@@ -403,11 +403,40 @@ body.guest .sidebar-my-channel { display: none; }
   position: absolute; bottom: -210px; left: 50%; transform: translateX(-50%);
   width: 180px; color: #000;
 }
-/* Star — same size as before, but inner text clipped to inner-pentagon area */
-.shape-star {
-  width: 260px; height: 260px;
-  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+/* Clip-path shapes — the clip lives on a ::before pseudo so the heart button
+   (and other overlays at top:6/right:6) aren't clipped away with the parent.
+   Parent background is forced transparent; the actual color comes from
+   --shape-bg, set inline alongside the original `background: <color>`. */
+.shape-star,
+.shape-diamond,
+.shape-hexagon,
+.shape-parallelogram {
+  background: transparent !important;
+  position: absolute;
 }
+.shape-star::before,
+.shape-diamond::before,
+.shape-hexagon::before,
+.shape-parallelogram::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--shape-bg, transparent);
+  z-index: 0;
+}
+/* Direct children sit above the clipped ::before so the heart, text and resize
+   handle stay clickable and never get clipped away. */
+.shape-star > *,
+.shape-diamond > *,
+.shape-hexagon > *,
+.shape-parallelogram > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Star — same size as before, but inner text clipped to inner-pentagon area */
+.shape-star { width: 260px; height: 260px; }
+.shape-star::before { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
 .shape-star .shape-text {
   font-size: 16px;
   max-width: 55%;
@@ -418,16 +447,11 @@ body.guest .sidebar-my-channel { display: none; }
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
-.shape-parallelogram {
-  width: 280px; height: 170px;
-  clip-path: polygon(20% 0%, 100% 0%, 80% 100%, 0% 100%);
-  border-radius: 2px;
-}
+.shape-parallelogram { width: 280px; height: 170px; border-radius: 2px; }
+.shape-parallelogram::before { clip-path: polygon(20% 0%, 100% 0%, 80% 100%, 0% 100%); border-radius: 2px; }
 /* Diamond — text fits inside the inner square area */
-.shape-diamond {
-  width: 220px; height: 220px;
-  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-}
+.shape-diamond { width: 220px; height: 220px; }
+.shape-diamond::before { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
 .shape-diamond .shape-text {
   font-size: 17px;
   max-width: 55%;
@@ -438,10 +462,8 @@ body.guest .sidebar-my-channel { display: none; }
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
-.shape-hexagon {
-  width: 240px; height: 210px;
-  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
-}
+.shape-hexagon { width: 240px; height: 210px; }
+.shape-hexagon::before { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); }
 
 /* Float animation */
 @keyframes floatDrift {

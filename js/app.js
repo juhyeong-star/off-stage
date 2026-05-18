@@ -2568,8 +2568,8 @@ function renderShapes() {
 
     const isTriangle = shape === 'triangle';
     const bgStyle = isTriangle
-      ? `border-bottom-color: ${color}; color: ${color};`
-      : `background: ${color};`;
+      ? `border-bottom-color: ${color}; color: ${color}; --shape-bg: ${color};`
+      : `background: ${color}; --shape-bg: ${color};`;
 
     const liked = isTrackLiked(track.id);
     shapesHtml += `
@@ -2930,7 +2930,9 @@ window.renderUniverse = async function () {
       const shape = t.shape || (typeof SHAPE_TYPES !== 'undefined' ? SHAPE_TYPES[i % SHAPE_TYPES.length] : 'circle');
       const color = t.shapeColor || (typeof SHAPE_COLORS !== 'undefined' ? SHAPE_COLORS[i % SHAPE_COLORS.length] : '#FF9800');
       const isTri = shape === 'triangle';
-      const bgStyle = isTri ? `border-bottom-color:${color}; color:${color};` : `background:${color};`;
+      const bgStyle = isTri
+        ? `border-bottom-color:${color}; color:${color}; --shape-bg:${color};`
+        : `background:${color}; --shape-bg:${color};`;
       const lines = t.lines || [t.title || '', t.artist || '', '클릭해서 들어봐!'];
       const safeLines = lines.map(l => (l||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
       const demoBadge = t.isDemo ? '<span class="universe-demo-badge">DEMO</span>' : '';
