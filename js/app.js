@@ -346,6 +346,7 @@ function navigateTo(route) {
       case 'home': renderHome(); break;
       case 'upload': renderUpload(); break;
       case 'library': window.renderLibrary(); break;
+      case 'universe': window.renderUniverse(); break;
       case 'tags': renderTags(); break;
       case 'wall': renderWall(); break;
       case 'events': renderEvents(); break;
@@ -2570,10 +2571,14 @@ function renderShapes() {
       ? `border-bottom-color: ${color}; color: ${color};`
       : `background: ${color};`;
 
+    const liked = isTrackLiked(track.id);
     shapesHtml += `
       <div class="floating-shape shape-${shape}" data-track-id="${track.id}" data-artist="${encodeURIComponent(track.artist || '')}"
            style="${bgStyle} left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;">
         <div class="shape-text">${safeLines.join('\n')}</div>
+        <button class="shape-like-btn ${liked ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${track.id}', this)" title="내 우주에 모으기">
+          <i class="${liked ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
+        </button>
         <div class="shape-resize-handle"><i class="ri-drag-move-2-line"></i></div>
       </div>
     `;
@@ -2630,6 +2635,60 @@ function renderShapes() {
   initShapeDrag();
   initDiceDrag();
 }
+
+// ── Unified "like" for tracks (works for both Supabase tracks and mock tracks).
+// Reads from window.__favoritedTracks (Supabase cache) or db.currentUser.likedTracks (legacy).
+function isTrackLiked(trackId) {
+  if (window.__favoritedTracks && window.__favoritedTracks.has && window.__favoritedTracks.has(trackId)) return true;
+  try {
+    const db = window.DB && window.DB.get && window.DB.get();
+    if (db && db.currentUser && Array.isArray(db.currentUser.likedTracks)) {
+      return db.currentUser.likedTracks.indexOf(trackId) >= 0;
+    }
+  } catch (_) {}
+  return false;
+}
+
+// Toggle a track heart. Mirrors to both Supabase (if track is server-stored)
+// and the local DB so liked items always appear in the universe.
+window.toggleTrackHeart = async function(trackId, btnEl) {
+  const db = window.DB.get();
+  if (!db.currentUser) {
+    alert('로그인 후 이용 가능합니다');
+    navigateTo('auth');
+    return;
+  }
+  const track = db.tracks && db.tracks.find(t => t.id === trackId);
+  const wasLiked = isTrackLiked(trackId);
+
+  // Optimistic UI flip
+  if (btnEl) {
+    const icon = btnEl.querySelector('i');
+    btnEl.classList.toggle('is-liked', !wasLiked);
+    if (icon) icon.className = !wasLiked ? 'ri-heart-fill' : 'ri-heart-line';
+    if (!wasLiked) {
+      btnEl.classList.add('pop');
+      setTimeout(() => btnEl.classList.remove('pop'), 360);
+    }
+  }
+
+  // Local DB mirror (used by every shape/demo render + universe)
+  if (!Array.isArray(db.currentUser.likedTracks)) db.currentUser.likedTracks = [];
+  const idx = db.currentUser.likedTracks.indexOf(trackId);
+  if (wasLiked) {
+    if (idx >= 0) db.currentUser.likedTracks.splice(idx, 1);
+  } else if (idx < 0) {
+    db.currentUser.likedTracks.push(trackId);
+  }
+  if (track) track.likes = Math.max(0, (track.likes || 0) + (wasLiked ? -1 : 1));
+  window.DB.save(db);
+
+  // Supabase mirror (only for server-stored tracks)
+  if (track && track.__supabase && window.Favorites && window.Favorites.toggle) {
+    try { await window.Favorites.toggle(trackId); }
+    catch (e) { console.warn('[toggleTrackHeart] Favorites.toggle', e); }
+  }
+};
 
 // Long-press the dice to enter drag mode. Short click still triggers bounce+play.
 function initDiceDrag() {
@@ -2768,6 +2827,153 @@ window.diceBouncePlay = function(el) {
 
 // Back-compat: older onclick="rollRandomTrack(this)" still works
 window.rollRandomTrack = function(el) { window.diceBouncePlay(el); };
+
+// ============================================================
+// 내 우주 — user's curated collection space
+// Liked tracks (masters + demos) + bookmarked post-its, all
+// floating in the same shapes-universe canvas. Drag to rearrange.
+// ============================================================
+window.renderUniverse = async function () {
+  const db = window.DB.get();
+  if (!db.currentUser) { navigateTo('auth'); return; }
+
+  // Ensure Supabase bookmark cache is fresh before reading isBookmarked
+  try {
+    if (window.Walls && window.Walls.refreshMyBookmarks) await window.Walls.refreshMyBookmarks();
+    if (window.Favorites && window.Favorites.refreshMine)   await window.Favorites.refreshMine();
+  } catch (_) {}
+
+  // ── Liked tracks (masters + demos) ───────────────────────
+  const likedIds = new Set(db.currentUser.likedTracks || []);
+  // Also fold in Supabase favorites cache
+  if (window.__favoritedTracks && window.__favoritedTracks.forEach) {
+    window.__favoritedTracks.forEach(id => likedIds.add(id));
+  }
+  const allTracks = db.tracks || [];
+  const likedTracks = allTracks.filter(t => t && likedIds.has(t.id));
+
+  // ── Bookmarked notes ─────────────────────────────────────
+  const allNotes = db.notes || [];
+  let bookmarkedNotes = [];
+  if (window.__bookmarkedNotes && window.__bookmarkedNotes.size) {
+    const setIds = window.__bookmarkedNotes;
+    bookmarkedNotes = allNotes.filter(n => n && setIds.has(n.id));
+    // If Supabase has bookmarks for notes not in local cache, fetch them
+    try {
+      if (window.Walls && window.Walls.fetchMyBookmarks) {
+        const fetched = await window.Walls.fetchMyBookmarks();
+        const seen = new Set(bookmarkedNotes.map(n => n.id));
+        (fetched || []).forEach(n => { if (n && !seen.has(n.id)) bookmarkedNotes.push(n); });
+      }
+    } catch (e) { console.warn('[universe] fetchMyBookmarks', e); }
+  }
+
+  // Empty state
+  if (likedTracks.length === 0 && bookmarkedNotes.length === 0) {
+    appContent.innerHTML = `
+      <div style="max-width:560px; margin:80px auto; text-align:center; padding:0 24px;">
+        <div style="font-size:64px; margin-bottom:16px;">🌌</div>
+        <h1 style="font-size:24px; margin-bottom:12px;">아직 비어있어요</h1>
+        <p style="color:var(--text-secondary); line-height:1.6; margin-bottom:28px;">
+          도형 페이지에서 마음에 드는 곡에 <i class="ri-heart-line"></i> 를,<br>
+          벽에서 마음에 든 글에 <i class="ri-bookmark-line"></i> 를 눌러보세요.<br>
+          모은 것들이 이 우주에 떠다니게 돼요.
+        </p>
+        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+          <button class="btn-primary" onclick="navigateTo('shapes')">도형으로 가기 →</button>
+          <button class="btn-primary" style="background:#444;" onclick="navigateTo('wall')">우리들의 벽 →</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  // ── Layout: distribute items in a 3-col grid pattern, then random offset ──
+  const allItems = [
+    ...likedTracks.map(t => ({ kind: 'track', t })),
+    ...bookmarkedNotes.map(n => ({ kind: 'note', n }))
+  ];
+  // Shuffle for visual variety
+  allItems.sort(() => Math.random() - 0.5);
+
+  const cols = 3;
+  const universeHeight = Math.max(900, Math.ceil(allItems.length / cols) * 280);
+
+  // Decorative bg shapes (same as renderShapes for cohesion)
+  let decoHtml = '';
+  const decoShapes = ['border-radius:50%', 'border-radius:4px', 'clip-path:polygon(50% 0%,0% 100%,100% 100%)'];
+  for (let i = 0; i < 30; i++) {
+    const size = 8 + Math.random() * 36;
+    const x = Math.random() * 96;
+    const y = Math.random() * 96;
+    const color = (typeof SHAPE_COLORS !== 'undefined') ? SHAPE_COLORS[Math.floor(Math.random() * SHAPE_COLORS.length)] : '#FF9800';
+    const opacity = 0.12 + Math.random() * 0.4;
+    const dur = 10 + Math.random() * 24;
+    const shapeStyle = decoShapes[Math.floor(Math.random() * decoShapes.length)];
+    decoHtml += `<div class="deco-shape" style="width:${size}px;height:${size}px;left:${x}%;top:${y}%;background:${color};opacity:${opacity};${shapeStyle};animation:floatDrift ${dur}s ease-in-out infinite;--dx:${(Math.random()*50-25)}px;--dy:${(Math.random()*50-25)}px;--rot:${Math.random()*6-3}deg;"></div>`;
+  }
+
+  // Item nodes
+  let itemsHtml = '';
+  allItems.forEach((it, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const xBase = 4 + col * 30 + Math.random() * 14;
+    const yPx = 30 + row * 260 + Math.random() * 50;
+    const rot = (Math.random() * 14 - 7);
+    const dur = 10 + Math.random() * 18;
+    const dx = (Math.random() * 50 - 25);
+    const dy = (Math.random() * 50 - 25);
+
+    if (it.kind === 'track') {
+      const t = it.t;
+      const shape = t.shape || (typeof SHAPE_TYPES !== 'undefined' ? SHAPE_TYPES[i % SHAPE_TYPES.length] : 'circle');
+      const color = t.shapeColor || (typeof SHAPE_COLORS !== 'undefined' ? SHAPE_COLORS[i % SHAPE_COLORS.length] : '#FF9800');
+      const isTri = shape === 'triangle';
+      const bgStyle = isTri ? `border-bottom-color:${color}; color:${color};` : `background:${color};`;
+      const lines = t.lines || [t.title || '', t.artist || '', '클릭해서 들어봐!'];
+      const safeLines = lines.map(l => (l||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+      const demoBadge = t.isDemo ? '<span class="universe-demo-badge">DEMO</span>' : '';
+      itemsHtml += `
+        <div class="floating-shape shape-${shape}" data-track-id="${t.id}" data-artist="${encodeURIComponent(t.artist || '')}"
+             style="${bgStyle} left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;">
+          ${demoBadge}
+          <div class="shape-text">${safeLines.join('\n')}</div>
+          <button class="shape-like-btn is-liked" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${t.id}', this); setTimeout(()=>renderUniverse(),250);" title="우주에서 빼기">
+            <i class="ri-heart-fill"></i>
+          </button>
+        </div>
+      `;
+    } else {
+      const n = it.n;
+      const c = (typeof NOTE_COLORS !== 'undefined' ? NOTE_COLORS[n.color] : null) || { bg:'#FFF59D', text:'#1a1a1a' };
+      const safeTxt = (n.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+      const safeAuth = (n.author || '').replace(/</g,'&lt;');
+      const noteRot = (typeof n.rotation === 'number') ? n.rotation : (Math.random() * 8 - 4);
+      itemsHtml += `
+        <div class="universe-note floating-shape" data-note-id="${n.id}"
+             style="left:${xBase}%; top:${yPx}px; background:${c.bg}; color:${c.text}; animation: floatDrift ${dur+4}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${noteRot}deg;">
+          <div class="universe-note-body">${safeTxt}</div>
+          <div class="universe-note-sig">— ${safeAuth}</div>
+        </div>
+      `;
+    }
+  });
+
+  appContent.innerHTML = `
+    <div style="padding:20px 24px 8px; text-align:center;">
+      <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-galaxy-fill" style="color:#9C27B0;"></i> 내 우주</h1>
+      <p style="font-size:13px; color:var(--text-secondary);">곡 ${likedTracks.length} · 포스트잇 ${bookmarkedNotes.length} — 끌어서 자리 옮길 수 있어요</p>
+    </div>
+    <div class="shapes-universe my-universe" style="height: ${universeHeight}px;">
+      ${decoHtml}
+      ${itemsHtml}
+    </div>
+  `;
+
+  // Reuse the same drag system as the main shapes page
+  if (typeof initShapeDrag === 'function') initShapeDrag();
+};
 
 // ===================== DRAG SYSTEM FOR FLOATING SHAPES =====================
 function initShapeDrag() {
@@ -4469,6 +4675,7 @@ function renderProjectBox(pid, versions) {
         <button class="demo-card-cm-send" onclick="event.stopPropagation(); submitTrackComment('${v.id}')" aria-label="남기기"><i class="ri-arrow-right-line"></i></button>
       </div>` : '';
 
+    const demoLiked = isTrackLiked(v.id);
     return `
       <div class="${cls} ${v.pinned ? 'is-pinned' : ''}" data-track-id="${v.id}" data-project="${pid}"
            style="grid-row:${pos.row}; grid-column:${pos.col};"
@@ -4477,6 +4684,9 @@ function renderProjectBox(pid, versions) {
           <span class="demo-tag">DEMO ${i+1}</span>
           ${shapeOpenBtnHtml}
           ${stoBadgeHtml}
+          <button class="demo-card-like ${demoLiked ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${v.id}', this)" title="내 우주에 모으기">
+            <i class="${demoLiked ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
+          </button>
         </div>
         ${noteHtml}
         <div class="demo-card-cm-list">${cmInlineHtml}</div>
