@@ -2628,6 +2628,85 @@ function renderShapes() {
   `;
 
   initShapeDrag();
+  initDiceDrag();
+}
+
+// Long-press the dice to enter drag mode. Short click still triggers bounce+play.
+function initDiceDrag() {
+  const dice = document.getElementById('random-dice');
+  if (!dice) return;
+
+  const LONG_PRESS_MS = 380;
+  const MOVE_CANCEL_PX = 8;  // moving farther than this before timer fires cancels long-press
+  let pressTimer = null;
+  let isDragging = false;
+  let pressActive = false;
+  let startX = 0, startY = 0, startLeft = 0, startTop = 0;
+
+  function onDown(e) {
+    if (e.type === 'mousedown' && e.button !== 0) return;
+    const pt = e.touches ? e.touches[0] : e;
+    pressActive = true;
+    isDragging = false;
+    startX = pt.clientX;
+    startY = pt.clientY;
+
+    // Compute current dice position in parent's pixel coordinates so we can drag
+    const parent = dice.parentElement;
+    const parentRect = parent.getBoundingClientRect();
+    const diceRect = dice.getBoundingClientRect();
+    startLeft = diceRect.left - parentRect.left;
+    startTop = diceRect.top - parentRect.top;
+
+    pressTimer = setTimeout(() => {
+      // Long-press achieved → enter drag mode
+      isDragging = true;
+      dice.classList.add('dragging');
+      // Lock position to current pixel coords (overrides the `left: X%` from inline style)
+      dice.style.left = startLeft + 'px';
+      dice.style.top  = startTop + 'px';
+    }, LONG_PRESS_MS);
+  }
+
+  function onMove(e) {
+    if (!pressActive) return;
+    const pt = e.touches ? e.touches[0] : e;
+    const dx = pt.clientX - startX;
+    const dy = pt.clientY - startY;
+
+    // If user moves before long-press fires, treat as scroll/cancel — abort.
+    if (!isDragging) {
+      if (Math.abs(dx) > MOVE_CANCEL_PX || Math.abs(dy) > MOVE_CANCEL_PX) {
+        clearTimeout(pressTimer); pressTimer = null;
+        pressActive = false;
+      }
+      return;
+    }
+
+    dice.style.left = (startLeft + dx) + 'px';
+    dice.style.top  = (startTop  + dy) + 'px';
+    if (e.cancelable) e.preventDefault();
+  }
+
+  function onUp() {
+    clearTimeout(pressTimer); pressTimer = null;
+    if (isDragging) {
+      dice.classList.remove('dragging');
+      // Suppress the click that would fire immediately after mouseup
+      dice.__suppressNextClick = true;
+      setTimeout(() => { dice.__suppressNextClick = false; }, 80);
+    }
+    pressActive = false;
+    isDragging = false;
+  }
+
+  dice.addEventListener('mousedown', onDown);
+  dice.addEventListener('touchstart', onDown, { passive: true });
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('mouseup', onUp);
+  document.addEventListener('touchend', onUp);
+  document.addEventListener('touchcancel', onUp);
 }
 
 // Set the visible face (1-6) by toggling data-face on the .die-face grid
@@ -2655,6 +2734,8 @@ window.diceHoverEnd = function(el) {
 // Click → bounce up once, play a random track. Avoids repeating the last pick.
 window.diceBouncePlay = function(el) {
   if (!el) return;
+  // Just finished dragging — swallow this synthetic click
+  if (el.__suppressNextClick) { el.__suppressNextClick = false; return; }
   if (window.__diceFaceTimer) { clearInterval(window.__diceFaceTimer); window.__diceFaceTimer = null; }
 
   const db = window.DB.get();
