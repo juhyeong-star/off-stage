@@ -263,6 +263,10 @@ body.guest .sidebar-my-channel { display: none; }
 }
 .floating-shape:hover .shape-resize-handle { opacity: 1; }
 
+/* When user hovers a shape, freeze the floatDrift so inner controls (heart, resize)
+   stay still and stay clickable. The drift resumes when the cursor leaves. */
+.floating-shape:hover { animation-play-state: paused; }
+
 /* "내 우주" page — small DEMO badge on the top-left of liked-demo shapes */
 .universe-demo-badge {
   position: absolute;
@@ -335,21 +339,22 @@ body.guest .sidebar-my-channel { display: none; }
 .shape-like-btn {
   position: absolute;
   top: 6px; right: 6px;
-  width: 30px; height: 30px;
+  width: 38px; height: 38px;
   border-radius: 50%;
-  background: rgba(0,0,0,0.55);
+  background: rgba(0,0,0,0.6);
   color: #fff;
   display: flex; align-items: center; justify-content: center;
-  font-size: 16px;
+  font-size: 18px;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.2s, transform 0.18s, background 0.18s;
-  z-index: 6;
+  transition: opacity 0.2s, background 0.18s;
+  z-index: 10;
   border: none;
   padding: 0;
+  transform-origin: center center;
 }
 .floating-shape:hover .shape-like-btn { opacity: 1; }
-.shape-like-btn:hover { transform: scale(1.12); background: rgba(0,0,0,0.75); }
+.shape-like-btn:hover { background: rgba(0,0,0,0.85); }
 .shape-like-btn.is-liked {
   opacity: 1;
   background: #fff;
