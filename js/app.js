@@ -6747,136 +6747,189 @@ function renderAuth() {
 
   appContent.innerHTML = `
     <div style="max-width: 420px; margin: 40px auto;" class="card">
-      <h1 style="text-align: center; margin-bottom: 24px;">Off-Stage 시작하기</h1>
+      <h1 style="text-align: center; margin-bottom: 8px;">시작하기</h1>
+      <p style="text-align:center; color:var(--text-secondary); font-size:13px; margin-bottom: 24px;">
+        가입 없이도 곡 감상은 가능해요.<br>좋아요·댓글·업로드는 로그인이 필요합니다.
+      </p>
       ${notice}
-      <div id="auth-forms">
-        <form id="login-form">
-          <div class="form-group">
-            <label>이메일</label>
-            <input type="email" class="form-control" id="login-email" required autocomplete="email" placeholder="you@example.com">
-          </div>
-          <div class="form-group">
-            <label>비밀번호</label>
-            <input type="password" class="form-control" id="login-pw" required autocomplete="current-password" placeholder="6자 이상">
-          </div>
-          <button type="submit" class="btn-primary" style="width: 100%; margin-bottom: 16px;">로그인</button>
-          <div style="text-align: center; font-size: 13px; color: var(--text-secondary);">
-            계정이 없으신가요? <a href="#" id="show-signup" style="color: var(--brand-color);">회원가입</a>
-          </div>
-        </form>
 
-        <form id="signup-form" style="display: none;">
-          <div class="form-group">
-            <label>활동명 (Display Name)</label>
-            <input type="text" class="form-control" id="reg-name" required placeholder="예: 김음악">
-          </div>
-          <div class="form-group">
-            <label>이메일</label>
-            <input type="email" class="form-control" id="reg-email" required autocomplete="email" placeholder="you@example.com">
-          </div>
-          <div class="form-group">
-            <label>비밀번호</label>
-            <input type="password" class="form-control" id="reg-pw" required minlength="6" autocomplete="new-password" placeholder="6자 이상">
-          </div>
-          <div class="form-group">
-            <label>역할</label>
-            <select class="form-control" id="reg-role" required>
-              <option value="artist">아티스트 (음악 업로드)</option>
-              <option value="listener">리스너 (감상 및 댓글)</option>
-            </select>
-          </div>
-          <button type="submit" class="btn-primary" style="width: 100%; margin-top: 12px; margin-bottom: 16px;">가입하기</button>
-          <div style="text-align: center; font-size: 13px; color: var(--text-secondary);">
-            이미 계정이 있으신가요? <a href="#" id="show-login" style="color: var(--brand-color);">로그인</a>
-          </div>
-        </form>
+      <!-- ── Consent ────────────────────────────────────────── -->
+      <div style="background:#111; border:1px solid var(--divider); border-radius:8px; padding:14px; margin-bottom:18px;">
+        <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; font-size:14px; line-height:1.5;">
+          <input type="checkbox" id="auth-consent" style="margin-top:3px; flex-shrink:0;">
+          <span>
+            <strong>(필수)</strong> 개인정보 수집·이용 및 서비스 이용약관에 동의합니다.
+            <a href="#" id="show-terms" style="color: var(--brand-color); margin-left:6px; font-size:13px;">자세히 ▼</a>
+          </span>
+        </label>
+        <div id="terms-detail" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--divider); font-size:12.5px; color:var(--text-secondary); line-height:1.7; max-height:240px; overflow-y:auto;">
+          <strong style="color:var(--brand-color);">개인정보 수집·이용 동의</strong><br>
+          • 수집 항목: 이메일, 닉네임, 프로필 사진<br>
+          • 이용 목적: 회원 식별 및 서비스 제공 (곡 업로드/댓글/팔로우 등)<br>
+          • 보관 기간: 회원 탈퇴 시까지 (탈퇴 즉시 파기)<br>
+          • 동의 거부 시 회원 가입이 제한됩니다.<br><br>
+          <strong style="color:var(--brand-color);">서비스 이용약관 (요약)</strong><br>
+          <strong>제1조</strong> 본 약관은 본 플랫폼 이용에 관한 권리·의무를 규정합니다.<br>
+          <strong>제2조 (음원 권리)</strong> 업로더는 창작물에 대한 모든 저작권을 소유하며, 본 플랫폼은 플랫폼 내 스트리밍·공유를 위한 비독점 권한만 가집니다.<br>
+          <strong>제3조 (외부 유통)</strong> 유통 신청 곡은 검수 후 파트너 유통사와 정식 발매 계약으로 연결될 수 있습니다.<br>
+          <strong>제4조 (금지 행위)</strong> 타인의 권리 침해, 허위 정보, 욕설/혐오 표현은 사전 통보 없이 삭제될 수 있습니다.
+        </div>
       </div>
+
+      <!-- ── Google (primary) ───────────────────────────────── -->
+      <button type="button" id="google-btn" disabled style="width:100%; padding:14px; background:#fff; color:#3c4043; border:1px solid #dadce0; border-radius:8px; font-size:15px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; opacity:0.4; transition: opacity 0.15s; margin-bottom:8px;">
+        <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+        Google로 계속하기
+      </button>
+
+      <!-- ── Kakao (primary) ────────────────────────────────── -->
+      <button type="button" id="kakao-btn" disabled style="width:100%; padding:14px; background:#FEE500; color:#191919; border:none; border-radius:8px; font-size:15px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; opacity:0.4; transition: opacity 0.15s;">
+        <span style="font-size:18px;">💬</span> 카카오로 계속하기
+      </button>
+
+      <!-- ── Divider ────────────────────────────────────────── -->
+      <div style="display:flex; align-items:center; gap:10px; margin:18px 0; color:var(--text-secondary); font-size:12px;">
+        <div style="flex:1; height:1px; background:var(--divider);"></div>
+        <span>또는</span>
+        <div style="flex:1; height:1px; background:var(--divider);"></div>
+      </div>
+
+      <!-- ── Magic link ─────────────────────────────────────── -->
+      <form id="magic-form">
+        <div class="form-group" style="margin-bottom:10px;">
+          <input type="email" class="form-control" id="magic-email" required autocomplete="email" placeholder="이메일 주소">
+        </div>
+        <button type="submit" id="magic-btn" disabled class="btn-primary" style="width:100%; opacity:0.4; transition: opacity 0.15s;">
+          이메일로 로그인 링크 받기
+        </button>
+        <p style="font-size:12px; color:var(--text-secondary); margin-top:8px; text-align:center;">
+          비밀번호 없이 메일에 도착한 링크로 로그인돼요.
+        </p>
+      </form>
+
+      <!-- ── Legacy email+password (collapsed) ──────────────── -->
+      <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--divider); text-align:center;">
+        <a href="#" id="show-legacy" style="color:var(--text-secondary); font-size:12px;">기존 비밀번호로 로그인 ▼</a>
+      </div>
+      <form id="legacy-login" style="display:none; margin-top:12px;">
+        <div class="form-group">
+          <input type="email" class="form-control" id="legacy-email" required autocomplete="email" placeholder="이메일">
+        </div>
+        <div class="form-group">
+          <input type="password" class="form-control" id="legacy-pw" required autocomplete="current-password" placeholder="비밀번호">
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%;">로그인</button>
+      </form>
     </div>
   `;
 
-  document.getElementById('show-signup').onclick = (e) => {
+  // ── Consent gating ─────────────────────────────────────────
+  const consent = document.getElementById('auth-consent');
+  const googleBtn = document.getElementById('google-btn');
+  const kakaoBtn = document.getElementById('kakao-btn');
+  const magicBtn = document.getElementById('magic-btn');
+  function syncConsent() {
+    const ok = consent.checked;
+    [googleBtn, kakaoBtn, magicBtn].forEach(b => {
+      b.disabled = !ok;
+      b.style.opacity = ok ? '1' : '0.4';
+      b.style.cursor = ok ? 'pointer' : 'not-allowed';
+    });
+  }
+  consent.addEventListener('change', syncConsent);
+
+  document.getElementById('show-terms').onclick = (e) => {
     e.preventDefault();
-    document.getElementById('login-form').style.display = 'none';
-    document.getElementById('signup-form').style.display = 'block';
+    const det = document.getElementById('terms-detail');
+    det.style.display = det.style.display === 'none' ? 'block' : 'none';
+    e.target.textContent = det.style.display === 'none' ? '자세히 ▼' : '접기 ▲';
   };
 
-  document.getElementById('show-login').onclick = (e) => {
+  document.getElementById('show-legacy').onclick = (e) => {
     e.preventDefault();
-    document.getElementById('signup-form').style.display = 'none';
-    document.getElementById('login-form').style.display = 'block';
+    const f = document.getElementById('legacy-login');
+    f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    e.target.textContent = f.style.display === 'none' ? '기존 비밀번호로 로그인 ▼' : '기존 비밀번호로 로그인 ▲';
   };
 
-  document.getElementById('login-form').onsubmit = async (e) => {
-    e.preventDefault();
-    if (!supabaseReady) {
-      alert('Supabase 키가 설정되지 않아 로그인을 진행할 수 없어요.');
-      return;
+  // ── Google ─────────────────────────────────────────────────
+  googleBtn.onclick = async () => {
+    if (!supabaseReady) { alert('Supabase 키가 설정되지 않았어요.'); return; }
+    if (!consent.checked) { alert('약관 동의가 필요해요.'); return; }
+    googleBtn.disabled = true;
+    googleBtn.innerHTML = '<span>이동 중…</span>';
+    try {
+      await window.Auth.signInWithGoogle();
+    } catch (err) {
+      alert('Google 로그인 시작 실패: ' + (err.message || err));
+      googleBtn.disabled = false;
+      window.location.reload();
     }
-    const email = document.getElementById('login-email').value.trim();
-    const password = document.getElementById('login-pw').value;
+  };
+
+  // ── Kakao ──────────────────────────────────────────────────
+  kakaoBtn.onclick = async () => {
+    if (!supabaseReady) { alert('Supabase 키가 설정되지 않았어요.'); return; }
+    if (!consent.checked) { alert('약관 동의가 필요해요.'); return; }
+    kakaoBtn.disabled = true;
+    kakaoBtn.innerHTML = '<span>이동 중…</span>';
+    try {
+      await window.Auth.signInWithKakao();
+      // page redirects out — control returns to Kakao
+    } catch (err) {
+      alert('카카오 로그인 시작 실패: ' + (err.message || err));
+      kakaoBtn.disabled = false;
+      kakaoBtn.innerHTML = '<span style="font-size:18px;">💬</span> 카카오로 계속하기';
+    }
+  };
+
+  // ── Magic link ─────────────────────────────────────────────
+  document.getElementById('magic-form').onsubmit = async (e) => {
+    e.preventDefault();
+    if (!supabaseReady) { alert('Supabase 키가 설정되지 않았어요.'); return; }
+    if (!consent.checked) { alert('약관 동의가 필요해요.'); return; }
+    const email = document.getElementById('magic-email').value.trim();
+    magicBtn.disabled = true;
+    magicBtn.textContent = '메일 보내는 중…';
+    try {
+      await window.Auth.signInWithMagicLink(email);
+      magicBtn.textContent = '✅ 메일을 확인해주세요';
+      showToast(`${email} 로 로그인 링크를 보냈어요. 메일함을 확인해주세요!`);
+    } catch (err) {
+      const msg = (err && err.message) || '';
+      if (/rate limit|too many/i.test(msg)) {
+        alert('메일을 너무 자주 보냈어요. 잠시 후 다시 시도해주세요.');
+      } else {
+        alert('메일 발송 실패: ' + msg);
+      }
+      magicBtn.disabled = false;
+      magicBtn.textContent = '이메일로 로그인 링크 받기';
+    }
+  };
+
+  // ── Legacy email+password (existing accounts only) ─────────
+  document.getElementById('legacy-login').onsubmit = async (e) => {
+    e.preventDefault();
+    if (!supabaseReady) { alert('Supabase 키가 설정되지 않았어요.'); return; }
+    const email = document.getElementById('legacy-email').value.trim();
+    const password = document.getElementById('legacy-pw').value;
     const btn = e.target.querySelector('button[type=submit]');
     btn.disabled = true; btn.textContent = '로그인 중...';
     try {
       await window.Auth.signIn({ email, password });
-      // Instant UI feedback — don't wait for ANY follow-up fetches
       updateHeaderAuth();
       renderSidebarPlaylists();
-      showToast(`다시 만나서 반가워요! 🎵`);
+      showToast('다시 만나서 반가워요! 🎵');
       navigateTo('shapes');
-      // Fire-and-forget: refresh user-scoped data in background (parallel)
-      const dbNow = window.DB.get();
-      const bgFetches = [];
-      if (window.Follows) bgFetches.push(window.Follows.refreshMine().catch(()=>{}));
-      if (window.Playlists) bgFetches.push(window.Playlists.refreshInto(dbNow).catch(()=>{}));
-      if (window.Walls && window.Walls.refreshMyBookmarks) bgFetches.push(window.Walls.refreshMyBookmarks().catch(()=>{}));
-      if (window.Favorites && window.Favorites.refreshMine) bgFetches.push(window.Favorites.refreshMine().catch(()=>{}));
-      Promise.all(bgFetches).then(() => {
-        try { updateHeaderAuth(); renderSidebarPlaylists(); } catch (_) {}
-      });
     } catch (err) {
       const msg = (err && err.message) || '';
-      if (/email not confirmed|not confirmed/i.test(msg)) {
-        alert('이메일 인증이 아직 안 끝났어요.\n\n받은 메일함에서 확인 링크를 클릭하거나, Supabase 대시보드에서 "Confirm email" 옵션을 꺼주세요.');
-      } else if (/invalid login credentials/i.test(msg)) {
+      if (/invalid login credentials/i.test(msg)) {
         alert('이메일 또는 비밀번호가 맞지 않아요.');
       } else {
         alert('로그인 실패: ' + msg);
       }
     } finally {
       btn.disabled = false; btn.textContent = '로그인';
-    }
-  };
-
-  document.getElementById('signup-form').onsubmit = async (e) => {
-    e.preventDefault();
-    if (!supabaseReady) {
-      alert('Supabase 키가 설정되지 않아 가입을 진행할 수 없어요.');
-      return;
-    }
-    const name = document.getElementById('reg-name').value.trim();
-    const email = document.getElementById('reg-email').value.trim();
-    const password = document.getElementById('reg-pw').value;
-    const role = document.getElementById('reg-role').value;
-    if (password.length < 6) { alert('비밀번호는 6자 이상이어야 해요.'); return; }
-    const btn = e.target.querySelector('button[type=submit]');
-    btn.disabled = true; btn.textContent = '가입 중...';
-    try {
-      const result = await window.Auth.signUp({ email, password, name, role });
-      if (result && result.session) {
-        // Email confirmation disabled → logged in immediately
-        updateHeaderAuth();
-        renderSidebarPlaylists();
-        showToast(`환영해요, ${name}! ✨`);
-        navigateTo('shapes');
-      } else {
-        // Email confirmation enabled
-        alert('가입 완료! 이메일을 확인하고 링크를 클릭해주세요.');
-        document.getElementById('show-login').click();
-      }
-    } catch (err) {
-      alert('가입 실패: ' + (err.message || err));
-    } finally {
-      btn.disabled = false; btn.textContent = '가입하기';
     }
   };
 }
