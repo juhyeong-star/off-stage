@@ -394,13 +394,14 @@
     async addComment(noteId, { text, authorName }) {
       if (!window.supabase) throw new Error('Supabase SDK not ready');
       const { data: { user } } = await window.supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요해요');
       const profile = window.__currentUser;
       const name = (authorName && authorName.trim())
         || (profile && profile.name)
-        || (user && user.email ? user.email.split('@')[0] : '익명');
+        || (user.email ? user.email.split('@')[0] : '익명');
       const payload = {
         note_id: noteId,
-        author_id: user ? user.id : null,
+        author_id: user.id,
         author_name: name,
         text: (text || '').slice(0, 500)
       };
@@ -939,13 +940,14 @@
     async addComment(trackId, { text, authorName }) {
       if (!window.supabase) throw new Error('Supabase SDK not ready');
       const { data: { user } } = await window.supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요해요');
       const profile = window.__currentUser;
       const name = (authorName && authorName.trim())
         || (profile && profile.name)
-        || (user && user.email ? user.email.split('@')[0] : '익명');
+        || (user.email ? user.email.split('@')[0] : '익명');
       const payload = {
         track_id: trackId,
-        author_id: user ? user.id : null,
+        author_id: user.id,
         author_name: name,
         text: (text || '').slice(0, 500)
       };

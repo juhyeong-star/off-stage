@@ -91,7 +91,7 @@ create table if not exists public.track_comments (
 create index if not exists track_comments_track_idx on public.track_comments(track_id);
 alter table public.track_comments enable row level security;
 create policy "track_comments_public_read" on public.track_comments for select using (true);
-create policy "track_comments_insert_any"  on public.track_comments for insert with check (true);
+create policy "track_comments_insert_auth" on public.track_comments for insert with check (auth.uid() is not null and author_id = auth.uid());
 create policy "track_comments_delete_own"  on public.track_comments for delete using (auth.uid() = author_id);
 
 -- ================================================================
@@ -127,7 +127,7 @@ create table if not exists public.wall_note_comments (
 create index if not exists wnc_note_idx on public.wall_note_comments(note_id);
 alter table public.wall_note_comments enable row level security;
 create policy "wnc_public_read" on public.wall_note_comments for select using (true);
-create policy "wnc_insert_any"  on public.wall_note_comments for insert with check (true);
+create policy "wnc_insert_auth" on public.wall_note_comments for insert with check (auth.uid() is not null and author_id = auth.uid());
 
 -- ================================================================
 -- 6. PLAYLISTS
