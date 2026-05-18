@@ -6695,27 +6695,62 @@ window.renderAdmin = async function () {
     return `<span style="display:inline-block; padding:2px 8px; background:${m.bg}; color:#fff; border-radius:10px; font-size:11px; font-weight:600;">${m.label}</span>`;
   };
 
+  // Provider badge → readable label
+  const providerLabel = (p) => {
+    const map = { google: 'Google', kakao: 'Kakao', email: '이메일', '': '—' };
+    return map[p] || p;
+  };
+  const esc = (s) => (s || '').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+  // SNS chip icons — only renders ones that have a value
+  const snsIcons = (sns) => {
+    const items = [
+      { key:'instagram', icon:'ri-instagram-line', color:'#E4405F' },
+      { key:'youtube',   icon:'ri-youtube-fill',   color:'#FF0000' },
+      { key:'tiktok',    icon:'ri-tiktok-fill',    color:'#fff' },
+      { key:'twitter',   icon:'ri-twitter-x-fill', color:'#fff' }
+    ];
+    const present = items.filter(it => sns && sns[it.key]);
+    if (!present.length) return '<span style="color:var(--text-secondary); font-size:11px;">SNS 없음</span>';
+    return present.map(it =>
+      `<span title="${esc(sns[it.key])}" style="color:${it.color}; display:inline-flex; align-items:center; gap:4px; font-size:11px;">
+         <i class="${it.icon}"></i>${esc(sns[it.key])}
+       </span>`
+    ).join('<span style="color:var(--divider); margin:0 4px;">·</span>');
+  };
+
   // Build the row HTML for a single user — used by both initial render and live filtering.
   const renderUserRow = (u) => {
     const isSelf = u.id === user.id;
+    const lastSignIn = u.lastSignInAt ? formatFullDate(u.lastSignInAt) : '—';
+    const provider = providerLabel(u.provider);
+    const hasBio = !!(u.bio && u.bio.trim());
     return `
-    <div class="admin-row" data-user-name="${(u.name||'').toLowerCase().replace(/"/g,'&quot;')}" data-user-role="${u.role}">
+    <div class="admin-row admin-user-row" data-user-name="${esc((u.name||'').toLowerCase())}" data-user-role="${u.role}">
       <img src="${u.avatar}" alt="" class="admin-row-cover" style="border-radius:50%;">
       <div class="admin-row-body">
         <div class="admin-row-title">
-          ${(u.name||'').replace(/</g,'&lt;')} ${roleBadge(u.role)}
+          ${esc(u.name)} ${roleBadge(u.role)}
           ${isSelf ? '<span style="color:var(--text-secondary); font-size:11px; margin-left:6px;">(나)</span>' : ''}
         </div>
         <div class="admin-row-meta">
-          가입 ${formatFullDate(u.createdAt)} · 트랙 ${u.trackCount} · 포스트잇 ${u.noteCount}
+          ${u.email ? `<span title="이메일">📧 ${esc(u.email)}</span> · ` : ''}
+          가입 ${formatFullDate(u.createdAt)} · 마지막 로그인 ${lastSignIn} · ${provider} · 트랙 ${u.trackCount} · 포스트잇 ${u.noteCount}
+        </div>
+        <div class="admin-user-extra" id="adm-extra-${u.id}" style="display:none; margin-top:8px; padding-top:8px; border-top:1px dashed var(--divider);">
+          <div style="font-size:12px; color:var(--text-secondary); margin-bottom:4px;">📝 자기소개</div>
+          <div style="font-size:13px; margin-bottom:8px; white-space:pre-wrap;">${hasBio ? esc(u.bio) : '<span style="color:var(--text-secondary);">(없음)</span>'}</div>
+          <div style="font-size:12px; color:var(--text-secondary); margin-bottom:4px;">🔗 SNS</div>
+          <div style="display:flex; flex-wrap:wrap; gap:2px; align-items:center;">${snsIcons(u.sns)}</div>
         </div>
       </div>
-      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+      <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
         <select onchange="adminSetUserRole('${u.id}', this.value, this)" ${isSelf ? 'disabled' : ''} style="background:#222; color:#fff; border:1px solid var(--divider); border-radius:6px; padding:6px 8px; font-size:12px;">
           <option value="listener" ${u.role==='listener'?'selected':''}>리스너</option>
           <option value="artist" ${u.role==='artist'?'selected':''}>아티스트</option>
           <option value="admin" ${u.role==='admin'?'selected':''}>관리자</option>
         </select>
+        <button class="admin-chip" onclick="adminToggleUserExtra('${u.id}', this)" style="padding:4px 10px; font-size:11px;">상세 ▼</button>
       </div>
     </div>`;
   };
@@ -6844,6 +6879,14 @@ window.adminFilterUsers = function() {
   if (listEl)  listEl.innerHTML = filtered.map(renderUserRow).join('');
   if (emptyEl) emptyEl.style.display = filtered.length ? 'none' : 'block';
   if (countEl) countEl.textContent = filtered.length === users.length ? users.length : `${filtered.length}/${users.length}`;
+};
+
+window.adminToggleUserExtra = function(userId, btnEl) {
+  const el = document.getElementById('adm-extra-' + userId);
+  if (!el) return;
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : 'block';
+  if (btnEl) btnEl.textContent = open ? '상세 ▼' : '닫기 ▲';
 };
 
 window.adminFilterByRole = function(role, btnEl) {

@@ -1467,12 +1467,13 @@
     },
 
     // ── User management ──────────────────────────────────────
-    // List all users with track/note counts. Admin-only (RLS enforces).
+    // List all users with track/note counts + auth metadata (email/lastSignIn/provider).
+    // Admin-only (RLS + RPC body re-checks). Returns full profile + counts + auth meta.
     async listUsers(limit) {
       if (!window.supabase) return [];
       const { data: profiles, error } = await window.supabase
         .from('profiles')
-        .select('id, name, avatar_url, role, created_at')
+        .select('id, name, avatar_url, role, created_at, bio, sns_instagram, sns_youtube, sns_tiktok, sns_twitter')
         .order('created_at', { ascending: false })
         .limit(limit || 200);
       if (error) { console.warn('[Admin] listUsers', error.message); return []; }
@@ -1494,15 +1495,50 @@
         (nRows || []).forEach(r => { noteCount[r.author_id] = (noteCount[r.author_id] || 0) + 1; });
       } catch (e) { console.warn('[Admin] noteCount', e); }
 
-      return profiles.map(p => ({
-        id: p.id,
-        name: p.name || '익명',
-        avatar: p.avatar_url || ('https://i.pravatar.cc/150?u=' + p.id),
-        role: p.role || 'listener',
-        createdAt: p.created_at,
-        trackCount: trackCount[p.id] || 0,
-        noteCount: noteCount[p.id] || 0
-      }));
+      // Auth metadata via RPC (admin-only on the server side). If the RPC isn't
+      // installed yet or caller isn't admin, just skip silently — rest still works.
+      const authMeta = {};
+      try {
+        const { data: rpcRows, error: rpcErr } = await window.supabase.rpc('admin_list_auth_meta');
+        if (rpcErr) {
+          if (!/admin only|does not exist/i.test(rpcErr.message || '')) {
+            console.warn('[Admin] auth meta rpc', rpcErr.message);
+          }
+        } else {
+          (rpcRows || []).forEach(r => {
+            authMeta[r.id] = {
+              email: r.email || '',
+              lastSignInAt: r.last_sign_in_at || null,
+              provider: r.provider || ''
+            };
+          });
+        }
+      } catch (e) { console.warn('[Admin] auth meta rpc threw', e); }
+
+      return profiles.map(p => {
+        const am = authMeta[p.id] || {};
+        return {
+          id: p.id,
+          name: p.name || '익명',
+          avatar: p.avatar_url || ('https://i.pravatar.cc/150?u=' + p.id),
+          role: p.role || 'listener',
+          createdAt: p.created_at,
+          trackCount: trackCount[p.id] || 0,
+          noteCount: noteCount[p.id] || 0,
+          // Profile-level extras
+          bio: p.bio || '',
+          sns: {
+            instagram: p.sns_instagram || '',
+            youtube:   p.sns_youtube   || '',
+            tiktok:    p.sns_tiktok    || '',
+            twitter:   p.sns_twitter   || ''
+          },
+          // Auth-level extras (may be blank if RPC unavailable)
+          email: am.email || '',
+          lastSignInAt: am.lastSignInAt || null,
+          provider: am.provider || ''
+        };
+      });
     },
 
     // Change a user's role. Admin-only. Will fail via RLS if caller isn't admin.
