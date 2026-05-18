@@ -6655,7 +6655,7 @@ window.renderAdmin = async function () {
     }
   } catch (e) { console.warn('[admin] list', e); }
 
-  const trackRows = recentTracks.map(t => `
+  const renderTrackRow = (t) => `
     <div class="admin-row">
       <img src="${t.cover || ''}" alt="" class="admin-row-cover">
       <div class="admin-row-body">
@@ -6667,9 +6667,10 @@ window.renderAdmin = async function () {
       </div>
       <button class="admin-del-btn" onclick="adminDeleteTrack('${t.id}')"><i class="ri-delete-bin-line"></i> 삭제</button>
     </div>
-  `).join('');
+  `;
+  const trackRows = recentTracks.map(renderTrackRow).join('');
 
-  const noteRows = recentNotes.map(n => `
+  const renderNoteRow = (n) => `
     <div class="admin-row">
       <div class="admin-note-preview" style="background:${(NOTE_COLORS[n.color]||NOTE_COLORS.yellow).bg}; color:${(NOTE_COLORS[n.color]||NOTE_COLORS.yellow).text};">
         ${(n.text||'').replace(/</g,'&lt;').slice(0, 80)}
@@ -6681,7 +6682,14 @@ window.renderAdmin = async function () {
       </div>
       <button class="admin-del-btn" onclick="adminDeleteNote('${n.id}')"><i class="ri-delete-bin-line"></i> 삭제</button>
     </div>
-  `).join('');
+  `;
+  const noteRows = recentNotes.map(renderNoteRow).join('');
+
+  // Stash on window for filter handlers
+  window.__adminTracks = recentTracks;
+  window.__adminNotes = recentNotes;
+  window.__adminRenderTrackRow = renderTrackRow;
+  window.__adminRenderNoteRow = renderNoteRow;
 
   const roleBadge = (role) => {
     const map = {
@@ -6693,10 +6701,11 @@ window.renderAdmin = async function () {
     return `<span style="display:inline-block; padding:2px 8px; background:${m.bg}; color:#fff; border-radius:10px; font-size:11px; font-weight:600;">${m.label}</span>`;
   };
 
-  const userRows = allUsers.map(u => {
+  // Build the row HTML for a single user — used by both initial render and live filtering.
+  const renderUserRow = (u) => {
     const isSelf = u.id === user.id;
     return `
-    <div class="admin-row">
+    <div class="admin-row" data-user-name="${(u.name||'').toLowerCase().replace(/"/g,'&quot;')}" data-user-role="${u.role}">
       <img src="${u.avatar}" alt="" class="admin-row-cover" style="border-radius:50%;">
       <div class="admin-row-body">
         <div class="admin-row-title">
@@ -6715,7 +6724,13 @@ window.renderAdmin = async function () {
         </select>
       </div>
     </div>`;
-  }).join('');
+  };
+
+  const userRows = allUsers.map(renderUserRow).join('');
+
+  // Stash list + renderer on window so the filter handler can access them after innerHTML wipes scope
+  window.__adminUsers = allUsers;
+  window.__adminRenderUserRow = renderUserRow;
 
   appContent.innerHTML = `
     <div style="max-width: 1000px; margin: 0 auto; padding: 32px;">
@@ -6725,34 +6740,123 @@ window.renderAdmin = async function () {
       <div class="admin-section">
         <h2 class="admin-section-title">
           <i class="ri-user-line" style="color:#64B5F6;"></i> 사용자 목록
-          <span class="admin-count">${allUsers.length}</span>
+          <span class="admin-count" id="admin-user-count">${allUsers.length}</span>
         </h2>
-        <div class="admin-list">
+        ${allUsers.length ? `
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; align-items:center;">
+          <input type="text" id="admin-user-search" placeholder="이름으로 검색…" oninput="adminFilterUsers()"
+                 style="flex:1; min-width:200px; background:#222; color:#fff; border:1px solid var(--divider); border-radius:6px; padding:8px 12px; font-size:13px;">
+          <div id="admin-role-chips" style="display:flex; gap:6px;">
+            <button type="button" data-role-filter="all"      class="admin-chip active" onclick="adminFilterByRole('all', this)">전체</button>
+            <button type="button" data-role-filter="admin"    class="admin-chip"        onclick="adminFilterByRole('admin', this)">관리자</button>
+            <button type="button" data-role-filter="artist"   class="admin-chip"        onclick="adminFilterByRole('artist', this)">아티스트</button>
+            <button type="button" data-role-filter="listener" class="admin-chip"        onclick="adminFilterByRole('listener', this)">리스너</button>
+          </div>
+        </div>
+        ` : ''}
+        <div class="admin-list" id="admin-user-list">
           ${allUsers.length ? userRows : '<div class="admin-empty">사용자 없음 (RLS 정책 미적용 가능성)</div>'}
         </div>
+        <div id="admin-user-empty" class="admin-empty" style="display:none;">검색 결과 없음</div>
       </div>
 
       <div class="admin-section" style="margin-top: 40px;">
         <h2 class="admin-section-title">
           <i class="ri-music-2-line" style="color:var(--brand-color);"></i> 최근 트랙
-          <span class="admin-count">${recentTracks.length}</span>
+          <span class="admin-count" id="admin-track-count">${recentTracks.length}</span>
         </h2>
-        <div class="admin-list">
+        ${recentTracks.length ? `
+        <input type="text" id="admin-track-search" placeholder="제목·아티스트로 검색…" oninput="adminFilterTracks()"
+               style="width:100%; background:#222; color:#fff; border:1px solid var(--divider); border-radius:6px; padding:8px 12px; font-size:13px; margin-bottom:14px;">
+        ` : ''}
+        <div class="admin-list" id="admin-track-list">
           ${recentTracks.length ? trackRows : '<div class="admin-empty">최근 업로드된 트랙 없음</div>'}
         </div>
+        <div id="admin-track-empty" class="admin-empty" style="display:none;">검색 결과 없음</div>
       </div>
 
       <div class="admin-section" style="margin-top: 40px;">
         <h2 class="admin-section-title">
           <i class="ri-sticky-note-fill" style="color:#FFD54F;"></i> 최근 포스트잇
-          <span class="admin-count">${recentNotes.length}</span>
+          <span class="admin-count" id="admin-note-count">${recentNotes.length}</span>
         </h2>
-        <div class="admin-list">
+        ${recentNotes.length ? `
+        <input type="text" id="admin-note-search" placeholder="내용·작성자로 검색…" oninput="adminFilterNotes()"
+               style="width:100%; background:#222; color:#fff; border:1px solid var(--divider); border-radius:6px; padding:8px 12px; font-size:13px; margin-bottom:14px;">
+        ` : ''}
+        <div class="admin-list" id="admin-note-list">
           ${recentNotes.length ? noteRows : '<div class="admin-empty">최근 포스트잇 없음</div>'}
         </div>
+        <div id="admin-note-empty" class="admin-empty" style="display:none;">검색 결과 없음</div>
       </div>
     </div>
   `;
+};
+
+window.adminFilterTracks = function() {
+  const tracks = window.__adminTracks || [];
+  const render = window.__adminRenderTrackRow;
+  if (!render) return;
+  const q = (document.getElementById('admin-track-search')?.value || '').trim().toLowerCase();
+  const filtered = !q ? tracks : tracks.filter(t =>
+    (t.title || '').toLowerCase().includes(q) ||
+    (t.artist || '').toLowerCase().includes(q)
+  );
+  const listEl  = document.getElementById('admin-track-list');
+  const emptyEl = document.getElementById('admin-track-empty');
+  const countEl = document.getElementById('admin-track-count');
+  if (listEl)  listEl.innerHTML = filtered.map(render).join('');
+  if (emptyEl) emptyEl.style.display = filtered.length ? 'none' : 'block';
+  if (countEl) countEl.textContent = filtered.length === tracks.length ? tracks.length : `${filtered.length}/${tracks.length}`;
+};
+
+window.adminFilterNotes = function() {
+  const notes = window.__adminNotes || [];
+  const render = window.__adminRenderNoteRow;
+  if (!render) return;
+  const q = (document.getElementById('admin-note-search')?.value || '').trim().toLowerCase();
+  const filtered = !q ? notes : notes.filter(n =>
+    (n.text || '').toLowerCase().includes(q) ||
+    (n.author || '').toLowerCase().includes(q)
+  );
+  const listEl  = document.getElementById('admin-note-list');
+  const emptyEl = document.getElementById('admin-note-empty');
+  const countEl = document.getElementById('admin-note-count');
+  if (listEl)  listEl.innerHTML = filtered.map(render).join('');
+  if (emptyEl) emptyEl.style.display = filtered.length ? 'none' : 'block';
+  if (countEl) countEl.textContent = filtered.length === notes.length ? notes.length : `${filtered.length}/${notes.length}`;
+};
+
+// ── Admin user list filter state ─────────────────────────────
+window.__adminUserRoleFilter = 'all';
+
+window.adminFilterUsers = function() {
+  const users = window.__adminUsers || [];
+  const renderUserRow = window.__adminRenderUserRow;
+  if (!renderUserRow) return;
+
+  const q = (document.getElementById('admin-user-search')?.value || '').trim().toLowerCase();
+  const roleFilter = window.__adminUserRoleFilter || 'all';
+
+  const filtered = users.filter(u => {
+    if (roleFilter !== 'all' && u.role !== roleFilter) return false;
+    if (q && !(u.name || '').toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const listEl  = document.getElementById('admin-user-list');
+  const emptyEl = document.getElementById('admin-user-empty');
+  const countEl = document.getElementById('admin-user-count');
+  if (listEl)  listEl.innerHTML = filtered.map(renderUserRow).join('');
+  if (emptyEl) emptyEl.style.display = filtered.length ? 'none' : 'block';
+  if (countEl) countEl.textContent = filtered.length === users.length ? users.length : `${filtered.length}/${users.length}`;
+};
+
+window.adminFilterByRole = function(role, btnEl) {
+  window.__adminUserRoleFilter = role;
+  document.querySelectorAll('#admin-role-chips .admin-chip').forEach(b => b.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+  window.adminFilterUsers();
 };
 
 window.adminSetUserRole = async function(userId, newRole, selectEl) {
