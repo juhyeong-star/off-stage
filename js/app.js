@@ -6644,12 +6644,13 @@ window.renderAdmin = async function () {
 
   appContent.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-secondary);">로딩 중…</div>`;
 
-  let recentNotes = [], recentTracks = [];
+  let recentNotes = [], recentTracks = [], allUsers = [];
   try {
     if (window.Admin) {
-      [recentNotes, recentTracks] = await Promise.all([
+      [recentNotes, recentTracks, allUsers] = await Promise.all([
         window.Admin.listRecentNotes(50),
-        window.Admin.listRecentTracks(50)
+        window.Admin.listRecentTracks(50),
+        window.Admin.listUsers ? window.Admin.listUsers(200) : Promise.resolve([])
       ]);
     }
   } catch (e) { console.warn('[admin] list', e); }
@@ -6682,12 +6683,56 @@ window.renderAdmin = async function () {
     </div>
   `).join('');
 
+  const roleBadge = (role) => {
+    const map = {
+      admin:    { bg:'#9C27B0', label:'관리자' },
+      artist:   { bg:'#FF9800', label:'아티스트' },
+      listener: { bg:'#555',    label:'리스너' }
+    };
+    const m = map[role] || map.listener;
+    return `<span style="display:inline-block; padding:2px 8px; background:${m.bg}; color:#fff; border-radius:10px; font-size:11px; font-weight:600;">${m.label}</span>`;
+  };
+
+  const userRows = allUsers.map(u => {
+    const isSelf = u.id === user.id;
+    return `
+    <div class="admin-row">
+      <img src="${u.avatar}" alt="" class="admin-row-cover" style="border-radius:50%;">
+      <div class="admin-row-body">
+        <div class="admin-row-title">
+          ${(u.name||'').replace(/</g,'&lt;')} ${roleBadge(u.role)}
+          ${isSelf ? '<span style="color:var(--text-secondary); font-size:11px; margin-left:6px;">(나)</span>' : ''}
+        </div>
+        <div class="admin-row-meta">
+          가입 ${formatFullDate(u.createdAt)} · 트랙 ${u.trackCount} · 포스트잇 ${u.noteCount}
+        </div>
+      </div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <select onchange="adminSetUserRole('${u.id}', this.value, this)" ${isSelf ? 'disabled' : ''} style="background:#222; color:#fff; border:1px solid var(--divider); border-radius:6px; padding:6px 8px; font-size:12px;">
+          <option value="listener" ${u.role==='listener'?'selected':''}>리스너</option>
+          <option value="artist" ${u.role==='artist'?'selected':''}>아티스트</option>
+          <option value="admin" ${u.role==='admin'?'selected':''}>관리자</option>
+        </select>
+      </div>
+    </div>`;
+  }).join('');
+
   appContent.innerHTML = `
     <div style="max-width: 1000px; margin: 0 auto; padding: 32px;">
       <h1 style="margin-bottom: 12px;"><i class="ri-dashboard-2-fill text-brand"></i> 관리자 대시보드</h1>
-      <p style="color: var(--text-secondary); margin-bottom: 32px;">부적절한 트랙·포스트잇을 여기서 삭제할 수 있어요. 삭제는 되돌릴 수 없으니 주의하세요.</p>
+      <p style="color: var(--text-secondary); margin-bottom: 32px;">사용자·트랙·포스트잇을 관리할 수 있어요. 삭제·역할변경은 되돌릴 수 없으니 주의하세요.</p>
 
       <div class="admin-section">
+        <h2 class="admin-section-title">
+          <i class="ri-user-line" style="color:#64B5F6;"></i> 사용자 목록
+          <span class="admin-count">${allUsers.length}</span>
+        </h2>
+        <div class="admin-list">
+          ${allUsers.length ? userRows : '<div class="admin-empty">사용자 없음 (RLS 정책 미적용 가능성)</div>'}
+        </div>
+      </div>
+
+      <div class="admin-section" style="margin-top: 40px;">
         <h2 class="admin-section-title">
           <i class="ri-music-2-line" style="color:var(--brand-color);"></i> 최근 트랙
           <span class="admin-count">${recentTracks.length}</span>
@@ -6708,6 +6753,22 @@ window.renderAdmin = async function () {
       </div>
     </div>
   `;
+};
+
+window.adminSetUserRole = async function(userId, newRole, selectEl) {
+  const prevRole = selectEl ? (selectEl.getAttribute('data-prev') || '') : '';
+  if (!confirm(`이 사용자의 역할을 "${newRole}"로 바꿀까요?`)) {
+    if (selectEl && prevRole) selectEl.value = prevRole;
+    return;
+  }
+  try {
+    await window.Admin.setUserRole(userId, newRole);
+    showToast('역할이 변경됐어요');
+    renderAdmin();
+  } catch (e) {
+    alert('변경 실패: ' + (e.message || e));
+    renderAdmin();
+  }
 };
 
 window.adminDeleteTrack = async function(id) {

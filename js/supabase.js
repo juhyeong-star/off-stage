@@ -1450,6 +1450,58 @@
     async deleteTrack(id) {
       const { error } = await window.supabase.from('tracks').delete().eq('id', id);
       if (error) throw error;
+    },
+
+    // ── User management ──────────────────────────────────────
+    // List all users with track/note counts. Admin-only (RLS enforces).
+    async listUsers(limit) {
+      if (!window.supabase) return [];
+      const { data: profiles, error } = await window.supabase
+        .from('profiles')
+        .select('id, name, avatar_url, role, created_at')
+        .order('created_at', { ascending: false })
+        .limit(limit || 200);
+      if (error) { console.warn('[Admin] listUsers', error.message); return []; }
+      if (!profiles || !profiles.length) return [];
+
+      const ids = profiles.map(p => p.id);
+
+      // Bulk-fetch track + note counts (one query each)
+      const trackCount = {};
+      const noteCount = {};
+      try {
+        const { data: tRows } = await window.supabase
+          .from('tracks').select('artist_id').in('artist_id', ids);
+        (tRows || []).forEach(r => { trackCount[r.artist_id] = (trackCount[r.artist_id] || 0) + 1; });
+      } catch (e) { console.warn('[Admin] trackCount', e); }
+      try {
+        const { data: nRows } = await window.supabase
+          .from('wall_notes').select('author_id').in('author_id', ids);
+        (nRows || []).forEach(r => { noteCount[r.author_id] = (noteCount[r.author_id] || 0) + 1; });
+      } catch (e) { console.warn('[Admin] noteCount', e); }
+
+      return profiles.map(p => ({
+        id: p.id,
+        name: p.name || '익명',
+        avatar: p.avatar_url || ('https://i.pravatar.cc/150?u=' + p.id),
+        role: p.role || 'listener',
+        createdAt: p.created_at,
+        trackCount: trackCount[p.id] || 0,
+        noteCount: noteCount[p.id] || 0
+      }));
+    },
+
+    // Change a user's role. Admin-only. Will fail via RLS if caller isn't admin.
+    async setUserRole(userId, role) {
+      if (!window.supabase) throw new Error('Supabase SDK not ready');
+      if (!['listener', 'artist', 'admin'].includes(role)) {
+        throw new Error('Invalid role: ' + role);
+      }
+      const { error } = await window.supabase
+        .from('profiles')
+        .update({ role })
+        .eq('id', userId);
+      if (error) throw error;
     }
   };
 })();
