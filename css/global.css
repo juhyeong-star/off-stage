@@ -350,33 +350,85 @@ body.guest .sidebar-my-channel { display: none; }
   z-index: 0;
 }
 
-/* Random-play dice — floats inside .shapes-universe */
+/* Random-play dice — realistic white cube with black pips */
 .dice-shape {
   position: absolute;
-  width: 64px; height: 64px;
+  width: 68px; height: 68px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #ffffff 0%, #d9d9d9 100%);
-  box-shadow: 0 8px 22px rgba(0,0,0,0.45), inset 0 2px 4px rgba(255,255,255,0.7), inset 0 -2px 4px rgba(0,0,0,0.15);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 42px; color: #1a1a1a;
+  /* Subtle gradient + insets fake a 3D-lit cube (light from top-left) */
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,0.95) 0%, rgba(245,245,245,1) 35%, rgba(225,225,225,1) 75%, rgba(200,200,200,1) 100%);
+  box-shadow:
+    0 10px 24px rgba(0,0,0,0.55),
+    0 2px 4px rgba(0,0,0,0.25),
+    inset 0 3px 0 rgba(255,255,255,0.9),
+    inset 0 -3px 0 rgba(0,0,0,0.14),
+    inset 3px 0 0 rgba(255,255,255,0.55),
+    inset -3px 0 0 rgba(0,0,0,0.08);
   cursor: pointer; user-select: none;
   z-index: 4;
   will-change: transform;
 }
-.dice-shape .dice-face {
-  display: inline-block;
-  transition: transform 0.06s linear;
+/* The face is a 3x3 grid; dots are positioned in specific cells per face number */
+.die-face {
+  width: 100%; height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  padding: 10px;
+  box-sizing: border-box;
+  transform-origin: center center;
 }
+.die-dot {
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  /* Slight radial gradient gives the pip an "engraved" look */
+  background: radial-gradient(circle at 35% 30%, #555, #1a1a1a 60%, #050505);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.4), inset 0 -1px 0 rgba(255,255,255,0.08);
+  align-self: center; justify-self: center;
+  visibility: hidden;
+}
+/* Grid cells (row, col): tl tm tr / ml c mr / bl bm br */
+.die-dot[data-pos="tl"] { grid-area: 1 / 1; }
+.die-dot[data-pos="tm"] { grid-area: 1 / 2; }
+.die-dot[data-pos="tr"] { grid-area: 1 / 3; }
+.die-dot[data-pos="ml"] { grid-area: 2 / 1; }
+.die-dot[data-pos="c"]  { grid-area: 2 / 2; }
+.die-dot[data-pos="mr"] { grid-area: 2 / 3; }
+.die-dot[data-pos="bl"] { grid-area: 3 / 1; }
+.die-dot[data-pos="bm"] { grid-area: 3 / 2; }
+.die-dot[data-pos="br"] { grid-area: 3 / 3; }
+/* Face dot maps */
+.die-face[data-face="1"] .die-dot[data-pos="c"] { visibility: visible; }
+.die-face[data-face="2"] .die-dot[data-pos="tl"],
+.die-face[data-face="2"] .die-dot[data-pos="br"] { visibility: visible; }
+.die-face[data-face="3"] .die-dot[data-pos="tl"],
+.die-face[data-face="3"] .die-dot[data-pos="c"],
+.die-face[data-face="3"] .die-dot[data-pos="br"] { visibility: visible; }
+.die-face[data-face="4"] .die-dot[data-pos="tl"],
+.die-face[data-face="4"] .die-dot[data-pos="tr"],
+.die-face[data-face="4"] .die-dot[data-pos="bl"],
+.die-face[data-face="4"] .die-dot[data-pos="br"] { visibility: visible; }
+.die-face[data-face="5"] .die-dot[data-pos="tl"],
+.die-face[data-face="5"] .die-dot[data-pos="tr"],
+.die-face[data-face="5"] .die-dot[data-pos="c"],
+.die-face[data-face="5"] .die-dot[data-pos="bl"],
+.die-face[data-face="5"] .die-dot[data-pos="br"] { visibility: visible; }
+.die-face[data-face="6"] .die-dot[data-pos="tl"],
+.die-face[data-face="6"] .die-dot[data-pos="ml"],
+.die-face[data-face="6"] .die-dot[data-pos="bl"],
+.die-face[data-face="6"] .die-dot[data-pos="tr"],
+.die-face[data-face="6"] .die-dot[data-pos="mr"],
+.die-face[data-face="6"] .die-dot[data-pos="br"] { visibility: visible; }
+
 /* Hover — pause idle drift, spin the face fast like a real rolling die */
-.dice-shape:hover {
-  animation-play-state: paused;
-}
-.dice-shape.rolling .dice-face {
+.dice-shape:hover { animation-play-state: paused; }
+.dice-shape.rolling .die-face {
   animation: diceSpin 0.32s linear infinite;
 }
 @keyframes diceSpin {
   0%   { transform: rotate(0deg)   scale(1); }
-  50%  { transform: rotate(180deg) scale(1.18); }
+  50%  { transform: rotate(180deg) scale(1.12); }
   100% { transform: rotate(360deg) scale(1); }
 }
 /* Click — single bounce up (퐁) with squash on landing.
@@ -384,7 +436,7 @@ body.guest .sidebar-my-channel { display: none; }
 .dice-shape.bouncing {
   animation: diceBounce 0.7s cubic-bezier(0.22, 1.2, 0.36, 1) !important;
 }
-.dice-shape.bouncing .dice-face {
+.dice-shape.bouncing .die-face {
   animation: diceBounceFace 0.7s cubic-bezier(0.22, 1.2, 0.36, 1);
 }
 @keyframes diceBounce {

@@ -2592,6 +2592,7 @@ function renderShapes() {
   const diceDx = Math.random() * 60 - 30;
   const diceDy = Math.random() * 60 - 30;
   const diceRot = Math.random() * 10 - 5;
+  const initialFace = 1 + Math.floor(Math.random() * 6);
   const diceHtml = `
     <div class="dice-shape" id="random-dice"
          onmouseenter="diceHoverStart(this)"
@@ -2600,7 +2601,17 @@ function renderShapes() {
          title="마우스 올리면 굴리고, 클릭하면 랜덤 곡 재생"
          style="left:${diceX}%; top:${diceY}px; animation: floatDrift ${diceDur}s ease-in-out infinite;
                 --dx:${diceDx}px; --dy:${diceDy}px; --rot:${diceRot}deg;">
-      <span class="dice-face">🎲</span>
+      <div class="die-face" data-face="${initialFace}">
+        <span class="die-dot" data-pos="tl"></span>
+        <span class="die-dot" data-pos="tm"></span>
+        <span class="die-dot" data-pos="tr"></span>
+        <span class="die-dot" data-pos="ml"></span>
+        <span class="die-dot" data-pos="c"></span>
+        <span class="die-dot" data-pos="mr"></span>
+        <span class="die-dot" data-pos="bl"></span>
+        <span class="die-dot" data-pos="bm"></span>
+        <span class="die-dot" data-pos="br"></span>
+      </div>
     </div>
   `;
 
@@ -2619,16 +2630,19 @@ function renderShapes() {
   initShapeDrag();
 }
 
-const DICE_FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+// Set the visible face (1-6) by toggling data-face on the .die-face grid
+function setDieFace(el, n) {
+  const grid = el && el.querySelector('.die-face');
+  if (grid) grid.setAttribute('data-face', String(n));
+}
 
 // Mouse over → fast-cycle faces (the dice "spins" while hovered).
 window.diceHoverStart = function(el) {
   if (!el) return;
-  const face = el.querySelector('.dice-face');
   el.classList.add('rolling');
   if (window.__diceFaceTimer) clearInterval(window.__diceFaceTimer);
   window.__diceFaceTimer = setInterval(() => {
-    if (face) face.textContent = DICE_FACES[Math.floor(Math.random() * 6)];
+    setDieFace(el, 1 + Math.floor(Math.random() * 6));
   }, 70);
 };
 
@@ -2642,7 +2656,6 @@ window.diceHoverEnd = function(el) {
 window.diceBouncePlay = function(el) {
   if (!el) return;
   if (window.__diceFaceTimer) { clearInterval(window.__diceFaceTimer); window.__diceFaceTimer = null; }
-  const face = el.querySelector('.dice-face');
 
   const db = window.DB.get();
   const pool = (db.tracks || []).filter(t => t && (!t.isDemo || t.pinned));
@@ -2666,9 +2679,7 @@ window.diceBouncePlay = function(el) {
   void el.offsetWidth;
   el.classList.add('bouncing');
   // Change face at the apex of the bounce
-  setTimeout(() => {
-    if (face) face.textContent = DICE_FACES[Math.floor(Math.random() * 6)];
-  }, 230);
+  setTimeout(() => setDieFace(el, 1 + Math.floor(Math.random() * 6)), 230);
   setTimeout(() => el.classList.remove('bouncing'), 700);
 
   try { playTrack(pick.id); } catch (e) { console.warn('[dice] playTrack', e); }
