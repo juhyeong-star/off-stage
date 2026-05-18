@@ -2584,10 +2584,28 @@ function renderShapes() {
   const showFeed = dbForFeed && dbForFeed.currentUser && (typeof window.renderActivityFeed === 'function');
   const feedHtml = showFeed ? window.renderActivityFeed() : '';
 
+  // Random-play dice — floats around the universe, click to play a random track.
+  // Position is randomized on each render so it never sits in the same spot.
+  const diceX = 30 + Math.random() * 40;        // 30%~70% — comfortable middle band
+  const diceY = 200 + Math.random() * (universeHeight - 500);
+  const diceDur = 12 + Math.random() * 10;
+  const diceDx = Math.random() * 60 - 30;
+  const diceDy = Math.random() * 60 - 30;
+  const diceRot = Math.random() * 10 - 5;
+  const diceHtml = `
+    <div class="dice-shape" id="random-dice" onclick="rollRandomTrack(this)"
+         title="주사위 굴려서 랜덤 곡 듣기"
+         style="left:${diceX}%; top:${diceY}px; animation: floatDrift ${diceDur}s ease-in-out infinite;
+                --dx:${diceDx}px; --dy:${diceDy}px; --rot:${diceRot}deg;">
+      <span class="dice-face">🎲</span>
+    </div>
+  `;
+
   appContent.innerHTML = `
     <div class="shapes-universe" style="height: ${universeHeight}px;">
       ${decoHtml}
       ${shapesHtml}
+      ${diceHtml}
     </div>
     ${feedHtml}
     <div class="upload-fab" onclick="navigateTo('upload')" title="음악 업로드">
@@ -2597,6 +2615,45 @@ function renderShapes() {
 
   initShapeDrag();
 }
+
+// Pick a random playable track and play it. Cycles dice face on each click.
+window.rollRandomTrack = function(el) {
+  const db = window.DB.get();
+  // Same pool the universe shows (master + pinned demos)
+  const pool = (db.tracks || []).filter(t => t && (!t.isDemo || t.pinned));
+  if (!pool.length) {
+    if (typeof showToast === 'function') showToast('재생할 곡이 없어요');
+    return;
+  }
+  // Avoid replaying the very last track when possible (so "한 번 더" feels random)
+  let pick;
+  if (pool.length > 1 && window.__lastDiceTrackId) {
+    const others = pool.filter(t => t.id !== window.__lastDiceTrackId);
+    pick = others[Math.floor(Math.random() * others.length)];
+  } else {
+    pick = pool[Math.floor(Math.random() * pool.length)];
+  }
+  window.__lastDiceTrackId = pick.id;
+
+  // Visual roll: cycle face for ~500ms then settle on a random face
+  const face = el.querySelector('.dice-face');
+  const FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+  if (face) {
+    el.classList.add('rolling');
+    let n = 0;
+    const tick = setInterval(() => {
+      face.textContent = FACES[Math.floor(Math.random() * 6)];
+      n++;
+      if (n >= 6) {
+        clearInterval(tick);
+        face.textContent = FACES[Math.floor(Math.random() * 6)];
+        el.classList.remove('rolling');
+      }
+    }, 70);
+  }
+
+  try { playTrack(pick.id); } catch (e) { console.warn('[dice] playTrack', e); }
+};
 
 // ===================== DRAG SYSTEM FOR FLOATING SHAPES =====================
 function initShapeDrag() {
