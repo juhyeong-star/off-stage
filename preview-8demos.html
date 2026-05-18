@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Preview · 8 demos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Caveat:wght@400;700&family=Archivo+Black&family=Bebas+Neue&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+  <link rel="stylesheet" href="css/global.css?v=117">
+  <style>
+    body { margin:0; padding:0; font-family: 'Inter', sans-serif; }
+    .preview-wrap { padding: 30px; }
+    .preview-label {
+      background:#111;color:#fff;font-family:'Bebas Neue';font-size:13px;letter-spacing:2px;
+      padding:6px 14px;display:inline-block;margin-bottom:14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="artist-canvas">
+    <div class="artist-bg-deco"></div>
+    <div class="sub-page artist-page" style="position:relative;z-index:1;padding:32px 36px;max-width:1200px;margin:0 auto;">
+      <span class="preview-label">데모 8개 / 1200px 화면 (현재 라이브: horizontal scroll)</span>
+
+      <!-- Project box with 8 demos -->
+      <div class="project-box reveal in-view" data-project="proj_demo8">
+        <div class="project-header">
+          <div class="project-cover-wrap" title="마스터 재생">
+            <img src="https://picsum.photos/seed/master1/400" class="project-cover-large" alt="cover">
+            <div class="project-play-overlay"><i class="ri-play-fill"></i></div>
+            <div class="project-master-badge">✦ MASTER</div>
+          </div>
+          <div class="project-header-info">
+            <h3 class="project-title">「밤하늘 속 모래성」</h3>
+            <p class="project-sub">데모 8개 → 마스터</p>
+            <div class="project-master-date">MASTER · 2026.04.15</div>
+          </div>
+        </div>
+
+        <div class="demo-path" style="grid-template-columns: repeat(4, 1fr);">
+          <div class="demo-card is-demo arrow-right is-selected" data-track-id="d1">
+            <div class="demo-card-top">
+              <span class="demo-tag">DEMO 1</span>
+              <button class="demo-play-btn"><i class="ri-play-fill"></i></button>
+            </div>
+            <div class="demo-card-title">첫 스케치 — 보컬 메모</div>
+            <div class="demo-card-date">2025.11.02</div>
+          </div>
+          <div class="demo-card is-demo arrow-right" data-track-id="d2">
+            <div class="demo-card-top">
+              <span class="demo-tag">DEMO 2</span>
+              <button class="demo-play-btn"><i class="ri-play-fill"></i></button>
+            </div>
+            <div class="demo-card-title">코드 정리 + 드럼</div>
+            <div class="demo-card-date">2025.11.20</div>
+          </div>
+          <div class="demo-card is-demo arrow-right" data-track-id="d3">
+            <div class="demo-card-top">
+              <span class="demo-tag">DEMO 3</span>
+              <button class="demo-play-btn"><i class="ri-play-fill"></i></button>
+            </div>
+            <div class="demo-card-title">베이스 인 + 후렴 수정</div>
+            <div class="demo-card-date">2025.12.07</div>
+          </div>
+          <div class="demo-card is-demo arrow-right" data-track-id="d4">
+            <div class="demo-card-top">
+              <span class="demo-tag">DEMO 4</span>
+              <button class="demo-play-btn"><i class="ri-play-fill"></i></button>
+            </div>
+            <div class="demo-card-title">스트링 샘플 얹어봄</div>
+            <div class="demo-card-date">2025.12.24</div>
+          </div>
+          <div class="demo-card is-demo arrow-right" data-track-id="d5">
+            <div class="demo-card-top">
+              <span class="demo-tag">DEMO 5</span>
+              <button class="demo-play-btn"><i class="ri-play-fill"></i></button>
+            </div>
+            <div class="demo-card-title">2절 멜로디 새로</div>
+            <div class="demo-card-date">2026.01.10</div>
+          </div>
+          <div class="demo-card is-demo arrow-right" data-track-id="d6">
+            <div class="demo-card-top">
+              <span class="demo-tag">DEMO 6</span>
+              <button class="demo-play-btn"><i class="ri-play-fill"></i></button>
+            </div>
+            <div class="demo-card-title">믹스 1차 — 답답함</div>
+            <div class="demo-card-date">2026.02.02</div>
+          </div>
+          <div class="demo-card is-demo arrow-right" data-track-id="d7">
+            <div class="demo-card-top">
+              <span class="demo-tag">DEMO 7</span>
+              <button class="demo-play-btn"><i class="ri-play-fill"></i></button>
+            </div>
+            <div class="demo-card-title">믹스 재작업 + 보컬 재녹음</div>
+            <div class="demo-card-date">2026.03.01</div>
+          </div>
+          <div class="demo-card is-demo arrow-right" data-track-id="d8">
+            <div class="demo-card-top">
+              <span class="demo-tag">DEMO 8</span>
+              <button class="demo-play-btn"><i class="ri-play-fill"></i></button>
+            </div>
+            <div class="demo-card-title">마스터링 직전 컷</div>
+            <div class="demo-card-date">2026.04.10</div>
+          </div>
+        </div>
+
+        <div class="version-panels">
+          <div class="version-panel active">
+            <div class="demo-diary">
+              <div class="diary-label">📝 아티스트의 기록</div>
+              <div class="diary-body">처음엔 멜로디만 흥얼거리다가 결국 8번 갈아엎었는데, 마지막 컷이 제일 본질에 가까운 것 같아.</div>
+            </div>
+            <div class="demo-comments">
+              <div class="scribble-title">✎ 이 데모에 낙서</div>
+              <div class="no-comments">ㄴ 아직 조용해... 첫 낙서 남겨봐 ✍️</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Proposed: wrap layout (제안안) -->
+      <span class="preview-label" style="margin-top:40px;background:#FFE500;color:#111;">제안: 데모 8개 / 자동 wrap (2줄)</span>
+
+      <div class="project-box reveal in-view wrap-demo" data-project="proj_demo8w" style="margin-bottom:30px;">
+        <div class="project-header">
+          <div class="project-cover-wrap">
+            <img src="https://picsum.photos/seed/master1/400" class="project-cover-large" alt="cover">
+            <div class="project-master-badge">✦ MASTER</div>
+          </div>
+          <div class="project-header-info">
+            <h3 class="project-title">「밤하늘 속 모래성」</h3>
+            <p class="project-sub">데모 8개 → 마스터</p>
+            <div class="project-master-date">MASTER · 2026.04.15</div>
+          </div>
+        </div>
+        <div class="demo-path demo-path-wrap">
+          <div class="demo-card is-demo"><div class="demo-card-top"><span class="demo-tag">DEMO 1</span><button class="demo-play-btn"><i class="ri-play-fill"></i></button></div><div class="demo-card-title">첫 스케치 — 보컬 메모</div><div class="demo-card-date">2025.11.02</div></div>
+          <div class="demo-card is-demo"><div class="demo-card-top"><span class="demo-tag">DEMO 2</span><button class="demo-play-btn"><i class="ri-play-fill"></i></button></div><div class="demo-card-title">코드 정리 + 드럼</div><div class="demo-card-date">2025.11.20</div></div>
+          <div class="demo-card is-demo"><div class="demo-card-top"><span class="demo-tag">DEMO 3</span><button class="demo-play-btn"><i class="ri-play-fill"></i></button></div><div class="demo-card-title">베이스 인 + 후렴 수정</div><div class="demo-card-date">2025.12.07</div></div>
+          <div class="demo-card is-demo"><div class="demo-card-top"><span class="demo-tag">DEMO 4</span><button class="demo-play-btn"><i class="ri-play-fill"></i></button></div><div class="demo-card-title">스트링 샘플 얹어봄</div><div class="demo-card-date">2025.12.24</div></div>
+          <div class="demo-card is-demo"><div class="demo-card-top"><span class="demo-tag">DEMO 5</span><button class="demo-play-btn"><i class="ri-play-fill"></i></button></div><div class="demo-card-title">2절 멜로디 새로</div><div class="demo-card-date">2026.01.10</div></div>
+          <div class="demo-card is-demo"><div class="demo-card-top"><span class="demo-tag">DEMO 6</span><button class="demo-play-btn"><i class="ri-play-fill"></i></button></div><div class="demo-card-title">믹스 1차 — 답답함</div><div class="demo-card-date">2026.02.02</div></div>
+          <div class="demo-card is-demo"><div class="demo-card-top"><span class="demo-tag">DEMO 7</span><button class="demo-play-btn"><i class="ri-play-fill"></i></button></div><div class="demo-card-title">믹스 재작업 + 보컬 재녹음</div><div class="demo-card-date">2026.03.01</div></div>
+          <div class="demo-card is-demo"><div class="demo-card-top"><span class="demo-tag">DEMO 8</span><button class="demo-play-btn"><i class="ri-play-fill"></i></button></div><div class="demo-card-title">마스터링 직전 컷</div><div class="demo-card-date">2026.04.10</div></div>
+        </div>
+      </div>
+
+      <style>
+        /* Wrap layout: allow demos to flow to multiple rows */
+        .demo-path.demo-path-wrap {
+          flex-wrap: wrap !important;
+          overflow: visible !important;
+          padding-right: 160px !important;
+          row-gap: 44px !important;
+        }
+        /* MASTER badge stays anchored at right-bottom for wrapped version */
+        .demo-path.demo-path-wrap::after {
+          position: absolute !important;
+          right: 16px !important;
+          bottom: 16px !important;
+          top: auto !important;
+          transform: none !important;
+        }
+      </style>
+
+      <span class="preview-label" style="margin-top:30px;">데모 4개 비교 (현재 그대로 OK)</span>
+
+      <!-- Project box with 4 demos -->
+      <div class="project-box reveal in-view" data-project="proj_demo4">
+        <div class="project-header">
+          <div class="project-cover-wrap">
+            <img src="https://picsum.photos/seed/master2/400" class="project-cover-large" alt="cover">
+            <div class="project-master-badge">✦ MASTER</div>
+          </div>
+          <div class="project-header-info">
+            <h3 class="project-title">「조용한 거실」</h3>
+            <p class="project-sub">데모 4개 → 마스터</p>
+            <div class="project-master-date">MASTER · 2025.12.20</div>
+          </div>
+        </div>
+
+        <div class="demo-path">
+          <div class="demo-card is-demo arrow-right">
+            <div class="demo-card-top"><span class="demo-tag">DEMO 1</span><button class="demo-play-btn"><i class="ri-play-fill"></i></button></div>
+            <div class="demo-card-title">홈데모 라프</div>
+            <div class="demo-card-date">2025.09.04</div>
+          </div>
+          <div class="demo-card is-demo arrow-right">
+            <div class="demo-card-top"><span class="demo-tag">DEMO 2</span><button class="demo-play-btn"><i class="ri-play-fill"></i></button></div>
+            <div class="demo-card-title">키 변경 + 보컬 라인 정리</div>
+            <div class="demo-card-date">2025.10.01</div>
+          </div>
+          <div class="demo-card is-demo arrow-right">
+            <div class="demo-card-top"><span class="demo-tag">DEMO 3</span><button class="demo-play-btn"><i class="ri-play-fill"></i></button></div>
+            <div class="demo-card-title">현 편곡 + 코러스</div>
+            <div class="demo-card-date">2025.11.05</div>
+          </div>
+          <div class="demo-card is-demo arrow-right">
+            <div class="demo-card-top"><span class="demo-tag">DEMO 4</span><button class="demo-play-btn"><i class="ri-play-fill"></i></button></div>
+            <div class="demo-card-title">믹스 마무리 직전</div>
+            <div class="demo-card-date">2025.12.10</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

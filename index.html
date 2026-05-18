@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Off-Stage | 감성으로 팬을 만드는 음악 플랫폼</title>
+  <meta name="description" content="아티스트의 데모, 기록, 감성이 모이는 곳. 음악과 팬이 만나는 플랫폼.">
+  <meta property="og:title" content="Off-Stage — 감성으로 팬을 만드는 음악 플랫폼">
+  <meta property="og:description" content="아티스트의 데모, 기록, 감성이 모이는 곳.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://vayzhmaggwpkbsrrsdqt.supabase.co" crossorigin>
+  <!-- Google Fonts — non-render-blocking (swap fallback fonts in until loaded) -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Gaegu:wght@400;700&family=Caveat:wght@400;700&family=Archivo+Black&family=Bebas+Neue&family=Press+Start+2P&family=VT323&family=Silkscreen:wght@400;700&display=swap" onload="this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Gaegu:wght@400;700&family=Caveat:wght@400;700&family=Archivo+Black&family=Bebas+Neue&family=Press+Start+2P&family=VT323&family=Silkscreen:wght@400;700&display=swap"></noscript>
+  <!-- Remixicon — non-render-blocking -->
+  <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
+  <link rel="stylesheet" href="css/global.css?v=169">
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar-nav" id="sidebar-nav">
+    <div class="sidebar-logo" onclick="navigateTo('shapes')">
+      <i class="ri-sound-module-fill"></i> Off-Stage
+    </div>
+    <nav class="sidebar-links">
+      <a href="#" data-route="shapes" class="active"><i class="ri-triangle-fill"></i> 도형</a>
+      <a href="#" data-route="wall"><i class="ri-sticky-note-fill"></i> 우리들의 벽</a>
+      <a href="#" data-route="tags"><i class="ri-hashtag"></i> TAG</a>
+      <a href="#" data-route="me" class="sidebar-my-channel"><i class="ri-headphone-fill"></i> 내 페이지 <span class="sidebar-link-sub">청취자</span></a>
+      <a href="#" data-route="studio" class="sidebar-artist-link"><i class="ri-mic-fill"></i> 아티스트 페이지</a>
+    </nav>
+    <div class="sidebar-search">
+      <i class="ri-search-line"></i>
+      <input type="text" id="global-search" placeholder="Search..." onkeypress="if(event.key==='Enter') window.doSearch()">
+    </div>
+    <button class="sidebar-bell" id="sidebar-bell" onclick="window.openNotifPanel && window.openNotifPanel()" aria-label="알림">
+      <i class="ri-notification-3-line"></i>
+      <span>알림</span>
+      <span class="sidebar-bell-badge" id="notif-badge" style="display:none;">0</span>
+    </button>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-user" id="auth-header-container"></div>
+  </aside>
+
+  <!-- Main -->
+  <div class="layout-wrapper">
+    <main id="app-content"></main>
+  </div>
+
+  <!-- Playlist Modal -->
+  <div id="playlist-modal" class="playlist-modal" style="display:none;" onclick="if(event.target===this)closePlaylistModal()">
+    <div class="playlist-modal-content">
+      <div class="playlist-modal-header">
+        <h3>Add to Playlist</h3>
+        <button onclick="closePlaylistModal()"><i class="ri-close-line"></i></button>
+      </div>
+      <div id="playlist-modal-list"></div>
+      <div class="playlist-modal-create">
+        <input type="text" id="new-playlist-name" placeholder="New playlist...">
+        <button onclick="createAndAddPlaylist()"><i class="ri-add-line"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DM Modal — 아티스트와 메시지 -->
+  <div id="dm-modal" class="dm-modal" style="display:none;" onclick="if(event.target===this) closeDmModal()">
+    <div class="dm-content" id="dm-content"></div>
+  </div>
+
+  <!-- Onboarding Modal — first-login picks 3 artists -->
+  <div id="onboarding-modal" class="onboarding-modal" style="display:none;">
+    <div class="onboarding-content" id="onboarding-content"></div>
+  </div>
+
+  <!-- Card Level-Up Toast (full-screen flash) -->
+  <div id="levelup-toast" class="levelup-toast" style="display:none;"></div>
+
+  <!-- STO Mini 함께 만들기 Modal -->
+  <div id="sto-mini-modal" class="sto-mini-modal" style="display:none;" onclick="if(event.target===this) closeStoMini()">
+    <div class="sto-mini-content" id="sto-mini-content"></div>
+  </div>
+
+  <!-- Tama Card Modal (포켓몬 카드 뒷면 느낌) -->
+  <div id="tama-modal" class="tama-modal" style="display:none;" onclick="if(event.target===this) closeTamaModal()">
+    <div class="tama-modal-content" id="tama-modal-content"></div>
+  </div>
+
+  <!-- Notification Panel — slides from right -->
+  <div id="notif-panel" class="notif-panel" style="display:none;" onclick="if(event.target===this) closeNotifPanel()">
+    <aside class="notif-drawer" id="notif-drawer"></aside>
+  </div>
+
+  <!-- Global Back Button (top-left, fixed). Hidden on root routes via JS. -->
+  <button class="global-back-btn" id="global-back" type="button" aria-label="뒤로" hidden onclick="window.goBack && window.goBack()">
+    <i class="ri-arrow-left-s-line"></i>
+  </button>
+
+  <!-- Hamburger Menu Button -->
+  <button class="hamburger-btn" id="hamburger-btn" onclick="toggleMenu()" aria-label="메뉴">
+    <i class="ri-menu-line"></i>
+  </button>
+
+  <!-- Mobile Bottom Tab Bar — 5 slots: 도형 / 벽 / TAG / 내 페이지 / 더보기 -->
+  <nav class="mobile-tab-bar" id="mobile-tab-bar" aria-label="메인 탭">
+    <a href="#" class="mobile-tab" data-route="shapes" onclick="event.preventDefault(); navigateTo('shapes');">
+      <i class="ri-triangle-fill"></i>
+      <span>도형</span>
+    </a>
+    <a href="#" class="mobile-tab" data-route="wall" onclick="event.preventDefault(); navigateTo('wall');">
+      <i class="ri-sticky-note-fill"></i>
+      <span>벽</span>
+    </a>
+    <a href="#" class="mobile-tab" data-route="tags" onclick="event.preventDefault(); navigateTo('tags');">
+      <i class="ri-hashtag"></i>
+      <span>TAG</span>
+    </a>
+    <a href="#" class="mobile-tab" data-route="me" onclick="event.preventDefault(); navigateTo('me');">
+      <i class="ri-headphone-fill"></i>
+      <span>내 페이지</span>
+    </a>
+    <a href="#" class="mobile-tab" data-route="__more" onclick="event.preventDefault(); window.openMoreSheet && window.openMoreSheet();">
+      <i class="ri-menu-line"></i>
+      <span>더보기</span>
+    </a>
+  </nav>
+
+  <!-- Player -->
+  <div id="global-player">
+    <!-- Explicit expand toggle (mobile) — only this triggers fullscreen player -->
+    <button class="player-expand-btn" id="player-expand-btn" aria-label="플레이어 펼치기" onclick="window.togglePlayerExpand && window.togglePlayerExpand(event)">
+      <i class="ri-arrow-up-s-line"></i>
+    </button>
+    <div class="player-controls">
+      <button class="control-btn" aria-label="이전 곡"><i class="ri-skip-back-fill"></i></button>
+      <button class="control-btn play-btn" id="player-play-btn" aria-label="재생/일시정지"><i class="ri-play-circle-fill"></i></button>
+      <button class="control-btn" aria-label="다음 곡"><i class="ri-skip-forward-fill"></i></button>
+    </div>
+    <div class="progress-container">
+      <span class="time-text" id="time-current">0:00</span>
+      <div class="progress-bar-wrap" id="progress-bar"><div class="progress-bar-track"><div class="progress-fill" id="progress-fill"></div></div></div>
+      <span class="time-text" id="time-total">0:00</span>
+    </div>
+    <div class="player-track-info">
+      <img src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' fill='%23333'/%3E%3C/svg%3E" alt="Cover" class="player-cover" id="player-cover" width="48" height="48" loading="lazy" decoding="async">
+      <div class="player-text">
+        <div class="player-title" id="player-title">선택된 곡 없음</div>
+        <div class="player-artist" id="player-artist">-</div>
+      </div>
+    </div>
+    <audio id="audio-element" style="display:none;"></audio>
+  </div>
+
+  <!-- Supabase SDK (UMD build — defer so it doesn't block parsing) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
+  <script defer src="js/supabase-init.js?v=169"></script>
+  <script defer src="js/data.js?v=169"></script>
+  <script defer src="js/supabase.js?v=169"></script>
+  <script defer src="js/app.js?v=169"></script>
+  <script defer src="js/polaroid.js?v=169"></script>
+</body>
+</html>

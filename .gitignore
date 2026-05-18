@@ -1,0 +1,13 @@
+.vercel
+# macOS metadata
+.DS_Store
+._*
+Thumbs.db
+# Node
+node_modules/
+# Claude Code (local-only)
+.claude/
+# Editor / OS
+.idea/
+.vscode/
+*.swp

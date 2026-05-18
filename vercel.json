@@ -1,0 +1,23 @@
+{
+  "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/:path*.(js|css|woff|woff2|ttf|otf|eot|svg|png|jpg|jpeg|webp|gif|ico|mp3|mp4|wav)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    }
+  ]
+}
