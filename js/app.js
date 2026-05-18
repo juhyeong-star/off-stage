@@ -2658,23 +2658,18 @@ function initShapeDrag() {
     el.style.zIndex = '';
     el.style.transition = '';
 
-    // If barely moved, treat as click — single click → play, double click → artist page
+    // If barely moved, treat as click — first click on a shape plays the song,
+    // a second click on the SAME shape (no time limit) navigates to artist page.
+    // Clicking a different shape resets: that shape is now the "primed" one.
     if (!moved) {
       const trackId = el.dataset.trackId;
       const artistEnc = el.dataset.artist;
-      if (el._clickTimer) {
-        clearTimeout(el._clickTimer);
-        el._clickTimer = null;
-        if (artistEnc) {
-          navigateTo('artist:' + artistEnc);
-        } else if (trackId) {
-          playTrack(trackId);
-        }
+      if (window.__lastClickedShape === el && artistEnc) {
+        window.__lastClickedShape = null;
+        navigateTo('artist:' + artistEnc);
       } else {
-        el._clickTimer = setTimeout(() => {
-          el._clickTimer = null;
-          if (trackId) playTrack(trackId);
-        }, 280);
+        window.__lastClickedShape = el;
+        if (trackId) playTrack(trackId);
       }
     }
   }
