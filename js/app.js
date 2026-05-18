@@ -4795,7 +4795,9 @@ window.submitTrackComment = async function(trackId) {
   if (!txtEl) return;
   const text = (txtEl.value || '').trim();
   if (!text) return;
-  const authorName = (authEl && authEl.value || '').trim();
+  // Prefer form input, then current user profile, then OAuth metadata fallbacks
+  const profileName = (window.__currentUser && window.__currentUser.name) || '';
+  const authorName = ((authEl && authEl.value) || profileName || '').trim();
   const sendBtn = document.querySelector(`#exp-${trackId} .scribble-send, .version-panel[data-track-id="${trackId}"] .scribble-send`);
   if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = '남기는 중…'; }
 

@@ -12,12 +12,21 @@
     // Synthesize from auth metadata if the profiles row hasn't been written yet
     // (e.g. trigger race on first OAuth signup). Caller still tries fetchProfile
     // again on next syncCurrentUser, so this is just a safe fallback.
+    // Best-effort name extraction across providers:
+    //   Google: full_name / name / picture
+    //   Kakao:  user_name / nickname / preferred_username
+    //   Manual: name from signup
+    function pickName(meta, authUser) {
+      const m = meta || {};
+      return (m.name || m.full_name || m.nickname || m.user_name
+              || m.preferred_username || m.display_name
+              || (authUser && authUser.email ? authUser.email.split('@')[0] : '익명'));
+    }
     if (!profile && authUser) {
       const meta = authUser.user_metadata || {};
       return {
         id: authUser.id,
-        name: meta.name || meta.full_name || meta.nickname
-              || (authUser.email ? authUser.email.split('@')[0] : '익명'),
+        name: pickName(meta, authUser),
         role: 'listener',
         avatar: meta.avatar_url || meta.picture
               || ('https://i.pravatar.cc/150?u=' + authUser.id),
@@ -29,9 +38,12 @@
       };
     }
     if (!profile) return null;
+    // If DB profile name is blank or fallback '익명', upgrade with auth metadata when possible
+    const dbName = (profile.name || '').trim();
+    const useDbName = dbName && dbName !== '익명';
     return {
       id: profile.id,
-      name: profile.name || (authUser && authUser.email ? authUser.email.split('@')[0] : '익명'),
+      name: useDbName ? dbName : pickName(authUser && authUser.user_metadata, authUser),
       role: profile.role || 'listener',
       avatar: profile.avatar_url || ('https://i.pravatar.cc/150?u=' + profile.id),
       heroUrl: profile.hero_url || '',  // 아티스트 페이지 우측 대표 사진
