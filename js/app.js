@@ -2984,6 +2984,9 @@ function initShapeDrag() {
   function pointerDown(e) {
     // Skip if clicking the resize handle
     if (e.target.closest('.shape-resize-handle')) return;
+    // Skip drag/play handling when the user is clicking the heart button.
+    // Without this, mouseup on the shape still fires playTrack on top of the heart toggle.
+    if (e.target.closest('.shape-like-btn')) return;
     // Ignore if it's a touch with multiple fingers
     if (e.touches && e.touches.length > 1) return;
 
