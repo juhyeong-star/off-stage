@@ -4239,11 +4239,8 @@ function renderProjectBox(pid, versions) {
     return sumRaised > 0 ? Math.max(1, Math.floor(sumRaised / Math.max(10000, avgUnit))) : 0;
   })();
 
-  // 댓글 권한 — 이 프로젝트의 어느 트랙이든 후원한 사람 + 아티스트 본인만 댓글 가능
-  const myBackingsForBox = (typeof window._getMyBackings === 'function') ? (window._getMyBackings() || []) : [];
-  const projectTrackIds = new Set(versions.map(x => x.id));
-  const hasBackedProject = myBackingsForBox.some(b => projectTrackIds.has(b.trackId));
-  const canComment = hasBackedProject || canEditArtist;
+  // 댓글 권한 — 로그인된 사용자 누구나 가능 (후원자/아티스트 제한 해제)
+  const canComment = !!(db.currentUser || window.__currentUser);
 
   // Snake cards — DEMOS ONLY (with 함께만들기 progress badge per demo)
   const firstTrackId = (demos[0] || final || {}).id;
