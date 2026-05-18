@@ -350,7 +350,7 @@ body.guest .sidebar-my-channel { display: none; }
   z-index: 0;
 }
 
-/* Random-play dice — floats inside .shapes-universe, click to roll */
+/* Random-play dice — floats inside .shapes-universe */
 .dice-shape {
   position: absolute;
   width: 64px; height: 64px;
@@ -361,20 +361,44 @@ body.guest .sidebar-my-channel { display: none; }
   font-size: 42px; color: #1a1a1a;
   cursor: pointer; user-select: none;
   z-index: 4;
-  transition: transform 0.15s ease-out;
   will-change: transform;
 }
+.dice-shape .dice-face {
+  display: inline-block;
+  transition: transform 0.06s linear;
+}
+/* Hover — pause idle drift, spin the face fast like a real rolling die */
 .dice-shape:hover {
-  transform: translate(var(--dx, 0), var(--dy, 0)) scale(1.08);
+  animation-play-state: paused;
 }
 .dice-shape.rolling .dice-face {
-  display: inline-block;
-  animation: diceRoll 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: diceSpin 0.32s linear infinite;
 }
-@keyframes diceRoll {
+@keyframes diceSpin {
   0%   { transform: rotate(0deg)   scale(1); }
-  40%  { transform: rotate(360deg) scale(1.35); }
-  100% { transform: rotate(720deg) scale(1); }
+  50%  { transform: rotate(180deg) scale(1.18); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+/* Click — single bounce up (퐁) with squash on landing.
+   !important needed to beat the inline `animation: floatDrift ...` style. */
+.dice-shape.bouncing {
+  animation: diceBounce 0.7s cubic-bezier(0.22, 1.2, 0.36, 1) !important;
+}
+.dice-shape.bouncing .dice-face {
+  animation: diceBounceFace 0.7s cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+@keyframes diceBounce {
+  0%   { transform: translateY(0)    scaleY(1)   scaleX(1); }
+  20%  { transform: translateY(-12px) scaleY(1.12) scaleX(0.92); }
+  45%  { transform: translateY(-90px) scaleY(1.05) scaleX(0.97); }
+  70%  { transform: translateY(-20px) scaleY(1)   scaleX(1); }
+  85%  { transform: translateY(0)    scaleY(0.78) scaleX(1.18); }
+  100% { transform: translateY(0)    scaleY(1)   scaleX(1); }
+}
+@keyframes diceBounceFace {
+  0%   { transform: rotate(0deg); }
+  45%  { transform: rotate(360deg); }
+  100% { transform: rotate(540deg); }
 }
 
 /* Upload button floating */

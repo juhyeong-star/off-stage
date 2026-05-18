@@ -2593,8 +2593,11 @@ function renderShapes() {
   const diceDy = Math.random() * 60 - 30;
   const diceRot = Math.random() * 10 - 5;
   const diceHtml = `
-    <div class="dice-shape" id="random-dice" onclick="rollRandomTrack(this)"
-         title="주사위 굴려서 랜덤 곡 듣기"
+    <div class="dice-shape" id="random-dice"
+         onmouseenter="diceHoverStart(this)"
+         onmouseleave="diceHoverEnd(this)"
+         onclick="diceBouncePlay(this)"
+         title="마우스 올리면 굴리고, 클릭하면 랜덤 곡 재생"
          style="left:${diceX}%; top:${diceY}px; animation: floatDrift ${diceDur}s ease-in-out infinite;
                 --dx:${diceDx}px; --dy:${diceDy}px; --rot:${diceRot}deg;">
       <span class="dice-face">🎲</span>
@@ -2616,16 +2619,37 @@ function renderShapes() {
   initShapeDrag();
 }
 
-// Pick a random playable track and play it. Cycles dice face on each click.
-window.rollRandomTrack = function(el) {
+const DICE_FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+
+// Mouse over → fast-cycle faces (the dice "spins" while hovered).
+window.diceHoverStart = function(el) {
+  if (!el) return;
+  const face = el.querySelector('.dice-face');
+  el.classList.add('rolling');
+  if (window.__diceFaceTimer) clearInterval(window.__diceFaceTimer);
+  window.__diceFaceTimer = setInterval(() => {
+    if (face) face.textContent = DICE_FACES[Math.floor(Math.random() * 6)];
+  }, 70);
+};
+
+window.diceHoverEnd = function(el) {
+  if (window.__diceFaceTimer) { clearInterval(window.__diceFaceTimer); window.__diceFaceTimer = null; }
+  if (el) el.classList.remove('rolling');
+  // Keep the last face shown — feels like the dice "settled" wherever it stopped
+};
+
+// Click → bounce up once, play a random track. Avoids repeating the last pick.
+window.diceBouncePlay = function(el) {
+  if (!el) return;
+  if (window.__diceFaceTimer) { clearInterval(window.__diceFaceTimer); window.__diceFaceTimer = null; }
+  const face = el.querySelector('.dice-face');
+
   const db = window.DB.get();
-  // Same pool the universe shows (master + pinned demos)
   const pool = (db.tracks || []).filter(t => t && (!t.isDemo || t.pinned));
   if (!pool.length) {
     if (typeof showToast === 'function') showToast('재생할 곡이 없어요');
     return;
   }
-  // Avoid replaying the very last track when possible (so "한 번 더" feels random)
   let pick;
   if (pool.length > 1 && window.__lastDiceTrackId) {
     const others = pool.filter(t => t.id !== window.__lastDiceTrackId);
@@ -2635,25 +2659,23 @@ window.rollRandomTrack = function(el) {
   }
   window.__lastDiceTrackId = pick.id;
 
-  // Visual roll: cycle face for ~500ms then settle on a random face
-  const face = el.querySelector('.dice-face');
-  const FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
-  if (face) {
-    el.classList.add('rolling');
-    let n = 0;
-    const tick = setInterval(() => {
-      face.textContent = FACES[Math.floor(Math.random() * 6)];
-      n++;
-      if (n >= 6) {
-        clearInterval(tick);
-        face.textContent = FACES[Math.floor(Math.random() * 6)];
-        el.classList.remove('rolling');
-      }
-    }, 70);
-  }
+  // Bounce: pause idle drift + remove rolling, then run bounce animation.
+  el.classList.remove('rolling');
+  el.classList.remove('bouncing');
+  // Force reflow so re-adding the class restarts the animation
+  void el.offsetWidth;
+  el.classList.add('bouncing');
+  // Change face at the apex of the bounce
+  setTimeout(() => {
+    if (face) face.textContent = DICE_FACES[Math.floor(Math.random() * 6)];
+  }, 230);
+  setTimeout(() => el.classList.remove('bouncing'), 700);
 
   try { playTrack(pick.id); } catch (e) { console.warn('[dice] playTrack', e); }
 };
+
+// Back-compat: older onclick="rollRandomTrack(this)" still works
+window.rollRandomTrack = function(el) { window.diceBouncePlay(el); };
 
 // ===================== DRAG SYSTEM FOR FLOATING SHAPES =====================
 function initShapeDrag() {
