@@ -47,6 +47,15 @@ function _pushRouteHash(route) {
   try { history.pushState({ route }, '', hash); } catch (_) {}
 }
 
+// FNV-1a 32-bit hash → stable integer seed for any string id.
+// Used by shapes/wall/universe to derive deterministic positions per item.
+function _hashSeed(s) {
+  let h = 2166136261 >>> 0;
+  s = String(s || '');
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+
 // Native back/forward handler — re-render the view encoded in the new URL
 window.addEventListener('popstate', (e) => {
   const route = (e.state && e.state.route) || _hashToRoute(location.hash) || 'shapes';
@@ -1579,8 +1588,13 @@ async function renderWall() {
   if (window.Walls && window.Walls.refreshInto) {
     const hasCache = Array.isArray(db.notes) && db.notes.length > 0;
     if (hasCache) {
+      // Snapshot what we're rendering now; only re-render later if Supabase returns *different* data.
+      // Without this guard, an instant refresh resolve would trigger infinite recursion.
+      const beforeIds = (db.notes || []).map(n => n.id).join('|');
       window.Walls.refreshInto(db).then(() => {
-        if (currentView === 'wall') renderWall();
+        if (currentView !== 'wall') return;
+        const afterIds = (window.DB.get().notes || []).map(n => n.id).join('|');
+        if (afterIds !== beforeIds) renderWall();
       }).catch(e => console.warn('[wall] bg refresh', e));
     } else {
       try {
@@ -1626,7 +1640,9 @@ async function renderWall() {
 
   let notesHtml = visibleNotes.map((note, i) => {
     const c = NOTE_COLORS[note.color] || NOTE_COLORS.yellow;
-    const rot = note.rotation || (Math.random() * 6 - 3);
+    // Seeded jitter from note id so positions don't reshuffle on every reload
+    const seed = _hashSeed(note.id);
+    const rot = note.rotation != null ? note.rotation : ((((seed >>> 2) % 60) - 30) / 10);
     const safeText = (note.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
     const safeAuthor = (note.author || '').replace(/</g,'&lt;');
     const isOwner = user && user.name === note.author;
@@ -1634,8 +1650,8 @@ async function renderWall() {
 
     const col = i % cols;
     const row = Math.floor(i / cols);
-    const x = 2 + col * 22 + Math.random() * 10;
-    const yPx = 130 + row * 190 + Math.random() * 40;
+    const x = 2 + col * 22 + (seed % 10);
+    const yPx = 130 + row * 190 + ((seed >>> 8) % 40);
 
     const bookmarked = window.Walls && window.Walls.isBookmarked && window.Walls.isBookmarked(note.id);
     const bookmarkBtn = user ? `
@@ -2615,13 +2631,15 @@ function renderShapes() {
   const cols = 3;
   const universeHeight = Math.max(900, Math.ceil(totalShapes / cols) * 300);
 
+  // Build two passes (each track shown twice for fuller universe). Order is stable
+  // so reloads don't reshuffle. Pass index goes into the seed so the same track's
+  // two copies sit in different spots.
   const shapeEntries = [];
   tracks.forEach((track, i) => shapeEntries.push({ track, idx: i, pass: 0 }));
-  const shuffled = [...tracks].map((t, i) => ({ t, i, r: Math.random() })).sort((a, b) => a.r - b.r);
-  shuffled.forEach(({ t, i }) => shapeEntries.push({ track: t, idx: i, pass: 1 }));
+  tracks.forEach((track, i) => shapeEntries.push({ track, idx: i, pass: 1 }));
 
   shapeEntries.forEach((entry, si) => {
-    const { track, idx } = entry;
+    const { track, idx, pass } = entry;
     const shape = track.shape || SHAPE_TYPES[idx % SHAPE_TYPES.length];
     const color = track.shapeColor || SHAPE_COLORS[idx % SHAPE_COLORS.length];
     const lines = track.lines || [track.title, track.artist, '클릭해서 들어봐!'];
@@ -2629,12 +2647,14 @@ function renderShapes() {
 
     const col = si % cols;
     const row = Math.floor(si / cols);
-    const xBase = 2 + col * 30 + Math.random() * 18;
-    const yPx = 20 + row * 280 + Math.random() * 60;
-    const rot = (Math.random() * 14 - 7);
-    const dur = 10 + Math.random() * 18;
-    const dx = (Math.random() * 50 - 25);
-    const dy = (Math.random() * 50 - 25);
+    // Seeded per-track-per-pass so positions are deterministic across reloads
+    const seed = _hashSeed(track.id + ':' + pass);
+    const xBase = 2 + col * 30 + (seed % 18);
+    const yPx = 20 + row * 280 + ((seed >>> 5) % 60);
+    const rot = ((((seed >>> 10) % 140) - 70) / 10);
+    const dur = 10 + ((seed >>> 18) % 18);
+    const dx = ((((seed >>> 22) % 50)) - 25);
+    const dy = ((((seed >>> 26) % 50)) - 25);
 
     const isTriangle = shape === 'triangle';
     const bgStyle = isTriangle
@@ -2915,9 +2935,14 @@ window.renderUniverse = async function () {
   if (window.Favorites && window.Favorites.refreshMine)  refreshTasks.push(window.Favorites.refreshMine().catch(()=>{}));
   if (refreshTasks.length) {
     if (hasFavCache || hasBmkCache) {
-      // Have cached data — fire refresh in background and re-render when done
+      // Have cached data — fire refresh in background and re-render only if changed
+      const sigBefore = (Array.from(window.__favoritedTracks || []).join('|')) + '#'
+                      + (Array.from(window.__bookmarkedNotes || []).join('|'));
       Promise.all(refreshTasks).then(() => {
-        if (currentView === 'universe') window.renderUniverse();
+        if (currentView !== 'universe') return;
+        const sigAfter = (Array.from(window.__favoritedTracks || []).join('|')) + '#'
+                      + (Array.from(window.__bookmarkedNotes || []).join('|'));
+        if (sigAfter !== sigBefore) window.renderUniverse();
       });
     } else {
       // No cache — wait briefly so universe isn't empty on first visit; cap at 1.5s
@@ -2977,12 +3002,6 @@ window.renderUniverse = async function () {
 
   // ── Layout: distribute items in a 3-col grid pattern with a deterministic jitter ──
   // Order + jitter must be STABLE across reloads so user-curated positions feel persistent.
-  function _hashSeed(s) {
-    let h = 2166136261 >>> 0;
-    s = String(s || '');
-    for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
-    return h >>> 0;
-  }
   function _loadUniversePos(id) {
     try {
       const raw = localStorage.getItem('unipos:' + id);
