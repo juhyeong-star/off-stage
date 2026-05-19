@@ -1519,9 +1519,24 @@ let _wallSort = 'new'; // 'new' | 'old' | 'random'
 
 async function renderWall() {
   const db = window.DB.get();
-  // Refresh wall notes from Supabase (mirrors into db.notes + window.__wallNotes)
-  if (window.Walls) {
-    try { await window.Walls.refreshInto(db); } catch (e) { console.warn('[wall] refresh', e); }
+  // Refresh wall notes from Supabase. Strategy:
+  //   - First visit (empty cache): wait up to 1.5s for data, then render whatever we have
+  //   - Subsequent visits: render instantly with cache, fire refresh in background, re-render on completion
+  // Prevents a stuck blank screen when Supabase is slow or unreachable.
+  if (window.Walls && window.Walls.refreshInto) {
+    const hasCache = Array.isArray(db.notes) && db.notes.length > 0;
+    if (hasCache) {
+      window.Walls.refreshInto(db).then(() => {
+        if (currentView === 'wall') renderWall();
+      }).catch(e => console.warn('[wall] bg refresh', e));
+    } else {
+      try {
+        await Promise.race([
+          window.Walls.refreshInto(db).catch(e => console.warn('[wall] refresh', e)),
+          new Promise(r => setTimeout(r, 1500))
+        ]);
+      } catch (_) {}
+    }
   }
   const allNotes = db.notes || [];
   const user = db.currentUser || window.__currentUser;
@@ -2836,11 +2851,27 @@ window.renderUniverse = async function () {
   const db = window.DB.get();
   if (!db.currentUser) { navigateTo('auth'); return; }
 
-  // Ensure Supabase bookmark cache is fresh before reading isBookmarked
-  try {
-    if (window.Walls && window.Walls.refreshMyBookmarks) await window.Walls.refreshMyBookmarks();
-    if (window.Favorites && window.Favorites.refreshMine)   await window.Favorites.refreshMine();
-  } catch (_) {}
+  // Refresh strategy: render cached state first, refresh in background.
+  // Only block briefly on first visit (when caches are empty) so we have *something* to show.
+  const hasFavCache = window.__favoritedTracks && window.__favoritedTracks.size > 0;
+  const hasBmkCache = window.__bookmarkedNotes && window.__bookmarkedNotes.size > 0;
+  const refreshTasks = [];
+  if (window.Walls && window.Walls.refreshMyBookmarks)   refreshTasks.push(window.Walls.refreshMyBookmarks().catch(()=>{}));
+  if (window.Favorites && window.Favorites.refreshMine)  refreshTasks.push(window.Favorites.refreshMine().catch(()=>{}));
+  if (refreshTasks.length) {
+    if (hasFavCache || hasBmkCache) {
+      // Have cached data — fire refresh in background and re-render when done
+      Promise.all(refreshTasks).then(() => {
+        if (currentView === 'universe') window.renderUniverse();
+      });
+    } else {
+      // No cache — wait briefly so universe isn't empty on first visit; cap at 1.5s
+      await Promise.race([
+        Promise.all(refreshTasks),
+        new Promise(r => setTimeout(r, 1500))
+      ]);
+    }
+  }
 
   // ── Liked tracks (masters + demos) ───────────────────────
   const likedIds = new Set(db.currentUser.likedTracks || []);
