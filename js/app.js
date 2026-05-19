@@ -5103,7 +5103,7 @@ function renderProjectBox(pid, versions) {
         <div class="project-header-info">
           <h3 class="project-title">「${safeTitle}」</h3>
           ${masterDate ? `<div class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
-          ${participantCount > 0 ? `<div class="project-participants"><i class="ri-team-fill"></i> ${participantCount}명 함께 만듦</div>` : ''}
+          ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
         </div>
       </div>
       ${demos.length > 0 ? `

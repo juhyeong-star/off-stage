@@ -8793,7 +8793,7 @@ body.polaroid-sheet-open { overflow: hidden; }
   font-family: var(--font-hand) !important;
   font-size: 16px !important;
   font-weight: 700 !important;
-  color: #6B46C1 !important;
+  color: #E91E63 !important;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -8801,7 +8801,7 @@ body.polaroid-sheet-open { overflow: hidden; }
 }
 .artist-canvas .project-header-info .project-participants i {
   font-size: 14px;
-  color: #6B46C1;
+  color: #E91E63;
 }
 /* project-sub (이전 journey label) 은 더 이상 사용 안 함 — 혹시 남아 있으면 숨김 */
 .artist-canvas .project-header-info .project-sub { display: none !important; }
