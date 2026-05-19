@@ -5845,17 +5845,7 @@ window.editArtistNote = async function(trackId) {
 
 // ===================== ARTIST PROFILE (public) =====================
 
-// Current tab on /artist:<name> page. Survives re-renders.
-window.__artistTab = window.__artistTab || 'all';
-window.switchArtistTab = function(tab) {
-  window.__artistTab = tab;
-  // Re-render keeping the same artist
-  if (window.__currentArtistName) {
-    renderArtistProfile(window.__currentArtistName);
-  }
-};
-
-function renderArtistProfile(artistName) {
+function _renderArtistProfileV2_unused(artistName) {
   window.__currentArtistName = artistName;
   const db = window.DB.get();
 
@@ -5992,8 +5982,8 @@ function renderArtistProfile(artistName) {
   `;
 }
 
-// === LEGACY artist profile (sponsor-heavy) — kept for reference, no longer routed ===
-function _renderArtistProfileLegacy(artistName) {
+// === Active artist profile (restored) ===
+function renderArtistProfile(artistName) {
   const db = window.DB.get();
   const artistTracks = db.tracks.filter(t => t.artist === artistName);
   // Include both: notes the artist wrote + notes that mention this artist (fan messages)
