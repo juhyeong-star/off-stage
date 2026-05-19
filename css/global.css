@@ -482,6 +482,28 @@ body.guest .sidebar-my-channel { display: none; }
   z-index: 0;
 }
 
+/* '소식' header on the artist page postit aside */
+.artist-postit-aside-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 2px solid #000;
+  background: #fff;
+  color: #000;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.artist-postit-aside-head i { color: #FFD54F; }
+.artist-postit-count {
+  background: #1DB954;
+  color: #fff;
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 8px;
+}
+
 /* ── New artist page (/artist:<name>) — simple portfolio layout ──── */
 .artist-page-v2 {
   max-width: 1100px;

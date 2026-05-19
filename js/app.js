@@ -4296,10 +4296,10 @@ async function _renderProfileImpl() {
     </div>
   `;
 
-  // 📰 소식 (작업·공유 피드 — 작업일지, 곡 공유, 추천)
+  // 📝 내 포스트잇 (작성한 것)
   const myNotesSection = userNotes.length > 0 ? `
     <div class="reveal artist-postit-section" style="margin-top:36px;">
-      <h2 class="section-title"><i class="ri-sticky-note-fill"></i> 소식 <span class="section-count">${userNotes.length}</span></h2>
+      <h2 class="section-title"><i class="ri-sticky-note-fill"></i> 내 포스트잇 <span class="section-count">${userNotes.length}</span></h2>
       <div class="artist-postit-grid">
         ${notesGridHtml}
       </div>
@@ -6166,6 +6166,9 @@ function renderArtistProfile(artistName) {
           </div>
           ${artistNotes.length > 0 ? `
             <aside class="artist-postit-aside">
+              <div class="artist-postit-aside-head">
+                <i class="ri-sticky-note-fill"></i> 소식 <span class="artist-postit-count">${artistNotes.length}</span>
+              </div>
               <div class="artist-postit-grid artist-postit-grid-aside">
                 ${notesGridHtml}
               </div>
