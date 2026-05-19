@@ -811,6 +811,13 @@ body.guest .sidebar-my-channel { display: none; }
 .note-track-chip-ext { color: #fff; }
 .note-track-chip-ext > i:first-child { font-size: 20px; flex-shrink: 0; }
 .note-detail-content .note-track-chip { margin-top: 14px; }
+/* Chip inside a comment line — smaller, indented under the comment text */
+.comment-track-wrap { margin-top: 4px; margin-left: 14px; max-width: 280px; }
+.comment-track-wrap .note-track-chip { margin-top: 0; padding: 4px 6px; }
+.comment-track-wrap .note-track-chip img { width: 26px; height: 26px; }
+.comment-track-wrap .note-track-chip-title { font-size: 11px; }
+.comment-track-wrap .note-track-chip-sub { font-size: 10px; }
+.comment-track-wrap .note-track-chip-play { font-size: 18px; }
 
 /* ── Wall compose: 노래 첨부 button + preview ────────────────────────── */
 .wall-attach-btn {

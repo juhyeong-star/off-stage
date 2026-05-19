@@ -325,7 +325,10 @@
       author: row.author_name || '익명',
       authorId: row.author_id || null,
       text: row.text || '',
-      createdAt: row.created_at
+      createdAt: row.created_at,
+      // Optional attached song — Off-Stage track id OR external URL
+      trackId:     row.track_id     || null,
+      externalUrl: row.external_url || ''
     };
   }
 
@@ -409,7 +412,7 @@
       }
     },
 
-    async addComment(noteId, { text, authorName }) {
+    async addComment(noteId, { text, authorName, trackId, externalUrl }) {
       if (!window.supabase) throw new Error('Supabase SDK not ready');
       const { data: { user } } = await window.supabase.auth.getUser();
       if (!user) throw new Error('로그인이 필요해요');
@@ -421,7 +424,9 @@
         note_id: noteId,
         author_id: user.id,
         author_name: name,
-        text: (text || '').slice(0, 500)
+        text: (text || '').slice(0, 500),
+        track_id:     trackId     || null,
+        external_url: externalUrl || null
       };
       const { data, error } = await window.supabase
         .from('wall_note_comments')

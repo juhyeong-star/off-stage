@@ -1855,10 +1855,14 @@ window.toggleWallCompose = function() {
   }
 };
 
-// ── Song attacher (wall compose) ────────────────────────────────────────
+// ── Song attacher (wall compose + comment compose) ──────────────────────
 // Picks an Off-Stage track OR an external URL (YouTube / Spotify / Apple Music)
-// and stashes the result on window.__wallAttachedSong for submitWallNote.
+// and stashes the result depending on which "target" the modal was opened for:
+//   - 'wall'    → window.__wallAttachedSong, preview in #wall-attach-preview
+//   - 'comment' → window.__commentAttachedSong, preview in #comment-attach-preview
 window.__wallAttachedSong = null;
+window.__commentAttachedSong = null;
+window.__songAttachTarget = 'wall';
 
 function _detectProvider(url) {
   const u = (url || '').toLowerCase();
@@ -1870,9 +1874,11 @@ function _detectProvider(url) {
 }
 
 function _renderAttachPreview() {
-  const preview = document.getElementById('wall-attach-preview');
+  // Target depends on which composer the user opened the attacher from
+  const isComment = window.__songAttachTarget === 'comment';
+  const preview = document.getElementById(isComment ? 'comment-attach-preview' : 'wall-attach-preview');
   if (!preview) return;
-  const a = window.__wallAttachedSong;
+  const a = isComment ? window.__commentAttachedSong : window.__wallAttachedSong;
   if (!a) { preview.innerHTML = ''; preview.hidden = true; return; }
   preview.hidden = false;
   if (a.kind === 'track') {
@@ -1886,7 +1892,9 @@ function _renderAttachPreview() {
         </div>
         <button type="button" class="wall-attached-x" onclick="clearAttachedSong()" aria-label="첨부 취소"><i class="ri-close-line"></i></button>
       </div>`;
-  } else {
+    return;
+  }
+  if (a.kind === 'url') {
     const p = _detectProvider(a.url) || { label: '링크' };
     preview.innerHTML = `
       <div class="wall-attached-chip">
@@ -1901,11 +1909,16 @@ function _renderAttachPreview() {
 }
 
 window.clearAttachedSong = function() {
-  window.__wallAttachedSong = null;
+  if (window.__songAttachTarget === 'comment') {
+    window.__commentAttachedSong = null;
+  } else {
+    window.__wallAttachedSong = null;
+  }
   _renderAttachPreview();
 };
 
-window.openSongAttacher = function() {
+window.openSongAttacher = function(target) {
+  window.__songAttachTarget = (target === 'comment') ? 'comment' : 'wall';
   const existing = document.getElementById('wall-song-modal');
   if (existing) existing.remove();
   const myTracks = (window.DB.get().tracks || [])
@@ -1968,8 +1981,16 @@ window._filterAttachTracks = function(q) {
   });
 };
 
+function _storeAttachedSong(value) {
+  if (window.__songAttachTarget === 'comment') {
+    window.__commentAttachedSong = value;
+  } else {
+    window.__wallAttachedSong = value;
+  }
+}
+
 window.pickAttachedTrack = function(trackId) {
-  window.__wallAttachedSong = { kind: 'track', id: trackId };
+  _storeAttachedSong({ kind: 'track', id: trackId });
   _renderAttachPreview();
   closeSongAttacher();
 };
@@ -1981,7 +2002,7 @@ window.pickAttachedUrl = function() {
   if (!_detectProvider(url)) {
     if (!confirm('지원하지 않는 URL일 수 있어요. 그래도 첨부할까요?')) return;
   }
-  window.__wallAttachedSong = { kind: 'url', url };
+  _storeAttachedSong({ kind: 'url', url });
   _renderAttachPreview();
   closeSongAttacher();
 };
@@ -2092,9 +2113,12 @@ window.openNoteDetail = async function(noteId) {
     : comments.map((cm, i) => {
         const cmSafe = (cm.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const cmAuth = (cm.author || '익명').replace(/</g,'&lt;');
+        // Comments can have a track or external URL attached — same chip pattern as wall notes
+        const cmChip = (cm.trackId || cm.externalUrl) ? _renderNoteTrackChip(cm) : '';
         return `
           <div class="comment-line" style="padding-left:${Math.min(i,5) * 18 + 4}px;">
             <span class="comment-arrow">ㄴ</span><span class="comment-text">${cmSafe}</span><span class="comment-author">— ${cmAuth}</span>
+            ${cmChip ? `<div class="comment-track-wrap">${cmChip}</div>` : ''}
           </div>
         `;
       }).join('');
@@ -2126,9 +2150,13 @@ window.openNoteDetail = async function(noteId) {
           <div class="scribble-title">✎ 낙서</div>
           ${commentsHtml}
 
+          <!-- Attached song preview for the comment being composed (hidden until picked) -->
+          <div id="comment-attach-preview" class="wall-attach-preview" hidden></div>
+
           <div class="scribble-input-row">
             <input type="text" id="comment-author" class="scribble-input scribble-name-input" placeholder="이름 (없어도 됨)" value="${db.currentUser?.name || ''}">
             <input type="text" id="comment-text" class="scribble-input" placeholder="ㄴ 하고 싶은 말 적어봐..." onkeypress="if(event.key==='Enter') submitComment('${noteId}')">
+            <button type="button" class="wall-attach-btn" onclick="openSongAttacher('comment')" title="노래 첨부"><i class="ri-music-2-fill"></i></button>
             <button class="scribble-send" onclick="submitComment('${noteId}')">남기기</button>
           </div>
         </div>
@@ -2154,18 +2182,24 @@ window.submitComment = async function(noteId) {
   if (!text) return;
   const authorName = (authorEl && authorEl.value || '').trim();
 
+  // Read any song the user attached via openSongAttacher('comment')
+  const attached  = window.__commentAttachedSong || null;
+  const trackId    = attached && attached.kind === 'track' ? attached.id : null;
+  const externalUrl = attached && attached.kind === 'url'  ? attached.url : null;
+
   const btn = document.querySelector('#note-detail-modal .scribble-send');
   if (btn) { btn.disabled = true; btn.textContent = '남기는 중…'; }
   try {
     if (window.Walls) {
-      await window.Walls.addComment(noteId, { text, authorName });
+      await window.Walls.addComment(noteId, { text, authorName, trackId, externalUrl });
     } else {
       window.DB.addNoteComment(noteId, {
         id: 'c' + Date.now(), author: authorName || '익명', text, createdAt: new Date().toISOString()
       });
     }
-    // Clear input and re-open modal (which now pulls fresh comments)
+    // Clear input + attached song, re-open modal (pulls fresh comments)
     if (textEl) textEl.value = '';
+    window.__commentAttachedSong = null;
     await openNoteDetail(noteId);
   } catch (e) {
     alert('댓글 저장 실패: ' + (e.message || e));
