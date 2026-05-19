@@ -862,7 +862,7 @@ body.guest .sidebar-my-channel { display: none; }
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.55);
   display: flex; align-items: center; justify-content: center;
-  z-index: 2000;
+  z-index: 4000;   /* must beat .note-detail-modal (3000) when opened from a comment */
 }
 .wall-song-modal-content {
   width: 92%; max-width: 460px; max-height: 80vh; overflow: hidden;
