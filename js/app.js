@@ -7045,6 +7045,7 @@ window.renderAdmin = async function () {
           · ${t.version || 'final'}
         </div>
       </div>
+      <button class="admin-zip-btn" data-zip-id="${t.id}" onclick="adminDownloadZip('${t.id}')" title="유통용 ZIP 다운로드"><i class="ri-folder-zip-line"></i> ZIP</button>
       <button class="admin-del-btn" onclick="adminDeleteTrack('${t.id}')"><i class="ri-delete-bin-line"></i> 삭제</button>
     </div>
   `;
@@ -7307,6 +7308,50 @@ window.adminDeleteTrack = async function(id) {
     renderAdmin();
   } catch (e) {
     alert('삭제 실패: ' + (e.message || e));
+  }
+};
+
+// ── Distribution ZIP ─────────────────────────────────────────
+// Bundles audio + cover + metadata JSON into a ZIP for handoff to a distributor.
+// Admin-only. The actual zip/fetch logic lives in js/distribute.js (window.Distribute).
+window.adminDownloadZip = async function(trackId) {
+  const t = (window.__tracks || []).find(x => x.id === trackId)
+    || (await window.Admin.listRecentTracks(200)).find(x => x.id === trackId);
+  if (!t) { alert('트랙을 찾을 수 없습니다.'); return; }
+  if (!window.Distribute) { alert('Distribute 모듈이 로드되지 않았어요 (JSZip 또는 js/distribute.js 누락).'); return; }
+
+  const btn = document.querySelector(`[data-zip-id="${trackId}"]`);
+  const setBtn = (txt, disabled) => { if (btn) { btn.innerHTML = txt; btn.disabled = !!disabled; } };
+  const originalLabel = '<i class="ri-folder-zip-line"></i> ZIP';
+  setBtn('<i class="ri-loader-4-line"></i> 준비…', true);
+
+  try {
+    const result = await window.Distribute.tryGenerateZipFromUrls(
+      {
+        artist: t.distArtist || t.artist,
+        title: t.title,
+        releaseDate: t.releaseDate || '',
+        description: t.description,
+        tags: t.tags,
+        language: '한국어'
+      },
+      t.cover, t.audioUrl,
+      {
+        onStage: s => setBtn(
+          s === 'fetch' ? '<i class="ri-download-cloud-line"></i> 받는중…'
+                        : '<i class="ri-folder-zip-line"></i> 압축…', true),
+        onProgress: m => setBtn(`<i class="ri-folder-zip-line"></i> ${m.percent.toFixed(0)}%`, true)
+      }
+    );
+    if (result && result.skipped) {
+      alert('ZIP 생성 불가: ' + result.reason);
+    } else if (result) {
+      showToast(`📦 ${result.name} (${(result.sizeBytes/1048576).toFixed(1)}MB) 다운로드됨`);
+    }
+  } catch (e) {
+    alert('ZIP 실패: ' + (e.message || e));
+  } finally {
+    setBtn(originalLabel, false);
   }
 };
 

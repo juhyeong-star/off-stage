@@ -2724,6 +2724,18 @@ html, body { overflow-x: hidden; max-width: 100%; }
   transition: background 0.2s;
 }
 .admin-del-btn:hover { background: rgba(255,82,82,0.25); }
+.admin-zip-btn {
+  background: rgba(124, 92, 255, 0.12);
+  color: #b39dff; border: 1px solid rgba(124,92,255,0.35);
+  padding: 6px 12px; border-radius: 16px;
+  font-size: 12px; font-weight: 600;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-right: 8px;
+  transition: background 0.2s;
+}
+.admin-zip-btn:hover { background: rgba(124,92,255,0.25); }
+.admin-zip-btn:disabled { opacity: 0.6; cursor: wait; }
 .admin-empty {
   text-align: center; color: var(--text-secondary);
   padding: 30px 0;
