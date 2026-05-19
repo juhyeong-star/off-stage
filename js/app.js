@@ -7,6 +7,55 @@ const playBtn = document.getElementById('player-play-btn');
 let currentView = 'home';
 let currentPlayingTrack = null;
 
+// ────────────────────────────────────────────────────────────
+// Browser-history routing — keeps the URL hash in sync with currentView
+// so the browser Back/Forward buttons and URL sharing both work.
+// SPA structure is unchanged; this just hooks into the platform's history API.
+// ────────────────────────────────────────────────────────────
+let _routerInPopstate = false;
+
+function _routeToHash(route) {
+  if (!route) return '';
+  // Preserve our "type:value" routes (artist:김주형, tag:bgm, etc.) — keep the colon, encode the value.
+  const idx = route.indexOf(':');
+  if (idx > 0) {
+    return '#/' + route.slice(0, idx) + ':' + encodeURIComponent(route.slice(idx + 1));
+  }
+  return '#/' + encodeURIComponent(route);
+}
+
+function _hashToRoute(hash) {
+  if (!hash || !hash.startsWith('#/')) return null;
+  const path = hash.slice(2);
+  if (!path) return null;
+  const idx = path.indexOf(':');
+  if (idx > 0) {
+    return path.slice(0, idx) + ':' + decodeURIComponent(path.slice(idx + 1));
+  }
+  try { return decodeURIComponent(path); } catch (_) { return path; }
+}
+
+function _pushRouteHash(route) {
+  if (typeof history === 'undefined' || typeof history.pushState !== 'function') return;
+  const hash = _routeToHash(route);
+  if (!hash) return;
+  if (location.hash === hash) {
+    // Same route — just refresh state object, don't add a duplicate stack entry
+    try { history.replaceState({ route }, '', hash); } catch (_) {}
+    return;
+  }
+  try { history.pushState({ route }, '', hash); } catch (_) {}
+}
+
+// Native back/forward handler — re-render the view encoded in the new URL
+window.addEventListener('popstate', (e) => {
+  const route = (e.state && e.state.route) || _hashToRoute(location.hash) || 'shapes';
+  _routerInPopstate = true;
+  try { navigateTo(route); }
+  finally { _routerInPopstate = false; }
+});
+
+
 // Toggle bottom hamburger menu
 window.toggleMenu = function() {
   const sidebar = document.getElementById('sidebar-nav');
@@ -232,8 +281,9 @@ async function init() {
     icon.className = 'ri-play-circle-fill';
   });
 
-  // Load Initial View — 도형 (shapes universe) is landing
-  navigateTo('shapes');
+  // Load Initial View — honor URL hash so refreshing /#/admin lands on admin
+  const initialRoute = _hashToRoute(location.hash) || 'shapes';
+  navigateTo(initialRoute);
 }
 
 // Logout — clears local state immediately, then best-effort Supabase signOut.
@@ -280,6 +330,9 @@ function navigateTo(route) {
   closeMenu();
   // Maintain internal back-nav stack (skipped during goBack to avoid loops).
   _pushNavStep(route);
+  // Sync the URL hash + browser history. Skip when this nav was itself triggered
+  // by a popstate (the browser already updated history for us).
+  if (!_routerInPopstate && route) _pushRouteHash(route);
   currentView = route;
   // Toggle global back button visibility based on the new route.
   _updateBackButton(route);
