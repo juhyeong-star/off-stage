@@ -1921,8 +1921,12 @@ window.openSongAttacher = function(target) {
   window.__songAttachTarget = (target === 'comment') ? 'comment' : 'wall';
   const existing = document.getElementById('wall-song-modal');
   if (existing) existing.remove();
+  // Only show Supabase-stored tracks — their ids are real UUIDs that the
+  // wall_notes.track_id / wall_note_comments.track_id columns can accept.
+  // Mock seed tracks (like 't1', 't2') have non-UUID ids and would fail INSERT.
+  const _UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const myTracks = (window.DB.get().tracks || [])
-    .filter(t => t && t.title)
+    .filter(t => t && t.title && (t.__supabase || _UUID_RE.test(t.id)))
     .slice(0, 30);
   const trackList = myTracks.map(t => `
     <div class="wall-song-row" onclick="pickAttachedTrack('${t.id}')">
@@ -1947,7 +1951,7 @@ window.openSongAttacher = function(target) {
       </div>
       <div class="wall-song-pane" data-pane="track">
         <input type="text" class="form-control" placeholder="곡 제목·아티스트 검색" oninput="_filterAttachTracks(this.value)" style="margin-bottom:10px;">
-        <div class="wall-song-list" id="wall-song-list">${trackList || '<div style="text-align:center; padding:24px; color:var(--text-secondary);">아직 곡이 없어요</div>'}</div>
+        <div class="wall-song-list" id="wall-song-list">${trackList || '<div style="text-align:center; padding:24px; color:var(--text-secondary); font-size:13px;">아직 업로드된 Off-Stage 곡이 없어요.<br>옆 탭에서 YouTube/Spotify URL은 첨부 가능 →</div>'}</div>
       </div>
       <div class="wall-song-pane" data-pane="url" style="display:none;">
         <input type="url" id="wall-song-url" class="form-control" placeholder="YouTube · Spotify · Apple Music URL" style="margin-bottom:12px;">
