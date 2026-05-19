@@ -1671,11 +1671,11 @@ async function renderWall() {
     ` : '';
 
     return `
-      <div class="wall-note" data-note-id="${note.id}" data-author="${safeAuthor}" style="background:${c.bg}; color:${c.text}; left:${x}%; top:${yPx}px; --rot:${rot}deg;" title="${safeAuthor} 프로필 보기">
+      <div class="wall-note" data-note-id="${note.id}" data-author="${safeAuthor}" style="background:${c.bg}; color:${c.text}; left:${x}%; top:${yPx}px; --rot:${rot}deg;" title="낙서·댓글 보기">
         ${deleteBtn}
         ${bookmarkBtn}
         <div class="note-body">${safeText}</div>
-        <div class="note-author">— ${safeAuthor} <i class="ri-arrow-right-line" style="font-size:11px; opacity:0.55;"></i></div>
+        <div class="note-author">— ${safeAuthor}</div>
       </div>
     `;
   }).join('');
@@ -2002,12 +2002,12 @@ function _noteUp() {
   s.dragEl = null;
   el.classList.remove('dragging');
   el.style.transition = '';
-  // Short click/tap → navigate to artist profile
+  // Short click/tap → open the note detail modal (낙서·댓글 보기).
+  // Author name inside the modal still links to the artist page if wanted.
   if (!wasMoved) {
-    const author = el.dataset.author;
-    if (author) {
-      // Defer navigation so current tap event completes cleanly on iOS
-      setTimeout(() => navigateTo('artist:' + encodeURIComponent(author)), 10);
+    const noteId = el.dataset.noteId;
+    if (noteId && typeof window.openNoteDetail === 'function') {
+      setTimeout(() => window.openNoteDetail(noteId), 10);
     }
   }
 }
@@ -4094,31 +4094,12 @@ async function _renderProfileImpl() {
             <span>${Object.keys(projects).length} 프로젝트</span>
             <span class="stat-dot">·</span>
             <span>${userNotes.length} 포스트잇</span>
-            <span class="stat-dot">·</span>
-            <span>${followedArtists.length} 지원</span>
           </div>
           <button class="btn-primary" onclick="editProfile()" style="margin-top:10px; padding:6px 16px; font-size:12px;"><i class="ri-settings-4-line"></i> 설정</button>
         </div>
       </div>
     </div>
-    <!-- 💰 통계 박스 — 받은 SPO + 기여 STO (artist studio only) -->
-    <div class="reveal profile-kpi-row">
-      <div class="profile-kpi profile-kpi-earned">
-        <div class="profile-kpi-icon">💰</div>
-        <div class="profile-kpi-num">${fmtEarned(earnedKrw)}</div>
-        <div class="profile-kpi-label">받은 SPO 후원</div>
-      </div>
-      <div class="profile-kpi profile-kpi-given">
-        <div class="profile-kpi-icon">💎</div>
-        <div class="profile-kpi-num">${fmtEarned(myBackings.reduce((s,b)=>s+(Number(b.amount)||0),0))}</div>
-        <div class="profile-kpi-label">함께 만든 금액</div>
-      </div>
-      <div class="profile-kpi profile-kpi-fans">
-        <div class="profile-kpi-icon">🌱</div>
-        <div class="profile-kpi-num">${followedArtists.length}</div>
-        <div class="profile-kpi-label">함께한 아티스트</div>
-      </div>
-    </div>
+    <!-- 후원/SPO KPI 박스 — 임시 숨김 (사용자 요청) -->
   ` : `
     <!-- Listener: Y2K bubble title + small settings affordance -->
     <div class="reveal listener-mini-header">
@@ -4189,11 +4170,7 @@ async function _renderProfileImpl() {
         <div class="artist-action-title">작업일지 / 미션</div>
         <div class="artist-action-sub">우리들의 벽에 글쓰기</div>
       </div>
-      <div class="artist-action-card sto-action" onclick="openStoManager()">
-        <div class="artist-action-icon"><i class="ri-shield-star-fill"></i></div>
-        <div class="artist-action-title">SPO 관리</div>
-        <div class="artist-action-sub">${myDemoCountForActions}개 데모 · ${fmtMoneyShort(totalRaisedForArtist)}원 모임</div>
-      </div>
+      <!-- SPO 관리 카드 임시 숨김 (사용자 요청) -->
     </div>
   `;
 
@@ -4435,18 +4412,8 @@ async function _renderProfileImpl() {
   };
   const sampleCardsHtml = sampleArtists.map(renderSampleCard).join('');
 
-  // Show only when there's content (samples on empty state for first-time visit)
-  const followingSection = followedArtists.length > 0 ? `
-    <div class="reveal" style="margin-top:36px;">
-      <h2 class="section-title"><i class="ri-seedling-fill"></i> 함께 만드는 아티스트 <span class="section-count">${followedArtists.length}</span></h2>
-      <div class="tama-grid">${tamaCardsHtml}</div>
-    </div>
-  ` : `
-    <div class="reveal" style="margin-top:36px;">
-      <h2 class="section-title"><i class="ri-seedling-fill"></i> 함께 만드는 아티스트</h2>
-      <div class="tama-grid">${sampleCardsHtml}</div>
-    </div>
-  `;
+  // "함께 만드는 아티스트" (다마고치 카드 / 후원자 컬렉션) — 임시 숨김 (사용자 요청)
+  const followingSection = '';
 
   // 수집한 포스트잇 grid moved to 내 우주 (universe) page — no duplicate here.
   // Profile still surfaces the count in the data-gram tile (which links to /universe).
