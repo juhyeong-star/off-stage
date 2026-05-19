@@ -18,7 +18,7 @@
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=183">
+  <link rel="stylesheet" href="css/global.css?v=184">
 </head>
 <body>
 
@@ -105,25 +105,20 @@
 
   <!-- Mobile Bottom Tab Bar — 5 slots: 도형 / 벽 / TAG / 내 페이지 / 더보기 -->
   <nav class="mobile-tab-bar" id="mobile-tab-bar" aria-label="메인 탭">
-    <a href="#" class="mobile-tab" data-route="shapes" onclick="event.preventDefault(); navigateTo('shapes');">
+    <a href="#" class="mobile-tab" data-route="shapes" aria-label="도형" onclick="event.preventDefault(); navigateTo('shapes');">
       <i class="ri-triangle-fill"></i>
-      <span>도형</span>
     </a>
-    <a href="#" class="mobile-tab" data-route="wall" onclick="event.preventDefault(); navigateTo('wall');">
+    <a href="#" class="mobile-tab" data-route="wall" aria-label="우리들의 벽" onclick="event.preventDefault(); navigateTo('wall');">
       <i class="ri-sticky-note-fill"></i>
-      <span>벽</span>
     </a>
-    <a href="#" class="mobile-tab" data-route="tags" onclick="event.preventDefault(); navigateTo('tags');">
+    <a href="#" class="mobile-tab" data-route="tags" aria-label="TAG" onclick="event.preventDefault(); navigateTo('tags');">
       <i class="ri-hashtag"></i>
-      <span>TAG</span>
     </a>
-    <a href="#" class="mobile-tab" data-route="me" onclick="event.preventDefault(); navigateTo('me');">
+    <a href="#" class="mobile-tab" data-route="me" aria-label="내 페이지" onclick="event.preventDefault(); navigateTo('me');">
       <i class="ri-headphone-fill"></i>
-      <span>내 페이지</span>
     </a>
-    <a href="#" class="mobile-tab" data-route="__more" onclick="event.preventDefault(); window.openMoreSheet && window.openMoreSheet();">
+    <a href="#" class="mobile-tab" data-route="__more" aria-label="더보기" onclick="event.preventDefault(); window.openMoreSheet && window.openMoreSheet();">
       <i class="ri-menu-line"></i>
-      <span>더보기</span>
     </a>
   </nav>
 
@@ -159,11 +154,11 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=183"></script>
-  <script defer src="js/data.js?v=183"></script>
-  <script defer src="js/supabase.js?v=183"></script>
-  <script defer src="js/distribute.js?v=183"></script>
-  <script defer src="js/app.js?v=183"></script>
-  <script defer src="js/polaroid.js?v=183"></script>
+  <script defer src="js/supabase-init.js?v=184"></script>
+  <script defer src="js/data.js?v=184"></script>
+  <script defer src="js/supabase.js?v=184"></script>
+  <script defer src="js/distribute.js?v=184"></script>
+  <script defer src="js/app.js?v=184"></script>
+  <script defer src="js/polaroid.js?v=184"></script>
 </body>
 </html>
