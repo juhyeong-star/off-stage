@@ -6164,16 +6164,14 @@ function renderArtistProfile(artistName) {
               </div>
             </div>
           </div>
-          ${artistNotes.length > 0 ? `
-            <aside class="artist-postit-aside">
-              <div class="artist-postit-aside-head">
-                <i class="ri-sticky-note-fill"></i> 소식 <span class="artist-postit-count">${artistNotes.length}</span>
-              </div>
-              <div class="artist-postit-grid artist-postit-grid-aside">
-                ${notesGridHtml}
-              </div>
-            </aside>
-          ` : ''}
+          <aside class="artist-postit-aside">
+            <div class="artist-postit-aside-head">
+              <i class="ri-sticky-note-fill"></i> 소식 <span class="artist-postit-count">${artistNotes.length}</span>
+            </div>
+            ${artistNotes.length > 0
+              ? `<div class="artist-postit-grid artist-postit-grid-aside">${notesGridHtml}</div>`
+              : `<div class="artist-postit-empty">아직 소식이 없어요</div>`}
+          </aside>
         </div>
 
         ${'' /* 기존 별도 postit-section은 프로필 옆으로 이동됨 */ ? `<div class="reveal artist-postit-section">
