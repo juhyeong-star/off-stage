@@ -384,11 +384,12 @@
         author_name,
         text: (text || '').slice(0, 500),
         color: color || 'yellow',
-        rotation: (typeof rotation === 'number') ? rotation : 0,
-        // Only set whichever of the two was provided — keep both nullable
-        track_id:     trackId     || null,
-        external_url: externalUrl || null
+        rotation: (typeof rotation === 'number') ? rotation : 0
       };
+      // Only include song-link columns when the user actually attached one,
+      // so this still works on schemas that haven't run the migration yet.
+      if (trackId)     payload.track_id     = trackId;
+      if (externalUrl) payload.external_url = externalUrl;
       const { data, error } = await window.supabase
         .from('wall_notes')
         .insert(payload)
@@ -424,10 +425,12 @@
         note_id: noteId,
         author_id: user.id,
         author_name: name,
-        text: (text || '').slice(0, 500),
-        track_id:     trackId     || null,
-        external_url: externalUrl || null
+        text: (text || '').slice(0, 500)
       };
+      // Only include song-link columns when the user actually attached one,
+      // so this still works against schemas that haven't run the migration yet.
+      if (trackId)     payload.track_id     = trackId;
+      if (externalUrl) payload.external_url = externalUrl;
       const { data, error } = await window.supabase
         .from('wall_note_comments')
         .insert(payload)
