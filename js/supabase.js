@@ -313,6 +313,9 @@
       color: row.color || 'yellow',
       rotation: (typeof row.rotation === 'number') ? row.rotation : 0,
       createdAt: row.created_at,
+      // Optional attached song link — Off-Stage track id OR external URL (YT/Spotify/Apple).
+      trackId:     row.track_id     || null,
+      externalUrl: row.external_url || '',
       comments: Array.isArray(comments) ? comments.map(mapCommentRow) : []
     };
   }
@@ -367,7 +370,7 @@
       return (data || []).map(mapCommentRow);
     },
 
-    async insert({ text, color, rotation }) {
+    async insert({ text, color, rotation, trackId, externalUrl }) {
       if (!window.supabase) throw new Error('Supabase SDK not ready');
       const { data: { user } } = await window.supabase.auth.getUser();
       if (!user) throw new Error('로그인이 필요해요');
@@ -378,7 +381,10 @@
         author_name,
         text: (text || '').slice(0, 500),
         color: color || 'yellow',
-        rotation: (typeof rotation === 'number') ? rotation : 0
+        rotation: (typeof rotation === 'number') ? rotation : 0,
+        // Only set whichever of the two was provided — keep both nullable
+        track_id:     trackId     || null,
+        external_url: externalUrl || null
       };
       const { data, error } = await window.supabase
         .from('wall_notes')

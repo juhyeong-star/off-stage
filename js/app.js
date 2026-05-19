@@ -1579,6 +1579,48 @@ const _WALL_PAGE_SIZE = 60;
 let _wallSearch = '';
 let _wallSort = 'new'; // 'new' | 'old' | 'random'
 
+// Renders the small attached-song chip beneath a wall note. Returns empty
+// string when the note has no song link.
+function _renderNoteTrackChip(note) {
+  if (!note) return '';
+  if (note.trackId) {
+    const t = (window.DB.get().tracks || []).find(x => x && x.id === note.trackId);
+    if (!t) return '';
+    const cover = t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=300';
+    const title = (t.title || '').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    const artist = (t.artist || '').replace(/</g,'&lt;');
+    return `
+      <div class="note-track-chip" onclick="event.stopPropagation(); playTrack('${t.id}')" title="${title} — 재생">
+        <img src="${cover}" alt="" loading="lazy">
+        <div class="note-track-chip-info">
+          <div class="note-track-chip-title">${title}</div>
+          <div class="note-track-chip-sub">${artist}</div>
+        </div>
+        <i class="ri-play-circle-fill note-track-chip-play"></i>
+      </div>`;
+  }
+  if (note.externalUrl) {
+    const url = note.externalUrl;
+    const u = url.toLowerCase();
+    let provider = '링크', icon = 'ri-link';
+    if (u.includes('youtube.') || u.includes('youtu.be')) { provider = 'YouTube'; icon = 'ri-youtube-fill'; }
+    else if (u.includes('open.spotify.com'))               { provider = 'Spotify'; icon = 'ri-spotify-fill'; }
+    else if (u.includes('music.apple.com'))                { provider = 'Apple Music'; icon = 'ri-apple-fill'; }
+    else if (u.includes('soundcloud.com'))                 { provider = 'SoundCloud'; icon = 'ri-soundcloud-fill'; }
+    const safeUrl = url.replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    return `
+      <a class="note-track-chip note-track-chip-ext" href="${safeUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" title="${provider}로 열기">
+        <i class="${icon}"></i>
+        <div class="note-track-chip-info">
+          <div class="note-track-chip-title">${provider}</div>
+          <div class="note-track-chip-sub" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${safeUrl}</div>
+        </div>
+        <i class="ri-arrow-right-up-line"></i>
+      </a>`;
+  }
+  return '';
+}
+
 async function renderWall() {
   const db = window.DB.get();
   // Refresh wall notes from Supabase. Strategy:
@@ -1676,6 +1718,7 @@ async function renderWall() {
         ${bookmarkBtn}
         <div class="note-body">${safeText}</div>
         <div class="note-author">— ${safeAuthor}</div>
+        ${_renderNoteTrackChip(note)}
       </div>
     `;
   }).join('');
@@ -1684,10 +1727,13 @@ async function renderWall() {
   const writeComposer = user ? `
     <div class="wall-compose-panel" id="wall-compose-panel" hidden>
       <textarea id="wall-text" class="form-control" rows="3" placeholder="하고 싶은 말을 자유롭게 ✍️" style="resize:none; margin-bottom:10px;"></textarea>
+      <!-- Attached song preview (hidden until a track or URL is picked) -->
+      <div id="wall-attach-preview" class="wall-attach-preview" hidden></div>
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <div style="display:flex; gap:6px;" id="wall-color-picker">
           ${colorKeys.map((key,i) => `<button class="color-dot ${i===0?'active':''}" data-color="${key}" style="background:${NOTE_COLORS[key].bg}; border:2px solid ${NOTE_COLORS[key].border};" onclick="document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('active')); this.classList.add('active');"></button>`).join('')}
         </div>
+        <button type="button" class="wall-attach-btn" onclick="openSongAttacher()" title="노래 첨부"><i class="ri-music-2-fill"></i> 노래</button>
         <button class="btn-primary" onclick="submitWallNote()" style="margin-left:auto; padding:8px 18px; font-size:13px;">붙이기 📌</button>
       </div>
     </div>
@@ -1795,6 +1841,137 @@ window.toggleWallCompose = function() {
   }
 };
 
+// ── Song attacher (wall compose) ────────────────────────────────────────
+// Picks an Off-Stage track OR an external URL (YouTube / Spotify / Apple Music)
+// and stashes the result on window.__wallAttachedSong for submitWallNote.
+window.__wallAttachedSong = null;
+
+function _detectProvider(url) {
+  const u = (url || '').toLowerCase();
+  if (/youtube\.com\/|youtu\.be\//.test(u))   return { provider: 'youtube', label: 'YouTube' };
+  if (/open\.spotify\.com\//.test(u))          return { provider: 'spotify', label: 'Spotify' };
+  if (/music\.apple\.com\//.test(u))           return { provider: 'apple',   label: 'Apple Music' };
+  if (/soundcloud\.com\//.test(u))             return { provider: 'soundcloud', label: 'SoundCloud' };
+  return null;
+}
+
+function _renderAttachPreview() {
+  const preview = document.getElementById('wall-attach-preview');
+  if (!preview) return;
+  const a = window.__wallAttachedSong;
+  if (!a) { preview.innerHTML = ''; preview.hidden = true; return; }
+  preview.hidden = false;
+  if (a.kind === 'track') {
+    const t = (window.DB.get().tracks || []).find(x => x.id === a.id) || {};
+    preview.innerHTML = `
+      <div class="wall-attached-chip">
+        <img src="${t.cover || ''}" alt="">
+        <div class="wall-attached-info">
+          <div class="wall-attached-title">${(t.title||'').replace(/</g,'&lt;')}</div>
+          <div class="wall-attached-sub">${(t.artist||'').replace(/</g,'&lt;')} · Off-Stage</div>
+        </div>
+        <button type="button" class="wall-attached-x" onclick="clearAttachedSong()" aria-label="첨부 취소"><i class="ri-close-line"></i></button>
+      </div>`;
+  } else {
+    const p = _detectProvider(a.url) || { label: '링크' };
+    preview.innerHTML = `
+      <div class="wall-attached-chip">
+        <div class="wall-attached-ext"><i class="ri-link"></i></div>
+        <div class="wall-attached-info">
+          <div class="wall-attached-title">${p.label}</div>
+          <div class="wall-attached-sub" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px;">${a.url.replace(/</g,'&lt;')}</div>
+        </div>
+        <button type="button" class="wall-attached-x" onclick="clearAttachedSong()" aria-label="첨부 취소"><i class="ri-close-line"></i></button>
+      </div>`;
+  }
+}
+
+window.clearAttachedSong = function() {
+  window.__wallAttachedSong = null;
+  _renderAttachPreview();
+};
+
+window.openSongAttacher = function() {
+  const existing = document.getElementById('wall-song-modal');
+  if (existing) existing.remove();
+  const myTracks = (window.DB.get().tracks || [])
+    .filter(t => t && t.title)
+    .slice(0, 30);
+  const trackList = myTracks.map(t => `
+    <div class="wall-song-row" onclick="pickAttachedTrack('${t.id}')">
+      <img src="${t.cover || ''}" alt="" loading="lazy">
+      <div class="wall-song-info">
+        <div class="wall-song-title">${(t.title||'').replace(/</g,'&lt;')}</div>
+        <div class="wall-song-sub">${(t.artist||'').replace(/</g,'&lt;')}${t.isDemo ? ' · DEMO' : ''}</div>
+      </div>
+    </div>`).join('');
+  const modal = document.createElement('div');
+  modal.id = 'wall-song-modal';
+  modal.className = 'wall-song-modal';
+  modal.innerHTML = `
+    <div class="wall-song-modal-content" onclick="event.stopPropagation()">
+      <div class="wall-song-modal-head">
+        <h3 style="margin:0; font-size:16px;">노래 첨부</h3>
+        <button class="wall-song-close" onclick="closeSongAttacher()" aria-label="닫기"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="wall-song-tabs">
+        <button class="wall-song-tab active" data-tab="track" onclick="_switchSongAttachTab('track')"><i class="ri-music-2-line"></i> Off-Stage 곡</button>
+        <button class="wall-song-tab"        data-tab="url"   onclick="_switchSongAttachTab('url')"><i class="ri-link"></i> URL</button>
+      </div>
+      <div class="wall-song-pane" data-pane="track">
+        <input type="text" class="form-control" placeholder="곡 제목·아티스트 검색" oninput="_filterAttachTracks(this.value)" style="margin-bottom:10px;">
+        <div class="wall-song-list" id="wall-song-list">${trackList || '<div style="text-align:center; padding:24px; color:var(--text-secondary);">아직 곡이 없어요</div>'}</div>
+      </div>
+      <div class="wall-song-pane" data-pane="url" style="display:none;">
+        <input type="url" id="wall-song-url" class="form-control" placeholder="YouTube · Spotify · Apple Music URL" style="margin-bottom:12px;">
+        <button class="btn-primary" style="width:100%;" onclick="pickAttachedUrl()">첨부</button>
+        <p style="font-size:11px; color:var(--text-secondary); margin-top:10px;">지원: youtube.com · open.spotify.com · music.apple.com</p>
+      </div>
+    </div>
+  `;
+  modal.onclick = (e) => { if (e.target === modal) closeSongAttacher(); };
+  document.body.appendChild(modal);
+};
+
+window.closeSongAttacher = function() {
+  const m = document.getElementById('wall-song-modal');
+  if (m) m.remove();
+};
+
+window._switchSongAttachTab = function(tab) {
+  document.querySelectorAll('.wall-song-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.wall-song-pane').forEach(p => p.style.display = (p.dataset.pane === tab) ? '' : 'none');
+};
+
+window._filterAttachTracks = function(q) {
+  q = (q || '').trim().toLowerCase();
+  const list = document.getElementById('wall-song-list');
+  if (!list) return;
+  const rows = list.querySelectorAll('.wall-song-row');
+  rows.forEach(r => {
+    const t = r.textContent.toLowerCase();
+    r.style.display = (!q || t.includes(q)) ? '' : 'none';
+  });
+};
+
+window.pickAttachedTrack = function(trackId) {
+  window.__wallAttachedSong = { kind: 'track', id: trackId };
+  _renderAttachPreview();
+  closeSongAttacher();
+};
+
+window.pickAttachedUrl = function() {
+  const urlEl = document.getElementById('wall-song-url');
+  const url = (urlEl && urlEl.value || '').trim();
+  if (!url) { alert('URL을 입력해주세요'); return; }
+  if (!_detectProvider(url)) {
+    if (!confirm('지원하지 않는 URL일 수 있어요. 그래도 첨부할까요?')) return;
+  }
+  window.__wallAttachedSong = { kind: 'url', url };
+  _renderAttachPreview();
+  closeSongAttacher();
+};
+
 window.submitWallNote = async function() {
   const user = window.__currentUser || (window.DB.get().currentUser);
   if (!user) {
@@ -1811,14 +1988,21 @@ window.submitWallNote = async function() {
 
   const btn = document.querySelector('button.btn-primary[onclick*="submitWallNote"]');
   if (btn) { btn.disabled = true; btn.textContent = '붙이는 중…'; }
+  // Pull any attached song link picked via openSongAttacher()
+  const attached = window.__wallAttachedSong || null;
+  const trackId    = attached && attached.kind === 'track' ? attached.id : null;
+  const externalUrl = attached && attached.kind === 'url'  ? attached.url : null;
+
   try {
     if (window.Walls) {
-      await window.Walls.insert({ text, color, rotation });
+      await window.Walls.insert({ text, color, rotation, trackId, externalUrl });
     } else {
-      // Fallback (shouldn't happen in Phase 2)
       window.DB.addNote({ id: 'n' + Date.now(), author: user.name, text, color, rotation, createdAt: new Date().toISOString() });
     }
     if (textEl) textEl.value = '';
+    window.__wallAttachedSong = null;
+    const preview = document.getElementById('wall-attach-preview');
+    if (preview) { preview.innerHTML = ''; preview.hidden = true; }
     const panel = document.getElementById('wall-compose-panel');
     if (panel) panel.hidden = true;
     await renderWall();
@@ -1922,6 +2106,7 @@ window.openNoteDetail = async function(noteId) {
             — <a href="#" class="author-link" onclick="event.preventDefault(); closeNoteDetail(); navigateTo('artist:' + encodeURIComponent('${safeAuthor}'))">${safeAuthor}</a>
           </div>
         </div>
+        ${_renderNoteTrackChip(note)}
 
         <div class="comments-scribble">
           <div class="scribble-title">✎ 낙서</div>
