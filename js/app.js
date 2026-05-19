@@ -2627,18 +2627,22 @@ function renderShapes() {
     .slice()
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
-  // Decorative floating shapes
+  // Decorative floating shapes — seeded by index so they stay in the same spots across reloads
   let decoHtml = '';
   const decoShapes = ['border-radius:50%', 'border-radius:50%', 'border-radius:4px', 'clip-path:polygon(50% 0%,0% 100%,100% 100%)', 'clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%)', 'border-radius:50%'];
   for (let i = 0; i < 50; i++) {
-    const size = 8 + Math.random() * 50;
-    const x = Math.random() * 96;
-    const y = Math.random() * 96;
-    const color = SHAPE_COLORS[Math.floor(Math.random() * SHAPE_COLORS.length)];
-    const opacity = 0.15 + Math.random() * 0.55;
-    const dur = 8 + Math.random() * 24;
-    const shapeStyle = decoShapes[Math.floor(Math.random() * decoShapes.length)];
-    decoHtml += `<div class="deco-shape" style="width:${size}px;height:${size}px;left:${x}%;top:${y}%;background:${color};opacity:${opacity};${shapeStyle};animation:floatDrift ${dur}s ease-in-out infinite;--dx:${(Math.random()*70-35)}px;--dy:${(Math.random()*70-35)}px;--rot:${Math.random()*8-4}deg;"></div>`;
+    const seed = _hashSeed('deco-shapes:' + i);
+    const size = 8 + (seed % 50);
+    const x = (seed >>> 6) % 96;
+    const y = (seed >>> 13) % 96;
+    const color = SHAPE_COLORS[(seed >>> 20) % SHAPE_COLORS.length];
+    const opacity = 0.15 + (((seed >>> 23) % 55) / 100);
+    const dur = 8 + ((seed >>> 26) % 24);
+    const shapeStyle = decoShapes[(seed >>> 29) % decoShapes.length];
+    const dx = ((seed >>> 4) % 70) - 35;
+    const dy = ((seed >>> 11) % 70) - 35;
+    const rot = ((((seed >>> 17) % 80) - 40) / 10);
+    decoHtml += `<div class="deco-shape" style="width:${size}px;height:${size}px;left:${x}%;top:${y}%;background:${color};opacity:${opacity};${shapeStyle};animation:floatDrift ${dur}s ease-in-out infinite;--dx:${dx}px;--dy:${dy}px;--rot:${rot}deg;"></div>`;
   }
 
   // Track shapes
@@ -3038,18 +3042,23 @@ window.renderUniverse = async function () {
   const cols = 3;
   const universeHeight = Math.max(900, Math.ceil(allItems.length / cols) * 280);
 
-  // Decorative bg shapes (same as renderShapes for cohesion)
+  // Decorative bg shapes — seeded by index so they stay put across reloads
   let decoHtml = '';
   const decoShapes = ['border-radius:50%', 'border-radius:4px', 'clip-path:polygon(50% 0%,0% 100%,100% 100%)'];
   for (let i = 0; i < 30; i++) {
-    const size = 8 + Math.random() * 36;
-    const x = Math.random() * 96;
-    const y = Math.random() * 96;
-    const color = (typeof SHAPE_COLORS !== 'undefined') ? SHAPE_COLORS[Math.floor(Math.random() * SHAPE_COLORS.length)] : '#FF9800';
-    const opacity = 0.12 + Math.random() * 0.4;
-    const dur = 10 + Math.random() * 24;
-    const shapeStyle = decoShapes[Math.floor(Math.random() * decoShapes.length)];
-    decoHtml += `<div class="deco-shape" style="width:${size}px;height:${size}px;left:${x}%;top:${y}%;background:${color};opacity:${opacity};${shapeStyle};animation:floatDrift ${dur}s ease-in-out infinite;--dx:${(Math.random()*50-25)}px;--dy:${(Math.random()*50-25)}px;--rot:${Math.random()*6-3}deg;"></div>`;
+    const seed = _hashSeed('deco-uni:' + i);
+    const size = 8 + (seed % 36);
+    const x = (seed >>> 6) % 96;
+    const y = (seed >>> 13) % 96;
+    const palette = (typeof SHAPE_COLORS !== 'undefined') ? SHAPE_COLORS : ['#FF9800'];
+    const color = palette[(seed >>> 20) % palette.length];
+    const opacity = 0.12 + (((seed >>> 23) % 40) / 100);
+    const dur = 10 + ((seed >>> 26) % 24);
+    const shapeStyle = decoShapes[(seed >>> 29) % decoShapes.length];
+    const dx = ((seed >>> 4) % 50) - 25;
+    const dy = ((seed >>> 11) % 50) - 25;
+    const rot = ((((seed >>> 17) % 60) - 30) / 10);
+    decoHtml += `<div class="deco-shape" style="width:${size}px;height:${size}px;left:${x}%;top:${y}%;background:${color};opacity:${opacity};${shapeStyle};animation:floatDrift ${dur}s ease-in-out infinite;--dx:${dx}px;--dy:${dy}px;--rot:${rot}deg;"></div>`;
   }
 
   // Item nodes
