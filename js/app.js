@@ -1621,11 +1621,21 @@ async function renderWall() {
     );
   }
 
-  // Sort
+  // Sort. Use note id as a tiebreaker so iteration order — and therefore the
+  // grid cell each note lands in — is identical on every reload.
+  const _idCmp = (a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
   if (_wallSort === 'new') {
-    filtered = [...filtered].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    filtered = [...filtered].sort((a, b) => {
+      const d = new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      return d !== 0 ? d : _idCmp(a, b);
+    });
   } else if (_wallSort === 'old') {
-    filtered = [...filtered].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    filtered = [...filtered].sort((a, b) => {
+      const d = new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+      return d !== 0 ? d : _idCmp(a, b);
+    });
+  } else {
+    filtered = [...filtered].sort(_idCmp);
   }
 
   // Paginate
@@ -2609,7 +2619,13 @@ function renderShapes() {
   // Main exposure rule: master + pinned demo (1 per project) — Instagram pin style
   // 모든 도형이 우주에서 자유롭게 떠다님 — 청취자가 아티스트를 모으는 컨셉
   const allTracks = db.tracks || [];
-  const tracks = allTracks.filter(t => !t.isDemo || t.pinned);
+  // Sort by id so the grid placement (col/row) is identical on every reload —
+  // otherwise Supabase fetch order shuffles items into different cells even
+  // though the seeded jitter is stable.
+  const tracks = allTracks
+    .filter(t => !t.isDemo || t.pinned)
+    .slice()
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
   // Decorative floating shapes
   let decoHtml = '';
