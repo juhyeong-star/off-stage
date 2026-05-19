@@ -2658,14 +2658,14 @@ function renderShapes() {
   const showFeed = dbForFeed && dbForFeed.currentUser && (typeof window.renderActivityFeed === 'function');
   const feedHtml = showFeed ? window.renderActivityFeed() : '';
 
-  // Random-play dice — floats around the universe, click to play a random track.
-  // Position is randomized on each render so it never sits in the same spot.
-  const diceX = 30 + Math.random() * 40;        // 30%~70% — comfortable middle band
-  const diceY = 200 + Math.random() * (universeHeight - 500);
-  const diceDur = 12 + Math.random() * 10;
-  const diceDx = Math.random() * 60 - 30;
-  const diceDy = Math.random() * 60 - 30;
-  const diceRot = Math.random() * 10 - 5;
+  // Random-play dice — fixed initial position: top-center.
+  // User can long-press to drag it elsewhere within the session.
+  const diceX = 50;     // % — horizontal center
+  const diceY = 80;     // px from top of universe
+  const diceDur = 14;
+  const diceDx = 25;
+  const diceDy = -15;
+  const diceRot = 4;
   const initialFace = 1 + Math.floor(Math.random() * 6);
   const diceHtml = `
     <div class="dice-shape" id="random-dice"
@@ -2673,7 +2673,7 @@ function renderShapes() {
          onmouseleave="diceHoverEnd(this)"
          onclick="diceBouncePlay(this)"
          title="마우스 올리면 굴리고, 클릭하면 랜덤 곡 재생"
-         style="left:${diceX}%; top:${diceY}px; animation: floatDrift ${diceDur}s ease-in-out infinite;
+         style="left:calc(${diceX}% - 34px); top:${diceY}px; animation: floatDrift ${diceDur}s ease-in-out infinite;
                 --dx:${diceDx}px; --dy:${diceDy}px; --rot:${diceRot}deg;">
       <div class="die-face" data-face="${initialFace}">
         <span class="die-dot" data-pos="tl"></span>
@@ -2975,13 +2975,30 @@ window.renderUniverse = async function () {
     return;
   }
 
-  // ── Layout: distribute items in a 3-col grid pattern, then random offset ──
+  // ── Layout: distribute items in a 3-col grid pattern with a deterministic jitter ──
+  // Order + jitter must be STABLE across reloads so user-curated positions feel persistent.
+  function _hashSeed(s) {
+    let h = 2166136261 >>> 0;
+    s = String(s || '');
+    for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+    return h >>> 0;
+  }
+  function _loadUniversePos(id) {
+    try {
+      const raw = localStorage.getItem('unipos:' + id);
+      if (!raw) return null;
+      const p = JSON.parse(raw);
+      if (typeof p.xPct !== 'number' || typeof p.yPx !== 'number') return null;
+      return p;
+    } catch (_) { return null; }
+  }
+
   const allItems = [
-    ...likedTracks.map(t => ({ kind: 'track', t })),
-    ...bookmarkedNotes.map(n => ({ kind: 'note', n }))
+    ...likedTracks.map(t => ({ kind: 'track', t, id: t.id })),
+    ...bookmarkedNotes.map(n => ({ kind: 'note', n, id: n.id }))
   ];
-  // Shuffle for visual variety
-  allItems.sort(() => Math.random() - 0.5);
+  // Stable order: sort by item id so reloading doesn't rearrange the grid.
+  allItems.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
   const cols = 3;
   const universeHeight = Math.max(900, Math.ceil(allItems.length / cols) * 280);
@@ -3005,12 +3022,17 @@ window.renderUniverse = async function () {
   allItems.forEach((it, i) => {
     const col = i % cols;
     const row = Math.floor(i / cols);
-    const xBase = 4 + col * 30 + Math.random() * 14;
-    const yPx = 30 + row * 260 + Math.random() * 50;
-    const rot = (Math.random() * 14 - 7);
-    const dur = 10 + Math.random() * 18;
-    const dx = (Math.random() * 50 - 25);
-    const dy = (Math.random() * 50 - 25);
+    // Per-item deterministic seed → stable jitter + drift animation
+    const seed = _hashSeed(it.id);
+    const stored = _loadUniversePos(it.id);
+    const xBase = stored ? stored.xPct : (4 + col * 30 + (seed % 14));
+    const yPx   = stored ? stored.yPx  : (30 + row * 260 + ((seed >>> 4) % 50));
+    const rot   = stored && typeof stored.rot === 'number'
+      ? stored.rot
+      : ((((seed >>> 8) % 140) - 70) / 10);
+    const dur = 10 + ((seed >>> 16) % 18);
+    const dx  = (((seed >>> 12) % 50) - 25);
+    const dy  = (((seed >>> 20) % 50) - 25);
 
     if (it.kind === 'track') {
       const t = it.t;
@@ -3038,7 +3060,8 @@ window.renderUniverse = async function () {
       const c = (typeof NOTE_COLORS !== 'undefined' ? NOTE_COLORS[n.color] : null) || { bg:'#FFF59D', text:'#1a1a1a' };
       const safeTxt = (n.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
       const safeAuth = (n.author || '').replace(/</g,'&lt;');
-      const noteRot = (typeof n.rotation === 'number') ? n.rotation : (Math.random() * 8 - 4);
+      // Notes use the same seeded rotation as shapes for stability
+      const noteRot = (typeof n.rotation === 'number') ? n.rotation : rot;
       itemsHtml += `
         <div class="universe-note floating-shape" data-note-id="${n.id}"
              style="left:${xBase}%; top:${yPx}px; background:${c.bg}; color:${c.text}; animation: floatDrift ${dur+4}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${noteRot}deg;">
@@ -3126,6 +3149,21 @@ function initShapeDrag() {
     el.classList.remove('dragging');
     el.style.zIndex = '';
     el.style.transition = '';
+
+    // Persist user-curated position on /universe (skip on main /shapes).
+    // Saves a percentage for x (so it scales with width) and pixels for y.
+    if (moved && currentView === 'universe') {
+      const itemId = el.dataset.trackId || el.dataset.noteId;
+      if (itemId && el.parentElement) {
+        const parentRect = el.parentElement.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const leftPx = elRect.left - parentRect.left;
+        const topPx  = elRect.top  - parentRect.top;
+        const xPct   = parentRect.width > 0 ? (leftPx / parentRect.width) * 100 : 0;
+        try { localStorage.setItem('unipos:' + itemId, JSON.stringify({ xPct, yPx: topPx })); }
+        catch (_) {}
+      }
+    }
 
     // If barely moved, treat as click — first click on a shape plays the song,
     // a second click on the SAME shape (no time limit) navigates to artist page.
