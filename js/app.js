@@ -2579,7 +2579,6 @@ function renderShapes() {
         <button class="shape-like-btn ${liked ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${track.id}', this)" title="내 우주에 모으기">
           <i class="${liked ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
         </button>
-        <div class="shape-resize-handle"><i class="ri-drag-move-2-line"></i></div>
       </div>
     `;
   });
