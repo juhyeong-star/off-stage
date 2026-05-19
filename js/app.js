@@ -2673,6 +2673,17 @@ function renderShapes() {
   tracks.forEach((track, i) => shapeEntries.push({ track, idx: i, pass: 0 }));
   tracks.forEach((track, i) => shapeEntries.push({ track, idx: i, pass: 1 }));
 
+  // Stored drag positions for the shapes page (keyed by trackId:pass)
+  function _loadShapePos(id, pass) {
+    try {
+      const raw = localStorage.getItem('shapepos:' + id + ':' + pass);
+      if (!raw) return null;
+      const p = JSON.parse(raw);
+      if (typeof p.xPct !== 'number' || typeof p.yPx !== 'number') return null;
+      return p;
+    } catch (_) { return null; }
+  }
+
   shapeEntries.forEach((entry, si) => {
     const { track, idx, pass } = entry;
     const shape = track.shape || SHAPE_TYPES[idx % SHAPE_TYPES.length];
@@ -2684,8 +2695,10 @@ function renderShapes() {
     const row = Math.floor(si / cols);
     // Seeded per-track-per-pass so positions are deterministic across reloads
     const seed = _hashSeed(track.id + ':' + pass);
-    const xBase = 2 + col * 30 + (seed % 18);
-    const yPx = 20 + row * 280 + ((seed >>> 5) % 60);
+    // Stored user drag overrides the seeded default
+    const stored = _loadShapePos(track.id, pass);
+    const xBase = stored ? stored.xPct : (2 + col * 30 + (seed % 18));
+    const yPx   = stored ? stored.yPx  : (20 + row * 280 + ((seed >>> 5) % 60));
     const rot = ((((seed >>> 10) % 140) - 70) / 10);
     const dur = 10 + ((seed >>> 18) % 18);
     const dx = ((((seed >>> 22) % 50)) - 25);
@@ -2698,7 +2711,7 @@ function renderShapes() {
 
     const liked = isTrackLiked(track.id);
     shapesHtml += `
-      <div class="floating-shape shape-${shape}" data-track-id="${track.id}" data-artist="${encodeURIComponent(track.artist || '')}"
+      <div class="floating-shape shape-${shape}" data-track-id="${track.id}" data-pass="${pass}" data-artist="${encodeURIComponent(track.artist || '')}"
            style="${bgStyle} left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;">
         <div class="shape-text">${safeLines.join('\n')}</div>
         <button class="shape-like-btn ${liked ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${track.id}', this)" title="내 우주에 모으기">
@@ -3209,9 +3222,9 @@ function initShapeDrag() {
     el.style.zIndex = '';
     el.style.transition = '';
 
-    // Persist user-curated position on /universe (skip on main /shapes).
+    // Persist user-curated position on /universe and /shapes.
     // Saves a percentage for x (so it scales with width) and pixels for y.
-    if (moved && currentView === 'universe') {
+    if (moved && (currentView === 'universe' || currentView === 'shapes')) {
       const itemId = el.dataset.trackId || el.dataset.noteId;
       if (itemId && el.parentElement) {
         const parentRect = el.parentElement.getBoundingClientRect();
@@ -3219,7 +3232,11 @@ function initShapeDrag() {
         const leftPx = elRect.left - parentRect.left;
         const topPx  = elRect.top  - parentRect.top;
         const xPct   = parentRect.width > 0 ? (leftPx / parentRect.width) * 100 : 0;
-        try { localStorage.setItem('unipos:' + itemId, JSON.stringify({ xPct, yPx: topPx })); }
+        const pass   = el.dataset.pass;
+        const key    = currentView === 'universe'
+          ? 'unipos:' + itemId
+          : 'shapepos:' + itemId + ':' + (pass != null ? pass : '0');
+        try { localStorage.setItem(key, JSON.stringify({ xPct, yPx: topPx })); }
         catch (_) {}
       }
     }
