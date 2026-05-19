@@ -4334,26 +4334,9 @@ async function _renderProfileImpl() {
     </div>
   `;
 
-  // 📌 수집한 포스트잇 — only shown when there's content
-  const bookmarkedSection = bookmarkedNotes.length > 0 ? `
-    <div class="reveal" style="margin-top:36px;">
-      <h2 class="section-title"><i class="ri-bookmark-fill"></i> 수집한 포스트잇 <span class="section-count">${bookmarkedNotes.length}</span></h2>
-      <div class="artist-postit-grid">
-        ${bookmarkedNotes.map((n, i) => {
-          const c = NOTE_COLORS[n.color] || NOTE_COLORS.yellow;
-          const rot = n.rotation || ((i % 2 === 0 ? -1 : 1) * (Math.random() * 3 + 0.5));
-          const txt = (n.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-          const auth = (n.author || '').replace(/</g,'&lt;');
-          return `
-            <div class="artist-postit" style="background:${c.bg}; color:${c.text}; --rot:${rot}deg;" onclick="openNoteDetail('${n.id}')">
-              <div class="artist-postit-body">${txt}</div>
-              <div class="artist-postit-sig">— ${auth}</div>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    </div>
-  ` : '';
+  // 수집한 포스트잇 grid moved to 내 우주 (universe) page — no duplicate here.
+  // Profile still surfaces the count in the data-gram tile (which links to /universe).
+  const bookmarkedSection = '';
 
   // 🎵 내 음악 폴더 (Spotify-folder-style: 즐겨듣기 / 투자하고픈 / 애는 된다 + 사용자 폴더)
   const playlistTitleByName = (s) => (s || '').toLowerCase();
@@ -4522,12 +4505,12 @@ async function _renderProfileImpl() {
           <div class="data-gram-num">${userNotes.length}<span class="data-gram-unit">개</span></div>
           <div class="data-gram-label">내가 쓴 포스트잇</div>
         </div>
-        <div class="data-gram-card data-gram-yellow">
+        <div class="data-gram-card data-gram-yellow" style="cursor:pointer;" onclick="navigateTo('universe')" title="내 우주에서 보기">
           <div class="data-gram-art">📌</div>
           <div class="data-gram-tag">#수집포스트잇</div>
           <div class="data-gram-meta">By NewListener · OFF-STAGE</div>
           <div class="data-gram-num">${bookmarkedNotes.length}<span class="data-gram-unit">개</span></div>
-          <div class="data-gram-label">수집한 포스트잇</div>
+          <div class="data-gram-label">수집한 포스트잇 →</div>
         </div>
       </div>
     `;
