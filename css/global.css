@@ -482,6 +482,73 @@ body.guest .sidebar-my-channel { display: none; }
   z-index: 0;
 }
 
+/* Artist page — top row lays out as 3 columns: name | counts | 소식 */
+.artist-header-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 20px;
+  align-items: flex-start;
+}
+@media (max-width: 960px) {
+  .artist-header-row { grid-template-columns: 1fr; }
+}
+
+/* Artist page — middle counts box (앨범/프로젝트/싱글) */
+.artist-counts-box {
+  background: #fff;
+  border: 3px solid #000;
+  border-radius: 4px;
+  padding: 14px 16px;
+  color: #000;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+}
+.artist-count-row {
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 0;
+  border-radius: 4px;
+  transition: background 0.12s;
+}
+.artist-count-row:hover { background: rgba(124,77,255,0.08); }
+.artist-count-row strong { font-size: 16px; color: #6B46C1; }
+.artist-count-row .artist-count-sub {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(0,0,0,0.5);
+}
+.artist-counts-feature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0,0,0,0.1);
+  cursor: pointer;
+}
+.artist-counts-feature img {
+  width: 56px; height: 56px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 2px solid #000;
+}
+.artist-counts-feature-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #000;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* '소식' header on the artist page postit aside */
 .artist-postit-aside-head {
   display: inline-flex;

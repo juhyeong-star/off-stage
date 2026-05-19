@@ -6164,6 +6164,41 @@ function renderArtistProfile(artistName) {
               </div>
             </div>
           </div>
+          ${(() => {
+            // Middle counts box: 앨범 / 프로젝트 / 싱글, clickable → scrolls to section below
+            const grp = {};
+            artistTracks.forEach(t => {
+              const pid = t.projectId || t.id;
+              if (!grp[pid]) grp[pid] = { demos: [], master: null };
+              if (t.isDemo) grp[pid].demos.push(t);
+              else grp[pid].master = t;
+            });
+            const arr = Object.values(grp);
+            const singleN  = arr.filter(p => p.master && p.demos.length === 0).length;
+            const projectN = arr.filter(p => p.demos.length > 0).length;
+            const albumN   = 0; // explicit album concept not yet
+            const featured = (artistTracks.find(t => !t.isDemo) || artistTracks[0]);
+            const cover    = featured && featured.cover || '';
+            const featureTitle = (featured && featured.title || '').replace(/</g,'&lt;');
+            return `
+              <div class="artist-counts-box">
+                <div class="artist-count-row" onclick="document.getElementById('artist-section-albums')?.scrollIntoView({behavior:'smooth', block:'start'})">
+                  <strong>${albumN}</strong> 앨범 <span class="artist-count-sub">여러 곡 묶음</span>
+                </div>
+                <div class="artist-count-row" onclick="document.getElementById('artist-section-projects')?.scrollIntoView({behavior:'smooth', block:'start'})">
+                  <strong>${projectN}</strong> 프로젝트 <span class="artist-count-sub">데모 공개</span>
+                </div>
+                <div class="artist-count-row" onclick="document.getElementById('artist-section-singles')?.scrollIntoView({behavior:'smooth', block:'start'})">
+                  <strong>${singleN}</strong> 싱글 <span class="artist-count-sub">단독 마스터</span>
+                </div>
+                ${cover ? `
+                  <div class="artist-counts-feature" onclick="document.getElementById('artist-section-singles')?.scrollIntoView({behavior:'smooth', block:'start'})" title="${featureTitle}">
+                    <img src="${cover}" alt="${featureTitle.replace(/"/g,'&quot;')}">
+                    <div class="artist-counts-feature-title">${featureTitle}</div>
+                  </div>
+                ` : ''}
+              </div>`;
+          })()}
           <aside class="artist-postit-aside">
             <div class="artist-postit-aside-head">
               <i class="ri-sticky-note-fill"></i> 소식 <span class="artist-postit-count">${artistNotes.length}</span>
@@ -6183,18 +6218,21 @@ function renderArtistProfile(artistName) {
         ` : ''}
 
         ${isArtistRole ? `
-          <!-- 청취곡 (라벨 없음 — 카드만 노출) -->
+          <!-- 청취곡: 마스터(싱글 포함) — counts box의 '싱글' 클릭 시 여기로 스크롤 -->
           ${releasedCount > 0 ? `
-            <div class="reveal" style="margin-top:36px;">
+            <div id="artist-section-singles" class="reveal" style="margin-top:36px; scroll-margin-top:80px;">
               ${releasedHtml}
             </div>
           ` : ''}
-          <!-- 데모곡 (라벨 없음 — 카드만 노출) -->
+          <!-- 데모곡: 프로젝트 진행중 — counts box의 '프로젝트' 클릭 시 여기로 스크롤 -->
           ${demoCount > 0 ? `
-            <div class="reveal" style="margin-top:36px;">
+            <div id="artist-section-projects" class="reveal" style="margin-top:36px; scroll-margin-top:80px;">
               ${demoHtml}
             </div>
           ` : ''}
+          <!-- 앨범 자리 (아직 컨셉 없음, 향후 확장) -->
+          <div id="artist-section-albums" style="scroll-margin-top:80px;"></div>
+
           ${(releasedCount + demoCount) === 0 ? `
             <div class="reveal" style="margin-top:36px;">
               <p style="color:var(--text-secondary);">아직 업로드한 곡이 없어요.</p>
