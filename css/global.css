@@ -572,6 +572,21 @@ body.guest .sidebar-my-channel { display: none; }
   font-weight: 700;
   margin-bottom: 10px;
 }
+.artist-postit-add {
+  margin-left: 6px;
+  padding: 2px 10px;
+  background: #1DB954;
+  color: #fff;
+  border: 2px solid #000;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.artist-postit-add:hover { background: #18a548; }
 .artist-postit-aside-head i { color: #FFD54F; }
 .artist-postit-count {
   background: #1DB954;

@@ -1831,6 +1831,20 @@ window.wallResetPage = function() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
+// "글 추가" 버튼 (아티스트 페이지 소식 헤더) → 벽으로 이동 + 컴포저 자동 열기
+window.goAddSoshik = function() {
+  navigateTo('wall');
+  // Wait for renderWall to populate the panel, then open it
+  setTimeout(() => {
+    const panel = document.getElementById('wall-compose-panel');
+    if (panel) {
+      panel.hidden = false;
+      const ta = document.getElementById('wall-text');
+      if (ta) ta.focus();
+    }
+  }, 200);
+};
+
 window.toggleWallCompose = function() {
   const panel = document.getElementById('wall-compose-panel');
   if (!panel) return;
@@ -6221,6 +6235,7 @@ function renderArtistProfile(artistName) {
           <aside class="artist-postit-aside">
             <div class="artist-postit-aside-head">
               <i class="ri-sticky-note-fill"></i> 소식 <span class="artist-postit-count">${artistNotes.length}</span>
+              ${isSelf ? `<button class="artist-postit-add" onclick="goAddSoshik()" title="새 소식 쓰기"><i class="ri-add-line"></i> 글 추가</button>` : ''}
             </div>
             ${artistNotes.length > 0
               ? `<div class="artist-postit-grid artist-postit-grid-aside">${notesGridHtml}</div>`
