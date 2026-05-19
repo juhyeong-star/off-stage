@@ -792,6 +792,11 @@ h2 { font-size: 22px; font-weight: 600; margin-bottom: 14px; }
   gap: 12px;
   margin-bottom: 26px;
 }
+/* Compact toggle inside project sub-step (smaller padding, tighter) */
+.upload-type-toggle.compact { margin-bottom: 14px; }
+.upload-type-toggle.compact .upload-type-opt { padding: 12px 10px; }
+.upload-type-toggle.compact .upload-type-icon { font-size: 20px; margin-bottom: 4px; }
+.upload-type-toggle.compact .upload-type-label { font-size: 13px; }
 .upload-type-opt {
   position: relative;
   display: block;

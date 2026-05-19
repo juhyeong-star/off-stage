@@ -3300,31 +3300,67 @@ function renderUpload() {
         데모부터 마스터까지 — 한 프로젝트 안에 여러 버전을 차곡차곡 쌓을 수 있어요 🎵
       </p>
 
+      <!-- Tier 1: 마스터 단독 vs 프로젝트 -->
       <div class="upload-type-toggle">
-        <label class="upload-type-opt active" data-type="new">
-          <input type="radio" name="up-type" value="new" checked>
-          <div class="upload-type-icon">🆕</div>
-          <div class="upload-type-label">새 프로젝트 시작</div>
-          <div class="upload-type-sub">첫 데모 / 새 곡</div>
+        <label class="upload-type-opt active" data-mode="master_solo">
+          <input type="radio" name="up-mode" value="master_solo" checked>
+          <div class="upload-type-icon">🎵</div>
+          <div class="upload-type-label">마스터</div>
+          <div class="upload-type-sub">완성된 단독 곡</div>
         </label>
-        <label class="upload-type-opt" data-type="existing">
-          <input type="radio" name="up-type" value="existing">
-          <div class="upload-type-icon">➕</div>
-          <div class="upload-type-label">기존 프로젝트에 추가</div>
-          <div class="upload-type-sub">다음 데모 or 마스터</div>
+        <label class="upload-type-opt" data-mode="project">
+          <input type="radio" name="up-mode" value="project">
+          <div class="upload-type-icon">✏️</div>
+          <div class="upload-type-label">프로젝트</div>
+          <div class="upload-type-sub">시리즈로 진행</div>
         </label>
       </div>
 
       <form id="upload-form">
-        <!-- Existing project picker (hidden unless 'existing' selected) -->
-        <div id="existing-project-section" style="display:none;">
+        <!-- Tier 2: 프로젝트 하위 옵션 (mode=project일 때만 보임) -->
+        <div id="project-substep" style="display:none;">
           <div class="form-group">
-            <label>프로젝트 선택</label>
-            <select class="form-control" id="up-project-id">
-              <option value="">불러오는 중...</option>
-            </select>
+            <label>어느 프로젝트?</label>
+            <div class="upload-type-toggle compact">
+              <label class="upload-type-opt active" data-proj-choice="new">
+                <input type="radio" name="up-proj-choice" value="new" checked>
+                <div class="upload-type-icon" style="font-size:20px;">🆕</div>
+                <div class="upload-type-label">새 프로젝트 시작</div>
+              </label>
+              <label class="upload-type-opt" data-proj-choice="existing">
+                <input type="radio" name="up-proj-choice" value="existing">
+                <div class="upload-type-icon" style="font-size:20px;">📁</div>
+                <div class="upload-type-label">기존 프로젝트</div>
+              </label>
+            </div>
           </div>
-          <div class="form-group" id="existing-version-info" style="font-size:13px; color:var(--text-secondary);"></div>
+
+          <div id="existing-project-picker" style="display:none;">
+            <div class="form-group">
+              <select class="form-control" id="up-project-id">
+                <option value="">불러오는 중...</option>
+              </select>
+              <div id="existing-version-info" style="font-size:13px; color:var(--text-secondary); margin-top:6px;"></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>이번 업로드는?</label>
+            <div class="upload-type-toggle compact">
+              <label class="upload-type-opt active" data-version-type="demo">
+                <input type="radio" name="up-version-type" value="demo" checked>
+                <div class="upload-type-icon" style="font-size:20px;">📝</div>
+                <div class="upload-type-label">데모</div>
+                <div class="upload-type-sub">진행 중 버전</div>
+              </label>
+              <label class="upload-type-opt" data-version-type="master">
+                <input type="radio" name="up-version-type" value="master">
+                <div class="upload-type-icon" style="font-size:20px;">⭐</div>
+                <div class="upload-type-label">마스터</div>
+                <div class="upload-type-sub">최종 완성본</div>
+              </label>
+            </div>
+          </div>
         </div>
 
         <div class="form-group">
@@ -3333,14 +3369,8 @@ function renderUpload() {
         </div>
         <div class="form-group">
           <label>버전 라벨</label>
-          <input type="text" class="form-control" id="up-version-label" value="Demo 1" placeholder="예: Demo 1, Demo 2 (코러스), Pre-master">
-          <div class="form-note">카드에 표시될 버전 이름. 자유롭게 쓰세요.</div>
-        </div>
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="up-is-final">
-            이게 <strong>최종 마스터</strong>입니다 ✨ <span style="color:var(--text-secondary); font-size:12px;">(체크하면 완성본으로 표시됨)</span>
-          </label>
+          <input type="text" class="form-control" id="up-version-label" value="Final" placeholder="예: Final, Demo 1, Pre-master">
+          <div class="form-note">카드에 표시될 이름. 자동으로 채워지지만 자유롭게 수정 가능.</div>
         </div>
 
         <div class="form-group">
@@ -3365,6 +3395,25 @@ function renderUpload() {
           <label><i class="ri-hashtag" style="color:var(--brand-color);"></i> 태그 (콤마로 구분, 선택)</label>
           <input type="text" class="form-control" id="up-tags" placeholder="예: 1982년 느낌, funky, 고2 기타과 음악">
           <div class="form-note">장르·무드·학년·연도 등 자유롭게. 다른 학생들이 #태그로 곡을 찾습니다.</div>
+        </div>
+
+        <!-- Distribution metadata — shown only when uploading a master -->
+        <div id="distribution-section" style="display:block;">
+          <hr style="border-color: var(--divider); margin: 20px 0;">
+          <h2 style="font-size: 18px; color: var(--brand-color); margin-bottom: 4px;"><i class="ri-folder-zip-line"></i> 유통용 메타데이터</h2>
+          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">유통사 제출용 정보. 비워두면 활동명 + 오늘 날짜로 들어가요.</p>
+          <div class="form-group">
+            <label>발매일</label>
+            <input type="date" class="form-control" id="up-release-date">
+          </div>
+          <div class="form-group">
+            <label>유통용 아티스트명 <span style="color:var(--text-secondary); font-weight:normal; font-size:12px;">(실명/예명 — 활동명과 다를 때만)</span></label>
+            <input type="text" class="form-control" id="up-dist-artist" placeholder="비워두면 활동명 사용">
+          </div>
+          <div class="form-group">
+            <label>콜라보 아티스트 <span style="color:var(--text-secondary); font-weight:normal; font-size:12px;">(콤마로 구분)</span></label>
+            <input type="text" class="form-control" id="up-collaborators" placeholder="예: 김작곡, 박보컬">
+          </div>
         </div>
 
         <hr style="border-color: var(--divider); margin: 20px 0;">
@@ -3428,70 +3477,123 @@ function renderUpload() {
     </div>
   `;
 
-  // ====== Upload type toggle behavior ======
+  // ====== Two-tier upload type toggle behavior ======
   let _myProjects = [];
-  const toggleOpts = document.querySelectorAll('.upload-type-opt');
-  const existingSection = document.getElementById('existing-project-section');
   const verLabelInput = document.getElementById('up-version-label');
   const titleInput = document.getElementById('up-title');
   const titleHint = document.getElementById('up-title-hint');
   const projectSelect = document.getElementById('up-project-id');
-  const isFinalCheck = document.getElementById('up-is-final');
   const verInfo = document.getElementById('existing-version-info');
+  const projSubstep = document.getElementById('project-substep');
+  const existingPicker = document.getElementById('existing-project-picker');
+  const distSection = document.getElementById('distribution-section');
+
+  // Resolve which mode/choice/version is selected from the live radios
+  function getUploadState() {
+    const mode    = (document.querySelector('input[name="up-mode"]:checked') || {}).value || 'master_solo';
+    const choice  = (document.querySelector('input[name="up-proj-choice"]:checked') || {}).value || 'new';
+    const verType = (document.querySelector('input[name="up-version-type"]:checked') || {}).value || 'demo';
+    // master_solo always uploads a master; project mode follows verType
+    const isFinal = mode === 'master_solo' || verType === 'master';
+    return { mode, choice, verType, isFinal };
+  }
 
   async function loadMyProjects() {
     if (!window.Tracks) return;
     _myProjects = await window.Tracks.listMyProjects();
     if (!_myProjects.length) {
-      projectSelect.innerHTML = '<option value="">아직 시작한 프로젝트가 없어요 — 먼저 "새 프로젝트"로 첫 데모 올려보세요</option>';
+      projectSelect.innerHTML = '<option value="">아직 시작한 프로젝트가 없어요 — "새 프로젝트 시작"으로 첫 곡 올려보세요</option>';
       return;
     }
     projectSelect.innerHTML = _myProjects.map(p =>
       `<option value="${p.projectId}">${(p.title||'무제').replace(/"/g,'&quot;')} · 데모 ${p.demoCount}개${p.hasFinal?' · ✦ 완성됨':''}</option>`
     ).join('');
-    updateExistingInfo();
+    refreshExistingInfo();
   }
-  function updateExistingInfo() {
+  function refreshExistingInfo() {
     if (!projectSelect || !verInfo) return;
     const pid = projectSelect.value;
     const p = _myProjects.find(x => x.projectId === pid);
     if (!p) { verInfo.innerHTML = ''; return; }
     const next = p.nextDemoNum || (p.demoCount + 1);
-    verInfo.innerHTML = `<strong>${p.title}</strong> — 데모 ${p.demoCount}개${p.hasFinal?' + 마스터':''}. 다음 버전 제안: <strong>Demo ${next}</strong>`;
-    verLabelInput.value = `Demo ${next}`;
+    verInfo.innerHTML = `<strong>${p.title}</strong> — 데모 ${p.demoCount}개${p.hasFinal?' + 마스터':''}. 다음 데모: <strong>Demo ${next}</strong>`;
     if (titleInput && !titleInput.dataset.userTyped) {
       titleInput.value = p.title;
       titleHint.textContent = '(프로젝트 제목 자동 반영)';
     }
+    syncVersionLabel();
   }
-  toggleOpts.forEach(opt => {
-    opt.addEventListener('click', () => {
-      toggleOpts.forEach(o => o.classList.remove('active'));
-      opt.classList.add('active');
-      const radio = opt.querySelector('input[type=radio]');
-      if (radio) radio.checked = true;
-      const t = opt.dataset.type;
-      if (t === 'existing') {
-        existingSection.style.display = 'block';
-        loadMyProjects();
-      } else {
-        existingSection.style.display = 'none';
-        verLabelInput.value = 'Demo 1';
+
+  // Auto-fill version label + show/hide distribution metadata section
+  function syncVersionLabel() {
+    if (verLabelInput.dataset.userTyped === '1') return;  // respect manual edits
+    const s = getUploadState();
+    if (s.isFinal) {
+      verLabelInput.value = 'Final';
+    } else if (s.mode === 'project' && s.choice === 'existing') {
+      const p = _myProjects.find(x => x.projectId === projectSelect.value);
+      verLabelInput.value = 'Demo ' + (p ? (p.nextDemoNum || p.demoCount + 1) : 1);
+    } else {
+      verLabelInput.value = 'Demo 1';
+    }
+  }
+  function syncDistributionSection() {
+    const s = getUploadState();
+    if (distSection) distSection.style.display = s.isFinal ? 'block' : 'none';
+  }
+
+  // Generic toggle: clicking a label updates the group's active class + checks its radio
+  function wireToggleGroup(groupSelector, afterChange) {
+    document.querySelectorAll(groupSelector + ' .upload-type-opt').forEach(opt => {
+      opt.addEventListener('click', () => {
+        opt.parentElement.querySelectorAll('.upload-type-opt').forEach(o => o.classList.remove('active'));
+        opt.classList.add('active');
+        const radio = opt.querySelector('input[type=radio]');
+        if (radio) radio.checked = true;
+        if (afterChange) afterChange();
+      });
+    });
+  }
+  // Tier 1 — mode
+  wireToggleGroup('.card > .upload-type-toggle:not(.compact)', () => {
+    const s = getUploadState();
+    if (s.mode === 'project') {
+      projSubstep.style.display = 'block';
+      // If 기존 already selected, ensure list is loaded
+      if (s.choice === 'existing') loadMyProjects();
+    } else {
+      projSubstep.style.display = 'none';
+      if (titleHint) titleHint.textContent = '';
+    }
+    syncVersionLabel();
+    syncDistributionSection();
+  });
+  // Tier 2a — new vs existing project
+  wireToggleGroup('#project-substep .upload-type-toggle.compact:first-of-type', () => {
+    const s = getUploadState();
+    if (s.choice === 'existing') {
+      existingPicker.style.display = 'block';
+      loadMyProjects();
+    } else {
+      existingPicker.style.display = 'none';
+      // Clear auto-filled title when switching to new project
+      if (titleInput && !titleInput.dataset.userTyped) {
+        titleInput.value = '';
         if (titleHint) titleHint.textContent = '';
       }
-    });
-  });
-  if (projectSelect) projectSelect.addEventListener('change', updateExistingInfo);
-  if (titleInput) titleInput.addEventListener('input', () => { titleInput.dataset.userTyped = '1'; });
-  if (isFinalCheck) isFinalCheck.addEventListener('change', () => {
-    if (isFinalCheck.checked) verLabelInput.value = 'Final';
-    else {
-      const sel = document.querySelector('.upload-type-opt.active');
-      const t = sel ? sel.dataset.type : 'new';
-      if (t === 'existing') updateExistingInfo();
-      else verLabelInput.value = 'Demo 1';
     }
+    syncVersionLabel();
+    syncDistributionSection();
   });
+  // Tier 2b — demo vs master version type
+  wireToggleGroup('#project-substep .upload-type-toggle.compact:last-of-type', () => {
+    syncVersionLabel();
+    syncDistributionSection();
+  });
+
+  if (projectSelect) projectSelect.addEventListener('change', refreshExistingInfo);
+  if (titleInput) titleInput.addEventListener('input', () => { titleInput.dataset.userTyped = '1'; });
+  if (verLabelInput) verLabelInput.addEventListener('input', () => { verLabelInput.dataset.userTyped = '1'; });
 
   document.getElementById('upload-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -3511,14 +3613,17 @@ function renderUpload() {
       const user = window.__currentUser || db.currentUser;
       if (!user) throw new Error('로그인이 필요해요');
 
-      // Determine upload type
-      const selectedType = document.querySelector('input[name="up-type"]:checked');
-      const uploadType = selectedType ? selectedType.value : 'new';
-      const isFinal = document.getElementById('up-is-final').checked;
+      // Determine upload type from new two-tier state
+      const state = getUploadState();
+      const isFinal = state.isFinal;
       const versionLabel = (verLabelInput.value || '').trim() || (isFinal ? 'Final' : 'Demo 1');
 
+      // master_solo  → no project context, brand new projectId
+      // project+new  → brand new projectId, isFinal follows version-type
+      // project+existing → reuse existing projectId, demote old final if needed
       let existingProject = null;
-      if (uploadType === 'existing') {
+      const usingExistingProject = (state.mode === 'project' && state.choice === 'existing');
+      if (usingExistingProject) {
         const pid = projectSelect.value;
         if (!pid) throw new Error('기존 프로젝트를 선택해주세요.');
         existingProject = _myProjects.find(p => p.projectId === pid);
@@ -3557,18 +3662,25 @@ function renderUpload() {
 
       // Version & project
       let version, projectId;
-      if (uploadType === 'existing') {
+      if (usingExistingProject) {
         projectId = existingProject.projectId;
-        if (isFinal) {
-          version = 'final';
-        } else {
-          // Use nextDemoNum so we don't collide with retired demos
-          version = 'demo' + (existingProject.nextDemoNum || (existingProject.demoCount + 1));
-        }
+        version = isFinal
+          ? 'final'
+          : 'demo' + (existingProject.nextDemoNum || (existingProject.demoCount + 1));
       } else {
-        projectId = undefined; // let DB generate
+        // master_solo or project+new — DB generates a fresh project_id
+        projectId = undefined;
         version = isFinal ? 'final' : 'demo1';
       }
+
+      // Distribution metadata — only meaningful when uploading a master.
+      // Backend columns are optional, so empty strings/null are fine for demos.
+      const distArtist    = isFinal ? ((document.getElementById('up-dist-artist')?.value || '').trim()) : '';
+      const releaseDate   = isFinal ? ((document.getElementById('up-release-date')?.value || '').trim()) : '';
+      const collabRaw     = isFinal ? ((document.getElementById('up-collaborators')?.value || '').trim()) : '';
+      const collaborators = collabRaw
+        ? collabRaw.split(',').map(s => s.trim()).filter(Boolean).map(name => ({ name }))
+        : [];
 
       setStatus('트랙 저장 중…');
       // Auto-promote listener → artist on first upload (idempotent)
@@ -3580,7 +3692,7 @@ function renderUpload() {
       }
 
       // If adding final to project that already has one, demote the old one
-      if (uploadType === 'existing' && isFinal && existingProject.hasFinal) {
+      if (usingExistingProject && isFinal && existingProject.hasFinal) {
         const oldFinal = existingProject.versions.find(v => v.version === 'final' && !v.isDemo);
         if (oldFinal && window.supabase) {
           await window.supabase.from('tracks').update({
@@ -3607,7 +3719,11 @@ function renderUpload() {
           line1 || '#' + title,
           line2 || '#' + user.name,
           line3 || '#클릭해서 들어봐!'
-        ]
+        ],
+        // Distribution metadata (admin ZIP uses these). Empty for demos.
+        distArtist,
+        releaseDate,
+        collaborators
       });
 
       await window.Tracks.refreshInto(db);
