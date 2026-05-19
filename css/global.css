@@ -529,22 +529,26 @@ body.guest .sidebar-my-channel { display: none; }
   font-weight: 500;
   color: rgba(0,0,0,0.5);
 }
-.artist-counts-feature {
+/* Cover thumbnail that lives directly under its category row */
+.artist-count-cover {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 8px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(0,0,0,0.1);
+  margin: 2px 0 6px 18px;   /* slight indent so it visually nests under the row above */
+  padding: 6px 8px;
+  border-radius: 6px;
   cursor: pointer;
+  transition: background 0.12s;
 }
-.artist-counts-feature img {
-  width: 56px; height: 56px;
+.artist-count-cover:hover { background: rgba(124,77,255,0.08); }
+.artist-count-cover img {
+  width: 48px; height: 48px;
   border-radius: 4px;
   object-fit: cover;
   border: 2px solid #000;
+  flex-shrink: 0;
 }
-.artist-counts-feature-title {
+.artist-count-cover-title {
   font-size: 12px;
   font-weight: 700;
   color: #000;

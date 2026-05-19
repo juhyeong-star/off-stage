@@ -6165,38 +6165,57 @@ function renderArtistProfile(artistName) {
             </div>
           </div>
           ${(() => {
-            // Middle counts box: 앨범 / 프로젝트 / 싱글, clickable → scrolls to section below
+            // Middle counts box: 앨범 / 프로젝트 / 싱글, clickable → scrolls to section below.
+            // Each category that has count > 0 shows its own representative cover RIGHT BELOW its row.
             const grp = {};
             artistTracks.forEach(t => {
               const pid = t.projectId || t.id;
-              if (!grp[pid]) grp[pid] = { demos: [], master: null };
+              if (!grp[pid]) grp[pid] = { demos: [], master: null, pid };
               if (t.isDemo) grp[pid].demos.push(t);
               else grp[pid].master = t;
             });
             const arr = Object.values(grp);
-            const singleN  = arr.filter(p => p.master && p.demos.length === 0).length;
-            const projectN = arr.filter(p => p.demos.length > 0).length;
-            const albumN   = 0; // explicit album concept not yet
-            const featured = (artistTracks.find(t => !t.isDemo) || artistTracks[0]);
-            const cover    = featured && featured.cover || '';
-            const featureTitle = (featured && featured.title || '').replace(/</g,'&lt;');
+            // 앨범 = a project that has BOTH multiple masters or multiple-tracks under it.
+            //   Off-Stage doesn't have an explicit album yet; until we model it, keep 0.
+            const albumProjects   = [];                                       // future
+            // 프로젝트 = project with at least one demo (work-in-progress)
+            const projectProjects = arr.filter(p => p.demos.length > 0);
+            // 싱글 = standalone master (no demos, just one finished master)
+            const singleProjects  = arr.filter(p => p.master && p.demos.length === 0);
+
+            // Pick a representative cover for each category (first non-empty cover)
+            function pickCover(projects) {
+              for (const p of projects) {
+                const t = p.master || p.demos[0];
+                if (t && t.cover) return { cover: t.cover, title: t.title || '' };
+              }
+              return null;
+            }
+            const albumRep   = pickCover(albumProjects);
+            const projectRep = pickCover(projectProjects);
+            const singleRep  = pickCover(singleProjects);
+
+            const esc = (s) => (s||'').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+            const renderCover = (rep, sectionId) => rep ? `
+              <div class="artist-count-cover" onclick="document.getElementById('${sectionId}')?.scrollIntoView({behavior:'smooth', block:'start'})" title="${esc(rep.title)}">
+                <img src="${rep.cover}" alt="${esc(rep.title)}">
+                <div class="artist-count-cover-title">${esc(rep.title)}</div>
+              </div>` : '';
+
             return `
               <div class="artist-counts-box">
                 <div class="artist-count-row" onclick="document.getElementById('artist-section-albums')?.scrollIntoView({behavior:'smooth', block:'start'})">
-                  <strong>${albumN}</strong> 앨범 <span class="artist-count-sub">여러 곡 묶음</span>
+                  <strong>${albumProjects.length}</strong> 앨범 <span class="artist-count-sub">여러 곡 묶음</span>
                 </div>
+                ${renderCover(albumRep, 'artist-section-albums')}
                 <div class="artist-count-row" onclick="document.getElementById('artist-section-projects')?.scrollIntoView({behavior:'smooth', block:'start'})">
-                  <strong>${projectN}</strong> 프로젝트 <span class="artist-count-sub">데모 공개</span>
+                  <strong>${projectProjects.length}</strong> 프로젝트 <span class="artist-count-sub">데모 공개</span>
                 </div>
+                ${renderCover(projectRep, 'artist-section-projects')}
                 <div class="artist-count-row" onclick="document.getElementById('artist-section-singles')?.scrollIntoView({behavior:'smooth', block:'start'})">
-                  <strong>${singleN}</strong> 싱글 <span class="artist-count-sub">단독 마스터</span>
+                  <strong>${singleProjects.length}</strong> 싱글 <span class="artist-count-sub">단독 마스터</span>
                 </div>
-                ${cover ? `
-                  <div class="artist-counts-feature" onclick="document.getElementById('artist-section-singles')?.scrollIntoView({behavior:'smooth', block:'start'})" title="${featureTitle}">
-                    <img src="${cover}" alt="${featureTitle.replace(/"/g,'&quot;')}">
-                    <div class="artist-counts-feature-title">${featureTitle}</div>
-                  </div>
-                ` : ''}
+                ${renderCover(singleRep, 'artist-section-singles')}
               </div>`;
           })()}
           <aside class="artist-postit-aside">
