@@ -1589,6 +1589,8 @@ async function renderWall() {
           new Promise(r => setTimeout(r, 1500))
         ]);
       } catch (_) {}
+      // User may have navigated away during the wait — don't clobber their new page
+      if (currentView !== 'wall') return;
     }
   }
   const allNotes = db.notes || [];
@@ -2923,6 +2925,8 @@ window.renderUniverse = async function () {
         Promise.all(refreshTasks),
         new Promise(r => setTimeout(r, 1500))
       ]);
+      // Bail if user moved on while we were waiting
+      if (currentView !== 'universe') return;
     }
   }
 
@@ -7233,6 +7237,10 @@ window.renderAdmin = async function () {
       ]);
     }
   } catch (e) { console.warn('[admin] list', e); }
+
+  // User may have navigated away while we waited for Supabase — bail before
+  // overwriting whatever page they're now on.
+  if (currentView !== 'admin') return;
 
   const renderTrackRow = (t) => `
     <div class="admin-row">
