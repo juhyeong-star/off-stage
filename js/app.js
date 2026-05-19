@@ -2151,16 +2151,21 @@ function renderHome() {
   const rows = Math.ceil(allItems.length / cols);
   const universeHeight = Math.max(1100, rows * 260 + 220);
 
-  // Also sprinkle some decorative floating dots
+  // Also sprinkle some decorative floating dots — seeded so they stay put across reloads
   let decoHtml = '';
   for (let i = 0; i < 40; i++) {
-    const size = 8 + Math.random() * 40;
-    const x = Math.random() * 96;
-    const y = Math.random() * 96;
-    const color = SHAPE_COLORS[Math.floor(Math.random() * SHAPE_COLORS.length)];
-    const opacity = 0.12 + Math.random() * 0.4;
-    const dur = 10 + Math.random() * 22;
-    decoHtml += `<div class="deco-shape" style="width:${size}px;height:${size}px;left:${x}%;top:${y}%;background:${color};opacity:${opacity};border-radius:${Math.random()<0.5?'50%':'4px'};animation:floatDrift ${dur}s ease-in-out infinite;--dx:${(Math.random()*70-35)}px;--dy:${(Math.random()*70-35)}px;--rot:${Math.random()*8-4}deg;"></div>`;
+    const seed = _hashSeed('deco-tag:' + i);
+    const size = 8 + (seed % 40);
+    const x = (seed >>> 6) % 96;
+    const y = (seed >>> 13) % 96;
+    const color = SHAPE_COLORS[(seed >>> 20) % SHAPE_COLORS.length];
+    const opacity = 0.12 + (((seed >>> 23) % 40) / 100);
+    const dur = 10 + ((seed >>> 26) % 22);
+    const radius = ((seed >>> 29) & 1) ? '50%' : '4px';
+    const dx = ((seed >>> 4) % 70) - 35;
+    const dy = ((seed >>> 11) % 70) - 35;
+    const rot = ((((seed >>> 17) % 80) - 40) / 10);
+    decoHtml += `<div class="deco-shape" style="width:${size}px;height:${size}px;left:${x}%;top:${y}%;background:${color};opacity:${opacity};border-radius:${radius};animation:floatDrift ${dur}s ease-in-out infinite;--dx:${dx}px;--dy:${dy}px;--rot:${rot}deg;"></div>`;
   }
 
   // Spacing per-column based on cols
@@ -2171,12 +2176,14 @@ function renderHome() {
   allItems.forEach((item, si) => {
     const col = si % cols;
     const row = Math.floor(si / cols);
-    const xBase = 3 + col * colWidth + Math.random() * (colWidth * 0.25);
-    const yPx = 40 + row * 260 + Math.random() * 70;
-    const rot = (Math.random() * 10 - 5);
-    const dur = 14 + Math.random() * 18;
-    const dx = (Math.random() * 50 - 25);
-    const dy = (Math.random() * 50 - 25);
+    const _sdHU = _hashSeed('home-univ:' + (item.id || si));
+    const xBase = 3 + col * colWidth + ((_sdHU % 100) / 100) * (colWidth * 0.25);
+    const yPx = 40 + row * 260 + ((_sdHU >>> 7) % 70);
+    const rot = ((((_sdHU >>> 13) % 100) - 50) / 10);
+    const dur = 14 + ((_sdHU >>> 19) % 18);
+    const _hSeedHU = _hashSeed('home-univ-d:' + (item.id || si));
+    const dx = (_hSeedHU % 50) - 25;
+    const dy = ((_hSeedHU >>> 8) % 50) - 25;
     const posStyle = `left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;`;
 
     if (item.type === 'shape') {
@@ -2322,25 +2329,31 @@ async function renderPlaylistUniverse(playlistId) {
 
     let decoHtml = '';
     for (let i = 0; i < 14; i++) {
-      const size = 8 + Math.random() * 36;
-      const x = Math.random() * 96;
-      const y = Math.random() * 96;
-      const color = SHAPE_COLORS[Math.floor(Math.random() * SHAPE_COLORS.length)];
-      const opacity = 0.1 + Math.random() * 0.3;
-      const dur = 10 + Math.random() * 22;
-      decoHtml += `<div class="deco-shape" style="width:${size}px;height:${size}px;left:${x}%;top:${y}%;background:${color};opacity:${opacity};border-radius:${Math.random()<0.5?'50%':'4px'};animation:floatDrift ${dur}s ease-in-out infinite;--dx:${(Math.random()*70-35)}px;--dy:${(Math.random()*70-35)}px;--rot:${Math.random()*8-4}deg;"></div>`;
+      const seed = _hashSeed('deco-tag-sec1:' + i);
+      const size = 8 + (seed % 36);
+      const x = (seed >>> 6) % 96;
+      const y = (seed >>> 13) % 96;
+      const color = SHAPE_COLORS[(seed >>> 20) % SHAPE_COLORS.length];
+      const opacity = 0.1 + (((seed >>> 23) % 30) / 100);
+      const dur = 10 + ((seed >>> 26) % 22);
+      const radius = ((seed >>> 29) & 1) ? '50%' : '4px';
+      const dx = ((seed >>> 4) % 70) - 35;
+      const dy = ((seed >>> 11) % 70) - 35;
+      const rot = ((((seed >>> 17) % 80) - 40) / 10);
+      decoHtml += `<div class="deco-shape" style="width:${size}px;height:${size}px;left:${x}%;top:${y}%;background:${color};opacity:${opacity};border-radius:${radius};animation:floatDrift ${dur}s ease-in-out infinite;--dx:${dx}px;--dy:${dy}px;--rot:${rot}deg;"></div>`;
     }
 
     let itemsHtml = '';
     masterItems.forEach((it, si) => {
       const col = si % cols;
       const row = Math.floor(si / cols);
-      const xBase = 2 + col * colW + Math.random() * (colW * 0.25);
-      const yPx = 30 + row * 230 + Math.random() * 40;
-      const rot = (Math.random() * 8 - 4);
-      const dur = 14 + Math.random() * 14;
-      const dx = (Math.random() * 40 - 20);
-      const dy = (Math.random() * 40 - 20);
+      const sd = _hashSeed('home-master:' + (it.id || si));
+      const xBase = 2 + col * colW + ((sd % 100) / 100) * (colW * 0.25);
+      const yPx = 30 + row * 230 + ((sd >>> 7) % 40);
+      const rot = ((((sd >>> 11) % 80) - 40) / 10);
+      const dur = 14 + ((sd >>> 17) % 14);
+      const dx = ((sd >>> 21) % 40) - 20;
+      const dy = ((sd >>> 25) % 40) - 20;
       const posStyle = `left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;`;
       const safeTitle = (it.title || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       const safeArtist = (it.artist || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -2385,12 +2398,13 @@ async function renderPlaylistUniverse(playlistId) {
     demoTracks.forEach((t, si) => {
       const col = si % cols;
       const row = Math.floor(si / cols);
-      const xBase = 2 + col * colW + Math.random() * (colW * 0.3);
-      const yPx = 30 + row * 220 + Math.random() * 40;
-      const rot = (Math.random() * 14 - 7);
-      const dur = 12 + Math.random() * 16;
-      const dx = (Math.random() * 50 - 25);
-      const dy = (Math.random() * 50 - 25);
+      const sd = _hashSeed('home-demo:' + (t.id || si));
+      const xBase = 2 + col * colW + ((sd % 100) / 100) * (colW * 0.3);
+      const yPx = 30 + row * 220 + ((sd >>> 7) % 40);
+      const rot = ((((sd >>> 11) % 140) - 70) / 10);
+      const dur = 12 + ((sd >>> 17) % 16);
+      const dx = ((sd >>> 21) % 50) - 25;
+      const dy = ((sd >>> 25) % 50) - 25;
       const shape = t.shape || SHAPE_TYPES[si % SHAPE_TYPES.length];
       const color = t.shapeColor || SHAPE_COLORS[si % SHAPE_COLORS.length];
       const isTriangle = shape === 'triangle';
@@ -2469,10 +2483,11 @@ async function renderPlaylistUniverse(playlistId) {
       const cnt = tagCounts[tag];
       const size = tagFontSize(cnt, maxTag) + 8;
       const safeTag = (tag || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      const rot = (Math.random() * 8 - 4);
-      const dur = 14 + Math.random() * 14;
-      const dx = (Math.random() * 30 - 15);
-      const dy = (Math.random() * 30 - 15);
+      const sd = _hashSeed('home-tag:' + tag);
+      const rot = ((((sd) % 80) - 40) / 10);
+      const dur = 14 + ((sd >>> 7) % 14);
+      const dx = ((sd >>> 13) % 30) - 15;
+      const dy = ((sd >>> 19) % 30) - 15;
       return `
         <span class="pl-tag-bubble" style="color:${tagColor(tag)}; font-size:${size}px; --rot:${rot}deg; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px;" onclick="navigateToTag('${jsEscape(tag)}')" title="${safeTag} · ${cnt}곡">
           #${safeTag}
