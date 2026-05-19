@@ -8025,6 +8025,21 @@ html, body { overflow-x: hidden; max-width: 100%; }
 /* Listeners (and guests, who default to role-listener) don't see 아티스트 페이지.
    Admin/Artist users still see it. */
 body.role-listener .sidebar-artist-link { display: none; }
+
+/* --- 사이드바 신규 메뉴: 관리자 (admin role만 보임) --- */
+.sidebar-admin-link {
+  background: linear-gradient(135deg, rgba(156,39,176,0.18), rgba(233,30,99,0.10)) !important;
+  color: #E1BEE7 !important;
+  border: 1px solid rgba(156,39,176,0.4);
+  margin-bottom: 6px;
+  display: none;  /* hidden by default; shown only when body.role-admin */
+}
+.sidebar-admin-link i { color: #CE93D8; }
+.sidebar-admin-link:hover {
+  background: linear-gradient(135deg, rgba(156,39,176,0.3), rgba(233,30,99,0.18)) !important;
+  color: #fff !important;
+}
+body.role-admin .sidebar-admin-link { display: flex; }
 .sidebar-link-sub {
   margin-left: auto;
   font-size: 10px;
