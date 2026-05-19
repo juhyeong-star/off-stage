@@ -5845,7 +5845,155 @@ window.editArtistNote = async function(trackId) {
 
 // ===================== ARTIST PROFILE (public) =====================
 
+// Current tab on /artist:<name> page. Survives re-renders.
+window.__artistTab = window.__artistTab || 'all';
+window.switchArtistTab = function(tab) {
+  window.__artistTab = tab;
+  // Re-render keeping the same artist
+  if (window.__currentArtistName) {
+    renderArtistProfile(window.__currentArtistName);
+  }
+};
+
 function renderArtistProfile(artistName) {
+  window.__currentArtistName = artistName;
+  const db = window.DB.get();
+
+  // ── Tracks & projects ────────────────────────────────────
+  const allTracks = (db.tracks || []).filter(t => t && t.artist === artistName);
+  const masters = allTracks.filter(t => !t.isDemo);
+  const demos   = allTracks.filter(t =>  t.isDemo);
+  // Group by projectId → 싱글 (master only, no demos) vs 프로젝트 (demos in flight)
+  const byProject = {};
+  allTracks.forEach(t => {
+    const pid = t.projectId || t.id;
+    if (!byProject[pid]) byProject[pid] = { demos: [], master: null };
+    if (t.isDemo) byProject[pid].demos.push(t);
+    else byProject[pid].master = t;
+  });
+  const projectsArr = Object.values(byProject);
+  const singleCount  = projectsArr.filter(p => p.master && p.demos.length === 0).length;
+  const projectCount = projectsArr.filter(p => p.demos.length > 0).length;
+  const albumCount   = 0; // 명시적 앨범 컨셉 없음 — 향후 확장
+
+  // ── Artist's own wall notes (top-right strip) ────────────
+  const myNotes = (db.notes || []).filter(n => n && n.author === artistName).slice(0, 4);
+
+  // ── Try to grab avatar / bio / sns (Supabase profile lookup async; fall back to first track) ──
+  let avatar = (allTracks[0] && allTracks[0].artistAvatar) || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(artistName));
+  let bio = '';
+  let sns = {};
+  // Try the cached profile (synchronous best-effort)
+  if (window.__currentUser && window.__currentUser.name === artistName) {
+    avatar = window.__currentUser.avatar || avatar;
+    bio = window.__currentUser.bio || '';
+    sns = window.__currentUser.sns || {};
+  }
+  // Async refresh (re-render if we find more details)
+  if (window.fetchProfileByName && !window.__artistProfileFetched) {
+    window.__artistProfileFetched = artistName;
+    window.fetchProfileByName(artistName).then(p => {
+      window.__artistProfileFetched = null;
+      if (!p) return;
+      if (currentView !== 'artist' || window.__currentArtistName !== artistName) return;
+      // Stash on a side map so subsequent renders pick it up
+      window.__artistProfileCache = window.__artistProfileCache || {};
+      window.__artistProfileCache[artistName] = p;
+      renderArtistProfile(artistName);
+    }).catch(()=>{ window.__artistProfileFetched = null; });
+  }
+  const cached = (window.__artistProfileCache || {})[artistName];
+  if (cached) {
+    avatar = cached.avatar_url || avatar;
+    bio = cached.bio || bio;
+  }
+
+  // ── Tabs ─────────────────────────────────────────────────
+  const tab = window.__artistTab || 'all';
+  let visibleTracks = masters;
+  if (tab === 'popular') {
+    visibleTracks = [...masters].sort((a,b) => (b.likes||0) - (a.likes||0));
+  } else if (tab === 'collab') {
+    visibleTracks = masters.filter(t => Array.isArray(t.collaborators) && t.collaborators.length > 0);
+  }
+  // 'all' = masters in default order (sorted by createdAt desc)
+  if (tab === 'all') {
+    visibleTracks = [...masters].sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0));
+  }
+
+  // ── HTML helpers ─────────────────────────────────────────
+  const safeName = (artistName || '').replace(/</g,'&lt;');
+
+  const noteCardsHtml = myNotes.map(n => {
+    const c = NOTE_COLORS[n.color] || NOTE_COLORS.yellow;
+    const txt = (n.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+    return `
+      <div class="artist-mini-postit" style="background:${c.bg}; color:${c.text};" onclick="openNoteDetail('${n.id}')">
+        <div class="artist-mini-postit-body">${txt}</div>
+      </div>`;
+  }).join('');
+
+  const trackCardHtml = (t) => {
+    const cover = t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=500';
+    const title = (t.title || '').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    return `
+      <div class="artist-track-card" onclick="playTrack('${t.id}')">
+        <img src="${cover}" alt="${title}" loading="lazy">
+        <div class="artist-track-title">${title}</div>
+        ${typeof t.likes === 'number' && t.likes > 0 ? `<div class="artist-track-likes"><i class="ri-heart-fill"></i> ${t.likes}</div>` : ''}
+      </div>`;
+  };
+
+  const aboutHtml = `
+    <div class="artist-about">
+      ${bio ? `<p class="artist-bio">${bio.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</p>` : '<p class="artist-bio-empty">아직 소개가 없어요.</p>'}
+      ${generateSnsLinks(sns) || ''}
+    </div>`;
+
+  const bodyHtml = tab === 'about'
+    ? aboutHtml
+    : (visibleTracks.length > 0
+        ? `<div class="artist-tracks-grid">${visibleTracks.map(trackCardHtml).join('')}</div>`
+        : `<div class="artist-tracks-empty">${tab === 'collab' ? '아직 콜라보한 곡이 없어요.' : tab === 'popular' ? '좋아요 받은 곡이 아직 없어요.' : '아직 올린 곡이 없어요.'}</div>`);
+
+  appContent.innerHTML = `
+    <div class="sub-page artist-page-v2">
+      <!-- Top row: name + 내 포스트잇 -->
+      <div class="artist-top-row">
+        <div class="artist-name-card">
+          <img class="artist-name-avatar" src="${avatar}" alt="${safeName}" loading="lazy">
+          <h1 class="artist-name-title">${safeName}</h1>
+        </div>
+        ${myNotes.length > 0 ? `
+          <div class="artist-postits-card">
+            <div class="artist-postits-title">내 포스트잇</div>
+            <div class="artist-postits-row">
+              ${noteCardsHtml}
+            </div>
+          </div>` : ''}
+      </div>
+
+      <!-- Info card: counts + track grid + tabs -->
+      <div class="artist-info-card">
+        <div class="artist-counts">
+          <div class="artist-count-row"><strong>${albumCount}</strong> 앨범 <span class="artist-count-sub">예라 = 누납</span></div>
+          <div class="artist-count-row"><strong>${projectCount}</strong> 프로젝트 <span class="artist-count-sub">데모 ${demos.length}</span></div>
+          <div class="artist-count-row"><strong>${singleCount}</strong> 싱글 <span class="artist-count-sub">단독 마스터</span></div>
+        </div>
+        <div class="artist-tabs">
+          <button class="artist-tab ${tab==='all' ? 'active' : ''}" onclick="switchArtistTab('all')">All tracks <span class="artist-tab-count">${masters.length}</span></button>
+          <button class="artist-tab ${tab==='popular' ? 'active' : ''}" onclick="switchArtistTab('popular')">인기</button>
+          <button class="artist-tab ${tab==='collab' ? 'active' : ''}" onclick="switchArtistTab('collab')">콜라보</button>
+          <button class="artist-tab ${tab==='about' ? 'active' : ''}" onclick="switchArtistTab('about')">About</button>
+        </div>
+        <div class="artist-body">${bodyHtml}</div>
+      </div>
+    </div>
+  `;
+}
+
+// === LEGACY artist profile (sponsor-heavy) — kept for reference, no longer routed ===
+function _renderArtistProfileLegacy(artistName) {
   const db = window.DB.get();
   const artistTracks = db.tracks.filter(t => t.artist === artistName);
   // Include both: notes the artist wrote + notes that mention this artist (fan messages)
