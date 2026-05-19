@@ -4937,17 +4937,8 @@ function renderProjectBox(pid, versions) {
       arrow ? 'arrow-' + arrow : '',
       v.id === firstTrackId ? 'is-selected' : ''
     ].join(' ');
-    // Per-demo SPO progress
-    const stoCfg = getStoConfigForTrack(v);
-    const progressPct = stoCfg ? Math.min(100, Math.round((stoCfg.raisedKrw / stoCfg.goalKrw) * 100)) : 0;
-    // Hide 함께만들기 badge on own tracks (artist self-view) — 청취자에게만 보임
-    const stoBadgeHtml = !canEditArtist ? `
-      <button class="demo-sto-badge" title="함께 만들기 — ${progressPct}% 모임"
-              onclick="event.stopPropagation(); openStoMini('${v.id}', '${(v.title||'').replace(/'/g,"\\'")}', '${(v.artist||'').replace(/'/g,"\\'")}')">
-        <span class="demo-sto-emoji">💎</span>
-        <span class="demo-sto-pct">${progressPct}%</span>
-      </button>
-    ` : '';
+    // 함께 만들기(STO) 후원 기능 — UI 숨김. 백엔드 데이터는 유지하지만 카드엔 표시 안 함.
+    const stoBadgeHtml = '';
     // ⚙ Shape picker button — artist self only, opens modal
     const shapeOpenBtnHtml = canEditArtist ? `
       <button class="demo-shape-open-btn" title="메인 노출 도형 선택"
