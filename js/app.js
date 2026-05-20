@@ -237,8 +237,16 @@ async function init() {
     setTimeout(() => { if (window.maybeShowOnboarding) window.maybeShowOnboarding(); }, 1500);
   } catch (_) {}
 
-  // Notification badge — count unread
-  try { setTimeout(() => { if (window.refreshNotifBadge) window.refreshNotifBadge(); }, 800); } catch (_) {}
+  // Notifications — fire one Supabase fetch a bit after login, then update the badge
+  try {
+    setTimeout(() => {
+      if (typeof _refreshNotifications === 'function') {
+        _refreshNotifications().catch(()=>{});
+      } else if (window.refreshNotifBadge) {
+        window.refreshNotifBadge();
+      }
+    }, 800);
+  } catch (_) {}
   // Backers/함께만드는중 UI removed — keep backend tables for later
 
   // Keep UI in sync if auth state changes (sign-out in another tab, session expire, etc.)
@@ -454,10 +462,171 @@ window.switchListenerTab = function(tab) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.tab === tab));
 };
 
-// ===================== NOTIFICATIONS — 🔔 (mock) =====================
-// Mock activity feed + notifications. Generates plausible events from existing data
-// (followed artists' new demos, backings, level-ups, DM, postit replies).
+// ===================== NOTIFICATIONS — 🔔 (real Supabase polling) =====================
+// Cache populated by _refreshNotifications(); _genNotifications stays sync so the existing
+// panel/badge code keeps working unchanged.
+window.__notifCache = window.__notifCache || [];
+window.__notifRefreshing = false;
+
+async function _refreshNotifications() {
+  if (window.__notifRefreshing) return;
+  if (!window.supabase || !window.__currentUser || !window.__currentUser.id) {
+    window.__notifCache = [];
+    return;
+  }
+  window.__notifRefreshing = true;
+  const myId   = window.__currentUser.id;
+  const myName = window.__currentUser.name || '';
+  const items  = [];
+  const sb     = window.supabase;
+  const since30 = new Date(Date.now() - 30 * 86400000).toISOString();
+  const since7  = new Date(Date.now() - 7  * 86400000).toISOString();
+
+  try {
+    // ── My tracks (need id list for comment/like notifications) ────
+    const { data: myTracks } = await sb.from('tracks').select('id, title').eq('artist_id', myId);
+    const myTrackIds   = (myTracks || []).map(t => t.id);
+    const trackTitleById = Object.fromEntries((myTracks||[]).map(t => [t.id, t.title || '']));
+
+    // ── 1. Comments on my tracks ──────────────────────────────────
+    if (myTrackIds.length) {
+      const { data: cmts } = await sb.from('track_comments')
+        .select('id, track_id, author_id, author_name, text, created_at')
+        .in('track_id', myTrackIds).gte('created_at', since30)
+        .order('created_at', { ascending: false }).limit(20);
+      (cmts || []).filter(c => c.author_id !== myId).forEach(c => {
+        items.push({
+          id: 'tc_' + c.id, kind: 'track_comment', icon: '💬', color: '#FF6B9D',
+          title: `${c.author_name || '익명'}님이 내 곡에 댓글`,
+          body: `「${trackTitleById[c.track_id] || ''}」 — "${(c.text||'').slice(0,40)}"`,
+          time: new Date(c.created_at).getTime(),
+          onClickRoute: myName ? ('artist:' + encodeURIComponent(myName)) : ''
+        });
+      });
+    }
+
+    // ── 2. Replies on my wall posts ──────────────────────────────
+    const { data: myNotes } = await sb.from('wall_notes').select('id').eq('author_id', myId);
+    const myNoteIds = (myNotes || []).map(n => n.id);
+    if (myNoteIds.length) {
+      const { data: replies } = await sb.from('wall_note_comments')
+        .select('id, note_id, author_id, author_name, text, created_at')
+        .in('note_id', myNoteIds).gte('created_at', since30)
+        .order('created_at', { ascending: false }).limit(20);
+      (replies || []).filter(r => r.author_id !== myId).forEach(r => {
+        items.push({
+          id: 'nc_' + r.id, kind: 'note_reply', icon: '✏', color: '#7C5CFF',
+          title: `${r.author_name || '익명'}님이 내 글에 답글`,
+          body: `"${(r.text||'').slice(0,60)}"`,
+          time: new Date(r.created_at).getTime(),
+          onClickRoute: 'wall'
+        });
+      });
+    }
+
+    // ── 3. New fans (last 30 days) ───────────────────────────────
+    const { data: fans } = await sb.from('follows')
+      .select('follower_id, created_at').eq('followed_id', myId)
+      .gte('created_at', since30).order('created_at', { ascending: false }).limit(15);
+    const fanIds = (fans || []).map(f => f.follower_id);
+    let fanNames = {};
+    if (fanIds.length) {
+      const { data: fanProfiles } = await sb.from('profiles').select('id, name').in('id', fanIds);
+      fanNames = Object.fromEntries((fanProfiles||[]).map(p => [p.id, p.name || '익명']));
+    }
+    (fans || []).forEach(f => {
+      items.push({
+        id: 'fan_' + f.follower_id + '_' + f.created_at,
+        kind: 'new_fan', icon: '❤', color: '#E91E63',
+        title: `${fanNames[f.follower_id] || '익명'}님이 팬이 됐어요`,
+        body: '내 페이지에서 확인해봐 ✨',
+        time: new Date(f.created_at).getTime(),
+        onClickRoute: myName ? ('artist:' + encodeURIComponent(myName)) : ''
+      });
+    });
+
+    // ── 4. ♥ on my tracks (grouped per track, last 7 days) ────────
+    if (myTrackIds.length) {
+      const { data: faves } = await sb.from('track_favorites')
+        .select('track_id, user_id, favorited_at')
+        .in('track_id', myTrackIds).gte('favorited_at', since7)
+        .order('favorited_at', { ascending: false });
+      const byTrack = {};
+      (faves || []).filter(f => f.user_id !== myId).forEach(f => {
+        const t = byTrack[f.track_id] || (byTrack[f.track_id] = { count: 0, latest: 0 });
+        t.count++;
+        const ts = new Date(f.favorited_at).getTime();
+        if (ts > t.latest) t.latest = ts;
+      });
+      Object.entries(byTrack).forEach(([trackId, info]) => {
+        // Use bucket of hour in id so the same group merges naturally for read-state
+        items.push({
+          id: 'fav_' + trackId + '_' + Math.floor(info.latest/3600000),
+          kind: 'track_likes', icon: '♥', color: '#F44336',
+          title: `${info.count}명이 좋아해요`,
+          body: `「${trackTitleById[trackId] || '내 곡'}」`,
+          time: info.latest,
+          onClickRoute: myName ? ('artist:' + encodeURIComponent(myName)) : ''
+        });
+      });
+    }
+
+    // ── 5+6. Followed artists' new tracks + posts (last 7 days) ──
+    const { data: myFollows } = await sb.from('follows').select('followed_id').eq('follower_id', myId);
+    const followedIds = (myFollows || []).map(f => f.followed_id);
+    if (followedIds.length) {
+      const { data: followedProfiles } = await sb.from('profiles').select('id, name').in('id', followedIds);
+      const nameById = Object.fromEntries((followedProfiles||[]).map(p => [p.id, p.name || '']));
+
+      const { data: newTracks } = await sb.from('tracks')
+        .select('id, title, artist_id, created_at, is_demo')
+        .in('artist_id', followedIds).gte('created_at', since7)
+        .order('created_at', { ascending: false }).limit(15);
+      (newTracks || []).forEach(t => {
+        const an = nameById[t.artist_id] || '아티스트';
+        items.push({
+          id: 'newt_' + t.id, kind: 'new_track',
+          icon: t.is_demo ? '✏' : '🎵',
+          color: t.is_demo ? '#FF9800' : '#1DB954',
+          title: `${an}님이 새 ${t.is_demo ? '데모' : '곡'}을 올렸어요`,
+          body: `「${t.title || ''}」`,
+          time: new Date(t.created_at).getTime(),
+          onClickRoute: an ? ('artist:' + encodeURIComponent(an)) : ''
+        });
+      });
+
+      const { data: newPosts } = await sb.from('wall_notes')
+        .select('id, text, author_id, author_name, created_at')
+        .in('author_id', followedIds).gte('created_at', since7)
+        .order('created_at', { ascending: false }).limit(15);
+      (newPosts || []).forEach(p => {
+        items.push({
+          id: 'newp_' + p.id, kind: 'new_post', icon: '📝', color: '#FFD54F',
+          title: `${p.author_name || '아티스트'}님의 새 소식`,
+          body: `"${(p.text||'').slice(0,60)}"`,
+          time: new Date(p.created_at).getTime(),
+          onClickRoute: 'wall'
+        });
+      });
+    }
+  } catch (e) {
+    console.warn('[notif] refresh', e);
+  }
+
+  items.sort((a, b) => (b.time || 0) - (a.time || 0));
+  window.__notifCache = items.slice(0, 50);
+  window.__notifRefreshing = false;
+  // Update the badge with the fresh data
+  if (typeof window.refreshNotifBadge === 'function') window.refreshNotifBadge();
+}
+
+// Synchronous accessor — returns cached items. _refreshNotifications populates the cache.
 function _genNotifications() {
+  return window.__notifCache || [];
+}
+
+// Legacy mock generator preserved for reference (no longer called)
+function _genNotificationsMock() {
   const db = window.DB.get();
   const myName = (db.currentUser && db.currentUser.name) || null;
   const items = [];
@@ -563,10 +732,15 @@ function _saveNotifReadSet(set) {
   try { localStorage.setItem('offstage_notif_read', JSON.stringify(Array.from(set))); } catch(_) {}
 }
 
-window.openNotifPanel = function() {
+window.openNotifPanel = async function() {
   const panel = document.getElementById('notif-panel');
   const drawer = document.getElementById('notif-drawer');
   if (!panel || !drawer) return;
+  // Pull fresh data from Supabase before rendering (non-blocking past 1.5s)
+  await Promise.race([
+    _refreshNotifications().catch(()=>{}),
+    new Promise(r => setTimeout(r, 1500))
+  ]);
   const items = _genNotifications();
   const readSet = _getNotifReadSet();
   const fmtTime = (t) => {
