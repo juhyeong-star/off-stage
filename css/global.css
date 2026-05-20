@@ -335,32 +335,33 @@ body.guest .sidebar-my-channel { display: none; }
 .demo-card-like.is-liked { background: #fff; color: #e91e63; }
 .demo-card-like.pop { animation: heartPop 0.36s ease-out; }
 
-/* Heart button — top-right corner of each shape; hidden until hover unless already liked */
+/* Heart button — icon-only (no circular background). Sits on top-right of each shape. */
 .shape-like-btn {
   position: absolute;
-  top: 6px; right: 6px;
-  width: 38px; height: 38px;
-  border-radius: 50%;
-  background: rgba(0,0,0,0.6);
-  color: #fff;
+  top: 4px; right: 6px;
+  width: 30px; height: 30px;
+  background: transparent;
+  color: rgba(255,255,255,0.85);
   display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
+  font-size: 22px;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.2s, background 0.18s;
+  /* Subtle shadow so the heart reads on both bright and dark shapes */
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  transition: opacity 0.2s, color 0.18s, transform 0.12s;
   z-index: 10;
   border: none;
   padding: 0;
   transform-origin: center center;
 }
 .floating-shape:hover .shape-like-btn { opacity: 1; }
-.shape-like-btn:hover { background: rgba(0,0,0,0.85); }
+.shape-like-btn:hover { color: #fff; transform: scale(1.1); }
 .shape-like-btn.is-liked {
   opacity: 1;
-  background: #fff;
-  color: #e91e63;
+  color: #ff2e63;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.45);
 }
-.shape-like-btn.is-liked:hover { background: #fff; }
+.shape-like-btn.is-liked:hover { color: #ff5276; }
 .shape-like-btn.pop { animation: heartPop 0.36s ease-out; }
 @keyframes heartPop {
   0%   { transform: scale(1); }
