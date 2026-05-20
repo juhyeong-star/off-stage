@@ -2117,12 +2117,9 @@ window.openNoteDetail = async function(noteId) {
     : comments.map((cm, i) => {
         const cmSafe = (cm.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const cmAuth = (cm.author || '익명').replace(/</g,'&lt;');
-        // Comments can have a track or external URL attached — same chip pattern as wall notes
-        const cmChip = (cm.trackId || cm.externalUrl) ? _renderNoteTrackChip(cm) : '';
         return `
           <div class="comment-line" style="padding-left:${Math.min(i,5) * 18 + 4}px;">
             <span class="comment-arrow">ㄴ</span><span class="comment-text">${cmSafe}</span><span class="comment-author">— ${cmAuth}</span>
-            ${cmChip ? `<div class="comment-track-wrap">${cmChip}</div>` : ''}
           </div>
         `;
       }).join('');
@@ -2154,13 +2151,9 @@ window.openNoteDetail = async function(noteId) {
           <div class="scribble-title">✎ 낙서</div>
           ${commentsHtml}
 
-          <!-- Attached song preview for the comment being composed (hidden until picked) -->
-          <div id="comment-attach-preview" class="wall-attach-preview" hidden></div>
-
           <div class="scribble-input-row">
             <input type="text" id="comment-author" class="scribble-input scribble-name-input" placeholder="이름 (없어도 됨)" value="${db.currentUser?.name || ''}">
             <input type="text" id="comment-text" class="scribble-input" placeholder="ㄴ 하고 싶은 말 적어봐..." onkeypress="if(event.key==='Enter') submitComment('${noteId}')">
-            <button type="button" class="wall-attach-btn" onclick="openSongAttacher('comment')" title="노래 첨부"><i class="ri-music-2-fill"></i></button>
             <button class="scribble-send" onclick="submitComment('${noteId}')">남기기</button>
           </div>
         </div>
@@ -2186,24 +2179,18 @@ window.submitComment = async function(noteId) {
   if (!text) return;
   const authorName = (authorEl && authorEl.value || '').trim();
 
-  // Read any song the user attached via openSongAttacher('comment')
-  const attached  = window.__commentAttachedSong || null;
-  const trackId    = attached && attached.kind === 'track' ? attached.id : null;
-  const externalUrl = attached && attached.kind === 'url'  ? attached.url : null;
-
   const btn = document.querySelector('#note-detail-modal .scribble-send');
   if (btn) { btn.disabled = true; btn.textContent = '남기는 중…'; }
   try {
     if (window.Walls) {
-      await window.Walls.addComment(noteId, { text, authorName, trackId, externalUrl });
+      await window.Walls.addComment(noteId, { text, authorName });
     } else {
       window.DB.addNoteComment(noteId, {
         id: 'c' + Date.now(), author: authorName || '익명', text, createdAt: new Date().toISOString()
       });
     }
-    // Clear input + attached song, re-open modal (pulls fresh comments)
+    // Clear input, re-open modal (pulls fresh comments)
     if (textEl) textEl.value = '';
-    window.__commentAttachedSong = null;
     await openNoteDetail(noteId);
   } catch (e) {
     alert('댓글 저장 실패: ' + (e.message || e));
