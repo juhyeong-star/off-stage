@@ -2964,7 +2964,7 @@ function renderShapes() {
          onmouseenter="diceHoverStart(this)"
          onmouseleave="diceHoverEnd(this)"
          onclick="diceBouncePlay(this)"
-         title="마우스 올리면 굴리고, 클릭하면 랜덤 곡 재생"
+         title="굴려서 도형들 다시 섞기"
          style="left:calc(${diceX}% - 34px); top:${diceY}px; animation: floatDrift ${diceDur}s ease-in-out infinite;
                 --dx:${diceDx}px; --dy:${diceDy}px; --rot:${diceRot}deg;">
       <div class="die-face" data-face="${initialFace}">
@@ -3151,40 +3151,56 @@ window.diceHoverEnd = function(el) {
   // Keep the last face shown — feels like the dice "settled" wherever it stopped
 };
 
-// Click → bounce up once, play a random track. Avoids repeating the last pick.
+// Click → bounce up + shuffle every floating shape to a new random spot.
+// Temporary effect only — F5 returns shapes to their seeded default positions
+// (or whatever the user dragged + saved to localStorage).
 window.diceBouncePlay = function(el) {
   if (!el) return;
-  // Just finished dragging — swallow this synthetic click
+  // Just finished dragging the dice itself — swallow this synthetic click
   if (el.__suppressNextClick) { el.__suppressNextClick = false; return; }
   if (window.__diceFaceTimer) { clearInterval(window.__diceFaceTimer); window.__diceFaceTimer = null; }
-
-  const db = window.DB.get();
-  const pool = (db.tracks || []).filter(t => t && (!t.isDemo || t.pinned));
-  if (!pool.length) {
-    if (typeof showToast === 'function') showToast('재생할 곡이 없어요');
-    return;
-  }
-  let pick;
-  if (pool.length > 1 && window.__lastDiceTrackId) {
-    const others = pool.filter(t => t.id !== window.__lastDiceTrackId);
-    pick = others[Math.floor(Math.random() * others.length)];
-  } else {
-    pick = pool[Math.floor(Math.random() * pool.length)];
-  }
-  window.__lastDiceTrackId = pick.id;
 
   // Bounce: pause idle drift + remove rolling, then run bounce animation.
   el.classList.remove('rolling');
   el.classList.remove('bouncing');
-  // Force reflow so re-adding the class restarts the animation
-  void el.offsetWidth;
+  void el.offsetWidth;                // force reflow → restart animation
   el.classList.add('bouncing');
-  // Change face at the apex of the bounce
   setTimeout(() => setDieFace(el, 1 + Math.floor(Math.random() * 6)), 230);
   setTimeout(() => el.classList.remove('bouncing'), 700);
 
-  try { playTrack(pick.id); } catch (e) { console.warn('[dice] playTrack', e); }
+  // Shuffle: at the apex of the bounce, throw every shape to a new spot.
+  setTimeout(() => shuffleAllShapes(), 230);
 };
+
+// Animated reshuffle of every floating shape on the current page.
+// Adds a brief CSS transition for left/top so shapes glide to their new spots.
+function shuffleAllShapes() {
+  const shapes = document.querySelectorAll('.floating-shape[data-track-id], .floating-shape[data-note-id]');
+  if (!shapes.length) return;
+  const universe = shapes[0].parentElement;
+  if (!universe) return;
+  const universeHeight = universe.getBoundingClientRect().height || 1200;
+
+  shapes.forEach(el => {
+    // Pause the floatDrift idle animation so the new left/top sticks
+    el.style.animation = 'none';
+    // Glide to the new spot
+    el.style.transition = 'left 0.6s cubic-bezier(0.34, 1.2, 0.5, 1), top 0.6s cubic-bezier(0.34, 1.2, 0.5, 1)';
+    const x = 2 + Math.random() * 86;                              // 2%~88%
+    const y = 30 + Math.random() * Math.max(200, universeHeight - 260);
+    el.style.left = x + '%';
+    el.style.top  = y + 'px';
+  });
+  // Resume floatDrift after the glide settles
+  setTimeout(() => {
+    shapes.forEach(el => {
+      el.style.transition = '';
+      // restore the seeded animation values (left as-is — keep new spot)
+      const dur = parseFloat(el.dataset.driftDur || '15');
+      el.style.animation = '';   // re-engage the inline `animation:` from the original style
+    });
+  }, 700);
+}
 
 // Back-compat: older onclick="rollRandomTrack(this)" still works
 window.rollRandomTrack = function(el) { window.diceBouncePlay(el); };
