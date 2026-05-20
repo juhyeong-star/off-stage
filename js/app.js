@@ -413,6 +413,13 @@ function navigateTo(route) {
       case 'wall': renderWall(); break;
       case 'events': renderEvents(); break;
       case 'auth': renderAuth(); break;
+      // Pseudo-route: jump to the current user's own /artist:<name> page
+      case 'my-artist': {
+        const _u = window.__currentUser || window.DB.get().currentUser;
+        if (_u && _u.name) navigateTo('artist:' + encodeURIComponent(_u.name));
+        else navigateTo('auth');
+        return;
+      }
       // Profile routes — three modes share renderProfile():
       //   profile  = auto (legacy, picks listener/artist by role)
       //   me       = forced listener view (any user)
