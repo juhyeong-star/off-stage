@@ -1636,16 +1636,16 @@ h2 { font-size: 22px; font-weight: 600; margin-bottom: 14px; }
 }
 .wall-note {
   position: absolute;
-  width: 230px;
-  min-height: 190px;
-  padding: 22px 20px 18px;
+  width: 280px;
+  min-height: 240px;
+  padding: 26px 24px 20px;
   border-radius: 2px;
   font-family: var(--font-hand);
-  font-size: 25px;
+  font-size: 29px;
   line-height: 1.4;
   font-weight: 700;
   transform: rotate(var(--rot));
-  box-shadow: 4px 5px 18px rgba(0,0,0,0.45);
+  box-shadow: 5px 7px 22px rgba(0,0,0,0.5);
   cursor: grab;
   z-index: 1;
   transition: box-shadow 0.3s;
@@ -1654,10 +1654,10 @@ h2 { font-size: 22px; font-weight: 600; margin-bottom: 14px; }
 }
 @media (max-width: 420px) {
   .wall-note {
-    width: 195px;
-    min-height: 165px;
-    padding: 20px 18px 16px;
-    font-size: 22px;
+    width: 230px;
+    min-height: 200px;
+    padding: 22px 20px 18px;
+    font-size: 25px;
     line-height: 1.35;
   }
 }
