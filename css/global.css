@@ -1641,7 +1641,7 @@ h2 { font-size: 22px; font-weight: 600; margin-bottom: 14px; }
   padding: 28px 26px 22px;
   border-radius: 2px;
   font-family: var(--font-hand);
-  font-size: 22px;
+  font-size: 18px;
   line-height: 1.4;
   font-weight: 700;
   transform: rotate(var(--rot));
@@ -1655,8 +1655,9 @@ h2 { font-size: 22px; font-weight: 600; margin-bottom: 14px; }
   display: flex;
   flex-direction: column;
 }
-/* Body of the post-it on the wall — clamp to ~6 lines so a long note
-   doesn't stretch the card. Full text is still visible in the detail modal. */
+/* Body of the post-it on the wall — clamped dynamically via inline style
+   (set in renderWall based on text length). Full text is still visible
+   in the detail modal. */
 .wall-note .note-body {
   display: -webkit-box;
   -webkit-line-clamp: 6;
@@ -1672,10 +1673,9 @@ h2 { font-size: 22px; font-weight: 600; margin-bottom: 14px; }
     width: 278px;
     min-height: 245px;
     padding: 24px 22px 18px;
-    font-size: 19px;
+    font-size: 16px;
     line-height: 1.35;
   }
-  .wall-note .note-body { -webkit-line-clamp: 5; }
 }
 .wall-note:hover {
   box-shadow: 5px 8px 28px rgba(0,0,0,0.55);

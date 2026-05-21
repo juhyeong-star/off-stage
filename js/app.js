@@ -1897,10 +1897,25 @@ async function renderWall() {
       </button>
     ` : '';
 
-    // Inline comments preview — show latest 2, hide the rest behind "+N 더보기"
+    // ── Dynamic body/comments split ──────────────────────────────────────
+    // Rough line estimate: ~22 Korean / ~30 latin chars per line at 18px on a
+    // 345px-wide card. Newlines force a break.
+    const rawText = note.text || '';
+    const explicitBreaks = (rawText.match(/\n/g) || []).length;
+    const approxLines = Math.max(1, explicitBreaks + Math.ceil(rawText.length / 22));
+    // Decide body clamp + how many comments to preview, so short posts give
+    // comments room and long posts shrink to make space for at least one.
+    let bodyClamp, previewCount;
+    if      (approxLines <= 1) { bodyClamp = 1; previewCount = 4; }
+    else if (approxLines <= 2) { bodyClamp = 2; previewCount = 4; }
+    else if (approxLines <= 3) { bodyClamp = 3; previewCount = 3; }
+    else if (approxLines <= 4) { bodyClamp = 4; previewCount = 2; }
+    else if (approxLines <= 5) { bodyClamp = 5; previewCount = 2; }
+    else                        { bodyClamp = 6; previewCount = 1; }
+
+    // Inline comments preview — show latest N (dynamic), hide the rest
     const allComments = Array.isArray(note.comments) ? note.comments : [];
-    const PREVIEW = 2;
-    const previewComments = allComments.slice(-PREVIEW);
+    const previewComments = allComments.slice(-previewCount);
     const restCount = Math.max(0, allComments.length - previewComments.length);
     const commentsHtml = allComments.length === 0 ? '' : `
       <div class="note-comments-inline">
@@ -1925,7 +1940,7 @@ async function renderWall() {
       <div class="wall-note" data-note-id="${note.id}" data-author="${safeAuthor}" style="background:${c.bg}; color:${c.text}; left:${x}%; top:${yPx}px; --rot:${rot}deg;" title="낙서·댓글 보기">
         ${deleteBtn}
         ${bookmarkBtn}
-        <div class="note-body">${safeText}</div>
+        <div class="note-body" style="-webkit-line-clamp:${bodyClamp};">${safeText}</div>
         <div class="note-author">— ${safeAuthor}</div>
         ${_renderNoteTrackChip(note)}
         ${commentsHtml}
