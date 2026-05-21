@@ -1869,28 +1869,56 @@ async function renderWall() {
 
   // Scatter notes
   const cols = 4;
-  const boardH = Math.max(700, Math.ceil(visibleNotes.length / cols) * 200 + 260);
+  // Each note can now grow tall with inline comments + input — give rows more vertical room
+  const boardH = Math.max(800, Math.ceil(visibleNotes.length / cols) * 360 + 280);
+
+  // Helper: escape user text for HTML
+  const _esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
   let notesHtml = visibleNotes.map((note, i) => {
     const c = NOTE_COLORS[note.color] || NOTE_COLORS.yellow;
     // Seeded jitter from note id so positions don't reshuffle on every reload
     const seed = _hashSeed(note.id);
     const rot = note.rotation != null ? note.rotation : ((((seed >>> 2) % 60) - 30) / 10);
-    const safeText = (note.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-    const safeAuthor = (note.author || '').replace(/</g,'&lt;');
+    const safeText = _esc(note.text).replace(/\n/g,'<br>');
+    const safeAuthor = _esc(note.author);
     const isOwner = user && user.name === note.author;
     const deleteBtn = isOwner ? `<button class="note-delete" onclick="event.stopPropagation(); deleteWallNote('${note.id}')" title="삭제"><i class="ri-close-line"></i></button>` : '';
 
     const col = i % cols;
     const row = Math.floor(i / cols);
     const x = 2 + col * 22 + (seed % 10);
-    const yPx = 130 + row * 190 + ((seed >>> 8) % 40);
+    const yPx = 140 + row * 360 + ((seed >>> 8) % 40);
 
     const bookmarked = window.Walls && window.Walls.isBookmarked && window.Walls.isBookmarked(note.id);
     const bookmarkBtn = user ? `
       <button class="note-bookmark ${bookmarked ? 'is-bookmarked' : ''}" onclick="event.stopPropagation(); toggleBookmark('${note.id}')" title="수집하기">
         <i class="${bookmarked ? 'ri-bookmark-fill' : 'ri-bookmark-line'}"></i>
       </button>
+    ` : '';
+
+    // Inline comments preview — show latest 2, hide the rest behind "+N 더보기"
+    const allComments = Array.isArray(note.comments) ? note.comments : [];
+    const PREVIEW = 2;
+    const previewComments = allComments.slice(-PREVIEW);
+    const restCount = Math.max(0, allComments.length - previewComments.length);
+    const commentsHtml = allComments.length === 0 ? '' : `
+      <div class="note-comments-inline">
+        ${previewComments.map(cm => `
+          <div class="note-comment-inline-line">
+            <span class="cli-arrow">ㄴ</span><span class="cli-text">${_esc(cm.text)}</span><span class="cli-auth">— ${_esc(cm.author || '익명')}</span>
+          </div>
+        `).join('')}
+        ${restCount > 0 ? `<button class="note-more-comments" onclick="event.stopPropagation(); openNoteDetail('${note.id}')">+ ${restCount}개 더보기</button>` : ''}
+      </div>
+    `;
+
+    // Inline comment input — only for logged-in users
+    const inlineForm = user ? `
+      <form class="note-inline-form" onsubmit="event.preventDefault(); submitInlineComment('${note.id}', this);">
+        <input type="text" class="note-inline-input" maxlength="200" placeholder="ㄴ 댓글 달기…">
+        <button type="submit" class="note-inline-send" title="댓글 남기기"><i class="ri-send-plane-fill"></i></button>
+      </form>
     ` : '';
 
     return `
@@ -1900,6 +1928,8 @@ async function renderWall() {
         <div class="note-body">${safeText}</div>
         <div class="note-author">— ${safeAuthor}</div>
         ${_renderNoteTrackChip(note)}
+        ${commentsHtml}
+        ${inlineForm}
       </div>
     `;
   }).join('');
@@ -2380,6 +2410,43 @@ window.submitComment = async function(noteId) {
   }
 };
 
+// Inline comment submit — used by the input row directly on each post-it (no modal)
+window.submitInlineComment = async function(noteId, formEl) {
+  if (!formEl) return;
+  const input = formEl.querySelector('.note-inline-input');
+  const text = (input && input.value || '').trim();
+  if (!text) return;
+  const btn = formEl.querySelector('.note-inline-send');
+  if (btn) btn.disabled = true;
+  try {
+    let newCm = null;
+    if (window.Walls) {
+      newCm = await window.Walls.addComment(noteId, { text });
+    } else {
+      newCm = { id: 'c' + Date.now(), author: '익명', text, createdAt: new Date().toISOString() };
+    }
+    // Mirror into db.notes so the next renderWall sees it (in case __wallNotes
+    // and db.notes are separate references)
+    const db = window.DB.get();
+    const n = (db.notes || []).find(x => x.id === noteId);
+    if (n) {
+      if (!Array.isArray(n.comments)) n.comments = [];
+      if (newCm && !n.comments.find(c => c.id === newCm.id)) n.comments.push(newCm);
+    }
+    if (input) input.value = '';
+    // Re-render the wall to show the new comment inline. Preserve scroll.
+    if (currentView === 'wall' && typeof renderWall === 'function') {
+      const scrollY = window.scrollY;
+      await renderWall();
+      window.scrollTo({ top: scrollY });
+    }
+  } catch (e) {
+    alert('댓글 저장 실패: ' + (e.message || e));
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+};
+
 // ===================== NOTE DRAG SYSTEM =====================
 // Global state so we can register document listeners ONCE (not on every render)
 let _noteDragState = { dragEl: null, startX: 0, startY: 0, origLeft: 0, origTop: 0, moved: false, startedAt: 0 };
@@ -2422,6 +2489,9 @@ function initNoteDrag() {
 
   function down(e) {
     if (e.target.closest('.note-delete')) return;
+    if (e.target.closest('.note-bookmark')) return;
+    if (e.target.closest('.note-inline-form')) return;
+    if (e.target.closest('.note-more-comments')) return;
     if (e.touches && e.touches.length > 1) return;
 
     const el = e.currentTarget;
