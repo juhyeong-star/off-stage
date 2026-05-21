@@ -296,6 +296,10 @@ async function init() {
   audioElement.addEventListener('ended', () => {
     const icon = playBtn.querySelector('i');
     icon.className = 'ri-play-circle-fill';
+    // Send a final 'end' analytics event for the just-finished track
+    if (window.Analytics && window.Analytics.trackPlayEnd) {
+      window.Analytics.trackPlayEnd().catch(()=>{});
+    }
   });
 
   // Load Initial View — honor URL hash so refreshing /#/admin lands on admin
@@ -437,6 +441,7 @@ function navigateTo(route) {
       case 'studio':  window.__profileMode = 'studio'; renderProfile(); break;
       case 'search': window.renderSearch(''); break;
       case 'admin': renderAdmin(); break;
+      case 'stats': renderStats(); break;
       default: renderShapes();
     }
   } catch (err) {
@@ -2321,6 +2326,11 @@ window.openNoteDetail = async function(noteId) {
   let note = (db.notes || []).find(n => n.id === noteId);
   if (!note) return;
 
+  // Analytics: count this as a "view" (deduped per session by SQL unique index)
+  if (window.Analytics && window.Analytics.noteView) {
+    window.Analytics.noteView(noteId).catch(()=>{});
+  }
+
   // Refresh comments from Supabase (keeps note body from cache)
   if (window.Walls) {
     try {
@@ -3765,7 +3775,7 @@ function initShapeDrag() {
         navigateTo('artist:' + artistEnc);
       } else {
         window.__lastClickedShape = el;
-        if (trackId) playTrack(trackId);
+        if (trackId) playTrack(trackId, 'shape');
       }
     }
   }
@@ -7889,7 +7899,7 @@ window.createAndAddPlaylist = async function() {
    AUDIO PLAYER
 ========================================================= */
 
-window.playTrack = function (trackId) {
+window.playTrack = function (trackId, source) {
   const db = window.DB.get();
   const track = db.tracks.find(t => t.id === trackId);
   if (!track) return;
@@ -7900,6 +7910,13 @@ window.playTrack = function (trackId) {
   }
 
   currentPlayingTrack = track.id;
+
+  // Analytics: fire 'start' event (also wraps up the previous track's 'end').
+  // source is used to count "shape clicks" vs other play surfaces.
+  if (window.Analytics && window.Analytics.trackPlayStart) {
+    const dur = track && track.duration ? track.duration : 0;
+    window.Analytics.trackPlayStart(track.id, source || 'other', dur).catch(()=>{});
+  }
 
   if (db.currentUser) {
     if (!db.currentUser.history) db.currentUser.history = [];
@@ -7993,6 +8010,7 @@ window.renderAdmin = async function () {
   appContent.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-secondary);">로딩 중…</div>`;
 
   let recentNotes = [], recentTracks = [], allUsers = [];
+  let overallStats = null, topTracks = [];
   try {
     if (window.Admin) {
       [recentNotes, recentTracks, allUsers] = await Promise.all([
@@ -8002,6 +8020,15 @@ window.renderAdmin = async function () {
       ]);
     }
   } catch (e) { console.warn('[admin] list', e); }
+  // Analytics — best-effort, doesn't block render
+  try {
+    if (window.Analytics) {
+      [overallStats, topTracks] = await Promise.all([
+        window.Analytics.getAdminOverall(),
+        window.Analytics.getAdminTopTracks(10)
+      ]);
+    }
+  } catch (e) { console.warn('[admin] analytics', e); }
 
   // User may have navigated away while we waited for Supabase — bail before
   // overwriting whatever page they're now on.
@@ -8120,12 +8147,61 @@ window.renderAdmin = async function () {
   window.__adminUsers = allUsers;
   window.__adminRenderUserRow = renderUserRow;
 
+  // ── 통계 섹션 (Analytics) ───────────────────────────────────
+  // Build a quick KPI grid + top tracks table. Both are computed from the
+  // play_events / note_views tables via admin_overall_stats / admin_top_tracks RPCs.
+  const _fmtSec = (s) => {
+    s = Math.max(0, Math.floor(Number(s) || 0));
+    const m = Math.floor(s / 60), r = s % 60;
+    return m + ':' + (r < 10 ? '0' : '') + r;
+  };
+  // Map track_id → track for showing titles
+  const _trackById = new Map(recentTracks.map(t => [t.id, t]));
+  const topTracksRows = (topTracks || []).map((row, i) => {
+    const tr = _trackById.get(row.track_id);
+    const title = tr ? tr.title : ('(id ' + (row.track_id || '').slice(0, 8) + '…)');
+    const artist = tr ? (tr.artist || '') : '';
+    return `
+      <div class="stats-row">
+        <span class="stats-rank">${i + 1}</span>
+        <div class="stats-row-body">
+          <div class="stats-row-title">${(title || '').replace(/</g,'&lt;')}</div>
+          <div class="stats-row-meta">${(artist || '').replace(/</g,'&lt;')}</div>
+        </div>
+        <div class="stats-row-num"><strong>${row.plays}</strong><small>재생</small></div>
+        <div class="stats-row-num"><strong>${row.listeners_30s}</strong><small>30초↑</small></div>
+      </div>
+    `;
+  }).join('');
+  const statsSectionHtml = `
+    <div class="admin-section">
+      <h2 class="admin-section-title">
+        <i class="ri-bar-chart-2-fill" style="color:#4FC3F7;"></i> 전체 통계
+      </h2>
+      ${overallStats ? `
+        <div class="stats-kpi-grid">
+          <div class="stats-kpi"><div class="stats-kpi-num">${overallStats.total_plays || 0}</div><div class="stats-kpi-label">총 재생수</div></div>
+          <div class="stats-kpi"><div class="stats-kpi-num">${overallStats.total_listeners || 0}</div><div class="stats-kpi-label">총 청취자(고유)</div></div>
+          <div class="stats-kpi"><div class="stats-kpi-num">${overallStats.total_listeners_30s || 0}</div><div class="stats-kpi-label">30초+ 청취자</div></div>
+          <div class="stats-kpi"><div class="stats-kpi-num">${overallStats.total_note_views || 0}</div><div class="stats-kpi-label">포스트잇 조회수</div></div>
+          <div class="stats-kpi"><div class="stats-kpi-num">${overallStats.events_today || 0}</div><div class="stats-kpi-label">오늘 활동</div></div>
+        </div>
+      ` : '<div class="admin-empty">통계 데이터 아직 없어요 (SQL 마이그레이션 적용 후 발생하는 이벤트부터 집계됩니다)</div>'}
+      ${topTracksRows ? `
+        <h3 style="margin: 22px 0 10px; font-size: 14px; color: var(--text-secondary);">🔥 인기 트랙 TOP ${topTracks.length}</h3>
+        <div class="stats-rows">${topTracksRows}</div>
+      ` : ''}
+    </div>
+  `;
+
   appContent.innerHTML = `
     <div style="max-width: 1000px; margin: 0 auto; padding: 32px;">
       <h1 style="margin-bottom: 12px;"><i class="ri-dashboard-2-fill text-brand"></i> 관리자 대시보드</h1>
       <p style="color: var(--text-secondary); margin-bottom: 32px;">사용자·트랙·포스트잇을 관리할 수 있어요. 삭제·역할변경은 되돌릴 수 없으니 주의하세요.</p>
 
-      <div class="admin-section">
+      ${statsSectionHtml}
+
+      <div class="admin-section" style="margin-top: 40px;">
         <h2 class="admin-section-title">
           <i class="ri-user-line" style="color:#64B5F6;"></i> 사용자 목록
           <span class="admin-count" id="admin-user-count">${allUsers.length}</span>
@@ -8538,3 +8614,121 @@ function renderAuth() {
     }
   };
 }
+
+// ===================== MY STATS PAGE (/stats) =====================
+window.renderStats = async function () {
+  const user = window.__currentUser || (window.DB.get() && window.DB.get().currentUser);
+  if (!user) { navigateTo('auth'); return; }
+
+  appContent.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-secondary);">통계 불러오는 중…</div>`;
+
+  let myTrackStats = [];
+  let myNotesViews = [];
+  try {
+    if (window.Analytics) {
+      [myTrackStats, myNotesViews] = await Promise.all([
+        window.Analytics.getMyTracksStats(),
+        window.Analytics.getMyNotesViews()
+      ]);
+    }
+  } catch (e) { console.warn('[stats] fetch', e); }
+
+  if (currentView !== 'stats') return;
+
+  const db = window.DB.get();
+  const myTracks = (db.tracks || []).filter(t => t && t.artist === user.name);
+  const myNotes  = (db.notes  || []).filter(n => n && n.author === user.name);
+
+  // Build maps for joining
+  const trackStatsMap = new Map((myTrackStats || []).map(r => [r.track_id, r]));
+  const noteViewsMap  = new Map((myNotesViews  || []).map(r => [r.note_id, r.views]));
+
+  // Aggregate KPIs
+  let totalPlays = 0, totalListeners30 = 0;
+  (myTrackStats || []).forEach(r => {
+    totalPlays      += r.plays_total || 0;
+    totalListeners30 += r.listeners_30s || 0;
+  });
+  const totalNoteViews = (myNotesViews || []).reduce((s, r) => s + (r.views || 0), 0);
+
+  // Track rows
+  const trackRows = myTracks.map(t => {
+    const s = trackStatsMap.get(t.id);
+    const plays = s ? s.plays_total : 0;
+    const uniq  = s ? s.unique_listeners : 0;
+    const l30   = s ? s.listeners_30s : 0;
+    const avg   = s ? Math.round(Number(s.avg_listened_sec || 0)) : 0;
+    return `
+      <div class="stats-row">
+        <img src="${t.cover || ''}" alt="" class="stats-row-cover" loading="lazy">
+        <div class="stats-row-body">
+          <div class="stats-row-title">${(t.title || '').replace(/</g,'&lt;')}</div>
+          <div class="stats-row-meta">${(t.version || '').replace(/</g,'&lt;')}</div>
+        </div>
+        <div class="stats-row-num"><strong>${plays}</strong><small>재생</small></div>
+        <div class="stats-row-num"><strong>${uniq}</strong><small>고유</small></div>
+        <div class="stats-row-num"><strong>${l30}</strong><small>30초↑</small></div>
+        <div class="stats-row-num"><strong>${window.Analytics ? window.Analytics.fmtSeconds(avg) : avg+'s'}</strong><small>평균</small></div>
+      </div>
+    `;
+  }).join('');
+
+  // Note rows — sorted by views desc
+  const sortedNotes = myNotes.slice().sort((a, b) => (noteViewsMap.get(b.id) || 0) - (noteViewsMap.get(a.id) || 0));
+  const noteRows = sortedNotes.map(n => {
+    const c = (typeof NOTE_COLORS !== 'undefined' && NOTE_COLORS[n.color]) || { bg:'#FFE082', text:'#3E2723' };
+    const text = (n.text || '').replace(/</g,'&lt;').slice(0, 80);
+    const views = noteViewsMap.get(n.id) || 0;
+    return `
+      <div class="stats-row stats-row-note" onclick="openNoteDetail('${n.id}')">
+        <div class="stats-note-thumb" style="background:${c.bg}; color:${c.text};">${text}</div>
+        <div class="stats-row-body">
+          <div class="stats-row-meta">${formatFullDate ? formatFullDate(n.createdAt) : (n.createdAt || '').slice(0,10)}</div>
+        </div>
+        <div class="stats-row-num"><strong>${views}</strong><small>조회</small></div>
+      </div>
+    `;
+  }).join('');
+
+  appContent.innerHTML = `
+    <div style="max-width: 1000px; margin: 0 auto; padding: 32px 28px 60px;">
+      <h1 style="margin-bottom: 6px;"><i class="ri-bar-chart-2-fill" style="color:#4FC3F7;"></i> 내 활동 통계</h1>
+      <p style="color: var(--text-secondary); margin-bottom: 24px;">
+        내 트랙이 얼마나 재생됐는지, 내 포스트잇이 몇 번 열렸는지 볼 수 있어요. 익명 방문자도 포함돼요.
+      </p>
+
+      <div class="stats-kpi-grid" style="margin-bottom: 28px;">
+        <div class="stats-kpi"><div class="stats-kpi-num">${totalPlays}</div><div class="stats-kpi-label">내 트랙 총 재생수</div></div>
+        <div class="stats-kpi"><div class="stats-kpi-num">${totalListeners30}</div><div class="stats-kpi-label">30초+ 청취 (고유)</div></div>
+        <div class="stats-kpi"><div class="stats-kpi-num">${totalNoteViews}</div><div class="stats-kpi-label">내 포스트잇 조회수</div></div>
+        <div class="stats-kpi"><div class="stats-kpi-num">${myTracks.length}</div><div class="stats-kpi-label">내 트랙 수</div></div>
+        <div class="stats-kpi"><div class="stats-kpi-num">${myNotes.length}</div><div class="stats-kpi-label">내 포스트잇 수</div></div>
+      </div>
+
+      <div class="admin-section">
+        <h2 class="admin-section-title">
+          <i class="ri-music-2-line" style="color:var(--brand-color);"></i> 트랙별 통계
+          <span class="admin-count">${myTracks.length}</span>
+        </h2>
+        ${trackRows
+          ? `<div class="stats-rows">${trackRows}</div>`
+          : '<div class="admin-empty">업로드한 트랙이 없어요.</div>'}
+      </div>
+
+      <div class="admin-section" style="margin-top: 36px;">
+        <h2 class="admin-section-title">
+          <i class="ri-sticky-note-fill" style="color:#FFD54F;"></i> 포스트잇별 조회수
+          <span class="admin-count">${myNotes.length}</span>
+        </h2>
+        ${noteRows
+          ? `<div class="stats-rows">${noteRows}</div>`
+          : '<div class="admin-empty">아직 작성한 포스트잇이 없어요.</div>'}
+      </div>
+
+      <p style="margin-top: 24px; font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+        🔒 개별 방문자 정보(누가 봤는지)는 저장하지 않아요. 카운트만 익명으로 집계됩니다.<br>
+        ※ 통계는 SQL 마이그레이션 적용 시점 이후부터 쌓이기 시작합니다.
+      </p>
+    </div>
+  `;
+};
