@@ -116,6 +116,80 @@
   .stats-kpi-num { font-size: 22px; }
 }
 
+/* Per-track segment heatmap (expand below a track row) */
+.stats-row-track { cursor: pointer; transition: background 0.15s; }
+.stats-row-track:hover { background: #222; }
+.stats-expand-chev {
+  margin-left: 4px;
+  color: var(--text-secondary, #999);
+  transition: transform 0.2s;
+  display: inline-flex;
+}
+.stats-row-track.open .stats-expand-chev { transform: rotate(180deg); color: #4FC3F7; }
+
+.stats-track-segments {
+  background: #0e0e0e;
+  border: 1px solid #262626;
+  border-radius: 8px;
+  padding: 14px 14px 16px;
+  margin: -2px 0 6px;
+}
+.seg-title {
+  font-size: 12px;
+  color: var(--text-secondary, #aaa);
+  margin-bottom: 12px;
+}
+.seg-title strong { color: #4FC3F7; }
+.segment-heatmap {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 90px;
+  background: #050505;
+  border: 1px solid #1a1a1a;
+  border-radius: 4px;
+  padding: 6px 4px 20px;
+  overflow-x: auto;
+}
+.segment-bar {
+  flex: 1 0 6px;
+  min-width: 6px;
+  max-width: 14px;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.segment-bar:hover { background: rgba(79,195,247,0.10); }
+.segment-bar-fill {
+  width: 100%;
+  background: #4FC3F7;
+  border-radius: 1px 1px 0 0;
+  min-height: 1px;
+  transition: height 0.2s ease;
+}
+.segment-bar-label {
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: var(--text-secondary, #888);
+  white-space: nowrap;
+}
+.seg-empty, .seg-loading {
+  font-size: 13px;
+  color: var(--text-secondary, #aaa);
+  padding: 10px 6px;
+  text-align: center;
+}
+.seg-note {
+  font-size: 11px;
+  color: var(--text-secondary, #888);
+  margin-top: 8px;
+}
+
 :root {
   --bg-color: #000000;
   --surface-color: #111111;

@@ -8615,6 +8615,83 @@ function renderAuth() {
   };
 }
 
+// ===================== TRACK SEGMENT HEATMAP =====================
+// Toggle (open/close) the per-segment heatmap below a track row on /stats.
+// Buckets are 5s wide (matches the analytics heartbeat).
+window.toggleTrackSegments = async function (trackId, rowEl) {
+  if (!rowEl) return;
+  // If already open, just close.
+  const next = rowEl.nextElementSibling;
+  if (next && next.classList && next.classList.contains('stats-track-segments')
+      && next.dataset.trackId === trackId) {
+    next.remove();
+    rowEl.classList.remove('open');
+    return;
+  }
+  // Close any other open expansion first
+  document.querySelectorAll('.stats-track-segments').forEach(el => el.remove());
+  document.querySelectorAll('.stats-row-track.open').forEach(el => el.classList.remove('open'));
+
+  // Insert loading placeholder
+  const wrap = document.createElement('div');
+  wrap.className = 'stats-track-segments';
+  wrap.dataset.trackId = trackId;
+  wrap.innerHTML = '<div class="seg-loading">분석 중…</div>';
+  rowEl.insertAdjacentElement('afterend', wrap);
+  rowEl.classList.add('open');
+
+  let segments = [];
+  try {
+    if (window.Analytics && window.Analytics.getTrackSegments) {
+      segments = await window.Analytics.getTrackSegments(trackId, 5);
+    }
+  } catch (e) { console.warn('[segments]', e); }
+
+  // User may have closed the row or navigated away — bail
+  if (!wrap.isConnected) return;
+
+  if (!segments || segments.length === 0) {
+    wrap.innerHTML = '<div class="seg-empty">아직 청취 데이터가 없어요. (트랙을 누가 들으면 5초마다 한 점씩 기록돼요)</div>';
+    return;
+  }
+
+  // Build a continuous bar series from 0 to the last bucket so gaps show as zero
+  const bucketMap = new Map(segments.map(s => [s.bucket_start, s]));
+  const maxBucket = Math.max(...segments.map(s => s.bucket_start));
+  const maxListeners = Math.max(...segments.map(s => s.listeners), 1);
+
+  const bars = [];
+  for (let b = 0; b <= maxBucket; b += 5) {
+    const s = bucketMap.get(b);
+    const listeners = s ? s.listeners : 0;
+    const pct = Math.round((listeners / maxListeners) * 100);
+    const m = Math.floor(b / 60), r = b % 60;
+    const tlabel = `${m}:${r < 10 ? '0' : ''}${r}`;
+    // Tooltip via title attribute. Show label only every 30s to avoid crowding.
+    const showLabel = (b % 30 === 0);
+    bars.push(`
+      <div class="segment-bar" title="${tlabel} → ${listeners}명 청취">
+        <div class="segment-bar-fill" style="height:${pct}%; background: hsl(${200 + Math.round(pct/2)}, 80%, ${Math.max(30, 30 + Math.round(pct/3))}%);"></div>
+        ${showLabel ? `<div class="segment-bar-label">${tlabel}</div>` : ''}
+      </div>
+    `);
+  }
+
+  // KPI summary (peak segment + dropoff point)
+  let peakBucket = 0, peakListeners = 0;
+  segments.forEach(s => { if (s.listeners > peakListeners) { peakListeners = s.listeners; peakBucket = s.bucket_start; } });
+  const pm = Math.floor(peakBucket / 60), pr = peakBucket % 60;
+  const peakLabel = `${pm}:${pr < 10 ? '0' : ''}${pr}`;
+
+  wrap.innerHTML = `
+    <div class="seg-title">
+      📈 구간별 청취 (5초 단위) · 가장 많이 들은 구간: <strong>${peakLabel}</strong> (${peakListeners}명)
+    </div>
+    <div class="segment-heatmap">${bars.join('')}</div>
+    <div class="seg-note">💡 막대 높이 = 그 5초 구간을 들은 사람 수 · 마우스 올리면 정확한 숫자가 나와요</div>
+  `;
+};
+
 // ===================== MY STATS PAGE (/stats) =====================
 window.renderStats = async function () {
   const user = window.__currentUser || (window.DB.get() && window.DB.get().currentUser);
@@ -8651,7 +8728,7 @@ window.renderStats = async function () {
   });
   const totalNoteViews = (myNotesViews || []).reduce((s, r) => s + (r.views || 0), 0);
 
-  // Track rows
+  // Track rows — each row is clickable to expand a per-segment heatmap below it
   const trackRows = myTracks.map(t => {
     const s = trackStatsMap.get(t.id);
     const plays = s ? s.plays_total : 0;
@@ -8659,7 +8736,7 @@ window.renderStats = async function () {
     const l30   = s ? s.listeners_30s : 0;
     const avg   = s ? Math.round(Number(s.avg_listened_sec || 0)) : 0;
     return `
-      <div class="stats-row">
+      <div class="stats-row stats-row-track" data-track-id="${t.id}" onclick="toggleTrackSegments('${t.id}', this)" title="구간별 청취 보기">
         <img src="${t.cover || ''}" alt="" class="stats-row-cover" loading="lazy">
         <div class="stats-row-body">
           <div class="stats-row-title">${(t.title || '').replace(/</g,'&lt;')}</div>
@@ -8669,6 +8746,7 @@ window.renderStats = async function () {
         <div class="stats-row-num"><strong>${uniq}</strong><small>고유</small></div>
         <div class="stats-row-num"><strong>${l30}</strong><small>30초↑</small></div>
         <div class="stats-row-num"><strong>${window.Analytics ? window.Analytics.fmtSeconds(avg) : avg+'s'}</strong><small>평균</small></div>
+        <span class="stats-expand-chev"><i class="ri-arrow-down-s-line"></i></span>
       </div>
     `;
   }).join('');
@@ -8710,6 +8788,7 @@ window.renderStats = async function () {
           <i class="ri-music-2-line" style="color:var(--brand-color);"></i> 트랙별 통계
           <span class="admin-count">${myTracks.length}</span>
         </h2>
+        ${trackRows ? `<p style="font-size:12px; color:var(--text-secondary); margin: -4px 0 10px;">트랙 행을 누르면 구간별 청취 그래프가 펼쳐져요 📈</p>` : ''}
         ${trackRows
           ? `<div class="stats-rows">${trackRows}</div>`
           : '<div class="admin-empty">업로드한 트랙이 없어요.</div>'}

@@ -108,17 +108,19 @@
     });
     // Accumulate listened time at 1Hz
     _current.tickTimer = setInterval(_onTick, 1000);
-    // Heartbeat at 15s — sends an interim 'progress' row
+    // Heartbeat at 5s — finer resolution for the segment heatmap RPC
+    // (track_segment_stats buckets by 5s, so one ping per bucket per listener).
     _current.heartbeatTimer = setInterval(async () => {
       if (!_current) return;
       const audio = document.getElementById('audio-element');
-      const pos = audio ? Math.floor(audio.currentTime) : 0;
+      if (!audio || audio.paused) return;  // don't log a position while paused
+      const pos = Math.floor(audio.currentTime);
       await _insertEvent(_current.trackId, 'progress', {
         positionSec: pos,
         listenedSec: Math.floor(_current.listenedSec),
         durationSec: _current.durationSec
       });
-    }, 15000);
+    }, 5000);
   }
 
   async function trackPlayEnd() {
@@ -199,6 +201,17 @@
     return data || [];
   }
 
+  // Per-track segment heatmap: [{bucket_start, listeners, samples}], 5-sec buckets by default
+  async function getTrackSegments(trackId, bucketSec) {
+    if (!window.supabase || !trackId) return [];
+    const { data, error } = await window.supabase.rpc('track_segment_stats', {
+      p_track_id: trackId,
+      p_bucket_sec: bucketSec || 5
+    });
+    if (error) { console.warn('[analytics] track_segment_stats', error.message); return []; }
+    return data || [];
+  }
+
   // ─── Last-ditch end on page unload ─────────────────────────
   window.addEventListener('beforeunload', () => {
     if (!_current) return;
@@ -236,6 +249,7 @@
     getMyTracksStats,
     getAdminOverall,
     getAdminTopTracks,
+    getTrackSegments,
     fmtSeconds,
     fmtPct
   };
