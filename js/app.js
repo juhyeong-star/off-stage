@@ -1870,7 +1870,7 @@ async function renderWall() {
   // Scatter notes
   const cols = 4;
   // Each note can now grow tall with inline comments + input — give rows more vertical room
-  const boardH = Math.max(800, Math.ceil(visibleNotes.length / cols) * 360 + 280);
+  const boardH = Math.max(820, Math.ceil(visibleNotes.length / cols) * 390 + 300);
 
   // Helper: escape user text for HTML
   const _esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1888,7 +1888,7 @@ async function renderWall() {
     const col = i % cols;
     const row = Math.floor(i / cols);
     const x = 2 + col * 22 + (seed % 10);
-    const yPx = 140 + row * 360 + ((seed >>> 8) % 40);
+    const yPx = 140 + row * 390 + ((seed >>> 8) % 40);
 
     const bookmarked = window.Walls && window.Walls.isBookmarked && window.Walls.isBookmarked(note.id);
     const bookmarkBtn = user ? `
