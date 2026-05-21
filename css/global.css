@@ -977,6 +977,33 @@ body.guest .sidebar-my-channel { display: none; }
 
 /* Hover — pause idle drift, spin the face fast like a real rolling die */
 .dice-shape:hover { animation-play-state: paused; }
+
+/* Fixed-position dice (pinned above the upload FAB on the right edge).
+   Follows the viewport on scroll so the user can roll it anywhere. */
+.dice-shape.dice-fab {
+  position: fixed !important;
+  /* Upload FAB sits at right:32px, width 56px → its center is 60px from right.
+     Dice is 68px wide → its center sits at 60px from right when right:26px. */
+  right: 26px;
+  /* Upload FAB bottom = player-height + 24, height 56, gap ~16 → 96 above viewport bottom */
+  bottom: calc(var(--player-height, 88px) + 96px);
+  left: auto !important;
+  top: auto !important;
+  z-index: 500;
+  /* Anchored — kill the drift; bounce/spin animations still trigger on hover/click */
+  animation: none !important;
+}
+@media (max-width: 768px) {
+  .dice-shape.dice-fab {
+    right: 18px;
+    width: 56px; height: 56px;
+    bottom: calc(var(--player-height, 88px) + 80px);
+  }
+  .dice-shape.dice-fab .die-face {
+    /* Scale dots roughly with the smaller box */
+    font-size: inherit;
+  }
+}
 /* Drag mode — disable drift entirely and add a subtle "lifted" indicator */
 .dice-shape.dragging {
   animation: none !important;

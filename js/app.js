@@ -3230,23 +3230,16 @@ function renderShapes() {
   const showFeed = dbForFeed && dbForFeed.currentUser && (typeof window.renderActivityFeed === 'function');
   const feedHtml = showFeed ? window.renderActivityFeed() : '';
 
-  // Random-play dice — fixed initial position: top-center.
-  // User can long-press to drag it elsewhere within the session.
-  const diceX = 50;     // % — horizontal center
-  const diceY = 80;     // px from top of universe
-  const diceDur = 14;
-  const diceDx = 25;
-  const diceDy = -15;
-  const diceRot = 4;
+  // Random-play dice — now a fixed FAB pinned above the upload button on
+  // the right edge. No more drag (anchored), but hover-roll + click-shuffle
+  // still work.
   const initialFace = 1 + Math.floor(Math.random() * 6);
   const diceHtml = `
-    <div class="dice-shape" id="random-dice"
+    <div class="dice-shape dice-fab" id="random-dice"
          onmouseenter="diceHoverStart(this)"
          onmouseleave="diceHoverEnd(this)"
          onclick="diceBouncePlay(this)"
-         title="굴려서 도형들 다시 섞기"
-         style="left:calc(${diceX}% - 34px); top:${diceY}px; animation: floatDrift ${diceDur}s ease-in-out infinite;
-                --dx:${diceDx}px; --dy:${diceDy}px; --rot:${diceRot}deg;">
+         title="굴려서 도형들 다시 섞기">
       <div class="die-face" data-face="${initialFace}">
         <span class="die-dot" data-pos="tl"></span>
         <span class="die-dot" data-pos="tm"></span>
@@ -3265,16 +3258,16 @@ function renderShapes() {
     <div class="shapes-universe" style="height: ${universeHeight}px;">
       ${decoHtml}
       ${shapesHtml}
-      ${diceHtml}
     </div>
     ${feedHtml}
+    ${diceHtml}
     <div class="upload-fab" onclick="navigateTo('upload')" title="음악 업로드">
       <i class="ri-add-line"></i>
     </div>
   `;
 
   initShapeDrag();
-  initDiceDrag();
+  // initDiceDrag() removed — dice is now fixed-position above upload-fab.
 }
 
 // ── Unified "like" for tracks (works for both Supabase tracks and mock tracks).
