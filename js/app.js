@@ -2425,13 +2425,27 @@ window.submitInlineComment = async function(noteId, formEl) {
     } else {
       newCm = { id: 'c' + Date.now(), author: '익명', text, createdAt: new Date().toISOString() };
     }
-    // Mirror into db.notes so the next renderWall sees it (in case __wallNotes
-    // and db.notes are separate references)
+    // window.DB.get() re-parses localStorage every call — it returns a *new*
+    // object each time, so mutations are NOT shared between calls unless we
+    // explicitly DB.save(). Without this save, the next renderWall reads
+    // stale localStorage and the just-added comment is invisible until the
+    // bg refresh eventually persists it (which is why the new comment used
+    // to appear only on the *next* submit).
     const db = window.DB.get();
     const n = (db.notes || []).find(x => x.id === noteId);
     if (n) {
       if (!Array.isArray(n.comments)) n.comments = [];
       if (newCm && !n.comments.find(c => c.id === newCm.id)) n.comments.push(newCm);
+      try { window.DB.save(db); } catch (_) {}
+    }
+    // Also mirror onto the in-memory __wallNotes cache so any code reading
+    // from it (or a quick subsequent render) sees the update too.
+    if (Array.isArray(window.__wallNotes)) {
+      const mem = window.__wallNotes.find(x => x.id === noteId);
+      if (mem) {
+        if (!Array.isArray(mem.comments)) mem.comments = [];
+        if (newCm && !mem.comments.find(c => c.id === newCm.id)) mem.comments.push(newCm);
+      }
     }
     if (input) input.value = '';
     // Re-render the wall to show the new comment inline. Preserve scroll.
