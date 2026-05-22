@@ -1450,6 +1450,111 @@
     }
   };
 
+  // ── Cheers — 응원 (one-time supportive message per track) ──────────────
+  window.Cheers = {
+    // True if the current user already cheered this track.
+    async hasCheered(trackId) {
+      if (!window.supabase || !trackId) return false;
+      const { data: { user } } = await window.supabase.auth.getUser();
+      if (!user) return false;
+      const { data } = await window.supabase
+        .from('cheers')
+        .select('id')
+        .eq('supporter_id', user.id)
+        .eq('track_id', trackId)
+        .maybeSingle();
+      return !!data;
+    },
+
+    // Send a cheer. Looks up the track's artist server-side.
+    // Throws Error('ALREADY_CHEERED') if the unique index rejects it.
+    async send(trackId, message) {
+      if (!window.supabase) throw new Error('Supabase 준비 안 됨');
+      const { data: { user } } = await window.supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요해요');
+
+      const { data: track, error: te } = await window.supabase
+        .from('tracks')
+        .select('id, title, artist_id')
+        .eq('id', trackId)
+        .single();
+      if (te || !track) throw new Error('트랙을 찾을 수 없어요');
+
+      const profile = window.__currentUser;
+      const supporterName = (profile && profile.name)
+        || (user.email ? user.email.split('@')[0] : '익명');
+
+      let artistName = '';
+      try {
+        const { data: ap } = await window.supabase
+          .from('profiles').select('name').eq('id', track.artist_id).maybeSingle();
+        artistName = ap ? ap.name : '';
+      } catch (_) {}
+
+      const payload = {
+        artist_id:      track.artist_id,
+        artist_name:    artistName,
+        track_id:       trackId,
+        track_title:    track.title,
+        supporter_id:   user.id,
+        supporter_name: supporterName,
+        message:        (message || '').slice(0, 300)
+      };
+      const { data, error } = await window.supabase
+        .from('cheers').insert(payload).select().single();
+      if (error) {
+        if (/duplicate|unique|cheers_once/i.test(error.message || '')) {
+          throw new Error('ALREADY_CHEERED');
+        }
+        throw error;
+      }
+      return data;
+    },
+
+    // Cheers received by an artist (for the heart wall).
+    async fetchForArtist(artistId, limit) {
+      if (!window.supabase || !artistId) return [];
+      const { data, error } = await window.supabase
+        .from('cheers')
+        .select('*')
+        .eq('artist_id', artistId)
+        .order('created_at', { ascending: false })
+        .limit(limit || 200);
+      if (error) { console.warn('[Cheers] fetchForArtist', error.message); return []; }
+      return data || [];
+    },
+
+    // Resolve an artist name → id, then fetch their cheers.
+    async fetchForArtistByName(name, limit) {
+      if (!window.supabase || !name) return [];
+      const { data: prof } = await window.supabase
+        .from('profiles').select('id').eq('name', name).limit(1).maybeSingle();
+      if (!prof) return [];
+      return this.fetchForArtist(prof.id, limit);
+    },
+
+    // Cheers the current user has sent (for the 응원하는곡 tab).
+    async fetchMySent() {
+      if (!window.supabase) return [];
+      const { data: { user } } = await window.supabase.auth.getUser();
+      if (!user) return [];
+      const { data, error } = await window.supabase
+        .from('cheers')
+        .select('*')
+        .eq('supporter_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (error) { console.warn('[Cheers] fetchMySent', error.message); return []; }
+      return data || [];
+    },
+
+    async remove(cheerId) {
+      if (!window.supabase || !cheerId) return;
+      const { error } = await window.supabase.from('cheers').delete().eq('id', cheerId);
+      if (error) throw error;
+    }
+  };
+
   window.Admin = {
     async listRecentNotes(limit) {
       if (!window.supabase) return [];

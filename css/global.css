@@ -1,4 +1,152 @@
 /* ============================================================
+   응원 (Cheer) — button, donation modal, success burst
+   ============================================================ */
+.cheer-btn {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff6fa5, #ff2e63);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(255,46,99,0.4);
+  transition: transform 0.14s, box-shadow 0.2s;
+}
+.cheer-btn:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 6px 20px rgba(255,46,99,0.55);
+}
+.cheer-btn:active { transform: scale(0.97); }
+.cheer-btn i { font-size: 15px; }
+
+/* Donation-style modal */
+.cheer-modal {
+  position: fixed; inset: 0;
+  z-index: 5000;
+  background: rgba(0,0,0,0.66);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  animation: cheerFadeIn 0.2s ease;
+}
+@keyframes cheerFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.cheer-modal-card {
+  position: relative;
+  width: 100%; max-width: 380px;
+  background: linear-gradient(180deg, #fff 0%, #fff5f8 100%);
+  border-radius: 20px;
+  padding: 30px 26px 26px;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  animation: cheerPopIn 0.32s cubic-bezier(0.22,1.2,0.36,1);
+}
+@keyframes cheerPopIn {
+  from { transform: scale(0.85) translateY(20px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+.cheer-modal-close {
+  position: absolute; top: 12px; right: 12px;
+  width: 32px; height: 32px;
+  border: none; background: rgba(0,0,0,0.06);
+  border-radius: 50%;
+  color: #888; font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.cheer-modal-close:hover { background: rgba(0,0,0,0.12); color: #333; }
+.cheer-modal-icon { font-size: 46px; line-height: 1; }
+.cheer-modal-title {
+  margin: 10px 0 4px;
+  font-size: 18px; font-weight: 800; color: #222;
+}
+.cheer-modal-track {
+  font-size: 13px; color: #ff2e63; font-weight: 700;
+  margin-bottom: 8px;
+}
+.cheer-modal-hint {
+  font-size: 12px; color: #999; line-height: 1.5;
+  margin-bottom: 14px;
+}
+.cheer-modal-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid #ffd0e0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  color: #222;
+  background: #fff;
+}
+.cheer-modal-textarea:focus { border-color: #ff2e63; }
+.cheer-modal-count {
+  text-align: right;
+  font-size: 11px; color: #bbb;
+  margin: 4px 2px 14px;
+}
+.cheer-modal-send {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ff6fa5, #ff2e63);
+  color: #fff;
+  font-size: 15px; font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(255,46,99,0.4);
+  transition: transform 0.14s;
+}
+.cheer-modal-send:hover { transform: scale(1.02); }
+.cheer-modal-send:active { transform: scale(0.98); }
+.cheer-modal-send:disabled { opacity: 0.6; cursor: default; transform: none; }
+
+/* Success burst overlay */
+.cheer-success {
+  position: fixed; inset: 0;
+  z-index: 5100;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.5);
+  pointer-events: none;
+  transition: opacity 0.5s;
+}
+.cheer-success.fade-out { opacity: 0; }
+.cheer-success-burst { text-align: center; }
+.cheer-success-heart {
+  font-size: 80px;
+  animation: cheerHeartPop 0.6s cubic-bezier(0.22,1.4,0.36,1);
+}
+@keyframes cheerHeartPop {
+  0%   { transform: scale(0); }
+  60%  { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+.cheer-success-text {
+  margin-top: 10px;
+  font-size: 22px; font-weight: 800; color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+.cheer-success-sub {
+  margin-top: 4px;
+  font-size: 13px; color: rgba(255,255,255,0.85);
+}
+.cheer-float-heart {
+  position: absolute;
+  bottom: 30%;
+  font-size: 28px;
+  animation: cheerFloatUp 2s ease-out forwards;
+}
+@keyframes cheerFloatUp {
+  0%   { transform: translateY(0) scale(0.6); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translateY(-260px) scale(1.1); opacity: 0; }
+}
+
+/* ============================================================
    Analytics / Stats card styles — used by /stats and /admin
    ============================================================ */
 .stats-kpi-grid {

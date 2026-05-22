@@ -5585,6 +5585,17 @@ function renderProjectBox(pid, versions) {
     </div>
   `;
 
+  // 응원하기 — cheers the master (or primary) track. Hidden on your own work.
+  const cheerTarget = final || primary;
+  const cheerBtnHtml = (!canEditArtist && cheerTarget) ? (() => {
+    const argT  = (cheerTarget.id || '').replace(/'/g,"\\'");
+    const argTi = (cheerTarget.title || projectTitle || '').replace(/'/g,"\\'");
+    const argA  = (cheerTarget.artist || '').replace(/'/g,"\\'");
+    return `<button class="cheer-btn" onclick="event.stopPropagation(); openCheerModal('${argT}','${argTi}','${argA}')" title="응원 메시지 보내기">
+      <i class="ri-heart-3-fill"></i> 응원하기
+    </button>`;
+  })() : '';
+
   // version-panels는 데모 카드 안으로 흡수됨 — 하단 MEMO & COMMENTS 섹션 제거
   return `
     <div class="project-box reveal" data-project="${pid}">
@@ -5594,6 +5605,7 @@ function renderProjectBox(pid, versions) {
           <h3 class="project-title">「${safeTitle}」</h3>
           ${masterDate ? `<div class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
           ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
+          ${cheerBtnHtml}
         </div>
       </div>
       ${demos.length > 0 ? `
@@ -8811,3 +8823,132 @@ window.renderStats = async function () {
     </div>
   `;
 };
+
+// ===================== 응원 (CHEER) — donation-style message =====================
+// LocalStorage cache of track IDs the user has already cheered, so the
+// "한 번만" rule gives instant feedback without a network round-trip.
+function _getCheeredSet() {
+  try { return new Set(JSON.parse(localStorage.getItem('offstage_cheered') || '[]')); }
+  catch (_) { return new Set(); }
+}
+function _addCheered(trackId) {
+  const s = _getCheeredSet();
+  s.add(trackId);
+  try { localStorage.setItem('offstage_cheered', JSON.stringify([...s])); } catch (_) {}
+}
+window.hasCheeredLocal = function (trackId) {
+  return _getCheeredSet().has(trackId);
+};
+
+// Open the cheer composer. Shows the once-only toast if already cheered.
+window.openCheerModal = function (trackId, trackTitle, artistName) {
+  const user = window.__currentUser || (window.DB.get() && window.DB.get().currentUser);
+  if (!user) {
+    showToast('로그인하고 응원해보세요 💌');
+    navigateTo('auth');
+    return;
+  }
+  // Already cheered (local cache) → just a toast, no modal
+  if (_getCheeredSet().has(trackId)) {
+    showToast('이미 응원했어요 💝');
+    return;
+  }
+  const existing = document.getElementById('cheer-modal');
+  if (existing) existing.remove();
+
+  const safeTitle  = (trackTitle  || '').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  const safeArtist = (artistName  || '아티스트').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  const argT = (trackId   || '').replace(/'/g,"\\'");
+  const argTi= (trackTitle|| '').replace(/'/g,"\\'");
+  const argA = (artistName|| '').replace(/'/g,"\\'");
+
+  const html = `
+    <div id="cheer-modal" class="cheer-modal" onclick="if(event.target===this) closeCheerModal()">
+      <div class="cheer-modal-card">
+        <button class="cheer-modal-close" onclick="closeCheerModal()" aria-label="닫기"><i class="ri-close-line"></i></button>
+        <div class="cheer-modal-icon">💌</div>
+        <h3 class="cheer-modal-title">${safeArtist}에게 응원 보내기</h3>
+        <div class="cheer-modal-track"><i class="ri-music-2-line"></i> 「${safeTitle}」</div>
+        <p class="cheer-modal-hint">딱 한 번 보낼 수 있어요.<br>마음을 담아 적어주세요 ✨</p>
+        <textarea id="cheer-message-input" class="cheer-modal-textarea" maxlength="300" rows="4"
+                  placeholder="이 곡 정말 좋아요! 다음 곡도 기대할게요 💛"></textarea>
+        <div class="cheer-modal-count"><span id="cheer-char-count">0</span>/300</div>
+        <button class="cheer-modal-send" id="cheer-send-btn"
+                onclick="submitCheer('${argT}', '${argTi}', '${argA}')">
+          💝 응원 보내기
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', html);
+  const ta = document.getElementById('cheer-message-input');
+  if (ta) {
+    ta.addEventListener('input', () => {
+      const c = document.getElementById('cheer-char-count');
+      if (c) c.textContent = ta.value.length;
+    });
+    setTimeout(() => ta.focus(), 80);
+  }
+};
+
+window.closeCheerModal = function () {
+  const m = document.getElementById('cheer-modal');
+  if (m) m.remove();
+};
+
+window.submitCheer = async function (trackId, trackTitle, artistName) {
+  const ta = document.getElementById('cheer-message-input');
+  const msg = (ta && ta.value || '').trim();
+  if (!msg) {
+    showToast('응원 메시지를 적어주세요 ✍️');
+    if (ta) ta.focus();
+    return;
+  }
+  const btn = document.getElementById('cheer-send-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '보내는 중…'; }
+  try {
+    if (window.Cheers) {
+      await window.Cheers.send(trackId, msg);
+    } else {
+      throw new Error('Cheers 모듈 없음');
+    }
+    _addCheered(trackId);
+    closeCheerModal();
+    _showCheerSuccess(artistName);
+  } catch (e) {
+    if (e && e.message === 'ALREADY_CHEERED') {
+      _addCheered(trackId);
+      closeCheerModal();
+      showToast('이미 응원했어요 💝');
+    } else {
+      alert('응원 전송 실패: ' + (e.message || e));
+      if (btn) { btn.disabled = false; btn.textContent = '💝 응원 보내기'; }
+    }
+  }
+};
+
+// Brief celebratory overlay after a cheer is sent.
+function _showCheerSuccess(artistName) {
+  const safeArtist = (artistName || '아티스트').replace(/</g,'&lt;');
+  const overlay = document.createElement('div');
+  overlay.className = 'cheer-success';
+  overlay.innerHTML = `
+    <div class="cheer-success-burst">
+      <div class="cheer-success-heart">💝</div>
+      <div class="cheer-success-text">응원이 도착했어요!</div>
+      <div class="cheer-success-sub">${safeArtist}님의 하트에 차곡차곡 쌓였어요</div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  // Float a few hearts
+  for (let i = 0; i < 8; i++) {
+    const h = document.createElement('span');
+    h.className = 'cheer-float-heart';
+    h.textContent = ['💛','💝','💗','✨'][i % 4];
+    h.style.left = (10 + Math.random() * 80) + '%';
+    h.style.animationDelay = (Math.random() * 0.5) + 's';
+    overlay.appendChild(h);
+  }
+  setTimeout(() => { overlay.classList.add('fade-out'); }, 1700);
+  setTimeout(() => { overlay.remove(); }, 2300);
+}
