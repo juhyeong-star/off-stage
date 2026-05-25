@@ -2844,16 +2844,15 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 .projects-grid .demo-card-cm-input-field { font-size: 12px; }
 
 /* Mobile (1 col grid): the album becomes a horizontal swipe carousel.
-   Cover page = big vertical hero (full square cover + centered info + cheer).
-   Demo pages = bigger, full-content card. */
+   Cover page = master page (cover + master content). Demo pages follow. */
 @media (max-width: 480px) {
-  /* Cover page hero */
+  /* Cover/master page — moderate size, hero look */
   .projects-grid .page-cover {
     flex-direction: column !important;
-    align-items: center !important;
+    align-items: stretch !important;
     text-align: center;
-    gap: 14px;
-    padding: 14px 14px 16px;
+    gap: 10px;
+    padding: 12px 12px 14px;
     border: 1.5px solid #111;
     border-radius: 4px;
     background: #fff;
@@ -2863,7 +2862,7 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
     width: 100% !important;
     height: auto !important;
     aspect-ratio: 1 / 1 !important;
-    max-width: 360px;
+    max-width: 240px;          /* compact — leaves room for diary + comments below */
     margin: 0 auto;
   }
   .projects-grid .page-cover .project-header-info {
@@ -2871,19 +2870,44 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
     text-align: center;
     align-items: center;
     flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
-  .projects-grid .page-cover .project-title { font-size: 22px; margin-bottom: 4px; }
+  .projects-grid .page-cover .project-title { font-size: 18px; margin-bottom: 0; }
   .projects-grid .page-cover .project-master-date,
   .projects-grid .page-cover .project-participants {
     justify-content: center;
     text-align: center;
+    font-size: 12px;
   }
-  .projects-grid .page-cover .cheer-btn { margin: 10px auto 0; }
+  .projects-grid .page-cover .cheer-btn { margin: 6px auto 0; padding: 7px 14px; font-size: 12px; }
+
+  /* Master content sits under cheer button — left-aligned reading column */
+  .projects-grid .page-cover .demo-card-note {
+    text-align: left;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(0,0,0,0.15);
+  }
+  .projects-grid .page-cover .demo-card-cm-list {
+    text-align: left;
+    margin-top: 4px;
+  }
+  .projects-grid .page-cover .demo-card-cm-input { margin-top: 6px; }
+
+  /* Demo page — moderate, scrollable internally if needed */
+  .projects-grid .page-demo {
+    padding: 14px 14px 12px !important;
+  }
+  .projects-grid .page-demo .demo-card-note {
+    -webkit-line-clamp: 6;   /* readable but capped so the page fits the viewport */
+  }
 
   /* Demo card body (general) — used both as a page and in fallbacks */
-  .projects-grid .demo-card-title { font-size: 14px; }
-  .projects-grid .demo-card-note-line,
-  .projects-grid .demo-card-cm-line { font-size: 13px; }
+  .projects-grid .demo-card-title { font-size: 13px; }
+  .projects-grid .demo-card-note-line { font-size: 13px; line-height: 1.4; }
+  .projects-grid .demo-card-cm-line { font-size: 12px; line-height: 1.35; }
   .projects-grid .demo-card-cm-input-field { font-size: 13px; }
 }
 

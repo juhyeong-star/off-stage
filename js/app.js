@@ -5647,12 +5647,37 @@ function renderProjectBox(pid, versions) {
   })() : '';
 
   // version-panels는 데모 카드 안으로 흡수됨 — 하단 MEMO & COMMENTS 섹션 제거
+  // Master content (diary + comments + input) — shown on the cover page
+  // when there's a final master track. This is the "master page" the user
+  // expects at the front of the carousel.
+  const noteEscG = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const masterContentHtml = final ? (() => {
+    const note = (final.artistNote || '').trim();
+    const noteLines = note ? note.split(/\r?\n/).map(l => l.trim()).filter(Boolean).slice(0, 6) : [];
+    const masterNoteHtml = noteLines.length > 0
+      ? `<div class="demo-card-note master-note">${noteLines.map(l => `<span class="demo-card-note-line">${noteEscG(l)}</span>`).join('')}</div>`
+      : '';
+    const masterCms = final.trackComments || [];
+    const masterCmHtml = masterCms.slice(0, 10).map(cm => {
+      const cmSafe = noteEscG(cm.text || '');
+      const cmAuth = noteEscG(cm.author || '익명');
+      return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span></div>`;
+    }).join('');
+    const masterInput = canComment ? `
+      <div class="demo-card-cm-input" onclick="event.stopPropagation();">
+        <input type="text" id="tct-${final.id}" class="demo-card-cm-input-field" placeholder="댓글 남기기…" onkeypress="if(event.key==='Enter'){ event.preventDefault(); submitTrackComment('${final.id}'); }">
+        <button class="demo-card-cm-send" onclick="event.stopPropagation(); submitTrackComment('${final.id}')" aria-label="남기기"><i class="ri-arrow-right-line"></i></button>
+      </div>` : '';
+    return `${masterNoteHtml}<div class="demo-card-cm-list">${masterCmHtml}</div>${masterInput}`;
+  })() : '';
+
   // Total carousel pages = cover (always) + each demo. Dots only show on
   // mobile when there's more than one page.
   const totalPages = 1 + demos.length;
+  const masterDotTitle = final ? '마스터 음원' : '앨범 커버';
   const projectDotsHtml = totalPages > 1 ? `
     <div class="project-dots" data-page-count="${totalPages}">
-      <span class="project-dot active" data-page="0" title="앨범 커버"></span>
+      <span class="project-dot active" data-page="0" data-master="${final ? '1' : '0'}" title="${masterDotTitle}"></span>
       ${demos.map((_, i) => `<span class="project-dot" data-page="${i + 1}" title="DEMO ${i + 1}"></span>`).join('')}
     </div>
   ` : '';
@@ -5660,13 +5685,14 @@ function renderProjectBox(pid, versions) {
   return `
     <div class="project-box reveal" data-project="${pid}">
       <div class="project-pages">
-        <div class="project-header page-cover">
+        <div class="project-header page-cover ${final ? 'has-master' : ''}">
           ${coverHtml}
           <div class="project-header-info">
             <h3 class="project-title">「${safeTitle}」</h3>
             ${masterDate ? `<div class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
             ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
             ${cheerBtnHtml}
+            ${masterContentHtml}
           </div>
         </div>
         ${cardsHtml /* each demo card already has class "page-demo" */}
