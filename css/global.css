@@ -2952,6 +2952,10 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   .project-pages {
     display: flex !important;
     flex-direction: row !important;
+    /* align-items: flex-start prevents children from stretching to match
+       the tallest page (which made the demo cards balloon to the full
+       cover-page height). */
+    align-items: flex-start !important;
     overflow-x: auto;
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
@@ -2965,10 +2969,17 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   .project-pages > .page-cover,
   .project-pages > .page-demo {
     flex: 0 0 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    /* Kill the .demo-card aspect-ratio 16/9 that was forcing the card
+       into a fixed shape way bigger than the screen. */
+    aspect-ratio: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    box-sizing: border-box;
     scroll-snap-align: start;
     scroll-snap-stop: always;
-    min-width: 0;
-    max-width: 100%;
   }
   /* Cover/master page on mobile — compact hero with cover, title, then
      master content below (diary + comments). */
