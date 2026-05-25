@@ -6538,60 +6538,7 @@ function renderArtistProfile(artistName) {
               </div>
             </div>
           </div>
-          ${(() => {
-            // Middle counts box: 앨범 / 프로젝트 / 싱글, clickable → scrolls to section below.
-            // Each category that has count > 0 shows its own representative cover RIGHT BELOW its row.
-            const grp = {};
-            artistTracks.forEach(t => {
-              const pid = t.projectId || t.id;
-              if (!grp[pid]) grp[pid] = { demos: [], master: null, pid };
-              if (t.isDemo) grp[pid].demos.push(t);
-              else grp[pid].master = t;
-            });
-            const arr = Object.values(grp);
-            // 앨범 = a project that has BOTH multiple masters or multiple-tracks under it.
-            //   Off-Stage doesn't have an explicit album yet; until we model it, keep 0.
-            const albumProjects   = [];                                       // future
-            // 프로젝트 = project with at least one demo (work-in-progress)
-            const projectProjects = arr.filter(p => p.demos.length > 0);
-            // 싱글 = standalone master (no demos, just one finished master)
-            const singleProjects  = arr.filter(p => p.master && p.demos.length === 0);
-
-            // Pick a representative cover for each category (first non-empty cover)
-            function pickCover(projects) {
-              for (const p of projects) {
-                const t = p.master || p.demos[0];
-                if (t && t.cover) return { cover: t.cover, title: t.title || '' };
-              }
-              return null;
-            }
-            const albumRep   = pickCover(albumProjects);
-            const projectRep = pickCover(projectProjects);
-            const singleRep  = pickCover(singleProjects);
-
-            const esc = (s) => (s||'').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-            const renderCover = (rep, sectionId) => rep ? `
-              <div class="artist-count-cover" onclick="document.getElementById('${sectionId}')?.scrollIntoView({behavior:'smooth', block:'start'})" title="${esc(rep.title)}">
-                <img src="${rep.cover}" alt="${esc(rep.title)}">
-                <div class="artist-count-cover-title">${esc(rep.title)}</div>
-              </div>` : '';
-
-            return `
-              <div class="artist-counts-box">
-                <div class="artist-count-row" onclick="document.getElementById('artist-section-albums')?.scrollIntoView({behavior:'smooth', block:'start'})">
-                  <strong>${albumProjects.length}</strong> 앨범 <span class="artist-count-sub">여러 곡 묶음</span>
-                </div>
-                ${renderCover(albumRep, 'artist-section-albums')}
-                <div class="artist-count-row" onclick="document.getElementById('artist-section-projects')?.scrollIntoView({behavior:'smooth', block:'start'})">
-                  <strong>${projectProjects.length}</strong> 프로젝트 <span class="artist-count-sub">데모 공개</span>
-                </div>
-                ${renderCover(projectRep, 'artist-section-projects')}
-                <div class="artist-count-row" onclick="document.getElementById('artist-section-singles')?.scrollIntoView({behavior:'smooth', block:'start'})">
-                  <strong>${singleProjects.length}</strong> 싱글 <span class="artist-count-sub">단독 마스터</span>
-                </div>
-                ${renderCover(singleRep, 'artist-section-singles')}
-              </div>`;
-          })()}
+          ${'' /* counts box (앨범/프로젝트/싱글) hidden for now — will surface later when there are many songs */}
           <aside class="artist-postit-aside">
             <div class="artist-postit-aside-head">
               <i class="ri-sticky-note-fill"></i> 소식 <span class="artist-postit-count">${artistNotes.length}</span>
@@ -6611,29 +6558,41 @@ function renderArtistProfile(artistName) {
           </div>
         ` : ''}
 
-        ${isArtistRole ? '<div id="cheer-heart-mount"></div>' : ''}
-
         ${isArtistRole ? `
-          <!-- 청취곡: 마스터(싱글 포함) — counts box의 '싱글' 클릭 시 여기로 스크롤 -->
-          ${releasedCount > 0 ? `
-            <div id="artist-section-singles" class="reveal" style="margin-top:36px; scroll-margin-top:80px;">
-              ${releasedHtml}
-            </div>
-          ` : ''}
-          <!-- 데모곡: 프로젝트 진행중 — counts box의 '프로젝트' 클릭 시 여기로 스크롤 -->
-          ${demoCount > 0 ? `
-            <div id="artist-section-projects" class="reveal" style="margin-top:36px; scroll-margin-top:80px;">
-              ${demoHtml}
-            </div>
-          ` : ''}
-          <!-- 앨범 자리 (아직 컨셉 없음, 향후 확장) -->
-          <div id="artist-section-albums" style="scroll-margin-top:80px;"></div>
+          <!-- Artist content tabs: 음악 / 응원함 -->
+          <div class="artist-content-tabs reveal" style="margin-top: 28px;">
+            <button type="button" class="content-tab active" data-content-tab="music" onclick="switchArtistContentTab('music')">
+              <i class="ri-music-2-fill"></i> 음악
+            </button>
+            <button type="button" class="content-tab" data-content-tab="cheers" onclick="switchArtistContentTab('cheers')">
+              <i class="ri-heart-3-fill"></i> 응원함
+            </button>
+          </div>
 
-          ${(releasedCount + demoCount) === 0 ? `
-            <div class="reveal" style="margin-top:36px;">
-              <p style="color:var(--text-secondary);">아직 업로드한 곡이 없어요.</p>
-            </div>
-          ` : ''}
+          <div class="artist-content-pane" data-content-tab="music">
+            <!-- 청취곡: 마스터(싱글 포함) -->
+            ${releasedCount > 0 ? `
+              <div id="artist-section-singles" class="reveal" style="margin-top:20px; scroll-margin-top:80px;">
+                ${releasedHtml}
+              </div>
+            ` : ''}
+            <!-- 데모곡: 프로젝트 진행중 -->
+            ${demoCount > 0 ? `
+              <div id="artist-section-projects" class="reveal" style="margin-top:36px; scroll-margin-top:80px;">
+                ${demoHtml}
+              </div>
+            ` : ''}
+            <div id="artist-section-albums" style="scroll-margin-top:80px;"></div>
+            ${(releasedCount + demoCount) === 0 ? `
+              <div class="reveal" style="margin-top:36px;">
+                <p style="color:var(--text-secondary);">아직 업로드한 곡이 없어요.</p>
+              </div>
+            ` : ''}
+          </div>
+
+          <div class="artist-content-pane" data-content-tab="cheers" hidden>
+            <div id="cheer-heart-mount" style="margin-top: 20px;"></div>
+          </div>
         ` : `
           <!-- 🌱 listener mode -->
           <div class="reveal" style="margin-top:36px;">
@@ -8956,6 +8915,16 @@ window.submitCheer = async function (trackId, trackTitle, artistName) {
       if (btn) { btn.disabled = false; btn.textContent = '💝 응원 보내기'; }
     }
   }
+};
+
+// Tab switcher for the artist page (음악 / 응원함)
+window.switchArtistContentTab = function (name) {
+  document.querySelectorAll('.content-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.contentTab === name);
+  });
+  document.querySelectorAll('.artist-content-pane').forEach(p => {
+    p.hidden = (p.dataset.contentTab !== name);
+  });
 };
 
 // ── 응원 하트 월 (cheer heart wall) ─────────────────────────────────

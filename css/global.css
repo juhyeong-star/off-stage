@@ -217,7 +217,7 @@
 .cheer-heart-wall {
   position: relative;
   width: 100%;
-  max-width: 540px;
+  max-width: 360px;
   margin: 0 auto;
   aspect-ratio: 1 / 0.9;
   background: linear-gradient(160deg, #ff85b3 0%, #ff5c8d 55%, #ff2e63 100%);
@@ -296,12 +296,43 @@
   word-break: keep-all;   /* keep Korean words together, don't break on each char */
 }
 @media (max-width: 600px) {
-  .cheer-heart-wall { max-width: 360px; }
+  .cheer-heart-wall { max-width: 280px; }
   .cheer-heart-cluster { top: 14%; left: 11%; right: 11%; }
-  .cheer-heart-empty { top: 30%; font-size: 14px; }
-  .cheer-postit { width: 88px; min-height: 66px; }
-  .cheer-postit-msg { font-size: 12px; }
+  .cheer-heart-empty { top: 30%; font-size: 13px; }
+  .cheer-postit { width: 78px; min-height: 60px; padding: 7px 8px 6px; }
+  .cheer-postit-msg { font-size: 11px; -webkit-line-clamp: 3; }
+  .cheer-postit-from { font-size: 9px; }
 }
+
+/* Artist page content tabs (음악 / 응원함) */
+.artist-content-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1.5px solid var(--divider, #2a2a2a);
+  margin-bottom: 4px;
+}
+.content-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  color: var(--text-secondary, #999);
+  border: none;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1.5px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.content-tab:hover { color: var(--text-primary, #fff); }
+.content-tab.active {
+  color: var(--text-primary, #fff);
+  border-bottom-color: #ff2e63;
+}
+.content-tab i { font-size: 16px; }
+.artist-content-pane[hidden] { display: none; }
 
 /* ============================================================
    Analytics / Stats card styles — used by /stats and /admin
@@ -1045,16 +1076,17 @@ body.guest .sidebar-my-channel { display: none; }
   .star-dot, .star-sparkle { animation: none; opacity: 0.85; transform: none; }
 }
 
-/* Artist page — top row: name strip stays compact, counts hugs it, 소식 fills the rest. */
+/* Artist page — top row: name strip on left, 소식 panel on right.
+   (Counts box hidden for now — will return as a third column later.) */
 .artist-header-row {
   display: grid;
-  grid-template-columns: auto minmax(240px, 1fr) minmax(320px, 1.6fr);
-  gap: 14px;                 /* tighter gap so counts feels close to name */
+  grid-template-columns: auto minmax(320px, 1.6fr);
+  gap: 16px;
   align-items: flex-start;
 }
 @media (max-width: 960px) {
   .artist-header-row {
-    grid-template-columns: 1fr 1fr;   /* tablet: name+counts on top, 소식 below */
+    grid-template-columns: 1fr;       /* tablet+: stack */
   }
   .artist-header-row .artist-postit-aside { grid-column: 1 / -1; }
 }
