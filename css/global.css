@@ -2867,10 +2867,10 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   font-size: 12px;
 }
 .projects-grid .cheer-btn i { font-size: 13px; }
-/* Demo cards inside the narrow album card always stack vertical */
+/* Demos honour the inline grid-template-columns set by JS (cols=2 on
+   desktop, cols=1 on small phones). Don't override with !important. */
 .projects-grid .demo-path {
-  grid-template-columns: 1fr !important;
-  gap: 8px;
+  gap: 12px 14px;
   padding: 0;
 }
 .projects-grid .demo-card {
