@@ -12088,3 +12088,205 @@ body:has(#global-player.expanded) .global-back-btn {
   top: calc(24px + var(--safe-top, 0px));
   background: rgba(255, 255, 255, 0.15);
 }
+/* ============================================================
+   PROJECTS-GRID HARD OVERRIDE — neutralize the Y2K design
+   .artist-canvas .project-box (at line ~10225) uses !important on
+   display:flex/wrap, cream background, big border + shadow, padding,
+   etc. When the project-box is inside the new .projects-grid layout,
+   we don't want any of that — it produced the "big yellow board"
+   behind the album card. Higher-specificity selectors here win over
+   the older 2-class !important rules.
+   ============================================================ */
+.artist-canvas .projects-grid .project-box {
+  display: block !important;
+  flex-direction: initial !important;
+  flex-wrap: initial !important;
+  align-items: initial !important;
+  gap: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 0 18px 0 !important;
+  overflow: visible !important;
+  position: relative !important;
+}
+.artist-canvas .projects-grid .project-box::before,
+.artist-canvas .projects-grid .project-box::after { content: none !important; display: none !important; }
+
+/* Project header inside the new grid — let .projects-grid rules drive it */
+.artist-canvas .projects-grid .project-header {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  flex: 0 0 auto !important;
+  order: initial !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Demo cards inside the new grid — kill the 16:9 aspect-ratio + snap */
+.artist-canvas .projects-grid .demo-card {
+  aspect-ratio: auto !important;
+  width: auto !important;
+  scroll-snap-align: none !important;
+  min-height: 0 !important;
+}
+
+/* .project-pages: clean vertical stack on desktop, horizontal carousel on mobile */
+.artist-canvas .projects-grid .project-pages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+/* Mobile carousel — high specificity so it wins everywhere */
+@media (max-width: 768px) {
+  .artist-canvas .projects-grid .project-pages {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    gap: 12px;
+    padding: 4px 0;
+    scrollbar-width: none;
+  }
+  .artist-canvas .projects-grid .project-pages::-webkit-scrollbar { display: none; }
+
+  .artist-canvas .projects-grid .project-pages > .page-cover,
+  .artist-canvas .projects-grid .project-pages > .page-demo {
+    flex: 0 0 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    aspect-ratio: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    box-sizing: border-box !important;
+    scroll-snap-align: start !important;
+    scroll-snap-stop: always !important;
+    margin: 0 !important;
+  }
+
+  /* Cover/master page — white card */
+  .artist-canvas .projects-grid .project-pages > .page-cover {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 14px !important;
+    background: #fff !important;
+    border: 1.5px solid #111 !important;
+    border-radius: 4px !important;
+    box-shadow: 2px 2px 0 #111 !important;
+  }
+  .artist-canvas .projects-grid .project-pages > .page-cover .project-cover-wrap {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1 !important;
+    max-width: 200px !important;
+    margin: 0 auto !important;
+    flex: none !important;
+  }
+  .artist-canvas .projects-grid .project-pages > .page-cover .project-header-info {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 4px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .artist-canvas .projects-grid .project-pages > .page-cover .project-title {
+    font-size: 16px !important;
+    margin: 0 !important;
+    color: #111 !important;
+  }
+  .artist-canvas .projects-grid .project-pages > .page-cover .project-master-date,
+  .artist-canvas .projects-grid .project-pages > .page-cover .project-participants {
+    font-size: 11px !important;
+    color: #555 !important;
+    justify-content: center !important;
+    margin: 0 !important;
+  }
+  .artist-canvas .projects-grid .project-pages > .page-cover .cheer-btn {
+    margin-top: 4px !important;
+    padding: 6px 14px !important;
+    font-size: 12px !important;
+  }
+  /* Master diary + comments — left-aligned reading column below the cover */
+  .artist-canvas .projects-grid .project-pages > .page-cover .demo-card-note {
+    width: 100% !important;
+    text-align: left !important;
+    margin-top: 10px !important;
+    padding-top: 8px !important;
+    border-top: 1px dashed rgba(0,0,0,0.15) !important;
+    background: transparent !important;
+    color: #111 !important;
+  }
+  .artist-canvas .projects-grid .project-pages > .page-cover .demo-card-cm-list {
+    width: 100% !important;
+    text-align: left !important;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  .artist-canvas .projects-grid .project-pages > .page-cover .demo-card-cm-input {
+    width: 100% !important;
+    margin-top: 6px !important;
+  }
+
+  /* Demo page — yellow sticky-note card */
+  .artist-canvas .projects-grid .project-pages > .page-demo {
+    background: #FFE500 !important;
+    border: 1.5px solid #111 !important;
+    border-radius: 4px !important;
+    padding: 12px 14px 12px !important;
+    box-shadow: 2px 2px 0 #111 !important;
+    color: #111 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .artist-canvas .projects-grid .project-pages > .page-demo .demo-card-top {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    margin-bottom: 6px !important;
+  }
+  .artist-canvas .projects-grid .project-pages > .page-demo .demo-tag {
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    color: #c2185b !important;
+    padding: 0 !important;
+  }
+  .artist-canvas .projects-grid .project-pages > .page-demo .demo-card-note {
+    margin: 4px 0 8px !important;
+    -webkit-line-clamp: 5 !important;
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+  }
+  .artist-canvas .projects-grid .project-pages > .page-demo .demo-card-cm-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border-top: 1px dashed rgba(0,0,0,0.15) !important;
+    padding-top: 6px;
+    margin-top: 4px;
+  }
+  .artist-canvas .projects-grid .project-pages > .page-demo .demo-card-cm-line {
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+  }
+  .artist-canvas .projects-grid .project-pages > .page-demo .demo-card-cm-input { margin-top: 6px !important; }
+
+  /* Show dots */
+  .artist-canvas .projects-grid .project-dots { display: flex !important; margin-top: 8px !important; }
+}
