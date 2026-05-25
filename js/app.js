@@ -4508,11 +4508,17 @@ async function _renderProfileImpl() {
   try {
     if (window.Playlists && window.Playlists.fetchMine) myPlaylists = await window.Playlists.fetchMine();
   } catch (e) { console.warn('[profile] playlists', e); }
+  // Cheers I've sent — drives the 세모(응원하는곡) tab
+  let mySentCheers = [];
+  try {
+    if (window.Cheers && window.Cheers.fetchMySent) mySentCheers = await window.Cheers.fetchMySent();
+  } catch (e) { console.warn('[profile] cheers', e); }
 
   // Defensive defaults — never crash if db arrays are missing
   if (!Array.isArray(followedArtists)) followedArtists = [];
   if (!Array.isArray(bookmarkedNotes)) bookmarkedNotes = [];
   if (!Array.isArray(myPlaylists)) myPlaylists = [];
+  if (!Array.isArray(mySentCheers)) mySentCheers = [];
 
   const allTracks = Array.isArray(db.tracks) ? db.tracks : [];
   const allNotes = Array.isArray(db.notes) ? db.notes : [];
@@ -5059,13 +5065,32 @@ async function _renderProfileImpl() {
     const allInteractedArtists = new Set([...backedArtistNames, ...followedNames]);
     const totalPlaylistTracks = (myPlaylists || []).reduce((sum, p) => sum + ((p.trackIds || []).length), 0);
 
-    // ── Tab 1 (▲ 투자): SPO trading cards + 함께 만드는 아티스트 (Pokemon-style tama cards) ──
+    // ── Tab 1 (▲ 세모): 응원하는 곡 — tracks the user has cheered ──
+    const _escC = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const cheeredSongsHtml = mySentCheers.map(c => {
+      const t = (db.tracks || []).find(x => x && x.id === c.track_id);
+      const cover = (t && t.cover)
+        || `https://i.pravatar.cc/200?u=${encodeURIComponent(c.artist_name || 'artist')}`;
+      const dateStr = c.created_at
+        ? new Date(c.created_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+        : '';
+      const playable = !!t;
+      return `
+        <div class="cheered-song-card" ${playable ? `onclick="playTrack('${c.track_id}')"` : ''}>
+          <img src="${cover}" alt="" class="cheered-song-cover" loading="lazy">
+          <div class="cheered-song-info">
+            <div class="cheered-song-title">${_escC(c.track_title) || '곡'}</div>
+            <div class="cheered-song-artist">${_escC(c.artist_name) || '아티스트'}${dateStr ? ` · ${dateStr}` : ''}</div>
+            <div class="cheered-song-msg"><i class="ri-heart-3-fill"></i> ${_escC(c.message)}</div>
+          </div>
+        </div>`;
+    }).join('');
     const tab1Content = `
-      ${myBackings.length > 0 ? `
-        <h3 class="tab-section-head"><i class="ri-coin-line"></i> 함께 만든 곡 <span class="section-count">${myBackings.length}</span></h3>
-        <div class="spo-card-grid">${stoTradingCardsHtml}</div>
+      ${mySentCheers.length > 0 ? `
+        <h3 class="tab-section-head"><i class="ri-heart-3-fill" style="color:#ff2e63;"></i> 응원하는 곡 <span class="section-count">${mySentCheers.length}</span></h3>
+        <div class="cheered-song-list">${cheeredSongsHtml}</div>
       ` : `
-        <div class="empty-tab-message">아직 함께 만든 곡이 없어요.<br>아티스트 페이지에서 💎 함께 만들기를 눌러보세요.</div>
+        <div class="empty-tab-message">아직 응원한 곡이 없어요.<br>아티스트 페이지에서 💝 응원하기를 눌러보세요.</div>
       `}
       ${followingSection}
     `;
@@ -5119,27 +5144,19 @@ async function _renderProfileImpl() {
       </div>
     `;
 
-    // ── Assemble listener body — tabs (icons only) + panels ──
+    // ── Assemble listener body — 2 tabs: 세모(응원하는곡) + 동그라미(즐겨듣기) ──
     listenerBody = `
       <div class="reveal listener-tabs" role="tablist">
-        <button class="listener-tab active" data-tab="cards" onclick="switchListenerTab('cards')" role="tab" title="투자 카드">
+        <button class="listener-tab active" data-tab="cards" onclick="switchListenerTab('cards')" role="tab" title="응원하는 곡">
           <i class="ri-triangle-fill"></i>
         </button>
         <button class="listener-tab" data-tab="folders" onclick="switchListenerTab('folders')" role="tab" title="즐겨듣기">
           <i class="ri-circle-fill"></i>
         </button>
-        <button class="listener-tab" data-tab="notes" onclick="switchListenerTab('notes')" role="tab" title="포스트잇">
-          <i class="ri-checkbox-blank-fill"></i>
-        </button>
-        <button class="listener-tab" data-tab="data" onclick="switchListenerTab('data')" role="tab" title="데이터">
-          <i class="shape-diamond">◆</i>
-        </button>
       </div>
       <div class="reveal listener-tab-panels">
         <div class="tab-panel active" data-tab="cards">${tab1Content}</div>
         <div class="tab-panel" data-tab="folders">${playlistSection || '<div class="empty-tab-message">아직 폴더가 없어요.</div>'}</div>
-        <div class="tab-panel" data-tab="notes">${mePostitsSection || '<div class="empty-tab-message">아직 포스트잇이 없어요.</div>'}</div>
-        <div class="tab-panel" data-tab="data">${dataTabContent}</div>
       </div>
     `;
   }
@@ -6587,6 +6604,8 @@ function renderArtistProfile(artistName) {
           </div>
         ` : ''}
 
+        ${isArtistRole ? '<div id="cheer-heart-mount"></div>' : ''}
+
         ${isArtistRole ? `
           <!-- 청취곡: 마스터(싱글 포함) — counts box의 '싱글' 클릭 시 여기로 스크롤 -->
           ${releasedCount > 0 ? `
@@ -6625,6 +6644,11 @@ function renderArtistProfile(artistName) {
   }, 100);
   // Re-run observer too
   try { if (typeof observeReveals === 'function') observeReveals(); } catch (_) {}
+
+  // Async: fill the 응원 하트 wall (cheers received by this artist)
+  if (isArtistRole && typeof window.mountCheerHeart === 'function') {
+    window.mountCheerHeart(artistName);
+  }
 
   // Async upgrade: if we don't yet know the Supabase artist id, look it up
   // and update fan count + follow button in the DOM (non-blocking).
@@ -8925,6 +8949,76 @@ window.submitCheer = async function (trackId, trackTitle, artistName) {
       if (btn) { btn.disabled = false; btn.textContent = '💝 응원 보내기'; }
     }
   }
+};
+
+// ── 응원 하트 월 (cheer heart wall) ─────────────────────────────────
+// Heart-masked panel holding cheer messages as little post-its.
+// Shown on the artist page (both the artist's own and visitors').
+const _CHEER_POSTIT_COLORS = [
+  { bg: '#FFE082', text: '#5D4037' },
+  { bg: '#F8BBD0', text: '#880E4F' },
+  { bg: '#C5E1A5', text: '#33691E' },
+  { bg: '#B3E5FC', text: '#01579B' },
+  { bg: '#FFCCBC', text: '#BF360C' },
+  { bg: '#E1BEE7', text: '#4A148C' }
+];
+
+function _cheerHeartHtml(artistName, cheers) {
+  const safeName = (artistName || '아티스트').replace(/</g,'&lt;');
+  const list = Array.isArray(cheers) ? cheers : [];
+  const VISIBLE = 14;
+  const shown = list.slice(0, VISIBLE);
+  const extra = Math.max(0, list.length - shown.length);
+
+  let inner;
+  if (list.length === 0) {
+    inner = `<div class="cheer-heart-empty">아직 응원이 없어요.<br>첫 응원을 기다리고 있어요 💛</div>`;
+  } else {
+    const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    inner = `<div class="cheer-heart-cluster">
+      ${shown.map((c, i) => {
+        const col = _CHEER_POSTIT_COLORS[i % _CHEER_POSTIT_COLORS.length];
+        const rot = ((i * 37) % 13) - 6;  // deterministic -6..+6
+        return `
+          <div class="cheer-postit" style="background:${col.bg}; color:${col.text}; --rot:${rot}deg;">
+            <div class="cheer-postit-msg">${esc(c.message)}</div>
+            <div class="cheer-postit-from">— ${esc(c.supporter_name || '익명')}</div>
+          </div>`;
+      }).join('')}
+      ${extra > 0 ? `<div class="cheer-postit cheer-postit-more" style="--rot:3deg;">+${extra}개<br>더</div>` : ''}
+    </div>`;
+  }
+
+  return `
+    <div class="cheer-heart-section reveal">
+      <div class="cheer-heart-header">
+        <span class="cheer-heart-emblem">💝</span>
+        <div>
+          <h2 class="cheer-heart-title">${safeName} 응원함</h2>
+          <div class="cheer-heart-sub">${list.length > 0 ? `${list.length}개의 응원이 쌓였어요` : '응원을 기다리는 중'}</div>
+        </div>
+      </div>
+      <div class="cheer-heart-wall">${inner}</div>
+    </div>
+  `;
+}
+
+// Fetch this artist's cheers and fill the #cheer-heart-mount placeholder.
+window.mountCheerHeart = async function (artistName) {
+  const mount = document.getElementById('cheer-heart-mount');
+  if (!mount) return;
+  let cheers = [];
+  try {
+    if (window.Cheers && window.Cheers.fetchForArtistByName) {
+      cheers = await window.Cheers.fetchForArtistByName(artistName, 120);
+    }
+  } catch (e) { console.warn('[cheerHeart]', e); }
+  // User may have navigated away during the fetch
+  if (currentView !== 'artist') return;
+  const m2 = document.getElementById('cheer-heart-mount');
+  if (!m2) return;
+  m2.innerHTML = _cheerHeartHtml(artistName, cheers);
+  try { document.querySelectorAll('#cheer-heart-mount .reveal').forEach(el => el.classList.add('in-view')); } catch (_) {}
 };
 
 // Brief celebratory overlay after a cheer is sent.
