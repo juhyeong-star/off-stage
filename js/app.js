@@ -2018,6 +2018,10 @@ async function renderWall() {
     ? `<button class="wall-fab" onclick="toggleWallCompose()" title="벽에 남기기"><i class="ri-add-line"></i> 남기기</button>`
     : `<button class="wall-fab" onclick="navigateTo('auth')" title="로그인하고 글 남기기"><i class="ri-login-box-line"></i> 로그인</button>`;
 
+  // Mobile-only floating search button — hidden on desktop via CSS.
+  // Tap it to slide up the search/sort sheet from the bottom.
+  const searchFab = `<button class="wall-search-fab" onclick="toggleWallSearch()" title="검색"><i class="ri-search-line"></i></button>`;
+
   // Compact toolbar (count only; search/sort only when there are many notes)
   const showAdvancedControls = allNotes.length > 12 || q;
   const toolbar = `
@@ -2031,6 +2035,9 @@ async function renderWall() {
       ` : ''}
     </div>
     <div class="wall-advanced" id="wall-advanced" ${showAdvancedControls && q ? '' : 'hidden'}>
+      <button class="wall-advanced-close" onclick="toggleWallSearch()" title="닫기" aria-label="닫기">
+        <i class="ri-close-line"></i>
+      </button>
       <div class="wall-search-v2">
         <i class="ri-search-line"></i>
         <input type="text" id="wall-search-input" placeholder="검색 (내용 / 작성자)" value="${q.replace(/"/g,'&quot;')}"
@@ -2071,6 +2078,7 @@ async function renderWall() {
         <p class="wall-hint">포스트잇을 드래그해서 움직여봐 · 탭하면 작성자 프로필 ✋</p>
       </div>
       ${writeFab}
+      ${searchFab}
       ${writeComposer}
       ${notesHtml}
       ${emptyMsg}
@@ -2080,6 +2088,19 @@ async function renderWall() {
 
   initNoteDrag();
 }
+
+// Mobile: toggle the search/sort sheet that slides up from the bottom.
+// Also focuses the input when opening so the keyboard pops up immediately.
+window.toggleWallSearch = function () {
+  const panel = document.getElementById('wall-advanced');
+  if (!panel) return;
+  const opening = panel.hidden;
+  panel.hidden = !opening;
+  if (opening) {
+    const input = document.getElementById('wall-search-input');
+    if (input) setTimeout(() => input.focus(), 60);
+  }
+};
 
 window.wallSetSearch = function(val) {
   _wallSearch = val || '';

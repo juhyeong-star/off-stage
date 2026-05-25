@@ -2185,13 +2185,89 @@ h3 { font-size: 19px; font-weight: 700; }
   .wall-header-v2 { padding: 12px 14px 6px; }
   .wall-title-row h1 { font-size: 18px; }
   .wall-toolbar-v2 { padding: 4px 10px; font-size: 11px; }
-  .wall-advanced { margin: 6px 14px 0; }
   .wall-search-v2 { min-width: 100%; }
   .wall-sort-v2 { width: 100%; justify-content: space-between; }
   .wall-sort-v2 .wall-sort-btn { flex: 1; padding: 5px 6px; font-size: 11px; }
   .wall-fab { bottom: calc(var(--player-height) + 16px); right: 16px; padding: 10px 18px; font-size: 13px; }
   .wall-compose-panel { bottom: calc(var(--player-height) + 72px); right: 16px; width: auto; left: 16px; }
 }
+
+/* ─── Mobile-only floating search FAB ─────────────────────────────────
+   Hidden on desktop. Appears on the bottom-left (opposite the 남기기 FAB).
+   Tapping it slides the search/sort panel up as a bottom sheet. */
+.wall-search-fab {
+  display: none;
+  position: fixed;
+  bottom: calc(var(--player-height) + 22px);
+  left: 22px;
+  z-index: 500;
+  width: 50px; height: 50px;
+  background: rgba(15,15,15,0.94);
+  color: #fff;
+  border: 1px solid var(--divider, #2a2a2a);
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.5);
+  backdrop-filter: blur(10px);
+  align-items: center; justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.wall-search-fab:hover { transform: scale(1.06); box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+.wall-search-fab:active { transform: scale(0.94); }
+
+/* Close X inside the advanced panel — visible on mobile (bottom sheet) */
+.wall-advanced-close {
+  display: none;
+  position: absolute;
+  top: 8px; right: 10px;
+  width: 32px; height: 32px;
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  border: none; border-radius: 50%;
+  cursor: pointer;
+  align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.wall-advanced-close:hover { background: rgba(255,255,255,0.14); }
+.wall-advanced { position: relative; }
+
+@media (max-width: 768px) {
+  /* Hide the inline toolbar search button — replaced by the floating FAB */
+  .wall-toolbar-v2 .wall-toolbtn { display: none; }
+  /* Show the floating search FAB */
+  .wall-search-fab {
+    display: inline-flex;
+    bottom: calc(var(--player-height) + 16px);
+    left: 16px;
+    width: 46px; height: 46px;
+    font-size: 19px;
+  }
+  /* Search panel becomes a bottom sheet that slides up */
+  .wall-advanced:not([hidden]) {
+    position: fixed;
+    left: 0; right: 0;
+    bottom: 0;
+    top: auto;
+    margin: 0;
+    padding: 36px 18px calc(env(safe-area-inset-bottom, 0px) + 18px);
+    z-index: 600;
+    background: rgba(15,15,15,0.98);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid var(--divider, #2a2a2a);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -10px 36px rgba(0,0,0,0.6);
+    animation: wallSearchSheetUp 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .wall-advanced-close { display: inline-flex; }
+}
+@keyframes wallSearchSheetUp {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* Player-expanded state hides the wall FABs (matches the existing wall-fab rule) */
+body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 
 /* Wall toolbar — search + sort + count */
 .wall-toolbar {
