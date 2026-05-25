@@ -56,6 +56,43 @@ function _hashSeed(s) {
   return h >>> 0;
 }
 
+// ─── Starfield background ───────────────────────────────────────────────
+// Returns HTML for a sky full of tiny twinkling dots + a few bigger sparkle
+// stars. Used as the background of the shapes / universe pages. Positions
+// are seeded so the sky is identical on every reload.
+function _buildStarfield(seedPrefix, dotCount, sparkleCount) {
+  const out = [];
+  // Tiny twinkling dots
+  for (let i = 0; i < (dotCount || 60); i++) {
+    const seed = _hashSeed((seedPrefix || 'sky') + ':dot:' + i);
+    const x = ((seed % 10000) / 100).toFixed(2);              // 0–99.99 %
+    const y = (((seed >>> 8) % 10000) / 100).toFixed(2);
+    const size = 1 + ((seed >>> 16) % 4);                     // 1–4 px
+    const dur = (2.4 + ((seed >>> 20) % 35) / 10).toFixed(1); // 2.4–5.8 s
+    const delay = (((seed >>> 22) % 40) / 10).toFixed(1);     // 0–4 s
+    const maxOp = (0.45 + ((seed >>> 24) % 55) / 100).toFixed(2); // 0.45–1.0
+    out.push(
+      `<div class="star star-dot" style="left:${x}%;top:${y}%;width:${size}px;height:${size}px;` +
+      `animation-duration:${dur}s;animation-delay:${delay}s;--max-opacity:${maxOp};"></div>`
+    );
+  }
+  // Bigger sparkle stars (✦)
+  for (let i = 0; i < (sparkleCount || 8); i++) {
+    const seed = _hashSeed((seedPrefix || 'sky') + ':spk:' + i);
+    const x = ((seed % 10000) / 100).toFixed(2);
+    const y = (((seed >>> 8) % 10000) / 100).toFixed(2);
+    const size = 12 + ((seed >>> 16) % 10);                   // 12–21 px
+    const dur = (3.5 + ((seed >>> 20) % 35) / 10).toFixed(1); // 3.5–6.9 s
+    const delay = (((seed >>> 22) % 50) / 10).toFixed(1);
+    const tilt = ((seed >>> 24) % 30) - 15;                   // -15..+14 deg
+    out.push(
+      `<div class="star star-sparkle" style="left:${x}%;top:${y}%;font-size:${size}px;` +
+      `animation-duration:${dur}s;animation-delay:${delay}s;--tilt:${tilt}deg;">✦</div>`
+    );
+  }
+  return out.join('');
+}
+
 // Native back/forward handler — re-render the view encoded in the new URL
 window.addEventListener('popstate', (e) => {
   const route = (e.state && e.state.route) || _hashToRoute(location.hash) || 'shapes';
@@ -3156,23 +3193,10 @@ function renderShapes() {
     .slice()
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
-  // Decorative floating shapes — seeded by index so they stay in the same spots across reloads
-  let decoHtml = '';
-  const decoShapes = ['border-radius:50%', 'border-radius:50%', 'border-radius:4px', 'clip-path:polygon(50% 0%,0% 100%,100% 100%)', 'clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%)', 'border-radius:50%'];
-  for (let i = 0; i < 50; i++) {
-    const seed = _hashSeed('deco-shapes:' + i);
-    const size = 8 + (seed % 50);
-    const x = (seed >>> 6) % 96;
-    const y = (seed >>> 13) % 96;
-    const color = SHAPE_COLORS[(seed >>> 20) % SHAPE_COLORS.length];
-    const opacity = 0.15 + (((seed >>> 23) % 55) / 100);
-    const dur = 8 + ((seed >>> 26) % 24);
-    const shapeStyle = decoShapes[(seed >>> 29) % decoShapes.length];
-    const dx = ((seed >>> 4) % 70) - 35;
-    const dy = ((seed >>> 11) % 70) - 35;
-    const rot = ((((seed >>> 17) % 80) - 40) / 10);
-    decoHtml += `<div class="deco-shape" style="width:${size}px;height:${size}px;left:${x}%;top:${y}%;background:${color};opacity:${opacity};${shapeStyle};animation:floatDrift ${dur}s ease-in-out infinite;--dx:${dx}px;--dy:${dy}px;--rot:${rot}deg;"></div>`;
-  }
+  // Starfield background — replaces the old "조잡한" floating shapes with
+  // a real twinkling night sky. Positions are seeded so the sky is the same
+  // across reloads.
+  const decoHtml = _buildStarfield('shapes-sky', 90, 10);
 
   // Track shapes
   let shapesHtml = '';
@@ -3592,24 +3616,8 @@ window.renderUniverse = async function () {
   const cols = 3;
   const universeHeight = Math.max(900, Math.ceil(allItems.length / cols) * 280);
 
-  // Decorative bg shapes — seeded by index so they stay put across reloads
-  let decoHtml = '';
-  const decoShapes = ['border-radius:50%', 'border-radius:4px', 'clip-path:polygon(50% 0%,0% 100%,100% 100%)'];
-  for (let i = 0; i < 30; i++) {
-    const seed = _hashSeed('deco-uni:' + i);
-    const size = 8 + (seed % 36);
-    const x = (seed >>> 6) % 96;
-    const y = (seed >>> 13) % 96;
-    const palette = (typeof SHAPE_COLORS !== 'undefined') ? SHAPE_COLORS : ['#FF9800'];
-    const color = palette[(seed >>> 20) % palette.length];
-    const opacity = 0.12 + (((seed >>> 23) % 40) / 100);
-    const dur = 10 + ((seed >>> 26) % 24);
-    const shapeStyle = decoShapes[(seed >>> 29) % decoShapes.length];
-    const dx = ((seed >>> 4) % 50) - 25;
-    const dy = ((seed >>> 11) % 50) - 25;
-    const rot = ((((seed >>> 17) % 60) - 30) / 10);
-    decoHtml += `<div class="deco-shape" style="width:${size}px;height:${size}px;left:${x}%;top:${y}%;background:${color};opacity:${opacity};${shapeStyle};animation:floatDrift ${dur}s ease-in-out infinite;--dx:${dx}px;--dy:${dy}px;--rot:${rot}deg;"></div>`;
-  }
+  // Starfield background — same twinkling night sky as the shapes page.
+  const decoHtml = _buildStarfield('universe-sky', 70, 8);
 
   // Item nodes
   let itemsHtml = '';

@@ -987,6 +987,57 @@ body.guest .sidebar-my-channel { display: none; }
   z-index: 0;
 }
 
+/* ─── Starfield background (shapes + universe pages) ────────────────
+   Replaces the older "deco-shape" floating squares with a real
+   night sky: tiny twinkling dots + a few bigger ✦ sparkles. */
+.star {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+  will-change: opacity, transform;
+}
+.star-dot {
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, rgba(255,255,255,0.55) 55%, transparent 90%);
+  box-shadow: 0 0 5px rgba(255,255,255,0.55), 0 0 10px rgba(200,220,255,0.25);
+  opacity: 0;
+  animation-name: starTwinkle;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+.star-sparkle {
+  color: #fff;
+  line-height: 1;
+  font-family: serif;
+  text-shadow:
+    0 0 6px rgba(255,255,255,0.95),
+    0 0 14px rgba(180,210,255,0.5),
+    0 0 22px rgba(140,180,255,0.25);
+  opacity: 0;
+  animation-name: starSparkle;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+  transform-origin: center center;
+}
+@keyframes starTwinkle {
+  0%, 100% { opacity: calc(var(--max-opacity, 0.9) * 0.25); transform: scale(0.7); }
+  50%      { opacity: var(--max-opacity, 0.9);             transform: scale(1.15); }
+}
+@keyframes starSparkle {
+  0%, 100% {
+    opacity: 0.25;
+    transform: scale(0.7) rotate(calc(var(--tilt, 0deg) - 12deg));
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15) rotate(calc(var(--tilt, 0deg) + 12deg));
+  }
+}
+/* Prefers-reduced-motion: hold steady at mid-opacity (no twinkle) */
+@media (prefers-reduced-motion: reduce) {
+  .star-dot, .star-sparkle { animation: none; opacity: 0.85; transform: none; }
+}
+
 /* Artist page — top row: name strip stays compact, counts hugs it, 소식 fills the rest. */
 .artist-header-row {
   display: grid;
