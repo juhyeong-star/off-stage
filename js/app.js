@@ -5661,13 +5661,42 @@ function renderProjectBox(pid, versions) {
     </div>
   `;
 
+  // PC ↔ Mobile split:
+  //   - Mobile (≤768): the new swipe carousel (master + each demo as pages)
+  //   - Desktop: the original layout — big square cover at top of the box,
+  //     title + cheer below, demos stacked in a 1-col grid underneath
+  // Decided at render time. Resize → user navigates or refreshes to flip.
+  const _isMobile = (typeof window !== 'undefined') && window.innerWidth <= 768;
+
+  if (_isMobile) {
+    return `
+      <div class="project-box reveal" data-project="${pid}">
+        <div class="project-pages">
+          ${masterPageHtml}
+          ${cardsHtml /* demo cards have class "page-demo" — mobile CSS uses it */}
+        </div>
+        ${projectDotsHtml}
+      </div>
+    `;
+  }
+
+  // Desktop — restored legacy layout (no carousel)
   return `
     <div class="project-box reveal" data-project="${pid}">
-      <div class="project-pages">
-        ${masterPageHtml}
-        ${cardsHtml /* each demo card already has class "page-demo" */}
+      <div class="project-header">
+        ${coverHtml}
+        <div class="project-header-info">
+          <h3 class="project-title">「${safeTitle}」</h3>
+          ${masterDate ? `<div class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
+          ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
+          ${cheerBtnHtml}
+        </div>
       </div>
-      ${projectDotsHtml}
+      ${demos.length > 0 ? `
+        <div class="demo-path" style="grid-template-columns: repeat(${cols}, 1fr);">
+          ${cardsHtml}
+        </div>
+      ` : ''}
     </div>
   `;
 }
