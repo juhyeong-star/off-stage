@@ -3240,26 +3240,35 @@ function renderShapes() {
   const showFeed = dbForFeed && dbForFeed.currentUser && (typeof window.renderActivityFeed === 'function');
   const feedHtml = showFeed ? window.renderActivityFeed() : '';
 
-  // Random-play dice — now a fixed FAB pinned above the upload button on
-  // the right edge. No more drag (anchored), but hover-roll + click-shuffle
-  // still work.
+  // Random-play dice — real 3D CSS cube pinned above the upload FAB.
+  // Each face is its own div with pre-placed dots; the wrapper's data-face
+  // attribute drives the cube's rotation transform (see CSS).
   const initialFace = 1 + Math.floor(Math.random() * 6);
+  const _dicePips = (n) => {
+    const map = {
+      1: ['c'],
+      2: ['tl','br'],
+      3: ['tl','c','br'],
+      4: ['tl','tr','bl','br'],
+      5: ['tl','tr','c','bl','br'],
+      6: ['tl','ml','bl','tr','mr','br']
+    };
+    return (map[n] || []).map(p => `<span class="die-dot" data-pos="${p}"></span>`).join('');
+  };
   const diceHtml = `
     <div class="dice-shape dice-fab" id="random-dice"
+         data-face="${initialFace}"
          onmouseenter="diceHoverStart(this)"
          onmouseleave="diceHoverEnd(this)"
          onclick="diceBouncePlay(this)"
          title="굴려서 도형들 다시 섞기">
-      <div class="die-face" data-face="${initialFace}">
-        <span class="die-dot" data-pos="tl"></span>
-        <span class="die-dot" data-pos="tm"></span>
-        <span class="die-dot" data-pos="tr"></span>
-        <span class="die-dot" data-pos="ml"></span>
-        <span class="die-dot" data-pos="c"></span>
-        <span class="die-dot" data-pos="mr"></span>
-        <span class="die-dot" data-pos="bl"></span>
-        <span class="die-dot" data-pos="bm"></span>
-        <span class="die-dot" data-pos="br"></span>
+      <div class="dice-cube">
+        <div class="cube-face face-front">${_dicePips(1)}</div>
+        <div class="cube-face face-back">${_dicePips(6)}</div>
+        <div class="cube-face face-right">${_dicePips(2)}</div>
+        <div class="cube-face face-left">${_dicePips(5)}</div>
+        <div class="cube-face face-top">${_dicePips(3)}</div>
+        <div class="cube-face face-bottom">${_dicePips(4)}</div>
       </div>
     </div>
   `;
@@ -3412,44 +3421,34 @@ function initDiceDrag() {
   document.addEventListener('touchcancel', onUp);
 }
 
-// Set the visible face (1-6) by toggling data-face on the .die-face grid
+// Set which face of the 3D cube is toward the camera (1-6).
+// data-face lives on the .dice-shape wrapper — CSS rotates .dice-cube
+// to the matching orientation with a transition.
 function setDieFace(el, n) {
-  const grid = el && el.querySelector('.die-face');
-  if (grid) grid.setAttribute('data-face', String(n));
+  if (el) el.setAttribute('data-face', String(n));
 }
 
-// Mouse over → fast-cycle faces (the dice "spins" while hovered).
-window.diceHoverStart = function(el) {
-  if (!el) return;
-  el.classList.add('rolling');
-  if (window.__diceFaceTimer) clearInterval(window.__diceFaceTimer);
-  window.__diceFaceTimer = setInterval(() => {
-    setDieFace(el, 1 + Math.floor(Math.random() * 6));
-  }, 70);
-};
+// Mouse over → CSS handles the 3D tumble animation via :hover .dice-cube.
+// JS just keeps the function defined for compat with inline onmouseenter.
+window.diceHoverStart = function(el) { /* CSS-driven */ };
+window.diceHoverEnd   = function(el) { /* CSS-driven */ };
 
-window.diceHoverEnd = function(el) {
-  if (window.__diceFaceTimer) { clearInterval(window.__diceFaceTimer); window.__diceFaceTimer = null; }
-  if (el) el.classList.remove('rolling');
-  // Keep the last face shown — feels like the dice "settled" wherever it stopped
-};
-
-// Click → bounce up + shuffle every floating shape to a new random spot.
-// Temporary effect only — F5 returns shapes to their seeded default positions
-// (or whatever the user dragged + saved to localStorage).
+// Click → bounce up + shuffle every floating shape. The cube also "rolls"
+// to a new random face by changing data-face mid-bounce (CSS transitions it).
 window.diceBouncePlay = function(el) {
   if (!el) return;
   // Just finished dragging the dice itself — swallow this synthetic click
   if (el.__suppressNextClick) { el.__suppressNextClick = false; return; }
-  if (window.__diceFaceTimer) { clearInterval(window.__diceFaceTimer); window.__diceFaceTimer = null; }
 
-  // Bounce: pause idle drift + remove rolling, then run bounce animation.
-  el.classList.remove('rolling');
+  // Restart the bounce animation cleanly
   el.classList.remove('bouncing');
   void el.offsetWidth;                // force reflow → restart animation
   el.classList.add('bouncing');
-  setTimeout(() => setDieFace(el, 1 + Math.floor(Math.random() * 6)), 230);
-  setTimeout(() => el.classList.remove('bouncing'), 700);
+  // Roll to a new face slightly after the bounce starts (looks like the dice
+  // "settles" mid-air). The .bouncing CSS rule disables :hover's tumble so
+  // the cube can transition cleanly to the new orientation.
+  setTimeout(() => setDieFace(el, 1 + Math.floor(Math.random() * 6)), 200);
+  setTimeout(() => el.classList.remove('bouncing'), 760);
 
   // Shuffle: at the apex of the bounce, throw every shape to a new spot.
   setTimeout(() => shuffleAllShapes(), 230);

@@ -1408,45 +1408,85 @@ body.guest .sidebar-my-channel { display: none; }
 .wall-song-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wall-song-sub { font-size: 11px; color: var(--text-secondary); }
 
-/* Random-play dice — realistic white cube with black pips */
+/* ============================================================
+   주사위 — true 3D CSS cube (perspective container + 6 absolutely-
+   positioned faces in preserve-3d space). data-face on the wrapper
+   rotates the cube so the chosen number faces the camera. Hover
+   tumbles continuously; click bounces + rolls to a random face.
+   ============================================================ */
 .dice-shape {
   position: absolute;
   width: 68px; height: 68px;
-  border-radius: 14px;
-  /* Subtle gradient + insets fake a 3D-lit cube (light from top-left) */
-  background:
-    radial-gradient(circle at 30% 25%, rgba(255,255,255,0.95) 0%, rgba(245,245,245,1) 35%, rgba(225,225,225,1) 75%, rgba(200,200,200,1) 100%);
-  box-shadow:
-    0 10px 24px rgba(0,0,0,0.55),
-    0 2px 4px rgba(0,0,0,0.25),
-    inset 0 3px 0 rgba(255,255,255,0.9),
-    inset 0 -3px 0 rgba(0,0,0,0.14),
-    inset 3px 0 0 rgba(255,255,255,0.55),
-    inset -3px 0 0 rgba(0,0,0,0.08);
+  --cube-half: 34px;            /* half the cube edge — drives face translateZ */
+  perspective: 600px;
   cursor: pointer; user-select: none;
   z-index: 4;
   will-change: transform;
 }
-/* The face is a 3x3 grid; dots are positioned in specific cells per face number */
-.die-face {
+.dice-cube {
+  position: relative;
   width: 100%; height: 100%;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: 1fr 1fr 1fr;
-  padding: 10px;
-  box-sizing: border-box;
-  transform-origin: center center;
+  transform-style: preserve-3d;
+  /* Smooth settling onto data-face. Overridden during :hover (animation)
+     and during .bouncing (faster transition, no animation). */
+  transition: transform 0.55s cubic-bezier(0.22, 1.2, 0.36, 1);
 }
+.cube-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  padding: 16%;
+  box-sizing: border-box;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,0.97) 0%, rgba(245,245,245,1) 35%, rgba(225,225,225,1) 75%, rgba(200,200,200,1) 100%);
+  border-radius: 14%;
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,0.08),
+    inset 0 4% 0 rgba(255,255,255,0.7),
+    inset 0 -5% 0 rgba(0,0,0,0.06);
+  backface-visibility: hidden;
+}
+/* Each face anchored in 3D space — translateZ = half the cube edge */
+.cube-face.face-front  { transform:                 translateZ(var(--cube-half)); }
+.cube-face.face-back   { transform: rotateY(180deg) translateZ(var(--cube-half)); }
+.cube-face.face-right  { transform: rotateY(90deg)  translateZ(var(--cube-half)); }
+.cube-face.face-left   { transform: rotateY(-90deg) translateZ(var(--cube-half)); }
+.cube-face.face-top    { transform: rotateX(90deg)  translateZ(var(--cube-half)); }
+.cube-face.face-bottom { transform: rotateX(-90deg) translateZ(var(--cube-half)); }
+
+/* data-face → which face is currently toward the camera */
+.dice-shape[data-face="1"] .dice-cube { transform: rotateX(0deg)    rotateY(0deg); }
+.dice-shape[data-face="6"] .dice-cube { transform: rotateX(0deg)    rotateY(180deg); }
+.dice-shape[data-face="2"] .dice-cube { transform: rotateX(0deg)    rotateY(-90deg); }
+.dice-shape[data-face="5"] .dice-cube { transform: rotateX(0deg)    rotateY(90deg); }
+.dice-shape[data-face="3"] .dice-cube { transform: rotateX(-90deg)  rotateY(0deg); }
+.dice-shape[data-face="4"] .dice-cube { transform: rotateX(90deg)   rotateY(0deg); }
+
+/* Drop shadow under the cube (faces are otherwise solid white) */
+.dice-shape::after {
+  content: '';
+  position: absolute;
+  left: 14%; right: 14%;
+  bottom: -7px;
+  height: 9px;
+  background: radial-gradient(ellipse, rgba(0,0,0,0.45), transparent 70%);
+  filter: blur(2px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Pip — same dot inside every face. Pre-placed in each face's HTML so
+   no data-face → visibility map is needed. */
 .die-dot {
-  width: 11px; height: 11px;
+  width: 18%; height: 18%;
+  min-width: 5px; min-height: 5px;
   border-radius: 50%;
-  /* Slight radial gradient gives the pip an "engraved" look */
   background: radial-gradient(circle at 35% 30%, #555, #1a1a1a 60%, #050505);
   box-shadow: inset 0 1px 1px rgba(0,0,0,0.4), inset 0 -1px 0 rgba(255,255,255,0.08);
   align-self: center; justify-self: center;
-  visibility: hidden;
 }
-/* Grid cells (row, col): tl tm tr / ml c mr / bl bm br */
 .die-dot[data-pos="tl"] { grid-area: 1 / 1; }
 .die-dot[data-pos="tm"] { grid-area: 1 / 2; }
 .die-dot[data-pos="tr"] { grid-area: 1 / 3; }
@@ -1456,109 +1496,70 @@ body.guest .sidebar-my-channel { display: none; }
 .die-dot[data-pos="bl"] { grid-area: 3 / 1; }
 .die-dot[data-pos="bm"] { grid-area: 3 / 2; }
 .die-dot[data-pos="br"] { grid-area: 3 / 3; }
-/* Face dot maps */
-.die-face[data-face="1"] .die-dot[data-pos="c"] { visibility: visible; }
-.die-face[data-face="2"] .die-dot[data-pos="tl"],
-.die-face[data-face="2"] .die-dot[data-pos="br"] { visibility: visible; }
-.die-face[data-face="3"] .die-dot[data-pos="tl"],
-.die-face[data-face="3"] .die-dot[data-pos="c"],
-.die-face[data-face="3"] .die-dot[data-pos="br"] { visibility: visible; }
-.die-face[data-face="4"] .die-dot[data-pos="tl"],
-.die-face[data-face="4"] .die-dot[data-pos="tr"],
-.die-face[data-face="4"] .die-dot[data-pos="bl"],
-.die-face[data-face="4"] .die-dot[data-pos="br"] { visibility: visible; }
-.die-face[data-face="5"] .die-dot[data-pos="tl"],
-.die-face[data-face="5"] .die-dot[data-pos="tr"],
-.die-face[data-face="5"] .die-dot[data-pos="c"],
-.die-face[data-face="5"] .die-dot[data-pos="bl"],
-.die-face[data-face="5"] .die-dot[data-pos="br"] { visibility: visible; }
-.die-face[data-face="6"] .die-dot[data-pos="tl"],
-.die-face[data-face="6"] .die-dot[data-pos="ml"],
-.die-face[data-face="6"] .die-dot[data-pos="bl"],
-.die-face[data-face="6"] .die-dot[data-pos="tr"],
-.die-face[data-face="6"] .die-dot[data-pos="mr"],
-.die-face[data-face="6"] .die-dot[data-pos="br"] { visibility: visible; }
 
-/* Hover — pause idle drift, spin the face fast like a real rolling die */
-.dice-shape:hover { animation-play-state: paused; }
+/* Hover — continuous 3D tumble (overrides the data-face transition) */
+.dice-shape:hover .dice-cube {
+  animation: diceTumble 2s linear infinite;
+  transition: none;
+}
+@keyframes diceTumble {
+  0%   { transform: rotateX(0deg)   rotateY(0deg); }
+  50%  { transform: rotateX(180deg) rotateY(360deg); }
+  100% { transform: rotateX(360deg) rotateY(720deg); }
+}
 
-/* Fixed-position dice (pinned above the upload FAB on the right edge).
-   Follows the viewport on scroll so the user can roll it anywhere. */
+/* Click bounce on the container; cube settles to the new data-face */
+.dice-shape.bouncing {
+  animation: diceBounce 0.75s cubic-bezier(0.22, 1.2, 0.36, 1) !important;
+}
+/* During bounce, kill the hover tumble so the cube can transition to data-face */
+.dice-shape.bouncing .dice-cube,
+.dice-shape.bouncing:hover .dice-cube {
+  animation: none;
+  transition: transform 0.6s cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+@keyframes diceBounce {
+  0%   { transform: translateY(0)    scale(1); }
+  20%  { transform: translateY(-14px) scale(1.06); }
+  45%  { transform: translateY(-60px) scale(1.04); }
+  70%  { transform: translateY(-12px) scale(1); }
+  85%  { transform: translateY(0)    scale(0.92); }
+  100% { transform: translateY(0)    scale(1); }
+}
+
+/* Fixed-position dice (pinned above the upload FAB on the right edge) */
 .dice-shape.dice-fab {
   position: fixed !important;
-  /* Upload FAB sits at right:32px, width 56px → its center is 60px from right.
-     Dice is 68px wide → its center sits at 60px from right when right:26px. */
   right: 26px;
-  /* Upload FAB bottom = player-height + 24, height 56, gap ~16 → 96 above viewport bottom */
   bottom: calc(var(--player-height, 88px) + 96px);
   left: auto !important;
   top: auto !important;
   z-index: 500;
-  /* Anchored — kill the drift; bounce/spin animations still trigger on hover/click */
-  animation: none !important;
 }
 @media (max-width: 768px) {
-  /* Mobile/tablet: upload-fab is still 56x56 right:32 (default), so align dice with it */
   .dice-shape.dice-fab {
     right: 26px;
     width: 60px; height: 60px;
+    --cube-half: 30px;
     bottom: calc(var(--player-height, 88px) + 92px);
   }
 }
 @media (max-width: 420px) {
-  /* Small phones: upload-fab shrinks to 46x46 right:14 — match dice to that */
   .dice-shape.dice-fab {
     right: 14px;
     width: 46px; height: 46px;
+    --cube-half: 23px;
     bottom: calc(var(--player-height, 88px) + 72px);
   }
 }
-/* Dice face uses percentage-based sizing so dots scale with the box on every breakpoint */
-.die-face { padding: 16%; }
-.die-dot {
-  width: 18%; height: 18%;
-  min-width: 6px; min-height: 6px;
-}
-/* Drag mode — disable drift entirely and add a subtle "lifted" indicator */
+
+/* Legacy drag indicator (drag-to-curate is disabled for the fab variant, but
+   keep this for any non-fab placement that re-enables drag) */
 .dice-shape.dragging {
-  animation: none !important;
   cursor: grabbing;
-  box-shadow:
-    0 18px 36px rgba(0,0,0,0.6),
-    0 4px 8px rgba(0,0,0,0.4),
-    inset 0 3px 0 rgba(255,255,255,0.95),
-    inset 0 -3px 0 rgba(0,0,0,0.14);
+  filter: drop-shadow(0 16px 28px rgba(0,0,0,0.55));
   transform: scale(1.08);
   z-index: 50;
-}
-.dice-shape.rolling .die-face {
-  animation: diceSpin 0.32s linear infinite;
-}
-@keyframes diceSpin {
-  0%   { transform: rotate(0deg)   scale(1); }
-  50%  { transform: rotate(180deg) scale(1.12); }
-  100% { transform: rotate(360deg) scale(1); }
-}
-/* Click — single bounce up (퐁) with squash on landing.
-   !important needed to beat the inline `animation: floatDrift ...` style. */
-.dice-shape.bouncing {
-  animation: diceBounce 0.7s cubic-bezier(0.22, 1.2, 0.36, 1) !important;
-}
-.dice-shape.bouncing .die-face {
-  animation: diceBounceFace 0.7s cubic-bezier(0.22, 1.2, 0.36, 1);
-}
-@keyframes diceBounce {
-  0%   { transform: translateY(0)    scaleY(1)   scaleX(1); }
-  20%  { transform: translateY(-12px) scaleY(1.12) scaleX(0.92); }
-  45%  { transform: translateY(-90px) scaleY(1.05) scaleX(0.97); }
-  70%  { transform: translateY(-20px) scaleY(1)   scaleX(1); }
-  85%  { transform: translateY(0)    scaleY(0.78) scaleX(1.18); }
-  100% { transform: translateY(0)    scaleY(1)   scaleX(1); }
-}
-@keyframes diceBounceFace {
-  0%   { transform: rotate(0deg); }
-  45%  { transform: rotate(360deg); }
-  100% { transform: rotate(540deg); }
 }
 
 /* Upload button floating */
