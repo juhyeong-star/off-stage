@@ -693,22 +693,8 @@ function _genNotificationsMock() {
     });
   } catch(_) {}
 
-  // Backing acknowledgements (artist thank-you messages)
-  try {
-    const myBackings = (typeof window._getMyBackings === 'function') ? window._getMyBackings() : [];
-    myBackings.slice(0, 3).forEach((b, i) => {
-      items.push({
-        id: 'n_thanks_' + b.id,
-        kind: 'thanks',
-        icon: '💌',
-        color: '#FFD600',
-        title: `${b.artistName}이(가) 감사 메시지를 보냈어요`,
-        body: `${(b.amount/10000).toFixed(0)}만원 후원 — 「${b.trackTitle}」`,
-        time: new Date(b.createdAt).getTime() + 30000,
-        onClickRoute: 'artist:' + encodeURIComponent(b.artistName)
-      });
-    });
-  } catch(_) {}
+  // Backing thank-you notifications — REMOVED. We don't surface money
+  // anymore; cheer messages took over the "thank you" role.
 
   // Level-up notification (mock: if any followed artist crossed a tier today)
   try {
@@ -875,24 +861,8 @@ window.renderActivityFeed = function() {
   const events = [];
   const mockListeners = ['청취자_민지', '청취자_도윤', '청취자_서연', '청취자_지호', '청취자_은서', '청취자_가람'];
 
-  // Recent backings
-  (db.tracks || []).filter(t => t && t.isDemo).slice(0, 6).forEach((t, i) => {
-    const cfg = (typeof getStoConfigForTrack === 'function') ? getStoConfigForTrack(t) : null;
-    if (!cfg || !cfg.raisedKrw) return;
-    const supporter = mockListeners[i % mockListeners.length];
-    const amt = Math.floor((cfg.raisedKrw / Math.max(3, i+2)) / 10000) * 10000;
-    if (amt < 10000) return;
-    events.push({
-      kind: 'backing',
-      who: supporter,
-      whoAvatar: 'https://i.pravatar.cc/100?u=' + encodeURIComponent(supporter),
-      action: '함께 만들기',
-      target: `${t.artist}의 「${t.title}」 데모에 ${(amt/10000).toFixed(0)}만원`,
-      time: Date.now() - (i+1) * 1800000 * 3,
-      cover: t.cover,
-      onClick: `playTrack('${t.id}')`
-    });
-  });
+  // Recent backings — REMOVED. We don't surface money on the platform
+  // anymore; cheer messages replaced this kind of activity entry.
 
   // Recent postits as activity
   (db.notes || []).slice(0, 8).forEach((n, i) => {
@@ -5574,8 +5544,8 @@ function renderProjectBox(pid, versions) {
             </div>
           ` : `
             <div class="scribble-locked">
-              <div class="scribble-locked-text">💎 후원한 분만 낙서를 남길 수 있어요</div>
-              <button class="scribble-locked-cta" onclick="event.stopPropagation(); openStoMini('${v.id}', '${(v.title||'').replace(/'/g,"\\'")}', '${(v.artist||'').replace(/'/g,"\\'")}')">함께 만들기 →</button>
+              <div class="scribble-locked-text">로그인하면 댓글을 남길 수 있어요</div>
+              <button class="scribble-locked-cta" onclick="event.stopPropagation(); navigateTo('auth')">로그인하기 →</button>
             </div>
           `}
         </div>
