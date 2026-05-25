@@ -2843,73 +2843,127 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 .projects-grid .demo-card-cm-line { font-size: 12px; line-height: 1.3; }
 .projects-grid .demo-card-cm-input-field { font-size: 12px; }
 
-/* Mobile (1 col grid): keep cover on the left, info on the right —
-   each card uses full viewport width so we have room for a horizontal layout */
+/* Mobile (1 col grid): the album becomes a horizontal swipe carousel.
+   Cover page = big vertical hero (full square cover + centered info + cheer).
+   Demo pages = bigger, full-content card. */
 @media (max-width: 480px) {
-  .projects-grid .project-header {
-    flex-direction: row;
+  /* Cover page hero */
+  .projects-grid .page-cover {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center;
+    gap: 14px;
+    padding: 14px 14px 16px;
+    border: 1.5px solid #111;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: 2px 2px 0 #111;
+  }
+  .projects-grid .page-cover .project-cover-wrap {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1 !important;
+    max-width: 360px;
+    margin: 0 auto;
+  }
+  .projects-grid .page-cover .project-header-info {
+    width: 100%;
+    text-align: center;
     align-items: center;
-    gap: 12px;
+    flex: none;
   }
-  .projects-grid .project-cover-wrap {
-    width: 96px;
-    height: 96px;
-    aspect-ratio: auto;
+  .projects-grid .page-cover .project-title { font-size: 22px; margin-bottom: 4px; }
+  .projects-grid .page-cover .project-master-date,
+  .projects-grid .page-cover .project-participants {
+    justify-content: center;
+    text-align: center;
   }
-  .projects-grid .project-title { font-size: 17px; }
-  .projects-grid .demo-card { padding: 10px 12px 12px; }
+  .projects-grid .page-cover .cheer-btn { margin: 10px auto 0; }
+
+  /* Demo card body (general) — used both as a page and in fallbacks */
   .projects-grid .demo-card-title { font-size: 14px; }
   .projects-grid .demo-card-note-line,
   .projects-grid .demo-card-cm-line { font-size: 13px; }
   .projects-grid .demo-card-cm-input-field { font-size: 13px; }
 }
 
-/* Demo carousel — page indicator dots (mobile only) */
-.demo-dots {
+/* Project carousel — page indicator dots (mobile only).
+   Page 0 = album cover, pages 1..N = each demo. */
+.project-pages {                       /* desktop default: pages stack vertically with a gap */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.project-dots {
   display: none;
   justify-content: center;
   gap: 8px;
   margin-top: 10px;
 }
-.demo-dot {
+.project-dot {
   width: 7px; height: 7px;
   border-radius: 50%;
   background: rgba(0,0,0,0.22);
   cursor: pointer;
   transition: background 0.2s, transform 0.15s;
 }
-.demo-dot.active {
+.project-dot.active {
   background: var(--brand-color, #1DB954);
-  transform: scale(1.25);
+  transform: scale(1.3);
+}
+/* Cover dot gets a heart accent so users can tell the cover from demos */
+.project-dot[data-page="0"] {
+  background: rgba(255, 46, 99, 0.3);
+}
+.project-dot[data-page="0"].active {
+  background: #ff2e63;
 }
 
-/* Mobile: turn .demo-path into a horizontal scroll-snap carousel.
-   Each demo card snaps to the full width of the project box, so swiping
-   left/right reveals Demo 1 → Demo 2 → Demo 3 one at a time. */
+/* Mobile (≤480): turn .project-pages into a horizontal scroll-snap carousel.
+   Cover and each demo become full-width pages. Swipe left to advance. */
 @media (max-width: 480px) {
-  .projects-grid .demo-path {
-    /* Override the inline grid-template-columns by switching display */
-    display: flex !important;
+  .projects-grid .project-pages {
+    display: flex;
     flex-direction: row;
     overflow-x: auto;
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    gap: 12px;
+    gap: 14px;
     padding: 2px 0 4px;
-    /* Hide scrollbar but keep it scrollable */
     scrollbar-width: none;
   }
-  .projects-grid .demo-path::-webkit-scrollbar { display: none; }
-  .projects-grid .demo-path > .demo-card {
+  .projects-grid .project-pages::-webkit-scrollbar { display: none; }
+  .projects-grid .project-pages > .page-cover,
+  .projects-grid .project-pages > .page-demo {
     flex: 0 0 100%;
     scroll-snap-align: start;
     scroll-snap-stop: always;
-    min-width: 0;     /* allow content shrinking inside flex item */
+    min-width: 0;
   }
-  /* Show dots on mobile when there's more than one demo */
-  .projects-grid .demo-dots { display: flex; }
+  /* Cover page: horizontal cover-left + info-right layout already covered
+     by .projects-grid .project-header on mobile. Just remove the border so
+     it merges into the carousel page. */
+  .projects-grid .page-cover {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding: 2px 0 4px;
+  }
+  /* Demo page: bigger, more breathable, full diary visible */
+  .projects-grid .page-demo {
+    padding: 16px 16px 14px;
+    border: 1.5px solid #111;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: 2px 2px 0 #111;
+  }
+  .projects-grid .page-demo .demo-card-note { -webkit-line-clamp: unset; max-height: none; }
+  .projects-grid .page-demo .demo-card-note-line { font-size: 14px; line-height: 1.45; }
+  .projects-grid .page-demo .demo-card-cm-line { font-size: 13px; line-height: 1.4; }
+  .projects-grid .page-demo .demo-tag { font-size: 13px; padding: 3px 9px; }
+  /* Show the dots */
+  .projects-grid .project-dots { display: flex; }
 }
 .artist-canvas .project-box:hover {
   transform: translateY(-2px);
