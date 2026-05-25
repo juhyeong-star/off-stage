@@ -12387,7 +12387,8 @@ body:has(#global-player.expanded) .global-back-btn {
   }
   .artist-canvas .projects-grid .project-pages::-webkit-scrollbar { display: none; }
 
-  /* ALL pages (master + demo) — same yellow sticky-note */
+  /* ALL pages — same dimensions; only the bg color differs (master = white,
+     demos = yellow sticky-note). */
   .artist-canvas .projects-grid .project-pages > .page-cover,
   .artist-canvas .projects-grid .project-pages > .page-demo {
     /* Width: exactly 100% of the carousel container — no overflow */
@@ -12405,17 +12406,24 @@ body:has(#global-player.expanded) .global-back-btn {
     /* Snap to each page individually */
     scroll-snap-align: start !important;
     scroll-snap-stop: always !important;
-    /* Sticky-note card look */
+    /* Card chrome (same border / shadow / padding for all) */
     display: flex !important;
     flex-direction: column !important;
     gap: 8px !important;
-    background: #FFE500 !important;
     border: 1.5px solid #111 !important;
     border-radius: 4px !important;
     box-shadow: 2px 2px 0 #111 !important;
     padding: 12px 14px !important;
     color: #111 !important;
     margin: 0 !important;
+  }
+  /* Master page: white background */
+  .artist-canvas .projects-grid .project-pages > .page-cover {
+    background: #fff !important;
+  }
+  /* Demo pages: yellow sticky-note */
+  .artist-canvas .projects-grid .project-pages > .page-demo {
+    background: #FFE500 !important;
   }
   /* Cover thumb sized smaller on mobile to leave room for content */
   .artist-canvas .projects-grid .project-pages > .page-cover .master-cover-thumb {
