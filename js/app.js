@@ -5384,10 +5384,12 @@ function renderProjectBox(pid, versions) {
   const db = window.DB.get();
   const canEditArtist = db.currentUser && db.currentUser.name === primary.artist;
 
-  // Demos inside a project always stack vertically — the project box itself
-  // is now a grid cell (.projects-grid is 4-per-row on desktop), so demos
-  // need to be 1 column to read nicely inside the narrower box.
-  const cols = 1;
+  // Desktop layout uses a snake-flow grid of demos. Mobile carousel doesn't
+  // use these columns at all (.project-pages flex overrides CSS grid).
+  // Original behaviour: <560px = 1 col, otherwise 2 cols.
+  const _w = (typeof window !== 'undefined') ? window.innerWidth : 1024;
+  const _baseCols = _w < 560 ? 1 : 2;
+  const cols = Math.min(_baseCols, Math.max(1, demos.length || 1));
 
   // Master info — 발매일 + 참여 인원
   const masterDate = final ? formatFullDate(final.createdAt) : '';
@@ -5463,6 +5465,7 @@ function renderProjectBox(pid, versions) {
     const demoLiked = isTrackLiked(v.id);
     return `
       <div class="${cls} page-demo ${v.pinned ? 'is-pinned' : ''}" data-track-id="${v.id}" data-project="${pid}"
+           style="grid-row:${pos.row}; grid-column:${pos.col};"
            onclick="selectProjectVersion('${pid}','${v.id}'); playTrack('${v.id}')">
         <div class="demo-card-top">
           <span class="demo-tag">DEMO ${i+1}</span>
