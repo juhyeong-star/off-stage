@@ -227,19 +227,20 @@
   -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
   -webkit-mask-size: contain;   mask-size: contain;
   -webkit-mask-position: center; mask-position: center;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 12% 10% 0;
   box-sizing: border-box;
 }
+/* Cluster of post-its sits in the heart's wide upper bulge, centered.
+   Absolute-positioned so it gets a proper computed width from left/right. */
 .cheer-heart-cluster {
+  position: absolute;
+  top: 14%;
+  left: 13%;
+  right: 13%;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-content: flex-start;
   gap: 8px;
-  max-width: 78%;
 }
 .cheer-postit {
   width: 104px;
@@ -281,6 +282,10 @@
   font-size: 14px;
 }
 .cheer-heart-empty {
+  position: absolute;
+  top: 30%;
+  left: 15%;
+  right: 15%;
   color: #fff;
   font-family: var(--font-hand, 'Gaegu', cursive);
   font-size: 16px;
@@ -288,10 +293,12 @@
   text-align: center;
   line-height: 1.6;
   text-shadow: 0 1px 4px rgba(0,0,0,0.3);
-  margin-top: 14%;
+  word-break: keep-all;   /* keep Korean words together, don't break on each char */
 }
 @media (max-width: 600px) {
-  .cheer-heart-wall { max-width: 360px; padding: 13% 8% 0; }
+  .cheer-heart-wall { max-width: 360px; }
+  .cheer-heart-cluster { top: 14%; left: 11%; right: 11%; }
+  .cheer-heart-empty { top: 30%; font-size: 14px; }
   .cheer-postit { width: 88px; min-height: 66px; }
   .cheer-postit-msg { font-size: 12px; }
 }
