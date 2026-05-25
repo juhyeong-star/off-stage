@@ -5682,19 +5682,41 @@ function renderProjectBox(pid, versions) {
     </div>
   ` : '';
 
+  // Master page — yellow sticky-note style, same shape as the demo pages
+  // so the carousel feels consistent. Small cover thumb + title + meta on
+  // top row; then cheer button; then master diary + comments + input.
+  const masterLiked = final ? isTrackLiked(final.id) : false;
+  const coverImg = (final && final.cover) || primary.cover || '';
+  const masterPageHtml = `
+    <div class="project-page page-cover ${final ? 'has-master' : ''}" data-track-id="${final ? final.id : (primary && primary.id || '')}">
+      <div class="demo-card-top">
+        <span class="demo-tag master-badge">${final ? '✦ MASTER' : '작업 중'}</span>
+        ${final ? `
+          <button class="demo-card-like ${masterLiked ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${final.id}', this)" title="내 우주에 모으기">
+            <i class="${masterLiked ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
+          </button>
+        ` : ''}
+      </div>
+      <div class="master-head-row" ${final ? `onclick="event.stopPropagation(); playTrack('${final.id}')"` : ''}>
+        <div class="master-cover-thumb">
+          <img src="${coverImg}" alt="${safeTitle}" loading="lazy">
+          ${final ? '<i class="ri-play-fill master-cover-play"></i>' : ''}
+        </div>
+        <div class="master-head-info">
+          <div class="master-head-title">「${safeTitle}」</div>
+          ${masterDate ? `<div class="master-head-meta">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
+          ${participantCount > 0 ? `<div class="master-head-meta master-head-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명 응원</div>` : ''}
+        </div>
+      </div>
+      ${cheerBtnHtml}
+      ${masterContentHtml}
+    </div>
+  `;
+
   return `
     <div class="project-box reveal" data-project="${pid}">
       <div class="project-pages">
-        <div class="project-header page-cover ${final ? 'has-master' : ''}">
-          ${coverHtml}
-          <div class="project-header-info">
-            <h3 class="project-title">「${safeTitle}」</h3>
-            ${masterDate ? `<div class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
-            ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
-            ${cheerBtnHtml}
-            ${masterContentHtml}
-          </div>
-        </div>
+        ${masterPageHtml}
         ${cardsHtml /* each demo card already has class "page-demo" */}
       </div>
       ${projectDotsHtml}
