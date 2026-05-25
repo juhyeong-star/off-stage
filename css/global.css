@@ -2787,6 +2787,54 @@ h3 { font-size: 19px; font-weight: 700; }
   .projects-grid .demo-card-cm-line { font-size: 13px; }
   .projects-grid .demo-card-cm-input-field { font-size: 13px; }
 }
+
+/* Demo carousel — page indicator dots (mobile only) */
+.demo-dots {
+  display: none;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.demo-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.22);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.demo-dot.active {
+  background: var(--brand-color, #1DB954);
+  transform: scale(1.25);
+}
+
+/* Mobile: turn .demo-path into a horizontal scroll-snap carousel.
+   Each demo card snaps to the full width of the project box, so swiping
+   left/right reveals Demo 1 → Demo 2 → Demo 3 one at a time. */
+@media (max-width: 480px) {
+  .projects-grid .demo-path {
+    /* Override the inline grid-template-columns by switching display */
+    display: flex !important;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    gap: 12px;
+    padding: 2px 0 4px;
+    /* Hide scrollbar but keep it scrollable */
+    scrollbar-width: none;
+  }
+  .projects-grid .demo-path::-webkit-scrollbar { display: none; }
+  .projects-grid .demo-path > .demo-card {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    min-width: 0;     /* allow content shrinking inside flex item */
+  }
+  /* Show dots on mobile when there's more than one demo */
+  .projects-grid .demo-dots { display: flex; }
+}
 .artist-canvas .project-box:hover {
   transform: translateY(-2px);
   box-shadow: 4px 4px 0 #111;

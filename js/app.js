@@ -5627,6 +5627,14 @@ function renderProjectBox(pid, versions) {
   })() : '';
 
   // version-panels는 데모 카드 안으로 흡수됨 — 하단 MEMO & COMMENTS 섹션 제거
+  // Mobile-only: small page indicator dots under the demo carousel.
+  // Demo cards become a horizontal scroll-snap track on small screens.
+  const demoDotsHtml = demos.length > 1 ? `
+    <div class="demo-dots" data-demo-count="${demos.length}">
+      ${demos.map((_, i) => `<span class="demo-dot ${i === 0 ? 'active' : ''}"></span>`).join('')}
+    </div>
+  ` : '';
+
   return `
     <div class="project-box reveal" data-project="${pid}">
       <div class="project-header">
@@ -5642,6 +5650,7 @@ function renderProjectBox(pid, versions) {
         <div class="demo-path" style="grid-template-columns: repeat(${cols}, 1fr);">
           ${cardsHtml}
         </div>
+        ${demoDotsHtml}
       ` : ''}
     </div>
   `;
@@ -6617,6 +6626,10 @@ function renderArtistProfile(artistName) {
   }, 100);
   // Re-run observer too
   try { if (typeof observeReveals === 'function') observeReveals(); } catch (_) {}
+
+  // Mobile demo swipe: wire up scroll-snap carousels + dot indicators.
+  // Safe at any viewport — observers do nothing if dots aren't visible (CSS).
+  try { _initDemoSwipe(); } catch (e) { console.warn('[demoSwipe]', e); }
 
   // Async: fill the 응원 하트 wall (cheers received by this artist)
   if (isArtistRole && typeof window.mountCheerHeart === 'function') {
@@ -8933,6 +8946,42 @@ window.switchArtistContentTab = function (name) {
     p.hidden = (p.dataset.contentTab !== name);
   });
 };
+
+// Mobile: each .demo-path becomes a horizontal scroll-snap carousel of
+// demo cards. This wires up an IntersectionObserver so the small dot
+// indicator under the path reflects which demo is currently in view.
+// Safe to call on every render — re-creates observers from scratch.
+function _initDemoSwipe() {
+  const paths = document.querySelectorAll('.projects-grid .demo-path');
+  paths.forEach(path => {
+    const cards = path.querySelectorAll('.demo-card');
+    if (cards.length < 2) return;
+    const dotsContainer = path.parentElement && path.parentElement.querySelector('.demo-dots');
+    if (!dotsContainer) return;
+    const dots = dotsContainer.querySelectorAll('.demo-dot');
+    // Observe each card's intersection within its scroll container
+    const io = new IntersectionObserver((entries) => {
+      let best = null;
+      entries.forEach(e => {
+        if (!best || e.intersectionRatio > best.intersectionRatio) best = e;
+      });
+      if (best && best.isIntersecting && best.intersectionRatio > 0.5) {
+        const idx = Array.from(cards).indexOf(best.target);
+        if (idx >= 0) {
+          dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+        }
+      }
+    }, { root: path, threshold: [0.5, 0.75, 1.0] });
+    cards.forEach(c => io.observe(c));
+    // Tap a dot to jump to that demo
+    dots.forEach((d, i) => {
+      d.addEventListener('click', () => {
+        const target = cards[i];
+        if (target) target.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+      });
+    });
+  });
+}
 
 // ── 응원 하트 월 (cheer heart wall) ─────────────────────────────────
 // Heart-masked panel holding cheer messages as little post-its.
