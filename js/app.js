@@ -1909,8 +1909,10 @@ async function renderWall() {
   const visibleNotes = filtered.slice(0, shown);
   const hasMore = total > shown;
 
-  // Scatter notes
-  const cols = 4;
+  // Scatter notes — responsive column count so post-its don't overflow
+  // on narrow viewports.
+  const _vw = (typeof window !== 'undefined' ? window.innerWidth : 1024) || 1024;
+  const cols = _vw < 800 ? 1 : (_vw < 1200 ? 2 : 4);
   // Each note can now grow tall with inline comments + input — give rows more vertical room
   const boardH = Math.max(820, Math.ceil(visibleNotes.length / cols) * 390 + 300);
 
@@ -1929,7 +1931,12 @@ async function renderWall() {
 
     const col = i % cols;
     const row = Math.floor(i / cols);
-    const x = 2 + col * 22 + (seed % 10);
+    // x is a % so post-its scale with the viewport. Column spacing depends
+    // on how many cols we picked above.
+    let x;
+    if (cols === 1)      x =  4 + (seed % 8);                       //  4-12%
+    else if (cols === 2) x =  4 + col * 46 + (seed % 6);            //  4-10 | 50-56
+    else                  x =  2 + col * 22 + (seed % 10);          //  2-12 | 24-34 | 46-56 | 68-78
     const yPx = 140 + row * 390 + ((seed >>> 8) % 40);
 
     const bookmarked = window.Walls && window.Walls.isBookmarked && window.Walls.isBookmarked(note.id);
@@ -5408,11 +5415,10 @@ function renderProjectBox(pid, versions) {
   const db = window.DB.get();
   const canEditArtist = db.currentUser && db.currentUser.name === primary.artist;
 
-  // Responsive columns — 카드가 16:9 landscape 느낌으로 충분히 넓도록
-  // 모바일 1, 태블릿 2, 데스크탑 2 (3·4 cols면 카드가 좁아서 portrait처럼 보임)
-  const w = (typeof window !== 'undefined') ? window.innerWidth : 1024;
-  const baseCols = w < 560 ? 1 : 2;
-  const cols = Math.min(baseCols, Math.max(1, demos.length || 1));
+  // Demos inside a project always stack vertically — the project box itself
+  // is now a grid cell (.projects-grid is 4-per-row on desktop), so demos
+  // need to be 1 column to read nicely inside the narrower box.
+  const cols = 1;
 
   // Master info — 발매일 + 참여 인원
   const masterDate = final ? formatFullDate(final.createdAt) : '';
@@ -6570,15 +6576,16 @@ function renderArtistProfile(artistName) {
           </div>
 
           <div class="artist-content-pane" data-content-tab="music">
-            <!-- 청취곡: 마스터(싱글 포함) -->
+            <!-- 청취곡: 마스터(싱글 포함). Wrapped in projects-grid so albums
+                 lay out as 4-per-row on desktop, 2-3 on tablet, 1 on mobile. -->
             ${releasedCount > 0 ? `
-              <div id="artist-section-singles" class="reveal" style="margin-top:20px; scroll-margin-top:80px;">
+              <div id="artist-section-singles" class="reveal projects-grid" style="margin-top:20px; scroll-margin-top:80px;">
                 ${releasedHtml}
               </div>
             ` : ''}
             <!-- 데모곡: 프로젝트 진행중 -->
             ${demoCount > 0 ? `
-              <div id="artist-section-projects" class="reveal" style="margin-top:36px; scroll-margin-top:80px;">
+              <div id="artist-section-projects" class="reveal projects-grid" style="margin-top:24px; scroll-margin-top:80px;">
                 ${demoHtml}
               </div>
             ` : ''}
