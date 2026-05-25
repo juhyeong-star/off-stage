@@ -4602,34 +4602,12 @@ async function _renderProfileImpl() {
   }).join('');
 
   // Determine role: artist (admin/artist/student) vs listener (default).
-  // window.__profileMode forces a specific view ('me' = listener, 'studio' = artist).
-  // 'profile' (legacy) leaves it null → auto by role.
+  // /me is now a unified personal page — same content for everyone (no
+  // artist-vs-listener split). Anything that's specifically artist-y
+  // (uploads, track list with project boxes) lives on /artist:<myname>.
   const role = db.currentUser.role;
   const naturalIsArtist = role === 'admin' || role === 'artist' || role === 'student';
-  const mode = window.__profileMode || null;
-
-  // Listener tries to open the artist page → show upgrade card and stop.
-  if (mode === 'studio' && !naturalIsArtist) {
-    appContent.innerHTML = `
-      <div class="sub-page" style="max-width:560px; margin:60px auto; padding:32px 24px; text-align:center;">
-        <div style="font-size:48px; margin-bottom:14px;">🎤</div>
-        <h2 style="margin:0 0 10px; font-size:22px;">아티스트 페이지는 아티스트 전용이에요</h2>
-        <p style="color:var(--text-secondary); font-size:14px; line-height:1.6; margin:0 0 22px;">
-          음악을 올리려면 아티스트로 전환해야 해요.<br>
-          전환은 무료고, 청취자 기능은 그대로 유지돼요.
-        </p>
-        <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-          <button class="btn-primary" onclick="if(confirm('아티스트로 전환할까요?')) navigateTo(\'upload\')"><i class="ri-upload-2-line"></i> 아티스트로 전환</button>
-          <button class="btn-primary" style="background:#333;" onclick="navigateTo('me')"><i class="ri-headphone-fill"></i> 내 페이지(청취자)로</button>
-        </div>
-      </div>
-    `;
-    return;
-  }
-
-  const isArtist = (mode === 'studio') ? true
-                 : (mode === 'me')     ? false
-                 : naturalIsArtist;
+  const isArtist = false;
   const roleLabel = role === 'admin' ? '관리자' : (naturalIsArtist ? '아티스트' : '리스너');
 
   // === Build section blocks as variables, then compose by role order ===
@@ -6463,15 +6441,12 @@ function renderArtistProfile(artistName) {
   // - artistData.role (from following/onboarding mock)
   // - artistTracks.length > 0 → 아티스트
   // - name starts with "청취자" → 리스너
-  // - default → 리스너 (safer for postit authors)
-  let role = artistData.role;
-  if (!role) {
-    if (artistTracks.length > 0) role = 'artist';
-    else if (/^청취자/.test(artistName)) role = 'listener';
-    else role = 'listener';
-  }
-  const isArtistRole = role === 'admin' || role === 'artist' || role === 'student';
-  const roleLabel = role === 'admin' ? '관리자' : (isArtistRole ? '아티스트' : '리스너');
+  // Unified artist page — no more listener-vs-artist branching. Every
+  // /artist:<name> page shows the same layout (header + 소식 + tracks +
+  // 응원 wall) regardless of whether the person has uploaded tracks yet.
+  let role = artistData.role || (artistTracks.length > 0 ? 'artist' : 'listener');
+  const isArtistRole = true;
+  const roleLabel = role === 'admin' ? '관리자' : '아티스트';
 
   // Attempt to get artist ID from an already-loaded Supabase track (no network). Look up by name later, async.
   const firstSupabaseTrack = artistTracks.find(t => t.__supabase && t.artistId);
