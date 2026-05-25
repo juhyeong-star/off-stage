@@ -2790,11 +2790,13 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 @media (max-width: 1100px) {
   .projects-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
 }
-@media (max-width: 800px) {
+@media (max-width: 900px) {
   .projects-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
 }
-@media (max-width: 480px) {
-  .projects-grid { grid-template-columns: 1fr; gap: 12px; }
+@media (max-width: 768px) {
+  /* Phone + tablet portrait: 1 album per row so the in-card carousel
+     has the full screen width to swipe through. */
+  .projects-grid { grid-template-columns: 1fr; gap: 14px; }
 }
 .projects-grid .project-box {
   margin-bottom: 0;
@@ -2943,51 +2945,98 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   background: #ff2e63;
 }
 
-/* Mobile (≤480): turn .project-pages into a horizontal scroll-snap carousel.
-   Cover and each demo become full-width pages. Swipe left to advance. */
-@media (max-width: 480px) {
-  .projects-grid .project-pages {
-    display: flex;
-    flex-direction: row;
+/* Mobile/tablet (≤768): turn .project-pages into a horizontal scroll-snap
+   carousel. Cover and each demo become full-width pages — swipe to advance.
+   Dropped the .projects-grid prefix so it works whatever the parent grid is. */
+@media (max-width: 768px) {
+  .project-pages {
+    display: flex !important;
+    flex-direction: row !important;
     overflow-x: auto;
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
     gap: 14px;
-    padding: 2px 0 4px;
+    padding: 2px 0 6px;
     scrollbar-width: none;
   }
-  .projects-grid .project-pages::-webkit-scrollbar { display: none; }
-  .projects-grid .project-pages > .page-cover,
-  .projects-grid .project-pages > .page-demo {
-    flex: 0 0 100%;
+  .project-pages::-webkit-scrollbar { display: none; }
+  .project-pages > .page-cover,
+  .project-pages > .page-demo {
+    flex: 0 0 100% !important;
     scroll-snap-align: start;
     scroll-snap-stop: always;
     min-width: 0;
+    max-width: 100%;
   }
-  /* Cover page: horizontal cover-left + info-right layout already covered
-     by .projects-grid .project-header on mobile. Just remove the border so
-     it merges into the carousel page. */
-  .projects-grid .page-cover {
-    border-bottom: none;
+  /* Cover/master page on mobile — compact hero with cover, title, then
+     master content below (diary + comments). */
+  .project-pages > .page-cover {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    text-align: center;
+    gap: 10px;
+    padding: 12px 12px 14px !important;
+    border: 1.5px solid #111 !important;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: 2px 2px 0 #111;
     margin-bottom: 0;
-    padding: 2px 0 4px;
   }
-  /* Demo page: bigger, more breathable, full diary visible */
-  .projects-grid .page-demo {
-    padding: 16px 16px 14px;
-    border: 1.5px solid #111;
+  .project-pages > .page-cover .project-cover-wrap {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1 !important;
+    max-width: 240px;
+    margin: 0 auto;
+  }
+  .project-pages > .page-cover .project-header-info {
+    width: 100%;
+    text-align: center;
+    align-items: center;
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .project-pages > .page-cover .project-title { font-size: 18px; margin-bottom: 0; }
+  .project-pages > .page-cover .project-master-date,
+  .project-pages > .page-cover .project-participants {
+    justify-content: center;
+    text-align: center;
+    font-size: 12px;
+  }
+  .project-pages > .page-cover .cheer-btn { margin: 6px auto 0; padding: 7px 14px; font-size: 12px; }
+  .project-pages > .page-cover .demo-card-note {
+    text-align: left;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(0,0,0,0.15);
+    -webkit-line-clamp: unset;
+    max-height: none;
+  }
+  .project-pages > .page-cover .demo-card-cm-list { text-align: left; margin-top: 4px; }
+  .project-pages > .page-cover .demo-card-cm-input { margin-top: 6px; }
+
+  /* Demo page on mobile — bigger card with full diary + comments */
+  .project-pages > .page-demo {
+    padding: 14px 14px 12px !important;
+    border: 1.5px solid #111 !important;
     border-radius: 4px;
     background: #fff;
     box-shadow: 2px 2px 0 #111;
   }
-  .projects-grid .page-demo .demo-card-note { -webkit-line-clamp: unset; max-height: none; }
-  .projects-grid .page-demo .demo-card-note-line { font-size: 14px; line-height: 1.45; }
-  .projects-grid .page-demo .demo-card-cm-line { font-size: 13px; line-height: 1.4; }
-  .projects-grid .page-demo .demo-tag { font-size: 13px; padding: 3px 9px; }
-  /* Show the dots */
-  .projects-grid .project-dots { display: flex; }
+  .project-pages > .page-demo .demo-card-note {
+    -webkit-line-clamp: 6;
+    max-height: none;
+  }
+  .project-pages > .page-demo .demo-card-note-line { font-size: 13px; line-height: 1.4; }
+  .project-pages > .page-demo .demo-card-cm-line { font-size: 12px; line-height: 1.35; }
+  .project-pages > .page-demo .demo-tag { font-size: 12px; padding: 3px 9px; }
+
+  /* Show the dots under the carousel */
+  .project-dots { display: flex !important; }
 }
 .artist-canvas .project-box:hover {
   transform: translateY(-2px);
