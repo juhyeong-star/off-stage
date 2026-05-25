@@ -12547,9 +12547,12 @@ body:has(#global-player.expanded) .global-back-btn {
    ...) AND come last in the cascade, so they win.
    ============================================================ */
 .artist-canvas .projects-grid .demo-path {
-  /* Back to CSS Grid — let the inline grid-template-columns from JS
-     drive how many demos per row (cols=2 on desktop). */
+  /* The Y2K rule .artist-canvas .demo-path sets BOTH display:flex AND
+     grid-template-columns:none with !important — we need to beat both.
+     Force grid + 2 columns on desktop; mobile carousel uses .project-pages
+     instead so this rule doesn't apply on small screens. */
   display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
   flex-direction: initial !important;
   flex-wrap: initial !important;
   align-items: initial !important;
@@ -12560,6 +12563,12 @@ body:has(#global-player.expanded) .global-back-btn {
   flex: initial !important;
   overflow: visible !important;
   order: initial !important;
+}
+/* Phones that somehow still hit the desktop branch (rare): single column */
+@media (max-width: 560px) {
+  .artist-canvas .projects-grid .demo-path {
+    grid-template-columns: 1fr !important;
+  }
 }
 .artist-canvas .projects-grid .demo-card {
   /* Unlock the fixed 420×240 — let the demo card fill its grid cell. */
