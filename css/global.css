@@ -1533,8 +1533,8 @@ body.guest .sidebar-my-channel { display: none; }
    ============================================================ */
 .dice-shape {
   position: absolute;
-  width: 68px; height: 68px;
-  --cube-half: 34px;            /* half the cube edge — drives face translateZ */
+  width: 48px; height: 48px;
+  --cube-half: 24px;            /* half the cube edge — drives face translateZ */
   perspective: 600px;
   cursor: pointer; user-select: none;
   z-index: 4;
@@ -1650,7 +1650,9 @@ body.guest .sidebar-my-channel { display: none; }
 /* Fixed-position dice (pinned above the upload FAB on the right edge) */
 .dice-shape.dice-fab {
   position: fixed !important;
-  right: 26px;
+  /* Center-align with the 56px upload-fab (center at 60px from right):
+     dice 48px wide → right = 60 - 24 = 36px */
+  right: 36px;
   bottom: calc(var(--player-height, 88px) + 96px);
   left: auto !important;
   top: auto !important;
@@ -1658,17 +1660,21 @@ body.guest .sidebar-my-channel { display: none; }
 }
 @media (max-width: 768px) {
   .dice-shape.dice-fab {
-    right: 26px;
-    width: 60px; height: 60px;
-    --cube-half: 30px;
+    /* Tablet (≤768): upload-fab still 56×56 right:32 — center at 60 from right.
+       Dice 42px → right = 60 - 21 = 39px */
+    right: 39px;
+    width: 42px; height: 42px;
+    --cube-half: 21px;
     bottom: calc(var(--player-height, 88px) + 92px);
   }
 }
 @media (max-width: 420px) {
   .dice-shape.dice-fab {
-    right: 14px;
-    width: 46px; height: 46px;
-    --cube-half: 23px;
+    /* Small phone: upload-fab 46×46 right:14 — center at 37 from right.
+       Dice 32px → right = 37 - 16 = 21px */
+    right: 21px;
+    width: 32px; height: 32px;
+    --cube-half: 16px;
     bottom: calc(var(--player-height, 88px) + 72px);
   }
 }
