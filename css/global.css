@@ -886,27 +886,27 @@ body.guest .sidebar-my-channel { display: none; }
   .shape-resize-handle { display: none !important; }
 }
 .floating-shape .shape-text {
-  font-size: 22px;
+  font-size: 24px;
   line-height: 1.3;
   white-space: pre-wrap;
   word-break: keep-all;
-  max-width: 220px;
+  max-width: 240px;
   pointer-events: none;
 }
 
-/* Shape types — original sizes */
-.shape-circle { border-radius: 50%; width: 240px; height: 240px; }
-.shape-oval { border-radius: 50%; width: 280px; height: 180px; }
-.shape-rect { border-radius: 6px; width: 260px; height: 190px; }
+/* Shape types — original sizes (slight uniform bump) */
+.shape-circle { border-radius: 50%; width: 265px; height: 265px; }
+.shape-oval { border-radius: 50%; width: 305px; height: 200px; }
+.shape-rect { border-radius: 6px; width: 285px; height: 210px; }
 .shape-triangle {
   width: 0; height: 0;
-  border-left: 130px solid transparent; border-right: 130px solid transparent;
-  border-bottom: 230px solid currentColor;
+  border-left: 145px solid transparent; border-right: 145px solid transparent;
+  border-bottom: 255px solid currentColor;
   background: none !important; padding: 0;
 }
 .shape-triangle .shape-text {
-  position: absolute; bottom: -210px; left: 50%; transform: translateX(-50%);
-  width: 180px; color: #000;
+  position: absolute; bottom: -232px; left: 50%; transform: translateX(-50%);
+  width: 200px; color: #000;
 }
 /* Clip-path shapes — the clip lives on a ::before pseudo so the heart button
    (and other overlays at top:6/right:6) aren't clipped away with the parent.
@@ -939,11 +939,11 @@ body.guest .sidebar-my-channel { display: none; }
   z-index: 1;
 }
 
-/* Star — same size as before, but inner text clipped to inner-pentagon area */
-.shape-star { width: 260px; height: 260px; }
+/* Star — slight bump, inner text clipped to inner-pentagon area */
+.shape-star { width: 285px; height: 285px; }
 .shape-star::before { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
 .shape-star .shape-text {
-  font-size: 16px;
+  font-size: 18px;
   max-width: 55%;
   max-height: 45%;
   line-height: 1.2;
@@ -952,13 +952,13 @@ body.guest .sidebar-my-channel { display: none; }
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
-.shape-parallelogram { width: 280px; height: 170px; border-radius: 2px; }
+.shape-parallelogram { width: 305px; height: 190px; border-radius: 2px; }
 .shape-parallelogram::before { clip-path: polygon(20% 0%, 100% 0%, 80% 100%, 0% 100%); border-radius: 2px; }
 /* Diamond — text fits inside the inner square area */
-.shape-diamond { width: 220px; height: 220px; }
+.shape-diamond { width: 245px; height: 245px; }
 .shape-diamond::before { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
 .shape-diamond .shape-text {
-  font-size: 17px;
+  font-size: 19px;
   max-width: 55%;
   max-height: 60%;
   line-height: 1.2;
@@ -967,7 +967,7 @@ body.guest .sidebar-my-channel { display: none; }
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
-.shape-hexagon { width: 240px; height: 210px; }
+.shape-hexagon { width: 265px; height: 230px; }
 .shape-hexagon::before { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); }
 
 /* Float animation */
@@ -3151,7 +3151,7 @@ h3 { font-size: 19px; font-weight: 700; }
 
   /* Floating shape universe on mobile (home) — kept compact earlier */
   .floating-shape { padding: 14px; }
-  .floating-shape .shape-text { font-size: 18px; max-width: 170px; }
+  .floating-shape .shape-text { font-size: 20px; max-width: 180px; }
 
   /* Wall — compact header area */
   .wall-header { padding: 16px 16px 10px; }
@@ -4829,24 +4829,24 @@ html, body { overflow-x: hidden; max-width: 100%; }
   .wall-postit-resize-handle { display: none !important; }
   .floating-shape { padding: 16px; }
   .floating-shape .shape-text {
-    font-size: 22px;
-    max-width: 200px;
+    font-size: 24px;
+    max-width: 215px;
     line-height: 1.25;
     font-weight: 700;
     letter-spacing: -0.3px;
   }
-  .shape-circle { width: 200px; height: 200px; }
-  .shape-oval { width: 230px; height: 154px; }
-  .shape-rect { width: 220px; height: 165px; }
+  .shape-circle { width: 220px; height: 220px; }
+  .shape-oval { width: 250px; height: 168px; }
+  .shape-rect { width: 240px; height: 180px; }
   .shape-triangle {
-    border-left-width: 110px; border-right-width: 110px; border-bottom-width: 200px;
+    border-left-width: 122px; border-right-width: 122px; border-bottom-width: 220px;
   }
-  .shape-triangle .shape-text { bottom: -190px; width: 190px; font-size: 21px; }
-  .shape-star { width: 220px; height: 220px; }
-  .shape-star .shape-text { font-size: 15px; max-width: 55%; -webkit-line-clamp: 3; }
-  .shape-diamond { width: 188px; height: 188px; }
-  .shape-diamond .shape-text { font-size: 16px; max-width: 55%; -webkit-line-clamp: 3; }
-  .shape-hexagon { width: 210px; height: 188px; }
+  .shape-triangle .shape-text { bottom: -208px; width: 210px; font-size: 23px; }
+  .shape-star { width: 240px; height: 240px; }
+  .shape-star .shape-text { font-size: 17px; max-width: 55%; -webkit-line-clamp: 3; }
+  .shape-diamond { width: 208px; height: 208px; }
+  .shape-diamond .shape-text { font-size: 18px; max-width: 55%; -webkit-line-clamp: 3; }
+  .shape-hexagon { width: 230px; height: 208px; }
   .shape-parallelogram { width: 230px; height: 150px; }
   /* Pinch-zoom only on mobile — no visible handle */
   .shape-resize-handle { display: none !important; }
