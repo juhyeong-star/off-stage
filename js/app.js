@@ -6587,7 +6587,7 @@ function renderArtistProfile(artistName) {
         ` : ''}
 
         ${isArtistRole ? `
-          <!-- Artist content tabs: 음악 / 응원함 -->
+          <!-- Artist content tabs: 음악 / 응원함 / 통계(본인만) -->
           <div class="artist-content-tabs reveal" style="margin-top: 28px;">
             <button type="button" class="content-tab active" data-content-tab="music" onclick="switchArtistContentTab('music')">
               <i class="ri-music-2-fill"></i> 음악
@@ -6595,6 +6595,11 @@ function renderArtistProfile(artistName) {
             <button type="button" class="content-tab" data-content-tab="cheers" onclick="switchArtistContentTab('cheers')">
               <i class="ri-heart-3-fill"></i> 응원함
             </button>
+            ${isSelf ? `
+              <button type="button" class="content-tab" data-content-tab="stats" onclick="switchArtistContentTab('stats')">
+                <i class="ri-bar-chart-2-fill"></i> 통계
+              </button>
+            ` : ''}
           </div>
 
           <div class="artist-content-pane" data-content-tab="music">
@@ -6622,6 +6627,14 @@ function renderArtistProfile(artistName) {
           <div class="artist-content-pane" data-content-tab="cheers" hidden>
             <div id="cheer-heart-mount" style="margin-top: 20px;"></div>
           </div>
+
+          ${isSelf ? `
+            <div class="artist-content-pane" data-content-tab="stats" hidden>
+              <div id="artist-stats-mount" style="margin-top: 20px;">
+                <p style="color: var(--text-secondary); font-size: 13px; padding: 14px;">탭을 누르면 통계가 로드돼요.</p>
+              </div>
+            </div>
+          ` : ''}
         ` : `
           <!-- 🌱 listener mode -->
           <div class="reveal" style="margin-top:36px;">
@@ -8728,11 +8741,16 @@ window.toggleTrackSegments = async function (trackId, rowEl) {
 };
 
 // ===================== MY STATS PAGE (/stats) =====================
-window.renderStats = async function () {
-  const user = window.__currentUser || (window.DB.get() && window.DB.get().currentUser);
-  if (!user) { navigateTo('auth'); return; }
+// Fetches the current user's analytics and fills the element identified by
+// containerId. Used by the /stats route AND by the 통계 tab on the artist
+// page (self only). Containers should be empty divs.
+window.mountMyStatsInto = async function (containerId) {
+  const mount = document.getElementById(containerId);
+  if (!mount) return;
+  mount.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-secondary);">통계 불러오는 중…</div>`;
 
-  appContent.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-secondary);">통계 불러오는 중…</div>`;
+  const user = window.__currentUser || (window.DB.get() && window.DB.get().currentUser);
+  if (!user) { mount.innerHTML = '<div class="admin-empty">로그인이 필요해요.</div>'; return; }
 
   let myTrackStats = [];
   let myNotesViews = [];
@@ -8745,17 +8763,17 @@ window.renderStats = async function () {
     }
   } catch (e) { console.warn('[stats] fetch', e); }
 
-  if (currentView !== 'stats') return;
+  // User may have navigated away or closed the tab — bail
+  const mount2 = document.getElementById(containerId);
+  if (!mount2) return;
 
   const db = window.DB.get();
   const myTracks = (db.tracks || []).filter(t => t && t.artist === user.name);
   const myNotes  = (db.notes  || []).filter(n => n && n.author === user.name);
 
-  // Build maps for joining
   const trackStatsMap = new Map((myTrackStats || []).map(r => [r.track_id, r]));
   const noteViewsMap  = new Map((myNotesViews  || []).map(r => [r.note_id, r.views]));
 
-  // Aggregate KPIs
   let totalPlays = 0, totalListeners30 = 0;
   (myTrackStats || []).forEach(r => {
     totalPlays      += r.plays_total || 0;
@@ -8763,7 +8781,6 @@ window.renderStats = async function () {
   });
   const totalNoteViews = (myNotesViews || []).reduce((s, r) => s + (r.views || 0), 0);
 
-  // Track rows — each row is clickable to expand a per-segment heatmap below it
   const trackRows = myTracks.map(t => {
     const s = trackStatsMap.get(t.id);
     const plays = s ? s.plays_total : 0;
@@ -8786,7 +8803,6 @@ window.renderStats = async function () {
     `;
   }).join('');
 
-  // Note rows — sorted by views desc
   const sortedNotes = myNotes.slice().sort((a, b) => (noteViewsMap.get(b.id) || 0) - (noteViewsMap.get(a.id) || 0));
   const noteRows = sortedNotes.map(n => {
     const c = (typeof NOTE_COLORS !== 'undefined' && NOTE_COLORS[n.color]) || { bg:'#FFE082', text:'#3E2723' };
@@ -8803,48 +8819,57 @@ window.renderStats = async function () {
     `;
   }).join('');
 
+  mount2.innerHTML = `
+    <p style="color: var(--text-secondary); margin-bottom: 18px; font-size: 13px;">
+      내 트랙이 얼마나 재생됐는지, 내 포스트잇이 몇 번 열렸는지 볼 수 있어요. 익명 방문자도 포함돼요.
+    </p>
+    <div class="stats-kpi-grid" style="margin-bottom: 24px;">
+      <div class="stats-kpi"><div class="stats-kpi-num">${totalPlays}</div><div class="stats-kpi-label">내 트랙 총 재생수</div></div>
+      <div class="stats-kpi"><div class="stats-kpi-num">${totalListeners30}</div><div class="stats-kpi-label">30초+ 청취 (고유)</div></div>
+      <div class="stats-kpi"><div class="stats-kpi-num">${totalNoteViews}</div><div class="stats-kpi-label">내 포스트잇 조회수</div></div>
+      <div class="stats-kpi"><div class="stats-kpi-num">${myTracks.length}</div><div class="stats-kpi-label">내 트랙 수</div></div>
+      <div class="stats-kpi"><div class="stats-kpi-num">${myNotes.length}</div><div class="stats-kpi-label">내 포스트잇 수</div></div>
+    </div>
+
+    <div class="admin-section">
+      <h2 class="admin-section-title">
+        <i class="ri-music-2-line" style="color:var(--brand-color);"></i> 트랙별 통계
+        <span class="admin-count">${myTracks.length}</span>
+      </h2>
+      ${trackRows ? `<p style="font-size:12px; color:var(--text-secondary); margin: -4px 0 10px;">트랙 행을 누르면 구간별 청취 그래프가 펼쳐져요 📈</p>` : ''}
+      ${trackRows
+        ? `<div class="stats-rows">${trackRows}</div>`
+        : '<div class="admin-empty">업로드한 트랙이 없어요.</div>'}
+    </div>
+
+    <div class="admin-section" style="margin-top: 28px;">
+      <h2 class="admin-section-title">
+        <i class="ri-sticky-note-fill" style="color:#FFD54F;"></i> 포스트잇별 조회수
+        <span class="admin-count">${myNotes.length}</span>
+      </h2>
+      ${noteRows
+        ? `<div class="stats-rows">${noteRows}</div>`
+        : '<div class="admin-empty">아직 작성한 포스트잇이 없어요.</div>'}
+    </div>
+
+    <p style="margin-top: 20px; font-size: 11px; color: var(--text-secondary); line-height: 1.6;">
+      🔒 개별 방문자 정보(누가 봤는지)는 저장하지 않아요. 카운트만 익명으로 집계됩니다.
+    </p>
+  `;
+};
+
+// /stats route — kept as a fallback / shareable URL. The primary entry
+// point for stats is now the "통계" tab on the artist page (self only).
+window.renderStats = async function () {
+  const user = window.__currentUser || (window.DB.get() && window.DB.get().currentUser);
+  if (!user) { navigateTo('auth'); return; }
   appContent.innerHTML = `
     <div style="max-width: 1000px; margin: 0 auto; padding: 32px 28px 60px;">
       <h1 style="margin-bottom: 6px;"><i class="ri-bar-chart-2-fill" style="color:#4FC3F7;"></i> 내 활동 통계</h1>
-      <p style="color: var(--text-secondary); margin-bottom: 24px;">
-        내 트랙이 얼마나 재생됐는지, 내 포스트잇이 몇 번 열렸는지 볼 수 있어요. 익명 방문자도 포함돼요.
-      </p>
-
-      <div class="stats-kpi-grid" style="margin-bottom: 28px;">
-        <div class="stats-kpi"><div class="stats-kpi-num">${totalPlays}</div><div class="stats-kpi-label">내 트랙 총 재생수</div></div>
-        <div class="stats-kpi"><div class="stats-kpi-num">${totalListeners30}</div><div class="stats-kpi-label">30초+ 청취 (고유)</div></div>
-        <div class="stats-kpi"><div class="stats-kpi-num">${totalNoteViews}</div><div class="stats-kpi-label">내 포스트잇 조회수</div></div>
-        <div class="stats-kpi"><div class="stats-kpi-num">${myTracks.length}</div><div class="stats-kpi-label">내 트랙 수</div></div>
-        <div class="stats-kpi"><div class="stats-kpi-num">${myNotes.length}</div><div class="stats-kpi-label">내 포스트잇 수</div></div>
-      </div>
-
-      <div class="admin-section">
-        <h2 class="admin-section-title">
-          <i class="ri-music-2-line" style="color:var(--brand-color);"></i> 트랙별 통계
-          <span class="admin-count">${myTracks.length}</span>
-        </h2>
-        ${trackRows ? `<p style="font-size:12px; color:var(--text-secondary); margin: -4px 0 10px;">트랙 행을 누르면 구간별 청취 그래프가 펼쳐져요 📈</p>` : ''}
-        ${trackRows
-          ? `<div class="stats-rows">${trackRows}</div>`
-          : '<div class="admin-empty">업로드한 트랙이 없어요.</div>'}
-      </div>
-
-      <div class="admin-section" style="margin-top: 36px;">
-        <h2 class="admin-section-title">
-          <i class="ri-sticky-note-fill" style="color:#FFD54F;"></i> 포스트잇별 조회수
-          <span class="admin-count">${myNotes.length}</span>
-        </h2>
-        ${noteRows
-          ? `<div class="stats-rows">${noteRows}</div>`
-          : '<div class="admin-empty">아직 작성한 포스트잇이 없어요.</div>'}
-      </div>
-
-      <p style="margin-top: 24px; font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
-        🔒 개별 방문자 정보(누가 봤는지)는 저장하지 않아요. 카운트만 익명으로 집계됩니다.<br>
-        ※ 통계는 SQL 마이그레이션 적용 시점 이후부터 쌓이기 시작합니다.
-      </p>
+      <div id="stats-route-mount"></div>
     </div>
   `;
+  await window.mountMyStatsInto('stats-route-mount');
 };
 
 // ===================== 응원 (CHEER) — donation-style message =====================
@@ -8950,7 +8975,9 @@ window.submitCheer = async function (trackId, trackTitle, artistName) {
   }
 };
 
-// Tab switcher for the artist page (음악 / 응원함)
+// Tab switcher for the artist page (음악 / 응원함 / 통계).
+// Stats is lazy-loaded on first activation — it does a Supabase RPC, no
+// point firing that until the user actually opens the tab.
 window.switchArtistContentTab = function (name) {
   document.querySelectorAll('.content-tab').forEach(b => {
     b.classList.toggle('active', b.dataset.contentTab === name);
@@ -8958,6 +8985,13 @@ window.switchArtistContentTab = function (name) {
   document.querySelectorAll('.artist-content-pane').forEach(p => {
     p.hidden = (p.dataset.contentTab !== name);
   });
+  if (name === 'stats') {
+    const mount = document.getElementById('artist-stats-mount');
+    // Re-load every time the user re-opens — fresh numbers
+    if (mount && typeof window.mountMyStatsInto === 'function') {
+      window.mountMyStatsInto('artist-stats-mount');
+    }
+  }
 };
 
 // Mobile: each .project-pages becomes a horizontal scroll-snap carousel.
