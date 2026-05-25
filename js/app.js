@@ -3196,7 +3196,7 @@ function renderShapes() {
   // Starfield background — replaces the old "조잡한" floating shapes with
   // a real twinkling night sky. Positions are seeded so the sky is the same
   // across reloads.
-  const decoHtml = _buildStarfield('shapes-sky', 90, 10);
+  const decoHtml = _buildStarfield('shapes-sky', 200, 18);
 
   // Track shapes
   let shapesHtml = '';
@@ -3617,7 +3617,7 @@ window.renderUniverse = async function () {
   const universeHeight = Math.max(900, Math.ceil(allItems.length / cols) * 280);
 
   // Starfield background — same twinkling night sky as the shapes page.
-  const decoHtml = _buildStarfield('universe-sky', 70, 8);
+  const decoHtml = _buildStarfield('universe-sky', 160, 15);
 
   // Item nodes
   let itemsHtml = '';
