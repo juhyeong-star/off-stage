@@ -1546,7 +1546,7 @@ body.guest .sidebar-my-channel { display: none; }
   transform-style: preserve-3d;
   /* Smooth settling onto data-face. Overridden during :hover (animation)
      and during .bouncing (faster transition, no animation). */
-  transition: transform 0.55s cubic-bezier(0.22, 1.2, 0.36, 1);
+  transition: transform 0.4s cubic-bezier(0.22, 1.2, 0.36, 1);
 }
 .cube-face {
   position: absolute;
@@ -1619,7 +1619,7 @@ body.guest .sidebar-my-channel { display: none; }
 
 /* Hover — continuous 3D tumble (overrides the data-face transition) */
 .dice-shape:hover .dice-cube {
-  animation: diceTumble 2s linear infinite;
+  animation: diceTumble 1.3s linear infinite;
   transition: none;
 }
 @keyframes diceTumble {
@@ -1630,13 +1630,13 @@ body.guest .sidebar-my-channel { display: none; }
 
 /* Click bounce on the container; cube settles to the new data-face */
 .dice-shape.bouncing {
-  animation: diceBounce 0.75s cubic-bezier(0.22, 1.2, 0.36, 1) !important;
+  animation: diceBounce 0.55s cubic-bezier(0.22, 1.2, 0.36, 1) !important;
 }
 /* During bounce, kill the hover tumble so the cube can transition to data-face */
 .dice-shape.bouncing .dice-cube,
 .dice-shape.bouncing:hover .dice-cube {
   animation: none;
-  transition: transform 0.6s cubic-bezier(0.22, 1.2, 0.36, 1);
+  transition: transform 0.45s cubic-bezier(0.22, 1.2, 0.36, 1);
 }
 @keyframes diceBounce {
   0%   { transform: translateY(0)    scale(1); }

@@ -3469,11 +3469,11 @@ window.diceBouncePlay = function(el) {
   // Roll to a new face slightly after the bounce starts (looks like the dice
   // "settles" mid-air). The .bouncing CSS rule disables :hover's tumble so
   // the cube can transition cleanly to the new orientation.
-  setTimeout(() => setDieFace(el, 1 + Math.floor(Math.random() * 6)), 200);
-  setTimeout(() => el.classList.remove('bouncing'), 760);
+  setTimeout(() => setDieFace(el, 1 + Math.floor(Math.random() * 6)), 150);
+  setTimeout(() => el.classList.remove('bouncing'), 560);
 
   // Shuffle: at the apex of the bounce, throw every shape to a new spot.
-  setTimeout(() => shuffleAllShapes(), 230);
+  setTimeout(() => shuffleAllShapes(), 170);
 };
 
 // Animated reshuffle of every floating shape on the current page.
