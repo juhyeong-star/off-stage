@@ -470,6 +470,33 @@
   padding: 14px 14px 16px;
   margin: -2px 0 6px;
 }
+/* Bucket-size selector (5초 / 15초 / 30초) above the heatmap */
+.seg-bucket-tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 10px;
+  padding: 2px;
+  background: #0a0a0a;
+  border: 1px solid #262626;
+  border-radius: 8px;
+}
+.seg-bucket-btn {
+  background: transparent;
+  color: var(--text-secondary, #888);
+  border: none;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.seg-bucket-btn:hover { color: #fff; }
+.seg-bucket-btn.active {
+  background: #4FC3F7;
+  color: #061018;
+}
+
 .seg-title {
   font-size: 12px;
   color: var(--text-secondary, #aaa);

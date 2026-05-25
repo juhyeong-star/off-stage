@@ -8666,8 +8666,9 @@ function renderAuth() {
 // ===================== TRACK SEGMENT HEATMAP =====================
 // Toggle (open/close) the per-segment heatmap below a track row on /stats.
 // Buckets are 5s wide (matches the analytics heartbeat).
-window.toggleTrackSegments = async function (trackId, rowEl) {
+window.toggleTrackSegments = async function (trackId, rowEl, bucketSec) {
   if (!rowEl) return;
+  bucketSec = bucketSec || 15;  // default to 15s buckets — comfortable read
   // If already open, just close.
   const next = rowEl.nextElementSibling;
   if (next && next.classList && next.classList.contains('stats-track-segments')
@@ -8684,39 +8685,74 @@ window.toggleTrackSegments = async function (trackId, rowEl) {
   const wrap = document.createElement('div');
   wrap.className = 'stats-track-segments';
   wrap.dataset.trackId = trackId;
+  wrap.dataset.bucketSec = String(bucketSec);
   wrap.innerHTML = '<div class="seg-loading">분석 중…</div>';
   rowEl.insertAdjacentElement('afterend', wrap);
   rowEl.classList.add('open');
 
+  await _renderSegmentHeatmap(wrap, trackId, bucketSec);
+};
+
+// Re-render the heatmap inside the expanded wrap at a different bucket size.
+// Called by the 5초 / 15초 / 30초 selector buttons.
+window.changeSegmentBucket = async function (btn, bucketSec) {
+  const wrap = btn.closest('.stats-track-segments');
+  if (!wrap) return;
+  const trackId = wrap.dataset.trackId;
+  if (!trackId) return;
+  wrap.dataset.bucketSec = String(bucketSec);
+  await _renderSegmentHeatmap(wrap, trackId, bucketSec);
+};
+
+// Shared renderer for the segment heatmap. Builds the bucket tabs +
+// continuous bar chart + peak-segment caption inside the given wrap.
+async function _renderSegmentHeatmap(wrap, trackId, bucketSec) {
+  if (!wrap || !wrap.isConnected) return;
+  wrap.innerHTML = '<div class="seg-loading">분석 중…</div>';
+
   let segments = [];
   try {
     if (window.Analytics && window.Analytics.getTrackSegments) {
-      segments = await window.Analytics.getTrackSegments(trackId, 5);
+      segments = await window.Analytics.getTrackSegments(trackId, bucketSec);
     }
   } catch (e) { console.warn('[segments]', e); }
 
-  // User may have closed the row or navigated away — bail
   if (!wrap.isConnected) return;
 
+  const bucketTabs = `
+    <div class="seg-bucket-tabs">
+      ${[5, 15, 30].map(s => `
+        <button type="button" class="seg-bucket-btn ${s === bucketSec ? 'active' : ''}"
+                onclick="event.stopPropagation(); changeSegmentBucket(this, ${s})">
+          ${s}초
+        </button>
+      `).join('')}
+    </div>
+  `;
+
   if (!segments || segments.length === 0) {
-    wrap.innerHTML = '<div class="seg-empty">아직 청취 데이터가 없어요. (트랙을 누가 들으면 5초마다 한 점씩 기록돼요)</div>';
+    wrap.innerHTML = `
+      ${bucketTabs}
+      <div class="seg-empty">아직 청취 데이터가 없어요. (누군가 들으면 ${bucketSec}초 단위로 집계돼요)</div>
+    `;
     return;
   }
 
-  // Build a continuous bar series from 0 to the last bucket so gaps show as zero
   const bucketMap = new Map(segments.map(s => [s.bucket_start, s]));
   const maxBucket = Math.max(...segments.map(s => s.bucket_start));
   const maxListeners = Math.max(...segments.map(s => s.listeners), 1);
 
+  // Label cadence: every 30s no matter the bucket size (avoids crowded labels at 5s).
+  const labelStep = 30;
+
   const bars = [];
-  for (let b = 0; b <= maxBucket; b += 5) {
+  for (let b = 0; b <= maxBucket; b += bucketSec) {
     const s = bucketMap.get(b);
     const listeners = s ? s.listeners : 0;
     const pct = Math.round((listeners / maxListeners) * 100);
     const m = Math.floor(b / 60), r = b % 60;
     const tlabel = `${m}:${r < 10 ? '0' : ''}${r}`;
-    // Tooltip via title attribute. Show label only every 30s to avoid crowding.
-    const showLabel = (b % 30 === 0);
+    const showLabel = (b % labelStep === 0);
     bars.push(`
       <div class="segment-bar" title="${tlabel} → ${listeners}명 청취">
         <div class="segment-bar-fill" style="height:${pct}%; background: hsl(${200 + Math.round(pct/2)}, 80%, ${Math.max(30, 30 + Math.round(pct/3))}%);"></div>
@@ -8725,20 +8761,21 @@ window.toggleTrackSegments = async function (trackId, rowEl) {
     `);
   }
 
-  // KPI summary (peak segment + dropoff point)
+  // Peak segment caption
   let peakBucket = 0, peakListeners = 0;
   segments.forEach(s => { if (s.listeners > peakListeners) { peakListeners = s.listeners; peakBucket = s.bucket_start; } });
   const pm = Math.floor(peakBucket / 60), pr = peakBucket % 60;
   const peakLabel = `${pm}:${pr < 10 ? '0' : ''}${pr}`;
 
   wrap.innerHTML = `
+    ${bucketTabs}
     <div class="seg-title">
-      📈 구간별 청취 (5초 단위) · 가장 많이 들은 구간: <strong>${peakLabel}</strong> (${peakListeners}명)
+      📈 구간별 청취 (${bucketSec}초 단위) · 가장 많이 들은 구간: <strong>${peakLabel}</strong> (${peakListeners}명)
     </div>
     <div class="segment-heatmap">${bars.join('')}</div>
-    <div class="seg-note">💡 막대 높이 = 그 5초 구간을 들은 사람 수 · 마우스 올리면 정확한 숫자가 나와요</div>
+    <div class="seg-note">💡 막대 높이 = 그 ${bucketSec}초 구간을 들은 사람 수 · 마우스 올리면 정확한 숫자</div>
   `;
-};
+}
 
 // ===================== MY STATS PAGE (/stats) =====================
 // Fetches the current user's analytics and fills the element identified by
