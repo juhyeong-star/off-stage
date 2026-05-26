@@ -12832,64 +12832,105 @@ body:has(#global-player.expanded) .global-back-btn {
     margin: 0 0 24px !important;
   }
 
-  /* Master block — vertical, cover centered, info below */
+  /* Master block — landscape demo-style yellow card.
+     Top bar (MASTER badge + heart), middle row (cover thumb LEFT +
+     title/cheer text RIGHT), bottom (master diary + comments + input). */
   .artist-canvas .projects-grid .project-master-mobile {
     display: flex !important;
     flex-direction: column !important;
-    align-items: stretch !important;
+    background: #FFE500 !important;
+    border: 1.5px solid #111 !important;
+    border-radius: 4px !important;
+    box-shadow: 2px 2px 0 #111 !important;
+    padding: 12px 14px !important;
+    margin-bottom: 18px !important;
+    color: #111 !important;
+    gap: 8px !important;
+  }
+  /* Top bar — MASTER tag (pink) on left, heart on right */
+  .artist-canvas .projects-grid .project-master-mobile .master-top-bar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+  .artist-canvas .projects-grid .project-master-mobile .master-badge {
+    color: #c2185b !important;
+    font-weight: 800 !important;
+    font-size: 12px !important;
+  }
+  /* Middle row — cover thumb (left) + side text (right) */
+  .artist-canvas .projects-grid .project-master-mobile .master-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
     gap: 12px !important;
-    margin-bottom: 22px !important;
   }
   .artist-canvas .projects-grid .project-master-mobile .project-cover-wrap {
-    width: 100% !important;
-    max-width: 280px !important;
-    height: auto !important;
+    width: 96px !important;
+    height: 96px !important;
     aspect-ratio: 1 / 1 !important;
-    margin: 0 auto !important;
+    margin: 0 !important;
     flex-shrink: 0 !important;
+    border: 1.5px solid #111 !important;
+    box-shadow: 2px 2px 0 rgba(17,17,17,0.5) !important;
   }
-  .artist-canvas .projects-grid .project-master-mobile-info {
+  .artist-canvas .projects-grid .project-master-mobile .master-side-text {
+    flex: 1 !important;
+    min-width: 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    align-items: center !important;
-    text-align: center !important;
-    gap: 6px !important;
+    align-items: flex-start !important;
+    text-align: left !important;
+    gap: 4px !important;
   }
-  .artist-canvas .projects-grid .project-master-mobile-info .project-title {
-    font-size: 19px !important;
+  .artist-canvas .projects-grid .project-master-mobile .master-side-text .project-title {
+    font-size: 16px !important;
     margin: 0 !important;
     color: #111 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
-  .artist-canvas .projects-grid .project-master-mobile-info .project-master-date,
-  .artist-canvas .projects-grid .project-master-mobile-info .project-participants {
+  .artist-canvas .projects-grid .project-master-mobile .master-side-text .project-master-date,
+  .artist-canvas .projects-grid .project-master-mobile .master-side-text .project-participants {
+    font-size: 11px !important;
+    color: rgba(0,0,0,0.55) !important;
+    justify-content: flex-start !important;
+  }
+  .artist-canvas .projects-grid .project-master-mobile .master-side-text .cheer-btn {
+    margin-top: 4px !important;
+    padding: 6px 14px !important;
     font-size: 12px !important;
-    color: var(--text-secondary, rgba(0,0,0,0.6)) !important;
-    justify-content: center !important;
   }
-  .artist-canvas .projects-grid .project-master-mobile-info .cheer-btn {
-    margin-top: 6px !important;
-    padding: 8px 18px !important;
-    font-size: 13px !important;
-  }
-  /* Master's own diary + comments + input below the header info */
-  .artist-canvas .projects-grid .project-master-mobile-info .demo-card-note {
+  /* Extra: master 일지 + 댓글 + 입력 (full-width block below the row) */
+  .artist-canvas .projects-grid .project-master-mobile .master-extra {
     width: 100% !important;
-    text-align: left !important;
-    margin-top: 10px !important;
-    padding-top: 10px !important;
-    border-top: 1px dashed rgba(0,0,0,0.18) !important;
+    padding-top: 8px !important;
+    margin-top: 2px !important;
+    border-top: 1px dashed rgba(0,0,0,0.2) !important;
+  }
+  .artist-canvas .projects-grid .project-master-mobile .master-extra .demo-card-note {
     background: transparent !important;
     color: #111 !important;
-    -webkit-line-clamp: 5 !important;
+    margin: 0 0 6px !important;
+    padding: 0 !important;
+    border: none !important;
+    -webkit-line-clamp: 4 !important;
+    font-size: 13px !important;
+    line-height: 1.4 !important;
   }
-  .artist-canvas .projects-grid .project-master-mobile-info .demo-card-cm-list {
-    width: 100% !important;
-    text-align: left !important;
-    max-height: 160px;
+  .artist-canvas .projects-grid .project-master-mobile .master-extra .demo-card-cm-list {
+    max-height: 140px;
     overflow-y: auto;
+    margin: 0 !important;
   }
-  .artist-canvas .projects-grid .project-master-mobile-info .demo-card-cm-input {
-    width: 100% !important;
+  .artist-canvas .projects-grid .project-master-mobile .master-extra .demo-card-cm-line {
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+  }
+  .artist-canvas .projects-grid .project-master-mobile .master-extra .demo-card-cm-input {
     margin-top: 6px !important;
   }
 

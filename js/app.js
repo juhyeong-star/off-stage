@@ -5730,15 +5730,28 @@ function renderProjectBox(pid, versions) {
 
     return `
       <div class="project-box reveal project-box-mobile" data-project="${pid}">
-        <div class="project-master-mobile">
-          ${coverHtml}
-          <div class="project-master-mobile-info">
-            <h3 class="project-title">「${safeTitle}」</h3>
-            ${masterDate ? `<div class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
-            ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
-            ${cheerBtnHtml}
-            ${masterContentHtml /* diary + comments + input — master's own content */}
+        <!-- Master = wide landscape demo-style yellow card.
+             Top: MASTER tag + heart. Mid: cover thumb (left) + title/cheer/text (right).
+             Bottom: full-width 글 (diary) + comments + input. -->
+        <div class="project-master-mobile master-as-demo">
+          <div class="master-top-bar">
+            <span class="demo-tag master-badge">${final ? '✦ MASTER' : '작업 중'}</span>
+            ${final ? `
+              <button class="demo-card-like ${isTrackLiked(final.id) ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${final.id}', this)" title="내 우주에 모으기">
+                <i class="${isTrackLiked(final.id) ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
+              </button>
+            ` : ''}
           </div>
+          <div class="master-row">
+            ${coverHtml}
+            <div class="master-side-text">
+              <h3 class="project-title">「${safeTitle}」</h3>
+              ${masterDate ? `<div class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
+              ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명 응원</div>` : ''}
+              ${cheerBtnHtml}
+            </div>
+          </div>
+          ${masterContentHtml ? `<div class="master-extra">${masterContentHtml}</div>` : ''}
         </div>
         ${demos.length > 0 ? `<div class="demo-snake-grid">${mobileCardsHtml}</div>` : ''}
       </div>
