@@ -12721,22 +12721,22 @@ body:has(#global-player.expanded) .global-back-btn {
     display: flex !important;
     flex-direction: column !important;
     align-items: stretch !important;
-    width: 260px !important;
-    flex: 0 0 260px !important;
-    gap: 10px !important;
+    width: 300px !important;
+    flex: 0 0 300px !important;
+    gap: 11px !important;
     padding: 0 !important;
     margin: 0 !important;
     border: none !important;
     background: transparent !important;
   }
   .artist-canvas .projects-grid .project-cover-wrap {
-    width: 260px !important;
-    height: 260px !important;
+    width: 300px !important;
+    height: 300px !important;
     aspect-ratio: 1 / 1 !important;
     flex-shrink: 0 !important;
-    box-shadow: 4px 4px 0 #111 !important;
+    box-shadow: 5px 5px 0 #111 !important;
   }
-  .artist-canvas .projects-grid .project-title { font-size: 18px !important; margin-top: 4px; }
+  .artist-canvas .projects-grid .project-title { font-size: 20px !important; margin-top: 4px; }
   .artist-canvas .projects-grid .project-master-date { font-size: 12px !important; }
   .artist-canvas .projects-grid .project-participants { font-size: 12px !important; }
   .artist-canvas .projects-grid .cheer-btn {
@@ -12772,9 +12772,9 @@ body:has(#global-player.expanded) .global-back-btn {
 
   /* Each demo: fixed-width film frame */
   .artist-canvas .projects-grid .demo-path > .demo-card {
-    flex: 0 0 340px !important;
-    width: 340px !important;
-    height: 260px !important;
+    flex: 0 0 380px !important;
+    width: 380px !important;
+    height: 300px !important;
     aspect-ratio: auto !important;
     margin: 0 !important;
     scroll-snap-align: start;
