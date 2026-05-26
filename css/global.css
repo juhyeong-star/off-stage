@@ -12686,3 +12686,106 @@ body:has(#global-player.expanded) .global-back-btn {
   display: block;
   margin-top: 6px;
 }
+
+/* ============================================================
+   PC FILMSTRIP LAYOUT — 1 album per row, master left, demos right
+   User-confirmed: "가로 일렬 (영화 필름)" — master 큰 커버 + 옆으로
+   DEMO 1 → DEMO 2 → DEMO 3 → DEMO 4 한 줄로 흐름.
+   ============================================================ */
+@media (min-width: 769px) {
+  /* 1 album per row on desktop */
+  .artist-canvas .projects-grid {
+    grid-template-columns: 1fr !important;
+    gap: 28px !important;
+  }
+
+  /* Album = flex row: master block (left) + demo filmstrip (right) */
+  .artist-canvas .projects-grid .project-box {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: flex-start !important;
+    gap: 22px !important;
+    padding: 18px 20px 22px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+  }
+  .artist-canvas .projects-grid .project-box::before,
+  .artist-canvas .projects-grid .project-box::after { content: none !important; display: none !important; }
+
+  /* Master block: fixed-width column on the left */
+  .artist-canvas .projects-grid .project-header {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 260px !important;
+    flex: 0 0 260px !important;
+    gap: 10px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+  }
+  .artist-canvas .projects-grid .project-cover-wrap {
+    width: 260px !important;
+    height: 260px !important;
+    aspect-ratio: 1 / 1 !important;
+    flex-shrink: 0 !important;
+    box-shadow: 4px 4px 0 #111 !important;
+  }
+  .artist-canvas .projects-grid .project-title { font-size: 18px !important; margin-top: 4px; }
+  .artist-canvas .projects-grid .project-master-date { font-size: 12px !important; }
+  .artist-canvas .projects-grid .project-participants { font-size: 12px !important; }
+  .artist-canvas .projects-grid .cheer-btn {
+    margin-top: 8px !important;
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    align-self: flex-start;
+  }
+
+  /* Demo filmstrip — horizontal scroll, no wrap */
+  .artist-canvas .projects-grid .demo-path {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    gap: 14px !important;
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    padding: 6px 4px 14px !important;
+    grid-template-columns: none !important;
+    margin: 0 !important;
+    align-items: stretch !important;
+    /* Snap so each demo lands cleanly when scrolling */
+    scroll-snap-type: x proximity;
+    scroll-behavior: smooth;
+  }
+  .artist-canvas .projects-grid .demo-path::-webkit-scrollbar { height: 6px; }
+  .artist-canvas .projects-grid .demo-path::-webkit-scrollbar-thumb {
+    background: rgba(17,17,17,0.25);
+    border-radius: 3px;
+  }
+
+  /* Each demo: fixed-width film frame */
+  .artist-canvas .projects-grid .demo-path > .demo-card {
+    flex: 0 0 280px !important;
+    width: 280px !important;
+    height: 260px !important;
+    aspect-ratio: auto !important;
+    margin: 0 !important;
+    scroll-snap-align: start;
+    /* Ignore the snake-flow inline grid-row/grid-column — flex layout */
+  }
+  /* Hide the snake-flow ↗↘ arrows between demos in filmstrip mode */
+  .artist-canvas .projects-grid .demo-path > .demo-card::after,
+  .artist-canvas .projects-grid .demo-path > .demo-card.arrow-right::after,
+  .artist-canvas .projects-grid .demo-path > .demo-card.arrow-left::after,
+  .artist-canvas .projects-grid .demo-path > .demo-card.arrow-down::after {
+    content: none !important;
+    display: none !important;
+  }
+}
