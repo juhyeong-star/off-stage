@@ -12780,6 +12780,16 @@ body:has(#global-player.expanded) .global-back-btn {
     scroll-snap-align: start;
     /* Ignore the snake-flow inline grid-row/grid-column — flex layout */
   }
+  /* 일지 (artistNote) — comments는 그대로, 일지 글씨만 키움 */
+  .artist-canvas .projects-grid .demo-path > .demo-card .demo-card-note {
+    font-size: 19px !important;
+    line-height: 1.4 !important;
+  }
+  .artist-canvas .projects-grid .demo-path > .demo-card .demo-card-note-line {
+    font-size: 19px !important;
+    line-height: 1.4 !important;
+    font-weight: 700 !important;
+  }
   /* Hide the snake-flow ↗↘ arrows between demos in filmstrip mode */
   .artist-canvas .projects-grid .demo-path > .demo-card::after,
   .artist-canvas .projects-grid .demo-path > .demo-card.arrow-right::after,
