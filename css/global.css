@@ -12832,13 +12832,13 @@ body:has(#global-player.expanded) .global-back-btn {
     margin: 0 0 24px !important;
   }
 
-  /* Master block — landscape demo-style yellow card.
+  /* Master block — landscape demo-style WHITE card.
      Top bar (MASTER badge + heart), middle row (cover thumb LEFT +
      title/cheer text RIGHT), bottom (master diary + comments + input). */
   .artist-canvas .projects-grid .project-master-mobile {
     display: flex !important;
     flex-direction: column !important;
-    background: #FFE500 !important;
+    background: #fff !important;
     border: 1.5px solid #111 !important;
     border-radius: 4px !important;
     box-shadow: 2px 2px 0 #111 !important;
@@ -12895,9 +12895,12 @@ body:has(#global-player.expanded) .global-back-btn {
   }
   .artist-canvas .projects-grid .project-master-mobile .master-side-text .project-master-date,
   .artist-canvas .projects-grid .project-master-mobile .master-side-text .project-participants {
-    font-size: 11px !important;
-    color: rgba(0,0,0,0.55) !important;
+    font-size: 12px !important;
+    color: rgba(0,0,0,0.75) !important;
+    font-weight: 600 !important;
     justify-content: flex-start !important;
+    display: flex !important;        /* 만에 하나 display:none 되어있던 거 강제 풀기 */
+    visibility: visible !important;
   }
   .artist-canvas .projects-grid .project-master-mobile .master-side-text .cheer-btn {
     margin-top: 4px !important;

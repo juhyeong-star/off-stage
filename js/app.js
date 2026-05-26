@@ -5730,10 +5730,10 @@ function renderProjectBox(pid, versions) {
 
     return `
       <div class="project-box reveal project-box-mobile" data-project="${pid}">
-        <!-- Master = wide landscape demo-style yellow card.
+        <!-- Master = wide landscape demo-style WHITE card.
              Top: MASTER tag + heart. Mid: cover thumb (left) + title/cheer/text (right).
              Bottom: full-width 글 (diary) + comments + input. -->
-        <div class="project-master-mobile master-as-demo">
+        <div class="project-master-mobile master-as-demo" ${final ? `data-track-id="${final.id}"` : ''}>
           <div class="master-top-bar">
             <span class="demo-tag master-badge">${final ? '✦ MASTER' : '작업 중'}</span>
             ${final ? `
@@ -6171,24 +6171,27 @@ window.submitTrackComment = async function(trackId) {
   }
   if (txtEl) txtEl.value = '';
 
-  // In-place DOM update — 데모 카드 내부의 .demo-card-cm-list 에 ㄴ 추가
+  // In-place DOM update — 데모 카드 OR 마스터 카드 내부의 .demo-card-cm-list 에 ㄴ 추가
   try {
     const cmSafe = (newComment.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const cmAuth = (newComment.author || '익명').replace(/</g,'&lt;');
 
-    // 새 구조: .demo-card[data-track-id] .demo-card-cm-list
-    const card = document.querySelector(`.demo-card[data-track-id="${trackId}"]`);
-    if (card) {
+    // 데모 카드 OR 마스터 카드 (둘 다 data-track-id 갖고 있고 .demo-card-cm-list 내부에 있음)
+    const containers = document.querySelectorAll(
+      `.demo-card[data-track-id="${trackId}"], .project-master-mobile[data-track-id="${trackId}"]`
+    );
+    containers.forEach(card => {
       const list = card.querySelector('.demo-card-cm-list');
-      if (list) {
-        const empty = list.querySelector('.demo-card-cm-empty');
-        if (empty) empty.remove();
-        const lineEl = document.createElement('div');
-        lineEl.className = 'demo-card-cm-line';
-        lineEl.innerHTML = `<span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span>`;
-        list.appendChild(lineEl);
-      }
-    }
+      if (!list) return;
+      const empty = list.querySelector('.demo-card-cm-empty');
+      if (empty) empty.remove();
+      const lineEl = document.createElement('div');
+      lineEl.className = 'demo-card-cm-line';
+      lineEl.innerHTML = `<span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span>`;
+      list.appendChild(lineEl);
+      // Scroll comments list to bottom so new comment is visible
+      list.scrollTop = list.scrollHeight;
+    });
     // 구 구조 호환 (혹시 다른 페이지에서 version-panel 사용 시)
     const panel = document.querySelector(`.version-panel[data-track-id="${trackId}"]`);
     if (panel) {
