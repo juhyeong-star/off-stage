@@ -563,7 +563,7 @@
   --brand-hover: #1ed760;
   --divider: #222222;
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-hand: 'Gaegu', 'Caveat', cursive;
+  --font-hand: 'Nanum Pen Script', 'Gaegu', 'Caveat', cursive;
   --player-height: 72px;
   --sidebar-width: 220px;
 }
@@ -12859,86 +12859,72 @@ body:has(#global-player.expanded) .global-back-btn {
     font-weight: 800 !important;
     font-size: 12px !important;
   }
-  /* 2-column split:
-       LEFT  = cover + title + date + cheer (stacked)
-       RIGHT = master 일지 + 댓글 + 입력           */
-  .artist-canvas .projects-grid .project-master-mobile .master-split {
-    display: grid !important;
-    grid-template-columns: 110px 1fr !important;
-    gap: 14px !important;
-    align-items: stretch !important;   /* 오른쪽 칼럼이 왼쪽 높이만큼 늘어나야 input을 바닥에 붙일 수 있음 */
+  /* Compact 2x2 grid:
+       [Cover ]  [Title       ]
+       [Date  ]  [N명 응원    ]
+     Sized close to a demo card so the master sits as a peer, not a header. */
+  .artist-canvas .projects-grid .project-master-mobile {
+    padding: 10px 12px !important;     /* slimmer than before */
+    margin-bottom: 12px !important;
   }
-  .artist-canvas .projects-grid .project-master-mobile .master-left {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 6px !important;
-    min-width: 0 !important;
+  .artist-canvas .projects-grid .project-master-mobile .master-grid-2x2 {
+    display: grid !important;
+    grid-template-columns: 56px 1fr !important;
+    grid-template-rows: auto auto !important;
+    column-gap: 12px !important;
+    row-gap: 6px !important;
+    align-items: center !important;
+  }
+  .artist-canvas .projects-grid .project-master-mobile .mg-cover-cell {
+    grid-column: 1; grid-row: 1;            /* row1 left only — date sits under it */
+    display: flex;
+    align-items: center;
   }
   .artist-canvas .projects-grid .project-master-mobile .project-cover-wrap {
-    width: 110px !important;
-    height: 110px !important;
+    width: 56px !important;
+    height: 56px !important;
     aspect-ratio: 1 / 1 !important;
     margin: 0 !important;
     flex-shrink: 0 !important;
     border: 1.5px solid #111 !important;
     box-shadow: 2px 2px 0 rgba(17,17,17,0.5) !important;
   }
-  .artist-canvas .projects-grid .project-master-mobile .master-left .project-title {
-    font-size: 15px !important;
-    margin: 4px 0 0 !important;
+  .artist-canvas .projects-grid .project-master-mobile .mg-title-cell {
+    grid-column: 2; grid-row: 1;
+    min-width: 0;
+    align-self: center;
+  }
+  .artist-canvas .projects-grid .project-master-mobile .mg-title-cell .project-title {
+    font-size: 14px !important;
+    margin: 0 !important;
     color: #111 !important;
     line-height: 1.25 !important;
-    /* allow wrap so long titles aren't truncated to ellipsis */
-    white-space: normal !important;
-    overflow: visible !important;
-    text-overflow: clip !important;
-    max-width: 110px !important;
-    word-break: keep-all !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
   }
-  .artist-canvas .projects-grid .project-master-mobile .master-left .project-master-date,
-  .artist-canvas .projects-grid .project-master-mobile .master-left .project-participants {
+  .artist-canvas .projects-grid .project-master-mobile .mg-date-cell,
+  .artist-canvas .projects-grid .project-master-mobile .mg-cheers-cell {
+    grid-row: 2;
+    min-width: 0;
+  }
+  .artist-canvas .projects-grid .project-master-mobile .mg-date-cell    { grid-column: 1; padding-left: 2px; }
+  .artist-canvas .projects-grid .project-master-mobile .mg-cheers-cell  { grid-column: 2; }
+  .artist-canvas .projects-grid .project-master-mobile .mg-date-cell .project-master-date,
+  .artist-canvas .projects-grid .project-master-mobile .mg-cheers-cell .project-participants {
     font-size: 11px !important;
-    color: #888 !important;          /* 까만색 → 부드러운 회색 */
+    color: #888 !important;
     font-weight: 500 !important;
-    justify-content: flex-start !important;
-    display: flex !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
     visibility: visible !important;
-    max-width: 110px !important;
   }
-  .artist-canvas .projects-grid .project-master-mobile .master-left .cheer-btn {
-    margin-top: 4px !important;
-    padding: 5px 10px !important;
-    font-size: 11px !important;
-  }
-  /* RIGHT column — master 일지 + 댓글 + 입력 */
-  .artist-canvas .projects-grid .project-master-mobile .master-right {
-    min-width: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 6px !important;
-  }
-  .artist-canvas .projects-grid .project-master-mobile .master-right .demo-card-note {
-    background: transparent !important;
-    color: #111 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    -webkit-line-clamp: 3 !important;
-    font-size: 13px !important;
-    line-height: 1.4 !important;
-  }
-  .artist-canvas .projects-grid .project-master-mobile .master-right .demo-card-cm-list {
-    max-height: 110px;
-    overflow-y: auto;
-    margin: 0 !important;
-  }
-  .artist-canvas .projects-grid .project-master-mobile .master-right .demo-card-cm-line {
-    font-size: 12px !important;
-    line-height: 1.35 !important;
-  }
-  .artist-canvas .projects-grid .project-master-mobile .master-right .demo-card-cm-input {
-    margin-top: auto !important;   /* 오른쪽 칼럼 맨 아래로 밀착 */
+  /* Date cell sits UNDER the cover, so align it under the cover's left edge */
+  .artist-canvas .projects-grid .project-master-mobile .mg-date-cell {
+    text-align: left !important;
   }
 
   /* Snake demo grid — 2 columns, cards placed by inline grid-row/col */

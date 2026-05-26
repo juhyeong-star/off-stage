@@ -5880,16 +5880,14 @@ function renderProjectBox(pid, versions) {
               </button>
             ` : ''}
           </div>
-          <!-- 2-column split: LEFT = cover/title/date/cheer, RIGHT = note/comments/input -->
-          <div class="master-split">
-            <div class="master-left">
-              ${coverHtml}
-              <h3 class="project-title">「${safeTitle}」</h3>
-              ${masterDate ? `<div class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
-              ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명 응원</div>` : ''}
-              ${cheerBtnHtml}
-            </div>
-            ${masterContentHtml ? `<div class="master-right">${masterContentHtml}</div>` : ''}
+          <!-- 2x2 compact grid:
+                 [Cover ]  [Title       ]
+                 [Date  ]  [N명 응원    ]                                  -->
+          <div class="master-grid-2x2">
+            <div class="mg-cover-cell">${coverHtml}</div>
+            <div class="mg-title-cell"><h3 class="project-title">「${safeTitle}」</h3></div>
+            <div class="mg-date-cell">${masterDate ? `<span class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</span>` : ''}</div>
+            <div class="mg-cheers-cell">${participantCount > 0 ? `<span class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명 응원</span>` : ''}</div>
           </div>
         </div>
         ${demos.length > 0 ? `<div class="demo-snake-grid">${mobileCardsHtml}</div>` : ''}
