@@ -12790,6 +12790,14 @@ body:has(#global-player.expanded) .global-back-btn {
     line-height: 1.4 !important;
     font-weight: 700 !important;
   }
+  /* 댓글 한 사이즈만 살짝 키움 */
+  .artist-canvas .projects-grid .demo-path > .demo-card .demo-card-cm-line {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+  }
+  .artist-canvas .projects-grid .demo-path > .demo-card .demo-card-cm-input-field {
+    font-size: 13px !important;
+  }
   /* Hide the snake-flow ↗↘ arrows between demos in filmstrip mode */
   .artist-canvas .projects-grid .demo-path > .demo-card::after,
   .artist-canvas .projects-grid .demo-path > .demo-card.arrow-right::after,
