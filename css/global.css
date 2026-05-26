@@ -13028,6 +13028,8 @@ body:has(#global-player.expanded) .global-back-btn {
   align-items: flex-end;
   justify-content: center;
   animation: tcmFadeIn 0.18s ease-out;
+  /* keep the bottom sheet from sliding under the persistent global player */
+  padding-bottom: var(--player-height, 72px);
 }
 @keyframes tcmFadeIn { from { opacity: 0; } to { opacity: 1; } }
 .tcm-card {
@@ -13041,7 +13043,8 @@ body:has(#global-player.expanded) .global-back-btn {
   box-shadow: 0 -8px 30px rgba(0,0,0,0.35);
   padding: 18px 18px 14px;
   position: relative;
-  max-height: 80vh;
+  /* leave room for the global player + a little breathing space */
+  max-height: calc(85vh - var(--player-height, 72px));
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -13159,7 +13162,8 @@ body:has(#global-player.expanded) .global-back-btn {
   }
 }
 
-/* Hint text under master title that the row is tappable */
+/* Hint button — opens the track-comments modal. Reset native <button>
+   styles so it reads as a small inline link. */
 .artist-canvas .projects-grid .project-master-mobile .master-tap-hint {
   font-size: 10px;
   color: #c2185b;
@@ -13167,6 +13171,17 @@ body:has(#global-player.expanded) .global-back-btn {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  margin-top: 2px;
-  opacity: 0.8;
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: rgba(194, 24, 91, 0.08);
+  border: 1px solid rgba(194, 24, 91, 0.3);
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+.artist-canvas .projects-grid .project-master-mobile .master-tap-hint:hover,
+.artist-canvas .projects-grid .project-master-mobile .master-tap-hint:active {
+  background: rgba(194, 24, 91, 0.18);
+  border-color: rgba(194, 24, 91, 0.55);
 }

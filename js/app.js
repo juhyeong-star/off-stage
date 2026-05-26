@@ -5890,14 +5890,18 @@ function renderProjectBox(pid, versions) {
                  [Cover]  Title
                           N명 응원
                           발매일
-               Whole row click → open track comments modal.                 -->
-          <div class="master-compact-row" ${final ? `onclick="event.stopPropagation(); openTrackCommentsModal('${final.id}')" style="cursor: pointer;"` : ''}>
-            ${coverHtml}
+                          [탭해서 댓글 보기] ← button only
+               Cover click   → playTrack
+               Hint click    → openTrackCommentsModal                       -->
+          <div class="master-compact-row">
+            <div class="master-cover-wrap-click" ${final ? `onclick="event.stopPropagation(); playTrack('${final.id}')" style="cursor: pointer;"` : ''}>
+              ${coverHtml}
+            </div>
             <div class="master-compact-text">
               <h3 class="project-title">「${safeTitle}」</h3>
               ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명 응원</div>` : ''}
               ${masterDate ? `<div class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
-              ${final ? `<div class="master-tap-hint"><i class="ri-chat-3-line"></i> 탭해서 댓글 보기</div>` : ''}
+              ${final ? `<button type="button" class="master-tap-hint" onclick="event.stopPropagation(); openTrackCommentsModal('${final.id}')"><i class="ri-chat-3-line"></i> 탭해서 댓글 보기</button>` : ''}
             </div>
           </div>
         </div>
