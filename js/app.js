@@ -3245,14 +3245,10 @@ function renderShapes() {
       ? `border-bottom-color: ${color}; color: ${color}; --shape-bg: ${color};`
       : `background: ${color}; --shape-bg: ${color};`;
 
-    const liked = isTrackLiked(track.id);
     shapesHtml += `
       <div class="floating-shape shape-${shape}" data-track-id="${track.id}" data-pass="${pass}" data-artist="${encodeURIComponent(track.artist || '')}"
            style="${bgStyle} left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;">
         <div class="shape-text">${safeLines.join('\n')}</div>
-        <button class="shape-like-btn ${liked ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${track.id}', this)" title="내 우주에 모으기">
-          <i class="${liked ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
-        </button>
       </div>
     `;
   });
@@ -3326,6 +3322,86 @@ function isTrackLiked(trackId) {
 
 // Toggle a track heart. Mirrors to both Supabase (if track is server-stored)
 // and the local DB so liked items always appear in the universe.
+// Long-press menu on a floating shape: quick actions like collect-to-universe
+// and add-to-playlist. Anchored near the touch point.
+window.openShapeLongPressMenu = function(trackId, anchorX, anchorY, shapeEl) {
+  // Clean up any existing menu first
+  const existing = document.getElementById('shape-longpress-menu');
+  if (existing) existing.remove();
+
+  const inUniverse = (typeof isTrackLiked === 'function') ? isTrackLiked(trackId) : false;
+  const argT = (trackId || '').replace(/'/g, "\\'");
+
+  const menu = document.createElement('div');
+  menu.id = 'shape-longpress-menu';
+  menu.className = 'shape-longpress-menu';
+  menu.innerHTML = `
+    <button class="splp-item" onclick="event.stopPropagation(); _splpCollect('${argT}', this)">
+      <i class="ri-${inUniverse ? 'heart-fill' : 'heart-add-line'}" style="color:${inUniverse ? '#ff2e63' : '#ff2e63'};"></i>
+      <span>${inUniverse ? '우주에서 빼기' : '내 우주에 모으기'}</span>
+    </button>
+    <button class="splp-item" onclick="event.stopPropagation(); _splpAddToFolder('${argT}')">
+      <i class="ri-folder-add-fill" style="color:#9C27B0;"></i>
+      <span>내 폴더에 담기</span>
+    </button>
+    <button class="splp-item splp-cancel" onclick="event.stopPropagation(); _splpClose()">
+      <i class="ri-close-line"></i>
+      <span>닫기</span>
+    </button>
+  `;
+  document.body.appendChild(menu);
+
+  // Position near the anchor, clamping to viewport
+  const W = menu.offsetWidth || 200;
+  const H = menu.offsetHeight || 140;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  let left = Math.min(Math.max(8, anchorX - W / 2), vw - W - 8);
+  let top  = Math.max(8, anchorY - H - 14);          // prefer above the touch
+  if (top < 60) top = Math.min(anchorY + 16, vh - H - 8);  // not enough room → below
+  menu.style.left = left + 'px';
+  menu.style.top  = top  + 'px';
+
+  // Dismiss on outside tap/click — register on next tick to avoid the
+  // touchend that triggered the menu from immediately closing it.
+  setTimeout(() => {
+    const onOutside = (ev) => {
+      if (!menu.contains(ev.target)) _splpClose();
+    };
+    menu.__onOutside = onOutside;
+    document.addEventListener('click', onOutside, true);
+    document.addEventListener('touchstart', onOutside, true);
+  }, 50);
+};
+
+window._splpClose = function() {
+  const m = document.getElementById('shape-longpress-menu');
+  if (!m) return;
+  if (m.__onOutside) {
+    document.removeEventListener('click', m.__onOutside, true);
+    document.removeEventListener('touchstart', m.__onOutside, true);
+  }
+  m.remove();
+};
+
+window._splpCollect = function(trackId, btn) {
+  if (typeof window.toggleTrackHeart === 'function') {
+    window.toggleTrackHeart(trackId, btn);
+  }
+  _splpClose();
+  // On /universe, the removed shape should disappear — refresh
+  if (currentView === 'universe' && typeof renderUniverse === 'function') {
+    setTimeout(() => renderUniverse(), 200);
+  }
+};
+
+window._splpAddToFolder = function(trackId) {
+  _splpClose();
+  if (typeof window.openPlaylistModal === 'function') {
+    window.openPlaylistModal(trackId);
+  }
+};
+
 window.toggleTrackHeart = async function(trackId, btnEl) {
   const db = window.DB.get();
   if (!db.currentUser) {
@@ -3650,9 +3726,6 @@ window.renderUniverse = async function () {
              style="${bgStyle} left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;">
           ${demoBadge}
           <div class="shape-text">${safeLines.join('\n')}</div>
-          <button class="shape-like-btn is-liked" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${t.id}', this); setTimeout(()=>renderUniverse(),250);" title="우주에서 빼기">
-            <i class="ri-heart-fill"></i>
-          </button>
         </div>
       `;
     } else {
@@ -3692,19 +3765,20 @@ function initShapeDrag() {
   const shapes = document.querySelectorAll('.floating-shape');
   let dragEl = null;
   let startX, startY, origLeft, origTop, moved;
+  let longPressTimer = null;
+  let longPressFired = false;
+  const LONG_PRESS_MS = 550;
 
   function pointerDown(e) {
     // Skip if clicking the resize handle
     if (e.target.closest('.shape-resize-handle')) return;
-    // Skip drag/play handling when the user is clicking the heart button.
-    // Without this, mouseup on the shape still fires playTrack on top of the heart toggle.
-    if (e.target.closest('.shape-like-btn')) return;
     // Ignore if it's a touch with multiple fingers
     if (e.touches && e.touches.length > 1) return;
 
     const el = e.currentTarget;
     dragEl = el;
     moved = false;
+    longPressFired = false;
 
     const ptr = e.touches ? e.touches[0] : e;
     startX = ptr.clientX;
@@ -3725,6 +3799,20 @@ function initShapeDrag() {
     el.style.transition = 'none';
     el.classList.add('dragging');
 
+    // Long-press detection — fires after LONG_PRESS_MS if user didn't move/release
+    if (longPressTimer) clearTimeout(longPressTimer);
+    longPressTimer = setTimeout(() => {
+      if (!dragEl || moved) return;
+      longPressFired = true;
+      // Anchor menu near pointer (use clientX/Y captured at down)
+      const trackId = el.dataset.trackId;
+      if (trackId && typeof window.openShapeLongPressMenu === 'function') {
+        window.openShapeLongPressMenu(trackId, startX, startY, el);
+      }
+      // Subtle haptic-ish feedback
+      try { if (navigator.vibrate) navigator.vibrate(15); } catch (_) {}
+    }, LONG_PRESS_MS);
+
     e.preventDefault();
   }
 
@@ -3734,7 +3822,11 @@ function initShapeDrag() {
     const dx = ptr.clientX - startX;
     const dy = ptr.clientY - startY;
 
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+      moved = true;
+      // Cancel pending long-press once user starts to drag
+      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    }
 
     dragEl.style.left = (origLeft + dx) + 'px';
     dragEl.style.top = (origTop + dy) + 'px';
@@ -3745,10 +3837,17 @@ function initShapeDrag() {
     if (!dragEl) return;
     const el = dragEl;
     dragEl = null;
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
 
     el.classList.remove('dragging');
     el.style.zIndex = '';
     el.style.transition = '';
+
+    // If long-press menu opened, don't treat as click/drag-end
+    if (longPressFired) {
+      longPressFired = false;
+      return;
+    }
 
     // Persist user-curated position on /universe and /shapes.
     // Saves a percentage for x (so it scales with width) and pixels for y.

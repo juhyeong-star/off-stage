@@ -12975,3 +12975,54 @@ body:has(#global-player.expanded) .global-back-btn {
   .artist-canvas .projects-grid .project-pages { display: none !important; }
   .artist-canvas .projects-grid .project-dots { display: none !important; }
 }
+
+/* ============================================================
+   Long-press menu on floating shapes
+   Anchored near the touch point, dismisses on outside tap.
+   ============================================================ */
+.shape-longpress-menu {
+  position: fixed;
+  z-index: 600;
+  min-width: 200px;
+  background: rgba(15, 15, 15, 0.96);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 14px 40px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.3);
+  padding: 6px;
+  animation: splpPop 0.18s cubic-bezier(0.22, 1.2, 0.36, 1);
+  user-select: none;
+}
+@keyframes splpPop {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.splp-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 11px 14px;
+  border-radius: 9px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.splp-item:hover { background: rgba(255, 255, 255, 0.08); }
+.splp-item:active { background: rgba(255, 255, 255, 0.14); }
+.splp-item i {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.splp-cancel {
+  color: rgba(255, 255, 255, 0.55);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: 2px;
+  padding-top: 11px;
+}
+.splp-cancel i { color: rgba(255, 255, 255, 0.5); }
