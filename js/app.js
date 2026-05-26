@@ -1883,8 +1883,18 @@ async function renderWall() {
   // on narrow viewports.
   const _vw = (typeof window !== 'undefined' ? window.innerWidth : 1024) || 1024;
   const cols = _vw < 800 ? 1 : (_vw < 1200 ? 2 : 4);
-  // Each note can now grow tall with inline comments + input — give rows more vertical room
-  const boardH = Math.max(820, Math.ceil(visibleNotes.length / cols) * 390 + 300);
+  // Each note can now grow tall with inline comments + input — give rows more vertical room.
+  // Also expand for any user-dragged positions that sit below the default grid.
+  let _maxSavedY = 0;
+  for (const _n of visibleNotes) {
+    try {
+      const _raw = localStorage.getItem('wallpos:' + _n.id);
+      if (!_raw) continue;
+      const _p = JSON.parse(_raw);
+      if (_p && typeof _p.yPx === 'number' && _p.yPx > _maxSavedY) _maxSavedY = _p.yPx;
+    } catch (_) {}
+  }
+  const boardH = Math.max(820, Math.ceil(visibleNotes.length / cols) * 390 + 300, _maxSavedY + 420);
 
   // Helper: escape user text for HTML
   const _esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1903,11 +1913,23 @@ async function renderWall() {
     const row = Math.floor(i / cols);
     // x is a % so post-its scale with the viewport. Column spacing depends
     // on how many cols we picked above.
-    let x;
-    if (cols === 1)      x =  4 + (seed % 8);                       //  4-12%
-    else if (cols === 2) x =  4 + col * 46 + (seed % 6);            //  4-10 | 50-56
-    else                  x =  2 + col * 22 + (seed % 10);          //  2-12 | 24-34 | 46-56 | 68-78
-    const yPx = 140 + row * 390 + ((seed >>> 8) % 40);
+    let x, yPx;
+    // Honor any user-curated position saved on drop. Falls back to the seeded
+    // grid layout when there's nothing in localStorage (or the parse fails).
+    let _savedPos = null;
+    try {
+      const _raw = localStorage.getItem('wallpos:' + note.id);
+      if (_raw) _savedPos = JSON.parse(_raw);
+    } catch (_) { _savedPos = null; }
+    if (_savedPos && typeof _savedPos.xPct === 'number' && typeof _savedPos.yPx === 'number') {
+      x   = _savedPos.xPct;
+      yPx = _savedPos.yPx;
+    } else {
+      if (cols === 1)      x =  4 + (seed % 8);                       //  4-12%
+      else if (cols === 2) x =  4 + col * 46 + (seed % 6);            //  4-10 | 50-56
+      else                  x =  2 + col * 22 + (seed % 10);          //  2-12 | 24-34 | 46-56 | 68-78
+      yPx = 140 + row * 390 + ((seed >>> 8) % 40);
+    }
 
     const bookmarked = window.Walls && window.Walls.isBookmarked && window.Walls.isBookmarked(note.id);
     const bookmarkBtn = user ? `
@@ -2548,13 +2570,30 @@ function _noteUp() {
   s.dragEl = null;
   el.classList.remove('dragging');
   el.style.transition = '';
-  // Short click/tap → open the note detail modal (낙서·댓글 보기).
-  // Author name inside the modal still links to the artist page if wanted.
-  if (!wasMoved) {
+
+  // Persist user-curated position to localStorage so the post-it stays
+  // where it was dropped across page reloads. % for x (scales with
+  // viewport width) + px for y.
+  if (wasMoved) {
     const noteId = el.dataset.noteId;
-    if (noteId && typeof window.openNoteDetail === 'function') {
-      setTimeout(() => window.openNoteDetail(noteId), 10);
+    const board = el.parentElement;
+    if (noteId && board) {
+      try {
+        const boardRect = board.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const leftPx = elRect.left - boardRect.left + (board.scrollLeft || 0);
+        const topPx  = elRect.top  - boardRect.top  + (board.scrollTop || 0);
+        const xPct   = boardRect.width > 0 ? (leftPx / boardRect.width) * 100 : 0;
+        localStorage.setItem('wallpos:' + noteId, JSON.stringify({ xPct, yPx: topPx }));
+      } catch (_) {}
     }
+    return;   // Don't open detail modal on drag-release
+  }
+
+  // Short click/tap (no drag) → open the note detail modal.
+  const noteId = el.dataset.noteId;
+  if (noteId && typeof window.openNoteDetail === 'function') {
+    setTimeout(() => window.openNoteDetail(noteId), 10);
   }
 }
 
@@ -5841,16 +5880,17 @@ function renderProjectBox(pid, versions) {
               </button>
             ` : ''}
           </div>
-          <div class="master-row">
-            ${coverHtml}
-            <div class="master-side-text">
+          <!-- 2-column split: LEFT = cover/title/date/cheer, RIGHT = note/comments/input -->
+          <div class="master-split">
+            <div class="master-left">
+              ${coverHtml}
               <h3 class="project-title">「${safeTitle}」</h3>
               ${masterDate ? `<div class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
               ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명 응원</div>` : ''}
               ${cheerBtnHtml}
             </div>
+            ${masterContentHtml ? `<div class="master-right">${masterContentHtml}</div>` : ''}
           </div>
-          ${masterContentHtml ? `<div class="master-extra">${masterContentHtml}</div>` : ''}
         </div>
         ${demos.length > 0 ? `<div class="demo-snake-grid">${mobileCardsHtml}</div>` : ''}
       </div>
