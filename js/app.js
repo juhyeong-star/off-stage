@@ -5672,13 +5672,75 @@ function renderProjectBox(pid, versions) {
   const _isMobile = (typeof window !== 'undefined') && window.innerWidth <= 768;
 
   if (_isMobile) {
-    return `
-      <div class="project-box reveal" data-project="${pid}">
-        <div class="project-pages">
-          ${masterPageHtml}
-          ${cardsHtml /* demo cards have class "page-demo" — mobile CSS uses it */}
+    // Mobile snake-up: master 위에, demos 아래 2x2 grid에서 좌하단부터 휘어 올라감.
+    //   Demo 1 ┐                       [ DEMO 4 ] ← [ DEMO 3 ]
+    //   Demo 2 ┘ bottom row                ↑
+    //   Demo 3 ┐                       [ DEMO 1 ] → [ DEMO 2 ]
+    //   Demo 4 ┘ next-up row
+    const SNAKE_COLS = 2;
+    const totalRows = Math.max(1, Math.ceil(demos.length / SNAKE_COLS));
+    const snakeUpPos = (i) => {
+      const pairIdx = Math.floor(i / SNAKE_COLS);
+      const pairOffset = i % SNAKE_COLS;
+      const row = totalRows - pairIdx;             // bottom row is biggest, fills first
+      const col = (pairIdx % 2 === 0)              // even pair → left-to-right
+        ? (pairOffset + 1)
+        : (SNAKE_COLS - pairOffset);               // odd pair → right-to-left
+      return { row, col };
+    };
+
+    // Rebuild demo cards with snake-up positions (positions differ from desktop)
+    const noteEscM = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const mobileCardsHtml = demos.map((v, i) => {
+      const pos = snakeUpPos(i);
+      const noteRaw = (v.artistNote || '').trim();
+      const noteLines = noteRaw ? noteRaw.split(/\r?\n/).map(l => l.trim()).filter(Boolean).slice(0, 3) : [];
+      const mNoteHtml = noteLines.length > 0
+        ? `<div class="demo-card-note">${noteLines.map(l => `<span class="demo-card-note-line">${noteEscM(l)}</span>`).join('')}</div>`
+        : '';
+      const cmList = v.trackComments || [];
+      const mCmHtml = cmList.slice(0, 5).map(cm => {
+        const cmSafe = noteEscM(cm.text || '');
+        const cmAuth = noteEscM(cm.author || '익명');
+        return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span></div>`;
+      }).join('');
+      const mInputHtml = canComment ? `
+        <div class="demo-card-cm-input" onclick="event.stopPropagation();">
+          <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="" onkeypress="if(event.key==='Enter'){ event.preventDefault(); submitTrackComment('${v.id}'); }">
+          <button class="demo-card-cm-send" onclick="event.stopPropagation(); submitTrackComment('${v.id}')" aria-label="남기기"><i class="ri-arrow-right-line"></i></button>
+        </div>` : '';
+      const demoLiked = isTrackLiked(v.id);
+      return `
+        <div class="demo-card is-demo ${v.id === firstTrackId ? 'is-selected' : ''} ${v.pinned ? 'is-pinned' : ''}"
+             data-track-id="${v.id}" data-project="${pid}"
+             style="grid-row:${pos.row}; grid-column:${pos.col};"
+             onclick="selectProjectVersion('${pid}','${v.id}'); playTrack('${v.id}')">
+          <div class="demo-card-top">
+            <span class="demo-tag">DEMO ${i+1}</span>
+            <button class="demo-card-like ${demoLiked ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${v.id}', this)" title="내 우주에 모으기">
+              <i class="${demoLiked ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
+            </button>
+          </div>
+          ${mNoteHtml}
+          <div class="demo-card-cm-list">${mCmHtml}</div>
+          ${mInputHtml}
         </div>
-        ${projectDotsHtml}
+      `;
+    }).join('');
+
+    return `
+      <div class="project-box reveal project-box-mobile" data-project="${pid}">
+        <div class="project-master-mobile">
+          ${coverHtml}
+          <div class="project-master-mobile-info">
+            <h3 class="project-title">「${safeTitle}」</h3>
+            ${masterDate ? `<div class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
+            ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
+            ${cheerBtnHtml}
+            ${masterContentHtml /* diary + comments + input — master's own content */}
+          </div>
+        </div>
+        ${demos.length > 0 ? `<div class="demo-snake-grid">${mobileCardsHtml}</div>` : ''}
       </div>
     `;
   }
