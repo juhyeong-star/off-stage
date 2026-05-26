@@ -5880,14 +5880,17 @@ function renderProjectBox(pid, versions) {
               </button>
             ` : ''}
           </div>
-          <!-- 2x2 compact grid:
-                 [Cover ]  [Title       ]
-                 [Date  ]  [N명 응원    ]                                  -->
-          <div class="master-grid-2x2">
-            <div class="mg-cover-cell">${coverHtml}</div>
-            <div class="mg-title-cell"><h3 class="project-title">「${safeTitle}」</h3></div>
-            <div class="mg-date-cell">${masterDate ? `<span class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</span>` : ''}</div>
-            <div class="mg-cheers-cell">${participantCount > 0 ? `<span class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명 응원</span>` : ''}</div>
+          <!-- Compact row: cover (left) + stacked text (right):
+                 [Cover]  Title
+                          N명 응원
+                          발매일                                            -->
+          <div class="master-compact-row">
+            ${coverHtml}
+            <div class="master-compact-text">
+              <h3 class="project-title">「${safeTitle}」</h3>
+              ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명 응원</div>` : ''}
+              ${masterDate ? `<div class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
+            </div>
           </div>
         </div>
         ${demos.length > 0 ? `<div class="demo-snake-grid">${mobileCardsHtml}</div>` : ''}
