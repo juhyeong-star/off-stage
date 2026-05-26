@@ -5837,11 +5837,17 @@ function renderProjectBox(pid, versions) {
         ? `<div class="demo-card-note">${noteLines.map(l => `<span class="demo-card-note-line">${noteEscM(l)}</span>`).join('')}</div>`
         : '';
       const cmList = v.trackComments || [];
-      const mCmHtml = cmList.slice(0, 5).map(cm => {
+      // Show last 3 inline; if more, append a "+N개 더보기" button that opens the modal.
+      const DEMO_INLINE_CM = 3;
+      const cmVisible = cmList.slice(-DEMO_INLINE_CM);
+      const cmHidden  = Math.max(0, cmList.length - cmVisible.length);
+      const mCmHtml = cmVisible.map(cm => {
         const cmSafe = noteEscM(cm.text || '');
         const cmAuth = noteEscM(cm.author || '익명');
         return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span></div>`;
-      }).join('');
+      }).join('') + (cmHidden > 0
+        ? `<button class="demo-card-cm-more" onclick="event.stopPropagation(); openTrackCommentsModal('${v.id}')">+ ${cmHidden}개 더보기</button>`
+        : '');
       const mInputHtml = canComment ? `
         <div class="demo-card-cm-input" onclick="event.stopPropagation();">
           <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="" onkeypress="if(event.key==='Enter'){ event.preventDefault(); submitTrackComment('${v.id}'); }">
@@ -5883,13 +5889,15 @@ function renderProjectBox(pid, versions) {
           <!-- Compact row: cover (left) + stacked text (right):
                  [Cover]  Title
                           N명 응원
-                          발매일                                            -->
-          <div class="master-compact-row">
+                          발매일
+               Whole row click → open track comments modal.                 -->
+          <div class="master-compact-row" ${final ? `onclick="event.stopPropagation(); openTrackCommentsModal('${final.id}')" style="cursor: pointer;"` : ''}>
             ${coverHtml}
             <div class="master-compact-text">
               <h3 class="project-title">「${safeTitle}」</h3>
               ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명 응원</div>` : ''}
               ${masterDate ? `<div class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
+              ${final ? `<div class="master-tap-hint"><i class="ri-chat-3-line"></i> 탭해서 댓글 보기</div>` : ''}
             </div>
           </div>
         </div>
@@ -9298,6 +9306,154 @@ window.submitCheer = async function (trackId, trackTitle, artistName) {
       if (btn) { btn.disabled = false; btn.textContent = '💝 응원 보내기'; }
     }
   }
+};
+
+// ===================== TRACK COMMENTS MODAL =====================
+// One modal that shows every comment for a track (master OR demo) and lets
+// the viewer drop a new one. Triggered from:
+//   - master compact card tap (mobile)
+//   - "+N개 더보기" on a demo card when comments exceed inline cap
+window.openTrackCommentsModal = function (trackId) {
+  if (!trackId) return;
+  const db = window.DB.get();
+  const track = (db.tracks || []).find(t => t && t.id === trackId);
+  if (!track) { showToast('곡을 찾을 수 없어요'); return; }
+
+  const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const safeTitle = esc(track.title || '');
+  const cms = Array.isArray(track.trackComments) ? track.trackComments : [];
+  const user = window.__currentUser || (window.DB.get() && window.DB.get().currentUser);
+  const canComment = !!user;
+
+  const cmsHtml = cms.length === 0
+    ? `<div class="tcm-empty">아직 댓글이 없어요 · 첫 댓글을 남겨보세요 ✨</div>`
+    : cms.map(cm => `
+        <div class="tcm-line">
+          <span class="tcm-arrow">ㄴ</span>
+          <span class="tcm-text">${esc(cm.text || '')}</span>
+          <span class="tcm-auth">— ${esc(cm.author || '익명')}</span>
+        </div>
+      `).join('');
+
+  const inputHtml = canComment ? `
+    <div class="tcm-input-row">
+      <input type="text" class="tcm-input" maxlength="200" placeholder="댓글 남기기…"
+             onkeypress="if(event.key==='Enter'){event.preventDefault(); submitTrackCommentFromModal('${trackId}');}">
+      <button class="tcm-send" onclick="submitTrackCommentFromModal('${trackId}')"><i class="ri-send-plane-fill"></i></button>
+    </div>
+  ` : `<div class="tcm-loginhint">로그인하면 댓글을 남길 수 있어요</div>`;
+
+  const existing = document.getElementById('track-comments-modal');
+  if (existing) existing.remove();
+
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="track-comments-modal" class="tcm-modal" onclick="if(event.target===this) closeTrackCommentsModal()">
+      <div class="tcm-card">
+        <button class="tcm-close" onclick="closeTrackCommentsModal()" aria-label="닫기"><i class="ri-close-line"></i></button>
+        <div class="tcm-header">
+          <div class="tcm-eyebrow">댓글</div>
+          <div class="tcm-title">「${safeTitle}」</div>
+          <div class="tcm-count">${cms.length}개</div>
+        </div>
+        <div class="tcm-list" id="tcm-list">${cmsHtml}</div>
+        ${inputHtml}
+      </div>
+    </div>
+  `);
+
+  // Scroll to latest on open & focus the modal input
+  setTimeout(() => {
+    const modal = document.getElementById('track-comments-modal');
+    if (!modal) return;
+    const list = modal.querySelector('#tcm-list');
+    if (list) list.scrollTop = list.scrollHeight;
+    const input = modal.querySelector('.tcm-input');
+    if (input && canComment) input.focus();
+  }, 50);
+};
+
+window.closeTrackCommentsModal = function () {
+  const m = document.getElementById('track-comments-modal');
+  if (m) m.remove();
+};
+
+// Independent comment-insert path used by the modal — does NOT delegate to
+// submitTrackComment (which assumes an inline #tct-<id> input that may not
+// exist when the modal is opened from a master tap). Mirrors that function's
+// Supabase + cache logic, then patches both the modal list and any inline
+// demo cards currently rendered for the same track.
+window.submitTrackCommentFromModal = async function (trackId) {
+  const modal = document.getElementById('track-comments-modal');
+  if (!modal) return;
+  const input = modal.querySelector('.tcm-input');
+  const sendBtn = modal.querySelector('.tcm-send');
+  const text = (input && input.value || '').trim();
+  if (!text) return;
+  if (sendBtn) sendBtn.disabled = true;
+
+  const db = window.DB.get();
+  const track = (db.tracks || []).find(t => t && t.id === trackId);
+  if (!track) {
+    showToast('곡을 찾을 수 없어요');
+    if (sendBtn) sendBtn.disabled = false;
+    return;
+  }
+  const profileName = (window.__currentUser && window.__currentUser.name) || '';
+  const authorName = profileName || '익명';
+  const isSupabaseTrack = !!track.__supabase;
+
+  let newComment = null;
+  try {
+    if (isSupabaseTrack && window.Tracks) {
+      newComment = await window.Tracks.addComment(trackId, { text, authorName });
+    } else {
+      newComment = {
+        id: 'tc' + Date.now(),
+        author: authorName,
+        text,
+        createdAt: new Date().toISOString()
+      };
+      window.DB.addTrackComment(trackId, newComment);
+    }
+    if (!Array.isArray(track.trackComments)) track.trackComments = [];
+    track.trackComments.push(newComment);
+  } catch (e) {
+    alert('댓글 저장 실패: ' + (e.message || e));
+    if (sendBtn) sendBtn.disabled = false;
+    return;
+  }
+
+  if (input) input.value = '';
+  if (sendBtn) sendBtn.disabled = false;
+
+  // Refresh modal list
+  const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const list = modal.querySelector('#tcm-list');
+  if (list) {
+    list.innerHTML = track.trackComments.map(cm => `
+      <div class="tcm-line">
+        <span class="tcm-arrow">ㄴ</span>
+        <span class="tcm-text">${esc(cm.text || '')}</span>
+        <span class="tcm-auth">— ${esc(cm.author || '익명')}</span>
+      </div>
+    `).join('');
+    list.scrollTop = list.scrollHeight;
+  }
+  const countEl = modal.querySelector('.tcm-count');
+  if (countEl) countEl.textContent = track.trackComments.length + '개';
+
+  // Also patch the inline demo card if currently rendered
+  try {
+    const cmSafe = esc(newComment.text || '');
+    const cmAuth = esc(newComment.author || '익명');
+    document.querySelectorAll(`.demo-card[data-track-id="${trackId}"] .demo-card-cm-list`).forEach(l => {
+      const lineEl = document.createElement('div');
+      lineEl.className = 'demo-card-cm-line';
+      lineEl.innerHTML = `<span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span>`;
+      l.appendChild(lineEl);
+      l.scrollTop = l.scrollHeight;
+    });
+  } catch (_) {}
 };
 
 // Tab switcher for the artist page (음악 / 메세지함(응원함) / 통계).
