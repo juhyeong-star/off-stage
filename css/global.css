@@ -12866,7 +12866,7 @@ body:has(#global-player.expanded) .global-back-btn {
     display: grid !important;
     grid-template-columns: 110px 1fr !important;
     gap: 14px !important;
-    align-items: start !important;
+    align-items: stretch !important;   /* 오른쪽 칼럼이 왼쪽 높이만큼 늘어나야 input을 바닥에 붙일 수 있음 */
   }
   .artist-canvas .projects-grid .project-master-mobile .master-left {
     display: flex !important;
@@ -12938,7 +12938,7 @@ body:has(#global-player.expanded) .global-back-btn {
     line-height: 1.35 !important;
   }
   .artist-canvas .projects-grid .project-master-mobile .master-right .demo-card-cm-input {
-    margin-top: 2px !important;
+    margin-top: auto !important;   /* 오른쪽 칼럼 맨 아래로 밀착 */
   }
 
   /* Snake demo grid — 2 columns, cards placed by inline grid-row/col */
