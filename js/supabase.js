@@ -1555,6 +1555,80 @@
     }
   };
 
+  // ── DM — 1:1 메시지 (Supabase-backed) ────────────────────────────────
+  window.DM = {
+    // Resolve an artist name to their profile id (needed when opening DM by
+    // name from a profile page). Falls back to null if not found.
+    async resolveUserIdByName(name) {
+      if (!window.supabase || !name) return null;
+      const { data } = await window.supabase
+        .from('profiles').select('id').eq('name', name).limit(1).maybeSingle();
+      return data ? data.id : null;
+    },
+
+    async getOrCreateConversation(otherUserId) {
+      if (!window.supabase || !otherUserId) return null;
+      const { data, error } = await window.supabase
+        .rpc('dm_get_or_create_conv', { p_other_id: otherUserId });
+      if (error) { console.warn('[DM] getOrCreate', error.message); return null; }
+      return data;
+    },
+
+    async fetchMessages(conversationId, limit) {
+      if (!window.supabase || !conversationId) return [];
+      const { data, error } = await window.supabase
+        .from('dm_messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true })
+        .limit(limit || 200);
+      if (error) { console.warn('[DM] fetchMessages', error.message); return []; }
+      return data || [];
+    },
+
+    async send(conversationId, text) {
+      if (!window.supabase || !conversationId || !text) return null;
+      const { data: { user } } = await window.supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요해요');
+      const { data, error } = await window.supabase
+        .from('dm_messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          text: text.slice(0, 2000)
+        })
+        .select().single();
+      if (error) throw error;
+      // Bump conversation last_message_at (best effort — RLS allows participants)
+      try {
+        await window.supabase
+          .from('dm_conversations')
+          .update({ last_message_at: new Date().toISOString() })
+          .eq('id', conversationId);
+      } catch (_) {}
+      return data;
+    },
+
+    async fetchMyConversations() {
+      if (!window.supabase) return [];
+      const { data, error } = await window.supabase.rpc('my_dm_conversations');
+      if (error) { console.warn('[DM] fetchMyConversations', error.message); return []; }
+      return data || [];
+    },
+
+    async markRead(conversationId) {
+      if (!window.supabase || !conversationId) return;
+      try { await window.supabase.rpc('dm_mark_read', { p_conversation_id: conversationId }); }
+      catch (e) { console.warn('[DM] markRead', e.message); }
+    },
+
+    // Quick unread aggregate — used for badges later.
+    async unreadTotal() {
+      const convs = await this.fetchMyConversations();
+      return convs.reduce((s, c) => s + (c.unread_count || 0), 0);
+    }
+  };
+
   window.Admin = {
     async listRecentNotes(limit) {
       if (!window.supabase) return [];

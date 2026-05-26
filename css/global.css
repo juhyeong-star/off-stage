@@ -12578,3 +12578,111 @@ body:has(#global-player.expanded) .global-back-btn {
   min-height: 0 !important;
   scroll-snap-align: none !important;
 }
+
+/* ============================================================
+   DM inbox — list of received conversations
+   Rendered on the artist page's 메세지함 tab (self only)
+   ============================================================ */
+.dm-inbox-section {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--divider, #2a2a2a);
+  border-radius: 12px;
+  padding: 14px;
+}
+.dm-inbox-header {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary, #fff);
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.dm-inbox-header i { color: #4FC3F7; font-size: 18px; }
+.dm-inbox-count {
+  background: rgba(255,255,255,0.12);
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary, #aaa);
+  margin-left: 2px;
+}
+.dm-inbox-unread-total {
+  margin-left: auto;
+  background: #ff2e63;
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.dm-inbox-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dm-inbox-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.dm-inbox-row:hover { background: rgba(255,255,255,0.06); }
+.dm-inbox-row:active { background: rgba(255,255,255,0.10); }
+.dm-inbox-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #333;
+}
+.dm-inbox-body { flex: 1; min-width: 0; }
+.dm-inbox-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+  display: flex; align-items: center; gap: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dm-inbox-unread {
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  background: #ff2e63;
+  color: #fff;
+  min-width: 18px; height: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+.dm-inbox-row.is-unread .dm-inbox-name { color: #fff; }
+.dm-inbox-row.is-unread .dm-inbox-preview { color: var(--text-primary, #fff); font-weight: 500; }
+.dm-inbox-preview {
+  font-size: 12px;
+  color: var(--text-secondary, #999);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-inbox-time {
+  font-size: 11px;
+  color: var(--text-secondary, #888);
+  flex-shrink: 0;
+}
+.dm-inbox-empty {
+  padding: 28px 14px;
+  text-align: center;
+  color: var(--text-secondary, #888);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.dm-inbox-empty small {
+  font-size: 11px;
+  opacity: 0.7;
+  display: block;
+  margin-top: 6px;
+}

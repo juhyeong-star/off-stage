@@ -6619,13 +6619,13 @@ function renderArtistProfile(artistName) {
         ` : ''}
 
         ${isArtistRole ? `
-          <!-- Artist content tabs: 음악 / 응원함 / 통계(본인만) -->
+          <!-- Artist content tabs: 음악 / 메세지함(또는 응원함) / 통계(본인만) -->
           <div class="artist-content-tabs reveal" style="margin-top: 28px;">
             <button type="button" class="content-tab active" data-content-tab="music" onclick="switchArtistContentTab('music')">
               <i class="ri-music-2-fill"></i> 음악
             </button>
             <button type="button" class="content-tab" data-content-tab="cheers" onclick="switchArtistContentTab('cheers')">
-              <i class="ri-heart-3-fill"></i> 응원함
+              <i class="ri-${isSelf ? 'mail' : 'heart-3'}-fill"></i> ${isSelf ? '메세지함' : '응원함'}
             </button>
             ${isSelf ? `
               <button type="button" class="content-tab" data-content-tab="stats" onclick="switchArtistContentTab('stats')">
@@ -6657,7 +6657,14 @@ function renderArtistProfile(artistName) {
           </div>
 
           <div class="artist-content-pane" data-content-tab="cheers" hidden>
-            <div id="cheer-heart-mount" style="margin-top: 20px;"></div>
+            ${isSelf ? `
+              <!-- Self only: private DM inbox above the public cheer wall -->
+              <div id="dm-inbox-mount" style="margin-top: 18px;"></div>
+              <div style="margin-top: 24px; padding-top: 18px; border-top: 1px dashed var(--divider, #2a2a2a); font-size: 13px; color: var(--text-secondary, #aaa); font-weight: 700;">
+                💝 받은 응원
+              </div>
+            ` : ''}
+            <div id="cheer-heart-mount" style="margin-top: 14px;"></div>
           </div>
 
           ${isSelf ? `
@@ -7171,7 +7178,7 @@ const _DM_CANNED_REPLIES = [
   '함께 만드는 분들 덕분에 이 곡이 살아나고 있어요. 고마워요!'
 ];
 
-window.openDmModal = function(artistName, artistAvatar) {
+window.openDmModal = async function(artistName, artistAvatar) {
   if (!artistName) return;
   const db = window.DB.get();
   if (!db || !db.currentUser) {
@@ -7179,40 +7186,17 @@ window.openDmModal = function(artistName, artistAvatar) {
     navigateTo('auth');
     return;
   }
-  const thread = _getDmThread(artistName);
+
   const safeName = artistName.replace(/</g,'&lt;').replace(/"/g,'&quot;');
   const safeAvatar = (artistAvatar || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(artistName))).replace(/"/g,'&quot;');
-  const myAvatar = (db.currentUser.avatar || 'https://i.pravatar.cc/150').replace(/"/g,'&quot;');
 
-  const messagesHtml = thread.length === 0
-    ? `<div class="dm-empty">
-         <div class="dm-empty-emoji">💌</div>
-         <div class="dm-empty-text">${safeName}에게 첫 메시지를 보내봐</div>
-         <div class="dm-empty-sub">응원 / 곡 의견 / 합주 제안 — 뭐든 환영</div>
-       </div>`
-    : thread.map(m => {
-        const safeText = (m.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-        const time = m.time ? new Date(m.time).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '';
-        if (m.from === 'me') {
-          return `
-            <div class="dm-row dm-row-me">
-              <div class="dm-bubble dm-bubble-me">${safeText}</div>
-              <div class="dm-time">${time}</div>
-            </div>`;
-        } else {
-          return `
-            <div class="dm-row dm-row-them">
-              <img src="${safeAvatar}" class="dm-avatar" alt="">
-              <div class="dm-bubble-wrap">
-                <div class="dm-bubble dm-bubble-them">${safeText}</div>
-                <div class="dm-time">${time}</div>
-              </div>
-            </div>`;
-        }
-      }).join('');
-
+  const modal = document.getElementById('dm-modal');
   const content = document.getElementById('dm-content');
-  if (!content) return;
+  if (!modal || !content) return;
+
+  // Show modal with loading shell
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
   content.innerHTML = `
     <div class="dm-card">
       <div class="dm-header">
@@ -7223,28 +7207,113 @@ window.openDmModal = function(artistName, artistAvatar) {
           <div class="dm-header-status"><span class="dm-status-dot"></span> 답장 가능</div>
         </div>
       </div>
-      <div class="dm-messages" id="dm-messages-${artistName.replace(/[^\w가-힣]/g,'_')}">
-        ${messagesHtml}
-      </div>
-      <div class="dm-input-row">
-        <textarea id="dm-input" class="dm-input" placeholder="${safeName}에게 메시지..." rows="1" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); window.sendDmMessage('${safeName.replace(/'/g, "\\'")}');}"></textarea>
-        <button class="dm-send-btn" onclick="window.sendDmMessage('${safeName.replace(/'/g, "\\'")}')">
-          <i class="ri-send-plane-fill"></i>
-        </button>
-      </div>
-      <div class="dm-footer-note">💌 메시지 곧 백엔드 연동 — 현재는 모의 답장</div>
+      <div class="dm-messages"><div class="dm-empty"><div class="dm-empty-text">메시지 불러오는 중…</div></div></div>
     </div>
   `;
 
-  const modal = document.getElementById('dm-modal');
-  if (modal) modal.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-  // Auto-scroll to bottom
+  // Resolve other user's id and the conversation. If they don't have a
+  // Supabase profile (mock follow / sample artist), gracefully tell user.
+  let otherUserId = null;
+  let conversationId = null;
+  try {
+    if (window.DM) {
+      otherUserId = await window.DM.resolveUserIdByName(artistName);
+      if (otherUserId) {
+        conversationId = await window.DM.getOrCreateConversation(otherUserId);
+      }
+    }
+  } catch (e) { console.warn('[DM] open', e); }
+
+  // Stash on window for sendDmMessage to read
+  window._currentDmConvId = conversationId;
+  window._currentDmAvatar = safeAvatar;
+  window._currentDmName   = artistName;
+
+  // Fetch messages
+  let messages = [];
+  if (conversationId && window.DM) {
+    try {
+      messages = await window.DM.fetchMessages(conversationId);
+      window.DM.markRead(conversationId);
+    } catch (e) { console.warn('[DM] fetch', e); }
+  }
+
+  // Re-render with real data
+  const { data: { user } } = (window.supabase ? await window.supabase.auth.getUser() : { data: { user: null } });
+  const myId = (user && user.id) || (db.currentUser && db.currentUser.id);
+
+  let messagesHtml;
+  if (!otherUserId) {
+    messagesHtml = `
+      <div class="dm-empty">
+        <div class="dm-empty-emoji">📭</div>
+        <div class="dm-empty-text">${safeName}님은 아직 메시지를 받을 수 없어요</div>
+        <div class="dm-empty-sub">상대방이 로그인 후 프로필을 생성하면 가능해요</div>
+      </div>`;
+  } else if (messages.length === 0) {
+    messagesHtml = `
+      <div class="dm-empty">
+        <div class="dm-empty-emoji">💌</div>
+        <div class="dm-empty-text">${safeName}에게 첫 메시지를 보내봐</div>
+        <div class="dm-empty-sub">응원 · 의견 · 협업 제안 — 뭐든 환영</div>
+      </div>`;
+  } else {
+    messagesHtml = messages.map(m => {
+      const safeText = (m.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+      const time = m.created_at ? new Date(m.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '';
+      const isMe = m.sender_id === myId;
+      if (isMe) {
+        return `
+          <div class="dm-row dm-row-me">
+            <div class="dm-bubble dm-bubble-me">${safeText}</div>
+            <div class="dm-time">${time}</div>
+          </div>`;
+      } else {
+        return `
+          <div class="dm-row dm-row-them">
+            <img src="${safeAvatar}" class="dm-avatar" alt="">
+            <div class="dm-bubble-wrap">
+              <div class="dm-bubble dm-bubble-them">${safeText}</div>
+              <div class="dm-time">${time}</div>
+            </div>
+          </div>`;
+      }
+    }).join('');
+  }
+
+  const canSend = !!conversationId;
+  const inputDisabled = canSend ? '' : 'disabled';
+  const placeholder = canSend ? `${safeName}에게 메시지...` : '메시지를 보낼 수 없는 상대예요';
+
+  content.innerHTML = `
+    <div class="dm-card">
+      <div class="dm-header">
+        <button class="dm-close-btn" onclick="closeDmModal()" aria-label="닫기"><i class="ri-arrow-left-line"></i></button>
+        <img src="${safeAvatar}" class="dm-header-avatar" alt="${safeName}">
+        <div class="dm-header-text">
+          <div class="dm-header-name">${safeName}</div>
+          <div class="dm-header-status"><span class="dm-status-dot"></span> 답장 가능</div>
+        </div>
+      </div>
+      <div class="dm-messages">
+        ${messagesHtml}
+      </div>
+      <div class="dm-input-row">
+        <textarea id="dm-input" class="dm-input" placeholder="${placeholder}" rows="1" ${inputDisabled}
+                  onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); window.sendDmMessage();}"></textarea>
+        <button class="dm-send-btn" onclick="window.sendDmMessage()" ${inputDisabled}>
+          <i class="ri-send-plane-fill"></i>
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Auto-scroll to bottom + focus input
   setTimeout(() => {
     const msgs = content.querySelector('.dm-messages');
     if (msgs) msgs.scrollTop = msgs.scrollHeight;
     const input = document.getElementById('dm-input');
-    if (input) input.focus();
+    if (input && canSend) input.focus();
   }, 100);
 };
 
@@ -7256,75 +7325,44 @@ window.closeDmModal = function() {
   document.body.style.overflow = '';
 };
 
-window.sendDmMessage = function(artistName) {
+window.sendDmMessage = async function() {
   const input = document.getElementById('dm-input');
   if (!input) return;
   const text = (input.value || '').trim();
   if (!text) return;
-
-  const thread = _getDmThread(artistName);
-  thread.push({ from: 'me', text, time: new Date().toISOString() });
-  _saveDmThread(artistName, thread);
+  const convId = window._currentDmConvId;
+  if (!convId || !window.DM) {
+    alert('대화방을 찾을 수 없어요');
+    return;
+  }
+  const btn = document.querySelector('.dm-send-btn');
+  if (btn) btn.disabled = true;
   input.value = '';
 
-  // Re-render the message list quickly
-  const db = window.DB.get();
-  const msgsEl = document.querySelector('#dm-content .dm-messages');
-  if (msgsEl) {
-    // append new message
-    const time = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-    const safeText = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-    // Remove empty state if present
-    const empty = msgsEl.querySelector('.dm-empty');
-    if (empty) empty.remove();
-    msgsEl.insertAdjacentHTML('beforeend', `
-      <div class="dm-row dm-row-me">
-        <div class="dm-bubble dm-bubble-me">${safeText}</div>
-        <div class="dm-time">${time}</div>
-      </div>
-    `);
-    msgsEl.scrollTop = msgsEl.scrollHeight;
-  }
-
-  // Mock typing indicator + canned reply after 1.5-2.5s
-  setTimeout(() => {
+  try {
+    const msg = await window.DM.send(convId, text);
+    // Append to DOM (optimistic — Supabase already accepted)
+    const msgsEl = document.querySelector('#dm-content .dm-messages');
     if (msgsEl) {
+      const empty = msgsEl.querySelector('.dm-empty');
+      if (empty) empty.remove();
+      const safeText = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+      const time = new Date(msg && msg.created_at ? msg.created_at : Date.now()).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
       msgsEl.insertAdjacentHTML('beforeend', `
-        <div class="dm-row dm-row-them dm-typing-row">
-          <div class="dm-bubble dm-bubble-them dm-typing">
-            <span></span><span></span><span></span>
-          </div>
+        <div class="dm-row dm-row-me">
+          <div class="dm-bubble dm-bubble-me">${safeText}</div>
+          <div class="dm-time">${time}</div>
         </div>
       `);
       msgsEl.scrollTop = msgsEl.scrollHeight;
     }
-    setTimeout(() => {
-      // Replace typing with actual canned reply
-      const typing = document.querySelector('.dm-typing-row');
-      if (typing) typing.remove();
-      const reply = _DM_CANNED_REPLIES[Math.floor(Math.random() * _DM_CANNED_REPLIES.length)];
-      const updatedThread = _getDmThread(artistName);
-      updatedThread.push({ from: 'them', text: reply, time: new Date().toISOString() });
-      _saveDmThread(artistName, updatedThread);
-      const msgsEl2 = document.querySelector('#dm-content .dm-messages');
-      if (msgsEl2) {
-        const safeReply = reply.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        const time2 = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-        const avatarEl = document.querySelector('#dm-content .dm-header-avatar');
-        const avatar = avatarEl ? avatarEl.src : '';
-        msgsEl2.insertAdjacentHTML('beforeend', `
-          <div class="dm-row dm-row-them">
-            <img src="${avatar}" class="dm-avatar" alt="">
-            <div class="dm-bubble-wrap">
-              <div class="dm-bubble dm-bubble-them">${safeReply}</div>
-              <div class="dm-time">${time2}</div>
-            </div>
-          </div>
-        `);
-        msgsEl2.scrollTop = msgsEl2.scrollHeight;
-      }
-    }, 1400);
-  }, 800);
+  } catch (e) {
+    alert('메시지 전송 실패: ' + (e.message || e));
+    input.value = text;  // restore for retry
+  } finally {
+    if (btn) btn.disabled = false;
+    if (input) input.focus();
+  }
 };
 
 // ===================== STO MINI — 함께 만들기 (데모 후원) =====================
@@ -9044,9 +9082,9 @@ window.submitCheer = async function (trackId, trackTitle, artistName) {
   }
 };
 
-// Tab switcher for the artist page (음악 / 응원함 / 통계).
-// Stats is lazy-loaded on first activation — it does a Supabase RPC, no
-// point firing that until the user actually opens the tab.
+// Tab switcher for the artist page (음악 / 메세지함(응원함) / 통계).
+// Stats + DM inbox are lazy-loaded on tab activation — RPCs only fire
+// when the user actually opens that tab.
 window.switchArtistContentTab = function (name) {
   document.querySelectorAll('.content-tab').forEach(b => {
     b.classList.toggle('active', b.dataset.contentTab === name);
@@ -9056,11 +9094,85 @@ window.switchArtistContentTab = function (name) {
   });
   if (name === 'stats') {
     const mount = document.getElementById('artist-stats-mount');
-    // Re-load every time the user re-opens — fresh numbers
     if (mount && typeof window.mountMyStatsInto === 'function') {
       window.mountMyStatsInto('artist-stats-mount');
     }
   }
+  if (name === 'cheers') {
+    // DM inbox only renders for self (the mount div is only emitted then)
+    const inboxMount = document.getElementById('dm-inbox-mount');
+    if (inboxMount && typeof window.mountDmInbox === 'function') {
+      window.mountDmInbox('dm-inbox-mount');
+    }
+  }
+};
+
+// Fetch the current user's DM conversations and render a tappable list.
+// Mounted into #dm-inbox-mount on the artist page's 메세지함 tab.
+window.mountDmInbox = async function (containerId) {
+  const mount = document.getElementById(containerId);
+  if (!mount) return;
+  mount.innerHTML = `<div class="dm-inbox-section"><div class="dm-inbox-header"><i class="ri-mail-fill"></i> 받은 메시지</div><div class="dm-inbox-empty">불러오는 중…</div></div>`;
+
+  let convs = [];
+  try {
+    if (window.DM && window.DM.fetchMyConversations) {
+      convs = await window.DM.fetchMyConversations();
+    }
+  } catch (e) { console.warn('[DM inbox]', e); }
+
+  const mount2 = document.getElementById(containerId);
+  if (!mount2) return;
+
+  if (!convs.length) {
+    mount2.innerHTML = `
+      <div class="dm-inbox-section">
+        <div class="dm-inbox-header">
+          <i class="ri-mail-fill"></i> 받은 메시지
+        </div>
+        <div class="dm-inbox-empty">
+          아직 받은 개인 메시지가 없어요.<br>
+          <small>누군가 메시지를 보내면 여기 쌓여요.</small>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const totalUnread = convs.reduce((s, c) => s + (c.unread_count || 0), 0);
+  const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const rows = convs.map(c => {
+    const avatar = c.other_avatar || ('https://i.pravatar.cc/100?u=' + encodeURIComponent(c.other_name || 'user'));
+    const preview = esc(c.last_text || '(메시지 없음)').slice(0, 80);
+    const time = c.last_at ? new Date(c.last_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }) : '';
+    const isUnread = (c.unread_count || 0) > 0;
+    const argName = (c.other_name || '').replace(/'/g, "\\'");
+    const argAvatar = (c.other_avatar || '').replace(/'/g, "\\'");
+    return `
+      <div class="dm-inbox-row ${isUnread ? 'is-unread' : ''}" onclick="openDmModal('${argName}', '${argAvatar}')">
+        <img src="${avatar}" alt="" class="dm-inbox-avatar" loading="lazy">
+        <div class="dm-inbox-body">
+          <div class="dm-inbox-name">
+            ${esc(c.other_name || '익명')}
+            ${isUnread ? `<span class="dm-inbox-unread">${c.unread_count}</span>` : ''}
+          </div>
+          <div class="dm-inbox-preview">${preview}</div>
+        </div>
+        <div class="dm-inbox-time">${time}</div>
+      </div>
+    `;
+  }).join('');
+
+  mount2.innerHTML = `
+    <div class="dm-inbox-section">
+      <div class="dm-inbox-header">
+        <i class="ri-mail-fill"></i> 받은 메시지
+        <span class="dm-inbox-count">${convs.length}</span>
+        ${totalUnread > 0 ? `<span class="dm-inbox-unread-total">새 메시지 ${totalUnread}</span>` : ''}
+      </div>
+      <div class="dm-inbox-rows">${rows}</div>
+    </div>
+  `;
 };
 
 // Mobile: each .project-pages becomes a horizontal scroll-snap carousel.
