@@ -13031,6 +13031,13 @@ body:has(#global-player.expanded) .global-back-btn {
   /* keep the bottom sheet from sliding under the persistent global player */
   padding-bottom: var(--player-height, 72px);
 }
+/* Mobile: ALSO clear the bottom tab bar (~64px + safe-area). Mirrors the
+   body padding-bottom rule used elsewhere. */
+@media (max-width: 768px) {
+  .tcm-modal {
+    padding-bottom: calc(var(--player-height, 72px) + 64px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
 @keyframes tcmFadeIn { from { opacity: 0; } to { opacity: 1; } }
 .tcm-card {
   width: 100%;
@@ -13044,7 +13051,7 @@ body:has(#global-player.expanded) .global-back-btn {
   padding: 18px 18px 14px;
   position: relative;
   /* leave room for the global player + a little breathing space */
-  max-height: calc(85vh - var(--player-height, 72px));
+  max-height: calc(90vh - var(--player-height, 72px) - 64px);
   display: flex;
   flex-direction: column;
   gap: 10px;
