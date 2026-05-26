@@ -12874,8 +12874,8 @@ body:has(#global-player.expanded) .global-back-btn {
     gap: 12px !important;
   }
   .artist-canvas .projects-grid .project-master-mobile .project-cover-wrap {
-    width: 64px !important;
-    height: 64px !important;
+    width: 80px !important;
+    height: 80px !important;
     aspect-ratio: 1 / 1 !important;
     margin: 0 !important;
     flex-shrink: 0 !important;
