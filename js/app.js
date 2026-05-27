@@ -3233,18 +3233,14 @@ function renderShapes() {
   // across reloads.
   const decoHtml = _buildStarfield('shapes-sky', 200, 18);
 
-  // Track shapes
+  // Track shapes — one shape per track (user request). Previously each track
+  // rendered twice to fill the universe; that doubled up on every upload.
   let shapesHtml = '';
-  const totalShapes = tracks.length * 2;
+  const totalShapes = tracks.length;
   const cols = 3;
   const universeHeight = Math.max(900, Math.ceil(totalShapes / cols) * 300);
 
-  // Build two passes (each track shown twice for fuller universe). Order is stable
-  // so reloads don't reshuffle. Pass index goes into the seed so the same track's
-  // two copies sit in different spots.
-  const shapeEntries = [];
-  tracks.forEach((track, i) => shapeEntries.push({ track, idx: i, pass: 0 }));
-  tracks.forEach((track, i) => shapeEntries.push({ track, idx: i, pass: 1 }));
+  const shapeEntries = tracks.map((track, i) => ({ track, idx: i, pass: 0 }));
 
   // Stored drag positions for the shapes page (keyed by trackId:pass)
   function _loadShapePos(id, pass) {
@@ -4579,6 +4575,9 @@ function renderUpload() {
       await window.Tracks.insert({
         title,
         description,
+        // 업로드 폼의 "곡 소개 및 코멘트" 가 사실상 일지(artistNote). 데모 카드에
+        // 노출되는 필드가 artistNote이라서 동일 값으로 같이 저장.
+        artistNote: description,
         audioUrl,
         cover: coverUrl,
         projectId,
@@ -5616,6 +5615,7 @@ function renderProjectBox(pid, versions) {
            onclick="selectProjectVersion('${pid}','${v.id}'); playTrack('${v.id}')">
         <div class="demo-card-top">
           <span class="demo-tag">DEMO ${i+1}</span>
+          <span class="demo-card-date">· ${dateLabel}</span>
           ${shapeOpenBtnHtml}
           ${stoBadgeHtml}
           <button class="demo-card-like ${demoLiked ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${v.id}', this)" title="내 우주에 모으기">
@@ -5877,6 +5877,7 @@ function renderProjectBox(pid, versions) {
              onclick="selectProjectVersion('${pid}','${v.id}'); playTrack('${v.id}')">
           <div class="demo-card-top">
             <span class="demo-tag">DEMO ${i+1}</span>
+            <span class="demo-card-date">· ${formatFullDate(v.createdAt)}</span>
             <button class="demo-card-like ${demoLiked ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${v.id}', this)" title="내 우주에 모으기">
               <i class="${demoLiked ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
             </button>
@@ -6846,6 +6847,9 @@ function renderArtistProfile(artistName) {
                 })() : ''}
                 ${isSelf ? `
                   <div class="artist-action-row" style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="follow-btn-v2" onclick="navigateTo('upload')" style="background:#111; color:#fff;">
+                      <i class="ri-upload-2-line"></i> 곡 업로드
+                    </button>
                     <button class="follow-btn-v2" onclick="editProfile()">
                       <i class="ri-settings-4-line"></i> 프로필 수정
                     </button>

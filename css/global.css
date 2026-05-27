@@ -13087,6 +13087,15 @@ body:has(#global-player.expanded) .global-back-btn {
 }
 .demo-card .demo-card-note-empty i { margin-right: 4px; }
 
+/* Demo card date — sits next to "DEMO N" tag */
+.demo-card .demo-card-date {
+  font-size: 11px;
+  color: rgba(0,0,0,0.45);
+  font-weight: 500;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
 /* ============================================================
    Project Album Card — desktop unified box
    Cover + title + release date wrapped into a single bordered card
