@@ -150,10 +150,11 @@ function _pushNavStep(route) {
 function _updateBackButton(route) {
   const btn = document.getElementById('global-back');
   if (!btn) return;
-  // Hide on root pages. Also hide when there's no history yet.
+  // Hide on root pages (도형 = home). On any other page show the button —
+  // even with empty history the fallback in goBack() lands on /shapes,
+  // so it's always a useful escape hatch.
   const isRoot = _ROOT_ROUTES.has(route);
-  const hasHistory = window.__navStack.length > 1;
-  btn.hidden = isRoot || !hasHistory;
+  btn.hidden = isRoot;
 }
 
 // Public: try to close any open overlay first, otherwise pop the nav stack.
@@ -3101,7 +3102,9 @@ async function renderPlaylistUniverse(playlistId) {
   appContent.innerHTML = `
     <div class="pl-page">
       <div class="pl-header">
-        <!-- duplicate back button removed — global-back-btn handles it -->
+        <button class="pl-back" onclick="navigateTo('profile')" aria-label="내 페이지로">
+          <i class="ri-arrow-left-line"></i>
+        </button>
         <div class="pl-title-block">
           <div class="pl-eyebrow">내 음악 폴더</div>
           <h1 class="pl-title">${safePlaylistTitle}</h1>
