@@ -6521,8 +6521,23 @@ window.deleteMyTrack = async function(trackId, trackTitle) {
       window.DB.save(db);
     }
     showToast('삭제 완료');
-    // Re-render current view
-    if (currentView === 'artist') renderArtist();
+    // Re-render current view. Artist page needs the artist name to
+    // re-render, so we re-trigger the router by re-navigating to the
+    // current hash. Other views just call their render fn directly.
+    if (currentView === 'artist') {
+      try {
+        // Force a re-render by replaying the current hash route.
+        const h = window.location.hash || '#/shapes';
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+        // Fallback: extract artist name and call renderArtistProfile
+        const m = h.match(/#\/artist:([^/?]+)/);
+        if (m && typeof renderArtistProfile === 'function') {
+          renderArtistProfile(decodeURIComponent(m[1]));
+        }
+      } catch (e) {
+        console.warn('[deleteMyTrack] re-render artist', e);
+      }
+    }
     else if (currentView === 'shapes' && typeof renderShapes === 'function') renderShapes();
     else if (currentView === 'profile' && typeof renderProfile === 'function') renderProfile();
   } catch (e) {
