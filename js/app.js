@@ -5902,16 +5902,19 @@ function renderProjectBox(pid, versions) {
     `;
   }
 
-  // Desktop — restored legacy layout (no carousel)
+  // Desktop — cover/title/date wrapped in one unified "album card" container.
+  // 응원하기 button intentionally hidden (user request) until the platform
+  // is past early-stage.
   return `
     <div class="project-box reveal" data-project="${pid}">
       <div class="project-header">
-        ${coverHtml}
-        <div class="project-header-info">
-          <h3 class="project-title">「${safeTitle}」</h3>
-          ${masterDate ? `<div class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
-          ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
-          ${cheerBtnHtml}
+        <div class="project-album-card">
+          ${coverHtml}
+          <div class="project-album-meta">
+            <h3 class="project-title">「${safeTitle}」</h3>
+            ${masterDate ? `<div class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
+            ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
+          </div>
         </div>
       </div>
       ${demos.length > 0 ? `
@@ -6809,7 +6812,7 @@ function renderArtistProfile(artistName) {
                   return `
                   <div class="artist-action-row" style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
                     <button class="follow-btn-v2 ${isFollowingNow ? 'is-following' : ''}" onclick="toggleFollowArtist(${followArg})">
-                      ${isFollowingNow ? '<i class="ri-heart-fill"></i> 팬이에요' : '<i class="ri-heart-line"></i> 팬 되기'}
+                      ${isFollowingNow ? '<i class="ri-user-follow-fill"></i> 팔로잉' : '<i class="ri-user-add-line"></i> 팔로우'}
                     </button>
                     <button class="dm-btn-v2" onclick="openDmModal('${safeName.replace(/'/g,"\\'")}', '${(avatar||'').replace(/'/g,"\\'")}')">
                       <i class="ri-mail-send-fill"></i> 메시지
@@ -6817,13 +6820,20 @@ function renderArtistProfile(artistName) {
                   </div>
                   `;
                 })() : ''}
+                ${isSelf ? `
+                  <div class="artist-action-row" style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="follow-btn-v2" onclick="editProfile()">
+                      <i class="ri-settings-4-line"></i> 프로필 수정
+                    </button>
+                  </div>
+                ` : ''}
               </div>
             </div>
           </div>
           ${'' /* counts box (앨범/프로젝트/싱글) hidden for now — will surface later when there are many songs */}
           <aside class="artist-postit-aside">
             <div class="artist-postit-aside-head">
-              <i class="ri-sticky-note-fill"></i> 소식 <span class="artist-postit-count">${artistNotes.length}</span>
+              <i class="ri-sticky-note-fill"></i> 소식
               ${isSelf ? `<button class="artist-postit-add" onclick="goAddSoshik()" title="새 소식 쓰기"><i class="ri-add-line"></i> 글 추가</button>` : ''}
             </div>
             ${artistNotes.length > 0
@@ -6847,7 +6857,7 @@ function renderArtistProfile(artistName) {
               <i class="ri-music-2-fill"></i> 음악
             </button>
             <button type="button" class="content-tab" data-content-tab="cheers" onclick="switchArtistContentTab('cheers')">
-              <i class="ri-${isSelf ? 'mail' : 'heart-3'}-fill"></i> ${isSelf ? '메세지함' : '응원함'}
+              <i class="ri-mail-fill"></i> 메세지함
             </button>
             ${isSelf ? `
               <button type="button" class="content-tab" data-content-tab="stats" onclick="switchArtistContentTab('stats')">

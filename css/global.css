@@ -13016,6 +13016,64 @@ body:has(#global-player.expanded) .global-back-btn {
 .splp-cancel i { color: rgba(255, 255, 255, 0.5); }
 
 /* ============================================================
+   Project Album Card — desktop unified box
+   Cover + title + release date wrapped into a single bordered card
+   instead of floating loose underneath the cover image.
+   ============================================================ */
+.artist-canvas .projects-grid .project-album-card {
+  background: #fff;
+  border: 1.5px solid #111;
+  border-radius: 8px;
+  box-shadow: 3px 3px 0 #111;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: #111;
+}
+.artist-canvas .projects-grid .project-album-card .project-cover-wrap {
+  margin: 0 !important;
+  width: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  border: 1.5px solid #111 !important;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 2px 2px 0 rgba(17,17,17,0.45) !important;
+}
+.artist-canvas .projects-grid .project-album-card .project-cover-wrap img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block;
+}
+.artist-canvas .projects-grid .project-album-card .project-album-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 4px 0;
+}
+.artist-canvas .projects-grid .project-album-card .project-title {
+  font-size: 17px !important;
+  margin: 0 !important;
+  color: #111 !important;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.artist-canvas .projects-grid .project-album-card .project-master-date {
+  font-size: 12px !important;
+  color: #888 !important;
+  font-weight: 500 !important;
+}
+.artist-canvas .projects-grid .project-album-card .project-participants {
+  font-size: 12px !important;
+  color: #c2185b !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+/* ============================================================
    TRACK COMMENTS MODAL (.tcm-*)
    Used by both master card tap and demo "+N개 더보기" link.
    Bottom-sheet style on mobile; centered card on desktop.
