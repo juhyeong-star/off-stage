@@ -159,6 +159,12 @@ function _updateBackButton(route) {
 
 // Public: try to close any open overlay first, otherwise pop the nav stack.
 window.goBack = function () {
+  // 0) Hard-coded shortcut — 내 페이지 → 도형 (요청)
+  //   nav stack과 무관하게 항상 같은 곳으로 가도록 명시
+  if (typeof currentView !== 'undefined' && currentView === 'profile') {
+    navigateTo('shapes');
+    return;
+  }
   // 1) Polaroid action menu / sheet
   const popMenu  = document.querySelector('.polaroid-actions-menu');
   const popSheet = document.querySelector('.polaroid-actions-sheet');
