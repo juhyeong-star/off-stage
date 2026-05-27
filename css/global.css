@@ -13057,6 +13057,35 @@ body:has(#global-player.expanded) .global-back-btn {
   outline: 2px solid rgba(194, 24, 91, 0.45);
   outline-offset: -1px;
 }
+/* Journal — inline edit affordance for the track owner */
+.demo-card .demo-card-note {
+  position: relative;
+}
+.demo-card .demo-card-note-edit {
+  position: absolute;
+  top: 0; right: 0;
+  font-size: 12px;
+  color: rgba(0,0,0,0.4);
+  padding: 2px 4px;
+}
+.demo-card .demo-card-note-empty {
+  font-family: var(--font-hand);
+  color: rgba(0,0,0,0.45);
+  font-size: 14px;
+  padding: 6px 8px;
+  border: 1px dashed rgba(0,0,0,0.25);
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+  margin-bottom: 4px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.demo-card .demo-card-note-empty:hover {
+  background: rgba(194, 24, 91, 0.06);
+  border-color: rgba(194, 24, 91, 0.5);
+  color: #c2185b;
+}
+.demo-card .demo-card-note-empty i { margin-right: 4px; }
 
 /* ============================================================
    Project Album Card — desktop unified box
@@ -13077,16 +13106,21 @@ body:has(#global-player.expanded) .global-back-btn {
   color: #111;
   max-width: 380px;     /* match .demo-path .demo-card width */
   width: 100%;
+  height: 300px;         /* match .demo-path .demo-card height */
   margin: 0 auto;        /* center if grid cell is wider */
+  box-sizing: border-box;
+  overflow: hidden;
 }
 .artist-canvas .projects-grid .project-album-card .project-cover-wrap {
   margin: 0 !important;
   width: 100% !important;
-  aspect-ratio: 16 / 13 !important;   /* close to demo-card 380×300 proportion */
+  flex: 1 1 auto !important;          /* fill all leftover height */
+  aspect-ratio: auto !important;       /* don't force a ratio */
   border: 1.5px solid #111 !important;
   border-radius: 4px;
   overflow: hidden;
   box-shadow: 2px 2px 0 rgba(17,17,17,0.45) !important;
+  min-height: 0;
 }
 .artist-canvas .projects-grid .project-album-card .project-cover-wrap img {
   width: 100% !important;

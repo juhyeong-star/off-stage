@@ -5579,12 +5579,20 @@ function renderProjectBox(pid, versions) {
 
     // Artist note shown ON the demo card — # 라인 그대로 (최대 3줄)
     // 예: #드럼 연주했는데 아쉽다 / #다음 곡은 피아노까지 녹음해볼게
+    // 본인 곡이면 일지 없을 때 "탭해서 일지 적기" placeholder + 작성 prompt 열기.
     const noteRaw = (v.artistNote || '').trim();
     const noteEsc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const noteLines = noteRaw ? noteRaw.split(/\r?\n/).map(l => l.trim()).filter(Boolean).slice(0, 3) : [];
     const noteHtml = noteLines.length > 0
-      ? `<div class="demo-card-note">${noteLines.map(l => `<span class="demo-card-note-line">${noteEsc(l)}</span>`).join('')}</div>`
-      : '';
+      ? `<div class="demo-card-note" ${canEditArtist ? `onclick="event.stopPropagation(); editArtistNote('${v.id}')"` : ''} ${canEditArtist ? 'style="cursor: pointer;"' : ''}>
+           ${noteLines.map(l => `<span class="demo-card-note-line">${noteEsc(l)}</span>`).join('')}
+           ${canEditArtist ? '<i class="ri-pencil-line demo-card-note-edit"></i>' : ''}
+         </div>`
+      : canEditArtist
+        ? `<div class="demo-card-note-empty" onclick="event.stopPropagation(); editArtistNote('${v.id}')">
+             <i class="ri-edit-2-line"></i> 탭해서 일지 적기
+           </div>`
+        : '';
 
     // ── 카드 내부 인라인 댓글 + 입력 ── (안내 문구 없음, 덕질 컨셉)
     const cmList = v.trackComments || [];
@@ -5835,8 +5843,15 @@ function renderProjectBox(pid, versions) {
       const noteRaw = (v.artistNote || '').trim();
       const noteLines = noteRaw ? noteRaw.split(/\r?\n/).map(l => l.trim()).filter(Boolean).slice(0, 3) : [];
       const mNoteHtml = noteLines.length > 0
-        ? `<div class="demo-card-note">${noteLines.map(l => `<span class="demo-card-note-line">${noteEscM(l)}</span>`).join('')}</div>`
-        : '';
+        ? `<div class="demo-card-note" ${canEditArtist ? `onclick="event.stopPropagation(); editArtistNote('${v.id}')" style="cursor: pointer;"` : ''}>
+             ${noteLines.map(l => `<span class="demo-card-note-line">${noteEscM(l)}</span>`).join('')}
+             ${canEditArtist ? '<i class="ri-pencil-line demo-card-note-edit"></i>' : ''}
+           </div>`
+        : canEditArtist
+          ? `<div class="demo-card-note-empty" onclick="event.stopPropagation(); editArtistNote('${v.id}')">
+               <i class="ri-edit-2-line"></i> 탭해서 일지 적기
+             </div>`
+          : '';
       const cmList = v.trackComments || [];
       // Show last 3 inline; if more, append a "+N개 더보기" button that opens the modal.
       const DEMO_INLINE_CM = 3;
