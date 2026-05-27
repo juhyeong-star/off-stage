@@ -4601,7 +4601,8 @@ function renderUpload() {
       await window.Tracks.refreshInto(db);
 
       showToast(isFinal ? '마스터 완성! ✨' : '데모 업로드 완료 🎵');
-      navigateTo('profile');
+      // 업로드 후 본인 아티스트 페이지로 바로 이동 — 새로 올린 곡이 거기 뜸.
+      navigateTo('artist:' + encodeURIComponent(user.name || ''));
     } catch (err) {
       alert('업로드 실패: ' + (err.message || err));
     } finally {
