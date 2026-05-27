@@ -8965,10 +8965,7 @@ function renderAuth() {
         Google로 계속하기
       </button>
 
-      <!-- ── Kakao (primary) ────────────────────────────────── -->
-      <button type="button" id="kakao-btn" disabled style="width:100%; padding:14px; background:#FEE500; color:#191919; border:none; border-radius:8px; font-size:15px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; opacity:0.4; transition: opacity 0.15s;">
-        <span style="font-size:18px;">💬</span> 카카오로 계속하기
-      </button>
+      <!-- Kakao login removed — provider not configured. Re-add when OAuth is set up. -->
 
       <!-- ── Divider ────────────────────────────────────────── -->
       <div style="display:flex; align-items:center; gap:10px; margin:18px 0; color:var(--text-secondary); font-size:12px;">
@@ -9009,11 +9006,11 @@ function renderAuth() {
   // ── Consent gating ─────────────────────────────────────────
   const consent = document.getElementById('auth-consent');
   const googleBtn = document.getElementById('google-btn');
-  const kakaoBtn = document.getElementById('kakao-btn');
   const magicBtn = document.getElementById('magic-btn');
   function syncConsent() {
     const ok = consent.checked;
-    [googleBtn, kakaoBtn, magicBtn].forEach(b => {
+    [googleBtn, magicBtn].forEach(b => {
+      if (!b) return;
       b.disabled = !ok;
       b.style.opacity = ok ? '1' : '0.4';
       b.style.cursor = ok ? 'pointer' : 'not-allowed';
@@ -9050,21 +9047,7 @@ function renderAuth() {
     }
   };
 
-  // ── Kakao ──────────────────────────────────────────────────
-  kakaoBtn.onclick = async () => {
-    if (!supabaseReady) { alert('Supabase 키가 설정되지 않았어요.'); return; }
-    if (!consent.checked) { alert('약관 동의가 필요해요.'); return; }
-    kakaoBtn.disabled = true;
-    kakaoBtn.innerHTML = '<span>이동 중…</span>';
-    try {
-      await window.Auth.signInWithKakao();
-      // page redirects out — control returns to Kakao
-    } catch (err) {
-      alert('카카오 로그인 시작 실패: ' + (err.message || err));
-      kakaoBtn.disabled = false;
-      kakaoBtn.innerHTML = '<span style="font-size:18px;">💬</span> 카카오로 계속하기';
-    }
-  };
+  // Kakao login handler removed — button no longer rendered.
 
   // ── Magic link ─────────────────────────────────────────────
   document.getElementById('magic-form').onsubmit = async (e) => {
