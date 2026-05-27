@@ -3101,9 +3101,7 @@ async function renderPlaylistUniverse(playlistId) {
   appContent.innerHTML = `
     <div class="pl-page">
       <div class="pl-header">
-        <button class="pl-back" onclick="navigateTo('profile')" aria-label="뒤로">
-          <i class="ri-arrow-left-line"></i>
-        </button>
+        <!-- duplicate back button removed — global-back-btn handles it -->
         <div class="pl-title-block">
           <div class="pl-eyebrow">내 음악 폴더</div>
           <h1 class="pl-title">${safePlaylistTitle}</h1>
@@ -3112,8 +3110,8 @@ async function renderPlaylistUniverse(playlistId) {
       </div>
       ${tracks.length === 0 ? `
         <div class="pl-empty-page">
-          <div style="font-size:48px; margin-bottom:18px;">🎵</div>
-          <p>아직 이 폴더에 곡이 없어요.<br>다른 페이지의 트랙에서 ➕로 담아보세요.</p>
+          <div style="font-size:40px; margin-bottom:12px;">🎵</div>
+          <p>이 폴더는 아직 비어 있어요.<br>아티스트 페이지에서 ➕ 폴더 아이콘을 눌러 곡을 담아보세요.</p>
         </div>
       ` : `
         ${section1Html}

@@ -5982,25 +5982,15 @@ html, body { overflow-x: hidden; max-width: 100%; }
   align-items: flex-start;
   gap: 14px;
   max-width: 1100px;
-  margin: 0 auto 28px;
+  margin: 0 0 28px;          /* left-align (was centered) */
+  text-align: left;
 }
-.pl-back {
-  width: 44px; height: 44px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.08);
-  color: #fff;
-  border: 2px solid rgba(255,255,255,0.18);
-  font-size: 20px;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.2s, transform 0.18s;
+.pl-back { display: none; }    /* duplicate back button — global-back-btn covers it */
+.pl-title-block {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
 }
-.pl-back:hover {
-  background: rgba(255,229,0,0.25);
-  transform: translateX(-2px);
-}
-.pl-title-block { flex: 1; min-width: 0; }
 .pl-eyebrow {
   font-size: 11px;
   font-weight: 900;
@@ -6179,24 +6169,33 @@ html, body { overflow-x: hidden; max-width: 100%; }
 }
 
 .pl-empty-page {
-  text-align: center;
-  padding: 80px 20px;
+  text-align: left;            /* was center */
+  padding: 40px 24px;
   color: rgba(255,255,255,0.65);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 14px;
   background: rgba(255,255,255,0.03);
   border: 1.5px dashed rgba(255,255,255,0.15);
   border-radius: 16px;
-  max-width: 600px;
-  margin: 0 auto;
+  max-width: 1100px;
+  margin: 0;                   /* left-align (was auto) */
+  line-height: 1.6;
 }
+.pl-empty-page p { margin: 0; }
 
 @media (max-width: 720px) {
   .pl-page { padding: 18px 14px 40px; }
+  .pl-header { margin-bottom: 18px; }
   .pl-section { margin-bottom: 28px; }
   .pl-section-title { font-size: 15px; padding: 6px 14px; }
   .pl-postit-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
   .pl-postit { font-size: 15px; min-height: 110px; padding: 12px 11px; }
+  .pl-empty-page {
+    padding: 28px 18px;
+    font-size: 13px;
+    border-radius: 12px;
+  }
+  .pl-meta { font-size: 12px; }
 }
 
 /* ===== DEMO SHAPE OPEN BUTTON (small icon on demo card) ===== */
