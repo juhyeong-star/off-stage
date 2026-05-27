@@ -3803,6 +3803,7 @@ function initShapeDrag() {
   let startX, startY, origLeft, origTop, moved;
   let longPressTimer = null;
   let longPressFired = false;
+  let dragModeEntered = false;     // <-- drag actually engaged?
   const LONG_PRESS_MS = 550;
 
   function pointerDown(e) {
@@ -3815,32 +3816,27 @@ function initShapeDrag() {
     dragEl = el;
     moved = false;
     longPressFired = false;
+    dragModeEntered = false;
 
     const ptr = e.touches ? e.touches[0] : e;
     startX = ptr.clientX;
     startY = ptr.clientY;
 
-    // Pause CSS animation so we can freely position
-    el.style.animation = 'none';
-    // Read current rendered position
+    // ⚠️ Don't modify the shape yet — entering drag mode immediately
+    // makes the long-press menu unusable on mobile (shape jiggles as
+    // finger lands). We only cache the origin position and start the
+    // long-press timer. Drag mode is engaged in pointerMove once the
+    // user actually slides past the threshold.
     const rect = el.getBoundingClientRect();
     const universe = el.parentElement.getBoundingClientRect();
     origLeft = rect.left - universe.left + el.parentElement.scrollLeft;
     origTop = rect.top - universe.top + el.parentElement.scrollTop;
 
-    // Switch to px positioning
-    el.style.left = origLeft + 'px';
-    el.style.top = origTop + 'px';
-    el.style.zIndex = '50';
-    el.style.transition = 'none';
-    el.classList.add('dragging');
-
     // Long-press detection — fires after LONG_PRESS_MS if user didn't move/release
     if (longPressTimer) clearTimeout(longPressTimer);
     longPressTimer = setTimeout(() => {
-      if (!dragEl || moved) return;
+      if (!dragEl || moved || dragModeEntered) return;
       longPressFired = true;
-      // Anchor menu near pointer (use clientX/Y captured at down)
       const trackId = el.dataset.trackId;
       if (trackId && typeof window.openShapeLongPressMenu === 'function') {
         window.openShapeLongPressMenu(trackId, startX, startY, el);
@@ -3849,7 +3845,7 @@ function initShapeDrag() {
       try { if (navigator.vibrate) navigator.vibrate(15); } catch (_) {}
     }, LONG_PRESS_MS);
 
-    e.preventDefault();
+    // Don't preventDefault here — let click/tap through if no movement.
   }
 
   function pointerMove(e) {
@@ -3862,11 +3858,24 @@ function initShapeDrag() {
       moved = true;
       // Cancel pending long-press once user starts to drag
       if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+
+      // Engage drag mode on first qualifying movement
+      if (!dragModeEntered) {
+        dragModeEntered = true;
+        dragEl.style.animation = 'none';
+        dragEl.style.left = origLeft + 'px';
+        dragEl.style.top = origTop + 'px';
+        dragEl.style.zIndex = '50';
+        dragEl.style.transition = 'none';
+        dragEl.classList.add('dragging');
+      }
     }
 
-    dragEl.style.left = (origLeft + dx) + 'px';
-    dragEl.style.top = (origTop + dy) + 'px';
-    e.preventDefault();
+    if (dragModeEntered) {
+      dragEl.style.left = (origLeft + dx) + 'px';
+      dragEl.style.top = (origTop + dy) + 'px';
+      e.preventDefault();
+    }
   }
 
   function pointerUp(e) {
@@ -5547,7 +5556,7 @@ function renderProjectBox(pid, versions) {
   const canComment = !!(db.currentUser || window.__currentUser);
 
   // Snake cards — DEMOS ONLY (with 함께만들기 progress badge per demo)
-  const firstTrackId = (demos[0] || final || {}).id;
+  // 모두 collapsed 상태로 시작 — 클릭해야 일지·댓글·입력 노출 (사용자 요청)
   const cardsHtml = demos.map((v, i) => {
     const label = (v.versionLabel || v.version || 'Version').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const dateLabel = formatFullDate(v.createdAt);
@@ -5556,8 +5565,7 @@ function renderProjectBox(pid, versions) {
     const cls = [
       'demo-card',
       'is-demo',
-      arrow ? 'arrow-' + arrow : '',
-      v.id === firstTrackId ? 'is-selected' : ''
+      arrow ? 'arrow-' + arrow : ''
     ].join(' ');
     // 함께 만들기(STO) 후원 기능 — UI 숨김. 백엔드 데이터는 유지하지만 카드엔 표시 안 함.
     const stoBadgeHtml = '';
@@ -5848,7 +5856,7 @@ function renderProjectBox(pid, versions) {
         </div>` : '';
       const demoLiked = isTrackLiked(v.id);
       return `
-        <div class="demo-card is-demo ${v.id === firstTrackId ? 'is-selected' : ''} ${v.pinned ? 'is-pinned' : ''}"
+        <div class="demo-card is-demo ${v.pinned ? 'is-pinned' : ''}"
              data-track-id="${v.id}" data-project="${pid}"
              style="grid-row:${pos.row}; grid-column:${pos.col};"
              onclick="selectProjectVersion('${pid}','${v.id}'); playTrack('${v.id}')">

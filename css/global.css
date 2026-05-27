@@ -13016,6 +13016,49 @@ body:has(#global-player.expanded) .global-back-btn {
 .splp-cancel i { color: rgba(255, 255, 255, 0.5); }
 
 /* ============================================================
+   Demo card — collapsed / expanded states
+   Default: just a plain yellow post-it (DEMO N label centered).
+   Clicked (.is-selected): full content — journal, comments, input.
+   Only one .is-selected at a time (selectProjectVersion handles toggle).
+   ============================================================ */
+.demo-card:not(.is-selected) .demo-card-note,
+.demo-card:not(.is-selected) .demo-card-cm-list,
+.demo-card:not(.is-selected) .demo-card-cm-input,
+.demo-card:not(.is-selected) .demo-card-cm-more {
+  display: none !important;
+}
+.demo-card:not(.is-selected) .demo-card-top {
+  /* Pin the DEMO tag at top, center the card vertically below */
+  margin-bottom: 0;
+}
+.demo-card:not(.is-selected) {
+  /* Give it a tap-to-open hint via centered demo tag */
+  cursor: pointer;
+  position: relative;
+}
+.demo-card:not(.is-selected) .demo-tag {
+  font-size: 18px !important;
+  font-weight: 800 !important;
+}
+.demo-card:not(.is-selected)::after {
+  content: '탭해서 열기';
+  position: absolute;
+  bottom: 12px;
+  left: 0; right: 0;
+  text-align: center;
+  font-size: 11px;
+  color: rgba(0,0,0,0.4);
+  font-family: var(--font-hand);
+  font-weight: 600;
+  pointer-events: none;
+}
+.demo-card.is-selected {
+  /* Visual cue: subtle outline + lift when active */
+  outline: 2px solid rgba(194, 24, 91, 0.45);
+  outline-offset: -1px;
+}
+
+/* ============================================================
    Project Album Card — desktop unified box
    Cover + title + release date wrapped into a single bordered card
    instead of floating loose underneath the cover image.
