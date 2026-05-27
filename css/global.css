@@ -13406,22 +13406,33 @@ body:has(#global-player.expanded) .global-back-btn {
    --font-hand (Nanum 손글씨 중학생)은 오직 .floating-shape 만 유지.
    ============================================================ */
 .wall-board,
-.wall-board *,
+.wall-board *:not(i):not([class*="ri-"]),
 .wall-toolbar-v2,
-.wall-toolbar-v2 *,
+.wall-toolbar-v2 *:not(i):not([class*="ri-"]),
 .wall-compose-panel,
-.wall-compose-panel *,
+.wall-compose-panel *:not(i):not([class*="ri-"]),
 .tags-page-header,
-.tags-page-header *,
+.tags-page-header *:not(i):not([class*="ri-"]),
 .tags-cloud,
-.tags-cloud *,
+.tags-cloud *:not(i):not([class*="ri-"]),
 .tags-page,
-.tags-page *,
+.tags-page *:not(i):not([class*="ri-"]),
 .artist-canvas,
-.artist-canvas *,
+.artist-canvas *:not(i):not([class*="ri-"]),
 .artist-page,
-.artist-page * {
+.artist-page *:not(i):not([class*="ri-"]) {
   font-family: var(--font-pretendard) !important;
+}
+/* Remixicon은 자기 font-family('remixicon') 그대로 유지 */
+.wall-board i[class*="ri-"],
+.wall-toolbar-v2 i[class*="ri-"],
+.wall-compose-panel i[class*="ri-"],
+.tags-page-header i[class*="ri-"],
+.tags-cloud i[class*="ri-"],
+.tags-page i[class*="ri-"],
+.artist-canvas i[class*="ri-"],
+.artist-page i[class*="ri-"] {
+  font-family: 'remixicon' !important;
 }
 /* 위 셀렉터로 인해 손글씨가 깎이는 곳을 다시 손글씨로 되돌림 (포스트잇 본문,
    일지, 인라인 댓글 등 손글씨 톤이 핵심인 곳) */
