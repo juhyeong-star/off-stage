@@ -13019,22 +13019,27 @@ body:has(#global-player.expanded) .global-back-btn {
    Project Album Card — desktop unified box
    Cover + title + release date wrapped into a single bordered card
    instead of floating loose underneath the cover image.
+   Sized to match the demo filmstrip cards (~380×300) so they feel
+   like peers in the row, not a header that towers over them.
    ============================================================ */
 .artist-canvas .projects-grid .project-album-card {
   background: #fff;
   border: 1.5px solid #111;
   border-radius: 8px;
   box-shadow: 3px 3px 0 #111;
-  padding: 14px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   color: #111;
+  max-width: 380px;     /* match .demo-path .demo-card width */
+  width: 100%;
+  margin: 0 auto;        /* center if grid cell is wider */
 }
 .artist-canvas .projects-grid .project-album-card .project-cover-wrap {
   margin: 0 !important;
   width: 100% !important;
-  aspect-ratio: 1 / 1 !important;
+  aspect-ratio: 16 / 13 !important;   /* close to demo-card 380×300 proportion */
   border: 1.5px solid #111 !important;
   border-radius: 4px;
   overflow: hidden;
@@ -13049,23 +13054,23 @@ body:has(#global-player.expanded) .global-back-btn {
 .artist-canvas .projects-grid .project-album-card .project-album-meta {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   padding: 2px 4px 0;
 }
 .artist-canvas .projects-grid .project-album-card .project-title {
-  font-size: 17px !important;
+  font-size: 15px !important;
   margin: 0 !important;
   color: #111 !important;
   font-weight: 700;
   line-height: 1.2;
 }
 .artist-canvas .projects-grid .project-album-card .project-master-date {
-  font-size: 12px !important;
+  font-size: 11px !important;
   color: #888 !important;
   font-weight: 500 !important;
 }
 .artist-canvas .projects-grid .project-album-card .project-participants {
-  font-size: 12px !important;
+  font-size: 11px !important;
   color: #c2185b !important;
   font-weight: 600 !important;
   display: inline-flex !important;

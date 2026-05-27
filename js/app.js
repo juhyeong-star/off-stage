@@ -5279,9 +5279,10 @@ async function _renderProfileImpl() {
     `;
   }
 
-  const body = isArtist
-    ? `${myMusicSection}${followingSection}${playlistSection}${bookmarkedSection}${myNotesSection}${stoSection}`
-    : listenerBody;
+  // 내 페이지 — 일단 "내 음악 폴더"만 노출. 나머지 섹션(응원하는 곡 / 폴라로이드
+  // 컬렉션 / 팔로잉 / 수집한 포스트잇 / 내 포스트잇 등)은 플랫폼이 성숙해질 때까지
+  // 숨김. 위 변수들은 그대로 계산되니까 필요할 때 한 줄만 다시 켜면 됨.
+  const body = playlistSection || '<div class="empty-tab-message">아직 음악 폴더가 없어요.<br>곡에 ❤를 눌러서 폴더에 모아보세요.</div>';
 
   // Listener: 덕질 다락방 (paper + tape + pins, 따뜻한 손글씨 톤)
   // Artist: standard lavender canvas
@@ -8422,12 +8423,13 @@ window.renderAdmin = async function () {
   window.__adminRenderNoteRow = renderNoteRow;
 
   const roleBadge = (role) => {
+    // 'listener' role 폐지 — 모두 아티스트로 표시 (admin 만 별도)
     const map = {
       admin:    { bg:'#9C27B0', label:'관리자' },
       artist:   { bg:'#FF9800', label:'아티스트' },
-      listener: { bg:'#555',    label:'리스너' }
+      listener: { bg:'#FF9800', label:'아티스트' }   // legacy → 아티스트로 매핑
     };
-    const m = map[role] || map.listener;
+    const m = map[role] || map.artist;
     return `<span style="display:inline-block; padding:2px 8px; background:${m.bg}; color:#fff; border-radius:10px; font-size:11px; font-weight:600;">${m.label}</span>`;
   };
 
@@ -8482,8 +8484,7 @@ window.renderAdmin = async function () {
       </div>
       <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
         <select onchange="adminSetUserRole('${u.id}', this.value, this)" ${isSelf ? 'disabled' : ''} style="background:#222; color:#fff; border:1px solid var(--divider); border-radius:6px; padding:6px 8px; font-size:12px;">
-          <option value="listener" ${u.role==='listener'?'selected':''}>리스너</option>
-          <option value="artist" ${u.role==='artist'?'selected':''}>아티스트</option>
+          <option value="artist" ${(u.role==='artist' || u.role==='listener')?'selected':''}>아티스트</option>
           <option value="admin" ${u.role==='admin'?'selected':''}>관리자</option>
         </select>
         <button class="admin-chip" onclick="adminToggleUserExtra('${u.id}', this)" style="padding:4px 10px; font-size:11px;">상세 ▼</button>
@@ -8564,7 +8565,6 @@ window.renderAdmin = async function () {
             <button type="button" data-role-filter="all"      class="admin-chip active" onclick="adminFilterByRole('all', this)">전체</button>
             <button type="button" data-role-filter="admin"    class="admin-chip"        onclick="adminFilterByRole('admin', this)">관리자</button>
             <button type="button" data-role-filter="artist"   class="admin-chip"        onclick="adminFilterByRole('artist', this)">아티스트</button>
-            <button type="button" data-role-filter="listener" class="admin-chip"        onclick="adminFilterByRole('listener', this)">리스너</button>
           </div>
         </div>
         ` : ''}
