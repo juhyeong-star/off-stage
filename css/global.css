@@ -562,8 +562,9 @@
   --brand-color: #1DB954;
   --brand-hover: #1ed760;
   --divider: #222222;
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-hand: 'Dongle', 'Gaegu', 'Caveat', cursive;
+  --font-family: 'Pretendard Variable', 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-pretendard: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-hand: 'Nanum Jungshik', 'Gaegu', cursive;
   --player-height: 72px;
   --sidebar-width: 220px;
 }
@@ -13398,4 +13399,76 @@ body:has(#global-player.expanded) .global-back-btn {
 .artist-canvas .projects-grid .project-master-mobile .master-tap-hint:active {
   background: rgba(194, 24, 91, 0.18);
   border-color: rgba(194, 24, 91, 0.55);
+}
+
+/* ============================================================
+   Pretendard for body pages — 우리들의 벽, TAG, 아티스트 페이지
+   --font-hand (Nanum 손글씨 중학생)은 오직 .floating-shape 만 유지.
+   ============================================================ */
+.wall-board,
+.wall-board *,
+.wall-toolbar-v2,
+.wall-toolbar-v2 *,
+.wall-compose-panel,
+.wall-compose-panel *,
+.tags-page-header,
+.tags-page-header *,
+.tags-cloud,
+.tags-cloud *,
+.tags-page,
+.tags-page *,
+.artist-canvas,
+.artist-canvas *,
+.artist-page,
+.artist-page * {
+  font-family: var(--font-pretendard) !important;
+}
+/* 위 셀렉터로 인해 손글씨가 깎이는 곳을 다시 손글씨로 되돌림 (포스트잇 본문,
+   일지, 인라인 댓글 등 손글씨 톤이 핵심인 곳) */
+.wall-note .note-body,
+.wall-note .note-author,
+.wall-note .note-comment-inline-line,
+.wall-note .note-inline-input,
+.demo-card .demo-card-note,
+.demo-card .demo-card-note-line,
+.demo-card .demo-card-cm-line,
+.demo-card .demo-card-cm-input-field,
+.tcm-line,
+.tcm-input {
+  font-family: var(--font-hand), 'Gaegu', cursive !important;
+}
+
+/* ============================================================
+   우리들의 벽 — 본문 + 댓글 글씨 크기 ↑
+   ============================================================ */
+.wall-note .note-body {
+  font-size: 19px !important;       /* 본문 키움 */
+  line-height: 1.45 !important;
+}
+.wall-note .note-author {
+  font-size: 14px !important;
+}
+.wall-note .note-comment-inline-line,
+.wall-note .note-comments-inline .cli-text,
+.wall-note .note-comments-inline .cli-auth {
+  font-size: 15px !important;       /* 댓글 키움 */
+  line-height: 1.4 !important;
+}
+.wall-note .note-inline-input {
+  font-size: 14px !important;
+}
+@media (max-width: 768px) {
+  .wall-note .note-body { font-size: 18px !important; }
+  .wall-note .note-comment-inline-line,
+  .wall-note .note-comments-inline .cli-text,
+  .wall-note .note-comments-inline .cli-auth { font-size: 14px !important; }
+}
+
+/* ============================================================
+   floating-shape — 나눔손글씨 중학생 강제
+   (변수 override가 위 룰들로 깎이지 않게 명시)
+   ============================================================ */
+.floating-shape,
+.floating-shape .shape-text {
+  font-family: 'Nanum Jungshik', 'Gaegu', cursive !important;
 }
