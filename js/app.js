@@ -3290,10 +3290,9 @@ function renderShapes() {
     `;
   });
 
-  // Inject activity feed below the shapes universe (logged-in only)
-  const dbForFeed = window.DB.get();
-  const showFeed = dbForFeed && dbForFeed.currentUser && (typeof window.renderActivityFeed === 'function');
-  const feedHtml = showFeed ? window.renderActivityFeed() : '';
+  // Activity feed ("지금 일어나는 일") — removed by user request. Was showing
+  // mock listener actions which felt spammy on the empty/early platform.
+  const feedHtml = '';
 
   // Random-play dice — real 3D CSS cube pinned above the upload FAB.
   // Each face is its own div with pre-placed dots; the wrapper's data-face
