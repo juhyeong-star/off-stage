@@ -3245,16 +3245,11 @@ function renderShapes() {
   const tracks = allTracks
     .filter(t => {
       if (!t) return false;
-      // Hide demoted-from-final tracks
+      // Hide demoted-from-final tracks (auto-demoted previous finals).
       if (t.version === 'demo_retired') return false;
-      // Always show: masters
-      if (!t.isDemo) return true;
-      // Always show: pinned demos
-      if (t.pinned) return true;
-      // Always show: my own tracks (so the uploader sees what they just posted)
-      if (myId && t.artistId === myId) return true;
-      if (myName && t.artist === myName) return true;
-      return false;
+      // 빈 플랫폼 단계 — 모든 곡 표시 (master / demo / 본인 / 남이 올린 거 다)
+      // 나중에 트래픽 늘면 master + pinned 만 노출하도록 다시 조이면 됨.
+      return true;
     })
     // Sort by id so the grid placement (col/row) is identical on every reload —
     // otherwise Supabase fetch order shuffles items into different cells even
