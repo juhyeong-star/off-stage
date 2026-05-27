@@ -1651,31 +1651,33 @@ body.guest .sidebar-my-channel { display: none; }
 .dice-shape.dice-fab {
   position: fixed !important;
   /* Center-align with the 56px upload-fab (center at 60px from right):
-     dice 48px wide → right = 60 - 24 = 36px */
+     dice 48px wide → right = 60 - 24 = 36px.
+     Bottom: upload-fab top edge is at player+(16+56)=player+72px, so put dice
+     well above with a ~24px breathing gap. */
   right: 36px;
-  bottom: calc(var(--player-height, 88px) + 96px);
+  bottom: calc(var(--player-height, 88px) + 120px);
   left: auto !important;
   top: auto !important;
   z-index: 500;
 }
 @media (max-width: 768px) {
   .dice-shape.dice-fab {
-    /* Tablet (≤768): upload-fab still 56×56 right:32 — center at 60 from right.
-       Dice 42px → right = 60 - 21 = 39px */
-    right: 39px;
+    /* Tablet/mobile: upload-fab is 48×48 at right:16, bottom:player+16.
+       Upload top edge ≈ player + 64px. Dice 42px → 24px gap. */
+    right: 19px;
     width: 42px; height: 42px;
     --cube-half: 21px;
-    bottom: calc(var(--player-height, 88px) + 92px);
+    bottom: calc(var(--player-height, 88px) + 110px);
   }
 }
 @media (max-width: 420px) {
   .dice-shape.dice-fab {
-    /* Small phone: upload-fab 46×46 right:14 — center at 37 from right.
-       Dice 32px → right = 37 - 16 = 21px */
+    /* Small phone: upload-fab 46×46 at right:14, bottom:player+12.
+       Upload top edge ≈ player + 58px. Dice 32px → ~24px gap. */
     right: 21px;
     width: 32px; height: 32px;
     --cube-half: 16px;
-    bottom: calc(var(--player-height, 88px) + 72px);
+    bottom: calc(var(--player-height, 88px) + 95px);
   }
 }
 
