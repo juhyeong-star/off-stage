@@ -5461,9 +5461,33 @@ window.editProfile = function () {
           .eq('id', window.__currentUser.id);
         if (upErr) throw new Error('DB 업데이트 실패: ' + upErr.message);
 
-        step = 'sync caches';
-        if (window.Auth && window.Auth.bootstrap) await window.Auth.bootstrap();
-        if (window.Tracks && window.Tracks.refreshInto) await window.Tracks.refreshInto(window.DB.get());
+        // Mirror into the local in-memory user object immediately so the UI
+        // shows the new avatar/name without waiting for re-bootstrap.
+        if (window.__currentUser) {
+          window.__currentUser.name = newName;
+          window.__currentUser.avatar = finalAvatarUrl;
+          window.__currentUser.avatar_url = finalAvatarUrl;
+          window.__currentUser.sns = sns;
+        }
+        try {
+          const cached = window.DB.get();
+          if (cached && cached.currentUser) {
+            cached.currentUser.name = newName;
+            cached.currentUser.avatar = finalAvatarUrl;
+            cached.currentUser.sns = sns;
+            window.DB.save(cached);
+          }
+        } catch (_) {}
+
+        // Cache refresh runs in the background — used to be awaited which
+        // made the form hang on "저장 중…" whenever Supabase fetch was slow.
+        step = 'sync caches (background)';
+        if (window.Auth && window.Auth.bootstrap) {
+          window.Auth.bootstrap().catch(e => console.warn('[edit-profile] bootstrap bg', e));
+        }
+        if (window.Tracks && window.Tracks.refreshInto) {
+          window.Tracks.refreshInto(window.DB.get()).catch(e => console.warn('[edit-profile] tracks bg', e));
+        }
       } else {
         // Fallback (no Supabase) — write localStorage
         db.currentUser.name = newName;
