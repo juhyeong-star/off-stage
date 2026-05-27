@@ -31,31 +31,9 @@ const MOCK_DATA = {
       lines: ['#예시 마스터 곡', '#Peek kiss kiss kiss type 🐑'],
       artistNote: '예시 — 첫 마스터 곡',
       trackComments: []
-    },
-    // ──────────────────────────────────────────────────────────
-    // 예시 #2 — Peek: 데모 1
-    // ──────────────────────────────────────────────────────────
-    {
-      id: 'tp1d1',
-      title: 'kiss kiss kiss type (Beat)',
-      artist: 'Peek',
-      artistAvatar: '/img/artists/peek.png',
-      cover: '/img/artists/peek.png',
-      audioUrl: '/audio/peek-kiss-kiss-kiss-type-beat.mp3',
-      likes: 0,
-      plays: 0,
-      createdAt: '2026-04-15T22:00:00Z',
-      projectId: 'proj_peek_kkkt',
-      version: 'demo1',
-      versionLabel: 'Demo 1',
-      isDemo: true,
-      tags: ['bedroom pop', '예시'],
-      shape: 'circle',
-      shapeColor: '#80E27E',
-      lines: ['#예시 데모'],
-      artistNote: '예시 — 데모 비트',
-      trackComments: []
     }
+    // 예시 데모(tp1d1)는 제거 — 빈 플랫폼에 가짜 데모까지 떠다니는 게 어색해서.
+    // 마스터 1개 예시만 노출. 사용자가 곡 업로드하면 자동으로 더 채워짐.
   ],
 
   reservations: [],
@@ -107,7 +85,7 @@ const MOCK_DATA = {
 // 예전 버전엔 "라일락" 강제 시드 / 데모 트레일 / 응원 시드 등이
 // 남아있을 수 있어서 같이 비워줌.
 // ============================================================
-const DATA_VERSION = '50';
+const DATA_VERSION = '51';
 if (localStorage.getItem('offstage_data_version') !== DATA_VERSION) {
   // Core data
   localStorage.removeItem('offstage_data');
