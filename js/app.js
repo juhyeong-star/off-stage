@@ -1770,12 +1770,13 @@ function renderTagDetail(tag) {
 // ===================== WALL — 우리들의 벽 (Sticky Notes) =====================
 
 const NOTE_COLORS = {
-  yellow: { bg: '#FFF9C4', border: '#FFD54F', text: '#5D4037' },
-  blue:   { bg: '#BBDEFB', border: '#64B5F6', text: '#1A237E' },
-  pink:   { bg: '#F8BBD0', border: '#F06292', text: '#880E4F' },
-  green:  { bg: '#C8E6C9', border: '#66BB6A', text: '#1B5E20' },
-  orange: { bg: '#FFE0B2', border: '#FFA726', text: '#BF360C' },
-  purple: { bg: '#E1BEE7', border: '#AB47BC', text: '#4A148C' }
+  // 좀 더 찐한 색조 — bg는 더 진한 채도, text는 어두운 대비
+  yellow: { bg: '#FFE066', border: '#F4B400', text: '#3E2723' },
+  blue:   { bg: '#7EB8E8', border: '#1976D2', text: '#0D1F4D' },
+  pink:   { bg: '#F48FB1', border: '#E91E63', text: '#560027' },
+  green:  { bg: '#81C784', border: '#388E3C', text: '#0F3F12' },
+  orange: { bg: '#FFB74D', border: '#F57C00', text: '#5D2105' },
+  purple: { bg: '#BA68C8', border: '#7B1FA2', text: '#2E0846' }
 };
 
 // Wall state: pagination + search + sort
@@ -2334,7 +2335,11 @@ window.submitWallNote = async function() {
 
   try {
     if (window.Walls) {
-      await window.Walls.insert({ text, color, rotation, trackId, externalUrl });
+      // 10초 안에 응답 안 오면 강제로 실패 처리 (form 영구 잠김 방지)
+      await Promise.race([
+        window.Walls.insert({ text, color, rotation, trackId, externalUrl }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('네트워크 타임아웃 (10초)')), 10000))
+      ]);
     } else {
       window.DB.addNote({ id: 'n' + Date.now(), author: user.name, text, color, rotation, createdAt: new Date().toISOString() });
     }
@@ -2344,13 +2349,15 @@ window.submitWallNote = async function() {
     if (preview) { preview.innerHTML = ''; preview.hidden = true; }
     const panel = document.getElementById('wall-compose-panel');
     if (panel) panel.hidden = true;
-    await renderWall();
     showToast('벽에 붙었어요 📌');
+    // renderWall은 fire-and-forget — 실패해도 form 잠기는 일 없게
+    if (btn) { btn.disabled = false; btn.innerHTML = '붙이기 📌'; }
+    Promise.resolve(renderWall()).catch(e => console.warn('[submitWallNote] renderWall', e));
+    return;
   } catch (e) {
     alert('저장 실패: ' + (e.message || e));
-  } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = '붙이기 📌'; }
   }
+  if (btn) { btn.disabled = false; btn.innerHTML = '붙이기 📌'; }
 };
 
 window.toggleBookmark = async function(noteId) {
