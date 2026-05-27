@@ -562,9 +562,9 @@
   --brand-color: #1DB954;
   --brand-hover: #1ed760;
   --divider: #222222;
-  --font-family: 'Pretendard Variable', 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-pretendard: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-hand: 'Single Day', 'Gaegu', cursive;
+  --font-family: 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-pretendard: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-hand: 'Nanum JungShik', 'Gaegu', cursive;
   --player-height: 72px;
   --sidebar-width: 220px;
 }
@@ -13446,7 +13446,7 @@ body:has(#global-player.expanded) .global-back-btn {
 .demo-card .demo-card-cm-input-field,
 .tcm-line,
 .tcm-input {
-  font-family: 'Single Day', 'Gaegu', cursive !important;
+  font-family: 'Nanum JungShik', 'Gaegu', cursive !important;
 }
 
 /* ============================================================
@@ -13481,5 +13481,5 @@ body:has(#global-player.expanded) .global-back-btn {
    ============================================================ */
 .floating-shape,
 .floating-shape .shape-text {
-  font-family: 'Single Day', 'Gaegu', cursive !important;
+  font-family: 'Nanum JungShik', 'Gaegu', cursive !important;
 }
