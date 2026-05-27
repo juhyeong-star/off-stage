@@ -13116,6 +13116,25 @@ body:has(#global-player.expanded) .global-back-btn {
   border-color: #e53935;
 }
 
+/* "내 폴더에 담기" button on demo / master cards — purple folder icon */
+.demo-card-folder,
+.master-top-bar .demo-card-folder {
+  background: transparent;
+  border: 1px solid rgba(156, 39, 176, 0.5);
+  color: #9C27B0;
+  border-radius: 6px;
+  padding: 3px 6px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.demo-card-folder:hover {
+  background: #9C27B0;
+  color: #fff;
+  border-color: #9C27B0;
+}
+
 /* ============================================================
    Project Album Card — desktop unified box
    Cover + title + release date wrapped into a single bordered card

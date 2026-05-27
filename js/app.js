@@ -5624,6 +5624,9 @@ function renderProjectBox(pid, versions) {
               <i class="ri-delete-bin-line"></i>
             </button>
           ` : ''}
+          <button class="demo-card-folder" onclick="event.stopPropagation(); event.preventDefault(); openPlaylistModal('${v.id}')" title="내 폴더에 담기">
+            <i class="ri-folder-add-line"></i>
+          </button>
           <button class="demo-card-like ${demoLiked ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${v.id}', this)" title="내 우주에 모으기">
             <i class="${demoLiked ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
           </button>
@@ -5889,6 +5892,9 @@ function renderProjectBox(pid, versions) {
                 <i class="ri-delete-bin-line"></i>
               </button>
             ` : ''}
+            <button class="demo-card-folder" onclick="event.stopPropagation(); event.preventDefault(); openPlaylistModal('${v.id}')" title="내 폴더에 담기">
+              <i class="ri-folder-add-line"></i>
+            </button>
             <button class="demo-card-like ${demoLiked ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${v.id}', this)" title="내 우주에 모으기">
               <i class="${demoLiked ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
             </button>
@@ -5914,6 +5920,9 @@ function renderProjectBox(pid, versions) {
               </button>
             ` : ''}
             ${final ? `
+              <button class="demo-card-folder" onclick="event.stopPropagation(); event.preventDefault(); openPlaylistModal('${final.id}')" title="내 폴더에 담기">
+                <i class="ri-folder-add-line"></i>
+              </button>
               <button class="demo-card-like ${isTrackLiked(final.id) ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${final.id}', this)" title="내 우주에 모으기">
                 <i class="${isTrackLiked(final.id) ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
               </button>
