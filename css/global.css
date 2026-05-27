@@ -12105,6 +12105,9 @@ body.polaroid-sheet-open { overflow: hidden; }
               background 0.18s, color 0.18s, box-shadow 0.18s;
 }
 .global-back-btn[hidden] { display: none !important; }
+/* On the playlist detail page the in-page round .pl-back covers "back to
+   내 페이지", so suppress the top-left global one to avoid two arrows. */
+body:has(.pl-page) .global-back-btn { display: none !important; }
 .global-back-btn:hover {
   background: rgba(40, 40, 40, 0.92);
   color: #fff;
