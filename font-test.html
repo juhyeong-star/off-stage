@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>폰트 비교 — Off-Stage</title>
+
+  <!-- 한글 손글씨 / 굵은 디스플레이 후보 다 같이 로드 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Hi+Melody&family=Nanum+Pen+Script&family=Black+Han+Sans&family=Gowun+Dodum&family=Cute+Font&family=Single+Day&family=Sunflower:wght@300;500;700&family=Dongle:wght@300;700&family=Diphylleia&family=East+Sea+Dokdo&family=Gugi&family=Yeon+Sung&family=Stylish&family=Black+And+White+Picture&display=swap">
+
+  <style>
+    body {
+      background: #1a0d2e;
+      color: #fff;
+      font-family: -apple-system, sans-serif;
+      padding: 32px 20px;
+      max-width: 760px;
+      margin: 0 auto;
+      line-height: 1.4;
+    }
+    h1 {
+      font-size: 22px;
+      margin: 0 0 8px;
+      color: #FFE500;
+    }
+    p.hint {
+      font-size: 13px;
+      color: rgba(255,255,255,0.6);
+      margin: 0 0 28px;
+    }
+    .row {
+      background: #fff;
+      color: #111;
+      padding: 22px 24px;
+      margin-bottom: 14px;
+      border: 1.5px solid #111;
+      border-radius: 8px;
+      box-shadow: 3px 3px 0 #111;
+    }
+    .label {
+      font-family: -apple-system, sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      color: #c2185b;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .sample {
+      font-size: 26px;
+      line-height: 1.35;
+      letter-spacing: -0.01em;
+      word-break: keep-all;
+      white-space: pre-wrap;
+    }
+    .pick-btn {
+      background: #111; color: #fff;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: -apple-system, sans-serif;
+      letter-spacing: 0.5px;
+    }
+    .pick-btn:hover { background: #c2185b; }
+
+    /* Each font row */
+    .f-gaegu400      .sample { font-family: 'Gaegu', cursive;                    font-weight: 400; }
+    .f-gaegu700      .sample { font-family: 'Gaegu', cursive;                    font-weight: 700; }
+    .f-himelody      .sample { font-family: 'Hi Melody', cursive; }
+    .f-nanumpen      .sample { font-family: 'Nanum Pen Script', cursive; }
+    .f-blackhan      .sample { font-family: 'Black Han Sans', sans-serif; }
+    .f-gowundodum    .sample { font-family: 'Gowun Dodum', sans-serif; }
+    .f-cutefont      .sample { font-family: 'Cute Font', cursive; }
+    .f-singleday     .sample { font-family: 'Single Day', cursive; }
+    .f-sunflower300  .sample { font-family: 'Sunflower', sans-serif;            font-weight: 300; }
+    .f-sunflower700  .sample { font-family: 'Sunflower', sans-serif;            font-weight: 700; }
+    .f-dongle700     .sample { font-family: 'Dongle', sans-serif;                font-weight: 700; }
+    .f-diphylleia    .sample { font-family: 'Diphylleia', serif; }
+    .f-eastsea       .sample { font-family: 'East Sea Dokdo', cursive; }
+    .f-gugi          .sample { font-family: 'Gugi', cursive; }
+    .f-yeonsung      .sample { font-family: 'Yeon Sung', cursive; }
+    .f-stylish       .sample { font-family: 'Stylish', sans-serif; }
+    .f-bwpicture     .sample { font-family: 'Black And White Picture', sans-serif; }
+  </style>
+</head>
+<body>
+  <h1>🔤 폰트 비교 — Off-Stage</h1>
+  <p class="hint">스크린샷 옆에 두고 똑같이 생긴 폰트를 골라줘. "이거!" 라고 알려주면 사이트 폰트 그걸로 바꿔줄게.</p>
+
+  <!-- Sample text — 옛날 스크린샷이랑 동일 -->
+
+  <div class="row f-gaegu400">
+    <div class="label">1. Gaegu 400 (Regular) <button class="pick-btn">이거!</button></div>
+    <div class="sample">"오늘 새벽에 만든 비트 들어봐줘 ✨
+#1982년 느낌 진짜 잘 뽑힘"</div>
+  </div>
+
+  <div class="row f-gaegu700">
+    <div class="label">2. Gaegu 700 (Bold) ⭐ 현재 사이트 <button class="pick-btn">이거!</button></div>
+    <div class="sample">"오늘 새벽에 만든 비트 들어봐줘 ✨
+#1982년 느낌 진짜 잘 뽑힘"</div>
+  </div>
+
+  <div class="row f-himelody">
+    <div class="label">3. Hi Melody <button class="pick-btn">이거!</button></div>
+    <div class="sample">"오늘 새벽에 만든 비트 들어봐줘 ✨
+#1982년 느낌 진짜 잘 뽑힘"</div>
+  </div>
+
+  <div class="row f-nanumpen">
+    <div class="label">4. Nanum Pen Script <button class="pick-btn">이거!</button></div>
+    <div class="sample">"오늘 새벽에 만든 비트 들어봐줘 ✨
+#1982년 느낌 진짜 잘 뽑힘"</div>
+  </div>
+
+  <div class="row f-blackhan">
+    <div class="label">5. Black Han Sans (검정한산스) <button class="pick-btn">이거!</button></div>
+    <div class="sample">"오늘 새벽에 만든 비트 들어봐줘 ✨
+#1982년 느낌 진짜 잘 뽑힘"</div>
+  </div>
+
+  <div class="row f-gowundodum">
+    <div class="label">6. Gowun Dodum (고운돋움) <button class="pick-btn">이거!</button></div>
+    <div class="sample">"오늘 새벽에 만든 비트 들어봐줘 ✨
+#1982년 느낌 진짜 잘 뽑힘"</div>
+  </div>
+
+  <div class="row f-cutefont">
+    <div class="label">7. Cute Font <button class="pick-btn">이거!</button></div>
+    <div class="sample">"오늘 새벽에 만든 비트 들어봐줘 ✨
+#1982년 느낌 진짜 잘 뽑힘"</div>
+  </div>
+
+  <div class="row f-singleday">
+    <div class="label">8. Single Day <button class="pick-btn">이거!</button></div>
+    <div class="sample">"오늘 새벽에 만든 비트 들어봐줘 ✨
+#1982년 느낌 진짜 잘 뽑힘"</div>
+  </div>
+
+  <div class="row f-sunflower300">
+    <div class="label">9. Sunflower 300 (Light) <button class="pick-btn">이거!</button></div>
+    <div class="sample">"오늘 새벽에 만든 비트 들어봐줘 ✨
+#1982년 느낌 진짜 잘 뽑힘"</div>
+  </div>
+
+  <div class="row f-sunflower700">
+    <div class="label">10. Sunflower 700 (Bold) <button class="pick-btn">이거!</button></div>
+    <div class="sample">"오늘 새벽에 만든 비트 들어봐줘 ✨
+#1982년 느낌 진짜 잘 뽑힘"</div>
+  </div>
+
+  <div class="row f-dongle700">
+    <div class="label">11. Dongle 700 (Bold) <button class="pick-btn">이거!</button></div>
+    <div class="sample">"오늘 새벽에 만든 비트 들어봐줘 ✨
+#1982년 느낌 진짜 잘 뽑힘"</div>
+  </div>
+
+  <div class="row f-eastsea">
+    <div class="label">12. East Sea Dokdo (붓글씨) <button class="pick-btn">이거!</button></div>
+    <div class="sample">"오늘 새벽에 만든 비트 들어봐줘 ✨
+#1982년 느낌 진짜 잘 뽑힘"</div>
+  </div>
+
+  <div class="row f-gugi">
+    <div class="label">13. Gugi (붓 두꺼움) <button class="pick-btn">이거!</button></div>
+    <div class="sample">"오늘 새벽에 만든 비트 들어봐줘 ✨
+#1982년 느낌 진짜 잘 뽑힘"</div>
+  </div>
+
+  <div class="row f-yeonsung">
+    <div class="label">14. Yeon Sung (붓 가는편) <button class="pick-btn">이거!</button></div>
+    <div class="sample">"오늘 새벽에 만든 비트 들어봐줘 ✨
+#1982년 느낌 진짜 잘 뽑힘"</div>
+  </div>
+
+  <div class="row f-stylish">
+    <div class="label">15. Stylish <button class="pick-btn">이거!</button></div>
+    <div class="sample">"오늘 새벽에 만든 비트 들어봐줘 ✨
+#1982년 느낌 진짜 잘 뽑힘"</div>
+  </div>
+
+  <div class="row f-bwpicture">
+    <div class="label">16. Black And White Picture <button class="pick-btn">이거!</button></div>
+    <div class="sample">"오늘 새벽에 만든 비트 들어봐줘 ✨
+#1982년 느낌 진짜 잘 뽑힘"</div>
+  </div>
+
+  <p class="hint" style="margin-top: 28px; text-align:center;">
+    같이 보고 어떤 번호인지 알려줘 (예: "10번", "Black Han Sans"). 사이트 폰트 그걸로 적용할게.
+  </p>
+</body>
+</html>
