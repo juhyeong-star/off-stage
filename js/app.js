@@ -6776,6 +6776,11 @@ function _renderArtistProfileV2_unused(artistName) {
 
 // === Active artist profile (restored) ===
 function renderArtistProfile(artistName) {
+  // Defensive decode — if the caller passed a URL-encoded name like
+  // "%EA%B9%80..." we want to display "김주형" in the header instead.
+  if (typeof artistName === 'string' && artistName.indexOf('%') >= 0) {
+    try { artistName = decodeURIComponent(artistName); } catch (_) {}
+  }
   const db = window.DB.get();
   const artistTracks = db.tracks.filter(t => t.artist === artistName);
   // Include both: notes the artist wrote + notes that mention this artist (fan messages)
