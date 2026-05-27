@@ -273,6 +273,13 @@ async function init() {
     try {
       if (currentView === 'profile' && typeof renderProfile === 'function') renderProfile();
       else if (currentView === 'wall' && typeof renderWall === 'function') renderWall();
+      else if (currentView === 'shapes' && typeof renderShapes === 'function') renderShapes();
+      else if (currentView === 'universe' && typeof renderUniverse === 'function') renderUniverse();
+      else if (currentView === 'artist' && typeof renderArtistProfile === 'function') {
+        // Replay current /artist:<name> route
+        const m = (window.location.hash || '').match(/#\/artist:([^/?]+)/);
+        if (m) renderArtistProfile(decodeURIComponent(m[1]));
+      }
     } catch (_) {}
   });
 
