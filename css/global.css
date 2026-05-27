@@ -13096,6 +13096,26 @@ body:has(#global-player.expanded) .global-back-btn {
   white-space: nowrap;
 }
 
+/* Owner-only delete button on demo / master cards */
+.demo-card-delete,
+.master-top-bar .demo-card-delete {
+  background: transparent;
+  border: 1px solid rgba(229, 57, 53, 0.5);
+  color: #e53935;
+  border-radius: 6px;
+  padding: 3px 6px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  margin-left: auto;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.demo-card-delete:hover {
+  background: #e53935;
+  color: #fff;
+  border-color: #e53935;
+}
+
 /* ============================================================
    Project Album Card — desktop unified box
    Cover + title + release date wrapped into a single bordered card

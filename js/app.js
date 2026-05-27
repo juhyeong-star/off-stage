@@ -5618,6 +5618,11 @@ function renderProjectBox(pid, versions) {
           <span class="demo-card-date">· ${dateLabel}</span>
           ${shapeOpenBtnHtml}
           ${stoBadgeHtml}
+          ${canEditArtist ? `
+            <button class="demo-card-delete" onclick="event.stopPropagation(); event.preventDefault(); deleteMyTrack('${v.id}', '${(v.title||'').replace(/'/g,"\\'")}')" title="삭제">
+              <i class="ri-delete-bin-line"></i>
+            </button>
+          ` : ''}
           <button class="demo-card-like ${demoLiked ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${v.id}', this)" title="내 우주에 모으기">
             <i class="${demoLiked ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
           </button>
@@ -5878,6 +5883,11 @@ function renderProjectBox(pid, versions) {
           <div class="demo-card-top">
             <span class="demo-tag">DEMO ${i+1}</span>
             <span class="demo-card-date">· ${formatFullDate(v.createdAt)}</span>
+            ${canEditArtist ? `
+              <button class="demo-card-delete" onclick="event.stopPropagation(); event.preventDefault(); deleteMyTrack('${v.id}', '${(v.title||'').replace(/'/g,"\\'")}')" title="삭제">
+                <i class="ri-delete-bin-line"></i>
+              </button>
+            ` : ''}
             <button class="demo-card-like ${demoLiked ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${v.id}', this)" title="내 우주에 모으기">
               <i class="${demoLiked ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
             </button>
@@ -5897,6 +5907,11 @@ function renderProjectBox(pid, versions) {
         <div class="project-master-mobile master-as-demo" ${final ? `data-track-id="${final.id}"` : ''}>
           <div class="master-top-bar">
             <span class="demo-tag master-badge">${final ? '✦ MASTER' : '작업 중'}</span>
+            ${final && canEditArtist ? `
+              <button class="demo-card-delete" onclick="event.stopPropagation(); event.preventDefault(); deleteMyTrack('${final.id}', '${(final.title||'').replace(/'/g,"\\'")}')" title="삭제">
+                <i class="ri-delete-bin-line"></i>
+              </button>
+            ` : ''}
             ${final ? `
               <button class="demo-card-like ${isTrackLiked(final.id) ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${final.id}', this)" title="내 우주에 모으기">
                 <i class="${isTrackLiked(final.id) ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
@@ -6486,6 +6501,32 @@ window.promoteDemoToFinal = async function(trackId) {
     }
   } catch (e) {
     alert('승격 실패: ' + (e.message || e));
+  }
+};
+
+// Delete a track the current user owns. Confirms by title to avoid mishaps.
+window.deleteMyTrack = async function(trackId, trackTitle) {
+  if (!trackId) return;
+  const ok = confirm(`「${trackTitle || '이 곡'}」 정말 삭제할까요?\n복구할 수 없어요.`);
+  if (!ok) return;
+
+  try {
+    if (window.Tracks && typeof window.Tracks.delete === 'function') {
+      await window.Tracks.delete(trackId);
+    }
+    // Also drop from local cache so the UI updates immediately
+    const db = window.DB.get();
+    if (Array.isArray(db.tracks)) {
+      db.tracks = db.tracks.filter(t => t.id !== trackId);
+      window.DB.save(db);
+    }
+    showToast('삭제 완료');
+    // Re-render current view
+    if (currentView === 'artist') renderArtist();
+    else if (currentView === 'shapes' && typeof renderShapes === 'function') renderShapes();
+    else if (currentView === 'profile' && typeof renderProfile === 'function') renderProfile();
+  } catch (e) {
+    alert('삭제 실패: ' + (e.message || e));
   }
 };
 
