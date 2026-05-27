@@ -1438,23 +1438,21 @@ function updateHeaderAuth() {
   document.body.classList.toggle('role-admin',    role === 'admin');
   if (!container) return;
   if (user) {
+    // 역할 구분 폐지 — 누구나 아티스트로도 동작. admin만 Admin 패널 추가 노출.
     const role = user.role || 'listener';
-    const roleLabel = role === 'admin' ? '관리자'
-                    : (role === 'artist' || role === 'student') ? '아티스트'
-                    : 'Collection';
-    const isArtist = role === 'admin' || role === 'artist' || role === 'student';
+    const isAdmin = role === 'admin';
     container.innerHTML = `
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; cursor:pointer;" onclick="navigateTo('profile')">
         <img src="${user.avatar}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" alt="${(user.name||'').replace(/"/g,'&quot;')}">
         <div style="flex:1;min-width:0;">
           <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${user.name}</div>
-          <div style="font-size:11px;color:var(--text-secondary);">${roleLabel}</div>
+          <div style="font-size:11px;color:var(--text-secondary);">${isAdmin ? '관리자' : '@' + (user.name || '').replace(/\s+/g,'').toLowerCase()}</div>
         </div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn-primary" style="padding:6px 14px;font-size:12px;" onclick="navigateTo('profile')"><i class="ri-user-3-line"></i> 내 페이지</button>
-        ${isArtist ? `<button class="btn-primary" style="padding:6px 14px;font-size:12px;background:#333;" onclick="navigateTo('upload')"><i class="ri-upload-2-line"></i> Upload</button>` : `<button style="padding:6px 12px;font-size:11px; background:transparent; border:1px solid var(--divider); color:var(--text-secondary); border-radius:14px;" onclick="if(confirm('아티스트로 전환하면 음악을 올릴 수 있어요. 계속할까요?')) navigateTo('upload')"><i class="ri-add-line"></i> 음악 올리기</button>`}
-        ${role === 'admin' ? `<button class="btn-primary" style="padding:6px 14px;font-size:12px;background:#9C27B0;" onclick="navigateTo('admin')"><i class="ri-dashboard-fill"></i> Admin</button>` : ''}
+        <button class="btn-primary" style="padding:6px 14px;font-size:12px;background:#333;" onclick="navigateTo('upload')"><i class="ri-upload-2-line"></i> Upload</button>
+        ${isAdmin ? `<button class="btn-primary" style="padding:6px 14px;font-size:12px;background:#9C27B0;" onclick="navigateTo('admin')"><i class="ri-dashboard-fill"></i> Admin</button>` : ''}
         <button style="color:var(--text-secondary);font-size:12px;padding:6px 8px;" onclick="logout()">로그아웃</button>
       </div>
     `;
@@ -5347,11 +5345,6 @@ window.editProfile = function () {
         </div>
 
         <h2 style="font-size: 18px; border-bottom: 1px solid var(--divider); padding-bottom: 10px; margin: 30px 0 20px;">계정 설정</h2>
-
-        <div class="form-group">
-          <label>신분 (Role)</label>
-          <input type="text" class="form-control" value="${db.currentUser.role === 'admin' ? '관리자 (Admin)' : (db.currentUser.role === 'artist' || db.currentUser.role === 'student') ? '아티스트 (Creator)' : 'Collection (Fan)'}" disabled style="opacity: 0.5; background: var(--bg-color);">
-        </div>
 
         <div class="form-group">
           <label>이메일</label>

@@ -9564,9 +9564,9 @@ html, body { overflow-x: hidden; max-width: 100%; }
   background: linear-gradient(135deg, rgba(124,77,255,0.28), rgba(29,185,84,0.18)) !important;
   color: #fff !important;
 }
-/* Listeners (and guests, who default to role-listener) don't see 아티스트 페이지.
-   Admin/Artist users still see it. */
-body.role-listener .sidebar-artist-link { display: none; }
+/* 역할 구분 폐지 — 누구나 아티스트 페이지에 접근 가능. role-listener 일 때도
+   링크 노출. (게스트는 .guest 클래스로 별도 제어) */
+body.guest .sidebar-artist-link { display: none; }
 
 /* --- 사이드바 신규 메뉴: 관리자 (admin role만 보임) --- */
 .sidebar-admin-link {
