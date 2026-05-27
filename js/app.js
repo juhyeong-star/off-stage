@@ -3231,14 +3231,34 @@ function initDiscoverDrag() {
 // ===================== SHAPES UNIVERSE (original floating shapes view) =====================
 function renderShapes() {
   const db = window.DB.get();
-  // Main exposure rule: master + pinned demo (1 per project) — Instagram pin style
   // 모든 도형이 우주에서 자유롭게 떠다님 — 청취자가 아티스트를 모으는 컨셉
+  //
+  // 노출 규칙 (이른 단계 — 빈 플랫폼이 더 빈약해 보이지 않게 완화):
+  //   1) 마스터 트랙 (version=final, !isDemo) → 무조건 노출
+  //   2) Pinned demo (아티스트가 메인 노출로 선택한 데모) → 노출
+  //   3) 본인이 올린 곡 (현재 로그인 유저) → master/demo 상관없이 무조건 노출
+  //   4) demo_retired (이전 final이 demoted된 것) → 숨김
   const allTracks = db.tracks || [];
-  // Sort by id so the grid placement (col/row) is identical on every reload —
-  // otherwise Supabase fetch order shuffles items into different cells even
-  // though the seeded jitter is stable.
+  const myName = (db.currentUser && db.currentUser.name) || (window.__currentUser && window.__currentUser.name) || '';
+  const myId   = (window.__currentUser && window.__currentUser.id) || null;
+
   const tracks = allTracks
-    .filter(t => !t.isDemo || t.pinned)
+    .filter(t => {
+      if (!t) return false;
+      // Hide demoted-from-final tracks
+      if (t.version === 'demo_retired') return false;
+      // Always show: masters
+      if (!t.isDemo) return true;
+      // Always show: pinned demos
+      if (t.pinned) return true;
+      // Always show: my own tracks (so the uploader sees what they just posted)
+      if (myId && t.artistId === myId) return true;
+      if (myName && t.artist === myName) return true;
+      return false;
+    })
+    // Sort by id so the grid placement (col/row) is identical on every reload —
+    // otherwise Supabase fetch order shuffles items into different cells even
+    // though the seeded jitter is stable.
     .slice()
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
