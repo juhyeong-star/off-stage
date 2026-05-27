@@ -5499,7 +5499,8 @@ window.editProfile = function () {
       console.log('[edit-profile] done');
       updateHeaderAuth();
       showToast('프로필 저장 완료 ✨');
-      navigateTo('profile');
+      // 저장 후 본인 아티스트 페이지로 — 새 아바타/이름이 거기 헤더에 바로 보임.
+      navigateTo('artist:' + encodeURIComponent(newName || ''));
     } catch (err) {
       console.error('[edit-profile] failed at step', step, err);
       showInlineError('[' + step + '] ' + (err.message || err));
