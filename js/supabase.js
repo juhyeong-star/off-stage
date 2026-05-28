@@ -449,6 +449,23 @@
       return mapped;
     },
 
+    // Delete a comment (RLS only lets the author delete their own row).
+    async deleteComment(commentId, noteId) {
+      if (!window.supabase) throw new Error('Supabase SDK not ready');
+      const { error } = await window.supabase
+        .from('wall_note_comments')
+        .delete()
+        .eq('id', commentId);
+      if (error) throw error;
+      // Update cache
+      if (Array.isArray(window.__wallNotes) && noteId) {
+        const n = window.__wallNotes.find(x => x.id === noteId);
+        if (n && Array.isArray(n.comments)) {
+          n.comments = n.comments.filter(c => c.id !== commentId);
+        }
+      }
+    },
+
     // Refresh the cache + mirror into legacy db.notes so sync code paths keep working
     async refreshInto(db) {
       const notes = await this.fetchAll();

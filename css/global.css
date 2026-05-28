@@ -2713,6 +2713,20 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   animation: fadeInUp 0.4s cubic-bezier(0.22,1,0.36,1);
   text-shadow: 0 0 1px rgba(255,255,255,0.15);
 }
+/* 본인 댓글 삭제 버튼 — 댓글 줄 끝에 작게 */
+.comment-line .comment-del {
+  background: transparent;
+  border: none;
+  color: rgba(255, 90, 90, 0.7);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  margin-left: 8px;
+  padding: 0 2px;
+  vertical-align: middle;
+  transition: color 0.15s;
+}
+.comment-line .comment-del:hover { color: #ff5252; }
 .comment-arrow {
   color: #FFD54F;
   margin-right: 8px;

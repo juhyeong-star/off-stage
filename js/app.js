@@ -2430,14 +2430,23 @@ window.openNoteDetail = async function(noteId) {
   const safeAuthor = (note.author || '').replace(/</g,'&lt;');
   const comments = note.comments || [];
 
+  // 본인이 쓴 댓글이면 삭제 버튼 노출 (authorId 우선, 없으면 이름 매칭)
+  const _me = db.currentUser || window.__currentUser;
+  const _myId = (window.__currentUser && window.__currentUser.id) || null;
+  const _myName = (_me && _me.name) || '';
   const commentsHtml = comments.length === 0
     ? '<div class="no-comments">ㄴ 아직 조용하네...<br>ㄴ 첫 낙서를 남겨봐 ✍️</div>'
     : comments.map((cm, i) => {
         const cmSafe = (cm.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const cmAuth = (cm.author || '익명').replace(/</g,'&lt;');
+        const isMine = (_myId && cm.authorId && cm.authorId === _myId)
+                    || (!cm.authorId && _myName && cm.author === _myName);
+        const delBtn = isMine
+          ? `<button class="comment-del" onclick="event.stopPropagation(); deleteNoteComment('${noteId}','${cm.id}')" title="댓글 삭제"><i class="ri-close-line"></i></button>`
+          : '';
         return `
           <div class="comment-line" style="padding-left:${Math.min(i,5) * 18 + 4}px;">
-            <span class="comment-arrow">ㄴ</span><span class="comment-text">${cmSafe}</span><span class="comment-author">— ${cmAuth}</span>
+            <span class="comment-arrow">ㄴ</span><span class="comment-text">${cmSafe}</span><span class="comment-author">— ${cmAuth}</span>${delBtn}
           </div>
         `;
       }).join('');
@@ -2488,6 +2497,35 @@ window.openNoteDetail = async function(noteId) {
 window.closeNoteDetail = function() {
   const m = document.getElementById('note-detail-modal');
   if (m) m.remove();
+};
+
+// Delete a comment the current user wrote (from the note detail modal).
+window.deleteNoteComment = async function(noteId, commentId) {
+  if (!noteId || !commentId) return;
+  if (!confirm('이 댓글을 지울까요?')) return;
+  try {
+    const db = window.DB.get();
+    const note = (db.notes || []).find(n => n.id === noteId);
+    const isSupabaseComment = !String(commentId).startsWith('c'); // local ids look like 'c123…'
+    if (window.Walls && window.Walls.deleteComment && isSupabaseComment) {
+      await window.Walls.deleteComment(commentId, noteId);
+    }
+    // Mirror into local cache regardless
+    if (note && Array.isArray(note.comments)) {
+      note.comments = note.comments.filter(c => c.id !== commentId);
+      window.DB.save(db);
+    }
+    if (Array.isArray(window.__wallNotes)) {
+      const wn = window.__wallNotes.find(n => n.id === noteId);
+      if (wn && Array.isArray(wn.comments)) wn.comments = wn.comments.filter(c => c.id !== commentId);
+    }
+    showToast('댓글 삭제됨');
+    // Re-open the modal to refresh the comment list, then re-render wall behind it
+    openNoteDetail(noteId);
+    renderWall();
+  } catch (e) {
+    alert('댓글 삭제 실패: ' + (e.message || e));
+  }
 };
 
 window.submitComment = async function(noteId) {
