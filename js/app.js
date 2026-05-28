@@ -7712,6 +7712,9 @@ function _markOnboarded() {
 window._onboardingPicked = new Set();
 
 window.maybeShowOnboarding = async function() {
+  // ⛔ 온보딩 일시 OFF (사용자 요청). 나중에 '곡 미리듣기 + 팔로우' 형태로
+  //    다시 만들 때 이 한 줄만 지우면 됨. (아래 로직/모달 코드는 그대로 보존)
+  return;
   // Guard: only show once per device, and only if user is logged in & has 0 follows (real + mock)
   if (_hasSeenOnboarding()) return;
   const db = window.DB.get();
@@ -8801,19 +8804,21 @@ window.renderAdmin = async function () {
 
   let recentNotes = [], recentTracks = [], allUsers = [];
   let overallStats = null, topTracks = [];
-  if (window.Admin) {
-    [recentNotes, recentTracks, allUsers] = await Promise.all([
-      withTimeout(window.Admin.listRecentNotes(50), []),
-      withTimeout(window.Admin.listRecentTracks(50), []),
-      withTimeout(window.Admin.listUsers ? window.Admin.listUsers(200) : Promise.resolve([]), [])
-    ]);
-  }
-  if (window.Analytics) {
-    [overallStats, topTracks] = await Promise.all([
-      withTimeout(window.Analytics.getAdminOverall(), null),
-      withTimeout(window.Analytics.getAdminTopTracks(10), [])
-    ]);
-  }
+  // ⚡ Admin 데이터와 Analytics 데이터를 따로 await 하면 (5s + 5s) 최악 10초
+  //    걸림 → 둘을 한 번에 병렬로 받아서 최악 5초로 줄임. (한번씩 느린 원인)
+  const adminReady = !!window.Admin;
+  const anaReady   = !!window.Analytics;
+  const [
+    _notes, _tracks, _users, _overall, _top
+  ] = await Promise.all([
+    adminReady ? withTimeout(window.Admin.listRecentNotes(50), []) : Promise.resolve([]),
+    adminReady ? withTimeout(window.Admin.listRecentTracks(50), []) : Promise.resolve([]),
+    adminReady && window.Admin.listUsers ? withTimeout(window.Admin.listUsers(200), []) : Promise.resolve([]),
+    anaReady ? withTimeout(window.Analytics.getAdminOverall(), null) : Promise.resolve(null),
+    anaReady ? withTimeout(window.Analytics.getAdminTopTracks(10), []) : Promise.resolve([])
+  ]);
+  recentNotes = _notes; recentTracks = _tracks; allUsers = _users;
+  overallStats = _overall; topTracks = _top;
 
   // User may have navigated away while we waited for Supabase — bail before
   // overwriting whatever page they're now on.
