@@ -2707,7 +2707,11 @@ function initNoteDrag() {
 
 // ===================== 1. HOME VIEW — FLOATING SHAPES UNIVERSE =====================
 
-const SHAPE_TYPES = ['circle', 'oval', 'rect', 'triangle', 'star', 'parallelogram', 'diamond', 'hexagon'];
+// 텍스트가 깔끔하게 들어가는 둥근 모양만 사용 — 별/삼각/다이아/평행사변형은
+// 글씨가 삐져나오고 애매해서 제외.
+const SHAPE_TYPES = ['circle', 'oval', 'rect', 'hexagon'];
+// 제외된(애매한) 모양 → 깔끔한 모양으로 매핑 (기존 트랙의 star 등도 정리)
+const SHAPE_REMAP = { triangle: 'circle', star: 'circle', diamond: 'hexagon', parallelogram: 'rect' };
 const SHAPE_COLORS = ['#FF9800', '#FF4081', '#2979FF', '#76FF03', '#7C4DFF', '#FFD600', '#00E5FF', '#FF1744', '#69F0AE', '#EA80FC'];
 
 function renderHome() {
@@ -2725,7 +2729,7 @@ function renderHome() {
     id: t.id,
     title: t.title,
     artist: t.artist,
-    shape: t.shape || SHAPE_TYPES[0],
+    shape: SHAPE_REMAP[t.shape] || t.shape || SHAPE_TYPES[0],
     color: t.shapeColor || SHAPE_COLORS[0],
     lines: t.lines || [t.title, t.artist, '클릭해서 들어봐!']
   }));
@@ -3052,7 +3056,8 @@ async function renderPlaylistUniverse(playlistId) {
       const dur = 12 + ((sd >>> 17) % 16);
       const dx = ((sd >>> 21) % 50) - 25;
       const dy = ((sd >>> 25) % 50) - 25;
-      const shape = t.shape || SHAPE_TYPES[si % SHAPE_TYPES.length];
+      let shape = t.shape || SHAPE_TYPES[si % SHAPE_TYPES.length];
+      if (SHAPE_REMAP[shape]) shape = SHAPE_REMAP[shape];
       const color = t.shapeColor || SHAPE_COLORS[si % SHAPE_COLORS.length];
       const isTriangle = shape === 'triangle';
       const bgStyle = isTriangle
@@ -3351,7 +3356,9 @@ function renderShapes() {
 
   shapeEntries.forEach((entry, si) => {
     const { track, idx, pass } = entry;
-    const shape = track.shape || SHAPE_TYPES[idx % SHAPE_TYPES.length];
+    let shape = track.shape || SHAPE_TYPES[idx % SHAPE_TYPES.length];
+    // 애매한 모양(별/삼각/다이아/평행) → 깔끔한 모양으로 정리
+    if (SHAPE_REMAP[shape]) shape = SHAPE_REMAP[shape];
     const color = track.shapeColor || SHAPE_COLORS[idx % SHAPE_COLORS.length];
     const lines = track.lines || [track.title, track.artist, '클릭해서 들어봐!'];
     const safeLines = lines.map(l => (l || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
@@ -3831,7 +3838,8 @@ window.renderUniverse = async function () {
 
     if (it.kind === 'track') {
       const t = it.t;
-      const shape = t.shape || (typeof SHAPE_TYPES !== 'undefined' ? SHAPE_TYPES[i % SHAPE_TYPES.length] : 'circle');
+      let shape = t.shape || (typeof SHAPE_TYPES !== 'undefined' ? SHAPE_TYPES[i % SHAPE_TYPES.length] : 'circle');
+      if (typeof SHAPE_REMAP !== 'undefined' && SHAPE_REMAP[shape]) shape = SHAPE_REMAP[shape];
       const color = t.shapeColor || (typeof SHAPE_COLORS !== 'undefined' ? SHAPE_COLORS[i % SHAPE_COLORS.length] : '#FF9800');
       const isTri = shape === 'triangle';
       const bgStyle = isTri
@@ -4392,12 +4400,8 @@ function renderUpload() {
           <select class="form-control" id="up-shape">
             <option value="circle">⬤ 원</option>
             <option value="oval">⬮ 타원</option>
-            <option value="rect">▬ 사각형</option>
-            <option value="triangle">▲ 삼각형</option>
-            <option value="star">★ 별</option>
-            <option value="diamond">◆ 다이아</option>
+            <option value="rect">▢ 둥근 사각형</option>
             <option value="hexagon">⬡ 육각형</option>
-            <option value="parallelogram">▱ 평행사변형</option>
           </select>
         </div>
         <div class="form-group">
