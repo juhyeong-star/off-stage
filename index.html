@@ -15,12 +15,15 @@
   <!-- Google Fonts — non-render-blocking (swap fallback fonts in until loaded) -->
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Gaegu:wght@400;700&family=Caveat:wght@400;700&family=Archivo+Black&family=Bebas+Neue&family=Press+Start+2P&family=VT323&family=Silkscreen:wght@400;700&display=swap" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Gaegu:wght@400;700&family=Caveat:wght@400;700&family=Archivo+Black&family=Bebas+Neue&family=Press+Start+2P&family=VT323&family=Silkscreen:wght@400;700&display=swap"></noscript>
-  <!-- Local fonts — Pretendard (body) + 나눔손글씨 중학생 (handwriting) -->
+  <!-- Local fonts — preload first so they're ready before paint -->
+  <link rel="preload" href="/fonts/Pretendard-Regular.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="/fonts/NanumJungShik.ttf" as="font" type="font/ttf" crossorigin>
   <style>
     @font-face {
       font-family: 'Pretendard';
       font-style: normal;
       font-weight: 400;
+      /* swap = 폰트 다운로드 전엔 fallback, 다운 완료 후 즉시 교체 */
       font-display: swap;
       src: url('/fonts/Pretendard-Regular.ttf') format('truetype');
     }
@@ -28,14 +31,15 @@
       font-family: 'Nanum JungShik';
       font-style: normal;
       font-weight: 400;
-      font-display: swap;
+      /* block = 폰트 로드까지 최대 3초간 텍스트 숨김. swap보다 깜빡임 적음. */
+      font-display: block;
       src: url('/fonts/NanumJungShik.ttf') format('truetype');
     }
   </style>
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=344">
+  <link rel="stylesheet" href="css/global.css?v=345">
 </head>
 <body>
 
@@ -174,12 +178,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=344"></script>
-  <script defer src="js/data.js?v=344"></script>
-  <script defer src="js/supabase.js?v=344"></script>
-  <script defer src="js/analytics.js?v=344"></script>
-  <script defer src="js/distribute.js?v=344"></script>
-  <script defer src="js/app.js?v=344"></script>
-  <script defer src="js/polaroid.js?v=344"></script>
+  <script defer src="js/supabase-init.js?v=345"></script>
+  <script defer src="js/data.js?v=345"></script>
+  <script defer src="js/supabase.js?v=345"></script>
+  <script defer src="js/analytics.js?v=345"></script>
+  <script defer src="js/distribute.js?v=345"></script>
+  <script defer src="js/app.js?v=345"></script>
+  <script defer src="js/polaroid.js?v=345"></script>
 </body>
 </html>
