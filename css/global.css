@@ -12787,7 +12787,7 @@ body:has(#global-player.expanded) .global-back-btn {
   .artist-canvas .projects-grid .project-header .project-album-card .project-cover-wrap {
     width: 100% !important;
     height: auto !important;
-    aspect-ratio: 1 / 1 !important;
+    aspect-ratio: 4 / 3 !important;     /* 1/1 → 4/3 (세로 줄임) */
     border: 1px solid rgba(0,0,0,0.12) !important;
     border-radius: 4px !important;
     box-shadow: none !important;
@@ -12862,11 +12862,11 @@ body:has(#global-player.expanded) .global-back-btn {
     border-radius: 3px;
   }
 
-  /* Each demo: fixed-width film frame */
+  /* Each demo: fixed-width film frame, height matches master album card. */
   .artist-canvas .projects-grid .demo-path > .demo-card {
     flex: 0 0 380px !important;
     width: 380px !important;
-    height: 360px !important;
+    height: 290px !important;
     aspect-ratio: auto !important;
     margin: 0 !important;
     scroll-snap-align: start;
