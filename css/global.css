@@ -652,13 +652,13 @@ input, textarea, select { font-family: inherit; }
 /* override the inherited inline-flex so logo column lays out clean */
 .bauhaus-logo i { display: none; }
 
-.sidebar-links { display: flex; flex-direction: column; gap: 2px; }
+.sidebar-links { display: flex; flex-direction: column; gap: 1px; }
 .sidebar-links a {
-  display: flex; align-items: center; gap: 14px; padding: 12px 12px;
-  border-radius: 8px; font-size: 15px; font-weight: 600; color: var(--text-secondary);
+  display: flex; align-items: center; gap: 11px; padding: 7px 11px;
+  border-radius: 7px; font-size: 14px; font-weight: 600; color: var(--text-secondary);
   transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
 }
-.sidebar-links a i { font-size: 22px; width: 24px; text-align: center; }
+.sidebar-links a i { font-size: 18px; width: 22px; text-align: center; }
 .sidebar-links a:hover { color: var(--text-primary); background: rgba(255,255,255,0.06); }
 
 /* Treasure-toned 내 채널 sidebar link */
@@ -666,7 +666,7 @@ input, textarea, select { font-family: inherit; }
   background: linear-gradient(135deg, rgba(218,165,32,0.18), rgba(107,70,193,0.15)) !important;
   color: #FFD700 !important;
   border: 1px solid rgba(218,165,32,0.4);
-  margin-bottom: 6px;
+  margin-top: 4px;
   position: relative;
   overflow: hidden;
 }
@@ -695,9 +695,9 @@ body.guest .sidebar-my-channel { display: none; }
   display: flex; align-items: center; gap: 10px;
   background: var(--surface-hover);
   border: 1px solid var(--divider);
-  border-radius: 22px;
-  padding: 11px 16px;
-  margin: 14px 0;
+  border-radius: 20px;
+  padding: 8px 14px;
+  margin: 10px 0;
   transition: border-color 0.2s, background 0.2s;
 }
 .sidebar-search:focus-within {
