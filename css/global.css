@@ -1677,73 +1677,72 @@ body.guest .sidebar-my-channel { display: none; }
   z-index: 500;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  filter: drop-shadow(0 6px 16px rgba(124,77,255,0.45));
+  filter: drop-shadow(0 6px 18px rgba(124,77,255,0.5));
   transition: transform 0.25s cubic-bezier(0.22,1.2,0.36,1);
 }
-.planet-orbit {
-  position: relative;
-  width: 60px; height: 60px;
-  display: block;
-  transform-origin: 50% 50%;
-}
-/* 행성 본체 — 보라/파랑 그라데이션 구체 */
-.planet-body {
+/* 3D 구체 — 표면 줄무늬가 가로로 흘러서 자전하는 착시.
+   고정된 radial 하이라이트(빛)가 구형 입체감을 줌. */
+.planet-sphere {
   position: absolute;
-  top: 14px; left: 14px;
-  width: 32px; height: 32px;
+  width: 42px; height: 42px;
   border-radius: 50%;
-  background: radial-gradient(circle at 34% 30%, #d8b4fe 0%, #a855f7 45%, #6d28d9 75%, #3b0764 100%);
-  box-shadow: inset -4px -4px 8px rgba(0,0,0,0.45), 0 0 14px rgba(168,85,247,0.55);
+  overflow: hidden;
+  background-image:
+    /* 빛/그림자 (고정) — 구 입체감 */
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 42%),
+    radial-gradient(circle at 70% 78%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 55%),
+    /* 표면 줄무늬 (흐르는 부분) */
+    repeating-linear-gradient(74deg,
+      #c084fc 0px, #c084fc 5px,
+      #a855f7 5px, #a855f7 11px,
+      #7c3aed 11px, #7c3aed 17px,
+      #9333ea 17px, #9333ea 23px);
+  background-size: 100% 100%, 100% 100%, 220% 100%;
+  background-position: 0 0, 0 0, 0 0;
+  box-shadow:
+    inset -5px -5px 11px rgba(0,0,0,0.5),
+    inset 4px 4px 9px rgba(255,255,255,0.18),
+    0 0 16px rgba(168,85,247,0.5);
+  animation: planetSpin 7s linear infinite;
 }
-/* 토성 고리 — 기울어진 타원 테두리 */
+/* 자전 — 줄무늬 background만 가로로 스크롤 (구는 제자리) */
+@keyframes planetSpin {
+  from { background-position: 0 0, 0 0, 0 0; }
+  to   { background-position: 0 0, 0 0, -220% 0; }
+}
+/* 토성 고리 — 기울어진 타원, 구 뒤에 */
 .planet-ring {
   position: absolute;
   top: 50%; left: 50%;
-  width: 64px; height: 22px;
-  transform: translate(-50%, -50%) rotate(-24deg);
+  width: 66px; height: 20px;
+  transform: translate(-50%, -50%) rotate(-22deg);
   border-radius: 50%;
-  border: 3px solid rgba(255, 214, 140, 0.9);
-  border-left-color: rgba(255,214,140,0.35);
-  border-right-color: rgba(255,214,140,0.35);
-  box-shadow: 0 0 10px rgba(255, 214, 140, 0.35);
+  border: 3px solid rgba(255, 214, 140, 0.85);
+  border-left-color: rgba(255,214,140,0.3);
+  border-right-color: rgba(255,214,140,0.3);
+  box-shadow: 0 0 10px rgba(255, 214, 140, 0.3);
+  z-index: -1;
 }
-/* 호버 → 시계방향으로 쭉 회전 */
-.planet-fab:hover { transform: scale(1.08); }
-.planet-fab:hover .planet-orbit {
-  animation: planetSpin 3s linear infinite;
+/* 호버 → 자전 빨라지고 살짝 커짐 */
+.planet-fab:hover { transform: scale(1.1); }
+.planet-fab:hover .planet-sphere { animation-duration: 2.2s; }
+/* 클릭 → 빠르게 한 바퀴 자전 펄스 */
+.planet-fab.bouncing .planet-sphere {
+  animation: planetSpinFast 0.7s linear;
 }
-@keyframes planetSpin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-/* 클릭 → 빠른 한 바퀴 펄스 */
-.planet-fab.bouncing .planet-orbit {
-  animation: planetPulseSpin 0.7s cubic-bezier(0.22,1.2,0.36,1);
-}
-@keyframes planetPulseSpin {
-  0%   { transform: rotate(0deg)   scale(1); }
-  40%  { transform: rotate(200deg) scale(1.15); }
-  100% { transform: rotate(360deg) scale(1); }
+@keyframes planetSpinFast {
+  from { background-position: 0 0, 0 0, 0 0; }
+  to   { background-position: 0 0, 0 0, -440% 0; }
 }
 @media (max-width: 768px) {
-  .planet-fab {
-    right: 16px;
-    width: 50px; height: 50px;
-    bottom: calc(var(--player-height, 88px) + 110px);
-  }
-  .planet-orbit { width: 50px; height: 50px; }
-  .planet-body { top: 12px; left: 12px; width: 26px; height: 26px; }
-  .planet-ring { width: 54px; height: 18px; }
+  .planet-fab { right: 16px; width: 50px; height: 50px; bottom: calc(var(--player-height, 88px) + 110px); }
+  .planet-sphere { width: 36px; height: 36px; }
+  .planet-ring { width: 56px; height: 17px; }
 }
 @media (max-width: 420px) {
-  .planet-fab {
-    right: 16px;
-    width: 44px; height: 44px;
-    bottom: calc(var(--player-height, 88px) + 95px);
-  }
-  .planet-orbit { width: 44px; height: 44px; }
-  .planet-body { top: 11px; left: 11px; width: 22px; height: 22px; }
-  .planet-ring { width: 48px; height: 16px; }
+  .planet-fab { right: 16px; width: 44px; height: 44px; bottom: calc(var(--player-height, 88px) + 95px); }
+  .planet-sphere { width: 30px; height: 30px; }
+  .planet-ring { width: 48px; height: 15px; }
 }
 
 /* Legacy drag indicator (drag-to-curate is disabled for the fab variant, but

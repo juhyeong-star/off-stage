@@ -3409,15 +3409,13 @@ function renderShapes() {
     };
     return (map[n] || []).map(p => `<span class="die-dot" data-pos="${p}"></span>`).join('');
   };
-  // 셔플 버튼 — 우주 컨셉에 맞춰 토성(행성) 모양. 호버하면 시계방향 회전.
+  // 셔플 버튼 — 3D 행성. 표면 줄무늬가 흘러서 "자전"하는 느낌, 호버하면 빨라짐.
   const diceHtml = `
     <div class="planet-fab" id="random-dice"
          onclick="diceBouncePlay(this)"
          title="행성을 돌려 도형 섞기 🪐">
-      <span class="planet-orbit">
-        <span class="planet-body"></span>
-        <span class="planet-ring"></span>
-      </span>
+      <span class="planet-ring"></span>
+      <span class="planet-sphere"></span>
     </div>
   `;
 
