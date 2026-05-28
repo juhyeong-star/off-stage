@@ -12866,7 +12866,7 @@ body:has(#global-player.expanded) .global-back-btn {
   .artist-canvas .projects-grid .demo-path > .demo-card {
     flex: 0 0 380px !important;
     width: 380px !important;
-    height: 290px !important;
+    height: 250px !important;
     aspect-ratio: auto !important;
     margin: 0 !important;
     scroll-snap-align: start;
