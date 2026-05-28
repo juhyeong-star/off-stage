@@ -1456,16 +1456,15 @@ function updateHeaderAuth() {
     const role = user.role || 'listener';
     const isAdmin = role === 'admin';
     container.innerHTML = `
-      <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; cursor:pointer;" onclick="navigateTo('profile')">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; cursor:pointer;" onclick="editProfile()" title="프로필 설정">
         <img src="${user.avatar}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" alt="${(user.name||'').replace(/"/g,'&quot;')}">
         <div style="flex:1;min-width:0;">
           <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${user.name}</div>
           <div style="font-size:11px;color:var(--text-secondary);">${isAdmin ? '관리자' : '@' + (user.name || '').replace(/\s+/g,'').toLowerCase()}</div>
         </div>
+        <i class="ri-settings-3-line" style="color:var(--text-secondary);font-size:16px;"></i>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn-primary" style="padding:6px 14px;font-size:12px;" onclick="navigateTo('profile')"><i class="ri-user-3-line"></i> 내 페이지</button>
-        <button class="btn-primary" style="padding:6px 14px;font-size:12px;background:#333;" onclick="navigateTo('upload')"><i class="ri-upload-2-line"></i> Upload</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         ${isAdmin ? `<button class="btn-primary" style="padding:6px 14px;font-size:12px;background:#9C27B0;" onclick="navigateTo('admin')"><i class="ri-dashboard-fill"></i> Admin</button>` : ''}
         <button style="color:var(--text-secondary);font-size:12px;padding:6px 8px;" onclick="logout()">로그아웃</button>
       </div>
