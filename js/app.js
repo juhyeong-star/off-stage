@@ -3560,6 +3560,49 @@ window._splpAddToFolder = function(trackId) {
   }
 };
 
+// 내 우주에서 곡 오브제를 폴더 오브제 위로 드래그-드롭했을 때 호출.
+// 곡을 폴더(플레이리스트)에 담고, 떠다니던 곡은 우주에서 정리(제거)한다.
+window._dropTrackIntoFolder = async function(trackId, folderId) {
+  if (!trackId || !folderId) return;
+  let ok = false;
+  try {
+    if (window.Playlists && window.Playlists.addTrack) {
+      await window.Playlists.addTrack(folderId, trackId);
+      await window.Playlists.refreshInto(window.DB.get());
+      ok = true;
+    } else if (window.DB && window.DB.addTrackToPlaylist) {
+      window.DB.addTrackToPlaylist(folderId, trackId);
+      ok = true;
+    }
+  } catch (e) {
+    console.warn('[universe] dropTrackIntoFolder', e);
+    if (typeof showToast === 'function') showToast(e.message || '담기에 실패했어요');
+  }
+
+  if (ok) {
+    // 폴더로 옮겼으니 떠다니던 곡은 우주에서 정리한다 — 모든 모은-곡 소스에서 제거.
+    if (window.CollectedTracks) window.CollectedTracks.remove(trackId);
+    try {
+      const db = window.DB.get();
+      if (db.currentUser && Array.isArray(db.currentUser.likedTracks)) {
+        db.currentUser.likedTracks = db.currentUser.likedTracks.filter(id => id !== trackId);
+      }
+      window.DB.save(db);
+    } catch (_) {}
+    // Supabase 즐겨찾기에도 있었으면 같이 제거 (안 그러면 새로고침 때 다시 떠다님)
+    if (window.Favorites && window.Favorites.isFavorited && window.Favorites.isFavorited(trackId)
+        && window.Favorites.toggle) {
+      try { await window.Favorites.toggle(trackId); } catch (_) {}
+    }
+    if (window.__favoritedTracks && window.__favoritedTracks.delete) window.__favoritedTracks.delete(trackId);
+
+    if (typeof showToast === 'function') showToast('폴더에 담았어요 🎵');
+    if (typeof renderSidebarPlaylists === 'function') renderSidebarPlaylists();
+  }
+  // 우주 다시 그려서 폴더 곡수/배치 갱신
+  if (currentView === 'universe' && typeof renderUniverse === 'function') renderUniverse();
+};
+
 window.toggleTrackHeart = async function(trackId, btnEl) {
   const db = window.DB.get();
   if (!db.currentUser) {
@@ -3990,10 +4033,29 @@ function initShapeDrag() {
   const shapes = document.querySelectorAll('.floating-shape');
   let dragEl = null;
   let startX, startY, origLeft, origTop, moved;
+  let lastX = 0, lastY = 0;        // last pointer position (for drop hit-test)
   let longPressTimer = null;
   let longPressFired = false;
   let dragModeEntered = false;     // <-- drag actually engaged?
   const LONG_PRESS_MS = 550;
+
+  // 드롭 대상 폴더 찾기 — 포인터 아래에 있는 실제 폴더 오브제(.floating-folder[data-folder-id]).
+  // 끌고 있는 곡 자신(exclude)은 건너뛴다. 템플릿/'새 폴더'는 data-folder-id가 없어 제외됨.
+  function _folderAt(x, y, exclude) {
+    let stack = [];
+    try { stack = document.elementsFromPoint(x, y) || []; } catch (_) { return null; }
+    for (const node of stack) {
+      if (node === exclude) continue;
+      const folder = node.closest && node.closest('.floating-folder[data-folder-id]');
+      if (folder && folder !== exclude) return folder;
+    }
+    return null;
+  }
+  function _clearDropHover(except) {
+    document.querySelectorAll('.floating-folder.folder-drop-hover').forEach(f => {
+      if (f !== except) f.classList.remove('folder-drop-hover');
+    });
+  }
 
   function pointerDown(e) {
     // Skip if clicking the resize handle
@@ -4010,6 +4072,7 @@ function initShapeDrag() {
     const ptr = e.touches ? e.touches[0] : e;
     startX = ptr.clientX;
     startY = ptr.clientY;
+    lastX = startX; lastY = startY;
 
     // ⚠️ Don't modify the shape yet — entering drag mode immediately
     // makes the long-press menu unusable on mobile (shape jiggles as
@@ -4064,6 +4127,13 @@ function initShapeDrag() {
       dragEl.style.left = (origLeft + dx) + 'px';
       dragEl.style.top = (origTop + dy) + 'px';
       e.preventDefault();
+      lastX = ptr.clientX; lastY = ptr.clientY;
+      // 곡을 끌고 있을 때만 폴더 위 하이라이트 (내 우주 한정)
+      if (currentView === 'universe' && dragEl.dataset.trackId) {
+        const folder = _folderAt(ptr.clientX, ptr.clientY, dragEl);
+        _clearDropHover(folder);
+        if (folder) folder.classList.add('folder-drop-hover');
+      }
     }
   }
 
@@ -4081,6 +4151,22 @@ function initShapeDrag() {
     if (longPressFired) {
       longPressFired = false;
       return;
+    }
+
+    // ── 드롭: 곡을 폴더 오브제 위에 떨어뜨리면 그 폴더(플레이리스트)에 담는다 ──
+    _clearDropHover(null);
+    if (moved && currentView === 'universe' && el.dataset.trackId) {
+      const folder = _folderAt(lastX, lastY, el);
+      if (folder && folder.dataset.folderId) {
+        const fid = folder.dataset.folderId;
+        const tid = el.dataset.trackId;
+        // 흡수되는 듯한 피드백
+        el.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+        el.style.transform = 'scale(0.15)';
+        el.style.opacity = '0';
+        if (typeof window._dropTrackIntoFolder === 'function') window._dropTrackIntoFolder(tid, fid);
+        return;   // 위치 저장/클릭 처리 건너뜀 — 곡은 폴더로 흡수됨
+      }
     }
 
     // Persist user-curated position on /universe and /shapes.
