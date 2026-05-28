@@ -8528,26 +8528,29 @@ window.renderAdmin = async function () {
 
   appContent.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-secondary);">로딩 중…</div>`;
 
+  // Per-fetch 5s timeout so one slow/missing endpoint can't lock the page on
+  // "로딩 중…". Each promise resolves to a safe default instead of hanging.
+  const withTimeout = (p, fallback, ms = 5000) =>
+    Promise.race([
+      p.catch(e => { console.warn('[admin] fetch err', e); return fallback; }),
+      new Promise(r => setTimeout(() => r(fallback), ms))
+    ]);
+
   let recentNotes = [], recentTracks = [], allUsers = [];
   let overallStats = null, topTracks = [];
-  try {
-    if (window.Admin) {
-      [recentNotes, recentTracks, allUsers] = await Promise.all([
-        window.Admin.listRecentNotes(50),
-        window.Admin.listRecentTracks(50),
-        window.Admin.listUsers ? window.Admin.listUsers(200) : Promise.resolve([])
-      ]);
-    }
-  } catch (e) { console.warn('[admin] list', e); }
-  // Analytics — best-effort, doesn't block render
-  try {
-    if (window.Analytics) {
-      [overallStats, topTracks] = await Promise.all([
-        window.Analytics.getAdminOverall(),
-        window.Analytics.getAdminTopTracks(10)
-      ]);
-    }
-  } catch (e) { console.warn('[admin] analytics', e); }
+  if (window.Admin) {
+    [recentNotes, recentTracks, allUsers] = await Promise.all([
+      withTimeout(window.Admin.listRecentNotes(50), []),
+      withTimeout(window.Admin.listRecentTracks(50), []),
+      withTimeout(window.Admin.listUsers ? window.Admin.listUsers(200) : Promise.resolve([]), [])
+    ]);
+  }
+  if (window.Analytics) {
+    [overallStats, topTracks] = await Promise.all([
+      withTimeout(window.Analytics.getAdminOverall(), null),
+      withTimeout(window.Analytics.getAdminTopTracks(10), [])
+    ]);
+  }
 
   // User may have navigated away while we waited for Supabase — bail before
   // overwriting whatever page they're now on.
