@@ -2003,10 +2003,14 @@ async function renderWall() {
       </div>
     `;
 
+    // 포스트잇에 첨부된 노래 칩 — 오른쪽 아래 보내기(✈) 버튼 옆에 작게 둔다.
+    const trackChip = _renderNoteTrackChip(note);
+
     // Inline comment input — only for logged-in users
     const inlineForm = user ? `
       <form class="note-inline-form" onsubmit="event.preventDefault(); submitInlineComment('${note.id}', this);">
         <input type="text" class="note-inline-input" maxlength="200" placeholder="ㄴ 댓글 달기…">
+        ${trackChip ? `<span class="note-inline-song">${trackChip}</span>` : ''}
         <button type="submit" class="note-inline-send" title="댓글 남기기"><i class="ri-send-plane-fill"></i></button>
       </form>
     ` : '';
@@ -2017,8 +2021,8 @@ async function renderWall() {
         ${bookmarkBtn}
         <div class="note-body" style="-webkit-line-clamp:${bodyClamp};">${safeText}</div>
         <div class="note-author">— ${safeAuthor}</div>
-        ${_renderNoteTrackChip(note)}
         ${commentsHtml}
+        ${user ? '' : trackChip}
         ${inlineForm}
       </div>
     `;

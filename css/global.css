@@ -2729,6 +2729,23 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 .note-inline-send:hover { background: #000; transform: scale(1.05); }
 .note-inline-send:disabled { opacity: 0.5; cursor: default; transform: none; }
 
+/* 포스트잇 하단, 보내기(✈) 버튼 바로 옆 작은 노래 칩 — 커버만(작게) */
+.note-inline-song { flex-shrink: 0; display: inline-flex; align-items: center; }
+.note-inline-song .note-track-chip {
+  margin: 0;
+  padding: 2px;
+  max-width: none;
+  gap: 0;
+  border-radius: 999px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.note-inline-song .note-track-chip img { width: 26px; height: 26px; }
+.note-inline-song .note-track-chip-info { display: none; }   /* 제목/아티스트 숨김 — 커버만 */
+.note-inline-song .note-track-chip-play { display: none; }
+.note-inline-song .note-track-chip-ext { padding: 4px 7px; }
+.note-inline-song .note-track-chip-ext > i:last-child { display: none; }  /* 화살표 숨김 */
+.note-inline-song .note-track-chip-ext > i:first-child { font-size: 18px; }
+
 /* STO portfolio empty state */
 .sto-empty {
   background: linear-gradient(135deg, rgba(156,39,176,0.08), rgba(255,107,157,0.05));
