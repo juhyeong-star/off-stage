@@ -12817,11 +12817,13 @@ body:has(#global-player.expanded) .global-back-btn {
     border-radius: 3px;
   }
 
-  /* Each demo: fixed-width film frame */
+  /* Each demo: fixed-width film frame.
+     Height = master cover (300) + gap + title (~28) + date (~16) ≈ 360
+     so the demo bottom edge lines up with the master title bottom. */
   .artist-canvas .projects-grid .demo-path > .demo-card {
     flex: 0 0 380px !important;
     width: 380px !important;
-    height: 300px !important;
+    height: 360px !important;
     aspect-ratio: auto !important;
     margin: 0 !important;
     scroll-snap-align: start;

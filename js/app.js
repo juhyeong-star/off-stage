@@ -6965,7 +6965,7 @@ function renderArtistProfile(artistName) {
                 <div class="artist-stats" style="margin-top:4px;">
                   ${isArtistRole ? `<span>${artistTracks.length}곡</span><span class="stat-dot">·</span><span>${Object.keys(projects).length} 프로젝트</span><span class="stat-dot">·</span>` : ''}
                   <span>${artistNotes.length} 포스트잇</span>
-                  ${artistSupabaseId ? `<span class="stat-dot">·</span><span class="fan-count-inline">❤ <strong id="fan-count-inline">${fanCount}</strong> 팬</span>` : ''}
+                  ${artistSupabaseId ? `<span class="stat-dot">·</span><span class="fan-count-inline">❤ <strong id="fan-count-inline">${fanCount}</strong> 팔로워</span>` : ''}
                 </div>
                 ${isArtistRole && !isSelf ? (() => {
                   // Supabase ID 우선, 없으면 이름 기반 로컬 팔로우 상태
@@ -7117,7 +7117,7 @@ function renderArtistProfile(artistName) {
         const statsEl = document.querySelector('.artist-id-text .artist-stats');
         const existingChip = statsEl && statsEl.querySelector('.fan-count-inline');
         if (statsEl && !existingChip) {
-          statsEl.insertAdjacentHTML('beforeend', `<span class="stat-dot">·</span><span class="fan-count-inline">❤ <strong id="fan-count-inline">${count}</strong> 팬</span>`);
+          statsEl.insertAdjacentHTML('beforeend', `<span class="stat-dot">·</span><span class="fan-count-inline">❤ <strong id="fan-count-inline">${count}</strong> 팔로워</span>`);
         } else if (existingChip) {
           const strong = existingChip.querySelector('strong');
           if (strong) strong.textContent = String(count);
