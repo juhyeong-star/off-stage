@@ -1665,38 +1665,85 @@ body.guest .sidebar-my-channel { display: none; }
   100% { transform: translateY(0)    scale(1); }
 }
 
-/* Fixed-position dice (pinned above the upload FAB on the right edge) */
-.dice-shape.dice-fab {
-  position: fixed !important;
-  /* Center-align with the 56px upload-fab (center at 60px from right):
-     dice 48px wide → right = 60 - 24 = 36px.
-     Bottom: upload-fab top edge is at player+(16+56)=player+72px, so put dice
-     well above with a ~24px breathing gap. */
-  right: 36px;
+/* ============================================================
+   SHUFFLE PLANET 🪐 — 우주 컨셉 셔플 버튼 (주사위 대체)
+   호버하면 시계방향으로 천천히 회전, 클릭하면 펄스 + 도형 셔플.
+   ============================================================ */
+.planet-fab {
+  position: fixed;
+  right: 30px;
   bottom: calc(var(--player-height, 88px) + 120px);
-  left: auto !important;
-  top: auto !important;
+  width: 60px; height: 60px;
   z-index: 500;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  filter: drop-shadow(0 6px 16px rgba(124,77,255,0.45));
+  transition: transform 0.25s cubic-bezier(0.22,1.2,0.36,1);
+}
+.planet-orbit {
+  position: relative;
+  width: 60px; height: 60px;
+  display: block;
+  transform-origin: 50% 50%;
+}
+/* 행성 본체 — 보라/파랑 그라데이션 구체 */
+.planet-body {
+  position: absolute;
+  top: 14px; left: 14px;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, #d8b4fe 0%, #a855f7 45%, #6d28d9 75%, #3b0764 100%);
+  box-shadow: inset -4px -4px 8px rgba(0,0,0,0.45), 0 0 14px rgba(168,85,247,0.55);
+}
+/* 토성 고리 — 기울어진 타원 테두리 */
+.planet-ring {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 64px; height: 22px;
+  transform: translate(-50%, -50%) rotate(-24deg);
+  border-radius: 50%;
+  border: 3px solid rgba(255, 214, 140, 0.9);
+  border-left-color: rgba(255,214,140,0.35);
+  border-right-color: rgba(255,214,140,0.35);
+  box-shadow: 0 0 10px rgba(255, 214, 140, 0.35);
+}
+/* 호버 → 시계방향으로 쭉 회전 */
+.planet-fab:hover { transform: scale(1.08); }
+.planet-fab:hover .planet-orbit {
+  animation: planetSpin 3s linear infinite;
+}
+@keyframes planetSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+/* 클릭 → 빠른 한 바퀴 펄스 */
+.planet-fab.bouncing .planet-orbit {
+  animation: planetPulseSpin 0.7s cubic-bezier(0.22,1.2,0.36,1);
+}
+@keyframes planetPulseSpin {
+  0%   { transform: rotate(0deg)   scale(1); }
+  40%  { transform: rotate(200deg) scale(1.15); }
+  100% { transform: rotate(360deg) scale(1); }
 }
 @media (max-width: 768px) {
-  .dice-shape.dice-fab {
-    /* Tablet/mobile: upload-fab is 48×48 at right:16, bottom:player+16.
-       Upload top edge ≈ player + 64px. Dice 42px → 24px gap. */
-    right: 19px;
-    width: 42px; height: 42px;
-    --cube-half: 21px;
+  .planet-fab {
+    right: 16px;
+    width: 50px; height: 50px;
     bottom: calc(var(--player-height, 88px) + 110px);
   }
+  .planet-orbit { width: 50px; height: 50px; }
+  .planet-body { top: 12px; left: 12px; width: 26px; height: 26px; }
+  .planet-ring { width: 54px; height: 18px; }
 }
 @media (max-width: 420px) {
-  .dice-shape.dice-fab {
-    /* Small phone: upload-fab 46×46 at right:14, bottom:player+12.
-       Upload top edge ≈ player + 58px. Dice 32px → ~24px gap. */
-    right: 21px;
-    width: 32px; height: 32px;
-    --cube-half: 16px;
+  .planet-fab {
+    right: 16px;
+    width: 44px; height: 44px;
     bottom: calc(var(--player-height, 88px) + 95px);
   }
+  .planet-orbit { width: 44px; height: 44px; }
+  .planet-body { top: 11px; left: 11px; width: 22px; height: 22px; }
+  .planet-ring { width: 48px; height: 16px; }
 }
 
 /* Legacy drag indicator (drag-to-curate is disabled for the fab variant, but
@@ -9934,6 +9981,7 @@ body:has(.sidebar-nav.open) .mobile-tab[data-route="__more"] i {
    하단 사용자 블록(Admin/로그아웃)이랑 겹쳐 보임 */
 body:has(.sidebar-nav.open) .upload-fab,
 body:has(.sidebar-nav.open) .dice-shape.dice-fab,
+body:has(.sidebar-nav.open) .planet-fab,
 body:has(.sidebar-nav.open) .wall-fab,
 body:has(.sidebar-nav.open) .wall-search-fab {
   display: none !important;

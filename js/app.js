@@ -3402,21 +3402,15 @@ function renderShapes() {
     };
     return (map[n] || []).map(p => `<span class="die-dot" data-pos="${p}"></span>`).join('');
   };
+  // 셔플 버튼 — 우주 컨셉에 맞춰 토성(행성) 모양. 호버하면 시계방향 회전.
   const diceHtml = `
-    <div class="dice-shape dice-fab" id="random-dice"
-         data-face="${initialFace}"
-         onmouseenter="diceHoverStart(this)"
-         onmouseleave="diceHoverEnd(this)"
+    <div class="planet-fab" id="random-dice"
          onclick="diceBouncePlay(this)"
-         title="굴려서 도형들 다시 섞기">
-      <div class="dice-cube">
-        <div class="cube-face face-front">${_dicePips(1)}</div>
-        <div class="cube-face face-back">${_dicePips(6)}</div>
-        <div class="cube-face face-right">${_dicePips(2)}</div>
-        <div class="cube-face face-left">${_dicePips(5)}</div>
-        <div class="cube-face face-top">${_dicePips(3)}</div>
-        <div class="cube-face face-bottom">${_dicePips(4)}</div>
-      </div>
+         title="행성을 돌려 도형 섞기 🪐">
+      <span class="planet-orbit">
+        <span class="planet-body"></span>
+        <span class="planet-ring"></span>
+      </span>
     </div>
   `;
 
@@ -3664,21 +3658,17 @@ window.diceHoverEnd   = function(el) { /* CSS-driven */ };
 // to a new random face by changing data-face mid-bounce (CSS transitions it).
 window.diceBouncePlay = function(el) {
   if (!el) return;
-  // Just finished dragging the dice itself — swallow this synthetic click
+  // Just finished dragging — swallow this synthetic click
   if (el.__suppressNextClick) { el.__suppressNextClick = false; return; }
 
-  // Restart the bounce animation cleanly
+  // Quick spin-pulse on the planet (separate from the hover idle spin)
   el.classList.remove('bouncing');
   void el.offsetWidth;                // force reflow → restart animation
   el.classList.add('bouncing');
-  // Roll to a new face slightly after the bounce starts (looks like the dice
-  // "settles" mid-air). The .bouncing CSS rule disables :hover's tumble so
-  // the cube can transition cleanly to the new orientation.
-  setTimeout(() => setDieFace(el, 1 + Math.floor(Math.random() * 6)), 150);
-  setTimeout(() => el.classList.remove('bouncing'), 560);
+  setTimeout(() => el.classList.remove('bouncing'), 700);
 
-  // Shuffle: at the apex of the bounce, throw every shape to a new spot.
-  setTimeout(() => shuffleAllShapes(), 170);
+  // Shuffle all floating shapes to new spots.
+  setTimeout(() => shuffleAllShapes(), 120);
 };
 
 // Animated reshuffle of every floating shape on the current page.
