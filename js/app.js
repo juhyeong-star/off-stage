@@ -159,9 +159,9 @@ function _updateBackButton(route) {
 
 // Public: try to close any open overlay first, otherwise pop the nav stack.
 window.goBack = function () {
-  // 0) Hard-coded shortcut — 내 페이지 → 도형 (요청)
-  //   nav stack과 무관하게 항상 같은 곳으로 가도록 명시
-  if (typeof currentView !== 'undefined' && currentView === 'profile') {
+  // 0) Hard-coded shortcut — 내 페이지/내 우주 → 도형 (요청)
+  //   nav stack과 무관하게 항상 도형으로 가도록 명시 (내 페이지로 새는 것 방지)
+  if (typeof currentView !== 'undefined' && (currentView === 'profile' || currentView === 'universe')) {
     navigateTo('shapes');
     return;
   }
@@ -502,13 +502,13 @@ function navigateTo(route) {
         else navigateTo('auth');
         return;
       }
-      // Profile routes — three modes share renderProfile():
-      //   profile  = auto (legacy, picks listener/artist by role)
-      //   me       = forced listener view (any user)
-      //   studio   = forced artist view (listener users see upgrade prompt)
-      case 'profile': window.__profileMode = null; renderProfile(); break;
-      case 'me':      window.__profileMode = 'me'; renderProfile(); break;
-      case 'studio':  window.__profileMode = 'studio'; renderProfile(); break;
+      // 내 페이지 비활성화(사용자 요청) — 폴더는 내 우주로 통합됨.
+      // profile/me/studio 로 들어와도 항상 도형으로 돌려보낸다.
+      case 'profile':
+      case 'me':
+      case 'studio':
+        navigateTo('shapes');
+        return;
       case 'search': window.renderSearch(''); break;
       case 'admin': renderAdmin(); break;
       case 'stats': renderStats(); break;
