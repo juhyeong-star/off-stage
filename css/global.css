@@ -2394,10 +2394,15 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   line-height: 1.4;
   font-weight: 700;
   transform: rotate(var(--rot));
-  /* 오른쪽 + 아래로 진한 그림자 (offset 더 멀고, 부드러운 블러 + 단단한 검정 라이너) */
+  /* 검정 배경에서도 보이는 그림자:
+     - 1px inner ring (종이 가장자리 하이라이트, 살짝 어둡게)
+     - 오른쪽+아래로 종이 색이 살짝 진하게 보이는 단단한 듀얼 톤 (자기 색이 우러나옴)
+     - 큰 블러 검정 그림자 (떠 있는 느낌) */
   box-shadow:
-    12px 14px 0 rgba(0, 0, 0, 0.18),
-    18px 22px 32px rgba(0, 0, 0, 0.45);
+    inset 0 0 0 1px rgba(0, 0, 0, 0.18),
+    8px 8px 0 rgba(0, 0, 0, 0.55),
+    14px 14px 0 rgba(255, 255, 255, 0.04),
+    20px 24px 36px rgba(0, 0, 0, 0.7);
   cursor: grab;
   z-index: 1;
   transition: box-shadow 0.3s, transform 0.2s;
@@ -2408,8 +2413,10 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 }
 .wall-note:hover {
   box-shadow:
-    14px 16px 0 rgba(0, 0, 0, 0.22),
-    22px 26px 38px rgba(0, 0, 0, 0.5);
+    inset 0 0 0 1px rgba(0, 0, 0, 0.22),
+    10px 10px 0 rgba(0, 0, 0, 0.65),
+    16px 16px 0 rgba(255, 255, 255, 0.06),
+    24px 30px 44px rgba(0, 0, 0, 0.8);
 }
 /* Body of the post-it on the wall — clamped dynamically via inline style
    (set in renderWall based on text length). Full text is still visible
