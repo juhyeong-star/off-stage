@@ -5630,13 +5630,8 @@ function renderProjectBox(pid, versions) {
     ].join(' ');
     // 함께 만들기(STO) 후원 기능 — UI 숨김. 백엔드 데이터는 유지하지만 카드엔 표시 안 함.
     const stoBadgeHtml = '';
-    // ⚙ Shape picker button — artist self only, opens modal
-    const shapeOpenBtnHtml = canEditArtist ? `
-      <button class="demo-shape-open-btn" title="메인 노출 도형 선택"
-              onclick="event.stopPropagation(); openShapePicker('${v.id}','${pid}')">
-        <i class="ri-shape-line"></i>
-      </button>
-    ` : '';
+    // "메인 노출 도형 선택" 버튼 폐기 — 이제 모든 데모가 자동으로 도형 페이지에 표시됨.
+    const shapeOpenBtnHtml = '';
 
     // Artist note shown ON the demo card — # 라인 그대로 (최대 3줄)
     // 예: #드럼 연주했는데 아쉽다 / #다음 곡은 피아노까지 녹음해볼게
