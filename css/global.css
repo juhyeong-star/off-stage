@@ -9872,7 +9872,8 @@ body {
 
 /* --- 사이드바 sheet: 모바일에서 안전영역 보강 + 더보기로 열린 상태 안정화 --- */
 .sidebar-nav {
-  padding-bottom: calc(24px + var(--safe-bottom));
+  /* 84px = 왼쪽 하단 초록 닫기(햄버거) 버튼 영역 확보 (사용자 블록 겹침 방지) */
+  padding-bottom: calc(84px + var(--safe-bottom));
   padding-left: max(20px, var(--safe-left));
   padding-right: max(20px, var(--safe-right));
 }
