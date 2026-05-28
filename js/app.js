@@ -3438,7 +3438,40 @@ function renderShapes() {
 
 // ── Unified "like" for tracks (works for both Supabase tracks and mock tracks).
 // Reads from window.__favoritedTracks (Supabase cache) or db.currentUser.likedTracks (legacy).
+// ============================================================
+// CollectedTracks — '내 우주에 모으기'의 단일 진실 소스(local).
+// db.currentUser.likedTracks 는 프로필 재매핑 때 []로 덮어써지고,
+// window.__favoritedTracks 는 Supabase 테이블이 있어야만 동작한다.
+// 그래서 어떤 경우에도 안 지워지는 전용 localStorage 키에 따로 저장한다.
+// ============================================================
+window.CollectedTracks = {
+  _key: 'offstage_collected_tracks',
+  _ids: null,
+  _load() {
+    if (this._ids) return this._ids;
+    try {
+      const raw = localStorage.getItem(this._key);
+      this._ids = new Set(raw ? JSON.parse(raw) : []);
+    } catch (_) { this._ids = new Set(); }
+    return this._ids;
+  },
+  _save() {
+    try { localStorage.setItem(this._key, JSON.stringify([...this._load()])); } catch (_) {}
+  },
+  has(id)    { return !!id && this._load().has(id); },
+  all()      { return [...this._load()]; },
+  add(id)    { if (id) { this._load().add(id); this._save(); } },
+  remove(id) { if (id) { this._load().delete(id); this._save(); } },
+  toggle(id) {
+    const s = this._load();
+    if (s.has(id)) { s.delete(id); this._save(); return false; }
+    s.add(id); this._save(); return true;
+  }
+};
+
 function isTrackLiked(trackId) {
+  // 1순위: 전용 localStorage (가장 안정적)
+  if (window.CollectedTracks && window.CollectedTracks.has(trackId)) return true;
   if (window.__favoritedTracks && window.__favoritedTracks.has && window.__favoritedTracks.has(trackId)) return true;
   try {
     const db = window.DB && window.DB.get && window.DB.get();
@@ -3468,10 +3501,6 @@ window.openShapeLongPressMenu = function(trackId, anchorX, anchorY, shapeEl) {
     <button class="splp-item" onclick="event.stopPropagation(); _splpCollect('${argT}', this)">
       <i class="ri-${inUniverse ? 'heart-fill' : 'heart-add-line'}" style="color:${inUniverse ? '#ff2e63' : '#ff2e63'};"></i>
       <span>${inUniverse ? '우주에서 빼기' : '내 우주에 모으기'}</span>
-    </button>
-    <button class="splp-item" onclick="event.stopPropagation(); _splpAddToFolder('${argT}')">
-      <i class="ri-folder-add-fill" style="color:#9C27B0;"></i>
-      <span>내 폴더에 담기</span>
     </button>
     <button class="splp-item splp-cancel" onclick="event.stopPropagation(); _splpClose()">
       <i class="ri-close-line"></i>
@@ -3550,6 +3579,12 @@ window.toggleTrackHeart = async function(trackId, btnEl) {
       btnEl.classList.add('pop');
       setTimeout(() => btnEl.classList.remove('pop'), 360);
     }
+  }
+
+  // 1순위 저장소 — 전용 localStorage (절대 안 지워짐)
+  if (window.CollectedTracks) {
+    if (wasLiked) window.CollectedTracks.remove(trackId);
+    else          window.CollectedTracks.add(trackId);
   }
 
   // Local DB mirror (used by every shape/demo render + universe)
@@ -3796,12 +3831,21 @@ window.renderUniverse = async function () {
   }
 
   // ── Liked tracks (masters + demos) ───────────────────────
+  // 우선순위: 전용 localStorage(CollectedTracks) → likedTracks → Supabase 캐시
   const likedIds = new Set(db.currentUser.likedTracks || []);
+  if (window.CollectedTracks && window.CollectedTracks.all) {
+    window.CollectedTracks.all().forEach(id => likedIds.add(id));
+  }
   // Also fold in Supabase favorites cache
   if (window.__favoritedTracks && window.__favoritedTracks.forEach) {
     window.__favoritedTracks.forEach(id => likedIds.add(id));
   }
-  const allTracks = db.tracks || [];
+  // db.tracks 에 아직 안 들어온 신규 업로드도 찾을 수 있게 __tracks 병합
+  const allTracks = (db.tracks || []).slice();
+  if (Array.isArray(window.__tracks)) {
+    const seen = new Set(allTracks.map(t => t && t.id));
+    window.__tracks.forEach(t => { if (t && !seen.has(t.id)) allTracks.push(t); });
+  }
   const likedTracks = allTracks.filter(t => t && likedIds.has(t.id));
 
   // ── Bookmarked notes ─────────────────────────────────────
