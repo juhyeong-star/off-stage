@@ -1668,9 +1668,6 @@ function renderTags() {
       <h1><i class="ri-hashtag" style="color:var(--brand-color);"></i> Tags</h1>
       <span class="count">총 ${tagList.length}개의 태그 · ${totalTracks}곡</span>
     </div>
-    <p class="reveal" style="color:var(--text-secondary); margin-bottom: 16px; font-size:14px; line-height:1.6;">
-      학생들이 직접 만든 음악 분류. 태그를 클릭해서 비슷한 느낌의 곡들을 탐색해보세요.
-    </p>
     <div class="tags-cloud reveal-scale">
       ${cloudHtml}
     </div>
