@@ -885,8 +885,8 @@ body.guest .sidebar-my-channel { display: none; }
 }
 .floating-folder .folder-orb {
   position: relative;
-  width: 100px; height: 100px;
-  border-radius: 28px;
+  width: 116px; height: 116px;
+  border-radius: 30px;
   overflow: hidden;
   background:
     radial-gradient(circle at 32% 26%, rgba(255,255,255,0.35), transparent 55%),
@@ -905,11 +905,11 @@ body.guest .sidebar-my-channel { display: none; }
   object-fit: cover;
 }
 .floating-folder .folder-orb .folder-orb-emoji {
-  font-size: 40px;
+  font-size: 46px;
   line-height: 1;
 }
 .floating-folder .folder-orb i {
-  font-size: 40px;
+  font-size: 46px;
 }
 .floating-folder .folder-orb-count {
   position: absolute;
@@ -923,8 +923,8 @@ body.guest .sidebar-my-channel { display: none; }
   display: flex; align-items: center; justify-content: center;
 }
 .floating-folder .folder-orb-title {
-  max-width: 116px;
-  font-size: 13px; font-weight: 700;
+  max-width: 128px;
+  font-size: 13.5px; font-weight: 700;
   color: #fff;
   text-align: center;
   text-shadow: 0 1px 4px rgba(0,0,0,0.7);
@@ -966,10 +966,10 @@ body.guest .sidebar-my-channel { display: none; }
     0 18px 40px rgba(124,77,255,0.75);
 }
 @media (max-width: 768px) {
-  .floating-folder .folder-orb { width: 86px; height: 86px; border-radius: 24px; }
+  .floating-folder .folder-orb { width: 98px; height: 98px; border-radius: 26px; }
   .floating-folder .folder-orb .folder-orb-emoji,
-  .floating-folder .folder-orb i { font-size: 34px; }
-  .floating-folder .folder-orb-title { max-width: 100px; font-size: 12px; }
+  .floating-folder .folder-orb i { font-size: 38px; }
+  .floating-folder .folder-orb-title { max-width: 110px; font-size: 12.5px; }
 }
 
 /* Heart button for demo cards — same look as shape heart but tuned for the card */
