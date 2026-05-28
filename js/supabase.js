@@ -784,6 +784,21 @@
       if (!window.supabase) throw new Error('Supabase SDK not ready');
       const { data: { user } } = await window.supabase.auth.getUser();
       if (!user) throw new Error('로그인이 필요해요');
+
+      // ⚠️ tracks.artist_id 는 profiles(id) 를 참조하는 FK다. 프로필 행이 없으면
+      // 업로드가 FK 위반으로 실패한다(=어떤 사람은 되고 어떤 사람은 안 되는 원인).
+      // 일부 OAuth/구가입 유저는 프로필 행이 없을 수 있으니, 업로드 직전에 보장한다.
+      try {
+        const md = user.user_metadata || {};
+        const fallbackName = md.name || md.full_name || md.user_name
+          || (user.email ? user.email.split('@')[0] : '익명');
+        await window.supabase
+          .from('profiles')
+          .upsert({ id: user.id, name: fallbackName }, { onConflict: 'id', ignoreDuplicates: true });
+      } catch (e) {
+        console.warn('[Tracks.insert] ensure profile row', e && e.message);
+      }
+
       const payload = {
         artist_id: user.id,
         project_id: track.projectId || undefined,  // let DB default uuid if omitted
@@ -810,7 +825,16 @@
         .insert(payload)
         .select('*, profiles(id, name, avatar_url)')
         .single();
-      if (error) throw error;
+      if (error) {
+        const m = error.message || '';
+        if (/foreign key|violates foreign key|not present in table "profiles"/i.test(m)) {
+          throw new Error('프로필 정보가 없어 업로드가 막혔어요. 로그아웃 후 다시 로그인하면 자동으로 복구돼요.');
+        }
+        if (/row-level security/i.test(m)) {
+          throw new Error('업로드 권한 에러 — 로그아웃 후 다시 로그인 해주세요.');
+        }
+        throw error;
+      }
       const mapped = mapTrackRow(data, data.profiles);
       if (Array.isArray(window.__tracks)) window.__tracks.unshift(mapped);
       return mapped;

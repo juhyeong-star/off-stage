@@ -244,9 +244,18 @@ async function init() {
     if (db && db.currentUser) { db.currentUser = null; window.DB.save(db); }
   } catch (_) {}
 
-  // 1) Bootstrap auth (must run first — other fetches may need user.id)
+  // 1) Bootstrap auth (must run first — other fetches may need user.id).
+  //    ⚠️ 절대 여기서 멈추면 안 됨. bootstrap 이 네트워크 때문에 안 끝나면
+  //    화면이 검은색으로 멈춰버린다(=가입 직후 검은화면 증상). 그래서 6초
+  //    타임아웃을 걸어서, 늦어도 UI 는 무조건 그려지게 한다. (세션은 나중에
+  //    onAuthChange 가 따라잡음)
   try {
-    if (window.Auth) await window.Auth.bootstrap();
+    if (window.Auth) {
+      await Promise.race([
+        window.Auth.bootstrap(),
+        new Promise(r => setTimeout(r, 6000))
+      ]);
+    }
   } catch (e) {
     console.warn('[init] Auth.bootstrap failed', e);
   }
@@ -300,11 +309,21 @@ async function init() {
   } catch (_) {}
   // Backers/함께만드는중 UI removed — keep backend tables for later
 
-  // Keep UI in sync if auth state changes (sign-out in another tab, session expire, etc.)
+  // Keep UI in sync if auth state changes (sign-out in another tab, session
+  // expire, OR a session that arrived AFTER the bootstrap timeout above).
   try {
-    if (window.Auth) window.Auth.onAuthChange(() => {
+    if (window.Auth) window.Auth.onAuthChange((event) => {
       updateHeaderAuth();
       renderSidebarPlaylists();
+      // 가입/로그인 직후(혹은 늦게 도착한 세션) — 현재 화면을 다시 그려서
+      // 로그인 상태가 즉시 반영되게 한다.
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        try {
+          if (currentView === 'profile' && typeof renderProfile === 'function') renderProfile();
+          else if (currentView === 'universe' && typeof renderUniverse === 'function') renderUniverse();
+          else if (currentView === 'shapes' && typeof renderShapes === 'function') renderShapes();
+        } catch (_) {}
+      }
     });
   } catch (_) {}
 
