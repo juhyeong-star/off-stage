@@ -12764,17 +12764,62 @@ body:has(#global-player.expanded) .global-back-btn {
     border: none !important;
     background: transparent !important;
   }
-  /* The album card inside project-header — let it size to its content
-     (cover + meta below) instead of clipping at fixed 300px height. */
+  /* The album card inside project-header — single bordered card that
+     contains cover image + title + release date. The cover image inside
+     drops its own border so only the OUTER card border is visible. */
   .artist-canvas .projects-grid .project-header .project-album-card {
     max-width: 100% !important;
     width: 100% !important;
     height: auto !important;
-    padding: 0 !important;
-    background: transparent !important;
-    border: none !important;
+    padding: 10px 10px 14px !important;
+    background: #fff !important;
+    border: 1.5px solid #111 !important;
+    border-radius: 8px !important;
+    box-shadow: 5px 5px 0 #111 !important;
+    overflow: hidden !important;
+    color: #111 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  /* Cover inside the album card: no extra border (outer card handles it),
+     trim shadow so it doesn't stack with the outer one. */
+  .artist-canvas .projects-grid .project-header .project-album-card .project-cover-wrap {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1 !important;
+    border: 1px solid rgba(0,0,0,0.12) !important;
+    border-radius: 4px !important;
     box-shadow: none !important;
-    overflow: visible !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+  }
+  .artist-canvas .projects-grid .project-header .project-album-card .project-cover-wrap img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+  }
+  /* Title + date inside the album card — left-aligned, dark text */
+  .artist-canvas .projects-grid .project-header .project-album-card .project-title {
+    font-size: 18px !important;
+    margin: 4px 4px 0 !important;
+    color: #111 !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .artist-canvas .projects-grid .project-header .project-album-card .project-master-date,
+  .artist-canvas .projects-grid .project-header .project-album-card .project-participants {
+    font-size: 12px !important;
+    color: #888 !important;
+    font-weight: 500 !important;
+    margin: 0 4px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
   }
   .artist-canvas .projects-grid .project-cover-wrap {
     width: 300px !important;
@@ -12817,9 +12862,7 @@ body:has(#global-player.expanded) .global-back-btn {
     border-radius: 3px;
   }
 
-  /* Each demo: fixed-width film frame.
-     Height = master cover (300) + gap + title (~28) + date (~16) ≈ 360
-     so the demo bottom edge lines up with the master title bottom. */
+  /* Each demo: fixed-width film frame */
   .artist-canvas .projects-grid .demo-path > .demo-card {
     flex: 0 0 380px !important;
     width: 380px !important;
