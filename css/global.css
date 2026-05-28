@@ -9891,6 +9891,14 @@ body:has(.sidebar-nav.open) .mobile-tab[data-route="__more"] {
 body:has(.sidebar-nav.open) .mobile-tab[data-route="__more"] i {
   filter: drop-shadow(0 0 6px rgba(255,229,0,0.6));
 }
+/* 모바일 메뉴(사이드바) 열렸을 때 떠다니는 FAB들 숨김 — 안 그러면 사이드바
+   하단 사용자 블록(Admin/로그아웃)이랑 겹쳐 보임 */
+body:has(.sidebar-nav.open) .upload-fab,
+body:has(.sidebar-nav.open) .dice-shape.dice-fab,
+body:has(.sidebar-nav.open) .wall-fab,
+body:has(.sidebar-nav.open) .wall-search-fab {
+  display: none !important;
+}
 
 /* --- Modal 닫기 버튼 안전영역 약간 보강 (가로/세로 모두) --- */
 .tama-modal-content,
