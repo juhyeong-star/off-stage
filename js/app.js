@@ -1912,10 +1912,16 @@ async function renderWall() {
   // Helper: escape user text for HTML
   const _esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
+  // 위치 시드에 보는 사람 ID를 끼워, 사용자마다 기본 배치가 달라지게.
+  // 본인이 드래그한 건 localStorage 에 저장되어 본인 기기에서만 적용됨.
+  const _viewerSeed = (window.__currentUser && window.__currentUser.id)
+                   || (user && user.name)
+                   || 'anon';
+
   let notesHtml = visibleNotes.map((note, i) => {
     const c = NOTE_COLORS[note.color] || NOTE_COLORS.yellow;
-    // Seeded jitter from note id so positions don't reshuffle on every reload
-    const seed = _hashSeed(note.id);
+    // Seeded jitter — different per-viewer so each user sees their own arrangement
+    const seed = _hashSeed(_viewerSeed + ':' + note.id);
     const rot = note.rotation != null ? note.rotation : ((((seed >>> 2) % 60) - 30) / 10);
     const safeText = _esc(note.text).replace(/\n/g,'<br>');
     const safeAuthor = _esc(note.author);
@@ -3278,6 +3284,13 @@ function renderShapes() {
 
   const shapeEntries = tracks.map((track, i) => ({ track, idx: i, pass: 0 }));
 
+  // 위치 시드에 현재 사용자 식별자를 끼워 넣어, 사람마다 기본 배치가 달라지게.
+  // 같은 계정에서 다른 컴퓨터로 들어와도 같은 사용자 ID 쓰니까 일관됨.
+  // (개인 드래그는 별도 localStorage에 저장되어 기기별로만 적용)
+  const _viewerSeed = (window.__currentUser && window.__currentUser.id)
+                   || (window.DB.get().currentUser && window.DB.get().currentUser.name)
+                   || 'anon';
+
   // Stored drag positions for the shapes page (keyed by trackId:pass)
   function _loadShapePos(id, pass) {
     try {
@@ -3298,8 +3311,9 @@ function renderShapes() {
 
     const col = si % cols;
     const row = Math.floor(si / cols);
-    // Seeded per-track-per-pass so positions are deterministic across reloads
-    const seed = _hashSeed(track.id + ':' + pass);
+    // Seeded per-track-per-pass per-viewer — different users see different
+    // default layouts so personal arrangements feel personal.
+    const seed = _hashSeed(_viewerSeed + ':' + track.id + ':' + pass);
     // Stored user drag overrides the seeded default
     const stored = _loadShapePos(track.id, pass);
     const xBase = stored ? stored.xPct : (2 + col * 30 + (seed % 18));

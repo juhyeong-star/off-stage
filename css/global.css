@@ -13134,6 +13134,15 @@ body:has(#global-player.expanded) .global-back-btn {
 }
 .demo-card .demo-card-note-empty i { margin-right: 4px; }
 
+/* Note detail modal — 손글씨로 표시 (포스트잇 본문 + 댓글 + 입력) */
+#note-detail-modal,
+#note-detail-modal * {
+  font-family: var(--font-hand), 'Gaegu', cursive !important;
+}
+#note-detail-modal i[class*="ri-"] {
+  font-family: 'remixicon' !important;
+}
+
 /* Demo card date — sits next to "DEMO N" tag */
 .demo-card .demo-card-date {
   font-size: 11px;
