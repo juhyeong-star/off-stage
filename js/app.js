@@ -4656,35 +4656,39 @@ function renderUpload() {
         }
       }
 
-      await window.Tracks.insert({
-        title,
-        description,
-        // 업로드 폼의 "곡 소개 및 코멘트" 가 사실상 일지(artistNote). 데모 카드에
-        // 노출되는 필드가 artistNote이라서 동일 값으로 같이 저장.
-        artistNote: description,
-        audioUrl,
-        cover: coverUrl,
-        projectId,
-        version,
-        versionLabel,
-        isDemo: !isFinal,
-        tags,
-        shape: shapeEl ? shapeEl.value : 'circle',
-        shapeColor: colorEl ? colorEl.value : '#FF4081',
-        lines: [
-          line1 || '#' + title,
-          line2 || '#' + user.name,
-          line3 || '#클릭해서 들어봐!'
-        ],
-        // Distribution metadata (admin ZIP uses these). Empty for demos.
-        distArtist,
-        releaseDate,
-        collaborators
-      });
-
-      await window.Tracks.refreshInto(db);
+      // DB INSERT — 20초 안에 응답 없으면 강제 실패 (영구 "저장 중…" 방지)
+      await Promise.race([
+        window.Tracks.insert({
+          title,
+          description,
+          // 업로드 폼의 "곡 소개 및 코멘트" 가 사실상 일지(artistNote). 데모 카드에
+          // 노출되는 필드가 artistNote이라서 동일 값으로 같이 저장.
+          artistNote: description,
+          audioUrl,
+          cover: coverUrl,
+          projectId,
+          version,
+          versionLabel,
+          isDemo: !isFinal,
+          tags,
+          shape: shapeEl ? shapeEl.value : 'circle',
+          shapeColor: colorEl ? colorEl.value : '#FF4081',
+          lines: [
+            line1 || '#' + title,
+            line2 || '#' + user.name,
+            line3 || '#클릭해서 들어봐!'
+          ],
+          // Distribution metadata (admin ZIP uses these). Empty for demos.
+          distArtist,
+          releaseDate,
+          collaborators
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('DB 저장 타임아웃 (20초). RLS 정책 또는 네트워크 확인 필요.')), 20000))
+      ]);
 
       showToast(isFinal ? '마스터 완성! ✨' : '데모 업로드 완료 🎵');
+      // refreshInto는 백그라운드 — 여기서 await하면 느릴 때 또 멈춤
+      Promise.resolve(window.Tracks.refreshInto(db)).catch(e => console.warn('[upload] refreshInto bg', e));
       // 업로드 후 본인 아티스트 페이지로 바로 이동 — 새로 올린 곡이 거기 뜸.
       navigateTo('artist:' + encodeURIComponent(user.name || ''));
     } catch (err) {
