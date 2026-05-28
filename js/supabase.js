@@ -89,9 +89,24 @@
     const profile = await fetchProfile(session.user.id);
     const mapped = mapProfile(profile, session.user);
     window.__currentUser = mapped;
-    // Mirror into legacy localStorage so existing code paths still work
+    // Mirror into legacy localStorage so existing code paths still work.
+    // IMPORTANT: the Supabase profile row does NOT carry user-curated local
+    // state (collected tracks, playlists/folders). Without preserving it,
+    // every auth refresh / token refresh / tab-focus would wipe what the user
+    // just collected. So merge the previous local values forward.
     try {
       const db = window.DB.get();
+      const prev = db.currentUser || {};
+      if (Array.isArray(prev.likedTracks) && prev.likedTracks.length) {
+        mapped.likedTracks = prev.likedTracks.slice();
+      }
+      if (Array.isArray(prev.playlists) && prev.playlists.length) {
+        mapped.playlists = prev.playlists;
+      }
+      if (Array.isArray(prev.history) && prev.history.length) {
+        mapped.history = prev.history;
+      }
+      window.__currentUser = mapped;
       db.currentUser = mapped;
       window.DB.save(db);
     } catch (_) {}

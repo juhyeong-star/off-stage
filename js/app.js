@@ -3711,6 +3711,63 @@ function shuffleAllShapes() {
 window.rollRandomTrack = function(el) { window.diceBouncePlay(el); };
 
 // ============================================================
+// 내 음악 폴더 (playlists) — 내 페이지와 동일한 폴더 그리드.
+// 내 우주에서도 똑같이 보여주려고 별도 헬퍼로 분리.
+// ============================================================
+function _buildUniverseFolders(myPlaylists) {
+  const lists = Array.isArray(myPlaylists) ? myPlaylists : [];
+  const titleKey = (s) => (s || '').toLowerCase();
+  const userTitles = new Set(lists.map(p => titleKey(p.title)));
+  // 사용자가 아직 안 만든 기본 템플릿 폴더 (폴더가 하나도 없을 때만 노출)
+  const defaultFolders = [
+    { title: '즐겨듣기',   emoji: '⭐', desc: '자주 듣는 음악',   color: '#FFE082', color2: '#FFD54F' },
+    { title: '투자하고픈', emoji: '💎', desc: '함께 만들고픈 곡', color: '#CE93D8', color2: '#BA68C8' },
+    { title: '애는 된다',  emoji: '🔥', desc: '주목하는 아티스트', color: '#FFAB91', color2: '#FF8A65' }
+  ].filter(f => !userTitles.has(titleKey(f.title)));
+
+  const userCards = lists.map(p => {
+    const title = (p.title || '무제').replace(/</g,'&lt;');
+    const count = (p.trackIds || []).length;
+    const cover = p.cover || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(p.id || p.title || 'pl'));
+    return `
+      <div class="folder-card" onclick="openMyPlaylist('${p.id}')">
+        <div class="folder-card-cover-stack">
+          <img src="${cover}" alt="${title.replace(/"/g,'&quot;')}" loading="lazy">
+        </div>
+        <div class="folder-card-body">
+          <div class="folder-card-title">${title}</div>
+          <div class="folder-card-meta">${count}곡</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  const showDefaults = lists.length === 0;
+  const defaultCards = showDefaults ? defaultFolders.map(f => `
+    <div class="folder-card folder-card-template" style="--folder-color:${f.color}; --folder-color-2:${f.color2};" onclick="createDefaultPlaylist('${f.title.replace(/'/g,"\\'")}')">
+      <div class="folder-card-cover-stack folder-card-cover-template">
+        <span class="folder-card-template-emoji">${f.emoji}</span>
+      </div>
+      <div class="folder-card-body">
+        <div class="folder-card-title">${f.title}</div>
+        <div class="folder-card-meta-template">${f.desc} · 만들기 +</div>
+      </div>
+    </div>`).join('') : '';
+
+  return `
+    <div class="universe-folders">
+      <h2 class="section-title"><i class="ri-folder-music-fill"></i> 내 음악 폴더${lists.length > 0 ? ` <span class="section-count">${lists.length}</span>` : ''}</h2>
+      <div class="folder-grid">
+        ${userCards}
+        ${defaultCards}
+        <div class="folder-card folder-card-new" onclick="promptNewPlaylist()">
+          <div class="folder-card-cover-stack folder-card-cover-new"><i class="ri-add-line"></i></div>
+          <div class="folder-card-body"><div class="folder-card-title">새 폴더</div></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ============================================================
 // 내 우주 — user's curated collection space
 // Liked tracks (masters + demos) + bookmarked post-its, all
 // floating in the same shapes-universe canvas. Drag to rearrange.
@@ -3773,13 +3830,31 @@ window.renderUniverse = async function () {
     } catch (e) { console.warn('[universe] fetchMyBookmarks', e); }
   }
 
-  // Empty state
+  // ── 내 음악 폴더 (playlists) — 내 페이지와 동일하게 내 우주에도 띄움 ──
+  let myPlaylists = [];
+  try {
+    if (window.Playlists && window.Playlists.fetchMine) {
+      myPlaylists = await Promise.race([
+        window.Playlists.fetchMine(),
+        new Promise(r => setTimeout(() => r(null), 1500))
+      ]);
+    }
+  } catch (e) { console.warn('[universe] playlists', e); }
+  if (!Array.isArray(myPlaylists)) myPlaylists = (db.playlists || []);
+  const foldersHtml = _buildUniverseFolders(myPlaylists);
+
+  // Empty state — 곡/포스트잇이 없어도 폴더는 위에 보여준다.
   if (likedTracks.length === 0 && bookmarkedNotes.length === 0) {
     appContent.innerHTML = `
-      <div style="max-width:560px; margin:80px auto; text-align:center; padding:0 24px;">
-        <div style="font-size:64px; margin-bottom:16px;">🌌</div>
-        <h1 style="font-size:24px; margin-bottom:12px;">아직 비어있어요</h1>
-        <p style="color:var(--text-secondary); line-height:1.6; margin-bottom:28px;">
+      <div style="padding:20px 24px 0; text-align:center;">
+        <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-galaxy-fill" style="color:#9C27B0;"></i> 내 우주</h1>
+      </div>
+      <div style="max-width:1000px; margin:0 auto; padding:0 24px;">
+        ${foldersHtml}
+      </div>
+      <div style="max-width:560px; margin:40px auto 80px; text-align:center; padding:0 24px;">
+        <div style="font-size:48px; margin-bottom:12px;">🌌</div>
+        <p style="color:var(--text-secondary); line-height:1.6; margin-bottom:24px;">
           도형 페이지에서 마음에 드는 곡에 <i class="ri-heart-line"></i> 를,<br>
           벽에서 마음에 든 글에 <i class="ri-bookmark-line"></i> 를 눌러보세요.<br>
           모은 것들이 이 우주에 떠다니게 돼요.
@@ -3875,6 +3950,9 @@ window.renderUniverse = async function () {
     <div style="padding:20px 24px 8px; text-align:center;">
       <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-galaxy-fill" style="color:#9C27B0;"></i> 내 우주</h1>
       <p style="font-size:13px; color:var(--text-secondary);">곡 ${likedTracks.length} · 포스트잇 ${bookmarkedNotes.length} — 끌어서 자리 옮길 수 있어요</p>
+    </div>
+    <div style="max-width:1000px; margin:0 auto; padding:0 24px;">
+      ${foldersHtml}
     </div>
     <div class="shapes-universe my-universe" style="height: ${universeHeight}px;">
       ${decoHtml}
@@ -8406,6 +8484,7 @@ window.promptNewPlaylist = async function() {
     renderSidebarPlaylists();
     showToast('폴더 만들었어요 ✨');
     if (currentView === 'profile') renderProfile();
+    else if (currentView === 'universe' && window.renderUniverse) window.renderUniverse();
   } catch (e) {
     alert('만들기 실패: ' + (e.message || e));
   }
@@ -8423,6 +8502,7 @@ window.createDefaultPlaylist = async function(title) {
     renderSidebarPlaylists();
     showToast(`"${title}" 폴더 시작! 🎵`);
     if (currentView === 'profile') renderProfile();
+    else if (currentView === 'universe' && window.renderUniverse) window.renderUniverse();
   } catch (e) {
     alert('만들기 실패: ' + (e.message || e));
   }
