@@ -1996,8 +1996,10 @@ async function renderWall() {
       </form>
     ` : '';
 
+    // 차곡차곡 쌓기(masonry) — 절대위치 제거. 살짝만 기울여서 포스트잇 느낌 유지.
+    const tiltRot = ((seed % 7) - 3) * 0.4;   // -1.2°~+1.2° 정도
     return `
-      <div class="wall-note" data-note-id="${note.id}" data-author="${safeAuthor}" style="background:${c.bg}; color:${c.text}; left:${x}%; top:${yPx}px; --rot:${rot}deg;" title="낙서·댓글 보기">
+      <div class="wall-note" data-note-id="${note.id}" data-author="${safeAuthor}" style="background:${c.bg}; color:${c.text}; --rot:${tiltRot}deg;" title="낙서·댓글 보기">
         ${deleteBtn}
         ${bookmarkBtn}
         <div class="note-body" style="-webkit-line-clamp:${bodyClamp};">${safeText}</div>
@@ -2080,24 +2082,32 @@ async function renderWall() {
     : '';
 
   appContent.innerHTML = `
-    <div class="wall-board" style="height:${total > 0 ? boardH : 600}px;">
+    <div class="wall-board wall-board-masonry">
       <div class="wall-header-v2">
         <div class="wall-title-row">
           <h1><i class="ri-sticky-note-fill" style="color:#FFD54F;"></i> 우리들의 벽</h1>
           ${toolbar}
         </div>
-        <p class="wall-hint">포스트잇을 드래그해서 움직여봐 · 탭하면 작성자 프로필 ✋</p>
+        <p class="wall-hint">포스트잇을 탭하면 낙서·댓글을 볼 수 있어 ✍️</p>
       </div>
       ${writeFab}
       ${searchFab}
       ${writeComposer}
-      ${notesHtml}
+      <div class="wall-masonry-grid">
+        ${notesHtml}
+      </div>
       ${emptyMsg}
       ${loadMoreBtn}
     </div>
   `;
 
-  initNoteDrag();
+  // Masonry 흐름 레이아웃 — 드래그 비활성. 탭하면 상세 모달.
+  document.querySelectorAll('.wall-board .wall-note').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.noteId;
+      if (id && typeof window.openNoteDetail === 'function') window.openNoteDetail(id);
+    });
+  });
 }
 
 // Mobile: toggle the search/sort sheet that slides up from the bottom.

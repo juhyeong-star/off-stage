@@ -2383,10 +2383,28 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   overflow: hidden;
   background: #111;
 }
+/* ============================================================
+   Wall masonry — 차곡차곡 쌓이는 정렬 레이아웃
+   CSS columns: 노트가 위에서부터 칼럼을 채우며 흐름.
+   ============================================================ */
+.wall-board-masonry { height: auto !important; min-height: 70vh; }
+.wall-masonry-grid {
+  column-count: 4;
+  column-gap: 22px;
+  padding: 8px 4px 80px;
+  margin-top: 8px;
+}
+@media (max-width: 1200px) { .wall-masonry-grid { column-count: 3; } }
+@media (max-width: 860px)  { .wall-masonry-grid { column-count: 2; column-gap: 16px; } }
+@media (max-width: 560px)  { .wall-masonry-grid { column-count: 1; } }
+
 .wall-note {
-  position: absolute;
-  width: 345px;
-  min-height: 295px;
+  position: relative;        /* was absolute — now flows in masonry column */
+  width: 100%;
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  margin: 0 0 22px;
+  min-height: 220px;
   padding: 28px 26px 22px;
   border-radius: 2px;
   font-family: var(--font-hand);
@@ -2403,11 +2421,10 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
     8px 8px 0 rgba(0, 0, 0, 0.55),
     14px 14px 0 rgba(255, 255, 255, 0.04),
     20px 24px 36px rgba(0, 0, 0, 0.7);
-  cursor: grab;
+  cursor: pointer;
   z-index: 1;
   transition: box-shadow 0.3s, transform 0.2s;
   user-select: none;
-  touch-action: none;
   display: flex;
   flex-direction: column;
 }
