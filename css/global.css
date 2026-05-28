@@ -1684,6 +1684,7 @@ body.guest .sidebar-my-channel { display: none; }
    고정된 radial 하이라이트(빛)가 구형 입체감을 줌. */
 .planet-sphere {
   position: absolute;
+  z-index: 1;                /* 뒤고리 위, 앞고리 아래 */
   width: 42px; height: 42px;
   border-radius: 50%;
   overflow: hidden;
@@ -1710,18 +1711,27 @@ body.guest .sidebar-my-channel { display: none; }
   from { background-position: 0 0, 0 0, 0 0; }
   to   { background-position: 0 0, 0 0, -220% 0; }
 }
-/* 토성 고리 — 기울어진 타원, 구 뒤에 */
+/* 토성 고리 — 행성을 감싸고 지나가게 앞/뒤 두 겹으로 분리.
+   뒤고리(위쪽 반)는 구 뒤, 앞고리(아래쪽 반)는 구 앞에 그려서
+   고리가 행성 뒤로 들어갔다 앞으로 나오는 입체감을 줌. */
 .planet-ring {
   position: absolute;
   top: 50%; left: 50%;
-  width: 66px; height: 20px;
-  transform: translate(-50%, -50%) rotate(-22deg);
+  width: 58px; height: 16px;
+  transform: translate(-50%, -50%) rotate(-20deg);
   border-radius: 50%;
-  border: 3px solid rgba(255, 214, 140, 0.85);
-  border-left-color: rgba(255,214,140,0.3);
-  border-right-color: rgba(255,214,140,0.3);
-  box-shadow: 0 0 10px rgba(255, 214, 140, 0.3);
-  z-index: -1;
+  border: 3px solid rgba(255, 214, 140, 0.9);
+  box-shadow: 0 0 9px rgba(255, 214, 140, 0.35);
+}
+/* 뒤고리: 구 뒤(z 0), 위쪽 절반만 보임 */
+.planet-ring-back {
+  z-index: 0;
+  clip-path: inset(0 0 50% 0);
+}
+/* 앞고리: 구 앞(z 2), 아래쪽 절반만 보임 */
+.planet-ring-front {
+  z-index: 2;
+  clip-path: inset(50% 0 0 0);
 }
 /* 호버 → 자전 빨라지고 살짝 커짐 */
 .planet-fab:hover { transform: scale(1.1); }

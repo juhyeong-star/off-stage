@@ -3414,8 +3414,9 @@ function renderShapes() {
     <div class="planet-fab" id="random-dice"
          onclick="diceBouncePlay(this)"
          title="행성을 돌려 도형 섞기 🪐">
-      <span class="planet-ring"></span>
+      <span class="planet-ring planet-ring-back"></span>
       <span class="planet-sphere"></span>
+      <span class="planet-ring planet-ring-front"></span>
     </div>
   `;
 
