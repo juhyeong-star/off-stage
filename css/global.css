@@ -9877,6 +9877,20 @@ body {
   padding-left: max(20px, var(--safe-left));
   padding-right: max(20px, var(--safe-right));
 }
+/* 데스크톱: 전체 너비로 쫙 펴지면 조잡함 → 왼쪽에 좁은 패널로 제한 */
+@media (min-width: 769px) {
+  .sidebar-nav {
+    left: 0;
+    right: auto !important;
+    width: 300px;
+    max-width: 88vw;
+    bottom: var(--player-height);
+    max-height: 80vh;
+    border-right: 1px solid var(--divider);
+    border-top-right-radius: 16px;
+    box-shadow: 8px 0 32px rgba(0,0,0,0.5);
+  }
+}
 @media (max-width: 768px) {
   /* sheet bottom = above player + tab-bar */
   .sidebar-nav {
