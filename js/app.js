@@ -3278,6 +3278,19 @@ function initDiscoverDrag() {
 // ===================== SHAPES UNIVERSE (original floating shapes view) =====================
 function renderShapes() {
   const db = window.DB.get();
+  // 도형 페이지 들어올 때마다 Supabase에서 새 트랙 백그라운드 확인.
+  // 트랙 목록이 바뀌었을 때만 다시 그려서 무한루프 방지.
+  if (window.Tracks && window.Tracks.refreshInto && !window.__shapesRefreshing) {
+    window.__shapesRefreshing = true;
+    const beforeIds = (db.tracks || []).map(t => t && t.id).join('|');
+    window.Tracks.refreshInto(window.DB.get())
+      .then(() => {
+        const afterIds = (window.DB.get().tracks || []).map(t => t && t.id).join('|');
+        if (currentView === 'shapes' && afterIds !== beforeIds) renderShapes();
+      })
+      .catch(e => console.warn('[shapes] bg refresh', e))
+      .finally(() => { window.__shapesRefreshing = false; });
+  }
   // 모든 도형이 우주에서 자유롭게 떠다님 — 청취자가 아티스트를 모으는 컨셉
   //
   // 노출 규칙 (이른 단계 — 빈 플랫폼이 더 빈약해 보이지 않게 완화):
