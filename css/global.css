@@ -875,12 +875,93 @@ body.guest .sidebar-my-channel { display: none; }
     radial-gradient(circle at 20% 30%, rgba(156,39,176,0.10), transparent 40%),
     radial-gradient(circle at 80% 70%, rgba(233,30,99,0.10), transparent 40%);
 }
-/* 내 우주 상단에 띄우는 '내 음악 폴더' 섹션 (내 페이지와 동일한 폴더 그리드) */
-.universe-folders {
-  margin: 8px 0 24px;
+/* 내 우주에 둥둥 떠다니는 '폴더 오브제' — 곡을 끌어다 정리할 대상 */
+.floating-folder {
+  width: auto; height: auto;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  background: none !important;
 }
-.universe-folders .section-title {
-  margin-bottom: 16px;
+.floating-folder .folder-orb {
+  position: relative;
+  width: 84px; height: 84px;
+  border-radius: 24px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255,255,255,0.35), transparent 55%),
+    linear-gradient(145deg, #6a5acd, #483d8b);
+  box-shadow:
+    inset -4px -6px 14px rgba(0,0,0,0.4),
+    inset 3px 4px 10px rgba(255,255,255,0.18),
+    0 10px 26px rgba(72,61,139,0.45);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  border: 2px solid rgba(255,255,255,0.25);
+  transition: transform 0.25s cubic-bezier(0.22,1.2,0.36,1), box-shadow 0.25s;
+}
+.floating-folder .folder-orb img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.floating-folder .folder-orb .folder-orb-emoji {
+  font-size: 34px;
+  line-height: 1;
+}
+.floating-folder .folder-orb i {
+  font-size: 34px;
+}
+.floating-folder .folder-orb-count {
+  position: absolute;
+  right: 6px; bottom: 6px;
+  min-width: 20px; height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.floating-folder .folder-orb-title {
+  max-width: 96px;
+  font-size: 12px; font-weight: 700;
+  color: #fff;
+  text-align: center;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.floating-folder:hover .folder-orb {
+  transform: scale(1.08) translateY(-2px);
+  box-shadow:
+    inset -4px -6px 14px rgba(0,0,0,0.4),
+    inset 3px 4px 10px rgba(255,255,255,0.22),
+    0 14px 32px rgba(124,77,255,0.6);
+}
+/* 템플릿(만들기 유도) 폴더 — 색을 살짝 다르게 + 점선 테두리로 '비어있음' 느낌 */
+.floating-folder.folder-orb-tpl .folder-orb {
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255,255,255,0.4), transparent 55%),
+    linear-gradient(145deg, var(--folder-color, #BA68C8), rgba(0,0,0,0.25));
+  border-style: dashed;
+}
+/* '새 폴더' 오브제 — 투명 + 점선 + 플러스 */
+.floating-folder.folder-orb-new .folder-orb {
+  background: rgba(255,255,255,0.06);
+  border: 2px dashed rgba(255,255,255,0.5);
+  box-shadow: none;
+  color: rgba(255,255,255,0.85);
+}
+.floating-folder.folder-orb-new:hover .folder-orb {
+  background: rgba(255,255,255,0.12);
+  box-shadow: 0 10px 26px rgba(124,77,255,0.4);
+}
+@media (max-width: 768px) {
+  .floating-folder .folder-orb { width: 70px; height: 70px; border-radius: 20px; }
+  .floating-folder .folder-orb .folder-orb-emoji,
+  .floating-folder .folder-orb i { font-size: 28px; }
+  .floating-folder .folder-orb-title { max-width: 80px; font-size: 11px; }
 }
 
 /* Heart button for demo cards — same look as shape heart but tuned for the card */
@@ -2549,7 +2630,7 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 .note-body { word-break: break-word; }
 .note-author { margin-top: 10px; font-size: 12px; opacity: 0.6; text-align: right; font-style: italic; }
 .note-delete {
-  position: absolute; top: 6px; right: 6px;
+  position: absolute; top: 6px; left: 6px;
   background: none; border: none; color: inherit; opacity: 0; font-size: 16px; cursor: pointer;
   transition: opacity 0.2s;
 }
@@ -2697,7 +2778,7 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 
 /* Bookmark (수집) button */
 .note-bookmark {
-  position: absolute; top: 6px; left: 6px;
+  position: absolute; top: 6px; right: 6px;
   background: none; border: none; color: inherit;
   opacity: 0; font-size: 18px; cursor: pointer;
   transition: opacity 0.2s, transform 0.2s;

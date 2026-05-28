@@ -3711,59 +3711,49 @@ function shuffleAllShapes() {
 window.rollRandomTrack = function(el) { window.diceBouncePlay(el); };
 
 // ============================================================
-// 내 음악 폴더 (playlists) — 내 페이지와 동일한 폴더 그리드.
-// 내 우주에서도 똑같이 보여주려고 별도 헬퍼로 분리.
+// 내 음악 폴더 (playlists) — 우주에 둥둥 떠다니는 오브제(orb)로 렌더.
+// 곡/포스트잇과 같은 floating-shape 캔버스 위에서 드래그 가능.
+// 나중에 모은 곡을 폴더 위로 끌어다 정리하는 그림.
 // ============================================================
-function _buildUniverseFolders(myPlaylists) {
-  const lists = Array.isArray(myPlaylists) ? myPlaylists : [];
-  const titleKey = (s) => (s || '').toLowerCase();
-  const userTitles = new Set(lists.map(p => titleKey(p.title)));
-  // 사용자가 아직 안 만든 기본 템플릿 폴더 (폴더가 하나도 없을 때만 노출)
-  const defaultFolders = [
-    { title: '즐겨듣기',   emoji: '⭐', desc: '자주 듣는 음악',   color: '#FFE082', color2: '#FFD54F' },
-    { title: '투자하고픈', emoji: '💎', desc: '함께 만들고픈 곡', color: '#CE93D8', color2: '#BA68C8' },
-    { title: '애는 된다',  emoji: '🔥', desc: '주목하는 아티스트', color: '#FFAB91', color2: '#FF8A65' }
-  ].filter(f => !userTitles.has(titleKey(f.title)));
+function _floatingFolderHtml(it, pos) {
+  const { xBase, yPx, rot, dur, dx, dy } = pos;
+  const base = `left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;`;
 
-  const userCards = lists.map(p => {
-    const title = (p.title || '무제').replace(/</g,'&lt;');
-    const count = (p.trackIds || []).length;
-    const cover = p.cover || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(p.id || p.title || 'pl'));
+  if (it.kind === 'folderNew') {
     return `
-      <div class="folder-card" onclick="openMyPlaylist('${p.id}')">
-        <div class="folder-card-cover-stack">
-          <img src="${cover}" alt="${title.replace(/"/g,'&quot;')}" loading="lazy">
+      <div class="floating-shape floating-folder folder-orb-new" data-folder-new="1" data-uid="${it.id}" style="${base}">
+        <div class="folder-orb">
+          <i class="ri-add-line"></i>
         </div>
-        <div class="folder-card-body">
-          <div class="folder-card-title">${title}</div>
-          <div class="folder-card-meta">${count}곡</div>
-        </div>
+        <div class="folder-orb-title">새 폴더</div>
       </div>`;
-  }).join('');
+  }
 
-  const showDefaults = lists.length === 0;
-  const defaultCards = showDefaults ? defaultFolders.map(f => `
-    <div class="folder-card folder-card-template" style="--folder-color:${f.color}; --folder-color-2:${f.color2};" onclick="createDefaultPlaylist('${f.title.replace(/'/g,"\\'")}')">
-      <div class="folder-card-cover-stack folder-card-cover-template">
-        <span class="folder-card-template-emoji">${f.emoji}</span>
-      </div>
-      <div class="folder-card-body">
-        <div class="folder-card-title">${f.title}</div>
-        <div class="folder-card-meta-template">${f.desc} · 만들기 +</div>
-      </div>
-    </div>`).join('') : '';
-
-  return `
-    <div class="universe-folders">
-      <h2 class="section-title"><i class="ri-folder-music-fill"></i> 내 음악 폴더${lists.length > 0 ? ` <span class="section-count">${lists.length}</span>` : ''}</h2>
-      <div class="folder-grid">
-        ${userCards}
-        ${defaultCards}
-        <div class="folder-card folder-card-new" onclick="promptNewPlaylist()">
-          <div class="folder-card-cover-stack folder-card-cover-new"><i class="ri-add-line"></i></div>
-          <div class="folder-card-body"><div class="folder-card-title">새 폴더</div></div>
+  if (it.kind === 'folderTpl') {
+    const f = it.tpl;
+    const title = (f.title || '폴더').replace(/</g,'&lt;');
+    return `
+      <div class="floating-shape floating-folder folder-orb-tpl" data-folder-template="${title.replace(/"/g,'&quot;')}" data-uid="${it.id}"
+           style="${base} --folder-color:${f.color};">
+        <div class="folder-orb">
+          <span class="folder-orb-emoji">${f.emoji}</span>
         </div>
+        <div class="folder-orb-title">${title}</div>
+      </div>`;
+  }
+
+  // 실제 사용자 폴더
+  const p = it.folder;
+  const title = (p.title || '무제').replace(/</g,'&lt;');
+  const count = (p.trackIds || []).length;
+  const cover = p.cover || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(p.id || p.title || 'pl'));
+  return `
+    <div class="floating-shape floating-folder" data-folder-id="${p.id}" style="${base}">
+      <div class="folder-orb">
+        <img src="${cover}" alt="${title.replace(/"/g,'&quot;')}" loading="lazy">
+        <span class="folder-orb-count">${count}</span>
       </div>
+      <div class="folder-orb-title">${title}</div>
     </div>`;
 }
 
@@ -3830,7 +3820,8 @@ window.renderUniverse = async function () {
     } catch (e) { console.warn('[universe] fetchMyBookmarks', e); }
   }
 
-  // ── 내 음악 폴더 (playlists) — 내 페이지와 동일하게 내 우주에도 띄움 ──
+  // ── 내 음악 폴더 (playlists) — 우주에 둥둥 떠다니는 오브제로 ──
+  // 나중에 모은 곡을 폴더 위로 끌어다 정리하는 그림.
   let myPlaylists = [];
   try {
     if (window.Playlists && window.Playlists.fetchMine) {
@@ -3841,32 +3832,18 @@ window.renderUniverse = async function () {
     }
   } catch (e) { console.warn('[universe] playlists', e); }
   if (!Array.isArray(myPlaylists)) myPlaylists = (db.playlists || []);
-  const foldersHtml = _buildUniverseFolders(myPlaylists);
 
-  // Empty state — 곡/포스트잇이 없어도 폴더는 위에 보여준다.
-  if (likedTracks.length === 0 && bookmarkedNotes.length === 0) {
-    appContent.innerHTML = `
-      <div style="padding:20px 24px 0; text-align:center;">
-        <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-galaxy-fill" style="color:#9C27B0;"></i> 내 우주</h1>
-      </div>
-      <div style="max-width:1000px; margin:0 auto; padding:0 24px;">
-        ${foldersHtml}
-      </div>
-      <div style="max-width:560px; margin:40px auto 80px; text-align:center; padding:0 24px;">
-        <div style="font-size:48px; margin-bottom:12px;">🌌</div>
-        <p style="color:var(--text-secondary); line-height:1.6; margin-bottom:24px;">
-          도형 페이지에서 마음에 드는 곡에 <i class="ri-heart-line"></i> 를,<br>
-          벽에서 마음에 든 글에 <i class="ri-bookmark-line"></i> 를 눌러보세요.<br>
-          모은 것들이 이 우주에 떠다니게 돼요.
-        </p>
-        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-          <button class="btn-primary" onclick="navigateTo('shapes')">도형으로 가기 →</button>
-          <button class="btn-primary" style="background:#444;" onclick="navigateTo('wall')">우리들의 벽 →</button>
-        </div>
-      </div>
-    `;
-    return;
+  const folderItems = (myPlaylists || []).map(p => ({ kind: 'folder', id: p.id, folder: p }));
+  // 폴더가 하나도 없으면 기본 템플릿을 띄워 만들기를 유도
+  if (folderItems.length === 0) {
+    [
+      { title: '즐겨듣기',   emoji: '⭐', color: '#FFD54F' },
+      { title: '투자하고픈', emoji: '💎', color: '#BA68C8' },
+      { title: '애는 된다',  emoji: '🔥', color: '#FF8A65' }
+    ].forEach(f => folderItems.push({ kind: 'folderTpl', id: 'tpl:' + f.title, tpl: f }));
   }
+  // 항상 '새 폴더' 오브제 하나
+  folderItems.push({ kind: 'folderNew', id: 'folder-new' });
 
   // ── Layout: distribute items in a 3-col grid pattern with a deterministic jitter ──
   // Order + jitter must be STABLE across reloads so user-curated positions feel persistent.
@@ -3881,6 +3858,7 @@ window.renderUniverse = async function () {
   }
 
   const allItems = [
+    ...folderItems,
     ...likedTracks.map(t => ({ kind: 'track', t, id: t.id })),
     ...bookmarkedNotes.map(n => ({ kind: 'note', n, id: n.id }))
   ];
@@ -3910,7 +3888,9 @@ window.renderUniverse = async function () {
     const dx  = (((seed >>> 12) % 50) - 25);
     const dy  = (((seed >>> 20) % 50) - 25);
 
-    if (it.kind === 'track') {
+    if (it.kind === 'folder' || it.kind === 'folderTpl' || it.kind === 'folderNew') {
+      itemsHtml += _floatingFolderHtml(it, { xBase, yPx, rot, dur, dx, dy });
+    } else if (it.kind === 'track') {
       const t = it.t;
       let shape = t.shape || (typeof SHAPE_TYPES !== 'undefined' ? SHAPE_TYPES[i % SHAPE_TYPES.length] : 'circle');
       if (typeof SHAPE_REMAP !== 'undefined' && SHAPE_REMAP[shape]) shape = SHAPE_REMAP[shape];
@@ -3949,10 +3929,7 @@ window.renderUniverse = async function () {
   appContent.innerHTML = `
     <div style="padding:20px 24px 8px; text-align:center;">
       <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-galaxy-fill" style="color:#9C27B0;"></i> 내 우주</h1>
-      <p style="font-size:13px; color:var(--text-secondary);">곡 ${likedTracks.length} · 포스트잇 ${bookmarkedNotes.length} — 끌어서 자리 옮길 수 있어요</p>
-    </div>
-    <div style="max-width:1000px; margin:0 auto; padding:0 24px;">
-      ${foldersHtml}
+      <p style="font-size:13px; color:var(--text-secondary);">폴더 ${myPlaylists.length} · 곡 ${likedTracks.length} · 포스트잇 ${bookmarkedNotes.length} — 끌어서 자리 옮길 수 있어요</p>
     </div>
     <div class="shapes-universe my-universe" style="height: ${universeHeight}px;">
       ${decoHtml}
@@ -4065,7 +4042,7 @@ function initShapeDrag() {
     // Persist user-curated position on /universe and /shapes.
     // Saves a percentage for x (so it scales with width) and pixels for y.
     if (moved && (currentView === 'universe' || currentView === 'shapes')) {
-      const itemId = el.dataset.trackId || el.dataset.noteId;
+      const itemId = el.dataset.trackId || el.dataset.noteId || el.dataset.folderId || el.dataset.uid;
       if (itemId && el.parentElement) {
         const parentRect = el.parentElement.getBoundingClientRect();
         const elRect = el.getBoundingClientRect();
@@ -4085,6 +4062,19 @@ function initShapeDrag() {
     // a second click on the SAME shape (no time limit) navigates to artist page.
     // Clicking a different shape resets: that shape is now the "primed" one.
     if (!moved) {
+      // 폴더 오브제 탭 — 폴더 열기 / 만들기
+      if (el.dataset.folderId) {
+        if (typeof openMyPlaylist === 'function') openMyPlaylist(el.dataset.folderId);
+        return;
+      }
+      if (el.dataset.folderTemplate) {
+        if (typeof createDefaultPlaylist === 'function') createDefaultPlaylist(el.dataset.folderTemplate);
+        return;
+      }
+      if (el.hasAttribute('data-folder-new')) {
+        if (typeof promptNewPlaylist === 'function') promptNewPlaylist();
+        return;
+      }
       const trackId = el.dataset.trackId;
       const artistEnc = el.dataset.artist;
       if (window.__lastClickedShape === el && artistEnc) {
