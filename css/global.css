@@ -1436,6 +1436,21 @@ body.guest .sidebar-my-channel { display: none; }
 .note-track-chip-ext { color: #fff; }
 .note-track-chip-ext > i:first-child { font-size: 20px; flex-shrink: 0; }
 .note-detail-content .note-track-chip { margin-top: 14px; }
+
+/* 우리들의 벽 카드 안의 노래 칩 — 작게, 오른쪽 아래로 (입력칸 비행기 옆 느낌) */
+.wall-note .note-track-chip {
+  margin: 6px 0 0 auto;        /* 오른쪽 정렬 */
+  padding: 3px 8px 3px 4px;
+  border-radius: 999px;
+  max-width: 62%;
+  align-self: flex-end;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.wall-note .note-track-chip img { width: 22px; height: 22px; border-radius: 50%; }
+.wall-note .note-track-chip-title { font-size: 10.5px; }
+.wall-note .note-track-chip-sub { display: none; }   /* 아티스트 줄 숨김 — 한 줄로 */
+.wall-note .note-track-chip-play { font-size: 16px; }
+.wall-note .note-track-chip-ext > i:first-child { font-size: 16px; }
 /* Chip inside a comment line — smaller, indented under the comment text */
 .comment-track-wrap { margin-top: 4px; margin-left: 14px; max-width: 280px; }
 .comment-track-wrap .note-track-chip { margin-top: 0; padding: 4px 6px; }
