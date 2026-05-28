@@ -590,10 +590,12 @@ input, textarea, select { font-family: inherit; }
   display: none; /* hidden by default, shown via JS toggle */
   position: fixed; bottom: var(--player-height); left: 0; right: 0;
   background: rgba(8,8,8,0.97);
-  flex-direction: column; padding: 20px 24px 24px; z-index: 1000;
+  /* bottom padding clears the green close (hamburger) button at bottom-left
+     so the user block (Admin/로그아웃) doesn't sit under it */
+  flex-direction: column; padding: 20px 24px 84px; z-index: 1000;
   border-top: 1px solid var(--divider);
   backdrop-filter: blur(24px);
-  max-height: 70vh; overflow-y: auto;
+  max-height: 78vh; overflow-y: auto;
   animation: slideUp 0.35s cubic-bezier(0.22,1,0.36,1);
 }
 .sidebar-nav.open { display: flex; }
