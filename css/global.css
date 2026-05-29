@@ -2808,16 +2808,10 @@ h3 { font-size: 19px; font-weight: 700; }
 .wall-advanced { position: relative; }
 
 @media (max-width: 768px) {
-  /* Hide the inline toolbar search button — replaced by the floating FAB */
-  .wall-toolbar-v2 .wall-toolbtn { display: none; }
-  /* Show the floating search FAB */
-  .wall-search-fab {
-    display: inline-flex;
-    bottom: calc(var(--player-height) + 16px);
-    left: 16px;
-    width: 46px; height: 46px;
-    font-size: 19px;
-  }
+  /* 모바일: 우리들의 벽 상단 검색 + 정렬(최신/오래된/랜덤) 전부 숨김 (요청) */
+  .wall-toolbar-v2 .wall-toolbtn { display: none !important; }
+  .wall-search-fab { display: none !important; }
+  .wall-advanced { display: none !important; }
   /* Search panel becomes a bottom sheet that slides up */
   .wall-advanced:not([hidden]) {
     position: fixed;
