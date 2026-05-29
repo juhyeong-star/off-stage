@@ -3791,9 +3791,7 @@ function _shapeShortsCardHtml(t) {
       <div class="floating-shape shape-${shape} sshorts-shape" style="${bg}">
         <div class="shape-text">${safeLines.join('\n')}</div>
       </div>
-      <button class="sshorts-artist" onclick="_shapeShortsGoArtist('${encodeURIComponent(t.artist || '')}')">
-        <i class="ri-mic-fill"></i> ${artist}
-      </button>
+      <button class="sshorts-artist" onclick="_shapeShortsGoArtist('${encodeURIComponent(t.artist || '')}')">${artist}</button>
     </div>`;
 }
 
@@ -3901,6 +3899,31 @@ function _shapeShortsMount() {
     if (Math.abs(dy) < 44) return;
     _shapeShortsGo(dy < 0 ? 'next' : 'prev');
   }, { passive: true });
+
+  // 탭 처리(스와이프는 위 touchend가, 탭은 click이 담당):
+  //  · 도형을 더블클릭/더블탭 → 그 아티스트 페이지
+  //  · 빈 공간 탭 → 뒤로가기(닫기)
+  //  · 아래 이름/닫기 버튼은 자기 onclick 처리
+  let _lastShapeClick = 0;
+  const _mountedAt = Date.now();
+  ov.addEventListener('click', (e) => {
+    // 도형을 탭해서 열릴 때 따라오는 '유령 클릭'이 오버레이를 바로 닫지 않게.
+    if (Date.now() - _mountedAt < 450) return;
+    if (e.target.closest('.sshorts-artist, .sshorts-close')) return;
+    if (e.target.closest('.sshorts-shape')) {
+      const now = Date.now();
+      if (now - _lastShapeClick < 320) {
+        _lastShapeClick = 0;
+        const s = window.__shapeShorts;
+        const t = s && s.tracks[s.idx];
+        _shapeShortsGoArtist(encodeURIComponent((t && t.artist) || ''));
+      } else {
+        _lastShapeClick = now;
+      }
+      return;
+    }
+    closeShapeShorts();   // 빈 공간 → 닫기
+  });
 
   window.__shapeShortsKey = (e) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); _shapeShortsGo('next'); }
