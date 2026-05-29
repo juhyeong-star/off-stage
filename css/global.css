@@ -843,11 +843,11 @@ body.guest .sidebar-my-channel { display: none; }
 /* "내 우주" page — post-its drift among the shapes */
 .universe-note {
   position: absolute;
-  width: 160px;
-  min-height: 80px;
-  padding: 14px 14px 8px;
-  border-radius: 4px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.35), 0 2px 4px rgba(0,0,0,0.2);
+  width: 210px;
+  min-height: 116px;
+  padding: 18px 18px 12px;
+  border-radius: 5px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.35), 0 2px 4px rgba(0,0,0,0.2);
   font-family: var(--font-hand, 'Gaegu', sans-serif);
   cursor: grab;
   z-index: 3;
@@ -856,17 +856,17 @@ body.guest .sidebar-my-channel { display: none; }
   transform-origin: center center;
 }
 .universe-note-body {
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: 17px;
+  line-height: 1.45;
   word-break: break-word;
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 5;
+  -webkit-line-clamp: 6;
   -webkit-box-orient: vertical;
 }
 .universe-note-sig {
-  margin-top: 8px;
-  font-size: 11px;
+  margin-top: 10px;
+  font-size: 12px;
   opacity: 0.7;
   text-align: right;
 }
