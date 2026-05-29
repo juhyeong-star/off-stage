@@ -6384,8 +6384,8 @@ html, body { overflow-x: hidden; max-width: 100%; }
   background: rgba(255,229,0,0.25);
   transform: translateX(-2px);
 }
-/* 폴더를 떠다니는 우주로 보여줄 때 */
-.pl-universe-page { overflow-x: hidden; }
+/* 폴더를 떠다니는 우주로 보여줄 때 — 내 우주와 같은 배경(보라 그라데이션 제거) */
+.pl-universe-page { overflow-x: hidden; background: transparent; }
 .pl-universe-page .pl-header { margin-bottom: 8px; align-items: center; }
 .pl-shorts-btn {
   margin-left: auto; flex-shrink: 0;

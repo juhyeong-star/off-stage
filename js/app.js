@@ -9098,20 +9098,21 @@ window.enterFolderWithAnim = function(folderId) {
     return;
   }
 
-  // 1) 원래 우주 애들 → 오른쪽 아래로 작아지며 사라짐
+  // 1) 원래 우주 애들 → 다 같이 오른쪽 아래로 미끄러지며 작아져 사라짐
+  //    (각자 같은 화면거리(vw/vh)만큼 이동해서 '한 덩어리로 패닝'되는 느낌)
   uni.querySelectorAll('.floating-shape').forEach(el => {
     el.style.animation = 'none';
-    el.style.transition = 'transform 0.55s cubic-bezier(0.5,0,0.55,1), opacity 0.5s ease';
+    el.style.transition = 'transform 0.6s cubic-bezier(0.4,0,0.4,1), opacity 0.55s ease';
     el.style.transformOrigin = 'center';
-    el.style.transform = 'translate(70%, 70%) scale(0.2)';
+    el.style.transform = 'translate(48vw, 44vh) scale(0.3)';
     el.style.opacity = '0';
     el.style.pointerEvents = 'none';
   });
 
-  // 2) 옆동네(폴더) 애들 → 왼쪽 위에서 중앙으로 날아옴 (같은 캔버스에 동시 등장)
+  // 2) 옆동네(폴더) 애들 → 왼쪽 위에서 중앙으로 한 덩어리로 날아옴 (동시에)
   const incoming = document.createElement('div');
   incoming.className = 'univ-incoming';
-  incoming.style.cssText = 'position:absolute; inset:0; pointer-events:none; transform:translate(-60%,-60%) scale(0.3); opacity:0; transition:transform 0.6s cubic-bezier(0.22,0.9,0.3,1), opacity 0.5s ease;';
+  incoming.style.cssText = 'position:absolute; inset:0; pointer-events:none; transform:translate(-48vw,-44vh) scale(0.32); opacity:0; transition:transform 0.62s cubic-bezier(0.22,0.9,0.3,1), opacity 0.55s ease;';
   incoming.innerHTML = built.html;
   uni.appendChild(incoming);
   requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -9120,7 +9121,7 @@ window.enterFolderWithAnim = function(folderId) {
   }));
 
   // 3) 애니 끝나면 실제 폴더 페이지로 — 배경/위치 동일이라 자연스럽게 이어짐
-  setTimeout(() => { if (window.openMyPlaylist) window.openMyPlaylist(folderId); }, 620);
+  setTimeout(() => { if (window.openMyPlaylist) window.openMyPlaylist(folderId); }, 700);
 };
 
 window.createAndAddPlaylist = async function() {
