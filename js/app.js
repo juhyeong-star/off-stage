@@ -9081,27 +9081,10 @@ window.openMyPlaylist = function(playlistId) {
   navigateTo('playlist:' + encodeURIComponent(playlistId));
 };
 
-// 폴더 진입 전환 애니 — 누른 폴더는 왼쪽 위로 커지고, 나머지 우주 오브제들은
-// 오른쪽 아래로 작아지며 사라진다. 그 다음 폴더 우주로 이동.
-window.enterFolderWithAnim = function(folderId, folderEl) {
-  const uni = folderEl && folderEl.closest && folderEl.closest('.shapes-universe');
-  if (!uni) { if (window.openMyPlaylist) window.openMyPlaylist(folderId); return; }
-  uni.querySelectorAll('.floating-shape').forEach(el => {
-    el.style.animation = 'none';
-    el.style.transition = 'transform 0.5s cubic-bezier(0.6,0.05,0.35,1), opacity 0.45s ease';
-    el.style.pointerEvents = 'none';
-    if (el === folderEl) {
-      el.style.transformOrigin = 'top left';
-      el.style.transform = 'scale(5) translate(-6%, -6%)';
-      el.style.opacity = '0';
-      el.style.zIndex = '60';
-    } else {
-      el.style.transformOrigin = 'bottom right';
-      el.style.transform = 'translate(45%, 45%) scale(0.08)';
-      el.style.opacity = '0';
-    }
-  });
-  setTimeout(() => { if (window.openMyPlaylist) window.openMyPlaylist(folderId); }, 480);
+// 폴더 진입 — '안으로 들어가는' 줌아웃 연출 없이 바로 폴더 우주로.
+// (등장 연출은 폴더 우주 캔버스가 좌상단에서 커지며 펼쳐지는 .folder-enter 가 담당)
+window.enterFolderWithAnim = function(folderId) {
+  if (window.openMyPlaylist) window.openMyPlaylist(folderId);
 };
 
 window.createAndAddPlaylist = async function() {
