@@ -4774,6 +4774,9 @@ function initShapeDrag() {
 
   function pointerMove(e) {
     if (!dragEl) return;
+    // 두 손가락(핀치 확대/축소) 중이면 드래그(이동)는 멈춘다 — 안 그러면
+    // 한 손가락이 도형을 끌고 다녀서 핀치랑 충돌(도형이 안 보이거나 튐).
+    if (e.touches && e.touches.length > 1) return;
     const ptr = e.touches ? e.touches[0] : e;
     const dx = ptr.clientX - startX;
     const dy = ptr.clientY - startY;
@@ -4936,8 +4939,16 @@ function initShapeDrag() {
 
   function touchStartPinch(e) {
     if (e.touches.length === 2) {
+      // 진행 중이던 한 손가락 드래그/롱프레스를 즉시 취소 (핀치와 충돌 방지)
+      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+      if (dragEl) { dragEl.classList.remove('dragging'); dragEl.style.zIndex = ''; }
+      dragEl = null; moved = false; dragModeEntered = false; longPressFired = false;
+
       pinchEl = e.currentTarget;
       pinchEl.style.animation = 'none';
+      pinchEl.style.transition = 'none';            // 손가락 따라 실시간으로
+      pinchEl.style.willChange = 'transform';
+      pinchEl.style.transformOrigin = 'center center';
       pinchStartDist = getPinchDist(e.touches);
       pinchStartScale = parseFloat(pinchEl.dataset.scale || '1');
       e.preventDefault();
@@ -4946,6 +4957,7 @@ function initShapeDrag() {
   function touchMovePinch(e) {
     if (!pinchEl || e.touches.length < 2) return;
     const dist = getPinchDist(e.touches);
+    if (!pinchStartDist) return;
     let scale = pinchStartScale * (dist / pinchStartDist);
     scale = Math.min(3, Math.max(0.3, scale));
     pinchEl.dataset.scale = scale;
@@ -4953,7 +4965,10 @@ function initShapeDrag() {
     e.preventDefault();
   }
   function touchEndPinch(e) {
-    if (pinchEl && e.touches.length < 2) pinchEl = null;
+    if (pinchEl && e.touches.length < 2) {
+      pinchEl.style.willChange = '';
+      pinchEl = null;
+    }
   }
 
   // Resize handle drag (mobile-friendly)

@@ -787,11 +787,9 @@ body.guest .sidebar-my-channel { display: none; }
   transition: transform 0.4s cubic-bezier(0.22,1,0.36,1), filter 0.4s;
   user-select: none;
   z-index: 1;
-  /* 크게 확대(핀치/휠)할 때 깜빡임 방지 — GPU 레이어로 합성 */
+  /* 확대 시 깜빡임만 완화 (preserve-3d 는 도형이 사라지는 부작용 있어 제거) */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  -webkit-transform-style: preserve-3d;
-  transform-style: preserve-3d;
 }
 .floating-shape:hover {
   transform: scale(1.15) !important;
