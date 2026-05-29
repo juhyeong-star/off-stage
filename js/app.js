@@ -3197,22 +3197,10 @@ async function renderPlaylistUniverse(playlistId) {
 
   const safePlaylistTitle = (playlist.title || '플레이리스트').replace(/</g,'&lt;');
 
-  // ── 폴더 내부 = 똑같은 '우주'. 곡 + 담은 포스트잇이 그대로 둥둥 떠다님 ──
-  // (곡/포스트잇 누르면 쇼츠 모드로 진입)
-  const _mergedTracks = (Array.isArray(db.tracks) ? db.tracks : []).slice();
-  if (Array.isArray(window.__tracks)) {
-    const seen = new Set(_mergedTracks.map(t => t && t.id));
-    window.__tracks.forEach(t => { if (t && !seen.has(t.id)) _mergedTracks.push(t); });
-  }
-  const folderTracks = _mergedTracks.filter(t => t && trackIdsSet.has(t.id));
-  const items = [
-    ...folderTracks.map(t => ({ kind: 'track', t, id: t.id })),
-    ...notes.map(n => ({ kind: 'note', n, id: n.id }))
-  ];
-  items.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-  const firstItemId = (items[0] && items[0].id) || '';
+  // ── 폴더 내부 = 똑같은 '우주' (곡/포스트잇 둥둥, 누르면 쇼츠) ──
+  const built = _folderItemsHtml(playlistId);
 
-  if (items.length === 0) {
+  if (built.total === 0) {
     appContent.innerHTML = `
       <div class="pl-page pl-universe-page">
         <div class="pl-header">
@@ -3230,50 +3218,8 @@ async function renderPlaylistUniverse(playlistId) {
     return;
   }
 
-  const cols = (typeof window !== 'undefined' && window.innerWidth < 560) ? 2 : 3;
-  const universeHeight = Math.max(820, Math.ceil(items.length / cols) * 280);
-  const folderDeco = _buildStarfield('pl-sky:' + playlistId, 150, 14);
-
-  let folderItemsHtml = '';
-  items.forEach((it, i) => {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const seed = _hashSeed('plitem:' + playlistId + ':' + it.id);
-    const xBase = 4 + col * (86 / cols) + (seed % 12);
-    const yPx = 30 + row * 260 + ((seed >>> 4) % 50);
-    const rot = ((((seed >>> 8) % 140) - 70) / 10);
-    const dur = 11 + ((seed >>> 16) % 16);
-    const dx = (((seed >>> 12) % 50) - 25);
-    const dy = (((seed >>> 20) % 50) - 25);
-    if (it.kind === 'track') {
-      const t = it.t;
-      let shape = t.shape || SHAPE_TYPES[i % SHAPE_TYPES.length];
-      if (SHAPE_REMAP[shape]) shape = SHAPE_REMAP[shape];
-      const color = t.shapeColor || SHAPE_COLORS[i % SHAPE_COLORS.length];
-      const lines = t.lines || [t.title || '', t.artist || '', '눌러서 쇼츠로'];
-      const safeLines = lines.map(l => (l || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
-      const demoBadge = t.isDemo ? '<span class="universe-demo-badge">DEMO</span>' : '';
-      folderItemsHtml += `
-        <div class="floating-shape shape-${shape}" data-track-id="${t.id}"
-             style="background:${color}; --shape-bg:${color}; left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;"
-             onclick="openFolderShorts('${playlistId}','${t.id}')">
-          ${demoBadge}
-          <div class="shape-text">${safeLines.join('\n')}</div>
-        </div>`;
-    } else {
-      const n = it.n;
-      const c = (typeof NOTE_COLORS !== 'undefined' ? NOTE_COLORS[n.color] : null) || { bg: '#FFF59D', text: '#1a1a1a' };
-      const safeTxt = (n.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
-      const safeAuth = (n.author || '').replace(/</g, '&lt;');
-      folderItemsHtml += `
-        <div class="universe-note floating-shape" data-note-id="${n.id}"
-             style="left:${xBase}%; top:${yPx}px; background:${c.bg}; color:${c.text}; animation: floatDrift ${dur + 4}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;"
-             onclick="openFolderShorts('${playlistId}','${n.id}')">
-          <div class="universe-note-body">${safeTxt}</div>
-          <div class="universe-note-sig">— ${safeAuth}</div>
-        </div>`;
-    }
-  });
+  // 내 우주와 '같은' 별 하늘 — 폴더 안/밖이 하나의 우주처럼 이어지게.
+  const folderDeco = _buildStarfield('universe-sky', 160, 15);
 
   appContent.innerHTML = `
     <div class="pl-page pl-universe-page">
@@ -3282,21 +3228,15 @@ async function renderPlaylistUniverse(playlistId) {
         <div class="pl-title-block">
           <div class="pl-eyebrow">내 음악 폴더</div>
           <h1 class="pl-title">${safePlaylistTitle}</h1>
-          <div class="pl-meta">🎵 ${folderTracks.length} 곡 · 📝 ${notes.length} 포스트잇 — 눌러서 쇼츠로</div>
+          <div class="pl-meta">🎵 ${built.trackCount} 곡 · 📝 ${built.noteCount} 포스트잇 — 눌러서 쇼츠로</div>
         </div>
-        <button class="pl-shorts-btn" onclick="openFolderShorts('${playlistId}','${firstItemId}')"><i class="ri-stack-fill"></i> 쇼츠로 보기</button>
+        <button class="pl-shorts-btn" onclick="openFolderShorts('${playlistId}','${built.firstId}')"><i class="ri-stack-fill"></i> 쇼츠로 보기</button>
       </div>
-      <div class="shapes-universe my-universe pl-folder-universe folder-enter" style="height:${universeHeight}px;">
+      <div class="shapes-universe my-universe pl-folder-universe" style="height:${built.height}px;">
         ${folderDeco}
-        ${folderItemsHtml}
+        ${built.html}
       </div>
     </div>`;
-
-  // 진입 애니메이션 — 폴더가 열리듯 캔버스가 왼쪽 위에서 커지며 등장
-  requestAnimationFrame(() => {
-    const uni = document.querySelector('.pl-folder-universe.folder-enter');
-    if (uni) requestAnimationFrame(() => uni.classList.remove('folder-enter'));
-  });
 }
 
 // ============================================================
@@ -3357,6 +3297,72 @@ function _buildFolderCards(playlist) {
 }
 
 const _shEsc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// 폴더 우주의 떠다니는 아이템 HTML 생성 — 폴더 페이지 + 진입 전환이 같은 위치를
+// 쓰도록 한 곳에서 만든다. (곡=도형, 포스트잇=노트, 누르면 쇼츠)
+function _folderItemsHtml(playlistId) {
+  const db = window.DB.get();
+  let playlist = (db.playlists || []).find(p => p.id === playlistId);
+  if (!playlist && Array.isArray(window.__playlists)) playlist = window.__playlists.find(p => p.id === playlistId);
+  if (!playlist) return { html: '', height: 820, firstId: '', trackCount: 0, noteCount: 0, total: 0 };
+  const trackIdsSet = new Set(playlist.trackIds || []);
+  const merged = (Array.isArray(db.tracks) ? db.tracks : []).slice();
+  if (Array.isArray(window.__tracks)) {
+    const seen = new Set(merged.map(t => t && t.id));
+    window.__tracks.forEach(t => { if (t && !seen.has(t.id)) merged.push(t); });
+  }
+  const tracks = merged.filter(t => t && trackIdsSet.has(t.id));
+  const noteIds = _getFolderNoteIds(playlistId);
+  const notes = (Array.isArray(db.notes) ? db.notes : []).filter(n => n && noteIds.has(n.id));
+  const items = [
+    ...tracks.map(t => ({ kind: 'track', t, id: t.id })),
+    ...notes.map(n => ({ kind: 'note', n, id: n.id }))
+  ];
+  items.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const cols = (typeof window !== 'undefined' && window.innerWidth < 560) ? 2 : 3;
+  const height = Math.max(820, Math.ceil(items.length / cols) * 280);
+  let html = '';
+  items.forEach((it, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const seed = _hashSeed('plitem:' + playlistId + ':' + it.id);
+    const xBase = 4 + col * (86 / cols) + (seed % 12);
+    const yPx = 30 + row * 260 + ((seed >>> 4) % 50);
+    const rot = ((((seed >>> 8) % 140) - 70) / 10);
+    const dur = 11 + ((seed >>> 16) % 16);
+    const dx = (((seed >>> 12) % 50) - 25);
+    const dy = (((seed >>> 20) % 50) - 25);
+    if (it.kind === 'track') {
+      const t = it.t;
+      let shape = t.shape || SHAPE_TYPES[i % SHAPE_TYPES.length];
+      if (SHAPE_REMAP[shape]) shape = SHAPE_REMAP[shape];
+      const color = t.shapeColor || SHAPE_COLORS[i % SHAPE_COLORS.length];
+      const lines = t.lines || [t.title || '', t.artist || '', '눌러서 쇼츠로'];
+      const safeLines = lines.map(l => (l || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+      const demoBadge = t.isDemo ? '<span class="universe-demo-badge">DEMO</span>' : '';
+      html += `
+        <div class="floating-shape shape-${shape}" data-track-id="${t.id}"
+             style="background:${color}; --shape-bg:${color}; left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;"
+             onclick="openFolderShorts('${playlistId}','${t.id}')">
+          ${demoBadge}
+          <div class="shape-text">${safeLines.join('\n')}</div>
+        </div>`;
+    } else {
+      const n = it.n;
+      const c = (typeof NOTE_COLORS !== 'undefined' ? NOTE_COLORS[n.color] : null) || { bg: '#FFF59D', text: '#1a1a1a' };
+      const safeTxt = (n.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+      const safeAuth = (n.author || '').replace(/</g, '&lt;');
+      html += `
+        <div class="universe-note floating-shape" data-note-id="${n.id}"
+             style="left:${xBase}%; top:${yPx}px; background:${c.bg}; color:${c.text}; animation: floatDrift ${dur + 4}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;"
+             onclick="openFolderShorts('${playlistId}','${n.id}')">
+          <div class="universe-note-body">${safeTxt}</div>
+          <div class="universe-note-sig">— ${safeAuth}</div>
+        </div>`;
+    }
+  });
+  return { html, height, firstId: (items[0] && items[0].id) || '', trackCount: tracks.length, noteCount: notes.length, total: items.length };
+}
 
 // 진입점 — 폴더 안에서 곡/포스트잇 누르면 호출
 window.openFolderShorts = async function (playlistId, startId) {
@@ -9081,10 +9087,40 @@ window.openMyPlaylist = function(playlistId) {
   navigateTo('playlist:' + encodeURIComponent(playlistId));
 };
 
-// 폴더 진입 — '안으로 들어가는' 줌아웃 연출 없이 바로 폴더 우주로.
-// (등장 연출은 폴더 우주 캔버스가 좌상단에서 커지며 펼쳐지는 .folder-enter 가 담당)
+// 폴더 진입 — '옆 우주로 이동하는' 느낌.
+// 같은 별 하늘(배경) 위에서: 원래 있던 애들은 오른쪽 아래로 작아져 사라지고,
+// 폴더(옆동네) 애들이 왼쪽 위에서 중앙으로 동시에 날아온다. 끝나면 폴더 페이지로.
 window.enterFolderWithAnim = function(folderId) {
-  if (window.openMyPlaylist) window.openMyPlaylist(folderId);
+  const uni = document.querySelector('.shapes-universe.my-universe');
+  const built = (typeof _folderItemsHtml === 'function') ? _folderItemsHtml(folderId) : null;
+  if (!uni || !built || !built.html) {
+    if (window.openMyPlaylist) window.openMyPlaylist(folderId);
+    return;
+  }
+
+  // 1) 원래 우주 애들 → 오른쪽 아래로 작아지며 사라짐
+  uni.querySelectorAll('.floating-shape').forEach(el => {
+    el.style.animation = 'none';
+    el.style.transition = 'transform 0.55s cubic-bezier(0.5,0,0.55,1), opacity 0.5s ease';
+    el.style.transformOrigin = 'center';
+    el.style.transform = 'translate(70%, 70%) scale(0.2)';
+    el.style.opacity = '0';
+    el.style.pointerEvents = 'none';
+  });
+
+  // 2) 옆동네(폴더) 애들 → 왼쪽 위에서 중앙으로 날아옴 (같은 캔버스에 동시 등장)
+  const incoming = document.createElement('div');
+  incoming.className = 'univ-incoming';
+  incoming.style.cssText = 'position:absolute; inset:0; pointer-events:none; transform:translate(-60%,-60%) scale(0.3); opacity:0; transition:transform 0.6s cubic-bezier(0.22,0.9,0.3,1), opacity 0.5s ease;';
+  incoming.innerHTML = built.html;
+  uni.appendChild(incoming);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    incoming.style.transform = 'none';
+    incoming.style.opacity = '1';
+  }));
+
+  // 3) 애니 끝나면 실제 폴더 페이지로 — 배경/위치 동일이라 자연스럽게 이어짐
+  setTimeout(() => { if (window.openMyPlaylist) window.openMyPlaylist(folderId); }, 620);
 };
 
 window.createAndAddPlaylist = async function() {
