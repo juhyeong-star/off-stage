@@ -1145,6 +1145,60 @@ body:has(#shorts-overlay) .mobile-tab-bar { display: none !important; }
 }
 .upload-done-later:hover { color: #fff; }
 
+/* ============================================================
+   도형 쇼츠 🎴 (모바일) — 도형을 원래 모양 그대로 크게 띄우기
+   ============================================================ */
+.sshorts-overlay {
+  position: fixed; inset: 0; z-index: 1300;
+  background: radial-gradient(circle at 50% 32%, #1c1530, #07041a 72%);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  animation: shortsFadeIn 0.22s ease;
+}
+.sshorts-top { display: flex; align-items: center; gap: 12px; padding: 14px 16px; color: #fff; flex-shrink: 0; }
+.sshorts-close {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(255,255,255,0.12); color: #fff; border: none;
+  font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.sshorts-progress { font-size: 13px; opacity: 0.8; margin-left: auto; }
+.sshorts-body { flex: 1; position: relative; min-height: 0; }
+.sshorts-stage {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  will-change: transform, opacity;
+}
+/* 도형은 원래 모양 그대로(부유 애니/절대배치 해제), 화면 중앙에 크게 */
+.sshorts-stage .sshorts-shape {
+  position: relative !important;
+  animation: none !important;
+  cursor: default;
+  transform: scale(1.06);
+  margin: 0;
+}
+.sshorts-stage .sshorts-shape .shape-text { font-size: 26px; max-width: 86vw; }
+.sshorts-artist {
+  position: absolute; right: 16px; bottom: calc(var(--safe-bottom, 0px) + 18px); z-index: 4;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.3);
+  padding: 9px 15px; border-radius: 999px; font-size: 14px; font-weight: 700; cursor: pointer;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.sshorts-artist:hover { background: rgba(0,0,0,0.72); }
+.sshorts-artist i { color: #FFD54F; }
+.sshorts-hint {
+  position: absolute; left: 50%; bottom: calc(var(--safe-bottom, 0px) + 22px); transform: translateX(-50%);
+  color: rgba(255,255,255,0.5); font-size: 12px; display: inline-flex; align-items: center; gap: 5px;
+  pointer-events: none;
+}
+/* 뜯기(넘기기) 애니 — folder shorts 키프레임 재사용 */
+.sshorts-stage.tear-out-up { animation: tearOutUp 0.42s cubic-bezier(0.5,0,0.75,0) forwards; }
+.sshorts-stage.tear-out-down { animation: tearOutDown 0.42s cubic-bezier(0.5,0,0.75,0) forwards; }
+.sshorts-stage.tear-in-up { animation: tearInUp 0.42s cubic-bezier(0.2,0.8,0.3,1) both; }
+.sshorts-stage.tear-in-down { animation: tearInDown 0.42s cubic-bezier(0.2,0.8,0.3,1) both; }
+/* 쇼츠 열려있을 땐 모바일 하단 탭바 숨김 */
+body:has(#shape-shorts-overlay) .mobile-tab-bar { display: none !important; }
+
 .floating-folder .folder-orb .folder-orb-emoji {
   font-size: 56px;
   line-height: 1;

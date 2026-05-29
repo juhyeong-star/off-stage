@@ -170,7 +170,11 @@ window.goBack = function () {
     navigateTo('shapes');
     return;
   }
-  // 0.5) 폴더 쇼츠 오버레이가 열려 있으면 먼저 닫기
+  // 0.5) 쇼츠 오버레이가 열려 있으면 먼저 닫기
+  if (document.getElementById('shape-shorts-overlay')) {
+    if (window.closeShapeShorts) window.closeShapeShorts();
+    return;
+  }
   if (document.getElementById('shorts-overlay')) {
     if (window.closeFolderShorts) window.closeFolderShorts();
     return;
@@ -3679,6 +3683,156 @@ function _shortsMount() {
   document.addEventListener('keydown', window.__shortsKeyHandler);
 }
 
+// ============================================================
+// 도형 쇼츠 🎴 — 모바일 전용. 도형을 '원래 모양 그대로' 크게 화면에 띄워
+// 글자를 잘 보이게 하고, 위/아래로 넘기면 랜덤 다음 곡이 자동 재생.
+// 오른쪽 아래 아티스트 이름 누르면 그 아티스트 페이지로.
+// ============================================================
+window.__shapeShorts = null;
+
+function _isMobileShorts() {
+  try { return window.matchMedia('(max-width: 768px)').matches; } catch (_) { return window.innerWidth <= 768; }
+}
+
+window.openShapeShorts = function (startTrackId) {
+  if (!_isMobileShorts()) return false;  // 모바일 전용
+  const db = window.DB.get();
+  let tracks = (Array.isArray(db.tracks) ? db.tracks : []).slice();
+  if (Array.isArray(window.__tracks)) {
+    const seen = new Set(tracks.map(t => t && t.id));
+    window.__tracks.forEach(t => { if (t && !seen.has(t.id)) tracks.push(t); });
+  }
+  tracks = tracks.filter(t => t && t.version !== 'demo_retired' && t.audioUrl !== undefined);
+  if (!tracks.length) return false;
+  // 랜덤 순서 (알고리즘 없음) — Fisher–Yates
+  for (let i = tracks.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [tracks[i], tracks[j]] = [tracks[j], tracks[i]];
+  }
+  // 탭해서 들어온 도형은 맨 앞으로
+  if (startTrackId) {
+    const idx = tracks.findIndex(t => t.id === startTrackId);
+    if (idx > 0) { const [s] = tracks.splice(idx, 1); tracks.unshift(s); }
+  }
+  window.__shapeShorts = { tracks, idx: 0 };
+  _shapeShortsMount();
+  return true;
+};
+
+function _shapeShortsCardHtml(t) {
+  let shape = t.shape || SHAPE_TYPES[0];
+  if (SHAPE_REMAP[shape]) shape = SHAPE_REMAP[shape];
+  const color = t.shapeColor || '#FF9800';
+  const isTri = shape === 'triangle';
+  const bg = isTri ? `border-bottom-color:${color}; color:${color}; --shape-bg:${color};` : `background:${color}; --shape-bg:${color};`;
+  const lines = t.lines || [t.title || '', t.artist || '', '클릭해서 들어봐!'];
+  const safeLines = lines.map(l => (l || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+  const artist = (t.artist || '아티스트').replace(/</g, '&lt;');
+  return `
+    <div class="sshorts-stage">
+      <div class="floating-shape shape-${shape} sshorts-shape" style="${bg}">
+        <div class="shape-text">${safeLines.join('\n')}</div>
+      </div>
+      <button class="sshorts-artist" onclick="_shapeShortsGoArtist('${encodeURIComponent(t.artist || '')}')">
+        <i class="ri-mic-fill"></i> ${artist}
+      </button>
+    </div>`;
+}
+
+function _shapeShortsRenderChrome() {
+  const st = window.__shapeShorts; if (!st) return;
+  const prog = document.getElementById('sshorts-progress');
+  if (prog) prog.textContent = (st.idx + 1) + ' / ' + st.tracks.length;
+}
+
+function _shapeShortsPlayCurrent() {
+  const st = window.__shapeShorts; if (!st) return;
+  const t = st.tracks[st.idx];
+  if (t && typeof playTrack === 'function') playTrack(t.id, 'shapeshorts');
+}
+
+function _shapeShortsGo(dir) {
+  const st = window.__shapeShorts; if (!st) return;
+  const ni = st.idx + (dir === 'next' ? 1 : -1);
+  if (ni < 0 || ni >= st.tracks.length) return;
+  const stage = document.getElementById('sshorts-body'); if (!stage) return;
+  const cur = stage.querySelector('.sshorts-stage:not(.tear-out-up):not(.tear-out-down)');
+  st.idx = ni;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = _shapeShortsCardHtml(st.tracks[ni]);
+  const card = wrap.firstElementChild;
+  card.classList.add(dir === 'next' ? 'tear-in-up' : 'tear-in-down');
+  if (cur) { cur.classList.add(dir === 'next' ? 'tear-out-up' : 'tear-out-down'); setTimeout(() => cur.remove(), 460); }
+  stage.appendChild(card);
+  _shapeShortsRenderChrome();
+  _shapeShortsPlayCurrent();   // 넘기면 그 다음 곡이 바로 재생
+}
+
+window._shapeShortsGoArtist = function (encName) {
+  closeShapeShorts();
+  if (encName) navigateTo('artist:' + encName);
+};
+
+window.closeShapeShorts = function () {
+  const ov = document.getElementById('shape-shorts-overlay');
+  if (ov) ov.remove();
+  if (window.__shapeShortsKey) { document.removeEventListener('keydown', window.__shapeShortsKey); window.__shapeShortsKey = null; }
+  window.__shapeShorts = null;
+};
+
+function _shapeShortsMount() {
+  const st = window.__shapeShorts; if (!st) return;
+  let ov = document.getElementById('shape-shorts-overlay');
+  if (ov) ov.remove();
+  ov = document.createElement('div');
+  ov.id = 'shape-shorts-overlay';
+  ov.className = 'sshorts-overlay';
+  ov.innerHTML = `
+    <div class="sshorts-top">
+      <button class="sshorts-close" onclick="closeShapeShorts()" aria-label="닫기"><i class="ri-arrow-left-line"></i></button>
+      <div class="sshorts-progress" id="sshorts-progress"></div>
+    </div>
+    <div class="sshorts-body" id="sshorts-body"></div>
+    <div class="sshorts-hint"><i class="ri-arrow-up-down-line"></i> 위아래로 넘겨요</div>
+  `;
+  document.body.appendChild(ov);
+
+  const body = ov.querySelector('#sshorts-body');
+  const wrap = document.createElement('div');
+  wrap.innerHTML = _shapeShortsCardHtml(st.tracks[st.idx]);
+  const card = wrap.firstElementChild;
+  card.classList.add('tear-in-up');
+  body.appendChild(card);
+  _shapeShortsRenderChrome();
+  _shapeShortsPlayCurrent();   // 처음 띄운 곡 바로 재생
+
+  // 휠
+  let wheelLock = false;
+  ov.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    if (wheelLock) return;
+    wheelLock = true; setTimeout(() => wheelLock = false, 480);
+    _shapeShortsGo(e.deltaY > 0 ? 'next' : 'prev');
+  }, { passive: false });
+
+  // 위아래 스와이프
+  let ty0 = null;
+  body.addEventListener('touchstart', (e) => { ty0 = e.touches[0].clientY; }, { passive: true });
+  body.addEventListener('touchend', (e) => {
+    if (ty0 == null) return;
+    const dy = e.changedTouches[0].clientY - ty0; ty0 = null;
+    if (Math.abs(dy) < 44) return;
+    _shapeShortsGo(dy < 0 ? 'next' : 'prev');
+  }, { passive: true });
+
+  window.__shapeShortsKey = (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); _shapeShortsGo('next'); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); _shapeShortsGo('prev'); }
+    else if (e.key === 'Escape') { closeShapeShorts(); }
+  };
+  document.addEventListener('keydown', window.__shapeShortsKey);
+}
+
 // ===================== DISCOVER UNIVERSE DRAG =====================
 let _discoverDocListenersAttached = false;
 let _discoverDragState = { dragEl: null, startX: 0, startY: 0, origLeft: 0, origTop: 0, moved: false };
@@ -4726,6 +4880,11 @@ function initShapeDrag() {
       }
       const trackId = el.dataset.trackId;
       const artistEnc = el.dataset.artist;
+      // 모바일 + 도형 페이지에서 도형 탭 → 도형 쇼츠(크게 띄워 글자 잘 보기)로
+      if (trackId && currentView === 'shapes' && typeof openShapeShorts === 'function'
+          && _isMobileShorts() && openShapeShorts(trackId)) {
+        return;
+      }
       if (window.__lastClickedShape === el && artistEnc) {
         window.__lastClickedShape = null;
         navigateTo('artist:' + artistEnc);
