@@ -3833,12 +3833,13 @@ function _shapeShortsMount() {
     _shapeShortsGo(e.deltaY > 0 ? 'next' : 'prev');
   }, { passive: false });
 
-  // 위아래 스와이프
+  // 위아래 스와이프 — 네이티브 스크롤(화면 위로 튐) 차단하려고 touchmove 막음
   let ty0 = null;
-  body.addEventListener('touchstart', (e) => { ty0 = e.touches[0].clientY; }, { passive: true });
-  body.addEventListener('touchend', (e) => {
+  ov.addEventListener('touchstart', (e) => { ty0 = e.touches[0] ? e.touches[0].clientY : null; }, { passive: true });
+  ov.addEventListener('touchmove', (e) => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+  ov.addEventListener('touchend', (e) => {
     if (ty0 == null) return;
-    const dy = e.changedTouches[0].clientY - ty0; ty0 = null;
+    const dy = (e.changedTouches[0] ? e.changedTouches[0].clientY : ty0) - ty0; ty0 = null;
     if (Math.abs(dy) < 44) return;
     _shapeShortsGo(dy < 0 ? 'next' : 'prev');
   }, { passive: true });

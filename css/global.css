@@ -1160,7 +1160,13 @@ body:has(#shorts-overlay) .mobile-tab-bar { display: none !important; }
   display: flex; flex-direction: column;
   overflow: hidden;
   animation: shortsFadeIn 0.22s ease;
+  /* 제스처를 우리가 직접 처리 — 브라우저 네이티브 스크롤(화면이 위로
+     올라갔다 내려오던 것) 차단. 카드만 움직이게. */
+  touch-action: none;
+  overscroll-behavior: contain;
 }
+/* 쇼츠 열려있는 동안 뒤 페이지 스크롤 잠금 */
+body:has(#shape-shorts-overlay) { overflow: hidden; }
 .sshorts-top { display: flex; align-items: center; gap: 12px; padding: 14px 16px; color: #fff; flex-shrink: 0; }
 .sshorts-close {
   width: 38px; height: 38px; border-radius: 50%;
