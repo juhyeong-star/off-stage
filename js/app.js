@@ -3273,6 +3273,34 @@ window._dropNoteIntoFolder = function (noteId, folderId) {
   if (currentView === 'universe' && typeof renderUniverse === 'function') renderUniverse();
 };
 
+// 폴더에서 항목(곡/포스트잇) 빼기 — 잘못 담았을 때. 수집 자체는 유지되니
+// 빼면 다시 떠다니는 내 우주로 돌아온다.
+window._removeFromFolder = async function (folderId, id, kind) {
+  if (!folderId || !id) return;
+  if (kind === 'note') {
+    const s = _getFolderNoteIds(folderId);
+    s.delete(id);
+    try { localStorage.setItem(_folderNotesKey(folderId), JSON.stringify([...s])); } catch (_) {}
+  } else {
+    try {
+      if (window.Playlists && window.Playlists.removeTrack) {
+        await window.Playlists.removeTrack(folderId, id);
+        await window.Playlists.refreshInto(window.DB.get());
+      } else if (window.DB && window.DB.removeTrackFromPlaylist) {
+        window.DB.removeTrackFromPlaylist(folderId, id);
+      }
+    } catch (e) { console.warn('[removeFromFolder]', e); }
+  }
+  if (typeof showToast === 'function') showToast('폴더에서 뺐어요');
+  if (typeof renderSidebarPlaylists === 'function') renderSidebarPlaylists();
+  // 보고 있던 폴더 화면 다시 그리기
+  if (window.__universeFolderId === folderId && typeof _renderFolderUniverse === 'function') {
+    _renderFolderUniverse(folderId);
+  } else if (currentView === 'playlist' && typeof renderPlaylistUniverse === 'function') {
+    renderPlaylistUniverse(folderId);
+  }
+};
+
 // 어느 폴더든 담겨 있는 포스트잇/곡 id 모음 (떠다니는 내 우주에서 제외하려고)
 function _allFolderedNoteIds() {
   const ids = new Set();
@@ -3366,6 +3394,7 @@ function _folderItemsHtml(playlistId) {
         <div class="floating-shape shape-${shape}" data-track-id="${t.id}"
              style="background:${color}; --shape-bg:${color}; left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;"
              onclick="openFolderShorts('${playlistId}','${t.id}')">
+          <button class="folder-remove-btn" onclick="event.stopPropagation(); _removeFromFolder('${playlistId}','${t.id}','track')" title="폴더에서 빼기"><i class="ri-close-line"></i></button>
           ${demoBadge}
           <div class="shape-text">${safeLines.join('\n')}</div>
         </div>`;
@@ -3378,6 +3407,7 @@ function _folderItemsHtml(playlistId) {
         <div class="universe-note floating-shape" data-note-id="${n.id}"
              style="left:${xBase}%; top:${yPx}px; background:${c.bg}; color:${c.text}; animation: floatDrift ${dur + 4}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;"
              onclick="openFolderShorts('${playlistId}','${n.id}')">
+          <button class="folder-remove-btn" onclick="event.stopPropagation(); _removeFromFolder('${playlistId}','${n.id}','note')" title="폴더에서 빼기"><i class="ri-close-line"></i></button>
           <div class="universe-note-body">${safeTxt}</div>
           <div class="universe-note-sig">— ${safeAuth}</div>
         </div>`;
