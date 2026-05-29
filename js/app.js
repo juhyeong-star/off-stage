@@ -9196,12 +9196,28 @@ window.enterFolderWithAnim = function(folderId) {
     return;
   }
 
+  // 헤더는 아이템 패닝과 '겹쳐서' 부드럽게 크로스페이드 (뚝딱 바뀌는 것 방지)
+  const _db = window.DB.get();
+  const _pl = (_db.playlists || []).find(p => p.id === folderId)
+        || (Array.isArray(window.__playlists) ? window.__playlists.find(p => p.id === folderId) : null);
+  const _title = _shEsc((_pl && _pl.title) || '폴더');
+  const head = document.getElementById('universe-head');
+  if (head) {
+    head.style.transition = 'opacity 0.22s ease';
+    head.style.opacity = '0';
+    setTimeout(() => {
+      head.style.textAlign = 'center';
+      head.innerHTML = _folderHeadHtml(folderId, built, _title);
+      requestAnimationFrame(() => { head.style.opacity = '1'; });
+    }, 220);
+  }
+
   // 1) 원래 우주 애들 → 다 같이 오른쪽 아래로 미끄러지며 작아져 사라짐
   uni.querySelectorAll('.floating-shape').forEach(el => {
     el.style.animation = 'none';
     el.style.transition = 'transform 0.6s cubic-bezier(0.4,0,0.4,1), opacity 0.55s ease';
     el.style.transformOrigin = 'center';
-    el.style.transform = 'translate(48vw, 44vh) scale(0.3)';
+    el.style.transform = 'translate(42vw, 38vh) scale(0.3)';
     el.style.opacity = '0';
     el.style.pointerEvents = 'none';
   });
@@ -9209,7 +9225,7 @@ window.enterFolderWithAnim = function(folderId) {
   // 2) 옆동네(폴더) 애들 → 왼쪽 위에서 중앙으로 한 덩어리로 날아옴 (동시에)
   const incoming = document.createElement('div');
   incoming.className = 'univ-incoming';
-  incoming.style.cssText = 'position:absolute; inset:0; pointer-events:none; transform:translate(-48vw,-44vh) scale(0.32); opacity:0; transition:transform 0.62s cubic-bezier(0.22,0.9,0.3,1), opacity 0.55s ease;';
+  incoming.style.cssText = 'position:absolute; inset:0; pointer-events:none; transform:translate(-42vw,-38vh) scale(0.34); opacity:0; transition:transform 0.62s cubic-bezier(0.22,0.9,0.3,1), opacity 0.55s ease;';
   incoming.innerHTML = built.html;
   uni.appendChild(incoming);
   requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -9217,7 +9233,7 @@ window.enterFolderWithAnim = function(folderId) {
     incoming.style.opacity = '1';
   }));
 
-  // 3) 애니 끝나면 — 페이지 이동 없이 그 자리에서 폴더 모드로 전환(DOM만 교체)
+  // 3) 애니 끝나면 — 페이지 이동 없이 그 자리에서 폴더 모드로 전환(아이템 정리만)
   setTimeout(() => {
     window.__universeFolderId = folderId;
     // 빠져나간 원래 애들 제거 (incoming 은 유지)
@@ -9226,16 +9242,6 @@ window.enterFolderWithAnim = function(folderId) {
     });
     incoming.style.pointerEvents = '';  // 폴더 애들 클릭 가능하게
     uni.style.height = built.height + 'px';
-    // 헤더만 폴더용으로 교체 (배경/캔버스는 그대로 → 끊김 없음)
-    const head = document.getElementById('universe-head');
-    if (head) {
-      const db = window.DB.get();
-      let pl = (db.playlists || []).find(p => p.id === folderId)
-            || (Array.isArray(window.__playlists) ? window.__playlists.find(p => p.id === folderId) : null);
-      const title = _shEsc((pl && pl.title) || '폴더');
-      head.style.textAlign = 'center';
-      head.innerHTML = _folderHeadHtml(folderId, built, title);
-    }
   }, 640);
 };
 
