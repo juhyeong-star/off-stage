@@ -3197,37 +3197,106 @@ async function renderPlaylistUniverse(playlistId) {
 
   const safePlaylistTitle = (playlist.title || '플레이리스트').replace(/</g,'&lt;');
 
-  const firstItemId = (tracks[0] && tracks[0].id) || (notes[0] && notes[0].id) || '';
-  const hasAnything = tracks.length > 0 || notes.length > 0;
+  // ── 폴더 내부 = 똑같은 '우주'. 곡 + 담은 포스트잇이 그대로 둥둥 떠다님 ──
+  // (곡/포스트잇 누르면 쇼츠 모드로 진입)
+  const _mergedTracks = (Array.isArray(db.tracks) ? db.tracks : []).slice();
+  if (Array.isArray(window.__tracks)) {
+    const seen = new Set(_mergedTracks.map(t => t && t.id));
+    window.__tracks.forEach(t => { if (t && !seen.has(t.id)) _mergedTracks.push(t); });
+  }
+  const folderTracks = _mergedTracks.filter(t => t && trackIdsSet.has(t.id));
+  const items = [
+    ...folderTracks.map(t => ({ kind: 'track', t, id: t.id })),
+    ...notes.map(n => ({ kind: 'note', n, id: n.id }))
+  ];
+  items.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const firstItemId = (items[0] && items[0].id) || '';
 
-  appContent.innerHTML = `
-    <div class="pl-page">
-      <div class="pl-header">
-        <button class="pl-back" onclick="navigateTo('universe')" aria-label="내 우주로">
-          <i class="ri-arrow-left-line"></i>
-        </button>
-        <div class="pl-title-block">
-          <div class="pl-eyebrow">내 음악 폴더</div>
-          <h1 class="pl-title">${safePlaylistTitle}</h1>
-          <div class="pl-meta">🎵 ${masterItems.length} 마스터 · ✏ ${demoTracks.length} 데모 · 📝 ${notes.length} 포스트잇 · #${tagList.length}</div>
+  if (items.length === 0) {
+    appContent.innerHTML = `
+      <div class="pl-page pl-universe-page">
+        <div class="pl-header">
+          <button class="pl-back" onclick="navigateTo('universe')" aria-label="내 우주로"><i class="ri-arrow-left-line"></i></button>
+          <div class="pl-title-block">
+            <div class="pl-eyebrow">내 음악 폴더</div>
+            <h1 class="pl-title">${safePlaylistTitle}</h1>
+          </div>
         </div>
-        ${hasAnything ? `<button class="pl-shorts-btn" onclick="openFolderShorts('${playlistId}','${firstItemId}')"><i class="ri-stack-fill"></i> 쇼츠로 보기</button>` : ''}
-      </div>
-      ${!hasAnything ? `
         <div class="pl-empty-page">
           <div style="font-size:40px; margin-bottom:12px;">🎵</div>
           <p>이 폴더는 아직 비어 있어요.<br>내 우주에서 곡이나 포스트잇을 이 폴더로 끌어다 담아보세요.</p>
         </div>
-      ` : `
-        ${section1Html}
-        ${section2Html}
-        ${section3Html}
-        ${section4Html}
-      `}
-    </div>
-  `;
+      </div>`;
+    return;
+  }
 
-  if (tracks.length > 0) initDiscoverDrag();
+  const cols = (typeof window !== 'undefined' && window.innerWidth < 560) ? 2 : 3;
+  const universeHeight = Math.max(820, Math.ceil(items.length / cols) * 280);
+  const folderDeco = _buildStarfield('pl-sky:' + playlistId, 150, 14);
+
+  let folderItemsHtml = '';
+  items.forEach((it, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const seed = _hashSeed('plitem:' + playlistId + ':' + it.id);
+    const xBase = 4 + col * (86 / cols) + (seed % 12);
+    const yPx = 30 + row * 260 + ((seed >>> 4) % 50);
+    const rot = ((((seed >>> 8) % 140) - 70) / 10);
+    const dur = 11 + ((seed >>> 16) % 16);
+    const dx = (((seed >>> 12) % 50) - 25);
+    const dy = (((seed >>> 20) % 50) - 25);
+    if (it.kind === 'track') {
+      const t = it.t;
+      let shape = t.shape || SHAPE_TYPES[i % SHAPE_TYPES.length];
+      if (SHAPE_REMAP[shape]) shape = SHAPE_REMAP[shape];
+      const color = t.shapeColor || SHAPE_COLORS[i % SHAPE_COLORS.length];
+      const lines = t.lines || [t.title || '', t.artist || '', '눌러서 쇼츠로'];
+      const safeLines = lines.map(l => (l || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+      const demoBadge = t.isDemo ? '<span class="universe-demo-badge">DEMO</span>' : '';
+      folderItemsHtml += `
+        <div class="floating-shape shape-${shape}" data-track-id="${t.id}"
+             style="background:${color}; --shape-bg:${color}; left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;"
+             onclick="openFolderShorts('${playlistId}','${t.id}')">
+          ${demoBadge}
+          <div class="shape-text">${safeLines.join('\n')}</div>
+        </div>`;
+    } else {
+      const n = it.n;
+      const c = (typeof NOTE_COLORS !== 'undefined' ? NOTE_COLORS[n.color] : null) || { bg: '#FFF59D', text: '#1a1a1a' };
+      const safeTxt = (n.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+      const safeAuth = (n.author || '').replace(/</g, '&lt;');
+      folderItemsHtml += `
+        <div class="universe-note floating-shape" data-note-id="${n.id}"
+             style="left:${xBase}%; top:${yPx}px; background:${c.bg}; color:${c.text}; animation: floatDrift ${dur + 4}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;"
+             onclick="openFolderShorts('${playlistId}','${n.id}')">
+          <div class="universe-note-body">${safeTxt}</div>
+          <div class="universe-note-sig">— ${safeAuth}</div>
+        </div>`;
+    }
+  });
+
+  appContent.innerHTML = `
+    <div class="pl-page pl-universe-page">
+      <div class="pl-header">
+        <button class="pl-back" onclick="navigateTo('universe')" aria-label="내 우주로"><i class="ri-arrow-left-line"></i></button>
+        <div class="pl-title-block">
+          <div class="pl-eyebrow">내 음악 폴더</div>
+          <h1 class="pl-title">${safePlaylistTitle}</h1>
+          <div class="pl-meta">🎵 ${folderTracks.length} 곡 · 📝 ${notes.length} 포스트잇 — 눌러서 쇼츠로</div>
+        </div>
+        <button class="pl-shorts-btn" onclick="openFolderShorts('${playlistId}','${firstItemId}')"><i class="ri-stack-fill"></i> 쇼츠로 보기</button>
+      </div>
+      <div class="shapes-universe my-universe pl-folder-universe folder-enter" style="height:${universeHeight}px;">
+        ${folderDeco}
+        ${folderItemsHtml}
+      </div>
+    </div>`;
+
+  // 진입 애니메이션 — 폴더가 열리듯 캔버스가 왼쪽 위에서 커지며 등장
+  requestAnimationFrame(() => {
+    const uni = document.querySelector('.pl-folder-universe.folder-enter');
+    if (uni) requestAnimationFrame(() => uni.classList.remove('folder-enter'));
+  });
 }
 
 // ============================================================
@@ -4546,9 +4615,10 @@ function initShapeDrag() {
     // a second click on the SAME shape (no time limit) navigates to artist page.
     // Clicking a different shape resets: that shape is now the "primed" one.
     if (!moved) {
-      // 폴더 오브제 탭 — 폴더 열기 / 만들기
+      // 폴더 오브제 탭 — 폴더가 왼쪽 위로 커지는 전환 애니 후 폴더 우주로
       if (el.dataset.folderId) {
-        if (typeof openMyPlaylist === 'function') openMyPlaylist(el.dataset.folderId);
+        if (typeof window.enterFolderWithAnim === 'function') window.enterFolderWithAnim(el.dataset.folderId, el);
+        else if (typeof openMyPlaylist === 'function') openMyPlaylist(el.dataset.folderId);
         return;
       }
       if (el.dataset.folderTemplate) {
@@ -9009,6 +9079,29 @@ window.createDefaultPlaylist = async function(title) {
 window.openMyPlaylist = function(playlistId) {
   if (!playlistId) return;
   navigateTo('playlist:' + encodeURIComponent(playlistId));
+};
+
+// 폴더 진입 전환 애니 — 누른 폴더는 왼쪽 위로 커지고, 나머지 우주 오브제들은
+// 오른쪽 아래로 작아지며 사라진다. 그 다음 폴더 우주로 이동.
+window.enterFolderWithAnim = function(folderId, folderEl) {
+  const uni = folderEl && folderEl.closest && folderEl.closest('.shapes-universe');
+  if (!uni) { if (window.openMyPlaylist) window.openMyPlaylist(folderId); return; }
+  uni.querySelectorAll('.floating-shape').forEach(el => {
+    el.style.animation = 'none';
+    el.style.transition = 'transform 0.5s cubic-bezier(0.6,0.05,0.35,1), opacity 0.45s ease';
+    el.style.pointerEvents = 'none';
+    if (el === folderEl) {
+      el.style.transformOrigin = 'top left';
+      el.style.transform = 'scale(5) translate(-6%, -6%)';
+      el.style.opacity = '0';
+      el.style.zIndex = '60';
+    } else {
+      el.style.transformOrigin = 'bottom right';
+      el.style.transform = 'translate(45%, 45%) scale(0.08)';
+      el.style.opacity = '0';
+    }
+  });
+  setTimeout(() => { if (window.openMyPlaylist) window.openMyPlaylist(folderId); }, 480);
 };
 
 window.createAndAddPlaylist = async function() {
