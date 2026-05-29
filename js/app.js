@@ -165,6 +165,11 @@ window.goBack = function () {
     navigateTo('shapes');
     return;
   }
+  // 0.5) 폴더 쇼츠 오버레이가 열려 있으면 먼저 닫기
+  if (document.getElementById('shorts-overlay')) {
+    if (window.closeFolderShorts) window.closeFolderShorts();
+    return;
+  }
   // 1) Polaroid action menu / sheet
   const popMenu  = document.querySelector('.polaroid-actions-menu');
   const popSheet = document.querySelector('.polaroid-actions-sheet');
@@ -2961,8 +2966,9 @@ async function renderPlaylistUniverse(playlistId) {
   const allTracks = Array.isArray(db.tracks) ? db.tracks : [];
   const allNotes = Array.isArray(db.notes) ? db.notes : [];
   const tracks = allTracks.filter(t => t && trackIdsSet.has(t.id));
-  const artistNames = new Set(tracks.map(t => t.artist).filter(Boolean));
-  const notes = allNotes.filter(n => artistNames.has(n.author)).slice(0, 18);
+  // 폴더에 직접 담은 포스트잇 (내 우주에서 드래그-드롭한 것)
+  const folderNoteIds = _getFolderNoteIds(playlistId);
+  const notes = allNotes.filter(n => n && folderNoteIds.has(n.id));
 
   // Split master vs demo
   const masterTracks = tracks.filter(t => !t.isDemo); // final / master
@@ -3032,7 +3038,7 @@ async function renderPlaylistUniverse(playlistId) {
       const safeTitle = (it.title || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       const safeArtist = (it.artist || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       itemsHtml += `
-        <div class="univ-album" style="${posStyle}" onclick="playTrack('${it.id}')" title="${safeTitle} — ${safeArtist}">
+        <div class="univ-album" style="${posStyle}" onclick="openFolderShorts('${playlistId}','${it.id}')" title="${safeTitle} — ${safeArtist}">
           <img src="${it.cover}" class="univ-album-cover" alt="${safeTitle}" loading="lazy">
           <div class="univ-album-play"><i class="ri-play-fill"></i></div>
           <div class="univ-album-title">「${safeTitle}」</div>
@@ -3094,7 +3100,7 @@ async function renderPlaylistUniverse(playlistId) {
       demoHtml += `
         <div class="floating-shape shape-${shape} univ-shape pl-demo" data-track-id="${t.id}"
              style="${posStyle}"
-             onclick="playTrack('${t.id}')"
+             onclick="openFolderShorts('${playlistId}','${t.id}')"
              title="${safeTitle} — ${safeArtist}">
           <div class="shape-text">${safeLines.join('\n')}</div>
         </div>
@@ -3129,7 +3135,7 @@ async function renderPlaylistUniverse(playlistId) {
       const safeAuth = (n.author || '').replace(/</g,'&lt;');
       const encAuth = encodeURIComponent(n.author || '');
       return `
-        <div class="pl-postit" style="background:${c.bg}; color:${c.text}; --rot:${rot}deg;" onclick="navigateTo('artist:${encAuth}')" title="${safeAuth} 프로필">
+        <div class="pl-postit" style="background:${c.bg}; color:${c.text}; --rot:${rot}deg;" onclick="openFolderShorts('${playlistId}','${n.id}')" title="눌러서 쇼츠로 보기">
           <div class="pl-postit-body">${safeTxt}</div>
           <div class="pl-postit-sig">— ${safeAuth}</div>
         </div>
@@ -3137,16 +3143,16 @@ async function renderPlaylistUniverse(playlistId) {
     }).join('');
     section3Html = `
       <section class="pl-section pl-section-notes">
-        <h2 class="pl-section-title"><i class="ri-sticky-note-fill"></i> 응원 포스트잇 <span class="pl-count">${notes.length}</span></h2>
-        <p class="pl-section-sub">이 아티스트들이 받은 마음</p>
+        <h2 class="pl-section-title"><i class="ri-sticky-note-fill"></i> 담은 포스트잇 <span class="pl-count">${notes.length}</span></h2>
+        <p class="pl-section-sub">눌러서 쇼츠로 한 장씩 넘겨봐</p>
         <div class="pl-postit-grid">${notesHtml}</div>
       </section>
     `;
   } else {
     section3Html = `
       <section class="pl-section pl-section-notes">
-        <h2 class="pl-section-title"><i class="ri-sticky-note-fill"></i> 응원 포스트잇</h2>
-        <p class="pl-section-empty">우리들의 벽에서 이 아티스트들에게 마음을 전하면 여기 모여요</p>
+        <h2 class="pl-section-title"><i class="ri-sticky-note-fill"></i> 담은 포스트잇</h2>
+        <p class="pl-section-empty">내 우주에서 포스트잇을 이 폴더로 끌어다 담아보세요 📌</p>
       </section>
     `;
   }
@@ -3187,10 +3193,13 @@ async function renderPlaylistUniverse(playlistId) {
 
   const safePlaylistTitle = (playlist.title || '플레이리스트').replace(/</g,'&lt;');
 
+  const firstItemId = (tracks[0] && tracks[0].id) || (notes[0] && notes[0].id) || '';
+  const hasAnything = tracks.length > 0 || notes.length > 0;
+
   appContent.innerHTML = `
     <div class="pl-page">
       <div class="pl-header">
-        <button class="pl-back" onclick="navigateTo('profile')" aria-label="내 페이지로">
+        <button class="pl-back" onclick="navigateTo('universe')" aria-label="내 우주로">
           <i class="ri-arrow-left-line"></i>
         </button>
         <div class="pl-title-block">
@@ -3198,11 +3207,12 @@ async function renderPlaylistUniverse(playlistId) {
           <h1 class="pl-title">${safePlaylistTitle}</h1>
           <div class="pl-meta">🎵 ${masterItems.length} 마스터 · ✏ ${demoTracks.length} 데모 · 📝 ${notes.length} 포스트잇 · #${tagList.length}</div>
         </div>
+        ${hasAnything ? `<button class="pl-shorts-btn" onclick="openFolderShorts('${playlistId}','${firstItemId}')"><i class="ri-stack-fill"></i> 쇼츠로 보기</button>` : ''}
       </div>
-      ${tracks.length === 0 ? `
+      ${!hasAnything ? `
         <div class="pl-empty-page">
           <div style="font-size:40px; margin-bottom:12px;">🎵</div>
-          <p>이 폴더는 아직 비어 있어요.<br>아티스트 페이지에서 ➕ 폴더 아이콘을 눌러 곡을 담아보세요.</p>
+          <p>이 폴더는 아직 비어 있어요.<br>내 우주에서 곡이나 포스트잇을 이 폴더로 끌어다 담아보세요.</p>
         </div>
       ` : `
         ${section1Html}
@@ -3214,6 +3224,313 @@ async function renderPlaylistUniverse(playlistId) {
   `;
 
   if (tracks.length > 0) initDiscoverDrag();
+}
+
+// ============================================================
+// 폴더 쇼츠 모드 🎞️ — 폴더 안의 곡/포스트잇을 '포스트잇 한 장'씩 세로로
+// 넘기며(뜯기 애니) 보는 모드. 곡은 연속 재생(직접 누를 때만 교체).
+// 폴더 안에서 곡이나 포스트잇을 누르면 진입.
+// ============================================================
+
+// 폴더에 담은 포스트잇(note) id 저장 — 곡은 플레이리스트(서버), 포스트잇은 로컬.
+function _folderNotesKey(folderId) { return 'folder_notes:' + folderId; }
+function _getFolderNoteIds(folderId) {
+  try {
+    const raw = localStorage.getItem(_folderNotesKey(folderId));
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch (_) { return new Set(); }
+}
+function _addNoteToFolder(folderId, noteId) {
+  const s = _getFolderNoteIds(folderId);
+  s.add(noteId);
+  try { localStorage.setItem(_folderNotesKey(folderId), JSON.stringify([...s])); } catch (_) {}
+}
+
+// 내 우주에서 포스트잇 오브제를 폴더 위로 드롭했을 때 호출.
+window._dropNoteIntoFolder = function (noteId, folderId) {
+  if (!noteId || !folderId) return;
+  _addNoteToFolder(folderId, noteId);
+  // 떠다니던 포스트잇은 우주에서 정리 — 북마크 해제(서버+캐시)
+  try {
+    if (window.toggleBookmark && window.Walls && window.Walls.isBookmarked && window.Walls.isBookmarked(noteId)) {
+      window.toggleBookmark(noteId);
+    } else if (window.__bookmarkedNotes && window.__bookmarkedNotes.delete) {
+      window.__bookmarkedNotes.delete(noteId);
+    }
+  } catch (_) {}
+  if (typeof showToast === 'function') showToast('폴더에 담았어요 📌');
+  if (currentView === 'universe' && typeof renderUniverse === 'function') renderUniverse();
+};
+
+// 폴더 안 아이템(곡 + 담긴 포스트잇)을 한 번 정해진 랜덤 순서로 반환.
+function _buildFolderCards(playlist) {
+  const db = window.DB.get();
+  const allTracks = Array.isArray(db.tracks) ? db.tracks : [];
+  const allNotes = Array.isArray(db.notes) ? db.notes : [];
+  const trackIdsSet = new Set(playlist.trackIds || []);
+  const tracks = allTracks.filter(t => t && trackIdsSet.has(t.id));
+  const noteIds = _getFolderNoteIds(playlist.id);
+  const notes = allNotes.filter(n => n && noteIds.has(n.id));
+  let items = [
+    ...tracks.map(t => ({ kind: 'track', id: t.id })),
+    ...notes.map(n => ({ kind: 'note', id: n.id }))
+  ];
+  // 시드 셔플 — 폴더+아이템 id 기준이라 다시 열어도 순서 유지
+  items = items
+    .map(it => ({ it, k: _hashSeed('shorts:' + playlist.id + ':' + it.id) }))
+    .sort((a, b) => a.k - b.k)
+    .map(x => x.it);
+  return items;
+}
+
+const _shEsc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// 진입점 — 폴더 안에서 곡/포스트잇 누르면 호출
+window.openFolderShorts = async function (playlistId, startId) {
+  const db = window.DB.get();
+  let playlist = (db.playlists || []).find(p => p.id === playlistId);
+  if (!playlist && window.Playlists && window.Playlists.fetchMine) {
+    try { const all = await window.Playlists.fetchMine(); playlist = (all || []).find(p => p.id === playlistId); }
+    catch (_) {}
+  }
+  if (!playlist) return;
+  const items = _buildFolderCards(playlist);
+  if (!items.length) { if (typeof showToast === 'function') showToast('이 폴더는 비어 있어요'); return; }
+  let idx = items.findIndex(x => x.id === startId);
+  if (idx < 0) idx = 0;
+  window.__shorts = { playlistId, items, idx, title: playlist.title || '폴더' };
+  _shortsMount();
+  // 곡을 눌러서 들어왔으면 그 곡 바로 재생
+  const cur = items[idx];
+  if (cur && cur.kind === 'track' && typeof playTrack === 'function') playTrack(cur.id, 'shorts');
+};
+
+function _shortsCardHtml(item) {
+  const db = window.DB.get();
+  if (item.kind === 'note') {
+    const n = (db.notes || []).find(x => x && x.id === item.id) || {};
+    const c = (typeof NOTE_COLORS !== 'undefined' ? NOTE_COLORS[n.color] : null) || { bg: '#FFF59D', text: '#1a1a1a' };
+    const body = _shEsc(n.text || '').replace(/\n/g, '<br>');
+    const author = _shEsc(n.author || '익명');
+    let songBtn = '';
+    if (n.trackId) {
+      const t = (db.tracks || []).find(x => x && x.id === n.trackId);
+      if (t) songBtn = `<button class="shorts-play" onclick="_shortsPlay('${t.id}')"><i class="ri-play-circle-fill"></i> ${_shEsc(t.title || '곡')} 듣기</button>`;
+    } else if (n.externalUrl) {
+      songBtn = `<a class="shorts-play" href="${(n.externalUrl||'').replace(/"/g,'&quot;')}" target="_blank" rel="noopener"><i class="ri-external-link-line"></i> 링크 열기</a>`;
+    }
+    return `
+      <div class="shorts-card note-paper" style="--paper:${c.bg}; --ink:${c.text};">
+        <div class="shorts-paper-tape"></div>
+        <div class="shorts-kind">📌 포스트잇</div>
+        <div class="shorts-card-body">${body || '...'}</div>
+        <div class="shorts-card-sig">— ${author}</div>
+        ${songBtn}
+      </div>`;
+  }
+  // track → 포스트잇 형태
+  const t = (db.tracks || []).find(x => x && x.id === item.id) || {};
+  const cover = t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=300';
+  const title = _shEsc(t.title || '제목 없음');
+  const artist = _shEsc(t.artist || '');
+  const desc = _shEsc(t.description || t.artistNote || '').replace(/\n/g, '<br>');
+  return `
+    <div class="shorts-card track-paper">
+      <div class="shorts-paper-tape"></div>
+      <div class="shorts-kind">🎵 곡</div>
+      <img class="shorts-cover" src="${cover}" alt="" loading="lazy" draggable="false">
+      <div class="shorts-card-title">${title}</div>
+      <div class="shorts-card-artist">${artist}</div>
+      ${desc ? `<div class="shorts-card-body">${desc}</div>` : `<div class="shorts-card-body shorts-card-body-dim">소개글이 아직 없어요</div>`}
+      <button class="shorts-play" onclick="_shortsPlay('${t.id}')"><i class="ri-play-circle-fill"></i> 이 곡 듣기</button>
+    </div>`;
+}
+
+function _shortsCommentsOf(item) {
+  const db = window.DB.get();
+  if (item.kind === 'note') {
+    const n = (db.notes || []).find(x => x && x.id === item.id);
+    return (n && Array.isArray(n.comments)) ? n.comments : [];
+  }
+  const t = (db.tracks || []).find(x => x && x.id === item.id);
+  return (t && Array.isArray(t.trackComments)) ? t.trackComments : [];
+}
+
+function _shortsRenderComments() {
+  const st = window.__shorts; if (!st) return;
+  const list = document.getElementById('shorts-cm-list');
+  if (!list) return;
+  const cms = _shortsCommentsOf(st.items[st.idx]);
+  list.innerHTML = cms.length === 0
+    ? `<div class="shorts-cm-empty">아직 댓글이 없어요.<br>첫 댓글을 남겨보세요 ✏️</div>`
+    : cms.map(cm => `
+        <div class="shorts-cm">
+          <span class="shorts-cm-auth">${_shEsc(cm.author || '익명')}</span>
+          <span class="shorts-cm-text">${_shEsc(cm.text || '')}</span>
+        </div>`).join('');
+  list.scrollTop = list.scrollHeight;
+}
+
+// 곡 카드 댓글을 처음 한 번 서버에서 불러와 채움
+async function _shortsMaybeLoadTrackComments() {
+  const st = window.__shorts; if (!st) return;
+  const item = st.items[st.idx];
+  if (!item || item.kind !== 'track') return;
+  const db = window.DB.get();
+  const t = (db.tracks || []).find(x => x && x.id === item.id);
+  if (!t || t._commentsLoaded || !t.__supabase || !window.Tracks || !window.Tracks.fetchComments) return;
+  t._commentsLoaded = true;
+  try {
+    const comments = await window.Tracks.fetchComments(item.id);
+    t.trackComments = comments;
+    try { window.DB.save(db); } catch (_) {}
+    if (window.__shorts && window.__shorts.items[window.__shorts.idx] && window.__shorts.items[window.__shorts.idx].id === item.id) {
+      _shortsRenderComments();
+    }
+  } catch (_) {}
+}
+
+function _shortsUpdateChrome() {
+  const st = window.__shorts; if (!st) return;
+  const prog = document.getElementById('shorts-progress');
+  if (prog) prog.textContent = (st.idx + 1) + ' / ' + st.items.length;
+  const up = document.getElementById('shorts-up');
+  const down = document.getElementById('shorts-down');
+  if (up) up.classList.toggle('disabled', st.idx <= 0);
+  if (down) down.classList.toggle('disabled', st.idx >= st.items.length - 1);
+}
+
+function _shortsGo(dir) {
+  const st = window.__shorts; if (!st) return;
+  const ni = st.idx + (dir === 'next' ? 1 : -1);
+  if (ni < 0 || ni >= st.items.length) return;
+  const stage = document.getElementById('shorts-stage'); if (!stage) return;
+  const cur = stage.querySelector('.shorts-card:not(.tear-out-up):not(.tear-out-down)');
+  st.idx = ni;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = _shortsCardHtml(st.items[ni]);
+  const card = wrap.firstElementChild;
+  card.classList.add(dir === 'next' ? 'tear-in-up' : 'tear-in-down');
+  if (cur) { cur.classList.add(dir === 'next' ? 'tear-out-up' : 'tear-out-down'); setTimeout(() => cur.remove(), 460); }
+  stage.appendChild(card);
+  _shortsRenderComments();
+  _shortsUpdateChrome();
+  _shortsMaybeLoadTrackComments();
+}
+
+window._shortsPlay = function (trackId) {
+  if (trackId && typeof playTrack === 'function') playTrack(trackId, 'shorts');
+};
+
+window._shortsSubmitComment = async function (formEl) {
+  const st = window.__shorts; if (!st || !formEl) return;
+  const item = st.items[st.idx]; if (!item) return;
+  const input = formEl.querySelector('.shorts-cm-input');
+  const text = (input && input.value || '').trim();
+  if (!text) return;
+  input.value = '';
+  const db = window.DB.get();
+  const author = (window.__currentUser && window.__currentUser.name)
+    || (db.currentUser && db.currentUser.name) || '익명';
+  try {
+    if (item.kind === 'note') {
+      let newCm = null;
+      if (window.Walls && window.Walls.addComment) newCm = await window.Walls.addComment(item.id, { text });
+      if (!newCm) newCm = { id: 'c' + Date.now(), author, text };
+      const n = (db.notes || []).find(x => x && x.id === item.id);
+      if (n) { if (!Array.isArray(n.comments)) n.comments = []; n.comments.push(newCm); window.DB.save(db); }
+    } else {
+      let newCm = null;
+      if (window.Tracks && window.Tracks.addComment) newCm = await window.Tracks.addComment(item.id, { text, authorName: author });
+      if (!newCm) newCm = { id: 'c' + Date.now(), author, text };
+      const t = (db.tracks || []).find(x => x && x.id === item.id);
+      if (t) { if (!Array.isArray(t.trackComments)) t.trackComments = []; t.trackComments.push(newCm); window.DB.save(db); }
+    }
+  } catch (e) { console.warn('[shorts] addComment', e); }
+  _shortsRenderComments();
+};
+
+window.closeFolderShorts = function () {
+  const ov = document.getElementById('shorts-overlay');
+  if (ov) ov.remove();
+  if (window.__shortsKeyHandler) { document.removeEventListener('keydown', window.__shortsKeyHandler); window.__shortsKeyHandler = null; }
+  window.__shorts = null;
+};
+
+function _shortsMount() {
+  const st = window.__shorts; if (!st) return;
+  let ov = document.getElementById('shorts-overlay');
+  if (ov) ov.remove();
+  ov = document.createElement('div');
+  ov.id = 'shorts-overlay';
+  ov.className = 'shorts-overlay';
+  ov.innerHTML = `
+    <div class="shorts-top">
+      <button class="shorts-close" onclick="closeFolderShorts()" aria-label="닫기"><i class="ri-arrow-left-line"></i></button>
+      <div class="shorts-title">${_shEsc(st.title)}</div>
+      <div class="shorts-progress" id="shorts-progress"></div>
+    </div>
+    <div class="shorts-body">
+      <div class="shorts-main">
+        <div class="shorts-stage" id="shorts-stage"></div>
+        <div class="shorts-navhint">
+          <button class="shorts-nav" id="shorts-up" onclick="_shortsGo('prev')" aria-label="이전"><i class="ri-arrow-up-s-line"></i></button>
+          <button class="shorts-nav" id="shorts-down" onclick="_shortsGo('next')" aria-label="다음"><i class="ri-arrow-down-s-line"></i></button>
+        </div>
+      </div>
+      <aside class="shorts-side" id="shorts-side">
+        <div class="shorts-side-head"><i class="ri-chat-3-line"></i> 댓글</div>
+        <div class="shorts-cm-list" id="shorts-cm-list"></div>
+        <form class="shorts-cm-form" onsubmit="event.preventDefault(); _shortsSubmitComment(this);">
+          <input type="text" class="shorts-cm-input" maxlength="200" placeholder="댓글 달기…">
+          <button type="submit" class="shorts-cm-send"><i class="ri-send-plane-fill"></i></button>
+        </form>
+      </aside>
+      <button class="shorts-cm-toggle" id="shorts-cm-toggle" onclick="document.getElementById('shorts-overlay').classList.toggle('cm-open')" aria-label="댓글">
+        <i class="ri-chat-3-fill"></i>
+      </button>
+    </div>
+  `;
+  document.body.appendChild(ov);
+
+  // 첫 카드
+  const stage = ov.querySelector('#shorts-stage');
+  const wrap = document.createElement('div');
+  wrap.innerHTML = _shortsCardHtml(st.items[st.idx]);
+  const card = wrap.firstElementChild;
+  card.classList.add('tear-in-up');
+  stage.appendChild(card);
+  _shortsRenderComments();
+  _shortsUpdateChrome();
+  _shortsMaybeLoadTrackComments();
+
+  // 휠 / 스와이프 / 키보드
+  let wheelLock = false;
+  ov.addEventListener('wheel', (e) => {
+    if (e.target.closest('.shorts-side')) return;  // 댓글 스크롤은 통과
+    e.preventDefault();
+    if (wheelLock) return;
+    wheelLock = true; setTimeout(() => wheelLock = false, 480);
+    _shortsGo(e.deltaY > 0 ? 'next' : 'prev');
+  }, { passive: false });
+
+  let touchY0 = null;
+  const main = ov.querySelector('.shorts-main');
+  main.addEventListener('touchstart', (e) => { touchY0 = e.touches[0].clientY; }, { passive: true });
+  main.addEventListener('touchend', (e) => {
+    if (touchY0 == null) return;
+    const dy = e.changedTouches[0].clientY - touchY0;
+    touchY0 = null;
+    if (Math.abs(dy) < 40) return;
+    _shortsGo(dy < 0 ? 'next' : 'prev');
+  }, { passive: true });
+
+  window.__shortsKeyHandler = (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); _shortsGo('next'); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); _shortsGo('prev'); }
+    else if (e.key === 'Escape') { closeFolderShorts(); }
+  };
+  document.addEventListener('keydown', window.__shortsKeyHandler);
 }
 
 // ===================== DISCOVER UNIVERSE DRAG =====================
@@ -4153,8 +4470,8 @@ function initShapeDrag() {
       dragEl.style.top = (origTop + dy) + 'px';
       e.preventDefault();
       lastX = ptr.clientX; lastY = ptr.clientY;
-      // 곡을 끌고 있을 때만 폴더 위 하이라이트 (내 우주 한정)
-      if (currentView === 'universe' && dragEl.dataset.trackId) {
+      // 곡/포스트잇을 끌고 있을 때 폴더 위 하이라이트 (내 우주 한정)
+      if (currentView === 'universe' && (dragEl.dataset.trackId || dragEl.dataset.noteId)) {
         const folder = _folderAt(ptr.clientX, ptr.clientY, dragEl);
         _clearDropHover(folder);
         if (folder) folder.classList.add('folder-drop-hover');
@@ -4178,19 +4495,22 @@ function initShapeDrag() {
       return;
     }
 
-    // ── 드롭: 곡을 폴더 오브제 위에 떨어뜨리면 그 폴더(플레이리스트)에 담는다 ──
+    // ── 드롭: 곡/포스트잇을 폴더 오브제 위에 떨어뜨리면 그 폴더에 담는다 ──
     _clearDropHover(null);
-    if (moved && currentView === 'universe' && el.dataset.trackId) {
+    if (moved && currentView === 'universe' && (el.dataset.trackId || el.dataset.noteId)) {
       const folder = _folderAt(lastX, lastY, el);
       if (folder && folder.dataset.folderId) {
         const fid = folder.dataset.folderId;
-        const tid = el.dataset.trackId;
         // 흡수되는 듯한 피드백
         el.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
         el.style.transform = 'scale(0.15)';
         el.style.opacity = '0';
-        if (typeof window._dropTrackIntoFolder === 'function') window._dropTrackIntoFolder(tid, fid);
-        return;   // 위치 저장/클릭 처리 건너뜀 — 곡은 폴더로 흡수됨
+        if (el.dataset.trackId && typeof window._dropTrackIntoFolder === 'function') {
+          window._dropTrackIntoFolder(el.dataset.trackId, fid);
+        } else if (el.dataset.noteId && typeof window._dropNoteIntoFolder === 'function') {
+          window._dropNoteIntoFolder(el.dataset.noteId, fid);
+        }
+        return;   // 위치 저장/클릭 처리 건너뜀 — 폴더로 흡수됨
       }
     }
 
