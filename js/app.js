@@ -2391,8 +2391,12 @@ window.submitWallNote = async function() {
 };
 
 window.toggleBookmark = async function(noteId) {
-  if (!window.Walls || !window.Walls.toggleBookmark) return;
-  const user = window.__currentUser;
+  if (!window.Walls || !window.Walls.toggleBookmark) {
+    alert('아직 준비 중이에요. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+  // __currentUser 가 인증 새로고침 타이밍에 잠깐 null 일 수 있음 → 로컬 db도 확인.
+  const user = window.__currentUser || (window.DB.get && window.DB.get().currentUser);
   if (!user) {
     if (confirm('포스트잇을 수집하려면 로그인이 필요해요. 로그인할까요?')) navigateTo('auth');
     return;
@@ -3862,9 +3866,14 @@ window.openShapeLongPressMenu = function(trackId, anchorX, anchorY, shapeEl) {
 
   // Dismiss on outside tap/click — register on next tick to avoid the
   // touchend that triggered the menu from immediately closing it.
+  // ⚠️ 데스크탑: 꾹 눌렀다 떼면 그 도형에서 'click' 이 한 번 발생하는데,
+  //    그게 메뉴를 즉시 닫아버림(=메뉴가 안 뜨는 것처럼 보임). 그래서 메뉴를
+  //    연 도형(shapeEl) 위의 클릭/탭은 무시한다.
   setTimeout(() => {
     const onOutside = (ev) => {
-      if (!menu.contains(ev.target)) _splpClose();
+      if (menu.contains(ev.target)) return;
+      if (shapeEl && (ev.target === shapeEl || (shapeEl.contains && shapeEl.contains(ev.target)))) return;
+      _splpClose();
     };
     menu.__onOutside = onOutside;
     document.addEventListener('click', onOutside, true);
