@@ -3438,10 +3438,9 @@ function _folderItemsHtml(playlistId) {
       const safeLines = lines.map(l => (l || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
       const demoBadge = t.isDemo ? '<span class="universe-demo-badge">DEMO</span>' : '';
       html += `
-        <div class="floating-shape shape-${shape}" data-track-id="${t.id}"
+        <div class="floating-shape shape-${shape}" data-track-id="${t.id}" data-folder-id="${playlistId}"
              style="background:${color}; --shape-bg:${color}; left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;"
              onclick="openFolderShorts('${playlistId}','${t.id}')">
-          <button class="folder-remove-btn" onclick="event.stopPropagation(); _removeFromFolder('${playlistId}','${t.id}','track')" title="폴더에서 빼기"><i class="ri-close-line"></i></button>
           ${demoBadge}
           <div class="shape-text">${safeLines.join('\n')}</div>
         </div>`;
@@ -3451,10 +3450,9 @@ function _folderItemsHtml(playlistId) {
       const safeTxt = (n.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
       const safeAuth = (n.author || '').replace(/</g, '&lt;');
       html += `
-        <div class="universe-note floating-shape" data-note-id="${n.id}"
+        <div class="universe-note floating-shape" data-note-id="${n.id}" data-folder-id="${playlistId}"
              style="left:${xBase}%; top:${yPx}px; background:${c.bg}; color:${c.text}; animation: floatDrift ${dur + 4}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;"
              onclick="openFolderShorts('${playlistId}','${n.id}')">
-          <button class="folder-remove-btn" onclick="event.stopPropagation(); _removeFromFolder('${playlistId}','${n.id}','note')" title="폴더에서 빼기"><i class="ri-close-line"></i></button>
           <div class="universe-note-body">${safeTxt}</div>
           <div class="universe-note-sig">— ${safeAuth}</div>
           ${(typeof _renderNoteTrackChip === 'function') ? _renderNoteTrackChip(n) : ''}
@@ -3466,6 +3464,8 @@ function _folderItemsHtml(playlistId) {
 
 // 진입점 — 폴더 안에서 곡/포스트잇 누르면 호출
 window.openFolderShorts = async function (playlistId, startId) {
+  // 롱프레스 메뉴(폴더에서 빼기)가 떠 있는 동안 들어온 '유령 클릭'이면 쇼츠를 열지 않는다.
+  if (document.getElementById('shape-longpress-menu')) return;
   const db = window.DB.get();
   let playlist = (db.playlists || []).find(p => p.id === playlistId);
   if (!playlist && window.Playlists && window.Playlists.fetchMine) {
@@ -4179,17 +4179,38 @@ window.openShapeLongPressMenu = function(trackId, anchorX, anchorY, shapeEl) {
   const existing = document.getElementById('shape-longpress-menu');
   if (existing) existing.remove();
 
-  const inUniverse = (typeof isTrackLiked === 'function') ? isTrackLiked(trackId) : false;
-  const argT = (trackId || '').replace(/'/g, "\\'");
+  // 폴더 안인지 판단 — 폴더 안이면 '폴더에서 빼기', 아니면 '내 우주에 모으기/빼기'.
+  const folderId = (shapeEl && shapeEl.dataset && shapeEl.dataset.folderId) || window.__universeFolderId || null;
+  const noteId = shapeEl && shapeEl.dataset && shapeEl.dataset.noteId;
+
+  let itemsHtml;
+  if (folderId) {
+    const itemId = trackId || noteId || '';
+    if (!itemId) return;
+    const kind = (trackId ? 'track' : 'note');
+    const argId = itemId.replace(/'/g, "\\'");
+    const argF  = (folderId || '').replace(/'/g, "\\'");
+    itemsHtml = `
+      <button class="splp-item" onclick="event.stopPropagation(); _splpClose(); _removeFromFolder('${argF}','${argId}','${kind}')">
+        <i class="ri-inbox-unarchive-line" style="color:#ff6b6b;"></i>
+        <span>폴더에서 빼기</span>
+      </button>`;
+  } else {
+    // 떠다니는 내 우주 — 트랙만 메뉴 있음
+    if (!trackId) return;
+    const inUniverse = (typeof isTrackLiked === 'function') ? isTrackLiked(trackId) : false;
+    const argT = (trackId || '').replace(/'/g, "\\'");
+    itemsHtml = `
+      <button class="splp-item" onclick="event.stopPropagation(); _splpCollect('${argT}', this)">
+        <i class="ri-${inUniverse ? 'heart-fill' : 'heart-add-line'}" style="color:#ff2e63;"></i>
+        <span>${inUniverse ? '우주에서 빼기' : '내 우주에 모으기'}</span>
+      </button>`;
+  }
 
   const menu = document.createElement('div');
   menu.id = 'shape-longpress-menu';
   menu.className = 'shape-longpress-menu';
-  menu.innerHTML = `
-    <button class="splp-item" onclick="event.stopPropagation(); _splpCollect('${argT}', this)">
-      <i class="ri-${inUniverse ? 'heart-fill' : 'heart-add-line'}" style="color:${inUniverse ? '#ff2e63' : '#ff2e63'};"></i>
-      <span>${inUniverse ? '우주에서 빼기' : '내 우주에 모으기'}</span>
-    </button>
+  menu.innerHTML = itemsHtml + `
     <button class="splp-item splp-cancel" onclick="event.stopPropagation(); _splpClose()">
       <i class="ri-close-line"></i>
       <span>닫기</span>
@@ -4790,11 +4811,13 @@ function initShapeDrag() {
     //    longPressFired 가 켜져서 pointerUp 이 일찍 빠져나가 '놓아도 안 떨어지는'
     //    느낌이 남.)
     if (longPressTimer) clearTimeout(longPressTimer);
-    if (el.dataset.trackId && typeof window.openShapeLongPressMenu === 'function') {
+    // 트랙은 항상, 포스트잇은 폴더 안일 때만 롱프레스 메뉴(폴더에서 빼기)를 건다.
+    const _lpHasMenu = el.dataset.trackId || (el.dataset.folderId && el.dataset.noteId);
+    if (_lpHasMenu && typeof window.openShapeLongPressMenu === 'function') {
       longPressTimer = setTimeout(() => {
         if (!dragEl || moved || dragModeEntered) return;
         longPressFired = true;
-        window.openShapeLongPressMenu(el.dataset.trackId, startX, startY, el);
+        window.openShapeLongPressMenu(el.dataset.trackId || null, startX, startY, el);
         try { if (navigator.vibrate) navigator.vibrate(15); } catch (_) {}
       }, LONG_PRESS_MS);
     }
@@ -5054,12 +5077,13 @@ function initShapeDrag() {
     el.addEventListener('wheel', onWheel, { passive: false });
     el.addEventListener('touchstart', touchStartPinch, { passive: false });
 
-    // 데스크탑: 오른쪽 클릭(우클릭)으로 '내 우주에 모으기' 메뉴 — 꾹누르기보다 확실.
+    // 데스크탑: 오른쪽 클릭(우클릭)으로 메뉴 — 우주에선 '모으기', 폴더 안에선 '폴더에서 빼기'.
     el.addEventListener('contextmenu', (e) => {
       const trackId = el.dataset.trackId;
-      if (!trackId || typeof window.openShapeLongPressMenu !== 'function') return;
+      const hasMenu = trackId || (el.dataset.folderId && el.dataset.noteId);
+      if (!hasMenu || typeof window.openShapeLongPressMenu !== 'function') return;
       e.preventDefault();
-      window.openShapeLongPressMenu(trackId, e.clientX, e.clientY, el);
+      window.openShapeLongPressMenu(trackId || null, e.clientX, e.clientY, el);
     });
 
     const handle = el.querySelector('.shape-resize-handle');
