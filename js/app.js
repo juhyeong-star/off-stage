@@ -9095,18 +9095,12 @@ window.openMyPlaylist = function(playlistId) {
   navigateTo('playlist:' + encodeURIComponent(playlistId));
 };
 
-// 폴더 헤더(뒤로/제목/쇼츠) — 내 우주 안 폴더 모드에서 씀
+// 폴더 헤더 — 내 우주 헤더와 똑같은 가운데 정렬 스타일(폴더명만 다름).
+// 뒤로가기는 좌상단 글로벌 백버튼이 담당, 쇼츠는 아이템 클릭으로 진입.
 function _folderHeadHtml(folderId, built, title) {
   return `
-    <div style="display:flex; align-items:center; gap:12px; text-align:left; max-width:1100px; margin:0 auto;">
-      <button class="pl-back" onclick="exitFolderToUniverse()" aria-label="내 우주로"><i class="ri-arrow-left-line"></i></button>
-      <div style="flex:1; min-width:0;">
-        <div style="font-size:11px; color:var(--text-secondary); font-weight:700;">내 우주 · 음악 폴더</div>
-        <h1 style="font-size:21px; margin:1px 0;">📁 ${title}</h1>
-        <div style="font-size:12px; color:var(--text-secondary);">🎵 ${built.trackCount} · 📝 ${built.noteCount} — 눌러서 쇼츠로</div>
-      </div>
-      <button class="pl-shorts-btn" onclick="openFolderShorts('${folderId}','${built.firstId}')"><i class="ri-stack-fill"></i> 쇼츠로 보기</button>
-    </div>`;
+    <h1 style="font-size:22px; margin-bottom:4px;">📁 ${title}</h1>
+    <p style="font-size:13px; color:var(--text-secondary);">🎵 ${built.trackCount} · 📝 ${built.noteCount} — 눌러서 쇼츠로</p>`;
 }
 
 // 내 우주 '안'에서 폴더 내용을 그린다(별도 페이지 X). 새로고침/쇼츠 복귀 등에 사용.
@@ -9119,7 +9113,7 @@ function _renderFolderUniverse(folderId) {
   if (built.total === 0) { window.__universeFolderId = null; window.renderUniverse(); return; }
   const deco = _buildStarfield('universe-sky', 160, 15);
   appContent.innerHTML = `
-    <div id="universe-head" style="padding:20px 24px 8px;">
+    <div id="universe-head" style="padding:20px 24px 8px; text-align:center;">
       ${_folderHeadHtml(folderId, built, title)}
     </div>
     <div class="shapes-universe my-universe" style="height:${built.height}px;">
@@ -9183,7 +9177,7 @@ window.enterFolderWithAnim = function(folderId) {
       let pl = (db.playlists || []).find(p => p.id === folderId)
             || (Array.isArray(window.__playlists) ? window.__playlists.find(p => p.id === folderId) : null);
       const title = _shEsc((pl && pl.title) || '폴더');
-      head.style.textAlign = 'left';
+      head.style.textAlign = 'center';
       head.innerHTML = _folderHeadHtml(folderId, built, title);
     }
   }, 640);
