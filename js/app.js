@@ -4435,11 +4435,20 @@ window.renderUniverse = async function () {
     // Per-item deterministic seed → stable jitter + drift animation
     const seed = _hashSeed(it.id);
     const stored = _loadUniversePos(it.id);
-    const xBase = stored ? stored.xPct : (4 + col * 30 + (seed % 14));
-    const yPx   = stored ? stored.yPx  : (30 + row * 260 + ((seed >>> 4) % 50));
-    const rot   = stored && typeof stored.rot === 'number'
-      ? stored.rot
-      : ((((seed >>> 8) % 140) - 70) / 10);
+    let xBase, yPx, rot;
+    if (stored) {
+      xBase = stored.xPct;
+      yPx   = stored.yPx;
+      rot   = (typeof stored.rot === 'number') ? stored.rot : ((((seed >>> 8) % 140) - 70) / 10);
+    } else {
+      // 처음 배치는 인덱스 기반 격자 → 그대로 두면 항목이 추가/삭제될 때(폴더에
+      // 담을 때) 인덱스가 밀려 위치가 초기화됨. 그래서 첫 렌더에 위치를 저장해
+      // 고정시킨다(이후엔 stored 사용 → 안 밀림).
+      xBase = 4 + col * 30 + (seed % 14);
+      yPx   = 30 + row * 260 + ((seed >>> 4) % 50);
+      rot   = (((seed >>> 8) % 140) - 70) / 10;
+      try { localStorage.setItem('unipos:' + it.id, JSON.stringify({ xPct: xBase, yPx, rot })); } catch (_) {}
+    }
     const dur = 10 + ((seed >>> 16) % 18);
     const dx  = (((seed >>> 12) % 50) - 25);
     const dy  = (((seed >>> 20) % 50) - 25);
