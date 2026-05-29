@@ -4624,6 +4624,16 @@ function initShapeDrag() {
       return;
     }
 
+    // 모바일: 터치하면 touchend 뒤에 '유령 mouseup/click'이 한 번 더 와서
+    // pointerUp 이 두 번 실행됨(=한 번 탭에 재생+아티스트이동 동시 발생).
+    // touchend 시각을 기록해두고, 직후 들어오는 mouseup 은 무시한다.
+    const _nowTs = Date.now();
+    if (e.type === 'touchend') {
+      window.__lastTouchEndTs = _nowTs;
+    } else if (e.type === 'mouseup' && window.__lastTouchEndTs && (_nowTs - window.__lastTouchEndTs) < 700) {
+      return;  // 유령 이벤트 — 이미 touchend 에서 처리함
+    }
+
     // ── 드롭: 곡/포스트잇을 폴더 오브제 위에 떨어뜨리면 그 폴더에 담는다 ──
     _clearDropHover(null);
     if (moved && currentView === 'universe' && (el.dataset.trackId || el.dataset.noteId)) {
