@@ -4559,6 +4559,11 @@ function initShapeDrag() {
         if (typeof promptNewPlaylist === 'function') promptNewPlaylist();
         return;
       }
+      // 내 우주 등에서 포스트잇 오브제 탭 → 글/댓글 모달 열기
+      if (el.dataset.noteId) {
+        if (typeof openNoteDetail === 'function') openNoteDetail(el.dataset.noteId);
+        return;
+      }
       const trackId = el.dataset.trackId;
       const artistEnc = el.dataset.artist;
       if (window.__lastClickedShape === el && artistEnc) {
@@ -4659,6 +4664,14 @@ function initShapeDrag() {
     el.addEventListener('touchstart', pointerDown, { passive: false });
     el.addEventListener('wheel', onWheel, { passive: false });
     el.addEventListener('touchstart', touchStartPinch, { passive: false });
+
+    // 데스크탑: 오른쪽 클릭(우클릭)으로 '내 우주에 모으기' 메뉴 — 꾹누르기보다 확실.
+    el.addEventListener('contextmenu', (e) => {
+      const trackId = el.dataset.trackId;
+      if (!trackId || typeof window.openShapeLongPressMenu !== 'function') return;
+      e.preventDefault();
+      window.openShapeLongPressMenu(trackId, e.clientX, e.clientY, el);
+    });
 
     const handle = el.querySelector('.shape-resize-handle');
     if (handle) {
