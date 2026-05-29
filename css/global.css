@@ -832,7 +832,7 @@ body.guest .sidebar-my-channel { display: none; }
 /* "내 우주" page — small DEMO badge on the top-left of liked-demo shapes */
 .universe-demo-badge {
   position: absolute;
-  top: 6px; left: 6px;
+  top: 8px; left: 50%; transform: translateX(-50%);   /* 위쪽 가운데(도형 위) */
   background: rgba(0,0,0,0.75);
   color: #ffeb3b;
   font-size: 9px;

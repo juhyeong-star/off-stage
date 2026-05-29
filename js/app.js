@@ -3366,6 +3366,17 @@ function _buildFolderCards(playlist) {
 
 const _shEsc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+// 폴더 안에서 드래그로 옮긴 위치 저장/불러오기 (폴더별로 구분)
+function _loadPlPos(playlistId, id) {
+  try {
+    const raw = localStorage.getItem('plpos:' + playlistId + ':' + id);
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    if (typeof p.xPct !== 'number' || typeof p.yPx !== 'number') return null;
+    return p;
+  } catch (_) { return null; }
+}
+
 // 폴더 우주의 떠다니는 아이템 HTML 생성 — 폴더 페이지 + 진입 전환이 같은 위치를
 // 쓰도록 한 곳에서 만든다. (곡=도형, 포스트잇=노트, 누르면 쇼츠)
 function _folderItemsHtml(playlistId) {
@@ -3394,8 +3405,9 @@ function _folderItemsHtml(playlistId) {
     const col = i % cols;
     const row = Math.floor(i / cols);
     const seed = _hashSeed('plitem:' + playlistId + ':' + it.id);
-    const xBase = 4 + col * (86 / cols) + (seed % 12);
-    const yPx = 30 + row * 260 + ((seed >>> 4) % 50);
+    const _sp = _loadPlPos(playlistId, it.id);   // 드래그로 옮긴 위치 있으면 사용
+    const xBase = _sp ? _sp.xPct : (4 + col * (86 / cols) + (seed % 12));
+    const yPx = _sp ? _sp.yPx : (30 + row * 260 + ((seed >>> 4) % 50));
     const rot = ((((seed >>> 8) % 140) - 70) / 10);
     const dur = 11 + ((seed >>> 16) % 16);
     const dx = (((seed >>> 12) % 50) - 25);
@@ -4791,6 +4803,9 @@ function initShapeDrag() {
       if (!dragModeEntered) {
         dragModeEntered = true;
         dragEl.style.animation = 'none';
+        // floatDrift 애니가 주던 축소(--scale)를 드래그 중에도 유지 (안 그러면 커짐)
+        const _sc = (getComputedStyle(dragEl).getPropertyValue('--scale') || '').trim();
+        if (_sc && _sc !== '1' && _sc !== '') dragEl.style.transform = 'scale(' + _sc + ')';
         dragEl.style.left = origLeft + 'px';
         dragEl.style.top = origTop + 'px';
         dragEl.style.zIndex = '50';
@@ -4858,7 +4873,7 @@ function initShapeDrag() {
       }
     }
 
-    // Persist user-curated position on /universe and /shapes.
+    // Persist user-curated position on /universe and /shapes (+ 폴더 안).
     // Saves a percentage for x (so it scales with width) and pixels for y.
     if (moved && (currentView === 'universe' || currentView === 'shapes')) {
       const itemId = el.dataset.trackId || el.dataset.noteId || el.dataset.folderId || el.dataset.uid;
@@ -4869,9 +4884,11 @@ function initShapeDrag() {
         const topPx  = elRect.top  - parentRect.top;
         const xPct   = parentRect.width > 0 ? (leftPx / parentRect.width) * 100 : 0;
         const pass   = el.dataset.pass;
-        const key    = currentView === 'universe'
-          ? 'unipos:' + itemId
-          : 'shapepos:' + itemId + ':' + (pass != null ? pass : '0');
+        const key    = window.__universeFolderId
+          ? ('plpos:' + window.__universeFolderId + ':' + itemId)   // 폴더 안 위치
+          : (currentView === 'universe'
+              ? 'unipos:' + itemId
+              : 'shapepos:' + itemId + ':' + (pass != null ? pass : '0'));
         try { localStorage.setItem(key, JSON.stringify({ xPct, yPx: topPx })); }
         catch (_) {}
       }
@@ -4881,6 +4898,8 @@ function initShapeDrag() {
     // a second click on the SAME shape (no time limit) navigates to artist page.
     // Clicking a different shape resets: that shape is now the "primed" one.
     if (!moved) {
+      // 폴더 안에서는 탭 동작을 인라인 onclick(쇼츠 열기)에 맡긴다 — 드래그(이동)만 처리.
+      if (window.__universeFolderId) return;
       // 폴더 오브제 탭 — 폴더가 왼쪽 위로 커지는 전환 애니 후 폴더 우주로
       if (el.dataset.folderId) {
         if (typeof window.enterFolderWithAnim === 'function') window.enterFolderWithAnim(el.dataset.folderId, el);
@@ -9445,6 +9464,8 @@ function _renderFolderUniverse(folderId) {
       ${deco}
       ${built.html}
     </div>`;
+  // 폴더 안 아이템도 드래그로 옮길 수 있게 (탭은 인라인 onclick=쇼츠가 처리)
+  if (typeof initShapeDrag === 'function') initShapeDrag();
 }
 
 // 폴더에서 빠져나와 전체 내 우주로
@@ -9511,6 +9532,8 @@ window.enterFolderWithAnim = function(folderId) {
     });
     incoming.style.pointerEvents = '';  // 폴더 애들 클릭 가능하게
     uni.style.height = built.height + 'px';
+    // 폴더 안 아이템 드래그 이동 가능하게 (탭은 인라인 onclick=쇼츠)
+    if (typeof initShapeDrag === 'function') initShapeDrag();
   }, 640);
 };
 
