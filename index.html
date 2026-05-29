@@ -39,7 +39,7 @@
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=409">
+  <link rel="stylesheet" href="css/global.css?v=410">
 </head>
 <body>
 
@@ -49,7 +49,7 @@
       <a href="#" data-route="shapes" class="active" aria-label="도형"><i class="ri-triangle-fill"></i> <span class="nav-label">도형</span></a>
       <a href="#" data-route="wall" aria-label="우리들의 벽"><i class="ri-sticky-note-fill"></i> <span class="nav-label">우리들의 벽</span></a>
       <a href="#" data-route="tags" aria-label="TAG"><i class="ri-hashtag"></i> <span class="nav-label">Tags</span></a>
-      <a href="#" data-route="universe" aria-label="내 우주"><i class="ri-heart-fill" style="color:#e91e63;"></i> <span class="nav-label">내 우주</span></a>
+      <a href="#" data-route="universe" aria-label="내 우주"><span class="mini-planet" aria-hidden="true"><span class="mp-ring"></span><span class="mp-sphere"></span></span> <span class="nav-label">내 우주</span></a>
       <a href="#" data-route="my-artist" class="sidebar-artist-link"><i class="ri-mic-fill"></i> 아티스트 페이지</a>
     </nav>
     <div class="sidebar-search">
@@ -135,7 +135,7 @@
       <i class="ri-hashtag"></i><span class="mobile-tab-label">Tags</span>
     </a>
     <a href="#" class="mobile-tab" data-route="universe" aria-label="내 우주" onclick="event.preventDefault(); navigateTo('universe');">
-      <i class="ri-heart-fill" style="color:#e91e63;"></i><span class="mobile-tab-label">내 우주</span>
+      <span class="mini-planet" aria-hidden="true"><span class="mp-ring"></span><span class="mp-sphere"></span></span><span class="mobile-tab-label">내 우주</span>
     </a>
     <a href="#" class="mobile-tab" data-route="__more" aria-label="더보기" onclick="event.preventDefault(); window.openMoreSheet && window.openMoreSheet();">
       <i class="ri-menu-line"></i><span class="mobile-tab-label">더보기</span>
@@ -174,12 +174,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=409"></script>
-  <script defer src="js/data.js?v=409"></script>
-  <script defer src="js/supabase.js?v=409"></script>
-  <script defer src="js/analytics.js?v=409"></script>
-  <script defer src="js/distribute.js?v=409"></script>
-  <script defer src="js/app.js?v=409"></script>
-  <script defer src="js/polaroid.js?v=409"></script>
+  <script defer src="js/supabase-init.js?v=410"></script>
+  <script defer src="js/data.js?v=410"></script>
+  <script defer src="js/supabase.js?v=410"></script>
+  <script defer src="js/analytics.js?v=410"></script>
+  <script defer src="js/distribute.js?v=410"></script>
+  <script defer src="js/app.js?v=410"></script>
+  <script defer src="js/polaroid.js?v=410"></script>
 </body>
 </html>
