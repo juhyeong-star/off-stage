@@ -3410,6 +3410,7 @@ function _folderItemsHtml(playlistId) {
           <button class="folder-remove-btn" onclick="event.stopPropagation(); _removeFromFolder('${playlistId}','${n.id}','note')" title="폴더에서 빼기"><i class="ri-close-line"></i></button>
           <div class="universe-note-body">${safeTxt}</div>
           <div class="universe-note-sig">— ${safeAuth}</div>
+          ${(typeof _renderNoteTrackChip === 'function') ? _renderNoteTrackChip(n) : ''}
         </div>`;
     }
   });
@@ -4484,11 +4485,13 @@ window.renderUniverse = async function () {
       const safeAuth = (n.author || '').replace(/</g,'&lt;');
       // Notes use the same seeded rotation as shapes for stability
       const noteRot = (typeof n.rotation === 'number') ? n.rotation : rot;
+      const noteChip = (typeof _renderNoteTrackChip === 'function') ? _renderNoteTrackChip(n) : '';
       itemsHtml += `
         <div class="universe-note floating-shape" data-note-id="${n.id}"
              style="left:${xBase}%; top:${yPx}px; background:${c.bg}; color:${c.text}; animation: floatDrift ${dur+4}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${noteRot}deg;">
           <div class="universe-note-body">${safeTxt}</div>
           <div class="universe-note-sig">— ${safeAuth}</div>
+          ${noteChip}
         </div>
       `;
     }

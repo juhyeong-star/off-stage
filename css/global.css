@@ -875,6 +875,21 @@ body.guest .sidebar-my-channel { display: none; }
     radial-gradient(circle at 20% 30%, rgba(156,39,176,0.10), transparent 40%),
     radial-gradient(circle at 80% 70%, rgba(233,30,99,0.10), transparent 40%);
 }
+/* 내 우주에 모인 곡 도형은 '원본 그대로' 모양, 크기만 살짝 줄임 (folatDrift scale) */
+.my-universe .floating-shape:not(.universe-note):not(.floating-folder) { --scale: 0.8; }
+/* 내 우주 포스트잇에 붙은 노래 칩 (벽 포스트잇처럼 오른쪽 아래 작게) */
+.universe-note .note-track-chip {
+  margin: 8px 0 0 auto;
+  padding: 3px 9px 3px 4px;
+  border-radius: 999px;
+  max-width: 92%;
+  align-self: flex-end;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.universe-note .note-track-chip img { width: 22px; height: 22px; border-radius: 50%; }
+.universe-note .note-track-chip-sub { display: none; }
+.universe-note .note-track-chip-title { font-size: 11px; }
+.universe-note .note-track-chip-play { font-size: 16px; }
 /* 내 우주에 둥둥 떠다니는 '폴더 오브제' — 곡을 끌어다 정리할 대상 */
 .floating-folder {
   width: auto; height: auto;
@@ -1304,11 +1319,11 @@ body:has(#shorts-overlay) .mobile-tab-bar { display: none !important; }
 
 /* Float animation */
 @keyframes floatDrift {
-  0%   { transform: translate(0, 0) rotate(var(--rot)); }
-  25%  { transform: translate(calc(var(--dx) * 0.7), calc(var(--dy) * -1)) rotate(calc(var(--rot) + 2deg)); }
-  50%  { transform: translate(var(--dx), calc(var(--dy) * -0.3)) rotate(calc(var(--rot) - 1deg)); }
-  75%  { transform: translate(calc(var(--dx) * 0.3), var(--dy)) rotate(calc(var(--rot) + 1.5deg)); }
-  100% { transform: translate(0, 0) rotate(var(--rot)); }
+  0%   { transform: translate(0, 0) rotate(var(--rot)) scale(var(--scale, 1)); }
+  25%  { transform: translate(calc(var(--dx) * 0.7), calc(var(--dy) * -1)) rotate(calc(var(--rot) + 2deg)) scale(var(--scale, 1)); }
+  50%  { transform: translate(var(--dx), calc(var(--dy) * -0.3)) rotate(calc(var(--rot) - 1deg)) scale(var(--scale, 1)); }
+  75%  { transform: translate(calc(var(--dx) * 0.3), var(--dy)) rotate(calc(var(--rot) + 1.5deg)) scale(var(--scale, 1)); }
+  100% { transform: translate(0, 0) rotate(var(--rot)) scale(var(--scale, 1)); }
 }
 
 /* Decorative shapes (no text, just visual) */
