@@ -889,8 +889,8 @@ body.guest .sidebar-my-channel { display: none; }
     radial-gradient(circle at 20% 30%, rgba(156,39,176,0.10), transparent 40%),
     radial-gradient(circle at 80% 70%, rgba(233,30,99,0.10), transparent 40%);
 }
-/* 내 우주에 모인 곡 도형은 '원본 그대로' 모양, 크기만 살짝 줄임 (folatDrift scale) */
-.my-universe .floating-shape:not(.universe-note):not(.floating-folder) { --scale: 0.8; }
+/* 내 우주에 모인 곡 도형 — 도형 크기 30% 키움 (0.8 → 1.04, folatDrift scale) */
+.my-universe .floating-shape:not(.universe-note):not(.floating-folder) { --scale: 1.04; }
 /* 내 우주 포스트잇에 붙은 노래 칩 (벽 포스트잇처럼 오른쪽 아래 작게) */
 .universe-note .note-track-chip {
   margin: 8px 0 0 auto;

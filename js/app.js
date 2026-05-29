@@ -3416,6 +3416,9 @@ function _folderItemsHtml(playlistId) {
   ];
   items.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const cols = (typeof window !== 'undefined' && window.innerWidth < 560) ? 2 : 3;
+  // 모바일(2칸)은 도형이 커서 칸 간격을 좁히고 우측 한계를 둬서 오른쪽으로 안 넘치게.
+  const colSpan = (cols === 2) ? 40 : (86 / cols);
+  const maxX = (cols === 2) ? 52 : 90;
   const height = Math.max(820, Math.ceil(items.length / cols) * 280);
   let html = '';
   items.forEach((it, i) => {
@@ -3423,7 +3426,10 @@ function _folderItemsHtml(playlistId) {
     const row = Math.floor(i / cols);
     const seed = _hashSeed('plitem:' + playlistId + ':' + it.id);
     const _sp = _loadPlPos(playlistId, it.id);   // 드래그로 옮긴 위치 있으면 사용
-    const xBase = _sp ? _sp.xPct : (4 + col * (86 / cols) + (seed % 12));
+    // 좌우 균형 잡힌 흔들기(+만 주면 전부 오른쪽으로 쏠림 → 치우쳐 보임)
+    const jitterX = (seed % 9) - 4;
+    let xBase = _sp ? _sp.xPct : (5 + col * colSpan + jitterX);
+    if (!_sp) xBase = Math.max(3, Math.min(xBase, maxX));
     const yPx = _sp ? _sp.yPx : (30 + row * 260 + ((seed >>> 4) % 50));
     const rot = ((((seed >>> 8) % 140) - 70) / 10);
     const dur = 11 + ((seed >>> 16) % 16);
