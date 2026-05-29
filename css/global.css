@@ -911,8 +911,8 @@ body.guest .sidebar-my-channel { display: none; }
 }
 .floating-folder .folder-orb {
   position: relative;
-  width: 116px; height: 116px;
-  border-radius: 30px;
+  width: 140px; height: 140px;
+  border-radius: 34px;
   overflow: hidden;
   background:
     radial-gradient(circle at 32% 26%, rgba(255,255,255,0.35), transparent 55%),
@@ -1099,11 +1099,11 @@ body.guest .sidebar-my-channel { display: none; }
 /* 쇼츠 열려있을 땐 모바일 하단 탭바 숨김 (풀스크린 + 댓글 영역 확보) */
 body:has(#shorts-overlay) .mobile-tab-bar { display: none !important; }
 .floating-folder .folder-orb .folder-orb-emoji {
-  font-size: 46px;
+  font-size: 56px;
   line-height: 1;
 }
 .floating-folder .folder-orb i {
-  font-size: 46px;
+  font-size: 56px;
 }
 .floating-folder .folder-orb-count {
   position: absolute;
@@ -1117,8 +1117,8 @@ body:has(#shorts-overlay) .mobile-tab-bar { display: none !important; }
   display: flex; align-items: center; justify-content: center;
 }
 .floating-folder .folder-orb-title {
-  max-width: 128px;
-  font-size: 13.5px; font-weight: 700;
+  max-width: 160px;
+  font-size: 16px; font-weight: 700;
   color: #fff;
   text-align: center;
   text-shadow: 0 1px 4px rgba(0,0,0,0.7);
@@ -1160,10 +1160,10 @@ body:has(#shorts-overlay) .mobile-tab-bar { display: none !important; }
     0 18px 40px rgba(124,77,255,0.75);
 }
 @media (max-width: 768px) {
-  .floating-folder .folder-orb { width: 98px; height: 98px; border-radius: 26px; }
+  .floating-folder .folder-orb { width: 118px; height: 118px; border-radius: 30px; }
   .floating-folder .folder-orb .folder-orb-emoji,
-  .floating-folder .folder-orb i { font-size: 38px; }
-  .floating-folder .folder-orb-title { max-width: 110px; font-size: 12.5px; }
+  .floating-folder .folder-orb i { font-size: 46px; }
+  .floating-folder .folder-orb-title { max-width: 134px; font-size: 14.5px; }
 }
 
 /* Heart button for demo cards — same look as shape heart but tuned for the card */
