@@ -5319,15 +5319,15 @@ function renderUpload() {
         <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">메인에 뜨는 도형에 적힐 내용. 3줄 다 채워주세요! (#은 자동으로 붙어요)</p>
         <div class="form-group">
           <label>1줄</label>
-          <input type="text" class="form-control" id="up-line1" placeholder="my music is the best" maxlength="40" required>
+          <input type="text" class="form-control" id="up-line1" placeholder="" maxlength="40" required>
         </div>
         <div class="form-group">
           <label>2줄</label>
-          <input type="text" class="form-control" id="up-line2" placeholder="고3이 작곡했어 들어봐라!" maxlength="40" required>
+          <input type="text" class="form-control" id="up-line2" placeholder="" maxlength="40" required>
         </div>
         <div class="form-group">
           <label>3줄</label>
-          <input type="text" class="form-control" id="up-line3" placeholder="음원명: 청춘 장영찬 메롱" maxlength="40" required>
+          <input type="text" class="form-control" id="up-line3" placeholder="" maxlength="40" required>
         </div>
         <div class="form-group">
           <label>도형 모양</label>
