@@ -5843,6 +5843,17 @@ html, body { overflow-x: hidden; max-width: 100%; }
 .mobile-tab.is-active i {
   filter: drop-shadow(0 0 6px rgba(255,229,0,0.6));
 }
+/* 탭마다 활성 색상을 다르게 — 눌렀을 때 각자 다른 색으로 불이 들어옴 */
+.mobile-tab[data-route="shapes"].is-active   { color: #FF4081; }   /* 도형 — 핑크 */
+.mobile-tab[data-route="shapes"].is-active i { filter: drop-shadow(0 0 7px rgba(255,64,129,0.7)); }
+.mobile-tab[data-route="wall"].is-active     { color: #FFD60A; }   /* 벽 — 포스트잇 노랑 */
+.mobile-tab[data-route="wall"].is-active i   { filter: drop-shadow(0 0 7px rgba(255,214,10,0.7)); }
+.mobile-tab[data-route="tags"].is-active     { color: #3FC1FF; }   /* Tags — 시안 */
+.mobile-tab[data-route="tags"].is-active i   { filter: drop-shadow(0 0 7px rgba(63,193,255,0.7)); }
+.mobile-tab[data-route="universe"].is-active { color: #B388FF; }   /* 내 우주 — 보라 */
+.mobile-tab[data-route="universe"].is-active .mp-sphere { box-shadow: 0 0 9px rgba(179,136,255,0.85); }
+.mobile-tab[data-route="__more"].is-active   { color: #1DE9B6; }   /* 더보기 — 민트 */
+.mobile-tab[data-route="__more"].is-active i { filter: drop-shadow(0 0 7px rgba(29,233,182,0.7)); }
 .mobile-tab:active {
   transform: scale(0.94);
 }
