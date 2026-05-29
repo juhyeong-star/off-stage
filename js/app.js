@@ -2127,6 +2127,20 @@ async function renderWall() {
   `;
 
   initNoteDrag();
+
+  // 업로드 완료 후 넘어온 경우 — 작성창을 곡 첨부된 채로 자동으로 연다.
+  if (window.__pendingWallCompose && user) {
+    const prefill = window.__pendingWallCompose;
+    window.__pendingWallCompose = null;
+    setTimeout(() => {
+      const panel = document.getElementById('wall-compose-panel');
+      if (panel && panel.hidden && typeof toggleWallCompose === 'function') toggleWallCompose();
+      const ta = document.getElementById('wall-text');
+      if (ta) { ta.value = (typeof prefill === 'string') ? prefill : ''; ta.focus(); }
+      window.__songAttachTarget = 'wall';
+      if (typeof _renderAttachPreview === 'function') _renderAttachPreview();
+    }, 80);
+  }
 }
 
 // Mobile: toggle the search/sort sheet that slides up from the bottom.
@@ -2746,7 +2760,7 @@ function initNoteDrag() {
 
 // 텍스트가 깔끔하게 들어가는 둥근 모양만 사용 — 별/삼각/다이아/평행사변형은
 // 글씨가 삐져나오고 애매해서 제외.
-const SHAPE_TYPES = ['circle', 'oval', 'rect', 'hexagon'];
+const SHAPE_TYPES = ['circle', 'oval', 'rect', 'wide', 'pill', 'hexagon'];
 // 제외된(애매한) 모양 → 깔끔한 모양으로 매핑 (기존 트랙의 star 등도 정리)
 const SHAPE_REMAP = { triangle: 'circle', star: 'circle', diamond: 'hexagon', parallelogram: 'rect' };
 const SHAPE_COLORS = ['#FF9800', '#FF4081', '#2979FF', '#76FF03', '#7C4DFF', '#FFD600', '#00E5FF', '#FF1744', '#69F0AE', '#EA80FC'];
@@ -5079,13 +5093,13 @@ function renderUpload() {
           <input type="text" class="form-control" id="up-youtube" placeholder="유튜브 영상 URL (예: https://youtube.com/watch?v=...)">
         </div>
         <div class="form-group">
-          <label>곡 소개 및 코멘트 (선택)</label>
-          <textarea class="form-control" id="up-description" rows="3" placeholder="이 곡에 얽힌 이야기나 리스너들에게 전하고 싶은 멘트를 자유롭게 적어주세요."></textarea>
+          <label>곡 소개 및 코멘트 <span style="color:#ff6b6b;">(필수)</span></label>
+          <textarea class="form-control" id="up-description" rows="3" placeholder="이 곡에 얽힌 이야기나 리스너들에게 전하고 싶은 멘트를 자유롭게 적어주세요." required></textarea>
         </div>
         <div class="form-group">
-          <label><i class="ri-hashtag" style="color:var(--brand-color);"></i> 태그 (콤마로 구분, 선택)</label>
-          <input type="text" class="form-control" id="up-tags" placeholder="예: 1982년 느낌, funky, 고2 기타과 음악">
-          <div class="form-note">장르·무드·학년·연도 등 자유롭게. 다른 학생들이 #태그로 곡을 찾습니다.</div>
+          <label><i class="ri-hashtag" style="color:var(--brand-color);"></i> 태그 (콤마로 구분) <span style="color:#ff6b6b;">(필수)</span></label>
+          <input type="text" class="form-control" id="up-tags" placeholder="예: 1982년 느낌, funky, 고2 기타과 음악" required>
+          <div class="form-note">장르·무드·학년·연도 등 자유롭게. 다른 학생들이 #태그로 곡을 찾습니다. (#은 자동으로 붙어요)</div>
         </div>
 
         <!-- Distribution metadata — shown only when uploading a master -->
@@ -5108,19 +5122,19 @@ function renderUpload() {
         </div>
 
         <hr style="border-color: var(--divider); margin: 20px 0;">
-        <h2 style="font-size: 18px; color: var(--brand-color); margin-bottom: 4px;"><i class="ri-shapes-fill"></i> 도형 낙서 (3줄)</h2>
-        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">메인에 뜨는 도형에 적힐 내용. 아무거나 자유롭게!</p>
+        <h2 style="font-size: 18px; color: var(--brand-color); margin-bottom: 4px;"><i class="ri-shapes-fill"></i> 도형 낙서 (3줄) <span style="color:#ff6b6b; font-size:13px;">(필수)</span></h2>
+        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">메인에 뜨는 도형에 적힐 내용. 3줄 다 채워주세요! (#은 자동으로 붙어요)</p>
         <div class="form-group">
           <label>1줄</label>
-          <input type="text" class="form-control" id="up-line1" placeholder="#my music is the best" maxlength="40">
+          <input type="text" class="form-control" id="up-line1" placeholder="my music is the best" maxlength="40" required>
         </div>
         <div class="form-group">
           <label>2줄</label>
-          <input type="text" class="form-control" id="up-line2" placeholder="#고3이 작곡했어 들어봐라!" maxlength="40">
+          <input type="text" class="form-control" id="up-line2" placeholder="고3이 작곡했어 들어봐라!" maxlength="40" required>
         </div>
         <div class="form-group">
           <label>3줄</label>
-          <input type="text" class="form-control" id="up-line3" placeholder="#음원명: 청춘 장영찬 메롱" maxlength="40">
+          <input type="text" class="form-control" id="up-line3" placeholder="음원명: 청춘 장영찬 메롱" maxlength="40" required>
         </div>
         <div class="form-group">
           <label>도형 모양</label>
@@ -5128,6 +5142,8 @@ function renderUpload() {
             <option value="circle">⬤ 원</option>
             <option value="oval">⬮ 타원</option>
             <option value="rect">▢ 둥근 사각형</option>
+            <option value="wide">▭ 직사각형</option>
+            <option value="pill">⬭ 알약</option>
             <option value="hexagon">⬡ 육각형</option>
           </select>
         </div>
@@ -5300,6 +5316,16 @@ function renderUpload() {
       const user = window.__currentUser || db.currentUser;
       if (!user) throw new Error('로그인이 필요해요');
 
+      // 필수 입력 검증 (오디오 업로드 전에 먼저 막아서 시간 낭비 방지)
+      if (!((document.getElementById('up-description').value || '').trim()))
+        throw new Error('곡 소개 및 코멘트를 적어주세요. (필수)');
+      if (!((document.getElementById('up-tags').value || '').trim()))
+        throw new Error('태그를 한 개 이상 적어주세요. (필수)');
+      if (!((document.getElementById('up-line1')?.value || '').trim())
+          || !((document.getElementById('up-line2')?.value || '').trim())
+          || !((document.getElementById('up-line3')?.value || '').trim()))
+        throw new Error('도형 낙서 3줄을 모두 적어주세요. (필수)');
+
       // Determine upload type from new two-tier state
       const state = getUploadState();
       const isFinal = state.isFinal;
@@ -5390,8 +5416,11 @@ function renderUpload() {
         }
       }
 
+      // 낙서 3줄 — # 안 붙었으면 자동으로 붙이고, 이미 #이면 그대로.
+      const _hashLine = (s) => { s = (s || '').trim(); return s ? (s.startsWith('#') ? s : '#' + s) : s; };
+
       // DB INSERT — 20초 안에 응답 없으면 강제 실패 (영구 "저장 중…" 방지)
-      await Promise.race([
+      const inserted = await Promise.race([
         window.Tracks.insert({
           title,
           description,
@@ -5407,11 +5436,7 @@ function renderUpload() {
           tags,
           shape: shapeEl ? shapeEl.value : 'circle',
           shapeColor: colorEl ? colorEl.value : '#FF4081',
-          lines: [
-            line1 || '#' + title,
-            line2 || '#' + user.name,
-            line3 || '#클릭해서 들어봐!'
-          ],
+          lines: [_hashLine(line1), _hashLine(line2), _hashLine(line3)],
           // Distribution metadata (admin ZIP uses these). Empty for demos.
           distArtist,
           releaseDate,
@@ -5423,14 +5448,59 @@ function renderUpload() {
       showToast(isFinal ? '마스터 완성! ✨' : '데모 업로드 완료 🎵');
       // refreshInto는 백그라운드 — 여기서 await하면 느릴 때 또 멈춤
       Promise.resolve(window.Tracks.refreshInto(db)).catch(e => console.warn('[upload] refreshInto bg', e));
-      // 업로드 후 본인 아티스트 페이지로 바로 이동 — 새로 올린 곡이 거기 뜸.
-      navigateTo('artist:' + encodeURIComponent(user.name || ''));
+      // 업로드 완료 → 우리들의 벽 음악일기 권유 (이쁜 모달). 거기서 페이지 이동.
+      _afterUploadPrompt(inserted, user.name);
     } catch (err) {
       alert('업로드 실패: ' + (err.message || err));
     } finally {
       if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '동의하고 업로드 완료하기'; }
     }
   });
+}
+
+// 업로드 완료 후 — '이 곡의 첫 음악일기를 우리들의 벽에 써볼까요?' 권유 모달.
+// 쓰기 누르면 우리들의 벽 작성창이 곡 첨부된 채로 열림.
+function _afterUploadPrompt(track, artistName) {
+  track = track || {};
+  const cover = track.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=300';
+  const title = (track.title || '내 곡').replace(/</g, '&lt;');
+  const goArtist = () => navigateTo('artist:' + encodeURIComponent(artistName || ''));
+
+  const ov = document.createElement('div');
+  ov.className = 'upload-done-modal';
+  ov.innerHTML = `
+    <div class="upload-done-card">
+      <div class="upload-done-spark">🎉</div>
+      <img class="upload-done-cover" src="${cover}" alt="" draggable="false">
+      <h2 class="upload-done-title">업로드 완료!</h2>
+      <p class="upload-done-sub">「${title}」 가 무대 뒤에 올라왔어요.<br>이 곡의 <b>첫 음악일기</b>를 우리들의 벽에 남겨볼까요? ✍️</p>
+      <div class="upload-done-actions">
+        <button class="btn-primary upload-done-write"><i class="ri-quill-pen-line"></i> 음악일기 쓰기</button>
+        <button class="upload-done-later">나중에 할게요</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  requestAnimationFrame(() => ov.classList.add('show'));
+
+  const close = () => { ov.classList.remove('show'); setTimeout(() => ov.remove(), 200); };
+
+  ov.querySelector('.upload-done-write').onclick = () => {
+    // 새 곡을 db.tracks 에 즉시 넣어 미리보기 칩이 바로 뜨게
+    try {
+      const d = window.DB.get();
+      if (track.id && !(d.tracks || []).some(t => t && t.id === track.id)) {
+        d.tracks = [track].concat(d.tracks || []);
+        window.DB.save(d);
+      }
+    } catch (_) {}
+    window.__songAttachTarget = 'wall';
+    window.__wallAttachedSong = track.id ? { kind: 'track', id: track.id } : null;
+    window.__pendingWallCompose = '「' + (track.title || '') + '」 작업 이야기 ✍️\n';
+    close();
+    navigateTo('wall');
+  };
+  ov.querySelector('.upload-done-later').onclick = () => { close(); goArtist(); };
+  ov.onclick = (e) => { if (e.target === ov) { close(); goArtist(); } };
 }
 
 // (Studio booking feature removed)

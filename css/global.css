@@ -1098,6 +1098,53 @@ body.guest .sidebar-my-channel { display: none; }
 }
 /* 쇼츠 열려있을 땐 모바일 하단 탭바 숨김 (풀스크린 + 댓글 영역 확보) */
 body:has(#shorts-overlay) .mobile-tab-bar { display: none !important; }
+
+/* ============================================================
+   업로드 완료 → 음악일기 권유 모달
+   ============================================================ */
+.upload-done-modal {
+  position: fixed; inset: 0; z-index: 1400;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(8,5,18,0.66);
+  backdrop-filter: blur(4px);
+  opacity: 0; transition: opacity 0.2s ease;
+  padding: 20px;
+}
+.upload-done-modal.show { opacity: 1; }
+.upload-done-card {
+  width: 100%; max-width: 360px;
+  background: linear-gradient(160deg, #241a3a, #150e29);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 22px;
+  padding: 28px 26px 24px;
+  text-align: center; color: #fff;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+  transform: translateY(14px) scale(0.97);
+  transition: transform 0.25s cubic-bezier(0.22,1,0.36,1);
+}
+.upload-done-modal.show .upload-done-card { transform: none; }
+.upload-done-spark { font-size: 34px; margin-bottom: 6px; }
+.upload-done-cover {
+  width: 96px; height: 96px; border-radius: 16px; object-fit: cover;
+  margin: 4px auto 14px; display: block;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.5);
+}
+.upload-done-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+.upload-done-sub { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.82); margin-bottom: 22px; }
+.upload-done-sub b { color: #fff; }
+.upload-done-actions { display: flex; flex-direction: column; gap: 10px; }
+.upload-done-write {
+  width: 100%; padding: 13px; font-size: 15px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: linear-gradient(135deg, #9C27B0, #E91E63); border: none; border-radius: 12px; color: #fff; cursor: pointer;
+}
+.upload-done-write:hover { transform: translateY(-1px); }
+.upload-done-later {
+  width: 100%; padding: 11px; font-size: 13px;
+  background: transparent; border: none; color: rgba(255,255,255,0.6); cursor: pointer;
+}
+.upload-done-later:hover { color: #fff; }
+
 .floating-folder .folder-orb .folder-orb-emoji {
   font-size: 56px;
   line-height: 1;
@@ -1256,6 +1303,8 @@ body:has(#shorts-overlay) .mobile-tab-bar { display: none !important; }
 .shape-circle { border-radius: 50%; width: 265px; height: 265px; }
 .shape-oval { border-radius: 50%; width: 305px; height: 200px; }
 .shape-rect { border-radius: 6px; width: 285px; height: 210px; }
+.shape-wide { border-radius: 10px; width: 330px; height: 188px; }   /* 직사각형 */
+.shape-pill { border-radius: 999px; width: 320px; height: 158px; }  /* 알약 */
 .shape-triangle {
   width: 0; height: 0;
   border-left: 145px solid transparent; border-right: 145px solid transparent;
@@ -5701,6 +5750,8 @@ html, body { overflow-x: hidden; max-width: 100%; }
   .shape-circle { width: 220px; height: 220px; }
   .shape-oval { width: 250px; height: 168px; }
   .shape-rect { width: 240px; height: 180px; }
+  .shape-wide { width: 272px; height: 158px; }
+  .shape-pill { width: 264px; height: 134px; }
   .shape-triangle {
     border-left-width: 122px; border-right-width: 122px; border-bottom-width: 220px;
   }
@@ -5729,6 +5780,8 @@ html, body { overflow-x: hidden; max-width: 100%; }
   .shape-circle { width: 168px; height: 168px; }
   .shape-oval { width: 195px; height: 132px; }
   .shape-rect { width: 184px; height: 138px; }
+  .shape-wide { width: 210px; height: 124px; }
+  .shape-pill { width: 204px; height: 106px; }
   .shape-triangle {
     border-left-width: 92px; border-right-width: 92px; border-bottom-width: 165px;
   }
