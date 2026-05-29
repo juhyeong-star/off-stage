@@ -2001,6 +2001,9 @@ async function renderWall() {
     else if (approxLines <= 4) { bodyClamp = 4; previewCount = 2; }
     else if (approxLines <= 5) { bodyClamp = 5; previewCount = 2; }
     else                        { bodyClamp = 6; previewCount = 1; }
+    // 글자 수 제한은 없지만, 카드를 넘칠 만큼 길면 본문을 잘라서 보여주고
+    // "더보기"를 눌러야 전체가 펼쳐지게 한다.
+    const isClamped = approxLines > bodyClamp;
 
     // Inline comments preview — show latest N (dynamic), hide the rest
     const allComments = Array.isArray(note.comments) ? note.comments : [];
@@ -2034,6 +2037,7 @@ async function renderWall() {
         ${deleteBtn}
         ${bookmarkBtn}
         <div class="note-body" style="-webkit-line-clamp:${bodyClamp};">${safeText}</div>
+        ${isClamped ? `<button class="note-more-text" onclick="event.stopPropagation(); window.expandNoteBody(this);">더보기</button>` : ''}
         <div class="note-author">— ${safeAuthor}</div>
         ${commentsHtml}
         ${user ? '' : trackChip}
@@ -2451,6 +2455,19 @@ window.deleteWallNote = async function(noteId) {
   } catch (e) {
     alert('삭제 실패: ' + (e.message || e));
   }
+};
+
+// 포스트잇 본문이 잘려 있을 때 "더보기"를 누르면 전체 글이 펼쳐진다.
+window.expandNoteBody = function(btn) {
+  const card = btn.closest('.wall-note');
+  if (!card) return;
+  const body = card.querySelector('.note-body');
+  if (body) {
+    body.style.webkitLineClamp = 'unset';
+    body.style.display = 'block';
+    body.style.overflow = 'visible';
+  }
+  btn.remove();
 };
 
 // ===================== NOTE DETAIL MODAL (comments) =====================
@@ -5335,7 +5352,7 @@ function renderUpload() {
 
         <hr style="border-color: var(--divider); margin: 20px 0;">
         <h2 style="font-size: 18px; color: var(--brand-color); margin-bottom: 4px;"><i class="ri-shapes-fill"></i> 도형 낙서 (3줄) <span style="color:#ff6b6b; font-size:13px;">(필수)</span></h2>
-        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">메인에 뜨는 도형에 적힐 내용. 3줄 다 채워주세요! (#은 자동으로 붙어요)</p>
+        <p id="up-graffiti-note" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">메인에 뜨는 도형에 적힐 내용. 3줄 다 채워주세요! (#은 자동으로 붙어요)</p>
         <div class="form-group">
           <label>1줄</label>
           <input type="text" class="form-control" id="up-line1" placeholder="" maxlength="40" required>
@@ -5509,6 +5526,33 @@ function renderUpload() {
   if (projectSelect) projectSelect.addEventListener('change', refreshExistingInfo);
   if (titleInput) titleInput.addEventListener('input', () => { titleInput.dataset.userTyped = '1'; });
   if (verLabelInput) verLabelInput.addEventListener('input', () => { verLabelInput.dataset.userTyped = '1'; });
+
+  // ===== 도형 낙서 글자수 제한 — 선택한 도형 모양에 맞게 한 줄 글자수를 제한 =====
+  // 도형이 좁으면 글씨가 삐져나오므로, 모양별로 한 줄에 들어갈 글자수를 다르게 잡는다.
+  const SHAPE_LINE_LIMIT = {
+    circle: 9,    // 원 — 좌우가 가장 좁음
+    hexagon: 10,  // 육각형
+    oval: 13,     // 타원
+    rect: 13,     // 둥근 사각형
+    pill: 15,     // 알약
+    wide: 18      // 직사각형 — 가장 넓음
+  };
+  const _graffitiLineEls = ['up-line1', 'up-line2', 'up-line3']
+    .map(id => document.getElementById(id)).filter(Boolean);
+  const shapeSelectEl = document.getElementById('up-shape');
+  const graffitiNoteEl = document.getElementById('up-graffiti-note');
+  function applyShapeLineLimit() {
+    const shape = (shapeSelectEl && shapeSelectEl.value) || 'circle';
+    const lim = SHAPE_LINE_LIMIT[shape] || 12;
+    _graffitiLineEls.forEach(el => {
+      el.maxLength = lim;
+      // 모양을 좁은 걸로 바꾸면 기존에 적어둔 글씨가 한도를 넘을 수 있으니 잘라준다.
+      if ((el.value || '').length > lim) el.value = el.value.slice(0, lim);
+    });
+    if (graffitiNoteEl) graffitiNoteEl.textContent = `메인에 뜨는 도형에 적힐 내용. 3줄 다 채워주세요! 지금 모양은 한 줄에 최대 ${lim}자까지 들어가요. (#은 자동으로 붙어요)`;
+  }
+  if (shapeSelectEl) shapeSelectEl.addEventListener('change', applyShapeLineLimit);
+  applyShapeLineLimit();
 
   document.getElementById('upload-form').addEventListener('submit', async (e) => {
     e.preventDefault();

@@ -2645,7 +2645,7 @@ h3 { font-size: 19px; font-weight: 700; }
 /* ===== Wall v2 — compact header, floating FAB, collapsible controls ===== */
 .wall-header-v2 {
   position: relative; z-index: 60;
-  padding: 14px 24px 8px;
+  padding: 14px 24px 8px 70px;   /* 좌상단 글로벌 뒤로가기 버튼과 안 겹치게 */
 }
 .wall-title-row {
   display: flex; align-items: center; justify-content: space-between;
@@ -2757,7 +2757,7 @@ h3 { font-size: 19px; font-weight: 700; }
 }
 
 @media (max-width: 560px) {
-  .wall-header-v2 { padding: 12px 14px 6px; }
+  .wall-header-v2 { padding: 12px 14px 6px 60px; }  /* 좌상단 뒤로가기 버튼과 안 겹치게 */
   .wall-title-row h1 { font-size: 18px; }
   .wall-toolbar-v2 { padding: 4px 10px; font-size: 11px; }
   .wall-search-v2 { min-width: 100%; }
@@ -3041,6 +3041,23 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   text-underline-offset: 2px;
 }
 .note-more-comments:hover { opacity: 0.9; }
+
+/* 포스트잇 본문이 길어 잘렸을 때 뜨는 "더보기" — 본문 바로 아래 */
+.note-more-text {
+  background: none; border: none;
+  font-family: var(--font-hand);
+  color: inherit;
+  opacity: 0.6;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 0 0;
+  margin-top: -2px;
+  text-align: left;
+  align-self: flex-start;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.note-more-text:hover { opacity: 0.95; }
 
 /* Inline comment input row on each post-it — pinned to the bottom via flex */
 .note-inline-form {
