@@ -3544,6 +3544,8 @@ function _shortsRenderComments() {
   const list = document.getElementById('shorts-cm-list');
   if (!list) return;
   const cms = _shortsCommentsOf(st.items[st.idx]);
+  const cnt = document.getElementById('shorts-cm-count');
+  if (cnt) cnt.textContent = cms.length ? cms.length : '';
   list.innerHTML = cms.length === 0
     ? `<div class="shorts-cm-empty">아직 댓글이 없어요.<br>첫 댓글을 남겨보세요 ✏️</div>`
     : cms.map(cm => `
@@ -3662,16 +3664,17 @@ function _shortsMount() {
         </div>
       </div>
       <aside class="shorts-side" id="shorts-side">
-        <div class="shorts-side-head"><i class="ri-chat-3-line"></i> 댓글</div>
+        <div class="shorts-side-head" onclick="document.getElementById('shorts-overlay').classList.toggle('cm-open')">
+          <span class="shorts-side-grab"></span>
+          <i class="ri-chat-3-line"></i> 댓글 <span id="shorts-cm-count"></span>
+          <i class="ri-arrow-up-s-line shorts-side-caret"></i>
+        </div>
         <div class="shorts-cm-list" id="shorts-cm-list"></div>
         <form class="shorts-cm-form" onsubmit="event.preventDefault(); _shortsSubmitComment(this);">
           <input type="text" class="shorts-cm-input" maxlength="200" placeholder="댓글 달기…">
           <button type="submit" class="shorts-cm-send"><i class="ri-send-plane-fill"></i></button>
         </form>
       </aside>
-      <button class="shorts-cm-toggle" id="shorts-cm-toggle" onclick="document.getElementById('shorts-overlay').classList.toggle('cm-open')" aria-label="댓글">
-        <i class="ri-chat-3-fill"></i>
-      </button>
     </div>
   `;
   document.body.appendChild(ov);
@@ -3686,6 +3689,13 @@ function _shortsMount() {
   _shortsRenderComments();
   _shortsUpdateChrome();
   _shortsMaybeLoadTrackComments();
+
+  // 손가락으로 넘길 때 뒤(우주 페이지)가 같이 움직이지 않게 — 댓글/카드 스크롤만 허용,
+  // 그 외 영역의 기본 스크롤(배경 따라 움직임)은 막는다.
+  ov.addEventListener('touchmove', (e) => {
+    if (e.target.closest('.shorts-cm-list') || e.target.closest('.shorts-card')) return;
+    e.preventDefault();
+  }, { passive: false });
 
   // 휠 / 스와이프 / 키보드
   let wheelLock = false;

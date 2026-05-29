@@ -1059,6 +1059,8 @@ body.guest .sidebar-my-channel { display: none; }
   color: #fff; overflow: hidden;
 }
 .shorts-side-head { padding: 14px 16px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 8px; }
+#shorts-cm-count { opacity: 0.6; font-size: 13px; font-weight: 700; }
+.shorts-side-grab, .shorts-side-caret { display: none; }  /* 데스크탑은 항상 열린 컬럼이라 불필요 */
 .shorts-cm-list { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
 .shorts-cm { font-size: 14px; line-height: 1.4; }
 .shorts-cm-auth { font-weight: 700; margin-right: 6px; }
@@ -1080,27 +1082,32 @@ body.guest .sidebar-my-channel { display: none; }
     position: absolute; left: 0; right: 0; bottom: 0;
     width: auto; height: 62%;
     border-radius: 18px 18px 0 0;
-    transform: translateY(110%);
+    /* 헤더(약 56px)만 빼꼼 — 댓글이 있다는 걸 바로 보이게. 탭하면 올라옴. */
+    transform: translateY(calc(100% - 56px));
     transition: transform 0.3s cubic-bezier(0.2,0.8,0.3,1);
     z-index: 5; background: rgba(20,16,32,0.98);
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.45);
   }
   .shorts-overlay.cm-open .shorts-side { transform: translateY(0); }
-  /* 댓글 버튼 — 라벨까지 붙인 알약 모양으로 눈에 잘 띄게 */
-  .shorts-cm-toggle {
-    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-    position: absolute; right: 14px; bottom: calc(var(--safe-bottom, 0px) + 14px); z-index: 6;
-    height: 44px; padding: 0 16px; border-radius: 999px;
-    background: rgba(124,77,255,0.92); color: #fff; border: none; font-size: 15px; font-weight: 700; cursor: pointer;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+  .shorts-cm-toggle { display: none; }  /* peek 헤더가 토글 역할 — 별도 버튼 불필요 */
+  /* peek 헤더 — 그랩 바 + 펼침 화살표 */
+  .shorts-side-head { cursor: pointer; position: relative; padding-top: 20px; user-select: none; }
+  .shorts-side-grab {
+    display: block; position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    width: 40px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.32);
   }
-  .shorts-cm-toggle::after { content: '댓글'; font-size: 14px; }
-  .shorts-overlay.cm-open .shorts-cm-toggle { display: none; }  /* 시트 열리면 버튼 숨김 */
+  .shorts-side-caret { display: inline-block; margin-left: auto; opacity: 0.7; transition: transform 0.25s; }
+  .shorts-overlay.cm-open .shorts-side-caret { transform: rotate(180deg); }
   .shorts-navhint { right: 2px; }
-  .shorts-stage { width: 92%; height: 78%; }
+  /* 카드를 peek 헤더 위로 올려 가운데 정렬 (가려지지 않게) */
+  .shorts-main { padding-bottom: 56px; }
+  .shorts-stage { width: 92%; height: 72%; }
   .shorts-card-body { font-size: 18px; }
 }
 /* 쇼츠 열려있을 땐 모바일 하단 탭바 숨김 (풀스크린 + 댓글 영역 확보) */
 body:has(#shorts-overlay) .mobile-tab-bar { display: none !important; }
+/* 쇼츠 열려있는 동안 뒤 페이지 스크롤 잠금 (아래로 내릴 때 배경이 같이 움직이던 것 방지) */
+body:has(#shorts-overlay) { overflow: hidden; }
 
 /* ============================================================
    업로드 완료 → 음악일기 권유 모달
