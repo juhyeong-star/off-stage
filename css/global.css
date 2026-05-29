@@ -841,34 +841,45 @@ body.guest .sidebar-my-channel { display: none; }
   pointer-events: none;
 }
 /* "내 우주" page — post-its drift among the shapes */
+/* 내 우주 포스트잇 — 우리들의 벽 포스트잇과 '똑같은' 글꼴/스타일, 크기만 작게 */
 .universe-note {
   position: absolute;
-  width: 210px;
-  min-height: 116px;
-  padding: 18px 18px 12px;
-  border-radius: 5px;
-  box-shadow: 0 10px 24px rgba(0,0,0,0.35), 0 2px 4px rgba(0,0,0,0.2);
-  font-family: var(--font-hand, 'Gaegu', sans-serif);
+  width: 230px;
+  min-height: 150px;
+  padding: 20px 20px 16px;
+  border-radius: 2px;                 /* 벽과 동일 */
+  font-family: var(--font-hand);      /* 벽과 동일 */
+  font-size: 16px;                    /* 벽 18px → 살짝 작게 */
+  line-height: 1.4;                   /* 벽과 동일 */
+  font-weight: 700;                   /* 벽과 동일(굵은 손글씨) */
+  /* 벽과 동일한 종이 듀얼톤 그림자 (약간 축소) */
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,0.18),
+    6px 6px 0 rgba(0,0,0,0.5),
+    10px 10px 0 rgba(255,255,255,0.04),
+    14px 16px 26px rgba(0,0,0,0.65);
   cursor: grab;
   z-index: 3;
   display: flex; flex-direction: column;
-  justify-content: space-between;
   transform-origin: center center;
 }
 .universe-note-body {
-  font-size: 17px;
-  line-height: 1.45;
+  font-size: inherit;
+  line-height: 1.4;
+  font-weight: 700;
   word-break: break-word;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 6;
   -webkit-box-orient: vertical;
 }
-.universe-note-sig {
-  margin-top: 10px;
+.universe-note-sig {                  /* 벽 .note-author 와 동일 */
+  margin-top: auto;
+  padding-top: 8px;
   font-size: 12px;
-  opacity: 0.7;
+  opacity: 0.6;
   text-align: right;
+  font-style: italic;
 }
 .my-universe {
   background:
