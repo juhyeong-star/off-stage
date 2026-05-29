@@ -3265,20 +3265,37 @@ function _addNoteToFolder(folderId, noteId) {
 }
 
 // 내 우주에서 포스트잇 오브제를 폴더 위로 드롭했을 때 호출.
+// 수집(북마크)은 그대로 유지 — 폴더에 담긴 건 떠다니는 우주에서만 빠진다(폴더 안에 있으니까).
 window._dropNoteIntoFolder = function (noteId, folderId) {
   if (!noteId || !folderId) return;
   _addNoteToFolder(folderId, noteId);
-  // 떠다니던 포스트잇은 우주에서 정리 — 북마크 해제(서버+캐시)
-  try {
-    if (window.toggleBookmark && window.Walls && window.Walls.isBookmarked && window.Walls.isBookmarked(noteId)) {
-      window.toggleBookmark(noteId);
-    } else if (window.__bookmarkedNotes && window.__bookmarkedNotes.delete) {
-      window.__bookmarkedNotes.delete(noteId);
-    }
-  } catch (_) {}
   if (typeof showToast === 'function') showToast('폴더에 담았어요 📌');
   if (currentView === 'universe' && typeof renderUniverse === 'function') renderUniverse();
 };
+
+// 어느 폴더든 담겨 있는 포스트잇/곡 id 모음 (떠다니는 내 우주에서 제외하려고)
+function _allFolderedNoteIds() {
+  const ids = new Set();
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.indexOf('folder_notes:') === 0) {
+        (JSON.parse(localStorage.getItem(k) || '[]') || []).forEach(id => ids.add(id));
+      }
+    }
+  } catch (_) {}
+  return ids;
+}
+function _allFolderedTrackIds() {
+  const ids = new Set();
+  try {
+    const lists = Array.isArray(window.__playlists)
+      ? window.__playlists
+      : ((window.DB.get().playlists) || []);
+    lists.forEach(p => (p.trackIds || []).forEach(id => ids.add(id)));
+  } catch (_) {}
+  return ids;
+}
 
 // 폴더 안 아이템(곡 + 담긴 포스트잇)을 한 번 정해진 랜덤 순서로 반환.
 function _buildFolderCards(playlist) {
@@ -4009,22 +4026,7 @@ window._dropTrackIntoFolder = async function(trackId, folderId) {
   }
 
   if (ok) {
-    // 폴더로 옮겼으니 떠다니던 곡은 우주에서 정리한다 — 모든 모은-곡 소스에서 제거.
-    if (window.CollectedTracks) window.CollectedTracks.remove(trackId);
-    try {
-      const db = window.DB.get();
-      if (db.currentUser && Array.isArray(db.currentUser.likedTracks)) {
-        db.currentUser.likedTracks = db.currentUser.likedTracks.filter(id => id !== trackId);
-      }
-      window.DB.save(db);
-    } catch (_) {}
-    // Supabase 즐겨찾기에도 있었으면 같이 제거 (안 그러면 새로고침 때 다시 떠다님)
-    if (window.Favorites && window.Favorites.isFavorited && window.Favorites.isFavorited(trackId)
-        && window.Favorites.toggle) {
-      try { await window.Favorites.toggle(trackId); } catch (_) {}
-    }
-    if (window.__favoritedTracks && window.__favoritedTracks.delete) window.__favoritedTracks.delete(trackId);
-
+    // 수집(❤)은 그대로 유지 — 폴더에 담긴 곡은 떠다니는 우주에서만 빠진다(폴더 안에 있으니까).
     if (typeof showToast === 'function') showToast('폴더에 담았어요 🎵');
     if (typeof renderSidebarPlaylists === 'function') renderSidebarPlaylists();
   }
@@ -4321,7 +4323,9 @@ window.renderUniverse = async function () {
     const seen = new Set(allTracks.map(t => t && t.id));
     window.__tracks.forEach(t => { if (t && !seen.has(t.id)) allTracks.push(t); });
   }
-  const likedTracks = allTracks.filter(t => t && likedIds.has(t.id));
+  // 폴더에 담긴 곡은 떠다니는 우주에서 제외(폴더 안에 있으니까). 수집(❤)은 유지.
+  const _folderedTracks = (typeof _allFolderedTrackIds === 'function') ? _allFolderedTrackIds() : new Set();
+  const likedTracks = allTracks.filter(t => t && likedIds.has(t.id) && !_folderedTracks.has(t.id));
 
   // ── Bookmarked notes ─────────────────────────────────────
   const allNotes = db.notes || [];
@@ -4338,6 +4342,9 @@ window.renderUniverse = async function () {
       }
     } catch (e) { console.warn('[universe] fetchMyBookmarks', e); }
   }
+  // 폴더에 담긴 포스트잇은 떠다니는 우주에서 제외(폴더 안에 있으니까). 수집(북마크)은 유지.
+  const _folderedNotes = (typeof _allFolderedNoteIds === 'function') ? _allFolderedNoteIds() : new Set();
+  if (_folderedNotes.size) bookmarkedNotes = bookmarkedNotes.filter(n => n && !_folderedNotes.has(n.id));
 
   // ── 내 음악 폴더 (playlists) — 우주에 둥둥 떠다니는 오브제로 ──
   // 나중에 모은 곡을 폴더 위로 끌어다 정리하는 그림.
