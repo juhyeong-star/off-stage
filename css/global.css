@@ -971,7 +971,11 @@ body.guest .sidebar-my-channel { display: none; }
   padding-bottom: var(--safe-bottom, 0px);
   animation: shortsFadeIn 0.25s ease;
   overscroll-behavior: contain;
+  /* 제스처를 직접 처리 — 브라우저 네이티브 스크롤(배경이 따라 흔들리던 것) 차단 */
+  touch-action: none;
 }
+/* 댓글 목록만 세로 스크롤 허용 */
+.shorts-cm-list { touch-action: pan-y; }
 @keyframes shortsFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .shorts-top {

@@ -3477,10 +3477,18 @@ window.openFolderShorts = async function (playlistId, startId) {
     catch (_) {}
   }
   if (!playlist) return;
-  const items = _buildFolderCards(playlist);
+  let items = _buildFolderCards(playlist);
   if (!items.length) { if (typeof showToast === 'function') showToast('이 폴더는 비어 있어요'); return; }
-  let idx = items.findIndex(x => x.id === startId);
-  if (idx < 0) idx = 0;
+  // 순서는 매번 무작위 — 누른 아이템을 1번으로, 그 뒤는 랜덤. (Fisher–Yates)
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  if (startId) {
+    const si = items.findIndex(x => x.id === startId);
+    if (si > 0) { const [s] = items.splice(si, 1); items.unshift(s); }
+  }
+  const idx = 0;
   window.__shorts = { playlistId, items, idx, title: playlist.title || '폴더' };
   _shortsMount();
   // 곡을 눌러서 들어왔으면 그 곡 바로 재생
@@ -3690,12 +3698,19 @@ function _shortsMount() {
   _shortsUpdateChrome();
   _shortsMaybeLoadTrackComments();
 
-  // 손가락으로 넘길 때 뒤(우주 페이지)가 같이 움직이지 않게 — 댓글/카드 스크롤만 허용,
-  // 그 외 영역의 기본 스크롤(배경 따라 움직임)은 막는다.
+  // 손가락으로 넘길 때 뒤(우주 페이지)가 같이 움직이지 않게 — 댓글 목록만 스크롤 허용,
+  // 그 외 영역의 기본 스크롤(배경 따라 움직임/고무줄)은 전부 막는다.
   ov.addEventListener('touchmove', (e) => {
-    if (e.target.closest('.shorts-cm-list') || e.target.closest('.shorts-card')) return;
+    if (e.target.closest('.shorts-cm-list')) return;  // 댓글 목록만 통과
     e.preventDefault();
   }, { passive: false });
+
+  // 댓글 시트가 열려 있을 때 시트 바깥(카드·빈 공간)을 탭하면 닫힌다.
+  ov.addEventListener('click', (e) => {
+    if (!ov.classList.contains('cm-open')) return;
+    if (e.target.closest('.shorts-side')) return;   // 시트 안 탭은 유지
+    ov.classList.remove('cm-open');
+  });
 
   // 휠 / 스와이프 / 키보드
   let wheelLock = false;
