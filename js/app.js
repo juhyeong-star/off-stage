@@ -4107,18 +4107,20 @@ function initShapeDrag() {
     origLeft = rect.left - universe.left + el.parentElement.scrollLeft;
     origTop = rect.top - universe.top + el.parentElement.scrollTop;
 
-    // Long-press detection — fires after LONG_PRESS_MS if user didn't move/release
+    // Long-press detection — fires after LONG_PRESS_MS if user didn't move/release.
+    // ⚠️ 트랙(곡)에만 적용. 폴더/포스트잇 등 trackId 없는 오브제는 롱프레스 메뉴가
+    //    없으므로 롱프레스 자체를 걸지 않는다. (안 그러면 살짝 쥐었다 끌 때
+    //    longPressFired 가 켜져서 pointerUp 이 일찍 빠져나가 '놓아도 안 떨어지는'
+    //    느낌이 남.)
     if (longPressTimer) clearTimeout(longPressTimer);
-    longPressTimer = setTimeout(() => {
-      if (!dragEl || moved || dragModeEntered) return;
-      longPressFired = true;
-      const trackId = el.dataset.trackId;
-      if (trackId && typeof window.openShapeLongPressMenu === 'function') {
-        window.openShapeLongPressMenu(trackId, startX, startY, el);
-      }
-      // Subtle haptic-ish feedback
-      try { if (navigator.vibrate) navigator.vibrate(15); } catch (_) {}
-    }, LONG_PRESS_MS);
+    if (el.dataset.trackId && typeof window.openShapeLongPressMenu === 'function') {
+      longPressTimer = setTimeout(() => {
+        if (!dragEl || moved || dragModeEntered) return;
+        longPressFired = true;
+        window.openShapeLongPressMenu(el.dataset.trackId, startX, startY, el);
+        try { if (navigator.vibrate) navigator.vibrate(15); } catch (_) {}
+      }, LONG_PRESS_MS);
+    }
 
     // Don't preventDefault here — let click/tap through if no movement.
   }
@@ -4336,6 +4338,10 @@ function initShapeDrag() {
     }
   });
 
+  // 이전 렌더에서 붙인 document 리스너 제거 → 페이지를 다시 그릴 때마다
+  // 핸들러가 쌓이는(이중 실행/메모리 누수) 문제 방지.
+  if (window.__shapeDragDocCleanup) { try { window.__shapeDragDocCleanup(); } catch (_) {} }
+
   document.addEventListener('mousemove', resizeMove);
   document.addEventListener('touchmove', resizeMove, { passive: false });
   document.addEventListener('mouseup', resizeUp);
@@ -4347,6 +4353,19 @@ function initShapeDrag() {
   document.addEventListener('mouseup', pointerUp);
   document.addEventListener('touchend', pointerUp);
   document.addEventListener('touchend', touchEndPinch);
+
+  window.__shapeDragDocCleanup = () => {
+    document.removeEventListener('mousemove', resizeMove);
+    document.removeEventListener('touchmove', resizeMove);
+    document.removeEventListener('mouseup', resizeUp);
+    document.removeEventListener('touchend', resizeUp);
+    document.removeEventListener('mousemove', pointerMove);
+    document.removeEventListener('touchmove', pointerMove);
+    document.removeEventListener('touchmove', touchMovePinch);
+    document.removeEventListener('mouseup', pointerUp);
+    document.removeEventListener('touchend', pointerUp);
+    document.removeEventListener('touchend', touchEndPinch);
+  };
 }
 
 // ===================== 2. TRACK DETAIL =====================
