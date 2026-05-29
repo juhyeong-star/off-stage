@@ -9095,12 +9095,12 @@ window.openMyPlaylist = function(playlistId) {
   navigateTo('playlist:' + encodeURIComponent(playlistId));
 };
 
-// 폴더 헤더 — 내 우주 헤더와 똑같은 가운데 정렬 스타일(폴더명만 다름).
+// 폴더 헤더 — 내 우주 헤더 그대로(제목 '내 우주') + 아래에 폴더명·곡수·포스트잇수.
 // 뒤로가기는 좌상단 글로벌 백버튼이 담당, 쇼츠는 아이템 클릭으로 진입.
 function _folderHeadHtml(folderId, built, title) {
   return `
-    <h1 style="font-size:22px; margin-bottom:4px;">📁 ${title}</h1>
-    <p style="font-size:13px; color:var(--text-secondary);">🎵 ${built.trackCount} · 📝 ${built.noteCount} — 눌러서 쇼츠로</p>`;
+    <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-galaxy-fill" style="color:#9C27B0;"></i> 내 우주</h1>
+    <p style="font-size:13px; color:var(--text-secondary);">📁 ${title} · 곡 ${built.trackCount} · 포스트잇 ${built.noteCount}</p>`;
 }
 
 // 내 우주 '안'에서 폴더 내용을 그린다(별도 페이지 X). 새로고침/쇼츠 복귀 등에 사용.
