@@ -2092,10 +2092,11 @@ body:has(#shape-shorts-overlay) .deco-shape {
    SHUFFLE PLANET 🪐 — 우주 컨셉 셔플 버튼 (주사위 대체)
    호버하면 시계방향으로 천천히 회전, 클릭하면 펄스 + 도형 셔플.
    ============================================================ */
-/* 미니 토성 — 내 우주 네비 아이콘 (셔플 행성과 같은 모양) */
+/* 미니 토성 — 내 우주 네비 아이콘 (셔플 행성과 같은 모양).
+   고리를 앞/뒤 반쪽으로 나눠서 구체를 감싸게(뒤로만 가있던 것 수정). */
 .mini-planet {
   position: relative; display: inline-block;
-  width: 24px; height: 22px; flex-shrink: 0;
+  width: 26px; height: 22px; flex-shrink: 0;
   vertical-align: middle;
 }
 .mini-planet .mp-sphere {
@@ -2109,12 +2110,13 @@ body:has(#shape-shorts-overlay) .deco-shape {
 }
 .mini-planet .mp-ring {
   position: absolute; top: 50%; left: 50%;
-  width: 24px; height: 9px;
-  transform: translate(-50%, -50%) rotate(-22deg);
+  width: 26px; height: 11px;
+  transform: translate(-50%, -50%) rotate(-20deg);
   border-radius: 50%;
   border: 2px solid rgba(255,214,140,0.92);
-  z-index: 0;
 }
+.mini-planet .mp-ring-back  { z-index: 0; clip-path: inset(0 0 50% 0); }   /* 위쪽 반 → 구 뒤 */
+.mini-planet .mp-ring-front { z-index: 2; clip-path: inset(50% 0 0 0); }   /* 아래쪽 반 → 구 앞 */
 
 .planet-fab {
   position: fixed;
