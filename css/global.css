@@ -2004,12 +2004,19 @@ body.guest .sidebar-my-channel { display: none; }
   to   { background-position: 0 0, 0 0, -440% 0; }
 }
 @media (max-width: 768px) {
-  .planet-fab { right: 16px; width: 62px; height: 62px; bottom: calc(var(--player-height, 88px) + 110px); }
+  /* 업로드 FAB(= player + tab-h + safe + 16, 높이 52) 바로 위에 띄워 겹침 방지 */
+  .planet-fab {
+    right: 16px; width: 62px; height: 62px;
+    bottom: calc(var(--player-height, 88px) + var(--mobile-tab-h, 56px) + var(--safe-bottom, 0px) + 84px);
+  }
   .planet-sphere { width: 44px; height: 44px; }
   .planet-ring { width: 68px; height: 20px; }
 }
 @media (max-width: 420px) {
-  .planet-fab { right: 16px; width: 54px; height: 54px; bottom: calc(var(--player-height, 88px) + 95px); }
+  .planet-fab {
+    right: 16px; width: 54px; height: 54px;
+    bottom: calc(var(--player-height, 88px) + var(--mobile-tab-h, 56px) + var(--safe-bottom, 0px) + 80px);
+  }
   .planet-sphere { width: 38px; height: 38px; }
   .planet-ring { width: 58px; height: 18px; }
 }
