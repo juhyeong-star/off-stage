@@ -1150,7 +1150,10 @@ body:has(#shorts-overlay) .mobile-tab-bar { display: none !important; }
    ============================================================ */
 .sshorts-overlay {
   position: fixed; inset: 0; z-index: 1300;
-  background: radial-gradient(circle at 50% 32%, #1c1530, #07041a 72%);
+  /* 뒷배경(도형 페이지)을 살짝 흐리게 — 반투명 + 블러 */
+  background: rgba(8,5,20,0.6);
+  -webkit-backdrop-filter: blur(22px);
+  backdrop-filter: blur(22px);
   display: flex; flex-direction: column;
   overflow: hidden;
   animation: shortsFadeIn 0.22s ease;
@@ -1168,15 +1171,26 @@ body:has(#shorts-overlay) .mobile-tab-bar { display: none !important; }
   display: flex; align-items: center; justify-content: center;
   will-change: transform, opacity;
 }
-/* 도형은 원래 모양 그대로(부유 애니/절대배치 해제), 화면 중앙에 크게 */
+/* 도형은 원래 모양 그대로(부유 애니/절대배치 해제), 화면을 거의 가득 채우게 크게.
+   모양별 비율을 유지하면서 화면 폭/높이에 맞춰 확대. */
 .sshorts-stage .sshorts-shape {
   position: relative !important;
   animation: none !important;
   cursor: default;
-  transform: scale(1.06);
+  transform: none;
   margin: 0;
 }
-.sshorts-stage .sshorts-shape .shape-text { font-size: 26px; max-width: 86vw; }
+.sshorts-stage .shape-circle.sshorts-shape  { width: min(86vw, 70vh); height: min(86vw, 70vh); }
+.sshorts-stage .shape-hexagon.sshorts-shape { width: min(92vw, 80vh); height: min(80vw, 70vh); }
+.sshorts-stage .shape-oval.sshorts-shape    { width: 92vw; height: 62vw; }
+.sshorts-stage .shape-rect.sshorts-shape    { width: 90vw; height: 70vw; }
+.sshorts-stage .shape-wide.sshorts-shape    { width: 94vw; height: 56vw; }
+.sshorts-stage .shape-pill.sshorts-shape    { width: 94vw; height: 50vw; }
+.sshorts-stage .sshorts-shape .shape-text {
+  font-size: clamp(22px, 6.5vw, 40px);
+  line-height: 1.35;
+  max-width: 80vw;
+}
 .sshorts-artist {
   position: absolute; right: 16px; bottom: calc(var(--safe-bottom, 0px) + 18px); z-index: 4;
   display: inline-flex; align-items: center; gap: 6px;
