@@ -787,6 +787,11 @@ body.guest .sidebar-my-channel { display: none; }
   transition: transform 0.4s cubic-bezier(0.22,1,0.36,1), filter 0.4s;
   user-select: none;
   z-index: 1;
+  /* 크게 확대(핀치/휠)할 때 깜빡임 방지 — GPU 레이어로 합성 */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-transform-style: preserve-3d;
+  transform-style: preserve-3d;
 }
 .floating-shape:hover {
   transform: scale(1.15) !important;
@@ -1212,6 +1217,13 @@ body:has(#shorts-overlay) .mobile-tab-bar { display: none !important; }
 .sshorts-stage.tear-in-down { animation: tearInDown 0.42s cubic-bezier(0.2,0.8,0.3,1) both; }
 /* 쇼츠 열려있을 땐 모바일 하단 탭바 숨김 */
 body:has(#shape-shorts-overlay) .mobile-tab-bar { display: none !important; }
+/* 쇼츠 열린 동안 뒷배경(도형 페이지) 애니메이션 정지 — 블러 너머로 흔들려 보이던 것 방지.
+   (오버레이 안의 .sshorts-shape 는 :not 로 제외) */
+body:has(#shape-shorts-overlay) .shapes-universe .floating-shape:not(.sshorts-shape),
+body:has(#shape-shorts-overlay) .star,
+body:has(#shape-shorts-overlay) .deco-shape {
+  animation-play-state: paused !important;
+}
 
 .floating-folder .folder-orb .folder-orb-emoji {
   font-size: 56px;

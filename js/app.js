@@ -3753,17 +3753,36 @@ function _shapeShortsPlayCurrent() {
 
 function _shapeShortsGo(dir) {
   const st = window.__shapeShorts; if (!st) return;
+  if (st._animating) return;                    // 전환 중 중복 입력 무시
   const ni = st.idx + (dir === 'next' ? 1 : -1);
   if (ni < 0 || ni >= st.tracks.length) return;
   const stage = document.getElementById('sshorts-body'); if (!stage) return;
-  const cur = stage.querySelector('.sshorts-stage:not(.tear-out-up):not(.tear-out-down)');
+  const cur = stage.querySelector('.sshorts-stage');
   st.idx = ni;
+  st._animating = true;
+
+  // 릴스/쇼츠처럼 두 카드가 '동시에' 같은 방향으로 미끄러진다 (이전 카드가
+  // 남아있다 사라지는 게 아니라, 스크롤되듯 함께 이동).
   const wrap = document.createElement('div');
   wrap.innerHTML = _shapeShortsCardHtml(st.tracks[ni]);
-  const card = wrap.firstElementChild;
-  card.classList.add(dir === 'next' ? 'tear-in-up' : 'tear-in-down');
-  if (cur) { cur.classList.add(dir === 'next' ? 'tear-out-up' : 'tear-out-down'); setTimeout(() => cur.remove(), 460); }
-  stage.appendChild(card);
+  const next = wrap.firstElementChild;
+  next.style.transition = 'none';
+  next.style.transform = 'translateY(' + (dir === 'next' ? '100%' : '-100%') + ')';
+  stage.appendChild(next);
+  // 강제 reflow 후 동시 슬라이드
+  void next.getBoundingClientRect();
+  const ease = 'transform 0.32s cubic-bezier(0.4,0,0.2,1)';
+  if (cur) {
+    cur.style.transition = ease;
+    cur.style.transform = 'translateY(' + (dir === 'next' ? '-100%' : '100%') + ')';
+  }
+  next.style.transition = ease;
+  next.style.transform = 'translateY(0)';
+  setTimeout(() => {
+    if (cur && cur.parentElement) cur.remove();
+    st._animating = false;
+  }, 340);
+
   _shapeShortsRenderChrome();
   _shapeShortsPlayCurrent();   // 넘기면 그 다음 곡이 바로 재생
 }
@@ -3801,7 +3820,6 @@ function _shapeShortsMount() {
   const wrap = document.createElement('div');
   wrap.innerHTML = _shapeShortsCardHtml(st.tracks[st.idx]);
   const card = wrap.firstElementChild;
-  card.classList.add('tear-in-up');
   body.appendChild(card);
   _shapeShortsRenderChrome();
   _shapeShortsPlayCurrent();   // 처음 띄운 곡 바로 재생
