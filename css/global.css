@@ -903,7 +903,15 @@ body.guest .sidebar-my-channel { display: none; }
 .floating-folder .folder-orb img {
   width: 100%; height: 100%;
   object-fit: cover;
+  /* 데스크탑 브라우저 기본 이미지 드래그(고스트) 차단 — 안 그러면 폴더가
+     '놓아도 안 떨어지는' 현상이 생김. pointer-events:none 으로 mousedown 이
+     이미지가 아니라 폴더 div 로 가게 해서 우리 드래그가 정상 동작. */
+  pointer-events: none;
+  -webkit-user-drag: none;
+  user-select: none;
 }
+/* 떠다니는 오브제 안의 어떤 이미지든 기본 드래그 금지(안전망) */
+.floating-shape img { -webkit-user-drag: none; user-select: none; }
 .floating-folder .folder-orb .folder-orb-emoji {
   font-size: 46px;
   line-height: 1;

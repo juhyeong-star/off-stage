@@ -3851,7 +3851,7 @@ function _floatingFolderHtml(it, pos) {
   return `
     <div class="floating-shape floating-folder" data-folder-id="${p.id}" style="${base}">
       <div class="folder-orb">
-        <img src="${cover}" alt="${title.replace(/"/g,'&quot;')}" loading="lazy">
+        <img src="${cover}" alt="${title.replace(/"/g,'&quot;')}" loading="lazy" draggable="false">
         <span class="folder-orb-count">${count}</span>
       </div>
       <div class="folder-orb-title">${title}</div>
