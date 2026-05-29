@@ -3436,12 +3436,10 @@ function _folderItemsHtml(playlistId) {
       const color = t.shapeColor || SHAPE_COLORS[i % SHAPE_COLORS.length];
       const lines = t.lines || [t.title || '', t.artist || '', '눌러서 쇼츠로'];
       const safeLines = lines.map(l => (l || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
-      const demoBadge = t.isDemo ? '<span class="universe-demo-badge">DEMO</span>' : '';
       html += `
         <div class="floating-shape shape-${shape}" data-track-id="${t.id}" data-folder-id="${playlistId}"
              style="background:${color}; --shape-bg:${color}; left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;"
              onclick="openFolderShorts('${playlistId}','${t.id}')">
-          ${demoBadge}
           <div class="shape-text">${safeLines.join('\n')}</div>
         </div>`;
     } else {
@@ -4707,11 +4705,9 @@ window.renderUniverse = async function () {
         : `background:${color}; --shape-bg:${color};`;
       const lines = t.lines || [t.title || '', t.artist || '', '클릭해서 들어봐!'];
       const safeLines = lines.map(l => (l||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
-      const demoBadge = t.isDemo ? '<span class="universe-demo-badge">DEMO</span>' : '';
       itemsHtml += `
         <div class="floating-shape shape-${shape}" data-track-id="${t.id}" data-artist="${encodeURIComponent(t.artist || '')}"
              style="${bgStyle} left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;">
-          ${demoBadge}
           <div class="shape-text">${safeLines.join('\n')}</div>
         </div>
       `;
