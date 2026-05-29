@@ -159,6 +159,11 @@ function _updateBackButton(route) {
 
 // Public: try to close any open overlay first, otherwise pop the nav stack.
 window.goBack = function () {
+  // 0) 내 우주 안에서 폴더를 보는 중이면 → 먼저 전체 내 우주로
+  if (window.__universeFolderId) {
+    if (typeof window.exitFolderToUniverse === 'function') window.exitFolderToUniverse();
+    return;
+  }
   // 0) Hard-coded shortcut — 내 페이지/내 우주 → 도형 (요청)
   //   nav stack과 무관하게 항상 도형으로 가도록 명시 (내 페이지로 새는 것 방지)
   if (typeof currentView !== 'undefined' && (currentView === 'profile' || currentView === 'universe')) {
@@ -495,7 +500,7 @@ function navigateTo(route) {
       case 'home': renderHome(); break;
       case 'upload': renderUpload(); break;
       case 'library': window.renderLibrary(); break;
-      case 'universe': window.renderUniverse(); break;
+      case 'universe': window.__universeFolderId = null; window.renderUniverse(); break;
       case 'tags': renderTags(); break;
       case 'wall': renderWall(); break;
       case 'events': renderEvents(); break;
@@ -4268,6 +4273,9 @@ window.renderUniverse = async function () {
   const db = window.DB.get();
   if (!db.currentUser) { navigateTo('auth'); return; }
 
+  // 폴더 안을 보는 중이면(내 우주를 벗어나지 않고 그 자리에서) 폴더 우주를 그린다.
+  if (window.__universeFolderId) { _renderFolderUniverse(window.__universeFolderId); return; }
+
   // Refresh strategy: render cached state first, refresh in background.
   // Only block briefly on first visit (when caches are empty) so we have *something* to show.
   const hasFavCache = window.__favoritedTracks && window.__favoritedTracks.size > 0;
@@ -4438,7 +4446,7 @@ window.renderUniverse = async function () {
   });
 
   appContent.innerHTML = `
-    <div style="padding:20px 24px 8px; text-align:center;">
+    <div id="universe-head" style="padding:20px 24px 8px; text-align:center;">
       <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-galaxy-fill" style="color:#9C27B0;"></i> 내 우주</h1>
       <p style="font-size:13px; color:var(--text-secondary);">폴더 ${myPlaylists.length} · 곡 ${likedTracks.length} · 포스트잇 ${bookmarkedNotes.length} — 끌어서 자리 옮길 수 있어요</p>
     </div>
@@ -9087,19 +9095,58 @@ window.openMyPlaylist = function(playlistId) {
   navigateTo('playlist:' + encodeURIComponent(playlistId));
 };
 
-// 폴더 진입 — '옆 우주로 이동하는' 느낌.
-// 같은 별 하늘(배경) 위에서: 원래 있던 애들은 오른쪽 아래로 작아져 사라지고,
-// 폴더(옆동네) 애들이 왼쪽 위에서 중앙으로 동시에 날아온다. 끝나면 폴더 페이지로.
+// 폴더 헤더(뒤로/제목/쇼츠) — 내 우주 안 폴더 모드에서 씀
+function _folderHeadHtml(folderId, built, title) {
+  return `
+    <div style="display:flex; align-items:center; gap:12px; text-align:left; max-width:1100px; margin:0 auto;">
+      <button class="pl-back" onclick="exitFolderToUniverse()" aria-label="내 우주로"><i class="ri-arrow-left-line"></i></button>
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:11px; color:var(--text-secondary); font-weight:700;">내 우주 · 음악 폴더</div>
+        <h1 style="font-size:21px; margin:1px 0;">📁 ${title}</h1>
+        <div style="font-size:12px; color:var(--text-secondary);">🎵 ${built.trackCount} · 📝 ${built.noteCount} — 눌러서 쇼츠로</div>
+      </div>
+      <button class="pl-shorts-btn" onclick="openFolderShorts('${folderId}','${built.firstId}')"><i class="ri-stack-fill"></i> 쇼츠로 보기</button>
+    </div>`;
+}
+
+// 내 우주 '안'에서 폴더 내용을 그린다(별도 페이지 X). 새로고침/쇼츠 복귀 등에 사용.
+function _renderFolderUniverse(folderId) {
+  const db = window.DB.get();
+  let pl = (db.playlists || []).find(p => p.id === folderId)
+        || (Array.isArray(window.__playlists) ? window.__playlists.find(p => p.id === folderId) : null);
+  const title = _shEsc((pl && pl.title) || '폴더');
+  const built = _folderItemsHtml(folderId);
+  if (built.total === 0) { window.__universeFolderId = null; window.renderUniverse(); return; }
+  const deco = _buildStarfield('universe-sky', 160, 15);
+  appContent.innerHTML = `
+    <div id="universe-head" style="padding:20px 24px 8px;">
+      ${_folderHeadHtml(folderId, built, title)}
+    </div>
+    <div class="shapes-universe my-universe" style="height:${built.height}px;">
+      ${deco}
+      ${built.html}
+    </div>`;
+}
+
+// 폴더에서 빠져나와 전체 내 우주로
+window.exitFolderToUniverse = function() {
+  window.__universeFolderId = null;
+  if (typeof window.renderUniverse === 'function') window.renderUniverse();
+};
+
+// 폴더 진입 — 내 우주를 '벗어나지 않고' 그 자리에서 옆 우주로 패닝.
+// 같은 별 하늘 위에서: 원래 애들은 오른쪽 아래로 미끄러져 사라지고,
+// 폴더(옆동네) 애들이 왼쪽 위에서 날아온다. 끝나면 헤더만 바꿔 폴더 모드로(페이지 이동 X).
 window.enterFolderWithAnim = function(folderId) {
   const uni = document.querySelector('.shapes-universe.my-universe');
   const built = (typeof _folderItemsHtml === 'function') ? _folderItemsHtml(folderId) : null;
   if (!uni || !built || !built.html) {
-    if (window.openMyPlaylist) window.openMyPlaylist(folderId);
+    window.__universeFolderId = folderId;
+    if (typeof window.renderUniverse === 'function') window.renderUniverse();
     return;
   }
 
   // 1) 원래 우주 애들 → 다 같이 오른쪽 아래로 미끄러지며 작아져 사라짐
-  //    (각자 같은 화면거리(vw/vh)만큼 이동해서 '한 덩어리로 패닝'되는 느낌)
   uni.querySelectorAll('.floating-shape').forEach(el => {
     el.style.animation = 'none';
     el.style.transition = 'transform 0.6s cubic-bezier(0.4,0,0.4,1), opacity 0.55s ease';
@@ -9120,8 +9167,26 @@ window.enterFolderWithAnim = function(folderId) {
     incoming.style.opacity = '1';
   }));
 
-  // 3) 애니 끝나면 실제 폴더 페이지로 — 배경/위치 동일이라 자연스럽게 이어짐
-  setTimeout(() => { if (window.openMyPlaylist) window.openMyPlaylist(folderId); }, 700);
+  // 3) 애니 끝나면 — 페이지 이동 없이 그 자리에서 폴더 모드로 전환(DOM만 교체)
+  setTimeout(() => {
+    window.__universeFolderId = folderId;
+    // 빠져나간 원래 애들 제거 (incoming 은 유지)
+    Array.from(uni.children).forEach(ch => {
+      if (ch !== incoming && ch.classList && ch.classList.contains('floating-shape')) ch.remove();
+    });
+    incoming.style.pointerEvents = '';  // 폴더 애들 클릭 가능하게
+    uni.style.height = built.height + 'px';
+    // 헤더만 폴더용으로 교체 (배경/캔버스는 그대로 → 끊김 없음)
+    const head = document.getElementById('universe-head');
+    if (head) {
+      const db = window.DB.get();
+      let pl = (db.playlists || []).find(p => p.id === folderId)
+            || (Array.isArray(window.__playlists) ? window.__playlists.find(p => p.id === folderId) : null);
+      const title = _shEsc((pl && pl.title) || '폴더');
+      head.style.textAlign = 'left';
+      head.innerHTML = _folderHeadHtml(folderId, built, title);
+    }
+  }, 640);
 };
 
 window.createAndAddPlaylist = async function() {
