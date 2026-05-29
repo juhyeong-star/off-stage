@@ -4316,23 +4316,25 @@ window.renderUniverse = async function () {
   if (window.Walls && window.Walls.refreshMyBookmarks)   refreshTasks.push(window.Walls.refreshMyBookmarks().catch(()=>{}));
   if (window.Favorites && window.Favorites.refreshMine)  refreshTasks.push(window.Favorites.refreshMine().catch(()=>{}));
   if (refreshTasks.length) {
-    if (hasFavCache || hasBmkCache) {
-      // Have cached data — fire refresh in background and re-render only if changed
+    // 처음 한 번(캐시 전혀 없을 때)만 잠깐 기다리고, 그 이후(뒤로가기 등)는
+    // 항상 백그라운드 새로고침 → 폴더에서 뒤로가기가 즉시 반응.
+    if (hasFavCache || hasBmkCache || window.__universeLoadedOnce) {
       const sigBefore = (Array.from(window.__favoritedTracks || []).join('|')) + '#'
                       + (Array.from(window.__bookmarkedNotes || []).join('|'));
       Promise.all(refreshTasks).then(() => {
-        if (currentView !== 'universe') return;
+        window.__universeLoadedOnce = true;
+        if (currentView !== 'universe' || window.__universeFolderId) return;
         const sigAfter = (Array.from(window.__favoritedTracks || []).join('|')) + '#'
                       + (Array.from(window.__bookmarkedNotes || []).join('|'));
         if (sigAfter !== sigBefore) window.renderUniverse();
       });
     } else {
-      // No cache — wait briefly so universe isn't empty on first visit; cap at 1.5s
+      // 최초 1회만 — 우주가 비어보이지 않게 최대 1.5s 대기
       await Promise.race([
         Promise.all(refreshTasks),
         new Promise(r => setTimeout(r, 1500))
       ]);
-      // Bail if user moved on while we were waiting
+      window.__universeLoadedOnce = true;
       if (currentView !== 'universe') return;
     }
   }
@@ -4363,31 +4365,32 @@ window.renderUniverse = async function () {
   if (window.__bookmarkedNotes && window.__bookmarkedNotes.size) {
     const setIds = window.__bookmarkedNotes;
     bookmarkedNotes = allNotes.filter(n => n && setIds.has(n.id));
-    // If Supabase has bookmarks for notes not in local cache, fetch them
-    try {
-      if (window.Walls && window.Walls.fetchMyBookmarks) {
-        const fetched = await window.Walls.fetchMyBookmarks();
-        const seen = new Set(bookmarkedNotes.map(n => n.id));
-        (fetched || []).forEach(n => { if (n && !seen.has(n.id)) bookmarkedNotes.push(n); });
-      }
-    } catch (e) { console.warn('[universe] fetchMyBookmarks', e); }
+    // 캐시(db.notes)로 즉시 렌더하고, 로컬에 없는 북마크 노트는 백그라운드로
+    // 가져와 db.notes 에 합친 뒤 1회만 다시 그린다 (await 제거 → 뒤로가기 빠름)
+    if (window.Walls && window.Walls.fetchMyBookmarks) {
+      window.Walls.fetchMyBookmarks().then(fetched => {
+        if (currentView !== 'universe' || window.__universeFolderId) return;
+        const dbNow = window.DB.get();
+        const have = new Set((dbNow.notes || []).map(n => n && n.id));
+        const extra = (fetched || []).filter(n => n && !have.has(n.id));
+        if (extra.length) {
+          dbNow.notes = (dbNow.notes || []).concat(extra);
+          try { window.DB.save(dbNow); } catch (_) {}
+          window.renderUniverse();  // 이제 db.notes 에 있으니 재호출 루프 없음
+        }
+      }).catch(() => {});
+    }
   }
   // 폴더에 담긴 포스트잇은 떠다니는 우주에서 제외(폴더 안에 있으니까). 수집(북마크)은 유지.
   const _folderedNotes = (typeof _allFolderedNoteIds === 'function') ? _allFolderedNoteIds() : new Set();
   if (_folderedNotes.size) bookmarkedNotes = bookmarkedNotes.filter(n => n && !_folderedNotes.has(n.id));
 
   // ── 내 음악 폴더 (playlists) — 우주에 둥둥 떠다니는 오브제로 ──
-  // 나중에 모은 곡을 폴더 위로 끌어다 정리하는 그림.
-  let myPlaylists = [];
-  try {
-    if (window.Playlists && window.Playlists.fetchMine) {
-      myPlaylists = await Promise.race([
-        window.Playlists.fetchMine(),
-        new Promise(r => setTimeout(() => r(null), 1500))
-      ]);
-    }
-  } catch (e) { console.warn('[universe] playlists', e); }
-  if (!Array.isArray(myPlaylists)) myPlaylists = (db.playlists || []);
+  // 캐시(window.__playlists / db.playlists) 우선 — 뒤로가기 등에서 네트워크
+  // 대기 없이 즉시 렌더. (목록은 init/폴더생성 때 이미 갱신됨)
+  let myPlaylists = Array.isArray(window.__playlists)
+    ? window.__playlists
+    : (Array.isArray(db.playlists) ? db.playlists : []);
 
   const folderItems = (myPlaylists || []).map(p => ({ kind: 'folder', id: p.id, folder: p }));
   // 폴더가 하나도 없으면 기본 템플릿을 띄워 만들기를 유도
