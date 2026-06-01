@@ -431,7 +431,17 @@ window.logout = async function () {
 };
 
 // Router
+// 같은 라우트를 짧은 시간 안에 두 번 누르면 무시 — 화면이 살짝 늦게 떠서 두번 누르게 되는 케이스 방지.
+let _lastNavRoute = null;
+let _lastNavTs = 0;
 function navigateTo(route) {
+  const _now = Date.now();
+  if (route && route === _lastNavRoute && (_now - _lastNavTs) < 500) {
+    return;  // 같은 라우트로 0.5초 이내 중복 클릭 — 첫 클릭이 처리중이므로 무시
+  }
+  _lastNavRoute = route;
+  _lastNavTs = _now;
+
   closeMenu();
   // Maintain internal back-nav stack (skipped during goBack to avoid loops).
   _pushNavStep(route);
