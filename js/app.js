@@ -5349,6 +5349,9 @@ window.openTrackDetail = function (trackId) {
 function renderUpload() {
   const db = window.DB.get();
   if (!db.currentUser) {
+    // pending 상태를 그대로 두면 다음번 진입 때 의도와 다르게 자동 세팅이 돼서 클리어.
+    window.__pendingUploadProjectId = null;
+    window.__pendingUploadVersionType = null;
     navigateTo('auth');
     return;
   }
