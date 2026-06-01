@@ -1861,17 +1861,12 @@ function _renderNoteTrackChip(note) {
     if (!t) return '';
     const cover = t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=300';
     const title = (t.title || '').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-    const artist = (t.artist || '').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-    // 사각형(rectangle) 카드 — 커버 + 제목 + 아티스트 + 재생 아이콘
+    // 미니 커버만 — 사진 클릭하면 재생. 제목/아티스트 표시 X (사용자 요청)
     return `
-      <div class="note-track-chip note-track-chip-card" onclick="event.stopPropagation(); playTrack('${t.id}', 'wall')" title="${title} — 재생">
+      <button class="note-track-thumb" onclick="event.stopPropagation(); playTrack('${t.id}', 'wall')" title="${title} — 재생">
         <img src="${cover}" alt="" loading="lazy">
-        <div class="note-track-chip-info">
-          <div class="note-track-chip-title">${title}</div>
-          <div class="note-track-chip-artist">${artist}</div>
-        </div>
-        <i class="ri-play-circle-fill note-track-chip-play"></i>
-      </div>`;
+        <i class="ri-play-fill"></i>
+      </button>`;
   }
   if (note.externalUrl) {
     const url = note.externalUrl;
@@ -2041,7 +2036,7 @@ async function renderWall() {
     // "더보기"를 눌러야 전체가 펼쳐지게 한다.
     const isClamped = approxLines > bodyClamp;
 
-    // 댓글 티저 — 카드 맨 아래에 살짝 보이는 한 줄. 궁금증을 일으켜서 디테일을 열게 함.
+    // 댓글 티저 — 카드 맨 아래에 살짝 보이는 한 줄. 'ㄴ "최근 댓글…"' 형태로만 (말풍선/카운트 제거)
     const allComments = Array.isArray(note.comments) ? note.comments : [];
     const lastComment = allComments.length ? allComments[allComments.length - 1] : null;
     const _ctClip = (s, n) => {
@@ -2049,22 +2044,20 @@ async function renderWall() {
       return s.length > n ? s.slice(0, n) + '…' : (s + '…');
     };
     const commentsTeaser = !lastComment ? '' : `
-      <div class="note-comments-teaser" onclick="event.stopPropagation(); openNoteDetail('${note.id}')" title="${allComments.length}개의 댓글 보기">
-        <i class="ri-chat-3-line"></i>
-        <span class="ct-count">${allComments.length}</span>
-        <span class="ct-preview">"${_esc(_ctClip(lastComment.text, 18))}"</span>
+      <div class="note-comments-teaser" onclick="event.stopPropagation(); openNoteDetail('${note.id}')" title="댓글 보기">
+        <span class="ct-arrow">ㄴ</span>
+        <span class="ct-preview">"${_esc(_ctClip(lastComment.text, 20))}"</span>
       </div>
     `;
 
     // 포스트잇에 첨부된 노래 칩 — 오른쪽 아래 보내기(✈) 버튼 옆에 작게 둔다.
     const trackChip = _renderNoteTrackChip(note);
 
-    // Inline comment input — only for logged-in users. 엔터로 보내기 (별도 송신 버튼 없음).
-    // 첨부된 노래 칩은 오른쪽 맨 끝으로 밀어둠.
+    // Inline comment input — only for logged-in users. 엔터로 보내기.
+    // 노래 칩은 카드 상단(이름 밑)에 하나만, 입력칸 옆 칩은 제거 (요청).
     const inlineForm = user ? `
       <form class="note-inline-form" onsubmit="event.preventDefault(); submitInlineComment('${note.id}', this);">
-        <input type="text" class="note-inline-input" maxlength="200" placeholder="ㄴ 댓글 달기… (엔터로 보내기)">
-        ${trackChip ? `<span class="note-inline-song" style="margin-left:auto;">${trackChip}</span>` : ''}
+        <input type="text" class="note-inline-input" maxlength="200" placeholder="ㄴ">
       </form>
     ` : '';
 

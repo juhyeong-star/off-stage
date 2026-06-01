@@ -1884,48 +1884,40 @@ body:has(#shape-shorts-overlay) .deco-shape {
 .wall-note .note-track-chip-play { font-size: 16px; }
 .wall-note .note-track-chip-ext > i:first-child { font-size: 16px; }
 
-/* 노래 칩(card) — 본문 아래 사각형으로 / 커버 + 제목 + 아티스트 + 재생 */
-.note-track-chip-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px 8px 8px;
-  background: rgba(0,0,0,0.78);
-  color: #fff;
-  border-radius: 8px;
+/* 노래 썸네일 — 작성자 이름 아래 작은 정사각 커버만. 누르면 재생. */
+.note-track-thumb {
+  display: inline-block;
+  position: relative;
+  width: 48px; height: 48px;
+  margin: 6px 0 2px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  overflow: hidden;
   cursor: pointer;
-  margin: 10px 0 4px;
-  max-width: none !important;
-  text-decoration: none;
-  transition: background 0.18s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+  transition: transform 0.15s;
+  background: rgba(0,0,0,0.2);
 }
-.note-track-chip-card:hover { background: rgba(0,0,0,0.92); }
-.note-track-chip-card:active { transform: scale(0.98); }
-.note-track-chip-card img {
-  width: 44px !important;
-  height: 44px !important;
-  border-radius: 5px;
+.note-track-thumb img {
+  width: 100%; height: 100%;
   object-fit: cover;
-  flex-shrink: 0;
+  display: block;
 }
-.note-track-chip-card .note-track-chip-info {
-  flex: 1; min-width: 0;
-  display: flex; flex-direction: column; gap: 2px;
+.note-track-thumb i {
+  position: absolute;
+  inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-size: 22px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.25);
+  opacity: 0;
+  transition: opacity 0.15s;
 }
-.note-track-chip-card .note-track-chip-title {
-  font-size: 13px; font-weight: 800;
-  line-height: 1.2;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.note-track-chip-card .note-track-chip-artist {
-  font-size: 11px; opacity: 0.75;
-  line-height: 1.2;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.note-track-chip-card .note-track-chip-play {
-  font-size: 26px;
-  flex-shrink: 0;
-}
+.note-track-thumb:hover i,
+.note-track-thumb:active i { opacity: 1; }
+.note-track-thumb:active { transform: scale(0.94); }
 
 /* 미니 칩 — 평소엔 커버 + 재생, 누르면 부드럽게 펼쳐져서 제목/아티스트 보임 */
 .note-track-chip-mini {
@@ -3100,27 +3092,22 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   .wall-board > .wall-note {
     position: static !important;  /* 절대배치 → 그리드 셀로 흘러가게 */
     width: auto !important;
-    min-width: 0;                  /* grid item이 콘텐츠로 셀보다 커지지 않게 */
+    min-width: 0;
     grid-column: span 1;
-    height: 280px !important;      /* 모든 카드 동일 크기 — 음원 칩까지 넉넉히 들어가게 */
+    height: 240px !important;      /* 모든 카드 동일 크기 */
     min-height: 0 !important;
-    max-height: 280px;
+    max-height: 240px;
     padding: 14px 14px 12px;
     font-size: 15px;
     line-height: 1.35;
-    cursor: default;               /* 그리드 정렬이라 드래그 무의미 */
+    cursor: default;
     margin: 0 !important;
-    touch-action: pan-y !important;   /* 포스트잇 위에서도 세로 스크롤 가능 */
-    overflow: hidden;              /* 긴 본문은 잘라줌 */
+    touch-action: pan-y !important;
+    overflow: hidden;
   }
-  /* 작은 카드 안에서 본문은 더 짧게 자르기 */
   .wall-board > .wall-note .note-body { -webkit-line-clamp: 3 !important; }
-  /* 카드 안의 음원 칩은 조금 컴팩트하게 */
-  .wall-board > .wall-note .note-track-chip-card { padding: 5px 9px 5px 5px; margin: 6px 0 2px; }
-  .wall-board > .wall-note .note-track-chip-card img { width: 32px !important; height: 32px !important; }
-  .wall-board > .wall-note .note-track-chip-card .note-track-chip-title { font-size: 11.5px; }
-  .wall-board > .wall-note .note-track-chip-card .note-track-chip-artist { font-size: 10px; }
-  .wall-board > .wall-note .note-track-chip-card .note-track-chip-play { font-size: 22px; }
+  /* 카드 안의 음원 썸네일은 더 작게 */
+  .wall-board > .wall-note .note-track-thumb { width: 38px; height: 38px; margin: 4px 0 2px; }
   .wall-note.dragging { transform: none !important; }
   .wall-note .note-body { font-size: 15px !important; -webkit-line-clamp: 5; }
   .wall-note .note-author { font-size: 11px; margin-top: 6px; }
@@ -3144,8 +3131,8 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 }
 @media (max-width: 420px) {
   .wall-board > .wall-note {
-    height: 260px !important;
-    max-height: 260px;
+    height: 220px !important;
+    max-height: 220px;
     padding: 12px 12px 10px;
     font-size: 14px;
   }
