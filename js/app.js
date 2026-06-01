@@ -4005,30 +4005,48 @@ function _shapeShortsGo(dir) {
   st.idx = ni;
   st._animating = true;
 
-  // 릴스/쇼츠처럼 두 카드가 '동시에' 같은 방향으로 미끄러진다 (이전 카드가
-  // 남아있다 사라지는 게 아니라, 스크롤되듯 함께 이동).
+  // 드래그로 들어왔을 때 cur 카드가 이미 어딘가에 살짝 옮겨져 있을 수 있다.
+  // 그 위치를 그대로 이어받아서 슬라이드를 시작해야 '끊기는' 느낌이 안 든다.
+  let curY = 0;
+  if (cur && cur.style.transform) {
+    const mt = cur.style.transform.match(/translate(?:Y)?\(\s*([-0-9.]+)px(?:,\s*([-0-9.]+)px)?/);
+    if (mt) curY = parseFloat(mt[2] != null ? mt[2] : mt[1]);
+  }
+  const vh = stage.getBoundingClientRect().height || window.innerHeight;
+
+  // 두 카드가 한 덩어리처럼 한 viewport 만큼 움직임 — 이어붙여 슬라이드.
+  // dir='next' (위로 스와이프): cur 은 위로(−vh), next 는 아래에서(+vh)
+  // dir='prev' (아래로 스와이프): cur 은 아래로(+vh), next 는 위에서(−vh)
+  const dirSign = dir === 'next' ? -1 : 1;
+  const curTarget = curY + dirSign * vh;
+  const nextStart = curY - dirSign * vh;       // cur 의 반대편에 딱 붙여 시작
+
   const wrap = document.createElement('div');
   wrap.innerHTML = _shapeShortsCardHtml(st.tracks[ni]);
   const next = wrap.firstElementChild;
   next.style.transition = 'none';
-  next.style.transform = 'translateY(' + (dir === 'next' ? '100%' : '-100%') + ')';
+  next.style.transform = `translate(0px, ${nextStart}px)`;
   stage.appendChild(next);
   // 강제 reflow 후 동시 슬라이드
   void next.getBoundingClientRect();
-  const ease = 'transform 0.32s cubic-bezier(0.4,0,0.2,1)';
+
+  // 부드러운 ease-out (out-quint) — 끊기는 느낌이 사라지고 자연스럽게 정착.
+  const ease = 'transform 0.38s cubic-bezier(0.22, 1, 0.36, 1)';
   if (cur) {
     cur.style.transition = ease;
-    cur.style.transform = 'translateY(' + (dir === 'next' ? '-100%' : '100%') + ')';
+    cur.style.transform = `translate(0px, ${curTarget}px)`;
   }
   next.style.transition = ease;
-  next.style.transform = 'translateY(0)';
+  next.style.transform = 'translate(0px, 0px)';
+
+  _shapeShortsRenderChrome();
+  // 트랙 전환(playTrack) 은 슬라이드가 끝난 뒤에 — 도중에 player UI 가
+  // 바뀌면서 reflow 가 일어나면 뚝뚝 끊겨 보임.
   setTimeout(() => {
     if (cur && cur.parentElement) cur.remove();
     st._animating = false;
-  }, 340);
-
-  _shapeShortsRenderChrome();
-  _shapeShortsPlayCurrent();   // 넘기면 그 다음 곡이 바로 재생
+    _shapeShortsPlayCurrent();
+  }, 400);
 }
 
 window._shapeShortsGoArtist = function (encName) {
