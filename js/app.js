@@ -3,9 +3,29 @@ const appContent = document.getElementById('app-content');
 const audioElement = document.getElementById('audio-element');
 const globalPlayer = document.getElementById('global-player');
 const playBtn = document.getElementById('player-play-btn');
+// 인라인 HTML(쇼츠, 우리들의 벽 등)이 재생 상태를 확인할 수 있도록 노출.
+window.audioElement = audioElement;
 
 let currentView = 'home';
 let currentPlayingTrack = null;
+
+// 우리들의 벽 등 곳곳의 .note-track-thumb 미니 커버 아이콘 ▶ ↔ ⏸ 동기화.
+// audioElement 의 play/pause/ended/emptied 어디에서 호출돼도 안전.
+window.syncNoteTrackThumbIcons = function () {
+  const playingId = window.currentPlayingTrack;
+  const isPlaying = !!(playingId && window.audioElement && !window.audioElement.paused && !window.audioElement.ended);
+  document.querySelectorAll('.note-track-thumb[data-track-id]').forEach(btn => {
+    const tid = btn.getAttribute('data-track-id');
+    const active = isPlaying && tid === playingId;
+    btn.classList.toggle('is-playing', active);
+    const i = btn.querySelector('i');
+    if (i) i.className = active ? 'ri-pause-fill' : 'ri-play-fill';
+    const baseTitle = btn.getAttribute('title') || '';
+    const cleaned = baseTitle.replace(/ — (재생|일시정지)$/, '');
+    btn.setAttribute('title', cleaned + (active ? ' — 일시정지' : ' — 재생'));
+  });
+};
+function syncNoteTrackThumbIcons() { return window.syncNoteTrackThumbIcons(); }
 
 // ────────────────────────────────────────────────────────────
 // Browser-history routing — keeps the URL hash in sync with currentView
@@ -384,7 +404,13 @@ async function init() {
     if (window.Analytics && window.Analytics.trackPlayEnd) {
       window.Analytics.trackPlayEnd().catch(()=>{});
     }
+    syncNoteTrackThumbIcons();
   });
+  // 우리들의 벽 / 곳곳에 흩어진 .note-track-thumb 미니 커버의 ▶/⏸ 아이콘을
+  // 실제 audio 상태와 동기화한다. (재생/일시정지/소스 변경/종료 어디서든)
+  audioElement.addEventListener('play', syncNoteTrackThumbIcons);
+  audioElement.addEventListener('pause', syncNoteTrackThumbIcons);
+  audioElement.addEventListener('emptied', syncNoteTrackThumbIcons);
 
   // Load Initial View — honor URL hash so refreshing /#/admin lands on admin
   const initialRoute = _hashToRoute(location.hash) || 'shapes';
@@ -1862,10 +1888,12 @@ function _renderNoteTrackChip(note) {
     const cover = t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=300';
     const title = (t.title || '').replace(/</g,'&lt;').replace(/"/g,'&quot;');
     // 미니 커버만 — 사진 클릭하면 재생. 제목/아티스트 표시 X (사용자 요청)
+    // data-track-id 가 audio play/pause 이벤트와 동기화돼서 ▶ / ⏸ 가 자동 토글됨.
+    const isPlaying = (window.currentPlayingTrack === t.id) && window.audioElement && !window.audioElement.paused;
     return `
-      <button class="note-track-thumb" onclick="event.stopPropagation(); playTrack('${t.id}', 'wall')" title="${title} — 재생">
+      <button class="note-track-thumb ${isPlaying ? 'is-playing' : ''}" data-track-id="${t.id}" onclick="event.stopPropagation(); playTrack('${t.id}', 'wall')" title="${title} — ${isPlaying ? '일시정지' : '재생'}">
         <img src="${cover}" alt="" loading="lazy">
-        <i class="ri-play-fill"></i>
+        <i class="${isPlaying ? 'ri-pause-fill' : 'ri-play-fill'}"></i>
       </button>`;
   }
   if (note.externalUrl) {
@@ -2578,8 +2606,14 @@ window.openNoteDetail = function(noteId) {
   }
 
   const isBookmarked = window.Walls && window.Walls.isBookmarked && window.Walls.isBookmarked(noteId);
+  // 모바일 터치-스와이프가 클릭을 먹어버리는 케이스가 있어, ontouchend 에서도
+  // 같은 핸들러를 명시적으로 호출 (백업). _bookmarkTouched 로 중복 호출 방지.
   const bookmarkBtnModal = db.currentUser ? `
-    <button class="note-bookmark in-modal ${isBookmarked ? 'is-bookmarked' : ''}" data-note-id="${noteId}" onclick="event.stopPropagation(); toggleBookmark('${noteId}')" title="${isBookmarked ? '수집 취소' : '수집하기'}">
+    <button class="note-bookmark in-modal ${isBookmarked ? 'is-bookmarked' : ''}"
+            data-note-id="${noteId}"
+            onclick="event.stopPropagation(); if(!this._bookmarkTouched){ toggleBookmark('${noteId}'); } this._bookmarkTouched=false;"
+            ontouchend="event.stopPropagation(); event.preventDefault(); this._bookmarkTouched=true; toggleBookmark('${noteId}');"
+            title="${isBookmarked ? '수집 취소' : '수집하기'}">
       <i class="${isBookmarked ? 'ri-bookmark-fill' : 'ri-bookmark-line'}"></i>
     </button>
   ` : '';
@@ -4043,15 +4077,62 @@ function _shapeShortsMount() {
     _shapeShortsGo(e.deltaY > 0 ? 'next' : 'prev');
   }, { passive: false });
 
-  // 위아래 스와이프 — 네이티브 스크롤(화면 위로 튐) 차단하려고 touchmove 막음
-  let ty0 = null;
-  ov.addEventListener('touchstart', (e) => { ty0 = e.touches[0] ? e.touches[0].clientY : null; }, { passive: true });
-  ov.addEventListener('touchmove', (e) => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+  // 위아래 스와이프 — 손가락 따라 카드가 살짝 끌려오고 놓으면 스프링백 / 또는 다음으로 넘어감.
+  // 단순 스와이프 감지가 아닌, 라이브 transform 동기화로 "잡고 끌고 다니는" 모션 적용.
+  let ty0 = null, tx0 = null;
+  let dragStage = null;
+  let dragging = false;
+  ov.addEventListener('touchstart', (e) => {
+    if (!e.touches[0]) return;
+    if (e.target.closest('.sshorts-close, .sshorts-artist')) { ty0 = tx0 = null; return; }
+    const st = window.__shapeShorts;
+    if (st && st._animating) { ty0 = tx0 = null; return; }   // 전환 중이면 새 드래그 무시
+    ty0 = e.touches[0].clientY;
+    tx0 = e.touches[0].clientX;
+    dragStage = ov.querySelector('.sshorts-stage');
+    dragging = false;
+    if (dragStage) {
+      dragStage.style.transition = 'none';      // 손가락 따라 즉시 반응
+      dragStage.style.willChange = 'transform';
+    }
+  }, { passive: true });
+  ov.addEventListener('touchmove', (e) => {
+    if (e.cancelable) e.preventDefault();
+    if (ty0 == null || tx0 == null || !dragStage || !e.touches[0]) return;
+    const dy = e.touches[0].clientY - ty0;
+    const dx = e.touches[0].clientX - tx0;
+    if (!dragging && Math.abs(dy) < 6 && Math.abs(dx) < 6) return;
+    dragging = true;
+    // 가로는 살짝만 따라오게(40%) + 약간의 기울기로 살아있는 느낌. 세로는 그대로.
+    const followX = dx * 0.4;
+    const rot = Math.max(-7, Math.min(7, dx / 18));
+    dragStage.style.transform = `translate(${followX}px, ${dy}px) rotate(${rot}deg)`;
+  }, { passive: false });
+  let _suppressClickUntil = 0;     // 드래그 직후 따라오는 유령 click 잠깐 차단
   ov.addEventListener('touchend', (e) => {
-    if (ty0 == null) return;
-    const dy = (e.changedTouches[0] ? e.changedTouches[0].clientY : ty0) - ty0; ty0 = null;
-    if (Math.abs(dy) < 44) return;
-    _shapeShortsGo(dy < 0 ? 'next' : 'prev');
+    if (ty0 == null) { dragStage = null; dragging = false; return; }
+    const touch = e.changedTouches[0];
+    const dy = touch ? touch.clientY - ty0 : 0;
+    const dx = touch ? touch.clientX - tx0 : 0;
+    ty0 = tx0 = null;
+    const stage = dragStage;
+    dragStage = null;
+    const wasDragging = dragging;
+    dragging = false;
+    if (wasDragging) _suppressClickUntil = Date.now() + 350;
+    if (!stage) return;
+    // 충분히 끌었으면 다음/이전 — 세로 거리가 더 크고 임계값 넘었을 때
+    if (Math.abs(dy) >= 80 && Math.abs(dy) > Math.abs(dx)) {
+      // 그대로 두면 _shapeShortsGo가 새 카드를 슬라이드 인 — 기존 transform은 자연스럽게 사라짐
+      _shapeShortsGo(dy < 0 ? 'next' : 'prev');
+      return;
+    }
+    // 안 넘기면 부드럽게 원위치 (살짝 spring 느낌의 ease)
+    if (wasDragging) {
+      stage.style.transition = 'transform 0.34s cubic-bezier(0.34,1.56,0.64,1)';
+      stage.style.transform = 'translate(0, 0) rotate(0deg)';
+      stage.style.willChange = '';
+    }
   }, { passive: true });
 
   // 탭 처리(스와이프는 위 touchend가, 탭은 click이 담당):
@@ -4061,6 +4142,8 @@ function _shapeShortsMount() {
   let _lastShapeClick = 0;
   const _mountedAt = Date.now();
   ov.addEventListener('click', (e) => {
+    // 드래그 직후 유령 클릭이 따라와 모달을 닫지 않게.
+    if (Date.now() < _suppressClickUntil) return;
     // 도형을 탭해서 열릴 때 따라오는 '유령 클릭'이 오버레이를 바로 닫지 않게.
     if (Date.now() - _mountedAt < 450) return;
     if (e.target.closest('.sshorts-artist, .sshorts-close')) return;
@@ -9989,6 +10072,7 @@ window.playTrack = function (trackId, source) {
   }
 
   currentPlayingTrack = track.id;
+  window.currentPlayingTrack = currentPlayingTrack;
 
   // Analytics: fire 'start' event (also wraps up the previous track's 'end').
   // source is used to count "shape clicks" vs other play surfaces.
@@ -10042,6 +10126,7 @@ function togglePlay() {
     audioElement.pause();
     icon.className = 'ri-play-circle-fill';
   }
+  if (typeof window.syncNoteTrackThumbIcons === 'function') window.syncNoteTrackThumbIcons();
 }
 
 function updateProgress() {
