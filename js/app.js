@@ -8350,7 +8350,8 @@ function renderArtistProfile(artistName) {
               <img src="${avatar}" class="artist-avatar" alt="${safeName}">
               <div class="artist-id-text">
                 <h1>${safeName}</h1>
-                <div style="color: var(--brand-color); font-weight: 600; font-size: 13px; margin-top:2px;">
+                <!-- 역할 라벨('아티스트') 숨김 — 사용자 요청. id/style은 유지해 다른 코드 안 깨지게. -->
+                <div style="display:none;" aria-hidden="true">
                   <i class="ri-user-star-line"></i> ${roleLabel}
                 </div>
                 <!-- 통계 줄(곡/프로젝트/포스트잇/팔로워) 임시 숨김 (사용자 요청) — fan-count-inline id 유지해야 mountCheerHeart 가 안전하게 작동 -->
@@ -8390,7 +8391,7 @@ function renderArtistProfile(artistName) {
           <aside class="artist-postit-aside">
             <div class="artist-postit-aside-head">
               소식
-              ${isSelf ? `<button class="artist-postit-add" onclick="goAddSoshik()" title="새 소식 쓰기"><i class="ri-add-line"></i> 글 추가</button>` : ''}
+              ${isSelf ? `<button class="artist-postit-add" onclick="goAddSoshik()" title="새 소식 쓰기"><i class="ri-add-line"></i></button>` : ''}
             </div>
             ${artistNotes.length > 0
               ? `<div class="artist-postit-grid artist-postit-grid-aside">${notesGridHtml}</div>`
