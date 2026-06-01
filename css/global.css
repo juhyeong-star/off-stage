@@ -2974,14 +2974,42 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   gap: 6px;
 }
 .wall-note .note-inline-form { margin-top: 0; }
+
+/* ===== 모바일: 우리들의 벽을 2칸 그리드로 정렬 (스크린샷 스타일) ===== */
+@media (max-width: 768px) {
+  .wall-board {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 12px 12px calc(var(--player-height) + 80px);
+    height: auto !important;     /* JS가 inline으로 설정한 height 무력화 */
+    min-height: 60vh;
+    overflow: visible;
+  }
+  .wall-note {
+    position: static !important;  /* 절대배치 → 그리드 셀로 흘러가게 */
+    width: 100% !important;
+    min-height: 200px;
+    padding: 14px 14px 12px;
+    font-size: 15px;
+    line-height: 1.35;
+    cursor: default;              /* 그리드 정렬이라 드래그 무의미 */
+  }
+  .wall-note.dragging { transform: none !important; }
+  .wall-note .note-body { font-size: 15px !important; -webkit-line-clamp: 5; }
+  .wall-note .note-author { font-size: 11px; margin-top: 6px; }
+  .wall-note .note-inline-input { font-size: 12px; }
+  .wall-note .note-comments-teaser { font-size: 11px; padding-top: 6px; }
+  .wall-note .note-bookmark,
+  .wall-note .note-delete { width: 26px; height: 26px; font-size: 14px; }
+}
 @media (max-width: 420px) {
   .wall-note {
-    width: 278px;
-    min-height: 245px;
-    padding: 24px 22px 18px;
-    font-size: 16px;
-    line-height: 1.35;
+    min-height: 180px;
+    padding: 12px 12px 10px;
+    font-size: 14px;
   }
+  .wall-note .note-body { font-size: 14px !important; }
 }
 .wall-note:hover {
   box-shadow: 0 14px 32px rgba(0,0,0,0.55);
@@ -12509,6 +12537,40 @@ body.polaroid-sheet-open { overflow: hidden; }
 .artist-canvas .version-panel.active .comment-arrow,
 .artist-canvas .version-panel.active .comment-author {
   color: #6B46C1 !important;
+}
+
+/* 데모 카드 — 클릭(=is-selected) 했을 때만 댓글 목록/입력 펼침.
+   기본은 글(노트) + 댓글 티저만 보이게 해서 호기심 자극. */
+.artist-canvas .demo-card .demo-card-cm-list,
+.artist-canvas .demo-card .demo-card-cm-input { display: none !important; }
+.artist-canvas .demo-card.is-selected .demo-card-cm-list { display: flex !important; }
+.artist-canvas .demo-card.is-selected .demo-card-cm-input { display: flex !important; }
+.artist-canvas .demo-card.is-selected .demo-card-cm-hint { display: none !important; }
+
+/* 댓글 티저 — 카드 맨 아래 한 줄. "뭐라고 적혔지?" 호기심 한방울. */
+.artist-canvas .demo-card-cm-hint {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  margin-top: auto;
+  padding-top: 6px;
+  border-top: 1.5px dashed rgba(17,17,17,0.18);
+  font-family: var(--font-hand);
+  font-size: 13px;
+  font-weight: 600;
+  font-style: italic;
+  color: #2a2240;
+  opacity: 0.62;
+  cursor: pointer;
+  pointer-events: none;   /* 카드 자체 클릭이 selectProjectVersion 호출 */
+}
+.artist-canvas .demo-card-cm-hint i { font-style: normal; opacity: 0.85; }
+.artist-canvas .demo-card-cm-hint .dch-count { font-weight: 800; font-style: normal; }
+.artist-canvas .demo-card-cm-hint .dch-preview {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1; min-width: 0;
 }
 
 /* 데모 카드 안의 # 라인 노트 — 포스트잇 톤 그대로 */

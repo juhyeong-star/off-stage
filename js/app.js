@@ -6911,18 +6911,27 @@ function renderProjectBox(pid, versions) {
            </div>`
         : '';
 
-    // ── 카드 내부 인라인 댓글 + 입력 ── (안내 문구 없음, 덕질 컨셉)
+    // ── 카드 내부 인라인 댓글 + 입력 ── (기본은 접혀있고, 카드 클릭하면 펼침)
     const cmList = v.trackComments || [];
     const cmInlineHtml = cmList.slice(0, 10).map(cm => {
       const cmSafe = noteEsc(cm.text || '');
       const cmAuth = noteEsc(cm.author || '익명');
       return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span></div>`;
     }).join('');
+    // 댓글 티저 — 댓글 있을 때만 카드 맨 아래에 한 줄로 보여줘 호기심 자극
+    // (선택되면 숨겨지고 위의 전체 목록이 펼쳐짐)
+    const lastCm = cmList.length ? cmList[cmList.length - 1] : null;
+    const cmHintHtml = lastCm ? `
+      <div class="demo-card-cm-hint">
+        <i class="ri-chat-3-line"></i>
+        <span class="dch-count">${cmList.length}</span>
+        <span class="dch-preview">"${noteEsc((lastCm.text || '').slice(0, 18))}…"</span>
+      </div>` : '';
 
-    // 후원자만 인라인 입력. 미후원자는 상단 우측 💎 뱃지가 단일 invest CTA — 하단엔 아무것도 표시 안 함
+    // 로그인한 누구나 인라인 입력 — 카드를 눌렀을 때만 보이게(CSS로 토글)
     const inputInlineHtml = canComment ? `
       <div class="demo-card-cm-input" onclick="event.stopPropagation();">
-        <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="" onkeypress="if(event.key==='Enter'){ event.preventDefault(); submitTrackComment('${v.id}'); }">
+        <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="댓글 남기기…" onkeypress="if(event.key==='Enter'){ event.preventDefault(); submitTrackComment('${v.id}'); }">
         <button class="demo-card-cm-send" onclick="event.stopPropagation(); submitTrackComment('${v.id}')" aria-label="남기기"><i class="ri-arrow-right-line"></i></button>
       </div>` : '';
 
@@ -6948,6 +6957,7 @@ function renderProjectBox(pid, versions) {
         ${noteHtml}
         <div class="demo-card-cm-list">${cmInlineHtml}</div>
         ${inputInlineHtml}
+        ${cmHintHtml}
       </div>
     `;
   }).join('');
