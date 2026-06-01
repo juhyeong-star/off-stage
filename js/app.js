@@ -475,6 +475,8 @@ function navigateTo(route) {
   // by a popstate (the browser already updated history for us).
   if (!_routerInPopstate && route) _pushRouteHash(route);
   currentView = route;
+  // 외부(supabase.js 등)에서도 라우트 알 수 있게 미러
+  window.__currentView = route;
   // Toggle global back button visibility based on the new route.
   _updateBackButton(route);
   appContent.innerHTML = '';
@@ -843,6 +845,23 @@ function _saveNotifReadSet(set) {
   try { localStorage.setItem('offstage_notif_read', JSON.stringify(Array.from(set))); } catch(_) {}
 }
 
+// PC 간 알림 읽음 상태 동기화 — 부팅 시 한 번 클라우드에서 받아와 localStorage 에 합쳐 둠.
+// 그 다음 로컬 코드는 그대로 localStorage 만 읽으면 됨.
+window._hydrateNotifReadsFromCloud = async function () {
+  if (!window.NotifReads) return;
+  try {
+    const cloudIds = await window.NotifReads.fetchAll();
+    if (!cloudIds.length) return;
+    const localSet = _getNotifReadSet();
+    let added = 0;
+    cloudIds.forEach(id => { if (!localSet.has(id)) { localSet.add(id); added++; } });
+    if (added > 0) {
+      _saveNotifReadSet(localSet);
+      if (typeof window.refreshNotifBadge === 'function') window.refreshNotifBadge();
+    }
+  } catch (_) {}
+};
+
 window.openNotifPanel = function() {
   const panel = document.getElementById('notif-panel');
   const drawer = document.getElementById('notif-drawer');
@@ -913,16 +932,23 @@ window.closeNotifPanel = function() {
 window.markNotifRead = function(id) {
   if (!id) return;
   const set = _getNotifReadSet();
-  set.add(id);
-  _saveNotifReadSet(set);
+  if (!set.has(id)) {
+    set.add(id);
+    _saveNotifReadSet(set);
+    // 다른 PC 에서도 읽음 처리되게 백그라운드로 동기화 (실패해도 로컬은 이미 처리됨)
+    if (window.NotifReads) window.NotifReads.markRead(id);
+  }
   window.refreshNotifBadge();
 };
 
 window.markAllNotifsRead = function() {
   const items = _genNotifications();
   const set = _getNotifReadSet();
-  items.forEach(n => set.add(n.id));
+  const newlyRead = [];
+  items.forEach(n => { if (!set.has(n.id)) { set.add(n.id); newlyRead.push(n.id); } });
   _saveNotifReadSet(set);
+  // 한 번에 묶어서 클라우드 mirror — 새로 읽음 처리된 것만
+  if (newlyRead.length && window.NotifReads) window.NotifReads.markManyRead(newlyRead);
   window.refreshNotifBadge();
   window.openNotifPanel(); // re-render
 };
@@ -2255,6 +2281,126 @@ window.quickUploadDemoToProject = function(projectId) {
   window.__pendingUploadProjectId   = projectId;
   window.__pendingUploadVersionType = 'demo';
   navigateTo('upload');
+};
+
+// 메세지함 모달 — 자기소개프로필 옆 '메세지' 버튼이 호출. 받은 DM 인박스 표시.
+window.openDmInboxModal = function () {
+  // 기존 모달 있으면 정리
+  const old = document.getElementById('dm-inbox-modal');
+  if (old) old.remove();
+  const html = `
+    <div id="dm-inbox-modal" class="profile-modal" onclick="if(event.target===this) closeDmInboxModal()">
+      <div class="profile-modal-card">
+        <div class="profile-modal-head">
+          <i class="ri-mail-fill" style="color:#1DB954;"></i>
+          <div class="profile-modal-title">메세지함</div>
+          <button class="profile-modal-close" onclick="closeDmInboxModal()" aria-label="닫기">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+        <div class="profile-modal-body">
+          <div id="dm-inbox-mount"><div style="text-align:center; padding:30px 0; color:var(--text-secondary);">불러오는 중…</div></div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', html);
+  // 인박스 채우기 (기존 mountDmInbox 재활용)
+  if (typeof window.mountDmInbox === 'function') {
+    window.mountDmInbox('dm-inbox-mount');
+  }
+};
+window.closeDmInboxModal = function () {
+  const m = document.getElementById('dm-inbox-modal');
+  if (m) m.remove();
+};
+
+// 자기소개프로필 모달 — bio 보기 + 수정. 작은 textarea 로 100자 free-form.
+window.openProfileBioModal = function () {
+  const old = document.getElementById('profile-bio-modal');
+  if (old) old.remove();
+  const me = window.__currentUser || (window.DB.get && window.DB.get().currentUser) || {};
+  const bio = (me.bio || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const html = `
+    <div id="profile-bio-modal" class="profile-modal" onclick="if(event.target===this) closeProfileBioModal()">
+      <div class="profile-modal-card">
+        <div class="profile-modal-head">
+          <i class="ri-user-3-line" style="color:#1DB954;"></i>
+          <div class="profile-modal-title">자기소개</div>
+          <button class="profile-modal-close" onclick="closeProfileBioModal()" aria-label="닫기">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+        <div class="profile-modal-body">
+          <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
+            <i class="ri-edit-line"></i> 자유롭게 100자 안에서 — 어떤 음악 하는지, 무엇을 좋아하는지
+          </div>
+          <textarea id="profile-bio-textarea" maxlength="100" rows="4"
+            style="width:100%; padding:12px; border:1px solid var(--divider,#2a2a2a); border-radius:8px; background:rgba(255,255,255,0.04); color:inherit; font-size:14px; line-height:1.5; resize:vertical; font-family:inherit;"
+            placeholder="자기소개를 적어보세요...">${bio}</textarea>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:11px; color:var(--text-secondary);">
+            <span><i class="ri-information-line"></i> 다른 사람도 볼 수 있어요</span>
+            <span id="profile-bio-counter">${(me.bio || '').length} / 100</span>
+          </div>
+          <div style="margin-top: 14px; display: flex; gap: 8px;">
+            <button class="btn-primary" style="flex:1;" onclick="saveProfileBio()">저장</button>
+            <button class="btn-primary" style="flex:1; background:#333;" onclick="closeProfileBioModal()">취소</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', html);
+  const ta = document.getElementById('profile-bio-textarea');
+  const counter = document.getElementById('profile-bio-counter');
+  if (ta && counter) {
+    ta.addEventListener('input', () => {
+      counter.textContent = ta.value.length + ' / 100';
+    });
+    setTimeout(() => ta.focus(), 80);
+  }
+};
+window.closeProfileBioModal = function () {
+  const m = document.getElementById('profile-bio-modal');
+  if (m) m.remove();
+};
+window.saveProfileBio = async function () {
+  const ta = document.getElementById('profile-bio-textarea');
+  if (!ta) return;
+  const bio = ta.value.trim().slice(0, 100);
+  const btns = document.querySelectorAll('#profile-bio-modal button');
+  btns.forEach(b => b.disabled = true);
+  try {
+    if (window.supabase && window.__currentUser) {
+      const { error } = await window.supabase
+        .from('profiles')
+        .update({ bio: bio || null })
+        .eq('id', window.__currentUser.id);
+      if (error) throw error;
+      window.__currentUser.bio = bio;
+    }
+    // 로컬 캐시도 갱신 — 다시 들어가면 즉시 반영
+    try {
+      const cached = window.DB.get();
+      if (cached && cached.currentUser) {
+        cached.currentUser.bio = bio;
+        window.DB.save(cached);
+      }
+    } catch (_) {}
+    showToast('자기소개 저장됨 ✨');
+    closeProfileBioModal();
+    // 현재 보고 있는 아티스트 페이지가 자기 거면 다시 그려서 bio 표시 갱신
+    if (currentView && currentView.startsWith('artist:')) {
+      if (typeof renderArtistProfile === 'function') {
+        const name = decodeURIComponent(currentView.slice(7));
+        renderArtistProfile(name);
+      }
+    }
+  } catch (e) {
+    alert('저장 실패: ' + (e.message || e));
+  } finally {
+    btns.forEach(b => b.disabled = false);
+  }
 };
 
 // "글 추가" 버튼 (아티스트 페이지 소식 헤더) → 벽으로 이동 + 컴포저 자동 열기
@@ -4276,6 +4422,7 @@ function initDiscoverDrag() {
 }
 
 // ===================== SHAPES UNIVERSE (original floating shapes view) =====================
+window.renderShapes = function () { return renderShapes(); };
 function renderShapes() {
   const db = window.DB.get();
   // 도형 페이지 들어올 때마다 Supabase에서 새 트랙 백그라운드 확인.
@@ -5229,13 +5376,24 @@ function initShapeDrag() {
         const topPx  = elRect.top  - parentRect.top;
         const xPct   = parentRect.width > 0 ? (leftPx / parentRect.width) * 100 : 0;
         const pass   = el.dataset.pass;
-        const key    = window.__universeFolderId
-          ? ('plpos:' + window.__universeFolderId + ':' + itemId)   // 폴더 안 위치
-          : (currentView === 'universe'
-              ? 'unipos:' + itemId
-              : 'shapepos:' + itemId + ':' + (pass != null ? pass : '0'));
+        // scope/scope_id 정리 — 클라우드(user_object_positions) 와 동일한 키 체계
+        let scope, scopeId, key;
+        if (window.__universeFolderId) {
+          scope = 'playlist'; scopeId = window.__universeFolderId;
+          key = 'plpos:' + scopeId + ':' + itemId;
+        } else if (currentView === 'universe') {
+          scope = 'universe'; scopeId = '';
+          key = 'unipos:' + itemId;
+        } else {
+          scope = 'shape'; scopeId = '';
+          key = 'shapepos:' + itemId + ':' + (pass != null ? pass : '0');
+        }
         try { localStorage.setItem(key, JSON.stringify({ xPct, yPx: topPx })); }
         catch (_) {}
+        // PC 간 동기화 — 다른 컴퓨터에서 같은 계정으로 들어가면 같은 배치
+        if (window.Positions && window.__currentUser) {
+          window.Positions.save(scope, scopeId, itemId, pass != null ? pass : 0, xPct, topPx);
+        }
       }
     }
 
@@ -8408,6 +8566,14 @@ function renderArtistProfile(artistName) {
   let fanCount = artistSupabaseId && window.__fanCounts ? (window.__fanCounts.get(artistSupabaseId) || 0) : 0;
   let iFollow = artistSupabaseId && window.__followed ? window.__followed.has(artistSupabaseId) : false;
 
+  // 자기소개(bio): 본인이면 __currentUser.bio 즉시, 다른 사람이면 fetchProfileByName 비동기로 채움
+  let initialBio = '';
+  if (isSelf && window.__currentUser && window.__currentUser.bio) {
+    initialBio = window.__currentUser.bio;
+  } else if (!isSelf && artistData && artistData.bio) {
+    initialBio = artistData.bio;
+  }
+
   // Group tracks by projectId
   const projects = {};
   artistTracks.forEach(t => {
@@ -8492,7 +8658,7 @@ function renderArtistProfile(artistName) {
   }).join('');
 
   // Artist notes grid — show all, wrapping
-  const notesGridHtml = artistNotes.map((n, i) => {
+  const notesGridCards = artistNotes.map((n, i) => {
     const col = NOTE_COLORS[n.color] || NOTE_COLORS.yellow;
     const rot = n.rotation || ((i % 2 === 0 ? -1 : 1) * (Math.random() * 3 + 0.5));
     const safeTxt = (n.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
@@ -8502,12 +8668,24 @@ function renderArtistProfile(artistName) {
       </div>
     `;
   }).join('');
+  // 본인이면 데모처럼 그리드 끝에 빈 포스트잇(+) 카드 — 누르면 글 쓰기로
+  const addCard = isSelf ? `
+    <div class="artist-postit artist-postit-add-card" onclick="goAddSoshik()" title="새 소식 쓰기">
+      <i class="ri-add-line"></i>
+    </div>
+  ` : '';
+  const notesGridHtml = notesGridCards + addCard;
 
   appContent.innerHTML = `
     <div class="artist-canvas">
       <div class="artist-bg-deco"></div>
 
       <div class="sub-page artist-page">
+        ${isSelf ? `
+          <button class="artist-settings-gear" onclick="editProfile()" title="설정 / 프로필 편집" aria-label="설정">
+            <i class="ri-settings-3-line"></i>
+          </button>
+        ` : ''}
         <div class="reveal" style="margin-bottom:14px;">
           <a href="#" onclick="event.preventDefault(); navigateTo('wall')" style="color:var(--text-secondary); font-size:13px;">
             <i class="ri-arrow-left-line"></i> 우리들의 벽으로
@@ -8520,6 +8698,11 @@ function renderArtistProfile(artistName) {
               <img src="${avatar}" class="artist-avatar" alt="${safeName}">
               <div class="artist-id-text">
                 <h1>${safeName}</h1>
+                ${initialBio ? `
+                  <p id="artist-bio-line" class="artist-bio-line">
+                    ${initialBio.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
+                  </p>
+                ` : `<p id="artist-bio-line" class="artist-bio-line" hidden></p>`}
                 <!-- 역할 라벨('아티스트') 숨김 — 사용자 요청. id/style은 유지해 다른 코드 안 깨지게. -->
                 <div style="display:none;" aria-hidden="true">
                   <i class="ri-user-star-line"></i> ${roleLabel}
@@ -8549,8 +8732,11 @@ function renderArtistProfile(artistName) {
                 })() : ''}
                 ${isSelf ? `
                   <div class="artist-action-row" style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
-                    <button class="follow-btn-v2" onclick="editProfile()">
+                    <button class="follow-btn-v2" onclick="openProfileBioModal()">
                       <i class="ri-user-3-line"></i> 자기소개 프로필
+                    </button>
+                    <button class="dm-btn-v2" onclick="openDmInboxModal()">
+                      <i class="ri-mail-fill"></i> 메세지
                     </button>
                   </div>
                 ` : ''}
@@ -8559,11 +8745,8 @@ function renderArtistProfile(artistName) {
           </div>
           ${'' /* counts box (앨범/프로젝트/싱글) hidden for now — will surface later when there are many songs */}
           <aside class="artist-postit-aside">
-            <div class="artist-postit-aside-head">
-              소식
-              ${isSelf ? `<button class="artist-postit-add" onclick="goAddSoshik()" title="새 소식 쓰기"><i class="ri-add-line"></i></button>` : ''}
-            </div>
-            ${artistNotes.length > 0
+            <div class="artist-postit-aside-head">소식</div>
+            ${(artistNotes.length > 0 || isSelf)
               ? `<div class="artist-postit-grid artist-postit-grid-aside">${notesGridHtml}</div>`
               : `<div class="artist-postit-empty">아직 소식이 없어요</div>`}
           </aside>
@@ -8578,13 +8761,10 @@ function renderArtistProfile(artistName) {
         ` : ''}
 
         ${isArtistRole ? `
-          <!-- Artist content tabs: 음악 / 메세지함(또는 응원함) / 통계(본인만) -->
+          <!-- Artist content tabs: 음악 / 통계(본인만). 메세지함 탭은 자기소개프로필 옆 버튼으로 이동. -->
           <div class="artist-content-tabs reveal" style="margin-top: 28px;">
             <button type="button" class="content-tab active" data-content-tab="music" onclick="switchArtistContentTab('music')">
               <i class="ri-music-2-fill"></i> 음악
-            </button>
-            <button type="button" class="content-tab" data-content-tab="cheers" onclick="switchArtistContentTab('cheers')">
-              <i class="ri-mail-fill"></i> 메세지함
             </button>
             ${isSelf ? `
               <button type="button" class="content-tab" data-content-tab="stats" onclick="switchArtistContentTab('stats')">
@@ -8615,16 +8795,20 @@ function renderArtistProfile(artistName) {
             ` : ''}
           </div>
 
-          <div class="artist-content-pane" data-content-tab="cheers" hidden>
-            ${isSelf ? `
-              <!-- Self only: private DM inbox above the public cheer wall -->
-              <div id="dm-inbox-mount" style="margin-top: 18px;"></div>
-              <div style="margin-top: 24px; padding-top: 18px; border-top: 1px dashed var(--divider, #2a2a2a); font-size: 13px; color: var(--text-secondary, #aaa); font-weight: 700;">
+          <!-- 메세지함 탭은 자기소개프로필 옆 '메세지' 버튼으로 이동(모달).
+               #dm-inbox-mount 는 모달이 동적으로 만들고, 여기서는 hidden 으로만 둠.
+               다른 사람이 보는 응원함은 음악 아래 별도 섹션으로 남김. -->
+          ${!isSelf ? `
+            <div class="reveal" style="margin-top: 28px;">
+              <div style="font-size: 13px; color: var(--text-secondary, #aaa); font-weight: 700; margin-bottom: 10px;">
                 💝 받은 응원
               </div>
-            ` : ''}
-            <div id="cheer-heart-mount" style="margin-top: 14px;"></div>
-          </div>
+              <div id="cheer-heart-mount"></div>
+            </div>
+          ` : `
+            <!-- self는 mountCheerHeart 가 안전하게 끝나도록 빈 placeholder 만 둠 -->
+            <div id="cheer-heart-mount" hidden></div>
+          `}
 
           ${isSelf ? `
             <div class="artist-content-pane" data-content-tab="stats" hidden>
@@ -8658,6 +8842,19 @@ function renderArtistProfile(artistName) {
   // Async: fill the 응원 하트 wall (cheers received by this artist)
   if (isArtistRole && typeof window.mountCheerHeart === 'function') {
     window.mountCheerHeart(artistName);
+  }
+
+  // Async: 다른 사람 프로필이면 bio 를 백그라운드로 가져와서 자리 채움
+  if (!isSelf && !initialBio && typeof window.fetchProfileByName === 'function') {
+    window.fetchProfileByName(artistName).then(p => {
+      if (p && p.bio) {
+        const el = document.getElementById('artist-bio-line');
+        if (el) {
+          el.innerHTML = p.bio.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+          el.hidden = false;
+        }
+      }
+    }).catch(_ => {});
   }
 
   // Async upgrade: if we don't yet know the Supabase artist id, look it up

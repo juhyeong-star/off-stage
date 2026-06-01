@@ -1689,6 +1689,100 @@ body:has(#shape-shorts-overlay) .deco-shape {
 .artist-postit-grid-aside::-webkit-scrollbar-thumb {
   background: rgba(0,0,0,0.25); border-radius: 4px;
 }
+/* 아티스트 이름 아래 자기소개 (bio) — 한 두 줄 짧게 */
+.artist-bio-line {
+  margin: 6px 0 2px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-secondary, #aaa);
+  font-weight: 500;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 100%;
+}
+.artist-bio-line[hidden] { display: none; }
+
+/* 본인 아티스트 페이지 우상단 톱니바퀴 — 프로필 설정으로 들어감 */
+.artist-settings-gear {
+  position: absolute;
+  top: 12px; right: 14px;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: var(--text-secondary, #aaa);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; cursor: pointer;
+  transition: background 0.18s, color 0.18s, transform 0.18s;
+  z-index: 50;
+}
+.artist-settings-gear:hover {
+  background: rgba(29,185,84,0.18);
+  color: #1DB954;
+  transform: rotate(35deg);
+}
+.artist-page { position: relative; }
+
+/* DM 인박스 모달 & 자기소개 모달 — 우리들의 벽 모달 톤 맞춤 */
+.profile-modal {
+  position: fixed; inset: 0; z-index: 3200;
+  background: rgba(0,0,0,0.78);
+  backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 32px 16px;
+  animation: fadeIn 0.22s ease;
+}
+.profile-modal-card {
+  background: var(--card-color, #1a1a1a);
+  color: var(--text-color, #fff);
+  border-radius: 14px;
+  max-width: 540px;
+  width: 100%;
+  max-height: 80vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 22px 60px rgba(0,0,0,0.55);
+  animation: slideUp 0.32s cubic-bezier(0.22,1,0.36,1);
+}
+.profile-modal-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--divider, #2a2a2a);
+  font-weight: 700;
+}
+.profile-modal-head .profile-modal-title { flex: 1; }
+.profile-modal-close {
+  background: none; border: none; color: var(--text-secondary, #aaa);
+  font-size: 22px; cursor: pointer; padding: 4px 6px;
+  border-radius: 6px;
+}
+.profile-modal-close:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.profile-modal-body {
+  padding: 18px 22px 22px;
+  overflow-y: auto;
+  flex: 1; min-height: 0;
+}
+
+/* 빈 포스트잇 추가 카드 — 데모 + 카드처럼 점선 테두리에 큰 + */
+.artist-postit-add-card {
+  background: transparent !important;
+  border: 2px dashed rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.55) !important;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.18s, color 0.18s, transform 0.18s;
+  box-shadow: none !important;
+  min-height: 160px;
+  font-size: 38px;
+  --rot: 0deg;
+}
+.artist-postit-add-card:hover {
+  border-color: rgba(29,185,84,0.85);
+  color: #1DB954 !important;
+  transform: rotate(0) translateY(-2px);
+}
+.artist-postit-add-card::before,
+.artist-postit-add-card::after { display: none !important; }
 .artist-postit-grid-aside .artist-postit {
   flex: 0 0 200px;
   min-height: 130px;
@@ -3448,10 +3542,16 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 .note-detail-content {
   /* 기본 — JS에서 inline style로 포스트잇 색을 넣어줌 (note-detail-paper) */
   background: transparent;
-  max-width: 460px; width: 100%;
+  /* PC: 메모 내용이 길어도 짧아도 항상 같은 크기 — 모달이 따라 커지는 것 방지 */
+  width: 460px;
+  max-width: calc(100vw - 40px);
+  height: 640px;
+  max-height: calc(100vh - 80px);
   padding: 0;
   position: relative;
   animation: slideUp 0.4s cubic-bezier(0.22,1,0.36,1);
+  display: flex;
+  flex-direction: column;
 }
 /* 카드 전체를 한 장의 포스트잇으로 — inline background 가 색 결정 */
 .note-detail-paper {
@@ -3460,6 +3560,16 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   box-shadow: 0 22px 60px rgba(0,0,0,0.55);
   overflow: hidden;
 }
+.note-detail-paper .note-detail-postit { flex-shrink: 0; }
+.note-detail-paper .comments-scribble {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.note-detail-paper #note-detail-comments-list {
+  flex: 1; min-height: 0; overflow-y: auto;
+}
+.note-detail-paper .scribble-input-row { flex-shrink: 0; margin-top: auto; }
 .note-detail-paper .note-detail-postit {
   background: transparent !important;
   color: inherit !important;

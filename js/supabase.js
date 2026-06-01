@@ -65,7 +65,7 @@
     if (!window.supabase || !artistName) return null;
     const { data } = await window.supabase
       .from('profiles')
-      .select('id, name, avatar_url, hero_url')
+      .select('id, name, avatar_url, hero_url, bio')
       .eq('name', artistName)
       .maybeSingle();
     return data || null;
@@ -167,11 +167,128 @@
       db.currentUser = mapped;
       window.DB.save(db);
     } catch (_) {}
+    // PC 간 동기화 — 위치 + 알림 읽음 상태 클라우드에서 받아와 localStorage 에 합침.
+    // 백그라운드 호출 (await 안 함) — 로그인 흐름은 늦추지 않음.
+    try {
+      if (window.Positions && typeof window.Positions.hydrateFromCloud === 'function') {
+        window.Positions.hydrateFromCloud().then(n => {
+          if (n > 0) {
+            // 위치가 새로 들어왔으면 현재 보고 있는 도형/우주 페이지를 다시 그림.
+            // currentView 는 app.js 의 let 이라 window 에 직접 안 매달려 있을 수 있어 fallback.
+            const view = (typeof window.currentView !== 'undefined') ? window.currentView
+                       : (window.__currentView || null);
+            if (view === 'shapes' && typeof window.renderShapes === 'function') {
+              try { window.renderShapes(); } catch (_) {}
+            } else if (view === 'universe' && typeof window.renderUniverse === 'function') {
+              try { window.renderUniverse(); } catch (_) {}
+            }
+          }
+        }).catch(_ => {});
+      }
+      if (window._hydrateNotifReadsFromCloud) {
+        window._hydrateNotifReadsFromCloud();
+      }
+    } catch (_) {}
     return mapped;
   }
 
   // 외부에 노출
   window.fetchProfileByName = fetchProfileByName;
+
+  // ────────────────────────────────────────────────────────────
+  // 알림 읽음 상태 — PC 간 동기화 (2026_06_02 마이그레이션 필요)
+  // 로컬 캐시(localStorage 'offstage_notif_read')는 그대로 두고, 클라우드에 mirror.
+  // ────────────────────────────────────────────────────────────
+  window.NotifReads = {
+    async fetchAll() {
+      if (!window.supabase || !window.__currentUser) return [];
+      try {
+        const { data, error } = await window.supabase
+          .from('notification_reads')
+          .select('notif_id')
+          .eq('user_id', window.__currentUser.id);
+        if (error) { console.warn('[NotifReads.fetchAll]', error.message); return []; }
+        return (data || []).map(r => r.notif_id);
+      } catch (e) { console.warn('[NotifReads.fetchAll]', e); return []; }
+    },
+    async markRead(notifId) {
+      if (!notifId || !window.supabase || !window.__currentUser) return;
+      try {
+        await window.supabase
+          .from('notification_reads')
+          .upsert({ user_id: window.__currentUser.id, notif_id: notifId }, { onConflict: 'user_id,notif_id' });
+      } catch (e) { console.warn('[NotifReads.markRead]', e); }
+    },
+    async markManyRead(notifIds) {
+      if (!Array.isArray(notifIds) || !notifIds.length) return;
+      if (!window.supabase || !window.__currentUser) return;
+      try {
+        const rows = notifIds.map(id => ({ user_id: window.__currentUser.id, notif_id: id }));
+        await window.supabase
+          .from('notification_reads')
+          .upsert(rows, { onConflict: 'user_id,notif_id' });
+      } catch (e) { console.warn('[NotifReads.markManyRead]', e); }
+    }
+  };
+
+  // ────────────────────────────────────────────────────────────
+  // 오브제(도형/우주/폴더) 위치 — PC 간 동기화
+  // 기존 localStorage 키('shapepos:', 'unipos:', 'plpos:')는 빠른 캐시로 유지,
+  // Supabase 는 cross-device 동기화 용도.
+  // ────────────────────────────────────────────────────────────
+  window.Positions = {
+    async fetchAll() {
+      if (!window.supabase || !window.__currentUser) return [];
+      try {
+        const { data, error } = await window.supabase
+          .from('user_object_positions')
+          .select('scope, scope_id, item_id, pass, x_pct, y_px')
+          .eq('user_id', window.__currentUser.id);
+        if (error) { console.warn('[Positions.fetchAll]', error.message); return []; }
+        return data || [];
+      } catch (e) { console.warn('[Positions.fetchAll]', e); return []; }
+    },
+    async save(scope, scopeId, itemId, pass, xPct, yPx) {
+      if (!scope || !itemId) return;
+      if (!window.supabase || !window.__currentUser) return;
+      try {
+        await window.supabase
+          .from('user_object_positions')
+          .upsert({
+            user_id: window.__currentUser.id,
+            scope,
+            scope_id: scopeId || '',
+            item_id: String(itemId),
+            pass: pass != null ? Number(pass) : 0,
+            x_pct: Number(xPct) || 0,
+            y_px: Number(yPx) || 0,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id,scope,scope_id,item_id,pass' });
+      } catch (e) { console.warn('[Positions.save]', e); }
+    },
+    // 부팅 직후 한 번 호출해서 클라우드 데이터를 localStorage 에 반영.
+    // 이렇게 하면 기존 렌더 코드는 그대로 localStorage 만 읽으면 됨.
+    async hydrateFromCloud() {
+      const rows = await window.Positions.fetchAll();
+      if (!rows.length) return 0;
+      let n = 0;
+      rows.forEach(r => {
+        let key;
+        if (r.scope === 'shape') {
+          key = 'shapepos:' + r.item_id + ':' + (r.pass != null ? r.pass : '0');
+        } else if (r.scope === 'universe') {
+          key = 'unipos:' + r.item_id;
+        } else if (r.scope === 'playlist') {
+          key = 'plpos:' + (r.scope_id || '') + ':' + r.item_id;
+        } else { return; }
+        try {
+          localStorage.setItem(key, JSON.stringify({ xPct: r.x_pct, yPx: r.y_px }));
+          n++;
+        } catch (_) {}
+      });
+      return n;
+    }
+  };
 
   window.Auth = {
     // Returns the current session (from Supabase)
