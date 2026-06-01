@@ -2115,18 +2115,12 @@ async function renderWall() {
       </form>
     ` : '';
 
-    // 작성 날짜 — 왼쪽 위에 작게 표시. 오늘/어제/N일 전/M.D 자동.
+    // 작성 날짜 — 왼쪽 위에 작게 표시 (YYYY년 M월 D일 형식)
     const _wallDate = (iso) => {
       if (!iso) return '';
       const d = new Date(iso);
       if (isNaN(d.getTime())) return '';
-      const now = new Date();
-      const diffMs = now - d;
-      const diffDay = Math.floor(diffMs / 86400000);
-      if (diffDay <= 0) return '오늘';
-      if (diffDay === 1) return '어제';
-      if (diffDay < 7) return diffDay + '일 전';
-      return (d.getMonth() + 1) + '.' + d.getDate();
+      return d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
     };
     const dateStr = _wallDate(note.createdAt || note.created_at);
     const dateChip = dateStr ? `<div class="note-date">${dateStr}</div>` : '';
