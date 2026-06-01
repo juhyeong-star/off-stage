@@ -1840,6 +1840,20 @@ let _wallSort = 'new'; // 'new' | 'old' | 'random'
 
 // Renders the small attached-song chip beneath a wall note. Returns empty
 // string when the note has no song link.
+// 칩 클릭 토글 — 펼치면서 곡 재생 시작. 다시 누르면 접힘.
+// 곡 재생/일시정지는 playTrack 이 같은 곡이면 토글 처리.
+window.toggleTrackChip = function(el, trackId) {
+  if (!el) return;
+  if (el.classList.contains('is-expanded')) {
+    el.classList.remove('is-expanded');
+  } else {
+    // 우주 다른 칩들 먼저 접기
+    document.querySelectorAll('.note-track-chip-mini.is-expanded').forEach(c => c.classList.remove('is-expanded'));
+    el.classList.add('is-expanded');
+  }
+  if (trackId && typeof window.playTrack === 'function') window.playTrack(trackId, 'wall');
+};
+
 function _renderNoteTrackChip(note) {
   if (!note) return '';
   if (note.trackId) {
@@ -1847,10 +1861,15 @@ function _renderNoteTrackChip(note) {
     if (!t) return '';
     const cover = t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=300';
     const title = (t.title || '').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-    // 사용자 요청: 제목 제거, 커버 + 재생 버튼만.
+    const artist = (t.artist || '').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    // 평소엔 커버+재생만 보이는 미니. 한 번 누르면 제목/아티스트가 부드럽게 펼쳐짐.
     return `
-      <div class="note-track-chip note-track-chip-mini" onclick="event.stopPropagation(); playTrack('${t.id}')" title="${title} — 재생">
+      <div class="note-track-chip note-track-chip-mini" onclick="event.stopPropagation(); window.toggleTrackChip(this, '${t.id}')" title="${title}">
         <img src="${cover}" alt="" loading="lazy">
+        <div class="note-track-chip-meta">
+          <div class="note-track-chip-title-expand">${title}</div>
+          <div class="note-track-chip-artist-expand">${artist}</div>
+        </div>
         <i class="ri-play-circle-fill note-track-chip-play"></i>
       </div>`;
   }

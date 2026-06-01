@@ -1884,11 +1884,11 @@ body:has(#shape-shorts-overlay) .deco-shape {
 .wall-note .note-track-chip-play { font-size: 16px; }
 .wall-note .note-track-chip-ext > i:first-child { font-size: 16px; }
 
-/* 미니 칩 — 제목/아티스트 텍스트 없이 커버 + 재생 버튼만 (사용자 요청) */
+/* 미니 칩 — 평소엔 커버 + 재생, 누르면 부드럽게 펼쳐져서 제목/아티스트 보임 */
 .note-track-chip-mini {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   padding: 3px 4px 3px 3px !important;
   background: rgba(0,0,0,0.65);
   color: #fff;
@@ -1896,19 +1896,56 @@ body:has(#shape-shorts-overlay) .deco-shape {
   text-decoration: none;
   cursor: pointer;
   width: auto !important;
-  max-width: none !important;
+  max-width: 36px !important;        /* 접힘 상태 폭 */
+  overflow: hidden;
+  transition: max-width 0.32s cubic-bezier(0.22,0.9,0.3,1), background 0.2s, padding 0.25s ease;
+  will-change: max-width;
 }
 .note-track-chip-mini img {
-  width: 24px !important;
-  height: 24px !important;
+  width: 26px !important;
+  height: 26px !important;
   border-radius: 50%;
   object-fit: cover;
+  flex-shrink: 0;
 }
 .note-track-chip-mini .note-track-chip-play,
 .note-track-chip-mini > i {
   font-size: 18px !important;
+  flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
 }
 .note-track-chip-mini:hover { background: rgba(0,0,0,0.85); }
+.note-track-chip-mini:active img { transform: scale(0.92); }
+
+/* 펼침 상태 — 제목/아티스트 슬라이드 인 */
+.note-track-chip-meta {
+  display: flex; flex-direction: column; gap: 1px;
+  max-width: 0;
+  opacity: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: max-width 0.32s cubic-bezier(0.22,0.9,0.3,1), opacity 0.2s ease;
+  pointer-events: none;
+}
+.note-track-chip-title-expand {
+  font-size: 12.5px; font-weight: 700; line-height: 1.15;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.note-track-chip-artist-expand {
+  font-size: 10.5px; opacity: 0.75; line-height: 1.15;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.note-track-chip-mini.is-expanded {
+  max-width: 260px !important;
+  padding-right: 10px !important;
+}
+.note-track-chip-mini.is-expanded .note-track-chip-meta {
+  max-width: 200px;
+  opacity: 1;
+}
+.note-track-chip-mini.is-expanded .note-track-chip-play {
+  transform: rotate(360deg);
+}
 /* Chip inside a comment line — smaller, indented under the comment text */
 .comment-track-wrap { margin-top: 4px; margin-left: 14px; max-width: 280px; }
 .comment-track-wrap .note-track-chip { margin-top: 0; padding: 4px 6px; }
@@ -3352,11 +3389,14 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   animation: fadeIn 0.25s ease;
 }
 .note-detail-content {
-  background: transparent;
+  /* 아래 영역까지 통일된 카드 표면으로 — 예전엔 투명이라 뒤가 비쳐서 분리돼 보였음 */
+  background: linear-gradient(180deg, rgba(20,15,40,0) 0%, rgba(20,15,40,0.95) 35%, rgba(15,10,30,0.98) 100%);
+  border-radius: 16px;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.55);
   max-width: 460px; width: 100%;
-  padding: 0;
+  padding: 0 12px 14px;
   position: relative;
-  animation: slideUp 0.35s cubic-bezier(0.22,1,0.36,1);
+  animation: slideUp 0.4s cubic-bezier(0.22,1,0.36,1);
 }
 .note-detail-close {
   position: absolute; top: -6px; right: -6px;
