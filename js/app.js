@@ -4584,7 +4584,6 @@ function initDiscoverDrag() {
 }
 
 // ===================== SHAPES UNIVERSE (original floating shapes view) =====================
-window.renderShapes = function () { return renderShapes(); };
 function renderShapes() {
   const db = window.DB.get();
   // 도형 페이지 들어올 때마다 Supabase에서 새 트랙 백그라운드 확인.
@@ -4739,6 +4738,9 @@ function renderShapes() {
   initShapeDrag();
   // initDiceDrag() removed — dice is now fixed-position above upload-fab.
 }
+// supabase.js 등 외부 스크립트에서 window.renderShapes() 로 호출 가능하게 명시 노출.
+// (비-모듈 스크립트에선 function 선언만으로도 window 에 매달리지만, 모든 환경 안전하게)
+window.renderShapes = renderShapes;
 
 // ── Unified "like" for tracks (works for both Supabase tracks and mock tracks).
 // Reads from window.__favoritedTracks (Supabase cache) or db.currentUser.likedTracks (legacy).
