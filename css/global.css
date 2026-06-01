@@ -3323,17 +3323,19 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 .wall-note {
   position: absolute;
   width: 345px;
-  min-height: 295px;
-  padding: 24px 24px 16px;
+  /* 짧게 쓰든 길게 쓰든 항상 같은 크기 — 'ㅇㅇ' 글이 기준. 길면 본문은 안에서 잘림. */
+  height: 320px;
+  max-height: 320px;
+  padding: 28px 24px 16px;            /* 위쪽 날짜 자리 살짝 확보 */
   border-radius: 6px;
   font-family: var(--font-hand);
   font-size: 18px;
   line-height: 1.4;
   font-weight: 700;
-  transform: none;   /* 회전 없음 — 깔끔한 직사각형 (스크린샷처럼) */
+  transform: none;
   box-shadow:
     inset 0 0 0 1px rgba(0, 0, 0, 0.08),
-    0 10px 24px rgba(0, 0, 0, 0.45);   /* 단일 소프트 섀도 — 접힘처럼 안 보이게 */
+    0 10px 24px rgba(0, 0, 0, 0.45);
   cursor: grab;
   z-index: 1;
   transition: box-shadow 0.3s, transform 0.2s;
@@ -3341,6 +3343,21 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   touch-action: none;
   display: flex;
   flex-direction: column;
+  overflow: hidden;                   /* 길면 잘림 */
+}
+/* 본문은 줄 수 제한 + 줄어들 수 있게 (note-bottom 이 잘리지 않게) */
+.wall-note .note-body { flex: 0 1 auto; min-height: 0; }
+.wall-note .note-bottom { flex-shrink: 0; }
+/* 왼쪽 위 작성 날짜 칩 — 항상 보임 */
+.wall-note .note-date {
+  position: absolute;
+  top: 8px; left: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.45;
+  letter-spacing: 0.2px;
+  pointer-events: none;
+  font-family: var(--font-pretendard, system-ui);
 }
 .wall-note:hover {
   transform: translateY(-2px);
@@ -3394,13 +3411,17 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
     height: 280px !important;      /* 모든 카드 동일 크기 — 살짝 더 키움 */
     min-height: 0 !important;
     max-height: 280px;
-    padding: 14px 14px 12px;
+    padding: 22px 14px 12px;       /* 위쪽 날짜 칩 자리 */
     font-size: 15px;
     line-height: 1.35;
     cursor: default;
     margin: 0 !important;
     touch-action: pan-y !important;
     overflow: hidden;
+  }
+  .wall-board > .wall-note .note-date {
+    font-size: 10px;
+    top: 6px; left: 10px;
   }
   .wall-board > .wall-note .note-body { -webkit-line-clamp: 3 !important; }
   /* 카드 안의 음원 썸네일은 더 작게 + 오른쪽 정렬 유지 */
@@ -3472,7 +3493,8 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 .note-body { word-break: break-word; }
 .note-author { margin-top: 10px; font-size: 12px; opacity: 0.6; text-align: right; font-style: italic; }
 .note-delete {
-  position: absolute; top: 6px; left: 6px;
+  /* 날짜를 왼쪽 위에 표시하게 되어 삭제 버튼은 오른쪽 위(북마크 왼쪽)로 이동 */
+  position: absolute; top: 6px; right: 32px; left: auto;
   background: none; border: none; color: inherit; opacity: 0; font-size: 16px; cursor: pointer;
   transition: opacity 0.2s;
 }
@@ -3733,8 +3755,9 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   /* PC: 메모 내용이 길어도 짧아도 항상 같은 크기 — 모달이 따라 커지는 것 방지 */
   width: 460px;
   max-width: calc(100vw - 40px);
-  height: 640px;
-  max-height: calc(100vh - 80px);
+  /* 사용자 요청: 아래로 더 길게 */
+  height: 780px;
+  max-height: calc(100vh - 50px);
   padding: 0;
   position: relative;
   animation: slideUp 0.4s cubic-bezier(0.22,1,0.36,1);

@@ -2115,8 +2115,24 @@ async function renderWall() {
       </form>
     ` : '';
 
+    // 작성 날짜 — 왼쪽 위에 작게 표시. 오늘/어제/N일 전/M.D 자동.
+    const _wallDate = (iso) => {
+      if (!iso) return '';
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      const now = new Date();
+      const diffMs = now - d;
+      const diffDay = Math.floor(diffMs / 86400000);
+      if (diffDay <= 0) return '오늘';
+      if (diffDay === 1) return '어제';
+      if (diffDay < 7) return diffDay + '일 전';
+      return (d.getMonth() + 1) + '.' + d.getDate();
+    };
+    const dateStr = _wallDate(note.createdAt || note.created_at);
+    const dateChip = dateStr ? `<div class="note-date">${dateStr}</div>` : '';
     return `
       <div class="wall-note" data-note-id="${note.id}" data-author="${safeAuthor}" style="background:${c.bg}; color:${c.text}; left:${x}%; top:${yPx}px;" title="낙서·댓글 보기">
+        ${dateChip}
         ${deleteBtn}
         ${bookmarkBtn}
         <div class="note-body" style="-webkit-line-clamp:${bodyClamp};">${safeText}</div>
