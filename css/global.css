@@ -13907,40 +13907,23 @@ body:has(#global-player.expanded) .global-back-btn {
 
 /* ============================================================
    Demo card — collapsed / expanded states
-   Default: just a plain yellow post-it (DEMO N label centered).
-   Clicked (.is-selected): full content — journal, comments, input.
+   Default: 글(노트)은 항상 보이고, 댓글/입력만 접혀있음.
+   Clicked (.is-selected): 곡 재생 + 댓글/입력 펼침.
    Only one .is-selected at a time (selectProjectVersion handles toggle).
    ============================================================ */
-.demo-card:not(.is-selected) .demo-card-note,
 .demo-card:not(.is-selected) .demo-card-cm-list,
 .demo-card:not(.is-selected) .demo-card-cm-input,
 .demo-card:not(.is-selected) .demo-card-cm-more {
   display: none !important;
 }
-.demo-card:not(.is-selected) .demo-card-top {
-  /* Pin the DEMO tag at top, center the card vertically below */
-  margin-bottom: 0;
-}
 .demo-card:not(.is-selected) {
-  /* Give it a tap-to-open hint via centered demo tag */
   cursor: pointer;
   position: relative;
 }
-.demo-card:not(.is-selected) .demo-tag {
-  font-size: 18px !important;
-  font-weight: 800 !important;
-}
+/* '탭해서 열기' 가짜 라벨 제거 — 이제 글(노트)이 바로 보여서 불필요 */
 .demo-card:not(.is-selected)::after {
-  content: '탭해서 열기';
-  position: absolute;
-  bottom: 12px;
-  left: 0; right: 0;
-  text-align: center;
-  font-size: 11px;
-  color: rgba(0,0,0,0.4);
-  font-family: var(--font-hand);
-  font-weight: 600;
-  pointer-events: none;
+  content: none !important;
+  display: none !important;
 }
 .demo-card.is-selected {
   /* Visual cue: subtle outline + lift when active */
