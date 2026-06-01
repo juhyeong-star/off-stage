@@ -1862,13 +1862,13 @@ function _renderNoteTrackChip(note) {
     const cover = t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=300';
     const title = (t.title || '').replace(/</g,'&lt;').replace(/"/g,'&quot;');
     const artist = (t.artist || '').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-    // 평소엔 커버+재생만 보이는 미니. 한 번 누르면 제목/아티스트가 부드럽게 펼쳐짐.
+    // 사각형(rectangle) 카드 — 커버 + 제목 + 아티스트 + 재생 아이콘
     return `
-      <div class="note-track-chip note-track-chip-mini" onclick="event.stopPropagation(); window.toggleTrackChip(this, '${t.id}')" title="${title}">
+      <div class="note-track-chip note-track-chip-card" onclick="event.stopPropagation(); playTrack('${t.id}', 'wall')" title="${title} — 재생">
         <img src="${cover}" alt="" loading="lazy">
-        <div class="note-track-chip-meta">
-          <div class="note-track-chip-title-expand">${title}</div>
-          <div class="note-track-chip-artist-expand">${artist}</div>
+        <div class="note-track-chip-info">
+          <div class="note-track-chip-title">${title}</div>
+          <div class="note-track-chip-artist">${artist}</div>
         </div>
         <i class="ri-play-circle-fill note-track-chip-play"></i>
       </div>`;
@@ -2075,9 +2075,9 @@ async function renderWall() {
         <div class="note-body" style="-webkit-line-clamp:${bodyClamp};">${safeText}</div>
         ${isClamped ? `<button class="note-more-text" onclick="event.stopPropagation(); openNoteDetail('${note.id}');">더보기</button>` : ''}
         <div class="note-author">${safeAuthor}</div>
+        ${trackChip}
         <div class="note-bottom">
           ${commentsTeaser}
-          ${user ? '' : trackChip}
           ${inlineForm}
         </div>
       </div>
@@ -2592,8 +2592,8 @@ window.openNoteDetail = function(noteId) {
           <div class="note-author-line">
             <a href="#" class="author-link" onclick="event.preventDefault(); closeNoteDetail(); navigateTo('artist:' + encodeURIComponent('${safeAuthor}'))">${safeAuthor}</a>
           </div>
+          ${_renderNoteTrackChip(note)}
         </div>
-        ${_renderNoteTrackChip(note)}
 
         <div class="comments-scribble">
           <div id="note-detail-comments-list">${commentsHtml}</div>
@@ -2609,12 +2609,40 @@ window.openNoteDetail = function(noteId) {
   setTimeout(() => {
     const input = document.getElementById('comment-text');
     if (input) input.focus();
-    // 모달 열릴 때 곡이 같이 재생 중이면 음원 칩을 자동으로 펼쳐서 뭐가 재생 중인지 잘 보이게.
-    if (note.trackId) {
-      const chip = document.querySelector('#note-detail-modal .note-track-chip-mini');
-      if (chip) chip.classList.add('is-expanded');
-    }
   }, 100);
+
+  // ── 모바일 — 쇼츠처럼 위아래로 스와이프해서 다음/이전 메모로 넘기기 ──
+  try {
+    const isMobile = (window.innerWidth <= 768);
+    if (isMobile) {
+      const modalEl = document.getElementById('note-detail-modal');
+      if (modalEl) {
+        let ty0 = null;
+        modalEl.addEventListener('touchstart', (ev) => {
+          // 입력칸/칩 위 터치는 스와이프 대상 아님
+          if (ev.target.closest('.scribble-input-row, .scribble-input, .note-track-chip, .note-bookmark, .note-detail-close')) {
+            ty0 = null; return;
+          }
+          ty0 = ev.touches[0] ? ev.touches[0].clientY : null;
+        }, { passive: true });
+        modalEl.addEventListener('touchend', (ev) => {
+          if (ty0 == null) return;
+          const ty1 = ev.changedTouches[0] ? ev.changedTouches[0].clientY : ty0;
+          const dy = ty1 - ty0;
+          ty0 = null;
+          if (Math.abs(dy) < 70) return;
+          const dbCur = window.DB.get();
+          const all = (dbCur.notes || []);
+          const i = all.findIndex(n => n && n.id === noteId);
+          if (i < 0) return;
+          const ni = dy < 0 ? i + 1 : i - 1;
+          if (ni < 0 || ni >= all.length) return;
+          const target = all[ni];
+          if (target && target.id) openNoteDetail(target.id);
+        }, { passive: true });
+      }
+    }
+  } catch (_) {}
 
   // 백그라운드로 최신 댓글 가져와서 목록만 조용히 업데이트 (모달은 즉시 떴음)
   if (window.Walls && window.Walls.fetchComments) {
