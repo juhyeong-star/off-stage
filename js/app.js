@@ -8334,10 +8334,9 @@ function renderArtistProfile(artistName) {
                 <div style="color: var(--brand-color); font-weight: 600; font-size: 13px; margin-top:2px;">
                   <i class="ri-user-star-line"></i> ${roleLabel}
                 </div>
-                <div class="artist-stats" style="margin-top:4px;">
-                  ${isArtistRole ? `<span>${artistTracks.length}곡</span><span class="stat-dot">·</span><span>${Object.keys(projects).length} 프로젝트</span><span class="stat-dot">·</span>` : ''}
-                  <span>${artistNotes.length} 포스트잇</span>
-                  ${artistSupabaseId ? `<span class="stat-dot">·</span><span class="fan-count-inline">❤ <strong id="fan-count-inline">${fanCount}</strong> 팔로워</span>` : ''}
+                <!-- 통계 줄(곡/프로젝트/포스트잇/팔로워) 임시 숨김 (사용자 요청) — fan-count-inline id 유지해야 mountCheerHeart 가 안전하게 작동 -->
+                <div class="artist-stats" style="display:none;" aria-hidden="true">
+                  ${artistSupabaseId ? `<span class="fan-count-inline">❤ <strong id="fan-count-inline">${fanCount}</strong> 팔로워</span>` : ''}
                 </div>
                 ${isArtistRole && !isSelf ? (() => {
                   // Supabase ID 우선, 없으면 이름 기반 로컬 팔로우 상태
@@ -8360,11 +8359,8 @@ function renderArtistProfile(artistName) {
                 })() : ''}
                 ${isSelf ? `
                   <div class="artist-action-row" style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
-                    <button class="follow-btn-v2" onclick="navigateTo('upload')" style="background:#111; color:#fff;">
-                      <i class="ri-upload-2-line"></i> 곡 업로드
-                    </button>
                     <button class="follow-btn-v2" onclick="editProfile()">
-                      <i class="ri-settings-4-line"></i> 프로필 수정
+                      <i class="ri-user-3-line"></i> 자기소개 프로필
                     </button>
                   </div>
                 ` : ''}
@@ -8374,7 +8370,7 @@ function renderArtistProfile(artistName) {
           ${'' /* counts box (앨범/프로젝트/싱글) hidden for now — will surface later when there are many songs */}
           <aside class="artist-postit-aside">
             <div class="artist-postit-aside-head">
-              <i class="ri-sticky-note-fill"></i> 소식
+              소식
               ${isSelf ? `<button class="artist-postit-add" onclick="goAddSoshik()" title="새 소식 쓰기"><i class="ri-add-line"></i> 글 추가</button>` : ''}
             </div>
             ${artistNotes.length > 0
