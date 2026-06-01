@@ -2931,22 +2931,16 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   position: absolute;
   width: 345px;
   min-height: 295px;
-  padding: 28px 26px 22px;
-  border-radius: 2px;
+  padding: 24px 24px 16px;
+  border-radius: 6px;
   font-family: var(--font-hand);
   font-size: 18px;
   line-height: 1.4;
   font-weight: 700;
-  transform: rotate(var(--rot));
-  /* 검정 배경에서도 보이는 그림자:
-     - 1px inner ring (종이 가장자리 하이라이트, 살짝 어둡게)
-     - 오른쪽+아래로 종이 색이 살짝 진하게 보이는 단단한 듀얼 톤 (자기 색이 우러나옴)
-     - 큰 블러 검정 그림자 (떠 있는 느낌) */
+  transform: none;   /* 회전 없음 — 깔끔한 직사각형 (스크린샷처럼) */
   box-shadow:
-    inset 0 0 0 1px rgba(0, 0, 0, 0.18),
-    8px 8px 0 rgba(0, 0, 0, 0.55),
-    14px 14px 0 rgba(255, 255, 255, 0.04),
-    20px 24px 36px rgba(0, 0, 0, 0.7);
+    inset 0 0 0 1px rgba(0, 0, 0, 0.08),
+    0 10px 24px rgba(0, 0, 0, 0.45);   /* 단일 소프트 섀도 — 접힘처럼 안 보이게 */
   cursor: grab;
   z-index: 1;
   transition: box-shadow 0.3s, transform 0.2s;
@@ -2956,11 +2950,10 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   flex-direction: column;
 }
 .wall-note:hover {
+  transform: translateY(-2px);
   box-shadow:
-    inset 0 0 0 1px rgba(0, 0, 0, 0.22),
-    10px 10px 0 rgba(0, 0, 0, 0.65),
-    16px 16px 0 rgba(255, 255, 255, 0.06),
-    24px 30px 44px rgba(0, 0, 0, 0.8);
+    inset 0 0 0 1px rgba(0, 0, 0, 0.10),
+    0 14px 32px rgba(0, 0, 0, 0.55);
 }
 /* Body of the post-it on the wall — clamped dynamically via inline style
    (set in renderWall based on text length). Full text is still visible
@@ -2973,8 +2966,14 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   word-break: break-word;
   overflow-wrap: anywhere;
 }
-/* The comment input sticks to the bottom edge of the post-it */
-.wall-note .note-inline-form { margin-top: auto; }
+/* 포스트잇 아래 묶음(form + 댓글 티저)을 카드 맨 아래에 붙임 */
+.wall-note .note-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wall-note .note-inline-form { margin-top: 0; }
 @media (max-width: 420px) {
   .wall-note {
     width: 278px;
@@ -2985,23 +2984,19 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   }
 }
 .wall-note:hover {
-  box-shadow: 5px 8px 28px rgba(0,0,0,0.55);
+  box-shadow: 0 14px 32px rgba(0,0,0,0.55);
   z-index: 10;
 }
 .wall-note.dragging {
   cursor: grabbing;
-  box-shadow: 8px 12px 36px rgba(0,0,0,0.6);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.6);
   z-index: 50 !important;
-  transform: rotate(0deg) scale(1.06) !important;
+  transform: scale(1.04) !important;   /* 회전 없이 살짝만 확대 */
 }
-/* Tape effect on top */
+/* Tape effect on top — 깔끔한 직사각형(스크린샷)을 위해 숨김 */
 .wall-note::before {
-  content: '';
-  position: absolute;
-  top: -6px; left: 50%; transform: translateX(-50%);
-  width: 40px; height: 12px;
-  background: rgba(255,255,255,0.35);
-  border-radius: 1px;
+  display: none !important;
+  content: none !important;
 }
 /* 포스트잇 — 오른쪽 끝이 접히는(dog-ear) 듯한 효과 차단 + 깔끔한 직사각형 보장.
    어떤 컴포넌트도 ::after로 접힌 모서리를 그리지 않게 막아둠. */
@@ -3074,6 +3069,32 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   text-underline-offset: 2px;
 }
 .note-more-comments:hover { opacity: 0.9; }
+
+/* 댓글 티저 — 포스트잇 맨 아래에 살짝 보이는 한 줄. "뭐라고 적혔지?" 호기심을 자극. */
+.note-comments-teaser {
+  padding-top: 8px;
+  border-top: 1px dotted rgba(0,0,0,0.18);
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.68;
+  cursor: pointer;
+  font-style: italic;
+  font-family: var(--font-hand);
+  transition: opacity 0.18s;
+}
+.note-comments-teaser:hover { opacity: 0.95; }
+.note-comments-teaser i { font-size: 13px; opacity: 0.85; font-style: normal; }
+.note-comments-teaser .ct-count { font-weight: 800; font-style: normal; }
+.note-comments-teaser .ct-preview {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
 
 /* 포스트잇 본문이 길어 잘렸을 때 뜨는 "더보기" — 본문 바로 아래 */
 .note-more-text {

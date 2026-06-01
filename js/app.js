@@ -2005,18 +2005,18 @@ async function renderWall() {
     // "더보기"를 눌러야 전체가 펼쳐지게 한다.
     const isClamped = approxLines > bodyClamp;
 
-    // Inline comments preview — show latest N (dynamic), hide the rest
+    // 댓글 티저 — 카드 맨 아래에 살짝 보이는 한 줄. 궁금증을 일으켜서 디테일을 열게 함.
     const allComments = Array.isArray(note.comments) ? note.comments : [];
-    const previewComments = allComments.slice(-previewCount);
-    const restCount = Math.max(0, allComments.length - previewComments.length);
-    const commentsHtml = allComments.length === 0 ? '' : `
-      <div class="note-comments-inline">
-        ${previewComments.map(cm => `
-          <div class="note-comment-inline-line">
-            <span class="cli-arrow">ㄴ</span><span class="cli-text">${_esc(cm.text)}</span><span class="cli-auth">— ${_esc(cm.author || '익명')}</span>
-          </div>
-        `).join('')}
-        ${restCount > 0 ? `<button class="note-more-comments" onclick="event.stopPropagation(); openNoteDetail('${note.id}')">+ ${restCount}개 더보기</button>` : ''}
+    const lastComment = allComments.length ? allComments[allComments.length - 1] : null;
+    const _ctClip = (s, n) => {
+      s = (s || '').replace(/\n/g, ' ');
+      return s.length > n ? s.slice(0, n) + '…' : (s + '…');
+    };
+    const commentsTeaser = !lastComment ? '' : `
+      <div class="note-comments-teaser" onclick="event.stopPropagation(); openNoteDetail('${note.id}')" title="${allComments.length}개의 댓글 보기">
+        <i class="ri-chat-3-line"></i>
+        <span class="ct-count">${allComments.length}</span>
+        <span class="ct-preview">"${_esc(_ctClip(lastComment.text, 18))}"</span>
       </div>
     `;
 
@@ -2033,15 +2033,17 @@ async function renderWall() {
     ` : '';
 
     return `
-      <div class="wall-note" data-note-id="${note.id}" data-author="${safeAuthor}" style="background:${c.bg}; color:${c.text}; left:${x}%; top:${yPx}px; --rot:${rot}deg;" title="낙서·댓글 보기">
+      <div class="wall-note" data-note-id="${note.id}" data-author="${safeAuthor}" style="background:${c.bg}; color:${c.text}; left:${x}%; top:${yPx}px;" title="낙서·댓글 보기">
         ${deleteBtn}
         ${bookmarkBtn}
         <div class="note-body" style="-webkit-line-clamp:${bodyClamp};">${safeText}</div>
         ${isClamped ? `<button class="note-more-text" onclick="event.stopPropagation(); openNoteDetail('${note.id}');">더보기</button>` : ''}
         <div class="note-author">— ${safeAuthor}</div>
-        ${commentsHtml}
-        ${user ? '' : trackChip}
-        ${inlineForm}
+        <div class="note-bottom">
+          ${user ? '' : trackChip}
+          ${inlineForm}
+          ${commentsTeaser}
+        </div>
       </div>
     `;
   }).join('');
@@ -8050,13 +8052,18 @@ function renderArtistProfile(artistName) {
   }
   const db = window.DB.get();
   const artistTracks = db.tracks.filter(t => t.artist === artistName);
-  // Include both: notes the artist wrote + notes that mention this artist (fan messages)
+  // 아티스트의 프로필 ID 셋 — 이름이 바뀌었거나 매칭이 안 맞아도 author_id 로 잡힌다.
+  // (이게 빠져 있어서 "소식이랑 우리들의 벽 연동 안되는" 케이스가 생김)
+  const _artistProfileIds = new Set();
+  artistTracks.forEach(t => { if (t && t.artistId) _artistProfileIds.add(t.artistId); });
+  if (window.__currentUser && window.__currentUser.name === artistName && window.__currentUser.id) {
+    _artistProfileIds.add(window.__currentUser.id);
+  }
   const artistNotes = (db.notes || []).filter(n => {
     if (!n) return false;
     if (n.author === artistName) return true;
-    const t = (n.text || '');
-    // Listener응원 messages mention the artist by name in body
-    return t.includes(artistName);
+    if (n.authorId && _artistProfileIds.has(n.authorId)) return true;
+    return false;
   });
   const artistData = (db.following || []).find(a => a.name === artistName) || {};
   const avatar = artistTracks[0]?.artistAvatar || artistData.avatar || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(artistName));
