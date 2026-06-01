@@ -1694,14 +1694,9 @@ window.generateArtistCard = function (artist) {
 // ===================== SNS LINKS HELPER =====================
 
 function generateSnsLinks(sns) {
-  if (!sns) return '';
-  const links = [];
-  if (sns.instagram) links.push(`<a href="${sns.instagram}" target="_blank" onclick="event.stopPropagation()"><i class="ri-instagram-line"></i></a>`);
-  if (sns.youtube) links.push(`<a href="${sns.youtube}" target="_blank" onclick="event.stopPropagation()"><i class="ri-youtube-fill"></i></a>`);
-  if (sns.tiktok) links.push(`<a href="${sns.tiktok}" target="_blank" onclick="event.stopPropagation()"><i class="ri-tiktok-fill"></i></a>`);
-  if (sns.twitter) links.push(`<a href="${sns.twitter}" target="_blank" onclick="event.stopPropagation()"><i class="ri-twitter-fill"></i></a>`);
-  if (links.length === 0) return '';
-  return `<div class="sns-links" style="margin-top:10px;">${links.join('')}</div>`;
+  // SNS 표시 임시 숨김 (사용자 요청) — 데이터는 그대로 두고 출력만 막아둠.
+  // 나중에 다시 켜고 싶을 땐 아래 return ''; 줄을 지우면 됨.
+  return '';
 }
 
 // ===================== TAGS VIEW (everynoise-style cloud) =====================
@@ -6730,23 +6725,25 @@ window.editProfile = function () {
           <div class="form-note">파일을 업로드하면 입력된 URL보다 우선 적용됩니다.</div>
         </div>
 
-        <h2 style="font-size: 18px; border-bottom: 1px solid var(--divider); padding-bottom: 10px; margin: 30px 0 20px;">SNS 계정 연동</h2>
-
-        <div class="form-group">
-          <label><i class="ri-instagram-line" style="color:#E4405F;"></i> Instagram</label>
-          <input type="url" class="form-control" id="edit-sns-instagram" value="${sns.instagram || ''}" placeholder="https://instagram.com/...">
-        </div>
-        <div class="form-group">
-          <label><i class="ri-youtube-fill" style="color:#FF0000;"></i> YouTube</label>
-          <input type="url" class="form-control" id="edit-sns-youtube" value="${sns.youtube || ''}" placeholder="https://youtube.com/@...">
-        </div>
-        <div class="form-group">
-          <label><i class="ri-tiktok-fill"></i> TikTok</label>
-          <input type="url" class="form-control" id="edit-sns-tiktok" value="${sns.tiktok || ''}" placeholder="https://tiktok.com/@...">
-        </div>
-        <div class="form-group">
-          <label><i class="ri-twitter-fill" style="color:#1DA1F2;"></i> Twitter / X</label>
-          <input type="url" class="form-control" id="edit-sns-twitter" value="${sns.twitter || ''}" placeholder="https://x.com/...">
+        <!-- SNS 계정 연동 — 임시 숨김 (사용자 요청). 데이터는 보존됨. -->
+        <div style="display:none;" aria-hidden="true">
+          <h2 style="font-size: 18px; border-bottom: 1px solid var(--divider); padding-bottom: 10px; margin: 30px 0 20px;">SNS 계정 연동</h2>
+          <div class="form-group">
+            <label><i class="ri-instagram-line" style="color:#E4405F;"></i> Instagram</label>
+            <input type="url" class="form-control" id="edit-sns-instagram" value="${sns.instagram || ''}" placeholder="https://instagram.com/...">
+          </div>
+          <div class="form-group">
+            <label><i class="ri-youtube-fill" style="color:#FF0000;"></i> YouTube</label>
+            <input type="url" class="form-control" id="edit-sns-youtube" value="${sns.youtube || ''}" placeholder="https://youtube.com/@...">
+          </div>
+          <div class="form-group">
+            <label><i class="ri-tiktok-fill"></i> TikTok</label>
+            <input type="url" class="form-control" id="edit-sns-tiktok" value="${sns.tiktok || ''}" placeholder="https://tiktok.com/@...">
+          </div>
+          <div class="form-group">
+            <label><i class="ri-twitter-fill" style="color:#1DA1F2;"></i> Twitter / X</label>
+            <input type="url" class="form-control" id="edit-sns-twitter" value="${sns.twitter || ''}" placeholder="https://x.com/...">
+          </div>
         </div>
 
         <h2 style="font-size: 18px; border-bottom: 1px solid var(--divider); padding-bottom: 10px; margin: 30px 0 20px;">계정 설정</h2>
