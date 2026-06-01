@@ -3103,9 +3103,9 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
     width: auto !important;
     min-width: 0;
     grid-column: span 1;
-    height: 240px !important;      /* 모든 카드 동일 크기 */
+    height: 280px !important;      /* 모든 카드 동일 크기 — 살짝 더 키움 */
     min-height: 0 !important;
-    max-height: 240px;
+    max-height: 280px;
     padding: 14px 14px 12px;
     font-size: 15px;
     line-height: 1.35;
@@ -3115,8 +3115,8 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
     overflow: hidden;
   }
   .wall-board > .wall-note .note-body { -webkit-line-clamp: 3 !important; }
-  /* 카드 안의 음원 썸네일은 더 작게 */
-  .wall-board > .wall-note .note-track-thumb { width: 38px; height: 38px; margin: 4px 0 2px; }
+  /* 카드 안의 음원 썸네일은 더 작게 + 오른쪽 정렬 유지 */
+  .wall-board > .wall-note .note-track-thumb { width: 38px; height: 38px; margin: 4px 0 2px auto; }
   .wall-note.dragging { transform: none !important; }
   .wall-note .note-body { font-size: 15px !important; -webkit-line-clamp: 5; }
   .wall-note .note-author { font-size: 11px; margin-top: 6px; }
@@ -3140,8 +3140,8 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 }
 @media (max-width: 420px) {
   .wall-board > .wall-note {
-    height: 220px !important;
-    max-height: 220px;
+    height: 250px !important;
+    max-height: 250px;
     padding: 12px 12px 10px;
     font-size: 14px;
   }
@@ -4578,9 +4578,21 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   .note-detail-content .note-detail-close {
     position: fixed !important;
     top: calc(12px + env(safe-area-inset-top)) !important;
-    right: 14px !important;
+    left: 14px !important;
+    right: auto !important;
     width: 38px; height: 38px;
     font-size: 18px;
+    z-index: 10;
+  }
+  /* 수집(북마크) 버튼은 오른쪽 위 — 닫기 버튼과 반대편 */
+  .note-detail-paper .note-bookmark.in-modal {
+    position: fixed !important;
+    top: calc(12px + env(safe-area-inset-top)) !important;
+    right: 14px !important;
+    left: auto !important;
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.2);
     z-index: 10;
   }
   .note-detail-postit { font-size: 19px; }

@@ -2625,26 +2625,42 @@ window.openNoteDetail = function(noteId) {
     if (input) input.focus();
   }, 100);
 
-  // ── 모바일 — 쇼츠처럼 위아래로 스와이프해서 다음/이전 메모로 부드럽게 넘기기 ──
+  // ── 모바일 — 쇼츠처럼 위아래 스와이프로 다음/이전 메모, 좌우 스와이프로 닫기(메인 복귀) ──
   try {
     const isMobile = (window.innerWidth <= 768);
     if (isMobile) {
       const modalEl = document.getElementById('note-detail-modal');
       if (modalEl) {
-        let ty0 = null;
+        let tx0 = null, ty0 = null;
         let swiping = false;
         modalEl.addEventListener('touchstart', (ev) => {
           if (ev.target.closest('.scribble-input-row, .scribble-input, .note-track-thumb, .note-bookmark, .note-detail-close')) {
-            ty0 = null; return;
+            tx0 = ty0 = null; return;
           }
-          if (swiping) { ty0 = null; return; }
-          ty0 = ev.touches[0] ? ev.touches[0].clientY : null;
+          if (swiping) { tx0 = ty0 = null; return; }
+          const t = ev.touches[0];
+          if (!t) return;
+          tx0 = t.clientX; ty0 = t.clientY;
         }, { passive: true });
         modalEl.addEventListener('touchend', (ev) => {
-          if (ty0 == null || swiping) return;
-          const ty1 = ev.changedTouches[0] ? ev.changedTouches[0].clientY : ty0;
-          const dy = ty1 - ty0;
-          ty0 = null;
+          if (tx0 == null || ty0 == null || swiping) return;
+          const t = ev.changedTouches[0];
+          if (!t) { tx0 = ty0 = null; return; }
+          const dx = t.clientX - tx0;
+          const dy = t.clientY - ty0;
+          tx0 = ty0 = null;
+          // 좌우 스와이프 우선 — 가로 거리가 더 크고 임계값 넘으면 닫기
+          if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 80) {
+            swiping = true;
+            const content = modalEl.querySelector('.note-detail-content');
+            if (content) {
+              content.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.6,1), opacity 0.22s';
+              content.style.transform = `translateX(${dx < 0 ? -100 : 100}vw)`;
+              content.style.opacity = '0';
+            }
+            setTimeout(() => { closeNoteDetail(); }, 260);
+            return;
+          }
           if (Math.abs(dy) < 70) return;
           const dbCur = window.DB.get();
           const all = (dbCur.notes || []);
@@ -2662,9 +2678,7 @@ window.openNoteDetail = function(noteId) {
             content.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.6,1)';
             content.style.transform = `translateY(${dy < 0 ? -100 : 100}vh)`;
           }
-          // 다음 모달이 어디서 슬라이드 인 할지 — 위로 스와이프했으면 아래에서 올라옴(다음)
           window.__noteDetailEnterFrom = dy < 0 ? 'bottom' : 'top';
-          // 동시에 새 모달 생성 (이전 모달은 슬라이드 끝나면 자동 제거됨)
           setTimeout(() => openNoteDetail(target.id), 30);
         }, { passive: true });
       }
