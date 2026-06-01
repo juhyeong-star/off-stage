@@ -2562,8 +2562,20 @@ window.openNoteDetail = function(noteId) {
   };
   const commentsHtml = buildCommentsListHtml();
 
+  // 스와이프로 들어오는 케이스 — 기존 모달은 슬라이드 아웃 중일 수 있어, 즉시 지우지 않고
+  // 잠시 후에 정리. 새 모달은 위/아래에서 슬라이드 인.
+  const swipeFrom = window.__noteDetailEnterFrom;
+  window.__noteDetailEnterFrom = null;
   const existingModal = document.getElementById('note-detail-modal');
-  if (existingModal) existingModal.remove();
+  if (existingModal) {
+    if (swipeFrom) {
+      // 기존 모달은 슬라이드 아웃 중 — 잠시 후 자동 제거
+      existingModal.id = 'note-detail-modal-prev';
+      setTimeout(() => { try { existingModal.remove(); } catch (_) {} }, 320);
+    } else {
+      existingModal.remove();
+    }
+  }
 
   const isBookmarked = window.Walls && window.Walls.isBookmarked && window.Walls.isBookmarked(noteId);
   const bookmarkBtnModal = db.currentUser ? `
@@ -2599,27 +2611,37 @@ window.openNoteDetail = function(noteId) {
     </div>
   `;
   document.body.insertAdjacentHTML('beforeend', modalHtml);
+  // 스와이프로 들어왔으면 다른 방향에서 슬라이드 인.
+  if (swipeFrom) {
+    const newContent = document.querySelector('#note-detail-modal .note-detail-content');
+    if (newContent) {
+      newContent.style.animation = swipeFrom === 'bottom'
+        ? 'noteSlideInFromBottom 0.3s cubic-bezier(0.22,1,0.36,1)'
+        : 'noteSlideInFromTop 0.3s cubic-bezier(0.22,1,0.36,1)';
+    }
+  }
   setTimeout(() => {
     const input = document.getElementById('comment-text');
     if (input) input.focus();
   }, 100);
 
-  // ── 모바일 — 쇼츠처럼 위아래로 스와이프해서 다음/이전 메모로 넘기기 ──
+  // ── 모바일 — 쇼츠처럼 위아래로 스와이프해서 다음/이전 메모로 부드럽게 넘기기 ──
   try {
     const isMobile = (window.innerWidth <= 768);
     if (isMobile) {
       const modalEl = document.getElementById('note-detail-modal');
       if (modalEl) {
         let ty0 = null;
+        let swiping = false;
         modalEl.addEventListener('touchstart', (ev) => {
-          // 입력칸/칩 위 터치는 스와이프 대상 아님
-          if (ev.target.closest('.scribble-input-row, .scribble-input, .note-track-chip, .note-bookmark, .note-detail-close')) {
+          if (ev.target.closest('.scribble-input-row, .scribble-input, .note-track-thumb, .note-bookmark, .note-detail-close')) {
             ty0 = null; return;
           }
+          if (swiping) { ty0 = null; return; }
           ty0 = ev.touches[0] ? ev.touches[0].clientY : null;
         }, { passive: true });
         modalEl.addEventListener('touchend', (ev) => {
-          if (ty0 == null) return;
+          if (ty0 == null || swiping) return;
           const ty1 = ev.changedTouches[0] ? ev.changedTouches[0].clientY : ty0;
           const dy = ty1 - ty0;
           ty0 = null;
@@ -2631,7 +2653,19 @@ window.openNoteDetail = function(noteId) {
           const ni = dy < 0 ? i + 1 : i - 1;
           if (ni < 0 || ni >= all.length) return;
           const target = all[ni];
-          if (target && target.id) openNoteDetail(target.id);
+          if (!target || !target.id) return;
+
+          // 현재 카드를 부드럽게 화면 밖으로 슬라이드 — 동시에 다음 카드를 같은 방향에서 슬라이드인.
+          swiping = true;
+          const content = modalEl.querySelector('.note-detail-content');
+          if (content) {
+            content.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.6,1)';
+            content.style.transform = `translateY(${dy < 0 ? -100 : 100}vh)`;
+          }
+          // 다음 모달이 어디서 슬라이드 인 할지 — 위로 스와이프했으면 아래에서 올라옴(다음)
+          window.__noteDetailEnterFrom = dy < 0 ? 'bottom' : 'top';
+          // 동시에 새 모달 생성 (이전 모달은 슬라이드 끝나면 자동 제거됨)
+          setTimeout(() => openNoteDetail(target.id), 30);
         }, { passive: true });
       }
     }
