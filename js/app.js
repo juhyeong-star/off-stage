@@ -318,6 +318,7 @@ async function init() {
       else if (currentView === 'wall' && typeof renderWall === 'function') renderWall();
       else if (currentView === 'shapes' && typeof renderShapes === 'function') renderShapes();
       else if (currentView === 'universe' && typeof renderUniverse === 'function') renderUniverse();
+      else if (currentView === 'admin' && typeof renderAdmin === 'function') renderAdmin();
       else if (currentView === 'artist' && typeof renderArtistProfile === 'function') {
         // Replay current /artist:<name> route
         const m = (window.location.hash || '').match(/#\/artist:([^/?]+)/);
@@ -356,6 +357,8 @@ async function init() {
           if (currentView === 'profile' && typeof renderProfile === 'function') renderProfile();
           else if (currentView === 'universe' && typeof renderUniverse === 'function') renderUniverse();
           else if (currentView === 'shapes' && typeof renderShapes === 'function') renderShapes();
+          else if (currentView === 'admin' && typeof renderAdmin === 'function') renderAdmin();
+          else if (currentView === 'wall' && typeof renderWall === 'function') renderWall();
         } catch (_) {}
       }
     });
@@ -10721,7 +10724,20 @@ window.onload = init;
 // ===================== ADMIN DASHBOARD =====================
 
 window.renderAdmin = async function () {
-  const user = window.__currentUser || window.DB.get().currentUser;
+  // 부팅 직후엔 auth 가 아직 도착 안 했을 수 있음 — 잠깐 (최대 2초) 기다렸다 검사.
+  // 그래도 없으면 진짜 로그인 필요. 이게 빠지면 직접 URL 접근/새로고침 케이스에서
+  // 권한 없음만 뜨고 영원히 그대로 → 새로고침을 또 해야만 정상.
+  let user = window.__currentUser || window.DB.get().currentUser;
+  if (!user) {
+    appContent.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-secondary);">로딩 중…</div>`;
+    const start = Date.now();
+    while (!user && Date.now() - start < 2000) {
+      await new Promise(r => setTimeout(r, 100));
+      user = window.__currentUser || window.DB.get().currentUser;
+      // 사용자가 화면 이동했으면 더 이상 의미 없음 — 빠져나옴
+      if (currentView !== 'admin') return;
+    }
+  }
   if (!user || user.role !== 'admin') {
     appContent.innerHTML = `<h2 style="text-align:center; padding: 100px 0; color: var(--brand-color);">접근 권한이 없습니다.</h2>`;
     return;
