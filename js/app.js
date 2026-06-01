@@ -1852,14 +1852,10 @@ function _renderNoteTrackChip(note) {
     if (!t) return '';
     const cover = t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=300';
     const title = (t.title || '').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-    const artist = (t.artist || '').replace(/</g,'&lt;');
+    // 사용자 요청: 제목 제거, 커버 + 재생 버튼만.
     return `
-      <div class="note-track-chip" onclick="event.stopPropagation(); playTrack('${t.id}')" title="${title} — 재생">
+      <div class="note-track-chip note-track-chip-mini" onclick="event.stopPropagation(); playTrack('${t.id}')" title="${title} — 재생">
         <img src="${cover}" alt="" loading="lazy">
-        <div class="note-track-chip-info">
-          <div class="note-track-chip-title">${title}</div>
-          <div class="note-track-chip-sub">${artist}</div>
-        </div>
         <i class="ri-play-circle-fill note-track-chip-play"></i>
       </div>`;
   }
@@ -1872,13 +1868,10 @@ function _renderNoteTrackChip(note) {
     else if (u.includes('music.apple.com'))                { provider = 'Apple Music'; icon = 'ri-apple-fill'; }
     else if (u.includes('soundcloud.com'))                 { provider = 'SoundCloud'; icon = 'ri-soundcloud-fill'; }
     const safeUrl = url.replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    // 외부 링크도 동일하게 미니 — 프로바이더 아이콘 + 외부 화살표만.
     return `
-      <a class="note-track-chip note-track-chip-ext" href="${safeUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" title="${provider}로 열기">
+      <a class="note-track-chip note-track-chip-ext note-track-chip-mini" href="${safeUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" title="${provider}로 열기">
         <i class="${icon}"></i>
-        <div class="note-track-chip-info">
-          <div class="note-track-chip-title">${provider}</div>
-          <div class="note-track-chip-sub" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${safeUrl}</div>
-        </div>
         <i class="ri-arrow-right-up-line"></i>
       </a>`;
   }
