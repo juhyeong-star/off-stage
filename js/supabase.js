@@ -1427,6 +1427,67 @@
       });
     },
 
+    // 이 사람이 팔로우하고 있는 사람 수 — 내 페이지든 남의 페이지든 같음
+    async followingCount(userId) {
+      if (!window.supabase || !userId) return 0;
+      const { count, error } = await window.supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', userId);
+      if (error) { console.warn('[Follows] followingCount', error.message); return 0; }
+      return count || 0;
+    },
+
+    // 이 아티스트(=userId)를 팔로우 중인 사람들 — 모달 리스트용
+    async listFollowers(artistId, opts) {
+      if (!window.supabase || !artistId) return [];
+      const limit = (opts && opts.limit) || 100;
+      const { data, error } = await window.supabase
+        .from('follows')
+        .select('follower_id, created_at')
+        .eq('followed_id', artistId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      if (error) { console.warn('[Follows] listFollowers', error.message); return []; }
+      const ids = (data || []).map(r => r.follower_id);
+      if (!ids.length) return [];
+      const { data: profs } = await window.supabase
+        .from('profiles').select('id, name, avatar_url').in('id', ids);
+      const byId = {};
+      (profs || []).forEach(p => { byId[p.id] = p; });
+      return data.map(r => ({
+        id: r.follower_id,
+        name: (byId[r.follower_id] && byId[r.follower_id].name) || '익명',
+        avatar: (byId[r.follower_id] && byId[r.follower_id].avatar_url) || ('https://i.pravatar.cc/150?u=' + r.follower_id),
+        followedAt: r.created_at
+      }));
+    },
+
+    // 이 사람이 팔로우 중인 사람들 — 모달 리스트용 (남의 페이지에서도 봄)
+    async listFollowings(userId, opts) {
+      if (!window.supabase || !userId) return [];
+      const limit = (opts && opts.limit) || 100;
+      const { data, error } = await window.supabase
+        .from('follows')
+        .select('followed_id, created_at')
+        .eq('follower_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      if (error) { console.warn('[Follows] listFollowings', error.message); return []; }
+      const ids = (data || []).map(r => r.followed_id);
+      if (!ids.length) return [];
+      const { data: profs } = await window.supabase
+        .from('profiles').select('id, name, avatar_url').in('id', ids);
+      const byId = {};
+      (profs || []).forEach(p => { byId[p.id] = p; });
+      return data.map(r => ({
+        id: r.followed_id,
+        name: (byId[r.followed_id] && byId[r.followed_id].name) || '익명',
+        avatar: (byId[r.followed_id] && byId[r.followed_id].avatar_url) || ('https://i.pravatar.cc/150?u=' + r.followed_id),
+        followedAt: r.created_at
+      }));
+    },
+
     async toggle(artistId) {
       if (!window.supabase || !artistId) return { following: false };
       const { data: { user } } = await window.supabase.auth.getUser();

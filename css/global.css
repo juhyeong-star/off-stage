@@ -1689,6 +1689,66 @@ body:has(#shape-shorts-overlay) .deco-shape {
 .artist-postit-grid-aside::-webkit-scrollbar-thumb {
   background: rgba(0,0,0,0.25); border-radius: 4px;
 }
+/* 아티스트 페이지 — 팔로워/팔로잉 카운트 칩 */
+.artist-follow-chips {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin: 8px 0 0;
+}
+.follow-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 16px;
+  color: var(--text-color, #fff);
+  font-size: 12px; font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+.follow-chip strong { color: #1DB954; font-weight: 700; }
+.follow-chip:hover {
+  background: rgba(29,185,84,0.12);
+  border-color: rgba(29,185,84,0.45);
+  transform: translateY(-1px);
+}
+.follow-chip i { font-size: 14px; color: var(--text-secondary, #aaa); }
+
+/* 팔로우 리스트 모달 — 한 사람씩 row */
+.follow-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 6px;
+  border-bottom: 1px solid var(--divider, #2a2a2a);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.follow-row:hover { background: rgba(255,255,255,0.04); }
+.follow-row:last-child { border-bottom: none; }
+.follow-row-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  object-fit: cover; flex-shrink: 0;
+}
+.follow-row-name {
+  flex: 1; min-width: 0;
+  font-size: 14px; font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.follow-row-btn {
+  background: transparent;
+  border: 1.5px solid #1DB954;
+  color: #1DB954;
+  border-radius: 18px;
+  padding: 5px 12px;
+  font-size: 12px; font-weight: 700;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+.follow-row-btn.is-following {
+  background: #1DB954; color: #fff;
+}
+.follow-row-btn:hover { background: rgba(29,185,84,0.15); }
+.follow-row-btn.is-following:hover { background: #19a04a; }
+
 /* 아티스트 이름 아래 자기소개 (bio) — 한 두 줄 짧게 */
 .artist-bio-line {
   margin: 6px 0 2px;
@@ -1701,6 +1761,134 @@ body:has(#shape-shorts-overlay) .deco-shape {
   max-width: 100%;
 }
 .artist-bio-line[hidden] { display: none; }
+
+/* ───── 팔로워 별자리 (constellation) — 본인 페이지 전용 ───── */
+.constellation-overlay {
+  position: fixed; inset: 0; z-index: 3300;
+  background: radial-gradient(ellipse at center, rgba(15,15,25,0.96) 0%, rgba(0,0,0,0.99) 100%);
+  overflow: hidden;
+  animation: fadeIn 0.32s ease;
+}
+.constellation-close {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  left: 14px;
+  z-index: 5;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.85);
+  padding: 8px 14px;
+  border-radius: 18px;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.constellation-close:hover { background: rgba(255,255,255,0.15); }
+.constellation-stage {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 0; height: 0; /* coordinate origin = stage center */
+}
+.constellation-center {
+  position: absolute; top: 0; left: 0;
+  transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  z-index: 4;
+}
+.constellation-center img {
+  width: 96px; height: 96px; border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 30px rgba(29,185,84,0.55), 0 0 0 3px rgba(29,185,84,0.65);
+  animation: constellationPulse 2.8s ease-in-out infinite;
+}
+.constellation-center-name {
+  font-size: 14px; font-weight: 800; color: #fff;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+}
+@keyframes constellationPulse {
+  0%, 100% { box-shadow: 0 0 30px rgba(29,185,84,0.55), 0 0 0 3px rgba(29,185,84,0.65); }
+  50% { box-shadow: 0 0 50px rgba(29,185,84,0.85), 0 0 0 5px rgba(29,185,84,0.85); }
+}
+.constellation-empty {
+  position: absolute; top: 110px; left: 0;
+  transform: translateX(-50%);
+  text-align: center;
+  color: rgba(255,255,255,0.6);
+  font-size: 14px; line-height: 1.6;
+  white-space: nowrap;
+}
+.constellation-loading {
+  position: absolute; top: 110px; left: 0;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.5);
+  font-size: 13px;
+}
+.constellation-star {
+  position: absolute; top: 0; left: 0;
+  transform: translate(-50%, -50%) translate(var(--tx, 0), var(--ty, 0));
+  background: none; border: none; padding: 0;
+  width: 64px; height: 64px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer;
+  animation: constellationStarIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  transition: transform 0.25s ease;
+}
+.constellation-star:hover {
+  transform: translate(-50%, -50%) translate(var(--tx, 0), var(--ty, 0)) scale(1.15);
+  z-index: 6;
+}
+.constellation-star-avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.85);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  position: relative; z-index: 1;
+}
+.constellation-star-name {
+  position: absolute;
+  bottom: -16px;
+  font-size: 10px; font-weight: 700; color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  white-space: nowrap;
+  max-width: 80px; overflow: hidden; text-overflow: ellipsis;
+  opacity: 0.85;
+}
+@keyframes constellationStarIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate(0, 0) scale(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) translate(var(--tx, 0), var(--ty, 0)) scale(1);
+  }
+}
+@media (max-width: 768px) {
+  .constellation-center img { width: 76px; height: 76px; }
+  .constellation-star { width: 52px; height: 52px; }
+  .constellation-star-avatar { width: 32px; height: 32px; }
+  .constellation-star-name { font-size: 9px; max-width: 60px; }
+}
+
+/* 본인 페이지 우상단 ✨ 별자리 버튼 — 톱니바퀴 옆에 */
+.artist-constellation-btn {
+  position: absolute;
+  top: 12px; right: 62px;   /* 톱니바퀴 옆 */
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: var(--text-secondary, #aaa);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; cursor: pointer;
+  transition: background 0.18s, color 0.18s, transform 0.18s;
+  z-index: 50;
+}
+.artist-constellation-btn:hover {
+  background: rgba(255,193,7,0.18);
+  color: #FFC107;
+  transform: scale(1.08);
+}
 
 /* 본인 아티스트 페이지 우상단 톱니바퀴 — 프로필 설정으로 들어감 */
 .artist-settings-gear {

@@ -2283,6 +2283,158 @@ window.quickUploadDemoToProject = function(projectId) {
   navigateTo('upload');
 };
 
+// 팔로워 별자리 — 본인 페이지에서 ✨ 누르면 풀스크린으로 떠다니는 도형 visualization.
+// 각 도형 = 한 명의 팔로워. 누르면 그 사람 페이지로.
+window.openFollowerConstellation = async function () {
+  const me = window.__currentUser;
+  if (!me || !me.id) { alert('로그인이 필요해요.'); return; }
+  const old = document.getElementById('constellation-overlay');
+  if (old) old.remove();
+  // 셸 먼저 띄우기 — 데이터는 비동기로 채움
+  const shell = `
+    <div id="constellation-overlay" class="constellation-overlay">
+      <button class="constellation-close" onclick="closeFollowerConstellation()" aria-label="닫기">
+        <i class="ri-close-line"></i> 닫기
+      </button>
+      <div class="constellation-stage" id="constellation-stage">
+        <div class="constellation-center">
+          <img src="${me.avatar || ('https://i.pravatar.cc/150?u=' + me.id)}" alt="${(me.name||'').replace(/</g,'&lt;')}">
+          <div class="constellation-center-name">${(me.name||'').replace(/</g,'&lt;')}</div>
+        </div>
+        <div class="constellation-loading">팔로워를 불러오는 중…</div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', shell);
+  document.body.style.overflow = 'hidden';
+  let followers = [];
+  try {
+    followers = (window.Follows && window.Follows.listFollowers)
+      ? await window.Follows.listFollowers(me.id, { limit: 60 }) : [];
+  } catch (e) { console.warn('[constellation]', e); }
+  const stage = document.getElementById('constellation-stage');
+  if (!stage) return;
+  const loader = stage.querySelector('.constellation-loading');
+  if (loader) loader.remove();
+  if (!followers.length) {
+    stage.insertAdjacentHTML('beforeend',
+      `<div class="constellation-empty">아직 팔로워가 없어요<br><small>곡 / 메모를 올리면 친구가 생길지도!</small></div>`);
+    return;
+  }
+  const SHAPES = (typeof SHAPE_TYPES !== 'undefined' && SHAPE_TYPES.length) ? SHAPE_TYPES
+                : ['circle','square','triangle','diamond','pentagon','heart','star'];
+  const COLORS = ['#FF9800','#9C27B0','#03A9F4','#E91E63','#FFC107','#4CAF50','#FF5722','#673AB7'];
+  // 원형 배치 — 팔로워 수에 맞춰 반지름 조정.
+  // 너무 많으면 두세 겹의 동심원으로.
+  const N = followers.length;
+  const isMobile = window.innerWidth <= 768;
+  const baseR = isMobile ? 130 : 200;
+  const maxPerRing = isMobile ? 8 : 12;
+  followers.forEach((u, i) => {
+    const ring = Math.floor(i / maxPerRing);
+    const inRing = N - ring * maxPerRing < maxPerRing ? (N - ring * maxPerRing) : maxPerRing;
+    const idx = i % maxPerRing;
+    const angle = (idx / inRing) * 2 * Math.PI + (ring * 0.3); // 링마다 살짝 회전 오프셋
+    const r = baseR + ring * (isMobile ? 70 : 90);
+    const x = Math.cos(angle) * r;
+    const y = Math.sin(angle) * r;
+    // 도형/색은 follower id 로 결정 (안정적)
+    const hash = (u.id || '').split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7);
+    const shape = SHAPES[Math.abs(hash) % SHAPES.length];
+    const color = COLORS[Math.abs(hash >> 3) % COLORS.length];
+    const isTri = shape === 'triangle';
+    const bgStyle = isTri ? `border-bottom-color:${color}; color:${color}; --shape-bg:${color};`
+                          : `background:${color}; --shape-bg:${color};`;
+    const safeName = (u.name || '').replace(/</g,'&lt;');
+    const delay = i * 35; // stagger 등장
+    stage.insertAdjacentHTML('beforeend', `
+      <button class="constellation-star floating-shape shape-${shape}"
+              style="--tx:${x}px; --ty:${y}px; animation-delay:${delay}ms; ${bgStyle}"
+              onclick="closeFollowerConstellation(); navigateTo('artist:' + encodeURIComponent('${safeName.replace(/'/g,"\\'")}'))"
+              title="${safeName}">
+        <img class="constellation-star-avatar" src="${u.avatar}" alt="${safeName}" loading="lazy">
+        <span class="constellation-star-name">${safeName}</span>
+      </button>
+    `);
+  });
+};
+
+window.closeFollowerConstellation = function () {
+  const m = document.getElementById('constellation-overlay');
+  if (m) m.remove();
+  document.body.style.overflow = '';
+};
+
+// 팔로워/팔로잉 리스트 모달 — 카운트 칩 누르면 호출.
+// mode: 'followers' | 'followings'
+window.openFollowListModal = async function (mode, displayName, userId) {
+  if (!userId) {
+    if (window.Follows && window.Follows.getArtistIdByName) {
+      userId = await window.Follows.getArtistIdByName(displayName);
+    }
+    if (!userId) { alert('아직 정보를 불러오는 중이에요. 잠시 후 다시 시도해주세요.'); return; }
+  }
+  const old = document.getElementById('follow-list-modal');
+  if (old) old.remove();
+  const title = mode === 'followers' ? '팔로워' : '팔로잉';
+  const icon = mode === 'followers' ? 'ri-group-line' : 'ri-user-3-line';
+  const html = `
+    <div id="follow-list-modal" class="profile-modal" onclick="if(event.target===this) closeFollowListModal()">
+      <div class="profile-modal-card">
+        <div class="profile-modal-head">
+          <i class="${icon}" style="color:#1DB954;"></i>
+          <div class="profile-modal-title">${title} — ${(displayName||'').replace(/</g,'&lt;')}</div>
+          <button class="profile-modal-close" onclick="closeFollowListModal()" aria-label="닫기">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+        <div class="profile-modal-body" id="follow-list-body">
+          <div style="text-align:center; padding:36px 0; color:var(--text-secondary);">불러오는 중…</div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', html);
+  try {
+    const list = mode === 'followers'
+      ? await window.Follows.listFollowers(userId)
+      : await window.Follows.listFollowings(userId);
+    const body = document.getElementById('follow-list-body');
+    if (!body) return;
+    if (!list.length) {
+      body.innerHTML = `<div style="text-align:center; padding:36px 0; color:var(--text-secondary); font-size:13px;">
+        ${mode === 'followers' ? '아직 팔로워가 없어요' : '아직 팔로잉이 없어요'}
+      </div>`;
+      return;
+    }
+    const myId = window.__currentUser && window.__currentUser.id;
+    body.innerHTML = list.map(u => {
+      const safeName2 = (u.name || '').replace(/</g,'&lt;').replace(/'/g,"\\'");
+      const isSelf2 = myId && myId === u.id;
+      const iFollow = !isSelf2 && window.__followed && window.__followed.has(u.id);
+      return `
+        <div class="follow-row" onclick="closeFollowListModal(); navigateTo('artist:' + encodeURIComponent('${safeName2}'))">
+          <img src="${u.avatar}" alt="" class="follow-row-avatar" loading="lazy">
+          <div class="follow-row-name">${safeName2}</div>
+          ${isSelf2 ? '' : `
+            <button class="follow-row-btn ${iFollow ? 'is-following' : ''}"
+              onclick="event.stopPropagation(); toggleFollowArtist('${u.id}', '${safeName2}'); this.classList.toggle('is-following'); this.innerHTML = this.classList.contains('is-following') ? '<i class=\\'ri-user-follow-fill\\'></i> 팔로잉' : '<i class=\\'ri-user-add-line\\'></i> 팔로우';">
+              ${iFollow ? '<i class="ri-user-follow-fill"></i> 팔로잉' : '<i class="ri-user-add-line"></i> 팔로우'}
+            </button>
+          `}
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    const body = document.getElementById('follow-list-body');
+    if (body) body.innerHTML = `<div style="text-align:center; padding:36px 0; color:#ff8080; font-size:13px;">불러오기 실패: ${e.message || e}</div>`;
+  }
+};
+window.closeFollowListModal = function () {
+  const m = document.getElementById('follow-list-modal');
+  if (m) m.remove();
+};
+
 // 메세지함 모달 — 자기소개프로필 옆 '메세지' 버튼이 호출. 받은 DM 인박스 표시.
 window.openDmInboxModal = function () {
   // 기존 모달 있으면 정리
@@ -8682,6 +8834,9 @@ function renderArtistProfile(artistName) {
 
       <div class="sub-page artist-page">
         ${isSelf ? `
+          <button class="artist-constellation-btn" onclick="openFollowerConstellation()" title="팔로워 별자리 보기" aria-label="팔로워 별자리">
+            <i class="ri-sparkling-2-line"></i>
+          </button>
           <button class="artist-settings-gear" onclick="editProfile()" title="설정 / 프로필 편집" aria-label="설정">
             <i class="ri-settings-3-line"></i>
           </button>
@@ -8703,6 +8858,15 @@ function renderArtistProfile(artistName) {
                     ${initialBio.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
                   </p>
                 ` : `<p id="artist-bio-line" class="artist-bio-line" hidden></p>`}
+                <!-- 팔로워 / 팔로잉 카운트 칩 — 본인이든 남이든 보임. 카운트는 비동기로 채워짐. -->
+                <div class="artist-follow-chips" id="artist-follow-chips">
+                  <button class="follow-chip" id="follow-chip-followers" onclick="openFollowListModal('followers', '${safeName.replace(/'/g,"\\'")}', '${artistSupabaseId || ''}')">
+                    <i class="ri-group-line"></i> 팔로워 <strong id="follow-chip-fans-n">${fanCount || 0}</strong>
+                  </button>
+                  <button class="follow-chip" id="follow-chip-followings" onclick="openFollowListModal('followings', '${safeName.replace(/'/g,"\\'")}', '${artistSupabaseId || ''}')">
+                    <i class="ri-user-3-line"></i> 팔로잉 <strong id="follow-chip-followings-n">0</strong>
+                  </button>
+                </div>
                 <!-- 역할 라벨('아티스트') 숨김 — 사용자 요청. id/style은 유지해 다른 코드 안 깨지게. -->
                 <div style="display:none;" aria-hidden="true">
                   <i class="ri-user-star-line"></i> ${roleLabel}
@@ -8856,6 +9020,33 @@ function renderArtistProfile(artistName) {
       }
     }).catch(_ => {});
   }
+
+  // Async: 팔로우 카운트 칩 — 팔로워(fanCount) + 팔로잉(followingCount) 채우기
+  (async () => {
+    try {
+      let aid = artistSupabaseId;
+      if (!aid && window.Follows && window.Follows.getArtistIdByName) {
+        aid = await window.Follows.getArtistIdByName(artistName);
+      }
+      if (!aid) return;
+      // 칩에 artistId 채워 넣기 (모달 열 때 다시 못 찾는 경우 대비)
+      const chipFollowers = document.getElementById('follow-chip-followers');
+      const chipFollowings = document.getElementById('follow-chip-followings');
+      if (chipFollowers) chipFollowers.setAttribute('onclick', `openFollowListModal('followers', '${safeName.replace(/'/g,"\\'")}', '${aid}')`);
+      if (chipFollowings) chipFollowings.setAttribute('onclick', `openFollowListModal('followings', '${safeName.replace(/'/g,"\\'")}', '${aid}')`);
+
+      if (window.Follows && window.Follows.fanCount) {
+        const fc = await window.Follows.fanCount(aid);
+        const n = document.getElementById('follow-chip-fans-n');
+        if (n) n.textContent = fc;
+      }
+      if (window.Follows && window.Follows.followingCount) {
+        const fc = await window.Follows.followingCount(aid);
+        const n = document.getElementById('follow-chip-followings-n');
+        if (n) n.textContent = fc;
+      }
+    } catch (e) { console.warn('[follow chips]', e); }
+  })();
 
   // Async upgrade: if we don't yet know the Supabase artist id, look it up
   // and update fan count + follow button in the DOM (non-blocking).
