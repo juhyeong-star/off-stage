@@ -325,6 +325,8 @@ async function init() {
         if (m) renderArtistProfile(decodeURIComponent(m[1]));
       }
     } catch (_) {}
+    // 알림 Realtime 구독 — auth 가 끝났으니 이제 안전.
+    try { if (typeof window.setupNotifRealtime === 'function') window.setupNotifRealtime(); } catch (_) {}
   });
 
   // Onboarding — first-login pick 3 artists (non-blocking, runs after main load)
@@ -342,6 +344,68 @@ async function init() {
       }
     }, 800);
   } catch (_) {}
+
+  // 백그라운드 폴링 — 45초마다 알림 자동 갱신. 페이지에 머물러도 새 알림이 떠오름.
+  //   · 탭이 숨겨져 있는 동안엔(예: 다른 탭으로 이동) 폴링 스킵 — 불필요한 트래픽 절약
+  //   · 탭이 다시 보이는 순간(visibilitychange)엔 즉시 1회 갱신
+  try {
+    if (window.__notifPollTimer) clearInterval(window.__notifPollTimer);
+    window.__notifPollTimer = setInterval(() => {
+      if (document.hidden) return;
+      if (!window.__currentUser || !window.__currentUser.id) return;
+      if (typeof _refreshNotifications === 'function') _refreshNotifications().catch(()=>{});
+    }, 45000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) return;
+      if (!window.__currentUser || !window.__currentUser.id) return;
+      if (typeof _refreshNotifications === 'function') _refreshNotifications().catch(()=>{});
+    });
+  } catch (_) {}
+
+  // Realtime push — auth 완료된 후 setupNotifRealtime() 가 실제 구독을 만든다.
+  // (이 시점엔 __currentUser 가 null 일 수 있어 setupNotifRealtime 은 아래에 정의만 해두고,
+  //  Promise.all(fetches).then 안에서 호출 — onAuthChange 에서도 재호출 가능)
+  window.setupNotifRealtime = function () {
+    try {
+      const user = window.__currentUser;
+      if (!user || !user.id) return;
+      if (!window.supabase || !window.supabase.channel) return;
+      // 이미 같은 user 로 구독 중이면 스킵
+      if (window.__notifRealtimeUserId === user.id && window.__notifRealtimeChannel) return;
+      // 기존 채널이 있으면 정리
+      if (window.__notifRealtimeChannel) {
+        try { window.supabase.removeChannel(window.__notifRealtimeChannel); } catch (_) {}
+        window.__notifRealtimeChannel = null;
+      }
+      const myId = user.id;
+      const ch = window.supabase
+        .channel('notif-' + myId)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dm_messages' }, (payload) => {
+          const r = payload && payload.new;
+          if (r && r.sender_id && r.sender_id !== myId) {
+            if (typeof _refreshNotifications === 'function') _refreshNotifications().catch(()=>{});
+          }
+        })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'cheers', filter: 'artist_id=eq.' + myId }, () => {
+          if (typeof _refreshNotifications === 'function') _refreshNotifications().catch(()=>{});
+        })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'follows', filter: 'followed_id=eq.' + myId }, () => {
+          if (typeof _refreshNotifications === 'function') _refreshNotifications().catch(()=>{});
+        })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wall_note_comments' }, () => {
+          if (typeof _refreshNotifications === 'function') _refreshNotifications().catch(()=>{});
+        })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'track_comments' }, () => {
+          if (typeof _refreshNotifications === 'function') _refreshNotifications().catch(()=>{});
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') console.log('[notif] realtime subscribed for', myId);
+          else if (status === 'CHANNEL_ERROR') console.warn('[notif] realtime channel error');
+        });
+      window.__notifRealtimeChannel = ch;
+      window.__notifRealtimeUserId = myId;
+    } catch (e) { console.warn('[notif] setupNotifRealtime', e); }
+  };
   // Backers/함께만드는중 UI removed — keep backend tables for later
 
   // Keep UI in sync if auth state changes (sign-out in another tab, session
@@ -359,6 +423,20 @@ async function init() {
           else if (currentView === 'shapes' && typeof renderShapes === 'function') renderShapes();
           else if (currentView === 'admin' && typeof renderAdmin === 'function') renderAdmin();
           else if (currentView === 'wall' && typeof renderWall === 'function') renderWall();
+        } catch (_) {}
+        // 새로 로그인됐을 때도 Realtime 구독 (재로그인/세션 변경 케이스)
+        try { if (typeof window.setupNotifRealtime === 'function') window.setupNotifRealtime(); } catch (_) {}
+        // 첫 알림 갱신 즉시
+        try { if (typeof _refreshNotifications === 'function') _refreshNotifications().catch(()=>{}); } catch (_) {}
+      }
+      if (event === 'SIGNED_OUT') {
+        // 로그아웃 시 Realtime 채널 정리 — 다른 사람 알림 받는 일 없게
+        try {
+          if (window.__notifRealtimeChannel && window.supabase && window.supabase.removeChannel) {
+            window.supabase.removeChannel(window.__notifRealtimeChannel);
+            window.__notifRealtimeChannel = null;
+            window.__notifRealtimeUserId = null;
+          }
         } catch (_) {}
       }
     });
@@ -675,26 +753,28 @@ async function _refreshNotifications() {
       });
     });
 
-    // ── 4. ♥ on my tracks (grouped per track, last 7 days) ────────
+    // ── 4. ♥ on my tracks (grouped per track + per DAY, last 7 days) ──
+    //    바뀐 점: 시간(hour) 버킷 → 일(day) 버킷. 한 곡에 하루 동안 묶음 1개.
     if (myTrackIds.length) {
       const { data: faves } = await sb.from('track_favorites')
         .select('track_id, user_id, favorited_at')
         .in('track_id', myTrackIds).gte('favorited_at', since7)
         .order('favorited_at', { ascending: false });
-      const byTrack = {};
+      const byTrackDay = {};
       (faves || []).filter(f => f.user_id !== myId).forEach(f => {
-        const t = byTrack[f.track_id] || (byTrack[f.track_id] = { count: 0, latest: 0 });
-        t.count++;
         const ts = new Date(f.favorited_at).getTime();
-        if (ts > t.latest) t.latest = ts;
+        const dayBucket = Math.floor(ts / 86400000);          // 하루 단위
+        const key = f.track_id + '_' + dayBucket;
+        const e = byTrackDay[key] || (byTrackDay[key] = { trackId: f.track_id, day: dayBucket, count: 0, latest: 0 });
+        e.count++;
+        if (ts > e.latest) e.latest = ts;
       });
-      Object.entries(byTrack).forEach(([trackId, info]) => {
-        // Use bucket of hour in id so the same group merges naturally for read-state
+      Object.values(byTrackDay).forEach(info => {
         items.push({
-          id: 'fav_' + trackId + '_' + Math.floor(info.latest/3600000),
+          id: 'fav_' + info.trackId + '_d' + info.day,
           kind: 'track_likes', icon: '♥', color: '#F44336',
           title: `${info.count}명이 좋아해요`,
-          body: `「${trackTitleById[trackId] || '내 곡'}」`,
+          body: `「${trackTitleById[info.trackId] || '내 곡'}」`,
           time: info.latest,
           onClickRoute: myName ? ('artist:' + encodeURIComponent(myName)) : ''
         });
@@ -739,6 +819,61 @@ async function _refreshNotifications() {
         });
       });
     }
+
+    // ── 7. 받은 DM — 최근 30일, 다른 사람이 보낸 메시지만 ──
+    //     dm_messages 에는 sender_id 가 있음 (보낸 사람 user id). 자기 자신은 제외.
+    try {
+      const { data: dms } = await sb.from('dm_messages')
+        .select('id, sender_id, body, created_at, conversation_id')
+        .neq('sender_id', myId)
+        .gte('created_at', since30)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      const senderIds = Array.from(new Set((dms || []).map(d => d.sender_id).filter(Boolean)));
+      let senderNameById = {};
+      if (senderIds.length) {
+        const { data: senderProfiles } = await sb.from('profiles').select('id, name').in('id', senderIds);
+        senderNameById = Object.fromEntries((senderProfiles || []).map(p => [p.id, p.name || '익명']));
+      }
+      // 한 conversation 안에서 가장 최근 메시지 1개만 알림으로
+      const seenConv = new Set();
+      (dms || []).forEach(d => {
+        if (seenConv.has(d.conversation_id)) return;
+        seenConv.add(d.conversation_id);
+        const senderName = senderNameById[d.sender_id] || '익명';
+        items.push({
+          id: 'dm_' + d.id,
+          kind: 'dm', icon: '✉', color: '#42A5F5',
+          title: `${senderName}님이 메시지를 보냈어요`,
+          body: `"${(d.body || '').slice(0, 60)}"`,
+          time: new Date(d.created_at).getTime(),
+          onClickRoute: myName ? ('artist:' + encodeURIComponent(myName)) : ''   // 자기 아티스트 페이지 → 거기서 메세지 버튼
+        });
+      });
+    } catch (e) { console.warn('[notif] dm', e); }
+
+    // ── 8. 받은 응원 — cheers (다른 사람이 내 곡에 보낸 응원 메시지) ──
+    try {
+      const { data: receivedCheers } = await sb.from('cheers')
+        .select('id, supporter_id, supporter_name, message, track_title, created_at')
+        .eq('artist_id', myId)
+        .neq('supporter_id', myId)
+        .gte('created_at', since30)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      (receivedCheers || []).forEach(c => {
+        items.push({
+          id: 'cheer_' + c.id,
+          kind: 'cheer', icon: '💝', color: '#FF6F91',
+          title: `${c.supporter_name || '익명'}님이 응원했어요`,
+          body: c.message
+            ? `「${c.track_title || ''}」 — "${(c.message || '').slice(0, 50)}"`
+            : `「${c.track_title || '내 곡'}」 에 응원이 도착했어요`,
+          time: new Date(c.created_at).getTime(),
+          onClickRoute: myName ? ('artist:' + encodeURIComponent(myName)) : ''
+        });
+      });
+    } catch (e) { console.warn('[notif] cheers', e); }
   } catch (e) {
     console.warn('[notif] refresh', e);
   }
