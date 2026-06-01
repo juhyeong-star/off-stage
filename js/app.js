@@ -2579,11 +2579,12 @@ window.openNoteDetail = function(noteId) {
     </button>
   ` : '';
 
+  // 카드 전체를 포스트잇 색으로 통일 — 위(본문)와 아래(낙서/댓글)가 한 장의 종이처럼 보이게.
   const modalHtml = `
     <div id="note-detail-modal" class="note-detail-modal" onclick="if(event.target===this) closeNoteDetail()">
-      <div class="note-detail-content">
+      <div class="note-detail-content note-detail-paper" style="background:${c.bg}; color:${c.text};">
         <button class="note-detail-close" onclick="closeNoteDetail()"><i class="ri-close-line"></i></button>
-        <div class="note-detail-postit" style="background:${c.bg}; color:${c.text};">
+        <div class="note-detail-postit">
           ${bookmarkBtnModal}
           <div class="note-body">${safeText}</div>
           <div class="note-author-line">
@@ -2788,23 +2789,10 @@ function _noteUp() {
     return;   // Don't open detail modal on drag-release
   }
 
-  // Short click/tap (no drag):
-  //  · 곡이 첨부된 메모면 → 바로 그 곡 재생
-  //  · 외부 링크가 첨부된 메모면 → 새 탭으로 열기
-  //  · 아무것도 없으면 → 디테일 모달
+  // Short click/tap (no drag) → 항상 디테일 모달 열기.
+  // 곡 재생은 모달 안의 음원 칩(클릭하면 펼쳐지면서 재생)에서만.
   const noteId = el.dataset.noteId;
   if (!noteId) return;
-  const db = window.DB.get();
-  const note = (db.notes || []).find(n => n && n.id === noteId)
-            || (Array.isArray(window.__wallNotes) ? window.__wallNotes.find(n => n.id === noteId) : null);
-  if (note && note.trackId && typeof window.playTrack === 'function') {
-    setTimeout(() => window.playTrack(note.trackId, 'wall'), 10);
-    return;
-  }
-  if (note && note.externalUrl) {
-    setTimeout(() => window.open(note.externalUrl, '_blank', 'noopener'), 10);
-    return;
-  }
   if (typeof window.openNoteDetail === 'function') {
     setTimeout(() => window.openNoteDetail(noteId), 10);
   }
