@@ -2023,12 +2023,12 @@ async function renderWall() {
     // 포스트잇에 첨부된 노래 칩 — 오른쪽 아래 보내기(✈) 버튼 옆에 작게 둔다.
     const trackChip = _renderNoteTrackChip(note);
 
-    // Inline comment input — only for logged-in users
+    // Inline comment input — only for logged-in users. 엔터로 보내기 (별도 송신 버튼 없음).
+    // 첨부된 노래 칩은 오른쪽 맨 끝으로 밀어둠.
     const inlineForm = user ? `
       <form class="note-inline-form" onsubmit="event.preventDefault(); submitInlineComment('${note.id}', this);">
-        <input type="text" class="note-inline-input" maxlength="200" placeholder="ㄴ 댓글 달기…">
-        ${trackChip ? `<span class="note-inline-song">${trackChip}</span>` : ''}
-        <button type="submit" class="note-inline-send" title="댓글 남기기"><i class="ri-send-plane-fill"></i></button>
+        <input type="text" class="note-inline-input" maxlength="200" placeholder="ㄴ 댓글 달기… (엔터로 보내기)">
+        ${trackChip ? `<span class="note-inline-song" style="margin-left:auto;">${trackChip}</span>` : ''}
       </form>
     ` : '';
 
@@ -2037,7 +2037,7 @@ async function renderWall() {
         ${deleteBtn}
         ${bookmarkBtn}
         <div class="note-body" style="-webkit-line-clamp:${bodyClamp};">${safeText}</div>
-        ${isClamped ? `<button class="note-more-text" onclick="event.stopPropagation(); window.expandNoteBody(this);">더보기</button>` : ''}
+        ${isClamped ? `<button class="note-more-text" onclick="event.stopPropagation(); openNoteDetail('${note.id}');">더보기</button>` : ''}
         <div class="note-author">— ${safeAuthor}</div>
         ${commentsHtml}
         ${user ? '' : trackChip}
@@ -2046,18 +2046,19 @@ async function renderWall() {
     `;
   }).join('');
 
-  // Write composer — hidden in a popover panel toggled by a FAB button
+  // Write composer — Enter로 바로 올림 (Shift+Enter는 줄바꿈). 송신 버튼은 숨김.
   const writeComposer = user ? `
     <div class="wall-compose-panel" id="wall-compose-panel" hidden>
-      <textarea id="wall-text" class="form-control" rows="3" placeholder="하고 싶은 말을 자유롭게 ✍️" style="resize:none; margin-bottom:10px;"></textarea>
+      <textarea id="wall-text" class="form-control" rows="3" placeholder="하고 싶은 말을 자유롭게 ✍️ (엔터로 바로 올라가요)"
+        style="resize:none; margin-bottom:10px;"
+        onkeydown="if (event.key==='Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); submitWallNote(); }"></textarea>
       <!-- Attached song preview (hidden until a track or URL is picked) -->
       <div id="wall-attach-preview" class="wall-attach-preview" hidden></div>
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <div style="display:flex; gap:6px;" id="wall-color-picker">
           ${colorKeys.map((key,i) => `<button class="color-dot ${i===0?'active':''}" data-color="${key}" style="background:${NOTE_COLORS[key].bg}; border:2px solid ${NOTE_COLORS[key].border};" onclick="document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('active')); this.classList.add('active');"></button>`).join('')}
         </div>
-        <button type="button" class="wall-attach-btn" onclick="openSongAttacher()" title="노래 첨부"><i class="ri-music-2-fill"></i> 노래</button>
-        <button class="btn-primary" onclick="submitWallNote()" style="margin-left:auto; padding:8px 18px; font-size:13px;">붙이기 📌</button>
+        <button type="button" class="wall-attach-btn" onclick="openSongAttacher()" title="노래 첨부" style="margin-left:auto;"><i class="ri-music-2-fill"></i> 노래</button>
       </div>
     </div>
   ` : '';
@@ -2119,11 +2120,7 @@ async function renderWall() {
   appContent.innerHTML = `
     <div class="wall-board" style="height:${total > 0 ? boardH : 600}px;">
       <div class="wall-header-v2">
-        <div class="wall-title-row">
-          <h1><i class="ri-sticky-note-fill" style="color:#FFD54F;"></i> 우리들의 벽</h1>
-          ${toolbar}
-        </div>
-        <p class="wall-hint">포스트잇을 드래그해서 움직여봐 · 탭하면 작성자 프로필 ✋</p>
+        ${toolbar}
       </div>
       ${writeFab}
       ${searchFab}
@@ -2393,10 +2390,20 @@ window.submitWallNote = async function() {
   try {
     if (window.Walls) {
       // 10초 안에 응답 안 오면 강제로 실패 처리 (form 영구 잠김 방지)
-      await Promise.race([
+      const inserted = await Promise.race([
         window.Walls.insert({ text, color, rotation, trackId, externalUrl }),
         new Promise((_, reject) => setTimeout(() => reject(new Error('네트워크 타임아웃 (10초)')), 10000))
       ]);
+      // ⚠️ Walls.insert는 __wallNotes에만 새 노트를 unshift하고 db.notes는 안 건드림.
+      //    renderWall은 db.notes에서 읽어가니까 여기서 직접 넣어줘야 즉시 보임(실시간 반영).
+      if (inserted) {
+        const _db = window.DB.get();
+        if (!Array.isArray(_db.notes)) _db.notes = [];
+        if (!_db.notes.some(n => n && n.id === inserted.id)) {
+          _db.notes.unshift(inserted);
+          try { window.DB.save(_db); } catch (_) {}
+        }
+      }
     } else {
       window.DB.addNote({ id: 'n' + Date.now(), author: user.name, text, color, rotation, createdAt: new Date().toISOString() });
     }
@@ -2721,9 +2728,24 @@ function _noteUp() {
     return;   // Don't open detail modal on drag-release
   }
 
-  // Short click/tap (no drag) → open the note detail modal.
+  // Short click/tap (no drag):
+  //  · 곡이 첨부된 메모면 → 바로 그 곡 재생
+  //  · 외부 링크가 첨부된 메모면 → 새 탭으로 열기
+  //  · 아무것도 없으면 → 디테일 모달
   const noteId = el.dataset.noteId;
-  if (noteId && typeof window.openNoteDetail === 'function') {
+  if (!noteId) return;
+  const db = window.DB.get();
+  const note = (db.notes || []).find(n => n && n.id === noteId)
+            || (Array.isArray(window.__wallNotes) ? window.__wallNotes.find(n => n.id === noteId) : null);
+  if (note && note.trackId && typeof window.playTrack === 'function') {
+    setTimeout(() => window.playTrack(note.trackId, 'wall'), 10);
+    return;
+  }
+  if (note && note.externalUrl) {
+    setTimeout(() => window.open(note.externalUrl, '_blank', 'noopener'), 10);
+    return;
+  }
+  if (typeof window.openNoteDetail === 'function') {
     setTimeout(() => window.openNoteDetail(noteId), 10);
   }
 }
@@ -2736,6 +2758,8 @@ function initNoteDrag() {
     if (e.target.closest('.note-bookmark')) return;
     if (e.target.closest('.note-inline-form')) return;
     if (e.target.closest('.note-more-comments')) return;
+    if (e.target.closest('.note-more-text')) return;
+    if (e.target.closest('.note-track-chip')) return;
     if (e.touches && e.touches.length > 1) return;
 
     const el = e.currentTarget;

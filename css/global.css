@@ -3003,6 +3003,25 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   background: rgba(255,255,255,0.35);
   border-radius: 1px;
 }
+/* 포스트잇 — 오른쪽 끝이 접히는(dog-ear) 듯한 효과 차단 + 깔끔한 직사각형 보장.
+   어떤 컴포넌트도 ::after로 접힌 모서리를 그리지 않게 막아둠. */
+.wall-note,
+.universe-note,
+.search-note-card,
+.artist-postit,
+.note-paper {
+  clip-path: none;
+}
+.wall-note::after,
+.universe-note::after,
+.search-note-card::after,
+.artist-postit::after,
+.note-paper::after {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+  border: none !important;
+}
 .note-body { word-break: break-word; }
 .note-author { margin-top: 10px; font-size: 12px; opacity: 0.6; text-align: right; font-style: italic; }
 .note-delete {
