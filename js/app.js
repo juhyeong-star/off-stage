@@ -5836,13 +5836,15 @@ function renderUpload() {
       const line1 = (document.getElementById('up-line1') || {}).value || '';
       const line2 = (document.getElementById('up-line2') || {}).value || '';
       const line3 = (document.getElementById('up-line3') || {}).value || '';
-      // 데모는 제목 칸이 안 보이므로 자동으로 채운다 — 기존 프로젝트면 그 제목, 새 프로젝트면 1줄 낙서.
+      // 데모는 제목 칸이 안 보이므로 자동으로 채운다.
+      // - 기존 프로젝트의 새 데모면 그 프로젝트 제목을 이어 받음.
+      // - 새 프로젝트의 첫 데모면 그냥 'Demo 1' (versionLabel) — 1줄 낙서를 제목으로 쓰지 않음.
       let title = (titleInput.value || '').trim();
       if (!isFinal) {
         if (usingExistingProject && existingProject) {
-          title = (existingProject.title || '').trim() || '데모';
+          title = (existingProject.title || '').trim() || versionLabel || 'Demo 1';
         } else {
-          title = (line1 || '').replace(/^#/, '').trim() || '데모';
+          title = versionLabel || 'Demo 1';
         }
       }
       const shapeEl = document.getElementById('up-shape');
