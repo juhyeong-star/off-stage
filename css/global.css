@@ -4590,27 +4590,30 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
     font-size: 18px;
     z-index: 10;
   }
-  /* 수집(북마크) 버튼은 오른쪽 위 — 닫기 버튼과 반대편 */
+  /* 수집(북마크) 버튼은 오른쪽 위 — 평소엔 테두리만, 수집했을 때만 색이 채워짐 */
   .note-detail-paper .note-bookmark.in-modal {
     position: fixed !important;
     top: calc(12px + env(safe-area-inset-top)) !important;
     right: 14px !important;
     left: auto !important;
-    width: 44px; height: 44px;          /* 손가락이 닿기 충분한 크기 */
+    width: 40px; height: 40px;
     border-radius: 50% !important;
-    background: rgba(255,255,255,0.92) !important;
-    color: #6B46C1 !important;
-    opacity: 1 !important;               /* base의 opacity:0 강제 해제 */
-    font-size: 22px !important;
+    background: transparent !important;
+    border: 1.5px solid rgba(255,255,255,0.85) !important;
+    color: rgba(255,255,255,0.95) !important;
+    opacity: 1 !important;
+    font-size: 19px !important;
     display: flex !important;
     align-items: center; justify-content: center;
-    z-index: 9999 !important;            /* 모달 어떤 레이어보다 위 */
+    z-index: 9999 !important;
     pointer-events: auto !important;
     touch-action: manipulation;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    box-shadow: none !important;
   }
+  /* 수집됨 — 안이 보라색으로 채워지고 흰 북마크 아이콘 */
   .note-detail-paper .note-bookmark.in-modal.is-bookmarked {
     background: #6B46C1 !important;
+    border-color: #6B46C1 !important;
     color: #fff !important;
   }
   .note-detail-postit { font-size: 19px; }
