@@ -7885,8 +7885,10 @@ window.editArtistNote = async function(trackId) {
   try {
     if (t.__supabase && window.Tracks) {
       await window.Tracks.setArtistNote(trackId, cleanedNote);
-      // Mirror into db.tracks
+      // Tracks.setArtistNote는 window.__tracks(메모리)만 업데이트함.
+      // localStorage db도 같이 저장해야 다음 DB.get()이 stale을 안 읽음(=새로고침 전에 안 보이던 버그).
       t.artistNote = cleanedNote;
+      try { window.DB.save(db); } catch (_) {}
     } else {
       window.DB.setArtistNote(trackId, cleanedNote);
     }
@@ -7895,11 +7897,12 @@ window.editArtistNote = async function(trackId) {
     return;
   }
 
-  // Re-render current view, keep version open
+  // 즉시 다시 그려서 변경이 바로 보이게 — 아티스트 이름은 URL hash에서 가져옴(.artist-strip이 없는 페이지에서도 동작)
   if (currentView === 'artist') {
-    const h = document.querySelector('.artist-strip h1');
-    if (h) {
-      renderArtistProfile(h.textContent.trim());
+    const m = (window.location.hash || '').match(/#\/artist:([^/?]+)/);
+    const artistName = m ? decodeURIComponent(m[1]) : null;
+    if (artistName && typeof renderArtistProfile === 'function') {
+      renderArtistProfile(artistName);
       setTimeout(() => {
         const wrap = document.getElementById('vw-' + trackId);
         if (wrap) wrap.classList.add('open');
