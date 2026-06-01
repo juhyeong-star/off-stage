@@ -14154,16 +14154,15 @@ body:has(#global-player.expanded) .global-back-btn {
 }
 .demo-card .demo-card-note-empty i { margin-right: 4px; }
 
-/* Note detail modal — 우리들의 벽 포스트잇과 동일한 손글씨 폰트 강제 (literal 문자열로)
-   var() 사용 시 CSS 변수가 cascade 상에서 다르게 resolve 될 가능성을 차단. */
+/* Note detail modal — 우리들의 벽 포스트잇과 동일한 폰트 사용.
+   실제로 .wall-board *:not(i):not([class*="ri-"]) 가 Pretendard 를 forces하고 있어
+   wall-note는 손글씨가 아니라 Pretendard로 렌더링됨. 모달도 Pretendard로 맞춤. */
 #note-detail-modal,
-#note-detail-modal * {
-  font-family: 'Nanum JungShik', 'Gaegu', cursive !important;
-  font-weight: 700 !important;
+#note-detail-modal *:not(i):not([class*="ri-"]) {
+  font-family: var(--font-pretendard) !important;
 }
 #note-detail-modal i[class*="ri-"] {
   font-family: 'remixicon' !important;
-  font-weight: 400 !important;
 }
 
 /* Demo card date — sits next to "DEMO N" tag */
@@ -14495,25 +14494,13 @@ body:has(#global-player.expanded) .global-back-btn {
 }
 /* 위 셀렉터로 인해 손글씨가 깎이는 곳을 다시 손글씨로 되돌림 (포스트잇 본문,
    일지, 인라인 댓글 등 손글씨 톤이 핵심인 곳) */
-.wall-note .note-body,
-.wall-note .note-author,
-.wall-note .note-comment-inline-line,
-.wall-note .note-inline-input,
+/* 데모 카드만 손글씨 톤 유지 (포스트잇 일지 톤이 핵심). 모달과 wall-note는 위 .wall-board * 규칙으로 Pretendard 사용. */
 .demo-card .demo-card-note,
 .demo-card .demo-card-note-line,
 .demo-card .demo-card-cm-line,
 .demo-card .demo-card-cm-input-field,
 .tcm-line,
-.tcm-input,
-/* 메모 디테일 모달 — 바깥 포스트잇과 동일한 손글씨 폰트 적용 */
-.note-detail-paper .note-body,
-.note-detail-paper .note-author-line,
-.note-detail-paper .comments-scribble .comment-line,
-.note-detail-paper .comments-scribble .comment-text,
-.note-detail-paper .comments-scribble .comment-author,
-.note-detail-paper .comments-scribble .comment-arrow,
-.note-detail-paper .comments-scribble .no-comments,
-.note-detail-paper .comments-scribble .scribble-input {
+.tcm-input {
   font-family: 'Nanum JungShik', 'Gaegu', cursive !important;
 }
 
