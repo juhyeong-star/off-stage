@@ -6384,7 +6384,7 @@ async function _renderProfileImpl() {
   const sampleCardsHtml = sampleArtists.map(renderSampleCard).join('');
 
   // "함께 만드는 아티스트" (다마고치 카드 / 후원자 컬렉션) — 임시 숨김 (사용자 요청)
-  const followingSection = '';
+  // followingSection은 아래쪽에서 팔로우 리스트 그리드로 다시 선언함 (commit 35eead7).
 
   // 수집한 포스트잇 grid moved to 내 우주 (universe) page — no duplicate here.
   // Profile still surfaces the count in the data-gram tile (which links to /universe).
