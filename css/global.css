@@ -4998,6 +4998,57 @@ html, body { overflow-x: hidden; max-width: 100%; }
 /* Fan count + follow button (Supabase-backed) */
 .fan-count-inline { color: #FF6B9D; font-weight: 700; }
 .fan-count-inline strong { color: #FF6B9D; }
+/* 팔로우 리스트 — 내 페이지에 보이는 아티스트 카드 그리드 */
+.follow-list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
+}
+.follow-list-card {
+  background: #FFFBD8;
+  border: 1.5px solid #111;
+  border-radius: 6px;
+  padding: 14px 10px 12px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 #111;
+  transition: transform 0.18s, box-shadow 0.18s;
+  color: #111;
+}
+.follow-list-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 #111;
+}
+.follow-list-avatar {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #111;
+  margin: 0 auto 8px;
+  display: block;
+  background: #fff;
+}
+.follow-list-name {
+  font-weight: 800;
+  font-size: 14px;
+  line-height: 1.2;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.follow-list-role {
+  font-size: 11px;
+  color: rgba(17,17,17,0.55);
+  font-weight: 600;
+}
+@media (max-width: 480px) {
+  .follow-list-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .follow-list-avatar { width: 56px; height: 56px; }
+  .follow-list-name { font-size: 12px; }
+  .follow-list-role { font-size: 10px; }
+}
+
 .follow-btn-v2 {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 18px;

@@ -1549,25 +1549,47 @@ window._toggleFollowName = function(name) {
 };
 
 window.toggleFollowArtist = async function (artistId, artistName) {
-  // Supabase ID 있으면 백엔드 + 로컬 모두 갱신, 없으면 로컬만
+  if (!artistName) return;
+  let following;
+  let syncedToServer = false;
+
+  // Supabase ID + 로그인 상태 → 서버 토글 시도
   if (artistId && window.Follows && window.__currentUser) {
     try {
-      const { following } = await window.Follows.toggle(artistId);
-      // localStorage 즐겨찾기 set 동기화 (메인 페이지 등에서 사용)
-      const names = window._getFollowedNames();
-      if (following) names.add(artistName); else names.delete(artistName);
-      window._setFollowedNames(names);
-      showToast(following ? `${artistName} 팬 추가 💚` : `${artistName} 팬 해제`);
-      renderArtistProfile(artistName);
-      return;
+      const r = await window.Follows.toggle(artistId);
+      following = r.following;
+      syncedToServer = true;
     } catch (e) {
       console.warn('[follow] supabase fail, fallback to local', e);
+      if (e && /자기 자신/.test(e.message || '')) {
+        showToast('자기 자신은 팔로우 할 수 없어요');
+        return;
+      }
     }
   }
-  // 로컬 전용 토글 (mock 아티스트 / 로그아웃 상태)
-  const nowFollowing = window._toggleFollowName(artistName);
-  showToast(nowFollowing ? `${artistName} 팬 추가 💚` : `${artistName} 팬 해제`);
-  renderArtistProfile(artistName);
+
+  if (!syncedToServer) {
+    // 로컬 토글(mock 아티스트 / 서버 실패 / 미로그인)
+    following = window._toggleFollowName(artistName);
+    // 버튼 상태 계산이 __followed.has(artistId)로도 이뤄지므로 같이 갱신해야 UI가 바뀜.
+    if (artistId && window.__followed) {
+      if (following) window.__followed.add(artistId);
+      else window.__followed.delete(artistId);
+    }
+  } else {
+    // 서버 성공 — 이름 기반 셋도 동기화
+    const s = window._getFollowedNames();
+    if (following) s.add(artistName); else s.delete(artistName);
+    window._setFollowedNames(s);
+  }
+
+  showToast(following ? `${artistName} 팔로우 ❤` : `${artistName} 언팔로우`);
+  // 즉시 다시 그려서 버튼/팔로워수 반영 (현재 페이지에 맞게)
+  if (currentView === 'artist' && typeof renderArtistProfile === 'function') {
+    renderArtistProfile(artistName);
+  } else if (currentView === 'profile' && typeof renderProfile === 'function') {
+    renderProfile();
+  }
 };
 
 // ===================== CARD GENERATORS =====================
@@ -6581,10 +6603,34 @@ async function _renderProfileImpl() {
     `;
   }
 
-  // 내 페이지 — 일단 "내 음악 폴더"만 노출. 나머지 섹션(응원하는 곡 / 폴라로이드
-  // 컬렉션 / 팔로잉 / 수집한 포스트잇 / 내 포스트잇 등)은 플랫폼이 성숙해질 때까지
-  // 숨김. 위 변수들은 그대로 계산되니까 필요할 때 한 줄만 다시 켜면 됨.
-  const body = playlistSection || '<div class="empty-tab-message">아직 음악 폴더가 없어요.<br>곡에 ❤를 눌러서 폴더에 모아보세요.</div>';
+  // 팔로우 중인 아티스트 — 내 페이지에 작은 카드 그리드로 노출
+  const followingSection = (followedArtists && followedArtists.length > 0) ? `
+    <div class="reveal" style="margin-bottom:24px;">
+      <h2 class="section-title" style="display:flex; align-items:center; gap:8px; margin:0 0 14px;">
+        <i class="ri-user-heart-fill" style="color:#FF4081;"></i>
+        팔로우 중인 아티스트 <span class="section-count">${followedArtists.length}</span>
+      </h2>
+      <div class="follow-list-grid">
+        ${followedArtists.map(a => {
+          const safeAName = (a.name || '').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+          const encAName = encodeURIComponent(a.name || '');
+          const subLabel = a.role === 'admin' ? '관리자' : (a.role === 'artist' || a.role === 'student' ? '아티스트' : 'Listener');
+          const aAvatar = a.avatar || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(a.name || ''));
+          return `
+            <div class="follow-list-card" onclick="navigateTo('artist:${encAName}')">
+              <img src="${aAvatar}" alt="${safeAName}" class="follow-list-avatar" loading="lazy">
+              <div class="follow-list-name">${safeAName}</div>
+              <div class="follow-list-role">${subLabel}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  // 내 페이지 — 팔로우 중 + 내 음악 폴더 노출. 나머지 섹션은 플랫폼 성숙 후 켤 예정.
+  const playlistOrEmpty = playlistSection || '<div class="empty-tab-message">아직 음악 폴더가 없어요.<br>곡에 ❤를 눌러서 폴더에 모아보세요.</div>';
+  const body = followingSection + playlistOrEmpty;
 
   // Listener: 덕질 다락방 (paper + tape + pins, 따뜻한 손글씨 톤)
   // Artist: standard lavender canvas
