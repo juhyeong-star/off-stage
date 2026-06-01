@@ -817,17 +817,11 @@ function _saveNotifReadSet(set) {
   try { localStorage.setItem('offstage_notif_read', JSON.stringify(Array.from(set))); } catch(_) {}
 }
 
-window.openNotifPanel = async function() {
+window.openNotifPanel = function() {
   const panel = document.getElementById('notif-panel');
   const drawer = document.getElementById('notif-drawer');
   if (!panel || !drawer) return;
-  // Pull fresh data from Supabase before rendering (non-blocking past 1.5s)
-  await Promise.race([
-    _refreshNotifications().catch(()=>{}),
-    new Promise(r => setTimeout(r, 1500))
-  ]);
-  const items = _genNotifications();
-  const readSet = _getNotifReadSet();
+
   const fmtTime = (t) => {
     if (!t) return '';
     const diff = Date.now() - t;
@@ -837,37 +831,49 @@ window.openNotifPanel = async function() {
     return Math.floor(diff/86400000) + '일 전';
   };
 
-  drawer.innerHTML = `
-    <div class="notif-head">
-      <button class="notif-close" onclick="closeNotifPanel()" aria-label="닫기"><i class="ri-close-line"></i></button>
-      <div class="notif-title">알림</div>
-      <button class="notif-mark-all" onclick="window.markAllNotifsRead()">모두 읽음</button>
-    </div>
-    <div class="notif-list">
-      ${items.length === 0 ? `
-        <div class="notif-empty">
-          <i class="ri-notification-off-line"></i>
-          <p>새 알림이 없어요</p>
-        </div>
-      ` : items.map(n => {
-        const isRead = readSet.has(n.id);
-        const onClick = n.onClickRoute ? `window.markNotifRead('${n.id}'); navigateTo('${n.onClickRoute}'); closeNotifPanel();` : `window.markNotifRead('${n.id}'); event.stopPropagation();`;
-        return `
-          <div class="notif-item ${isRead ? 'is-read' : ''}" onclick="${onClick}">
-            <div class="notif-icon" style="background:${n.color}22; color:${n.color};">${n.icon}</div>
-            <div class="notif-body">
-              <div class="notif-item-title">${(n.title||'').replace(/</g,'&lt;')}</div>
-              <div class="notif-item-sub">${(n.body||'').replace(/</g,'&lt;')}</div>
-              <div class="notif-item-time">${fmtTime(n.time)}</div>
-            </div>
-            ${!isRead ? '<div class="notif-dot"></div>' : ''}
+  const renderDrawer = () => {
+    const items = _genNotifications();
+    const readSet = _getNotifReadSet();
+    drawer.innerHTML = `
+      <div class="notif-head">
+        <button class="notif-close" onclick="closeNotifPanel()" aria-label="닫기"><i class="ri-close-line"></i></button>
+        <div class="notif-title">알림</div>
+        <button class="notif-mark-all" onclick="window.markAllNotifsRead()">모두 읽음</button>
+      </div>
+      <div class="notif-list">
+        ${items.length === 0 ? `
+          <div class="notif-empty">
+            <i class="ri-notification-off-line"></i>
+            <p>새 알림이 없어요</p>
           </div>
-        `;
-      }).join('')}
-    </div>
-  `;
+        ` : items.map(n => {
+          const isRead = readSet.has(n.id);
+          const onClick = n.onClickRoute ? `window.markNotifRead('${n.id}'); navigateTo('${n.onClickRoute}'); closeNotifPanel();` : `window.markNotifRead('${n.id}'); event.stopPropagation();`;
+          return `
+            <div class="notif-item ${isRead ? 'is-read' : ''}" onclick="${onClick}">
+              <div class="notif-icon" style="background:${n.color}22; color:${n.color};">${n.icon}</div>
+              <div class="notif-body">
+                <div class="notif-item-title">${(n.title||'').replace(/</g,'&lt;')}</div>
+                <div class="notif-item-sub">${(n.body||'').replace(/</g,'&lt;')}</div>
+                <div class="notif-item-time">${fmtTime(n.time)}</div>
+              </div>
+              ${!isRead ? '<div class="notif-dot"></div>' : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  };
+
+  // 1) 바로 보여줘서 클릭 즉시 패널이 뜨게 (캐시 데이터). 예전엔 Promise.race 1.5초 기다림.
+  renderDrawer();
   panel.style.display = 'flex';
   document.body.style.overflow = 'hidden';
+
+  // 2) 백그라운드로 새 데이터 받아오면 조용히 다시 그림.
+  _refreshNotifications()
+    .then(() => { if (panel.style.display !== 'none') renderDrawer(); })
+    .catch(() => {});
 };
 
 window.closeNotifPanel = function() {
@@ -2511,7 +2517,7 @@ window.expandNoteBody = function(btn) {
 };
 
 // ===================== NOTE DETAIL MODAL (comments) =====================
-window.openNoteDetail = async function(noteId) {
+window.openNoteDetail = function(noteId) {
   const db = window.DB.get();
   let note = (db.notes || []).find(n => n.id === noteId);
   if (!note) return;
@@ -2521,43 +2527,36 @@ window.openNoteDetail = async function(noteId) {
     window.Analytics.noteView(noteId).catch(()=>{});
   }
 
-  // Refresh comments from Supabase (keeps note body from cache)
-  if (window.Walls) {
-    try {
-      const freshComments = await window.Walls.fetchComments(noteId);
-      note.comments = freshComments;
-      if (Array.isArray(window.__wallNotes)) {
-        const cached = window.__wallNotes.find(x => x.id === noteId);
-        if (cached) cached.comments = freshComments;
-      }
-    } catch (e) { console.warn('[openNoteDetail] fetchComments', e); }
-  }
-
   const c = NOTE_COLORS[note.color] || NOTE_COLORS.yellow;
   const safeText = (note.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
   const safeAuthor = (note.author || '').replace(/</g,'&lt;');
-  const comments = note.comments || [];
 
-  // 본인이 쓴 댓글이면 삭제 버튼 노출 (authorId 우선, 없으면 이름 매칭)
-  const _me = db.currentUser || window.__currentUser;
-  const _myId = (window.__currentUser && window.__currentUser.id) || null;
-  const _myName = (_me && _me.name) || '';
-  const commentsHtml = comments.length === 0
-    ? '<div class="no-comments">ㄴ 아직 조용하네...<br>ㄴ 첫 낙서를 남겨봐 ✍️</div>'
-    : comments.map((cm, i) => {
-        const cmSafe = (cm.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        const cmAuth = (cm.author || '익명').replace(/</g,'&lt;');
-        const isMine = (_myId && cm.authorId && cm.authorId === _myId)
-                    || (!cm.authorId && _myName && cm.author === _myName);
-        const delBtn = isMine
-          ? `<button class="comment-del" onclick="event.stopPropagation(); deleteNoteComment('${noteId}','${cm.id}')" title="댓글 삭제"><i class="ri-close-line"></i></button>`
-          : '';
-        return `
-          <div class="comment-line" style="padding-left:${Math.min(i,5) * 18 + 4}px;">
-            <span class="comment-arrow">ㄴ</span><span class="comment-text">${cmSafe}</span><span class="comment-author">— ${cmAuth}</span>${delBtn}
-          </div>
-        `;
-      }).join('');
+  // 댓글 목록 HTML — note.comments 가 바뀔 때 다시 그려서 in-place 업데이트.
+  // (예전엔 모달 열기 전에 fetchComments 를 await 해서 클릭 후 1~2초 멈춰있던 게 원인)
+  const buildCommentsListHtml = () => {
+    const comments = note.comments || [];
+    const _me = db.currentUser || window.__currentUser;
+    const _myId = (window.__currentUser && window.__currentUser.id) || null;
+    const _myName = (_me && _me.name) || '';
+    if (comments.length === 0) {
+      return '<div class="no-comments">ㄴ 아직 조용하네...<br>ㄴ 첫 낙서를 남겨봐 ✍️</div>';
+    }
+    return comments.map((cm, i) => {
+      const cmSafe = (cm.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const cmAuth = (cm.author || '익명').replace(/</g,'&lt;');
+      const isMine = (_myId && cm.authorId && cm.authorId === _myId)
+                  || (!cm.authorId && _myName && cm.author === _myName);
+      const delBtn = isMine
+        ? `<button class="comment-del" onclick="event.stopPropagation(); deleteNoteComment('${noteId}','${cm.id}')" title="댓글 삭제"><i class="ri-close-line"></i></button>`
+        : '';
+      return `
+        <div class="comment-line" style="padding-left:${Math.min(i,5) * 18 + 4}px;">
+          <span class="comment-arrow">ㄴ</span><span class="comment-text">${cmSafe}</span><span class="comment-author">— ${cmAuth}</span>${delBtn}
+        </div>
+      `;
+    }).join('');
+  };
+  const commentsHtml = buildCommentsListHtml();
 
   const existingModal = document.getElementById('note-detail-modal');
   if (existingModal) existingModal.remove();
@@ -2584,7 +2583,7 @@ window.openNoteDetail = async function(noteId) {
 
         <div class="comments-scribble">
           <div class="scribble-title">✎ 낙서</div>
-          ${commentsHtml}
+          <div id="note-detail-comments-list">${commentsHtml}</div>
 
           <div class="scribble-input-row">
             <input type="text" id="comment-author" class="scribble-input scribble-name-input" placeholder="이름 (없어도 됨)" value="${db.currentUser?.name || ''}">
@@ -2600,6 +2599,19 @@ window.openNoteDetail = async function(noteId) {
     const input = document.getElementById('comment-text');
     if (input) input.focus();
   }, 100);
+
+  // 백그라운드로 최신 댓글 가져와서 목록만 조용히 업데이트 (모달은 즉시 떴음)
+  if (window.Walls && window.Walls.fetchComments) {
+    window.Walls.fetchComments(noteId).then(fresh => {
+      note.comments = fresh;
+      if (Array.isArray(window.__wallNotes)) {
+        const cached = window.__wallNotes.find(x => x.id === noteId);
+        if (cached) cached.comments = fresh;
+      }
+      const listEl = document.getElementById('note-detail-comments-list');
+      if (listEl) listEl.innerHTML = buildCommentsListHtml();
+    }).catch(e => console.warn('[openNoteDetail] bg fetchComments', e));
+  }
 };
 
 window.closeNoteDetail = function() {
