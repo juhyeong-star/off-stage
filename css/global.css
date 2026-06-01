@@ -14501,7 +14501,16 @@ body:has(#global-player.expanded) .global-back-btn {
 .demo-card .demo-card-cm-line,
 .demo-card .demo-card-cm-input-field,
 .tcm-line,
-.tcm-input {
+.tcm-input,
+/* 메모 디테일 모달 — 바깥 포스트잇과 동일한 손글씨 폰트 적용 */
+.note-detail-paper .note-body,
+.note-detail-paper .note-author-line,
+.note-detail-paper .comments-scribble .comment-line,
+.note-detail-paper .comments-scribble .comment-text,
+.note-detail-paper .comments-scribble .comment-author,
+.note-detail-paper .comments-scribble .comment-arrow,
+.note-detail-paper .comments-scribble .no-comments,
+.note-detail-paper .comments-scribble .scribble-input {
   font-family: 'Nanum JungShik', 'Gaegu', cursive !important;
 }
 
