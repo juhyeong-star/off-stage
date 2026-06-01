@@ -2065,19 +2065,20 @@ async function renderWall() {
     `;
   }).join('');
 
-  // Write composer — Enter로 바로 올림 (Shift+Enter는 줄바꿈). 송신 버튼은 숨김.
+  // Write composer — 텍스트 입력 + 노래 첨부 + 남기기 버튼.
+  // (Enter는 줄바꿈으로 자유롭게 쓰게 두고, '남기기' 버튼만 클릭으로 전송)
   const writeComposer = user ? `
     <div class="wall-compose-panel" id="wall-compose-panel" hidden>
-      <textarea id="wall-text" class="form-control" rows="3" placeholder="하고 싶은 말을 자유롭게 ✍️ (엔터로 바로 올라가요)"
-        style="resize:none; margin-bottom:10px;"
-        onkeydown="if (event.key==='Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); submitWallNote(); }"></textarea>
+      <textarea id="wall-text" class="form-control" rows="3" placeholder="하고 싶은 말을 자유롭게 ✍️"
+        style="resize:none; margin-bottom:10px;"></textarea>
       <!-- Attached song preview (hidden until a track or URL is picked) -->
       <div id="wall-attach-preview" class="wall-attach-preview" hidden></div>
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <div style="display:flex; gap:6px;" id="wall-color-picker">
           ${colorKeys.map((key,i) => `<button class="color-dot ${i===0?'active':''}" data-color="${key}" style="background:${NOTE_COLORS[key].bg}; border:2px solid ${NOTE_COLORS[key].border};" onclick="document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('active')); this.classList.add('active');"></button>`).join('')}
         </div>
-        <button type="button" class="wall-attach-btn" onclick="openSongAttacher()" title="노래 첨부" style="margin-left:auto;"><i class="ri-music-2-fill"></i> 노래</button>
+        <button type="button" class="wall-attach-btn" onclick="openSongAttacher()" title="노래 첨부"><i class="ri-music-2-fill"></i> 노래</button>
+        <button class="btn-primary" onclick="submitWallNote()" style="margin-left:auto; padding:8px 18px; font-size:13px;">남기기 📌</button>
       </div>
     </div>
   ` : '';
@@ -2156,7 +2157,7 @@ async function renderWall() {
   initNoteDrag();
 
   // 업로드 완료 후 넘어온 경우 — 작성창을 곡 첨부된 채로 자동으로 연다.
-  if (window.__pendingWallCompose && user) {
+  if (window.__pendingWallCompose != null && user) {
     const prefill = window.__pendingWallCompose;
     window.__pendingWallCompose = null;
     setTimeout(() => {
@@ -5972,7 +5973,8 @@ function _afterUploadPrompt(track, artistName) {
     } catch (_) {}
     window.__songAttachTarget = 'wall';
     window.__wallAttachedSong = track.id ? { kind: 'track', id: track.id } : null;
-    window.__pendingWallCompose = '「' + (track.title || '') + '」 작업 이야기 ✍️\n';
+    // 컴포저만 열어주고 텍스트는 빈 상태 — 사용자가 직접 적게.
+    window.__pendingWallCompose = '';
     close();
     navigateTo('wall');
   };
