@@ -2579,7 +2579,9 @@ window.openNoteDetail = function(noteId) {
     </button>
   ` : '';
 
-  // 카드 전체를 포스트잇 색으로 통일 — 위(본문)와 아래(낙서/댓글)가 한 장의 종이처럼 보이게.
+  // 카드 전체를 포스트잇 색으로 통일 — 위(본문)와 아래(댓글)가 한 장의 종이처럼.
+  // 정리: '✎ 낙서' 타이틀, 작성자 앞 '—' dash, '이름' 입력칸, 댓글 placeholder, '남기기' 버튼 모두 제거.
+  // 댓글은 엔터로만 전송. 이름은 로그인한 계정 이름이 자동으로 들어감.
   const modalHtml = `
     <div id="note-detail-modal" class="note-detail-modal" onclick="if(event.target===this) closeNoteDetail()">
       <div class="note-detail-content note-detail-paper" style="background:${c.bg}; color:${c.text};">
@@ -2588,19 +2590,16 @@ window.openNoteDetail = function(noteId) {
           ${bookmarkBtnModal}
           <div class="note-body">${safeText}</div>
           <div class="note-author-line">
-            — <a href="#" class="author-link" onclick="event.preventDefault(); closeNoteDetail(); navigateTo('artist:' + encodeURIComponent('${safeAuthor}'))">${safeAuthor}</a>
+            <a href="#" class="author-link" onclick="event.preventDefault(); closeNoteDetail(); navigateTo('artist:' + encodeURIComponent('${safeAuthor}'))">${safeAuthor}</a>
           </div>
         </div>
         ${_renderNoteTrackChip(note)}
 
         <div class="comments-scribble">
-          <div class="scribble-title">✎ 낙서</div>
           <div id="note-detail-comments-list">${commentsHtml}</div>
 
           <div class="scribble-input-row">
-            <input type="text" id="comment-author" class="scribble-input scribble-name-input" placeholder="이름 (없어도 됨)" value="${db.currentUser?.name || ''}">
-            <input type="text" id="comment-text" class="scribble-input" placeholder="ㄴ 하고 싶은 말 적어봐..." onkeypress="if(event.key==='Enter') submitComment('${noteId}')">
-            <button class="scribble-send" onclick="submitComment('${noteId}')">남기기</button>
+            <input type="text" id="comment-text" class="scribble-input" placeholder="" onkeypress="if(event.key==='Enter') submitComment('${noteId}')">
           </div>
         </div>
       </div>
@@ -2667,6 +2666,7 @@ window.deleteNoteComment = async function(noteId, commentId) {
 
 window.submitComment = async function(noteId) {
   const textEl = document.getElementById('comment-text');
+  // 이름 입력칸은 제거됨 — 로그인한 사용자명으로 자동 (Walls.addComment 내부에서 처리)
   const authorEl = document.getElementById('comment-author');
   const text = (textEl && textEl.value || '').trim();
   if (!text) return;
