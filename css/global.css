@@ -2979,32 +2979,55 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 @media (max-width: 768px) {
   .wall-board {
     display: grid !important;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));   /* minmax로 셀 폭 고정 — 콘텐츠가 셀을 키우지 못하게 */
+    grid-auto-rows: min-content;
     gap: 12px;
     padding: 12px 12px calc(var(--player-height) + 80px);
     height: auto !important;     /* JS가 inline으로 설정한 height 무력화 */
     min-height: 60vh;
     overflow: visible;
   }
-  .wall-note {
+  /* 노트가 아닌 요소들(헤더/빈 메시지/더보기 등)은 두 칸 모두 차지 — 안 그러면 한 셀만 먹어서 그리드가 어긋남 */
+  .wall-board > .wall-header-v2,
+  .wall-board > .wall-empty,
+  .wall-board > .wall-load-more {
+    grid-column: 1 / -1;
+  }
+  .wall-board > .wall-note {
     position: static !important;  /* 절대배치 → 그리드 셀로 흘러가게 */
-    width: 100% !important;
+    width: auto !important;
+    min-width: 0;                  /* grid item이 콘텐츠로 셀보다 커지지 않게 */
+    grid-column: span 1;
     min-height: 200px;
     padding: 14px 14px 12px;
     font-size: 15px;
     line-height: 1.35;
-    cursor: default;              /* 그리드 정렬이라 드래그 무의미 */
+    cursor: default;               /* 그리드 정렬이라 드래그 무의미 */
+    margin: 0 !important;
   }
   .wall-note.dragging { transform: none !important; }
   .wall-note .note-body { font-size: 15px !important; -webkit-line-clamp: 5; }
   .wall-note .note-author { font-size: 11px; margin-top: 6px; }
   .wall-note .note-inline-input { font-size: 12px; }
   .wall-note .note-comments-teaser { font-size: 11px; padding-top: 6px; }
-  .wall-note .note-bookmark,
-  .wall-note .note-delete { width: 26px; height: 26px; font-size: 14px; }
+  /* 수집(북마크)·삭제 버튼 — 모바일은 hover가 없으니 항상 보이게 + 아이콘 크기에 맞춰 자연 박스 */
+  .wall-note .note-bookmark {
+    opacity: 0.55;
+    font-size: 16px;
+    width: auto; height: auto;
+    padding: 4px;
+    top: 4px; right: 4px;
+  }
+  .wall-note .note-bookmark.is-bookmarked { opacity: 1; }
+  .wall-note .note-delete {
+    opacity: 0.45;
+    font-size: 14px;
+    width: auto; height: auto;
+    padding: 4px;
+  }
 }
 @media (max-width: 420px) {
-  .wall-note {
+  .wall-board > .wall-note {
     min-height: 180px;
     padding: 12px 12px 10px;
     font-size: 14px;
