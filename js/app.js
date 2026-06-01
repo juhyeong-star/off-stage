@@ -2144,7 +2144,10 @@ async function renderWall() {
   appContent.innerHTML = `
     <div class="wall-board" style="height:${total > 0 ? boardH : 600}px;">
       <div class="wall-header-v2">
-        ${toolbar}
+        <div class="wall-title-row">
+          <h1><i class="ri-sticky-note-fill" style="color:#FFD54F;"></i> 우리들의 벽</h1>
+          ${toolbar}
+        </div>
       </div>
       ${writeFab}
       ${searchFab}
