@@ -7433,6 +7433,9 @@ window.editProfile = function () {
           console.log('[edit-profile] update succeeded:', updRows);
         }
 
+        // 이전 이름 기억해뒀다 cached.tracks / cached.notes 갱신할 때 사용
+        const oldName = (window.__currentUser && window.__currentUser.name) || (db.currentUser && db.currentUser.name);
+
         // 메모리/로컬 캐시 동기화
         if (window.__currentUser) {
           window.__currentUser.id = targetId;
@@ -7448,7 +7451,48 @@ window.editProfile = function () {
             cached.currentUser.name = newName;
             cached.currentUser.avatar = finalAvatarUrl;
             cached.currentUser.sns = sns;
-            window.DB.save(cached);
+          }
+          // ── 이 사용자가 올린 트랙들 — artist 이름/아바타 새로 반영
+          //    (Tracks.refreshInto 가 백그라운드로 갈아끼우긴 하지만, navigateTo 가
+          //     그 전에 먼저 렌더하므로 옛 값을 보고 화면이 그려지던 문제)
+          if (cached && Array.isArray(cached.tracks)) {
+            cached.tracks.forEach(t => {
+              if (!t) return;
+              const match = (t.artistId && t.artistId === targetId) || (oldName && t.artist === oldName);
+              if (match) {
+                t.artist = newName;
+                t.artistAvatar = finalAvatarUrl;
+                if (t.artistId == null) t.artistId = targetId;
+              }
+            });
+          }
+          // 우리들의 벽 메모도 동일하게 — 작성자 이름/아바타
+          if (cached && Array.isArray(cached.notes)) {
+            cached.notes.forEach(n => {
+              if (!n) return;
+              const match = (n.authorId && n.authorId === targetId) || (oldName && n.author === oldName);
+              if (match) {
+                n.author = newName;
+                n.authorAvatar = finalAvatarUrl;
+                if (n.authorId == null) n.authorId = targetId;
+              }
+            });
+          }
+          window.DB.save(cached);
+          // 다른 메모리 캐시들도 (window.__wallNotes, window.__tracks 등)
+          if (Array.isArray(window.__wallNotes)) {
+            window.__wallNotes.forEach(n => {
+              if (!n) return;
+              const match = (n.authorId && n.authorId === targetId) || (oldName && n.author === oldName);
+              if (match) { n.author = newName; n.authorAvatar = finalAvatarUrl; }
+            });
+          }
+          if (Array.isArray(window.__tracks)) {
+            window.__tracks.forEach(t => {
+              if (!t) return;
+              const match = (t.artistId && t.artistId === targetId) || (oldName && t.artist === oldName);
+              if (match) { t.artist = newName; t.artistAvatar = finalAvatarUrl; }
+            });
           }
         } catch (_) {}
 
@@ -8784,11 +8828,15 @@ function renderArtistProfile(artistName) {
     return false;
   });
   const artistData = (db.following || []).find(a => a.name === artistName) || {};
-  const avatar = artistTracks[0]?.artistAvatar || artistData.avatar || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(artistName));
-  const sns = artistData.sns || {};
-  const snsHtml = generateSnsLinks(sns);
   const isSelf = (window.__currentUser && window.__currentUser.name === artistName) ||
                  (db.currentUser && db.currentUser.name === artistName);
+  // 본인이면 막 저장된 __currentUser 가 가장 최신 — 캐시된 트랙 아바타보다 우선.
+  // (옛 아바타로 캐시된 트랙 데이터가 새로 저장한 아바타를 덮어버리는 문제 방지)
+  const avatar = (isSelf && window.__currentUser && window.__currentUser.avatar)
+              ? window.__currentUser.avatar
+              : (artistTracks[0]?.artistAvatar || artistData.avatar || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(artistName)));
+  const sns = (isSelf && window.__currentUser && window.__currentUser.sns) || artistData.sns || {};
+  const snsHtml = generateSnsLinks(sns);
 
   // === Role detection ===
   // Heuristic: declared role > track count > name prefix
