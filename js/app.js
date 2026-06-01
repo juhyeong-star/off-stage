@@ -2697,6 +2697,10 @@ function _noteMove(e) {
   // Higher threshold on touch: fingers shake
   const threshold = e.touches ? 14 : 6;
   if (Math.abs(dx) > threshold || Math.abs(dy) > threshold) s.moved = true;
+  // 모바일은 포스트잇이 그리드라 드래그 이동이 무의미 — 스크롤 막지 말고 left/top도 안 건드림.
+  // (moved 플래그는 그대로 두니 다음 _noteUp이 wasMoved 보고 탭 액션을 건너뜀)
+  const isMobile = (typeof window !== 'undefined' && window.innerWidth <= 768);
+  if (isMobile) return;
   s.dragEl.style.left = (s.origLeft + dx) + 'px';
   s.dragEl.style.top = (s.origTop + dy) + 'px';
   if (s.moved) e.preventDefault();
@@ -2762,6 +2766,7 @@ function initNoteDrag() {
     if (e.target.closest('.note-more-comments')) return;
     if (e.target.closest('.note-more-text')) return;
     if (e.target.closest('.note-track-chip')) return;
+    if (e.target.closest('.note-comments-teaser')) return;
     if (e.touches && e.touches.length > 1) return;
 
     const el = e.currentTarget;

@@ -3004,6 +3004,7 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
     line-height: 1.35;
     cursor: default;               /* 그리드 정렬이라 드래그 무의미 */
     margin: 0 !important;
+    touch-action: pan-y !important;   /* 포스트잇 위에서도 세로 스크롤 가능 */
   }
   .wall-note.dragging { transform: none !important; }
   .wall-note .note-body { font-size: 15px !important; -webkit-line-clamp: 5; }
