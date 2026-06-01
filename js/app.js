@@ -2524,11 +2524,21 @@ window.saveProfileBio = async function () {
   btns.forEach(b => b.disabled = true);
   try {
     if (window.supabase && window.__currentUser) {
-      const { error } = await window.supabase
+      // 세션 한 번 새로고침 — RLS 가 stale token 으로 막는 silent failure 방지
+      try { await window.supabase.auth.refreshSession(); } catch (_) {}
+      if (window.Auth && window.Auth.ensureProfileRow) {
+        try { await window.Auth.ensureProfileRow(); } catch (_) {}
+      }
+      const { data: rows, error } = await window.supabase
         .from('profiles')
         .update({ bio: bio || null })
-        .eq('id', window.__currentUser.id);
+        .eq('id', window.__currentUser.id)
+        .select('id, bio');
       if (error) throw error;
+      if (!Array.isArray(rows) || rows.length === 0) {
+        console.error('[saveProfileBio] 0 rows updated — id:', window.__currentUser.id);
+        throw new Error('자기소개가 저장되지 않았어요. 로그아웃 후 다시 로그인 해보세요.');
+      }
       window.__currentUser.bio = bio;
     }
     // 로컬 캐시도 갱신 — 다시 들어가면 즉시 반영
@@ -7289,23 +7299,43 @@ window.editProfile = function () {
       clearError();
       console.log('[edit-profile] start');
 
-      step = 'session check';
-      // Refresh session in case it's about to expire
+      // ── 1) 세션 확실히 살아있게 — 만료 임박이든 아니든 한 번 refresh.
+      //     editProfile 의 update 가 RLS 검사 (auth.uid() = id) 를 통과하려면
+      //     서버에 올라간 토큰이 진짜 유효해야 한다. 클라이언트에 cached session 만
+      //     있고 서버에서 거부되면 update 가 '에러 없이 0 rows' 로 조용히 실패함.
+      step = 'session refresh';
+      let liveSession = null;
       if (window.supabase) {
         try {
-          const { data: { session } } = await window.supabase.auth.getSession();
-          if (!session) throw new Error('로그인 세션이 없어요. 다시 로그인해주세요.');
-          if (session.expires_at && session.expires_at - Math.floor(Date.now()/1000) < 120) {
-            console.log('[edit-profile] refreshing session');
-            await window.supabase.auth.refreshSession();
+          // refreshSession 은 만료 안 됐어도 안전 — 서버 검증 + 새 토큰 받아옴
+          const { data, error: refErr } = await window.supabase.auth.refreshSession();
+          if (refErr) {
+            // 만료된 세션은 refresh 가 실패하므로 getSession 으로 한 번 더 확인
+            const { data: { session } } = await window.supabase.auth.getSession();
+            if (!session) throw new Error('로그인 세션이 만료됐어요. 다시 로그인해주세요.');
+            liveSession = session;
+            console.warn('[edit-profile] refreshSession 실패하나 기존 세션 사용:', refErr.message);
+          } else {
+            liveSession = data && data.session;
           }
+          if (!liveSession || !liveSession.user) throw new Error('세션은 있지만 user 정보가 비었어요. 다시 로그인해주세요.');
+          console.log('[edit-profile] session user.id:', liveSession.user.id);
         } catch (e) { throw new Error('세션 확인 실패: ' + (e.message || e)); }
+      }
+
+      // ── 2) profiles 행 보장 — FK / RLS 가 실패하던 옛 케이스 방어
+      step = 'ensure profile row';
+      if (window.Auth && window.Auth.ensureProfileRow) {
+        try { await window.Auth.ensureProfileRow(); }
+        catch (e) { console.warn('[edit-profile] ensureProfileRow', e); }
       }
 
       step = 'read fields';
       const newName = document.getElementById('edit-name').value.trim();
       const avatarUrl = document.getElementById('edit-avatar-url').value.trim();
       const avatarFile = document.getElementById('edit-avatar-file').files[0];
+
+      if (!newName) throw new Error('활동명은 비워둘 수 없어요');
 
       let finalAvatarUrl = avatarUrl || db.currentUser.avatar;
 
@@ -7320,17 +7350,31 @@ window.editProfile = function () {
       }
 
       step = 'update profile';
+      // SNS 필드는 현재 UI 숨김 — 인풋이 DOM 에 있으면 읽고, 없으면 기존 값 유지
+      const _readInput = (id, fallback) => {
+        const el = document.getElementById(id);
+        return el ? el.value.trim() : (fallback || '');
+      };
+      const _sns = db.currentUser.sns || {};
       const sns = {
-        instagram: document.getElementById('edit-sns-instagram').value.trim(),
-        youtube:   document.getElementById('edit-sns-youtube').value.trim(),
-        tiktok:    document.getElementById('edit-sns-tiktok').value.trim(),
-        twitter:   document.getElementById('edit-sns-twitter').value.trim()
+        instagram: _readInput('edit-sns-instagram', _sns.instagram),
+        youtube:   _readInput('edit-sns-youtube',   _sns.youtube),
+        tiktok:    _readInput('edit-sns-tiktok',    _sns.tiktok),
+        twitter:   _readInput('edit-sns-twitter',   _sns.twitter)
       };
 
       if (window.supabase && window.__currentUser) {
         if (submitBtn) submitBtn.textContent = '프로필 저장 중…';
-        console.log('[edit-profile] update profiles row id:', window.__currentUser.id);
-        const { error: upErr } = await window.supabase
+        // 세션 user.id 기준으로 업데이트 — __currentUser.id 가 stale 할 가능성 대비
+        const targetId = (liveSession && liveSession.user && liveSession.user.id) || window.__currentUser.id;
+        console.log('[edit-profile] update targetId:', targetId, '   __currentUser.id:', window.__currentUser.id);
+        if (targetId !== window.__currentUser.id) {
+          console.warn('[edit-profile] __currentUser.id 와 session user.id 가 다름 — 세션 user.id 사용');
+        }
+
+        // .select('id, name, avatar_url') 로 진짜 업데이트된 row 를 받아온다.
+        // RLS 가 막아도 error 가 안 나오므로, data 가 빈 배열이면 0행 매치 → 진단 가능.
+        const { data: updRows, error: upErr } = await window.supabase
           .from('profiles')
           .update({
             name: newName,
@@ -7340,12 +7384,48 @@ window.editProfile = function () {
             sns_tiktok:    sns.tiktok || null,
             sns_twitter:   sns.twitter || null
           })
-          .eq('id', window.__currentUser.id);
-        if (upErr) throw new Error('DB 업데이트 실패: ' + upErr.message);
+          .eq('id', targetId)
+          .select('id, name, avatar_url');
+        if (upErr) {
+          console.error('[edit-profile] update error full object:', upErr);
+          throw new Error('DB 업데이트 실패: ' + (upErr.message || JSON.stringify(upErr)) +
+                          (upErr.hint ? ' (힌트: ' + upErr.hint + ')' : '') +
+                          (upErr.code ? ' [code:' + upErr.code + ']' : ''));
+        }
+        if (!Array.isArray(updRows) || updRows.length === 0) {
+          // ⚠️ 가장 흔한 silent failure: RLS 가 매치를 거부했거나 행이 없음
+          console.error('[edit-profile] update 0 rows — targetId:', targetId,
+                        'session.uid:', liveSession && liveSession.user && liveSession.user.id);
+          // 한 번 더 RPC 로 행을 만들고 재시도
+          try {
+            await window.supabase.rpc('ensure_my_profile');
+          } catch (rpcErr) { console.warn('[edit-profile] ensure_my_profile RPC', rpcErr); }
+          const { data: retryRows, error: retryErr } = await window.supabase
+            .from('profiles')
+            .update({
+              name: newName,
+              avatar_url: finalAvatarUrl,
+              sns_instagram: sns.instagram || null,
+              sns_youtube:   sns.youtube || null,
+              sns_tiktok:    sns.tiktok || null,
+              sns_twitter:   sns.twitter || null
+            })
+            .eq('id', targetId)
+            .select('id, name, avatar_url');
+          if (retryErr) throw new Error('재시도 DB 업데이트 실패: ' + retryErr.message);
+          if (!Array.isArray(retryRows) || retryRows.length === 0) {
+            throw new Error('프로필 행이 매치되지 않았어요. id=' + targetId +
+              ' / auth.uid=' + (liveSession && liveSession.user && liveSession.user.id) +
+              ' — 콘솔에서 자세한 로그 확인 부탁드려요.');
+          }
+          console.log('[edit-profile] retry succeeded:', retryRows);
+        } else {
+          console.log('[edit-profile] update succeeded:', updRows);
+        }
 
-        // Mirror into the local in-memory user object immediately so the UI
-        // shows the new avatar/name without waiting for re-bootstrap.
+        // 메모리/로컬 캐시 동기화
         if (window.__currentUser) {
+          window.__currentUser.id = targetId;
           window.__currentUser.name = newName;
           window.__currentUser.avatar = finalAvatarUrl;
           window.__currentUser.avatar_url = finalAvatarUrl;
@@ -7354,6 +7434,7 @@ window.editProfile = function () {
         try {
           const cached = window.DB.get();
           if (cached && cached.currentUser) {
+            cached.currentUser.id = targetId;
             cached.currentUser.name = newName;
             cached.currentUser.avatar = finalAvatarUrl;
             cached.currentUser.sns = sns;
@@ -7361,8 +7442,7 @@ window.editProfile = function () {
           }
         } catch (_) {}
 
-        // Cache refresh runs in the background — used to be awaited which
-        // made the form hang on "저장 중…" whenever Supabase fetch was slow.
+        // 백그라운드로 다른 캐시도 갱신
         step = 'sync caches (background)';
         if (window.Auth && window.Auth.bootstrap) {
           window.Auth.bootstrap().catch(e => console.warn('[edit-profile] bootstrap bg', e));
