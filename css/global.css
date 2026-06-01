@@ -11394,6 +11394,36 @@ body.polaroid-sheet-open { overflow: hidden; }
 .artist-canvas .demo-card.arrow-left::after,
 .artist-canvas .demo-card.arrow-down::after,
 .artist-canvas .demo-card::after { content: '' !important; display: none !important; }
+
+/* 데모 카드 옆 '+ 데모 추가' 빈 포스트잇 — 본인 페이지에서만 보임 */
+.artist-canvas .demo-card.demo-card-add {
+  background: rgba(255, 251, 216, 0.4) !important;
+  border: 2px dashed rgba(17,17,17,0.45) !important;
+  box-shadow: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  color: rgba(17,17,17,0.55) !important;
+  cursor: pointer !important;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.18s !important;
+}
+.artist-canvas .demo-card.demo-card-add:hover {
+  background: rgba(255, 251, 216, 0.95) !important;
+  border-color: #111 !important;
+  color: #111 !important;
+  transform: translateY(-1px) !important;
+}
+.artist-canvas .demo-card.demo-card-add i {
+  font-size: 40px;
+  line-height: 1;
+}
+.demo-card-add-label {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
 /* Single-line layout: show → arrow after every card except the last */
 .artist-canvas .demo-card::before {
   content: '→' !important;

@@ -2211,6 +2211,14 @@ window.wallResetPage = function() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
+// 데모 카드 옆 '+ DEMO N 추가' 빈 포스트잇이 호출 — 그 프로젝트의 다음 데모로 업로드 폼 자동 세팅.
+window.quickUploadDemoToProject = function(projectId) {
+  if (!projectId) { navigateTo('upload'); return; }
+  window.__pendingUploadProjectId   = projectId;
+  window.__pendingUploadVersionType = 'demo';
+  navigateTo('upload');
+};
+
 // "글 추가" 버튼 (아티스트 페이지 소식 헤더) → 벽으로 이동 + 컴포저 자동 열기
 window.goAddSoshik = function() {
   navigateTo('wall');
@@ -5351,6 +5359,9 @@ window.openTrackDetail = function (trackId) {
 function renderUpload() {
   const db = window.DB.get();
   if (!db.currentUser) {
+    // pending 상태 남겨두면 다음 로그인 시 의도와 다른 자동 세팅이 됨 — 항상 클리어.
+    window.__pendingUploadProjectId = null;
+    window.__pendingUploadVersionType = null;
     navigateTo('auth');
     return;
   }
@@ -5675,6 +5686,34 @@ function renderUpload() {
   });
   // 초기 한 번 — 첫 진입은 master_solo(=master)라 demo-mode 아님
   syncMasterFields();
+
+  // 아티스트 페이지 '+ DEMO N 추가' 카드에서 넘어왔다면: 프로젝트+기존+데모로 자동 세팅 + 대상 프로젝트 선택
+  (async function applyPendingUploadState() {
+    if (!window.__pendingUploadProjectId && !window.__pendingUploadVersionType) return;
+    const pendingProjectId = window.__pendingUploadProjectId;
+    const pendingVerType   = window.__pendingUploadVersionType || 'demo';
+    window.__pendingUploadProjectId = null;
+    window.__pendingUploadVersionType = null;
+    try {
+      // 1) Tier1: 프로젝트 모드로
+      const projModeOpt = document.querySelector('.card > .upload-type-toggle:not(.compact) .upload-type-opt[data-mode="project"]');
+      if (projModeOpt) projModeOpt.click();
+      // 2) Tier2a: 기존 프로젝트
+      const existingOpt = document.querySelector('#project-substep .upload-type-toggle.compact:first-of-type .upload-type-opt[data-proj-choice="existing"]');
+      if (existingOpt) existingOpt.click();
+      // 3) Tier2b: 데모
+      if (pendingVerType === 'demo') {
+        const demoOpt = document.querySelector('#project-substep .upload-type-toggle.compact:last-of-type .upload-type-opt[data-version-type="demo"]');
+        if (demoOpt) demoOpt.click();
+      }
+      // 4) 프로젝트 목록 로딩 후 해당 프로젝트 선택
+      await loadMyProjects();
+      if (pendingProjectId && projectSelect && projectSelect.querySelector(`option[value="${pendingProjectId}"]`)) {
+        projectSelect.value = pendingProjectId;
+        refreshExistingInfo();
+      }
+    } catch (e) { console.warn('[upload] applyPendingUploadState', e); }
+  })();
 
   if (projectSelect) projectSelect.addEventListener('change', refreshExistingInfo);
   if (titleInput) titleInput.addEventListener('input', () => { titleInput.dataset.userTyped = '1'; });
@@ -6901,9 +6940,11 @@ function renderProjectBox(pid, versions) {
   // Desktop layout uses a snake-flow grid of demos. Mobile carousel doesn't
   // use these columns at all (.project-pages flex overrides CSS grid).
   // Original behaviour: <560px = 1 col, otherwise 2 cols.
+  // 본인 페이지면 맨 끝에 '+ 데모 추가' 빈 카드를 한 칸 더 잡아둠.
   const _w = (typeof window !== 'undefined') ? window.innerWidth : 1024;
   const _baseCols = _w < 560 ? 1 : 2;
-  const cols = Math.min(_baseCols, Math.max(1, demos.length || 1));
+  const _totalCards = demos.length + (canEditArtist ? 1 : 0);
+  const cols = Math.min(_baseCols, Math.max(1, _totalCards || 1));
 
   // Master info — 발매일 + 참여 인원
   const masterDate = final ? formatFullDate(final.createdAt) : '';
@@ -7012,7 +7053,21 @@ function renderProjectBox(pid, versions) {
         ${cmHintHtml}
       </div>
     `;
-  }).join('');
+  }).join('') + (canEditArtist ? (() => {
+    // 빈 포스트잇(+ 데모 추가) — 데모 카드들 끝에 한 칸. 본인 페이지에서만 보임.
+    // 누르면 그 프로젝트의 다음 데모로 바로 업로드 폼이 세팅됨.
+    const nextIdx = demos.length;
+    const pos = snakePos(nextIdx, cols);
+    return `
+      <div class="demo-card demo-card-add" data-project="${pid}"
+           style="grid-row:${pos.row}; grid-column:${pos.col};"
+           onclick="quickUploadDemoToProject('${pid}')"
+           title="이 프로젝트에 다음 데모 올리기">
+        <i class="ri-add-line"></i>
+        <span class="demo-card-add-label">DEMO ${nextIdx + 1} 추가</span>
+      </div>
+    `;
+  })() : '');
 
   // Shape options shared by version-panel below
   const SHAPE_OPTIONS = [
@@ -7337,7 +7392,7 @@ function renderProjectBox(pid, versions) {
           </div>
         </div>
       </div>
-      ${demos.length > 0 ? `
+      ${(demos.length > 0 || canEditArtist) ? `
         <div class="demo-path" style="grid-template-columns: repeat(${cols}, 1fr);">
           ${cardsHtml}
         </div>
