@@ -890,7 +890,7 @@ body.guest .sidebar-my-channel { display: none; }
     radial-gradient(circle at 80% 70%, rgba(233,30,99,0.10), transparent 40%);
 }
 /* 내 우주에 모인 곡 도형 — 도형 크기 30% 키움 (0.8 → 1.04, folatDrift scale) */
-.my-universe .floating-shape:not(.universe-note):not(.floating-folder) { --scale: 1.04; }
+.my-universe .floating-shape:not(.universe-note):not(.floating-folder) { --scale: 1.35; }   /* PC/모바일 공통 +30% 추가 (요청) */
 /* 내 우주 포스트잇에 붙은 노래 칩 (벽 포스트잇처럼 오른쪽 아래 작게) */
 .universe-note .note-track-chip {
   margin: 8px 0 0 auto;
@@ -1386,7 +1386,7 @@ body:has(#shape-shorts-overlay) .deco-shape {
   .shape-resize-handle { display: none !important; }
 }
 .floating-shape .shape-text {
-  font-size: 24px;
+  font-size: 26px;   /* 24 → 26 (+2px 요청) */
   line-height: 1.3;
   white-space: pre-wrap;
   word-break: keep-all;
@@ -4306,7 +4306,7 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 
   /* Floating shape universe on mobile (home) — kept compact earlier */
   .floating-shape { padding: 14px; }
-  .floating-shape .shape-text { font-size: 20px; max-width: 180px; }
+  .floating-shape .shape-text { font-size: 22px; max-width: 180px; }   /* 20 → 22 */
 
   /* Wall — compact header area */
   .wall-header { padding: 16px 16px 10px; }
@@ -6054,7 +6054,7 @@ html, body { overflow-x: hidden; max-width: 100%; }
   .wall-postit-resize-handle { display: none !important; }
   .floating-shape { padding: 16px; }
   .floating-shape .shape-text {
-    font-size: 24px;
+    font-size: 26px;   /* 24 → 26 */
     max-width: 215px;
     line-height: 1.25;
     font-weight: 700;
@@ -6085,7 +6085,7 @@ html, body { overflow-x: hidden; max-width: 100%; }
 @media (max-width: 420px) {
   .floating-shape { padding: 14px; }
   .floating-shape .shape-text {
-    font-size: 19px;
+    font-size: 21px;   /* 19 → 21 */
     max-width: 170px;
     line-height: 1.25;
     font-weight: 700;
