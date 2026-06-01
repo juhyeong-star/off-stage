@@ -1709,21 +1709,12 @@ function renderTags() {
 
 function renderTagDetail(tag) {
   const db = window.DB.get();
-  // Masters only — one final per project
-  const masters = db.tracks.filter(t =>
-    (t.tags || []).includes(tag) && (t.version === 'final' || !t.isDemo)
-  );
-  // Deduplicate by projectId (take final if multiple)
-  const seenProject = new Set();
-  const matched = [];
-  masters.forEach(t => {
-    const pid = t.projectId || t.id;
-    if (seenProject.has(pid)) return;
-    seenProject.add(pid);
-    matched.push(t);
-  });
-  // Sort by createdAt desc
-  matched.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  // 마스터·데모 모두 포함 — 태그가 일치하는 모든 곡 보여줌 (예전엔 마스터만 노출해서
+  // 데모만 올린 사람의 태그 곡이 안 보였음).
+  // 같은 프로젝트의 마스터 + 데모는 dedup하지 않음 — 각각이 독립된 트랙.
+  const matched = db.tracks
+    .filter(t => t && Array.isArray(t.tags) && t.tags.includes(tag))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   const safeTag = tag.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 

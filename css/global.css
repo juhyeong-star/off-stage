@@ -11244,9 +11244,10 @@ body.polaroid-sheet-open { overflow: hidden; }
   transform: translate(-1px, -1px) !important;
 }
 .artist-canvas .demo-card.is-selected .demo-card-title { color: #B5575A !important; }
+/* 글(노트)은 클릭 전후 모두 검정색으로 유지 */
 .artist-canvas .demo-card.is-selected .demo-card-note,
 .artist-canvas .demo-card.is-selected .demo-card-note-line {
-  color: #A04F52 !important;
+  color: #111 !important;
 }
 .artist-canvas .demo-card-top {
   gap: 8px !important;
@@ -12597,21 +12598,22 @@ body.polaroid-sheet-open { overflow: hidden; }
   flex: 1; min-width: 0;
 }
 
-/* 데모 카드 안의 # 라인 노트 — 포스트잇 톤 그대로 */
+/* 데모 카드 안의 # 라인 노트 — 검정색 (요청) */
 .artist-canvas .demo-card-note {
   font-family: var(--font-hand) !important;
   font-size: 17px !important;
   line-height: 1.35 !important;
   font-weight: 600 !important;
-  color: #2a2240 !important;
+  color: #111 !important;
   margin: 4px 0 10px !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 1px;
-  opacity: 0.92;
+  opacity: 1;
   -webkit-line-clamp: unset !important;
   overflow: visible !important;
 }
+.artist-canvas .demo-card-note-line { color: #111 !important; }
 .artist-canvas .demo-card-note-line {
   display: block;
   white-space: normal;
