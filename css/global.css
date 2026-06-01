@@ -3059,14 +3059,19 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
     width: auto !important;
     min-width: 0;                  /* grid item이 콘텐츠로 셀보다 커지지 않게 */
     grid-column: span 1;
-    min-height: 200px;
+    height: 200px !important;      /* 모든 카드 동일 크기 — 짧은 메모 기준 */
+    min-height: 0 !important;
+    max-height: 200px;
     padding: 14px 14px 12px;
     font-size: 15px;
     line-height: 1.35;
     cursor: default;               /* 그리드 정렬이라 드래그 무의미 */
     margin: 0 !important;
     touch-action: pan-y !important;   /* 포스트잇 위에서도 세로 스크롤 가능 */
+    overflow: hidden;              /* 긴 본문은 잘라줌 */
   }
+  /* 작은 카드 안에서 본문은 더 짧게 자르기 */
+  .wall-board > .wall-note .note-body { -webkit-line-clamp: 3 !important; }
   .wall-note.dragging { transform: none !important; }
   .wall-note .note-body { font-size: 15px !important; -webkit-line-clamp: 5; }
   .wall-note .note-author { font-size: 11px; margin-top: 6px; }
@@ -3090,7 +3095,8 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 }
 @media (max-width: 420px) {
   .wall-board > .wall-note {
-    min-height: 180px;
+    height: 180px !important;
+    max-height: 180px;
     padding: 12px 12px 10px;
     font-size: 14px;
   }
@@ -4483,9 +4489,34 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   /* Playlist modal adapt */
   .playlist-modal-content { width: 100%; max-width: 95vw; }
 
-  /* Note detail modal */
-  .note-detail-postit { font-size: 19px; padding: 20px 18px 16px; }
-  .note-detail-content { max-width: 100%; }
+  /* Note detail modal — 모바일은 풀스크린(쇼츠 느낌). 위에서 슬라이드 인. */
+  .note-detail-modal {
+    padding: 0 !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    overflow: hidden !important;
+  }
+  .note-detail-content,
+  .note-detail-content.note-detail-paper {
+    max-width: 100% !important;
+    width: 100% !important;
+    min-height: 100vh;
+    border-radius: 0 !important;
+    padding: 0 0 calc(var(--player-height) + 16px + env(safe-area-inset-bottom)) 0 !important;
+    box-shadow: none !important;
+    animation: shortsFadeIn 0.22s ease !important;
+  }
+  .note-detail-paper .note-detail-postit {
+    padding: 44px 22px 18px !important;   /* 상단 닫기 버튼 자리 확보 */
+  }
+  .note-detail-content .note-detail-close {
+    position: fixed !important;
+    top: calc(12px + env(safe-area-inset-top)) !important;
+    right: 14px !important;
+    width: 38px; height: 38px;
+    font-size: 18px;
+  }
+  .note-detail-postit { font-size: 19px; }
 }
 
 /* Global horizontal overflow safety */
