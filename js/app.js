@@ -2062,9 +2062,9 @@ async function renderWall() {
         ${isClamped ? `<button class="note-more-text" onclick="event.stopPropagation(); openNoteDetail('${note.id}');">더보기</button>` : ''}
         <div class="note-author">— ${safeAuthor}</div>
         <div class="note-bottom">
+          ${commentsTeaser}
           ${user ? '' : trackChip}
           ${inlineForm}
-          ${commentsTeaser}
         </div>
       </div>
     `;
