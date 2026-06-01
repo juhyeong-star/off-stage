@@ -86,7 +86,23 @@
     if (!window.supabase) { window.__currentUser = null; return null; }
     const { data: { session } } = await window.supabase.auth.getSession();
     if (!session || !session.user) { window.__currentUser = null; return null; }
-    const profile = await fetchProfile(session.user.id);
+    let profile = await fetchProfile(session.user.id);
+    // 프로필 행이 없으면 만들어준다 — 업로드가 FK 위반으로 막히는 가장 큰 원인.
+    // (OAuth/매직링크는 우리의 signUp 경로를 거치지 않아 트리거에만 의존하므로,
+    //  트리거가 어떤 이유로든 실패하면 영영 프로필이 안 생겨 업로드가 계속 실패함.)
+    if (!profile) {
+      try {
+        const md = session.user.user_metadata || {};
+        const fallbackName = md.name || md.full_name || md.user_name
+          || (session.user.email ? session.user.email.split('@')[0] : '익명');
+        await window.supabase
+          .from('profiles')
+          .upsert({ id: session.user.id, name: fallbackName }, { onConflict: 'id', ignoreDuplicates: true });
+        profile = await fetchProfile(session.user.id);
+      } catch (e) {
+        console.warn('[Auth] auto-create profile failed', e && e.message);
+      }
+    }
     const mapped = mapProfile(profile, session.user);
     window.__currentUser = mapped;
     // Mirror into legacy localStorage so existing code paths still work.

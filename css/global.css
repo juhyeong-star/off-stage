@@ -2427,6 +2427,9 @@ h3 { font-size: 19px; font-weight: 700; }
 .project-cover-wrap:active .cover-edit-btn { opacity: 1; }
 .cover-edit-btn:hover { background: #FFE500; color: #111; transform: scale(1.1); }
 
+/* 데모 업로드일 땐 제목/커버 칸을 숨김 (자동 채워짐) */
+#upload-form.demo-mode .master-only { display: none !important; }
+
 /* ===== Upload type toggle (새 vs 기존 프로젝트) ===== */
 .upload-type-toggle {
   display: grid;

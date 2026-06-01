@@ -5301,6 +5301,18 @@ function renderUpload() {
     return;
   }
 
+  // 데모 업로드 기본 커버 — 노란 포스트잇 + "Coming Soon" (data: URL이라 별도 호스팅 불필요)
+  const COMING_SOON_COVER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">' +
+    '<rect width="500" height="500" fill="#FFF59D"/>' +
+    '<rect x="200" y="0" width="100" height="22" fill="rgba(255,255,255,0.55)"/>' +
+    '<g transform="rotate(-3 250 260)" font-family="Comic Sans MS, Gaegu, cursive" font-weight="800" fill="#3a2a00" text-anchor="middle">' +
+      '<text x="250" y="250" font-size="62">Coming</text>' +
+      '<text x="250" y="322" font-size="62">Soon...</text>' +
+    '</g>' +
+    '</svg>'
+  );
+
   appContent.innerHTML = `
     <div style="max-width: 600px; margin: 0 auto; padding: 30px;" class="card">
       <h1 style="margin-bottom: 8px;">음원 업로드</h1>
@@ -5371,7 +5383,7 @@ function renderUpload() {
           </div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group master-only">
           <label>곡 제목 <span id="up-title-hint" style="color:var(--text-secondary); font-weight:normal;"></span></label>
           <input type="text" class="form-control" id="up-title" required placeholder="예: 한밤의 드라이브">
         </div>
@@ -5381,7 +5393,7 @@ function renderUpload() {
           <div class="form-note">카드에 표시될 이름. 자동으로 채워지지만 자유롭게 수정 가능.</div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group master-only">
           <label>커버 이미지 (선택)</label>
           <input type="file" class="form-control" id="up-cover" accept="image/*">
         </div>
@@ -5390,10 +5402,6 @@ function renderUpload() {
           <input type="file" class="form-control" id="up-audio" accept="audio/*" required
                  onchange="(function(el){var f=el.files[0];if(!f)return;var mb=(f.size/1048576).toFixed(1);var lbl=document.getElementById('up-audio-size');if(lbl)lbl.textContent=' · '+mb+'MB'+(f.size>50*1048576?' ⚠️ 50MB 초과 - 거부됨':'');})(this)">
           <div class="form-note">최대 50MB · mp3/m4a/wav 지원 · 크면 업로드가 느림</div>
-        </div>
-        <div class="form-group">
-          <label>유튜브 개인 채널 / M/V 링크 (선택)</label>
-          <input type="text" class="form-control" id="up-youtube" placeholder="유튜브 영상 URL (예: https://youtube.com/watch?v=...)">
         </div>
         <div class="form-group">
           <label>곡 소개 및 코멘트 <span style="color:#ff6b6b;">(필수)</span></label>
@@ -5547,6 +5555,18 @@ function renderUpload() {
     const s = getUploadState();
     if (distSection) distSection.style.display = s.isFinal ? 'block' : 'none';
   }
+  // 데모 모드면 제목/커버 칸을 숨기고 제목 required도 떼어준다.
+  // (데모는 자동으로 프로젝트 제목 또는 1줄 낙서를 제목으로 쓰고, 커버는 Coming Soon 포스트잇)
+  function syncMasterFields() {
+    const s = getUploadState();
+    const isDemo = !s.isFinal;
+    const form = document.getElementById('upload-form');
+    if (form) form.classList.toggle('demo-mode', isDemo);
+    if (titleInput) {
+      if (isDemo) titleInput.removeAttribute('required');
+      else titleInput.setAttribute('required', '');
+    }
+  }
 
   // Generic toggle: clicking a label updates the group's active class + checks its radio
   function wireToggleGroup(groupSelector, afterChange) {
@@ -5573,6 +5593,7 @@ function renderUpload() {
     }
     syncVersionLabel();
     syncDistributionSection();
+    syncMasterFields();
   });
   // Tier 2a — new vs existing project
   wireToggleGroup('#project-substep .upload-type-toggle.compact:first-of-type', () => {
@@ -5590,22 +5611,27 @@ function renderUpload() {
     }
     syncVersionLabel();
     syncDistributionSection();
+    syncMasterFields();
   });
   // Tier 2b — demo vs master version type
   wireToggleGroup('#project-substep .upload-type-toggle.compact:last-of-type', () => {
     syncVersionLabel();
     syncDistributionSection();
+    syncMasterFields();
   });
+  // 초기 한 번 — 첫 진입은 master_solo(=master)라 demo-mode 아님
+  syncMasterFields();
 
   if (projectSelect) projectSelect.addEventListener('change', refreshExistingInfo);
   if (titleInput) titleInput.addEventListener('input', () => { titleInput.dataset.userTyped = '1'; });
   if (verLabelInput) verLabelInput.addEventListener('input', () => { verLabelInput.dataset.userTyped = '1'; });
 
-  // ===== 도형 낙서 글자수 제한 — 선택한 도형 모양에 맞게 한 줄 글자수를 제한 =====
+  // ===== 도형 낙서 글자수 제한 — 모양별 한 줄 글자수(공백 제외) 제한 =====
   // 도형이 좁으면 글씨가 삐져나오므로, 모양별로 한 줄에 들어갈 글자수를 다르게 잡는다.
+  // 띄어쓰기(공백)는 글자수에 포함하지 않는다.
   const SHAPE_LINE_LIMIT = {
-    circle: 9,    // 원 — 좌우가 가장 좁음
-    hexagon: 10,  // 육각형
+    circle: 12,   // 원 — 가장 좁음
+    hexagon: 12,  // 육각형
     oval: 13,     // 타원
     rect: 13,     // 둥근 사각형
     pill: 15,     // 알약
@@ -5615,15 +5641,24 @@ function renderUpload() {
     .map(id => document.getElementById(id)).filter(Boolean);
   const shapeSelectEl = document.getElementById('up-shape');
   const graffitiNoteEl = document.getElementById('up-graffiti-note');
+  const _nonSpaceLen = (s) => (s || '').replace(/\s+/g, '').length;
   function applyShapeLineLimit() {
     const shape = (shapeSelectEl && shapeSelectEl.value) || 'circle';
     const lim = SHAPE_LINE_LIMIT[shape] || 12;
     _graffitiLineEls.forEach(el => {
-      el.maxLength = lim;
-      // 모양을 좁은 걸로 바꾸면 기존에 적어둔 글씨가 한도를 넘을 수 있으니 잘라준다.
-      if ((el.value || '').length > lim) el.value = el.value.slice(0, lim);
+      el.dataset.lim = String(lim);
+      el.removeAttribute('maxlength');  // 공백 제외해야 해서 HTML maxlength는 사용 X
+      // 모양을 좁은 걸로 바꿔서 한도 초과면 비공백 기준으로 끝부터 잘라준다.
+      while (_nonSpaceLen(el.value) > lim) el.value = el.value.slice(0, -1);
+      if (!el.__limWired) {
+        el.__limWired = true;
+        el.addEventListener('input', () => {
+          const cur = parseInt(el.dataset.lim || '12', 10);
+          while (_nonSpaceLen(el.value) > cur) el.value = el.value.slice(0, -1);
+        });
+      }
     });
-    if (graffitiNoteEl) graffitiNoteEl.textContent = `메인에 뜨는 도형에 적힐 내용. 3줄 다 채워주세요! 지금 모양은 한 줄에 최대 ${lim}자까지 들어가요. (#은 자동으로 붙어요)`;
+    if (graffitiNoteEl) graffitiNoteEl.textContent = `메인에 뜨는 도형에 적힐 내용. 3줄 다 채워주세요! 지금 모양은 한 줄에 최대 ${lim}자(공백 제외). (#은 자동으로 붙어요)`;
   }
   if (shapeSelectEl) shapeSelectEl.addEventListener('change', applyShapeLineLimit);
   applyShapeLineLimit();
@@ -5679,27 +5714,41 @@ function renderUpload() {
       }
 
       // Upload files to Supabase Storage
-      let coverUrl = 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=500';
+      let coverUrl;
       let audioUrl = '';
 
       if (!window.Tracks) throw new Error('Supabase가 준비되지 않았어요.');
 
       setStatus('오디오 업로드 중…');
       audioUrl = await window.Tracks.uploadFile(audioFile, 'audio');
-      if (coverFile) {
-        setStatus('커버 업로드 중…');
-        coverUrl = await window.Tracks.uploadFile(coverFile, 'covers');
-      } else if (existingProject && existingProject.cover) {
-        coverUrl = existingProject.cover;
+      // 데모는 'Coming Soon' 포스트잇 커버 고정. 마스터일 때만 커버 파일/기존 프로젝트 커버 사용.
+      if (!isFinal) {
+        coverUrl = COMING_SOON_COVER;
+      } else {
+        coverUrl = 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=500';
+        if (coverFile) {
+          setStatus('커버 업로드 중…');
+          coverUrl = await window.Tracks.uploadFile(coverFile, 'covers');
+        } else if (existingProject && existingProject.cover) {
+          coverUrl = existingProject.cover;
+        }
       }
 
       const tagsRaw = document.getElementById('up-tags').value || '';
       const tags = tagsRaw.split(',').map(s => s.trim().replace(/^#/, '')).filter(Boolean);
-      const title = titleInput.value;
       const description = document.getElementById('up-description').value;
       const line1 = (document.getElementById('up-line1') || {}).value || '';
       const line2 = (document.getElementById('up-line2') || {}).value || '';
       const line3 = (document.getElementById('up-line3') || {}).value || '';
+      // 데모는 제목 칸이 안 보이므로 자동으로 채운다 — 기존 프로젝트면 그 제목, 새 프로젝트면 1줄 낙서.
+      let title = (titleInput.value || '').trim();
+      if (!isFinal) {
+        if (usingExistingProject && existingProject) {
+          title = (existingProject.title || '').trim() || '데모';
+        } else {
+          title = (line1 || '').replace(/^#/, '').trim() || '데모';
+        }
+      }
       const shapeEl = document.getElementById('up-shape');
       const colorEl = document.getElementById('up-shape-color');
 
