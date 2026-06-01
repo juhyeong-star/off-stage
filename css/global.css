@@ -14154,15 +14154,15 @@ body:has(#global-player.expanded) .global-back-btn {
 }
 .demo-card .demo-card-note-empty i { margin-right: 4px; }
 
-/* Note detail modal — 우리들의 벽 포스트잇과 동일한 폰트 사용.
-   실제로 .wall-board *:not(i):not([class*="ri-"]) 가 Pretendard 를 forces하고 있어
-   wall-note는 손글씨가 아니라 Pretendard로 렌더링됨. 모달도 Pretendard로 맞춤. */
+/* Note detail modal — 우리들의 벽 포스트잇과 동일 폰트 + 굵기 */
 #note-detail-modal,
 #note-detail-modal *:not(i):not([class*="ri-"]) {
   font-family: var(--font-pretendard) !important;
+  font-weight: 700 !important;
 }
 #note-detail-modal i[class*="ri-"] {
   font-family: 'remixicon' !important;
+  font-weight: 400 !important;
 }
 
 /* Demo card date — sits next to "DEMO N" tag */
