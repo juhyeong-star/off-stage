@@ -14154,13 +14154,16 @@ body:has(#global-player.expanded) .global-back-btn {
 }
 .demo-card .demo-card-note-empty i { margin-right: 4px; }
 
-/* Note detail modal — 손글씨로 표시 (포스트잇 본문 + 댓글 + 입력) */
+/* Note detail modal — 우리들의 벽 포스트잇과 동일한 손글씨 폰트 강제 (literal 문자열로)
+   var() 사용 시 CSS 변수가 cascade 상에서 다르게 resolve 될 가능성을 차단. */
 #note-detail-modal,
 #note-detail-modal * {
-  font-family: var(--font-hand), 'Gaegu', cursive !important;
+  font-family: 'Nanum JungShik', 'Gaegu', cursive !important;
+  font-weight: 700 !important;
 }
 #note-detail-modal i[class*="ri-"] {
   font-family: 'remixicon' !important;
+  font-weight: 400 !important;
 }
 
 /* Demo card date — sits next to "DEMO N" tag */
