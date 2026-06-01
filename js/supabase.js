@@ -82,6 +82,47 @@
     return data;
   }
 
+  // ⚠️ 전 사용자 공통 — 곡/메모/댓글을 올리기 직전에 호출해서 profiles 행이 있는지 보장.
+  //    profiles 가 없으면 author_id/artist_id FK 위반으로 INSERT 가 실패함(=올리기 안됨 증상).
+  //    OAuth/매직링크로 가입한 사용자 중 트리거가 실패한 케이스를 클라 측에서 매번 복구함.
+  async function ensureProfileRow() {
+    if (!window.supabase) return false;
+    const { data: { user } } = await window.supabase.auth.getUser();
+    if (!user) return false;
+    // 이미 있으면 통과
+    const { data: existing } = await window.supabase
+      .from('profiles').select('id').eq('id', user.id).maybeSingle();
+    if (existing) return true;
+    // 1차 — 클라에서 직접 upsert (RLS 가 self-insert 허용해야 동작)
+    const md = user.user_metadata || {};
+    const fallbackName = md.name || md.full_name || md.user_name
+      || (user.email ? user.email.split('@')[0] : '익명');
+    const { error: upErr } = await window.supabase
+      .from('profiles')
+      .upsert({ id: user.id, name: fallbackName }, { onConflict: 'id' });
+    if (!upErr) return true;
+    console.warn('[ensureProfileRow] direct upsert failed, trying RPC fallback:', upErr.message);
+    // 2차 — RPC 호출 (SECURITY DEFINER 로 RLS 우회 가능). 2026_06_01 마이그레이션 필요.
+    try {
+      const { error: rpcErr } = await window.supabase.rpc('ensure_my_profile');
+      if (!rpcErr) {
+        const { data: r2 } = await window.supabase
+          .from('profiles').select('id').eq('id', user.id).maybeSingle();
+        if (r2) return true;
+      } else {
+        console.error('[ensureProfileRow] RPC fallback failed:', rpcErr.message);
+      }
+    } catch (e) {
+      console.error('[ensureProfileRow] RPC threw', e && e.message);
+    }
+    // 마지막 한 번 더 확인 (동시 생성 케이스)
+    const { data: retry } = await window.supabase
+      .from('profiles').select('id').eq('id', user.id).maybeSingle();
+    return !!retry;
+  }
+  // 외부 인서트 경로에서도 쓸 수 있게 전역 노출
+  window.ensureProfileRow = ensureProfileRow;
+
   async function syncCurrentUser() {
     if (!window.supabase) { window.__currentUser = null; return null; }
     const { data: { session } } = await window.supabase.auth.getSession();
@@ -408,6 +449,10 @@
       if (!window.supabase) throw new Error('Supabase SDK not ready');
       const { data: { user } } = await window.supabase.auth.getUser();
       if (!user) throw new Error('로그인이 필요해요');
+      // ⚠️ wall_notes.author_id 는 profiles(id) 를 참조하는 FK — profiles 행 없으면 인서트 실패.
+      // 사용자 중 일부(트리거 실패한 OAuth/매직링크) 가 영향받으므로 매번 보장.
+      const ok = await ensureProfileRow();
+      if (!ok) throw new Error('프로필 정보가 없어 글을 올릴 수 없어요. 로그아웃 후 다시 로그인 해주세요.');
       const profile = window.__currentUser;
       const author_name = (profile && profile.name) || (user.email ? user.email.split('@')[0] : '익명');
       const payload = {
@@ -448,6 +493,9 @@
       if (!window.supabase) throw new Error('Supabase SDK not ready');
       const { data: { user } } = await window.supabase.auth.getUser();
       if (!user) throw new Error('로그인이 필요해요');
+      // FK 보장: wall_note_comments.author_id → profiles(id)
+      const ok = await ensureProfileRow();
+      if (!ok) throw new Error('프로필 정보가 없어 댓글을 올릴 수 없어요. 로그아웃 후 다시 로그인 해주세요.');
       const profile = window.__currentUser;
       const name = (authorName && authorName.trim())
         || (profile && profile.name)
@@ -803,16 +851,10 @@
 
       // ⚠️ tracks.artist_id 는 profiles(id) 를 참조하는 FK다. 프로필 행이 없으면
       // 업로드가 FK 위반으로 실패한다(=어떤 사람은 되고 어떤 사람은 안 되는 원인).
-      // 일부 OAuth/구가입 유저는 프로필 행이 없을 수 있으니, 업로드 직전에 보장한다.
-      try {
-        const md = user.user_metadata || {};
-        const fallbackName = md.name || md.full_name || md.user_name
-          || (user.email ? user.email.split('@')[0] : '익명');
-        await window.supabase
-          .from('profiles')
-          .upsert({ id: user.id, name: fallbackName }, { onConflict: 'id', ignoreDuplicates: true });
-      } catch (e) {
-        console.warn('[Tracks.insert] ensure profile row', e && e.message);
+      // ensureProfileRow가 없으면 만들고, 그래도 안 되면 에러로 빨리 알린다.
+      const ok = await ensureProfileRow();
+      if (!ok) {
+        throw new Error('프로필 정보가 없어 업로드가 막혀요. 로그아웃 후 다시 로그인 해주세요.');
       }
 
       const payload = {
@@ -1039,6 +1081,9 @@
       if (!window.supabase) throw new Error('Supabase SDK not ready');
       const { data: { user } } = await window.supabase.auth.getUser();
       if (!user) throw new Error('로그인이 필요해요');
+      // FK 보장: track_comments.author_id → profiles(id)
+      const ok = await ensureProfileRow();
+      if (!ok) throw new Error('프로필 정보가 없어 댓글을 올릴 수 없어요. 로그아웃 후 다시 로그인 해주세요.');
       const profile = window.__currentUser;
       const name = (authorName && authorName.trim())
         || (profile && profile.name)
