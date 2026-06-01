@@ -2610,6 +2610,11 @@ window.openNoteDetail = function(noteId) {
   setTimeout(() => {
     const input = document.getElementById('comment-text');
     if (input) input.focus();
+    // 모달 열릴 때 곡이 같이 재생 중이면 음원 칩을 자동으로 펼쳐서 뭐가 재생 중인지 잘 보이게.
+    if (note.trackId) {
+      const chip = document.querySelector('#note-detail-modal .note-track-chip-mini');
+      if (chip) chip.classList.add('is-expanded');
+    }
   }, 100);
 
   // 백그라운드로 최신 댓글 가져와서 목록만 조용히 업데이트 (모달은 즉시 떴음)
@@ -2789,10 +2794,17 @@ function _noteUp() {
     return;   // Don't open detail modal on drag-release
   }
 
-  // Short click/tap (no drag) → 항상 디테일 모달 열기.
-  // 곡 재생은 모달 안의 음원 칩(클릭하면 펼쳐지면서 재생)에서만.
+  // Short click/tap (no drag):
+  //  · 곡이 첨부된 메모 → 모달 열고 + 그 곡 바로 재생 (둘 다 동시에)
+  //  · 곡 없는 메모 → 모달만 열림
   const noteId = el.dataset.noteId;
   if (!noteId) return;
+  const db = window.DB.get();
+  const note = (db.notes || []).find(n => n && n.id === noteId)
+            || (Array.isArray(window.__wallNotes) ? window.__wallNotes.find(n => n.id === noteId) : null);
+  if (note && note.trackId && typeof window.playTrack === 'function') {
+    setTimeout(() => window.playTrack(note.trackId, 'wall'), 10);
+  }
   if (typeof window.openNoteDetail === 'function') {
     setTimeout(() => window.openNoteDetail(noteId), 10);
   }
