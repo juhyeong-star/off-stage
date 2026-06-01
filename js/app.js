@@ -2074,7 +2074,7 @@ async function renderWall() {
         ${bookmarkBtn}
         <div class="note-body" style="-webkit-line-clamp:${bodyClamp};">${safeText}</div>
         ${isClamped ? `<button class="note-more-text" onclick="event.stopPropagation(); openNoteDetail('${note.id}');">더보기</button>` : ''}
-        <div class="note-author">— ${safeAuthor}</div>
+        <div class="note-author">${safeAuthor}</div>
         <div class="note-bottom">
           ${commentsTeaser}
           ${user ? '' : trackChip}
