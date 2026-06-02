@@ -1749,18 +1749,48 @@ body:has(#shape-shorts-overlay) .deco-shape {
 .follow-row-btn:hover { background: rgba(29,185,84,0.15); }
 .follow-row-btn.is-following:hover { background: #19a04a; }
 
-/* 아티스트 이름 아래 자기소개 (bio) — 한 두 줄 짧게 */
-.artist-bio-line {
-  margin: 6px 0 2px;
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--text-secondary, #aaa);
+/* 아티스트 페이지 — 칩 아래의 인라인 자기소개 영역.
+   본인이 비어있을 땐 안내 placeholder, 작성됐을 땐 본 글, 다른 사람 페이지에서
+   비어있으면 hidden. 자기소개프로필 버튼 자리를 대체. */
+.artist-bio-inline {
+  margin: 14px 0 2px;
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.18);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-color, #fff);
   font-weight: 500;
   white-space: pre-wrap;
   word-break: break-word;
-  max-width: 100%;
+  max-width: 540px;
+  min-height: 44px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
 }
-.artist-bio-line[hidden] { display: none; }
+.artist-bio-inline:hover {
+  background: rgba(0,0,0,0.26);
+  border-color: rgba(29,185,84,0.4);
+}
+.artist-bio-inline-empty {
+  color: var(--text-secondary, #aaa);
+  font-size: 12.5px;
+  font-style: italic;
+}
+.artist-bio-inline-empty i { margin-right: 4px; }
+.artist-bio-inline[hidden] { display: none; }
+
+/* 메세지 칩 — 팔로워/팔로잉 옆에 들어가는 본인 전용 액션 칩 */
+.follow-chip.follow-chip-msg {
+  background: rgba(29,185,84,0.12);
+  border-color: rgba(29,185,84,0.4);
+  color: #1DB954;
+}
+.follow-chip.follow-chip-msg:hover {
+  background: rgba(29,185,84,0.22);
+  border-color: rgba(29,185,84,0.7);
+}
 
 /* ───── 팔로워 별자리 (constellation) — 본인 페이지 전용 ───── */
 .constellation-overlay {

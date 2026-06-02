@@ -7416,6 +7416,16 @@ window.editProfile = function () {
           <div class="form-note">파일을 업로드하면 입력된 URL보다 우선 적용됩니다.</div>
         </div>
 
+        <div class="form-group">
+          <label>자기소개 <span style="color:var(--text-secondary); font-weight:400; font-size:12px;">— 100자까지, 아티스트 페이지에 표시</span></label>
+          <textarea class="form-control" id="edit-bio" maxlength="100" rows="3"
+            style="resize:vertical;"
+            placeholder="자유롭게 — 어떤 음악 하는지, 무엇을 좋아하는지">${((db.currentUser.bio || '')).replace(/</g,'&lt;').replace(/"/g,'&quot;')}</textarea>
+          <div class="form-note">
+            <span id="edit-bio-counter">${(db.currentUser.bio || '').length} / 100</span>
+          </div>
+        </div>
+
         <!-- SNS 계정 연동 — 임시 숨김 (사용자 요청). 데이터는 보존됨. -->
         <div style="display:none;" aria-hidden="true">
           <h2 style="font-size: 18px; border-bottom: 1px solid var(--divider); padding-bottom: 10px; margin: 30px 0 20px;">SNS 계정 연동</h2>
@@ -7452,6 +7462,17 @@ window.editProfile = function () {
       </form>
     </div>
   `;
+
+  // bio 글자수 실시간 카운터
+  try {
+    const _bioTa = document.getElementById('edit-bio');
+    const _bioCt = document.getElementById('edit-bio-counter');
+    if (_bioTa && _bioCt) {
+      _bioTa.addEventListener('input', () => {
+        _bioCt.textContent = _bioTa.value.length + ' / 100';
+      });
+    }
+  } catch (_) {}
 
   document.getElementById('edit-profile-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -7551,6 +7572,12 @@ window.editProfile = function () {
           console.warn('[edit-profile] __currentUser.id 와 session user.id 가 다름 — 세션 user.id 사용');
         }
 
+        // 자기소개 (bio) 도 함께 저장 — 같은 폼에서 처리
+        const newBio = (function () {
+          const el = document.getElementById('edit-bio');
+          return el ? el.value.trim().slice(0, 100) : (db.currentUser.bio || '');
+        })();
+
         // .select('id, name, avatar_url') 로 진짜 업데이트된 row 를 받아온다.
         // RLS 가 막아도 error 가 안 나오므로, data 가 빈 배열이면 0행 매치 → 진단 가능.
         const { data: updRows, error: upErr } = await withTimeout(
@@ -7559,13 +7586,14 @@ window.editProfile = function () {
             .update({
               name: newName,
               avatar_url: finalAvatarUrl,
+              bio: newBio || null,
               sns_instagram: sns.instagram || null,
               sns_youtube:   sns.youtube || null,
               sns_tiktok:    sns.tiktok || null,
               sns_twitter:   sns.twitter || null
             })
             .eq('id', targetId)
-            .select('id, name, avatar_url'),
+            .select('id, name, avatar_url, bio'),
           8000, 'profile update');
         if (upErr) {
           console.error('[edit-profile] update error full object:', upErr);
@@ -7586,13 +7614,14 @@ window.editProfile = function () {
             .update({
               name: newName,
               avatar_url: finalAvatarUrl,
+              bio: newBio || null,
               sns_instagram: sns.instagram || null,
               sns_youtube:   sns.youtube || null,
               sns_tiktok:    sns.tiktok || null,
               sns_twitter:   sns.twitter || null
             })
             .eq('id', targetId)
-            .select('id, name, avatar_url');
+            .select('id, name, avatar_url, bio');
           if (retryErr) throw new Error('재시도 DB 업데이트 실패: ' + retryErr.message);
           if (!Array.isArray(retryRows) || retryRows.length === 0) {
             throw new Error('프로필 행이 매치되지 않았어요. id=' + targetId +
@@ -7613,6 +7642,7 @@ window.editProfile = function () {
           window.__currentUser.name = newName;
           window.__currentUser.avatar = finalAvatarUrl;
           window.__currentUser.avatar_url = finalAvatarUrl;
+          window.__currentUser.bio = newBio;
           window.__currentUser.sns = sns;
         }
         try {
@@ -7621,6 +7651,7 @@ window.editProfile = function () {
             cached.currentUser.id = targetId;
             cached.currentUser.name = newName;
             cached.currentUser.avatar = finalAvatarUrl;
+            cached.currentUser.bio = newBio;
             cached.currentUser.sns = sns;
           }
           // ── 이 사용자가 올린 트랙들 — artist 이름/아바타 새로 반영
@@ -9162,12 +9193,7 @@ function renderArtistProfile(artistName) {
               <img src="${avatar}" class="artist-avatar" alt="${safeName}">
               <div class="artist-id-text">
                 <h1>${safeName}</h1>
-                ${initialBio ? `
-                  <p id="artist-bio-line" class="artist-bio-line">
-                    ${initialBio.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
-                  </p>
-                ` : `<p id="artist-bio-line" class="artist-bio-line" hidden></p>`}
-                <!-- 팔로워 / 팔로잉 카운트 칩 — 본인이든 남이든 보임. 카운트는 비동기로 채워짐. -->
+                <!-- 팔로워 / 팔로잉 + 메세지(본인만) 칩 row — 카운트는 비동기로 채워짐. -->
                 <div class="artist-follow-chips" id="artist-follow-chips">
                   <button class="follow-chip" id="follow-chip-followers" onclick="openFollowListModal('followers', '${safeName.replace(/'/g,"\\'")}', '${artistSupabaseId || ''}')">
                     <i class="ri-group-line"></i> 팔로워 <strong id="follow-chip-fans-n">${fanCount || 0}</strong>
@@ -9175,6 +9201,11 @@ function renderArtistProfile(artistName) {
                   <button class="follow-chip" id="follow-chip-followings" onclick="openFollowListModal('followings', '${safeName.replace(/'/g,"\\'")}', '${artistSupabaseId || ''}')">
                     <i class="ri-user-3-line"></i> 팔로잉 <strong id="follow-chip-followings-n">0</strong>
                   </button>
+                  ${isSelf ? `
+                    <button class="follow-chip follow-chip-msg" onclick="openDmInboxModal()" title="받은 메세지 보기">
+                      <i class="ri-mail-fill"></i> 메세지
+                    </button>
+                  ` : ''}
                 </div>
                 <!-- 역할 라벨('아티스트') 숨김 — 사용자 요청. id/style은 유지해 다른 코드 안 깨지게. -->
                 <div style="display:none;" aria-hidden="true">
@@ -9203,16 +9234,19 @@ function renderArtistProfile(artistName) {
                   </div>
                   `;
                 })() : ''}
+                <!-- 자기소개 인라인 (칩 아래) — 작성됐으면 표시, 본인 + 비어있으면 안내 -->
                 ${isSelf ? `
-                  <div class="artist-action-row" style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
-                    <button class="follow-btn-v2" onclick="openProfileBioModal()">
-                      <i class="ri-user-3-line"></i> 자기소개 프로필
-                    </button>
-                    <button class="dm-btn-v2" onclick="openDmInboxModal()">
-                      <i class="ri-mail-fill"></i> 메세지
-                    </button>
+                  <div id="artist-bio-line" class="artist-bio-inline" onclick="editProfile()" title="프로필 설정에서 수정">
+                    ${initialBio
+                      ? initialBio.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')
+                      : '<span class="artist-bio-inline-empty"><i class="ri-edit-line"></i> 자기소개를 적어보세요 — 우상단 ⚙️ 에서</span>'
+                    }
                   </div>
-                ` : ''}
+                ` : (initialBio ? `
+                  <div id="artist-bio-line" class="artist-bio-inline">
+                    ${initialBio.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
+                  </div>
+                ` : `<div id="artist-bio-line" class="artist-bio-inline" hidden></div>`)}
               </div>
             </div>
           </div>
