@@ -3025,6 +3025,15 @@ window.openNoteDetail = function(noteId) {
   const c = NOTE_COLORS[note.color] || NOTE_COLORS.yellow;
   const safeText = (note.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
   const safeAuthor = (note.author || '').replace(/</g,'&lt;');
+  // 작성 날짜 — 모달 왼쪽 위에 작게 (벽 카드와 같은 포맷)
+  const _modalDate = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
+  };
+  const modalDateStr = _modalDate(note.createdAt || note.created_at);
+  const modalDateChip = modalDateStr ? `<div class="note-detail-date">${modalDateStr}</div>` : '';
 
   // 댓글 목록 HTML — note.comments 가 바뀔 때 다시 그려서 in-place 업데이트.
   // (예전엔 모달 열기 전에 fetchComments 를 await 해서 클릭 후 1~2초 멈춰있던 게 원인)
@@ -3087,14 +3096,17 @@ window.openNoteDetail = function(noteId) {
   const modalHtml = `
     <div id="note-detail-modal" class="note-detail-modal" onclick="if(event.target===this) closeNoteDetail()">
       <div class="note-detail-content note-detail-paper" style="background:${c.bg}; color:${c.text};">
+        ${modalDateChip}
         <button class="note-detail-close" onclick="closeNoteDetail()"><i class="ri-close-line"></i></button>
         <div class="note-detail-postit">
           ${bookmarkBtnModal}
           <div class="note-body">${safeText}</div>
-          <div class="note-author-line">
-            <a href="#" class="author-link" onclick="event.preventDefault(); closeNoteDetail(); navigateTo('artist:' + encodeURIComponent('${safeAuthor}'))">${safeAuthor}</a>
+          <div class="note-meta-row note-meta-row-in-modal">
+            <div class="note-author-line">
+              <a href="#" class="author-link" onclick="event.preventDefault(); closeNoteDetail(); navigateTo('artist:' + encodeURIComponent('${safeAuthor}'))">${safeAuthor}</a>
+            </div>
+            ${_renderNoteTrackChip(note)}
           </div>
-          ${_renderNoteTrackChip(note)}
         </div>
 
         <div class="comments-scribble">

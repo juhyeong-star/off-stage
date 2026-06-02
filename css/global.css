@@ -3428,14 +3428,17 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
     grid-column: 1 / -1;
   }
   .wall-board > .wall-note {
-    position: static !important;  /* 절대배치 → 그리드 셀로 흘러가게 */
+    /* relative : 그리드 셀로 흘러가게 하면서도 자식 absolute(.note-date 등)의
+       기준점이 카드가 되게. static 이면 .note-date 가 wall-board 기준으로
+       엉뚱한 자리에 떠서 화면 밖으로 사라짐 — 모바일에 날짜 안 보이던 원인. */
+    position: relative !important;
     width: auto !important;
     min-width: 0;
     grid-column: span 1;
-    height: 280px !important;      /* 모든 카드 동일 크기 — 살짝 더 키움 */
+    height: 280px !important;
     min-height: 0 !important;
     max-height: 280px;
-    padding: 22px 14px 12px;       /* 위쪽 날짜 칩 자리 */
+    padding: 22px 14px 12px;
     font-size: 15px;
     line-height: 1.35;
     cursor: default;
@@ -3795,19 +3798,36 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   box-shadow: 0 22px 60px rgba(0,0,0,0.55);
   overflow: hidden;
 }
-/* 본문 섹션은 모달 위쪽 절반을 안정적으로 차지 — 짧게 쓰든 길게 쓰든
-   작성자/음원이 가운데 부근에 자리 잡게.
-   내부도 flex-column 으로 만들어 본문은 위, 작성자+음원은 아래로 밀어냄.  */
+/* 본문 섹션 — 모달 위쪽 절반을 안정적으로 차지.
+   작성자 + 음원은 .note-meta-row 로 묶여 오른쪽 맨 아래에 자리 잡음. */
 .note-detail-paper .note-detail-postit {
   flex-shrink: 0;
-  min-height: 340px;            /* PC 기준 — 모달 780 의 ~44% */
+  min-height: 340px;            /* PC 기준 */
   display: flex;
   flex-direction: column;
 }
 .note-detail-paper .note-detail-postit .note-body { flex-shrink: 0; }
-.note-detail-paper .note-detail-postit .note-author-line {
-  margin-top: auto;             /* 작성자 줄을 본문 섹션 아래로 밀어냄 */
+/* 모달 안의 작성자 + 음원 meta-row — 본문 섹션 오른쪽 맨 아래로 */
+.note-detail-paper .note-meta-row-in-modal {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 8px;
 }
+.note-detail-paper .note-meta-row-in-modal .note-author-line {
+  margin: 0;
+  text-align: right;
+  font-size: 15px;
+  font-style: italic;
+  opacity: 0.85;
+}
+.note-detail-paper .note-meta-row-in-modal .note-track-thumb {
+  margin: 0 !important;
+  flex-shrink: 0;
+}
+/* 댓글 영역 — 위쪽 공간 비우고 아래쪽(입력칸 근처)부터 채우게 */
 .note-detail-paper .comments-scribble {
   flex: 1; min-height: 0;
   display: flex; flex-direction: column;
@@ -3815,8 +3835,23 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 }
 .note-detail-paper #note-detail-comments-list {
   flex: 1; min-height: 0; overflow-y: auto;
+  display: flex; flex-direction: column;
+  justify-content: flex-end;     /* 댓글이 아래쪽부터 쌓이게 — 위 공간 비움 */
 }
 .note-detail-paper .scribble-input-row { flex-shrink: 0; margin-top: auto; }
+
+/* 모달 왼쪽 위 작성 날짜 칩 — 닫기 버튼 옆 (반대편) */
+.note-detail-date {
+  position: absolute;
+  top: 6px;
+  left: 38px;                    /* 닫기 버튼(top:-6 left:-6) 옆 */
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.55;
+  font-family: var(--font-pretendard, system-ui);
+  pointer-events: none;
+  z-index: 5;
+}
 .note-detail-paper .note-detail-postit {
   background: transparent !important;
   color: inherit !important;
@@ -4924,6 +4959,11 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
     min-height: 38vh !important;          /* 모바일: 본문 섹션이 화면 위 38% 확보 */
     display: flex !important;
     flex-direction: column !important;
+  }
+  /* 모바일 모달 날짜 — 닫기 버튼(left:14)과 수집(right:14) 사이, 가운데 위쪽 */
+  .note-detail-paper .note-detail-date {
+    top: calc(18px + env(safe-area-inset-top)) !important;
+    left: 60px !important;                /* 모바일 닫기 버튼(44px) 옆 */
   }
   /* 낙서/댓글 영역은 남는 공간 전부 차지하면서 입력칸은 맨 아래에 고정 */
   /* 점선 구분은 사용자 요청으로 제거 — 이름 아래에 보이던 그 점선 */
