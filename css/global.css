@@ -3902,9 +3902,9 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   padding: 28px 30px 18px !important;
 }
 .note-detail-diary .note-diary-title {
-  font-family: 'Pretendard', 'Noto Sans KR', system-ui, sans-serif;
-  font-weight: 800;
-  font-size: 26px;
+  font-family: 'Noto Serif KR', 'Nanum Myeongjo', serif !important;
+  font-weight: 900 !important;
+  font-size: 28px;
   line-height: 1.3;
   margin: 8px 0 16px;
   color: inherit;
@@ -14853,19 +14853,33 @@ body:has(#global-player.expanded) .global-back-btn {
 }
 .demo-card .demo-card-note-empty i { margin-right: 4px; }
 
-/* Note detail modal — 기본 Pretendard. 단 일기 모드(.note-diary-*) 는 예외 — 본문 serif. */
+/* Note detail modal — 일기 모드는 전체적으로 serif 톤.
+   제목/본문/댓글/입력칸 모두 Noto Serif KR. 제목만 더 굵게. */
 #note-detail-modal,
-#note-detail-modal *:not(i):not([class*="ri-"]):not(.note-diary-body):not(.note-diary-title) {
-  font-family: var(--font-pretendard) !important;
-  font-weight: 700 !important;
+#note-detail-modal *:not(i):not([class*="ri-"]):not(.note-diary-body):not(.note-diary-title):not(.comment-line):not(.comment-text):not(.comment-arrow):not(.comment-author):not(.no-comments):not(.scribble-input) {
+  font-family: 'Noto Serif KR', 'Nanum Myeongjo', serif !important;
+  font-weight: 400 !important;
 }
 #note-detail-modal .note-diary-title {
-  font-family: 'Pretendard', 'Noto Sans KR', system-ui, sans-serif !important;
-  font-weight: 800 !important;
+  font-family: 'Noto Serif KR', 'Nanum Myeongjo', serif !important;
+  font-weight: 900 !important;                /* 본문보다 더 굵게 */
 }
 #note-detail-modal .note-diary-body {
   font-family: 'Noto Serif KR', 'Nanum Myeongjo', 'Times New Roman', serif !important;
   font-weight: 400 !important;
+}
+/* 댓글들 — 본문과 같은 serif 폰트로 (사용자 요청) */
+#note-detail-modal .comment-line,
+#note-detail-modal .comment-text,
+#note-detail-modal .comment-arrow,
+#note-detail-modal .comment-author,
+#note-detail-modal .no-comments,
+#note-detail-modal .scribble-input {
+  font-family: 'Noto Serif KR', 'Nanum Myeongjo', serif !important;
+  font-weight: 400 !important;
+}
+#note-detail-modal .scribble-input::placeholder {
+  font-family: 'Noto Serif KR', serif !important;
 }
 #note-detail-modal i[class*="ri-"] {
   font-family: 'remixicon' !important;

@@ -9395,11 +9395,14 @@ function renderArtistProfile(artistName) {
   // 안전 바인딩 — 모든 핵심 버튼을 렌더 직후 addEventListener 로 직접 묶음.
   // (인라인 onclick 이 이스케이프/CSP 등으로 안 먹는 케이스 회피)
   try {
+    // 본인 페이지에선 __currentUser.id 가 가장 정확 (트랙 없는 사용자도 OK)
+    const _selfId = (isSelf && window.__currentUser && window.__currentUser.id) || '';
+    const _initialId = artistSupabaseId || _selfId || '';
     // 팔로워/팔로잉 칩 — 즉시(synchronous) 1차 바인딩. 아래 async 가 finalize.
     const _chipFs = document.getElementById('follow-chip-followers');
     const _chipFi = document.getElementById('follow-chip-followings');
-    if (_chipFs) _chipFs.onclick = (e) => { e.preventDefault(); openFollowListModal('followers', artistName, artistSupabaseId || ''); };
-    if (_chipFi) _chipFi.onclick = (e) => { e.preventDefault(); openFollowListModal('followings', artistName, artistSupabaseId || ''); };
+    if (_chipFs) _chipFs.onclick = (e) => { e.preventDefault(); openFollowListModal('followers', artistName, _initialId); };
+    if (_chipFi) _chipFi.onclick = (e) => { e.preventDefault(); openFollowListModal('followings', artistName, _initialId); };
 
     const _msgChip = document.querySelector('#artist-follow-chips .follow-chip-msg');
     if (_msgChip) {
@@ -9441,6 +9444,12 @@ function renderArtistProfile(artistName) {
   (async () => {
     try {
       let aid = artistSupabaseId;
+      // 본인 페이지면 __currentUser.id 즉시 사용 — 트랙 없는 사용자도 정확한 ID 보장.
+      // (트랙 lookup 만으론 aid 가 null 일 수 있고, getArtistIdByName 은 동명이인
+      //  / 이름 정확히 안 맞는 케이스에서 실패할 수 있음)
+      if (!aid && isSelf && window.__currentUser && window.__currentUser.id) {
+        aid = window.__currentUser.id;
+      }
       if (!aid && window.Follows && window.Follows.getArtistIdByName) {
         aid = await window.Follows.getArtistIdByName(artistName);
       }
