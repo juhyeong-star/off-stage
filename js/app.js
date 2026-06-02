@@ -2245,13 +2245,9 @@ async function renderWall() {
     // 포스트잇에 첨부된 노래 칩 — 오른쪽 아래 보내기(✈) 버튼 옆에 작게 둔다.
     const trackChip = _renderNoteTrackChip(note);
 
-    // Inline comment input — only for logged-in users. 엔터로 보내기.
-    // 노래 칩은 카드 상단(이름 밑)에 하나만, 입력칸 옆 칩은 제거 (요청).
-    const inlineForm = user ? `
-      <form class="note-inline-form" onsubmit="event.preventDefault(); submitInlineComment('${note.id}', this);">
-        <input type="text" class="note-inline-input" maxlength="200" placeholder="ㄴ">
-      </form>
-    ` : '';
+    // 인라인 입력칸 제거 (사용자 요청) — 카드가 지저분해 보여서.
+    // 댓글은 카드 클릭 → 모달 열고 거기서만 작성. 메인 그리드는 보기 전용.
+    const inlineForm = '';
 
     // 작성 날짜 — 왼쪽 위에 작게 표시 (YYYY년 M월 D일 형식)
     const _wallDate = (iso) => {
