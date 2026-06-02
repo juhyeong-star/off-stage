@@ -4663,10 +4663,20 @@ function _shapeShortsMount() {
     //   · |dy| >= |dx| * 0.4 로 완화 (기존: |dy| > |dx|, 즉 45° 이상만 인정)
     //     → 약 22° 이상이면 인정 — 대각선 자연스럽게 인식.
     if (Math.abs(dy) >= 50 && Math.abs(dy) >= Math.abs(dx) * 0.4) {
+      // 경계 케이스(첫/마지막 카드)는 _shapeShortsGo 가 아무것도 안 하고 return —
+      // 이때 카드가 끌어 놓은 자리에 박혀있으므로 직접 spring-back 시켜야 한다.
+      const _prevIdx = window.__shapeShorts ? window.__shapeShorts.idx : -1;
       _shapeShortsGo(dy < 0 ? 'next' : 'prev');
+      const _newIdx = window.__shapeShorts ? window.__shapeShorts.idx : -1;
+      if (_prevIdx === _newIdx && wasDragging && stage) {
+        // 더 이상 갈 곳이 없으니 원위치로 부드럽게 — 일반 spring-back 과 동일
+        stage.style.transition = 'transform 0.34s cubic-bezier(0.34,1.56,0.64,1)';
+        stage.style.transform = 'translate(0, 0) rotate(0deg)';
+        stage.style.willChange = '';
+      }
       return;
     }
-    // 안 넘기면 부드럽게 원위치 (살짝 spring 느낌의 ease)
+    // 임계값 못 넘기면 부드럽게 원위치 (살짝 spring 느낌의 ease)
     if (wasDragging) {
       stage.style.transition = 'transform 0.34s cubic-bezier(0.34,1.56,0.64,1)';
       stage.style.transform = 'translate(0, 0) rotate(0deg)';
