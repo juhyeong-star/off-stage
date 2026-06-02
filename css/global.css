@@ -1749,12 +1749,15 @@ body:has(#shape-shorts-overlay) .deco-shape {
 .follow-row-btn:hover { background: rgba(29,185,84,0.15); }
 .follow-row-btn.is-following:hover { background: #19a04a; }
 
-/* 아티스트 페이지 — 칩 아래의 인라인 자기소개. 노란 포스트잇 톤. */
+/* 아티스트 페이지 — 칩 아래의 인라인 자기소개. 노란 포스트잇 톤.
+   flex + justify-start 로 글자를 박스 왼쪽 끝에 확실히 박음. */
 .artist-bio-inline {
-  display: block;                             /* 자체 한 줄, 왼쪽 정렬 명확하게 */
-  width: fit-content;                         /* 글자 길이에 맞게 — 빈 공간 X */
-  margin: 14px 0 2px !important;
-  padding: 14px 18px !important;
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+  width: fit-content !important;
+  margin: 14px auto 2px 0 !important;        /* margin-right auto → 왼쪽으로 박스 자체도 박힘 */
+  padding: 14px 22px 14px 18px !important;
   background: #FFE066 !important;
   border: 1px solid #F4B400 !important;
   border-radius: 6px !important;
