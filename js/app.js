@@ -8038,7 +8038,7 @@ function renderProjectBox(pid, versions) {
   const journeyLabel = demoCount > 0 && final
     ? `데모 ${demoCount}개 → 마스터`
     : demoCount > 0
-      ? `작업 중 · 데모 ${demoCount}개`
+      ? `Coming Soon... · 데모 ${demoCount}개`
       : '마스터';
 
   // Edit cover button — only for project owner with Supabase tracks
@@ -8059,7 +8059,7 @@ function renderProjectBox(pid, versions) {
   ` : `
     <div class="project-cover-wrap no-master">
       <img src="${primary.cover}" class="project-cover-large" alt="${safeTitle}" loading="lazy">
-      <div class="project-wip-badge">작업 중</div>
+      <div class="project-wip-badge">Coming Soon...</div>
       ${editCoverBtn}
     </div>
   `;
@@ -8111,15 +8111,19 @@ function renderProjectBox(pid, versions) {
     </div>
   ` : '';
 
-  // Master page — yellow sticky-note style, same shape as the demo pages
-  // so the carousel feels consistent. Small cover thumb + title + meta on
-  // top row; then cheer button; then master diary + comments + input.
+  // Master page — yellow sticky-note style, same shape as the demo pages.
+  // 마스터가 아직 안 올라온 프로젝트는 제목/아티스트 모두 'Coming Soon' 으로.
   const masterLiked = final ? isTrackLiked(final.id) : false;
   const coverImg = (final && final.cover) || primary.cover || '';
+  const _displayTitle = final ? safeTitle : 'Coming Soon';
+  const _artistRaw = (final && final.artist) || (primary && primary.artist) || '';
+  const _displayArtist = final ? _artistRaw : 'Coming Soon';
+  const _safeArtist = (_displayArtist || '').replace(/</g,'&lt;');
+  const _badgeText = final ? '✦ MASTER' : 'Coming Soon...';
   const masterPageHtml = `
     <div class="project-page page-cover ${final ? 'has-master' : ''}" data-track-id="${final ? final.id : (primary && primary.id || '')}">
       <div class="demo-card-top">
-        <span class="demo-tag master-badge">${final ? '✦ MASTER' : '작업 중'}</span>
+        <span class="demo-tag master-badge">${_badgeText}</span>
         ${final ? `
           <button class="demo-card-like ${masterLiked ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${final.id}', this)" title="내 우주에 모으기">
             <i class="${masterLiked ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
@@ -8127,13 +8131,14 @@ function renderProjectBox(pid, versions) {
         ` : ''}
       </div>
       <div class="master-head-row" ${final ? `onclick="event.stopPropagation(); playTrack('${final.id}')"` : ''}>
-        <div class="master-cover-thumb">
-          <img src="${coverImg}" alt="${safeTitle}" loading="lazy">
+        <div class="master-cover-thumb ${final ? '' : 'no-master'}">
+          <img src="${coverImg}" alt="${_displayTitle}" loading="lazy">
           ${final ? '<i class="ri-play-fill master-cover-play"></i>' : ''}
         </div>
         <div class="master-head-info">
-          <div class="master-head-title">「${safeTitle}」</div>
-          ${masterDate ? `<div class="master-head-meta">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
+          <div class="master-head-title">「${_displayTitle}」</div>
+          <div class="master-head-artist">${_safeArtist}</div>
+          ${masterDate && final ? `<div class="master-head-meta">발매 · ${masterDate}</div>` : ''}
           ${participantCount > 0 ? `<div class="master-head-meta master-head-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명 응원</div>` : ''}
         </div>
       </div>
@@ -8232,7 +8237,7 @@ function renderProjectBox(pid, versions) {
              Bottom: full-width 글 (diary) + comments + input. -->
         <div class="project-master-mobile master-as-demo" ${final ? `data-track-id="${final.id}"` : ''}>
           <div class="master-top-bar">
-            <span class="demo-tag master-badge">${final ? '✦ MASTER' : '작업 중'}</span>
+            <span class="demo-tag master-badge">${final ? '✦ MASTER' : 'Coming Soon...'}</span>
             ${final && canEditArtist ? `
               <button class="demo-card-delete" onclick="event.stopPropagation(); event.preventDefault(); deleteMyTrack('${final.id}', '${(final.title||'').replace(/'/g,"\\'")}')" title="삭제">
                 <i class="ri-delete-bin-line"></i>
@@ -8256,9 +8261,10 @@ function renderProjectBox(pid, versions) {
               ${coverHtml}
             </div>
             <div class="master-compact-text">
-              <h3 class="project-title">「${safeTitle}」</h3>
+              <h3 class="project-title">「${final ? safeTitle : 'Coming Soon'}」</h3>
+              <div class="project-artist-line">${final ? ((final.artist || primary.artist || '').replace(/</g,'&lt;')) : 'Coming Soon'}</div>
               ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명 응원</div>` : ''}
-              ${masterDate ? `<div class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
+              ${masterDate && final ? `<div class="project-master-date">발매 · ${masterDate}</div>` : ''}
               ${final ? `<button type="button" class="master-tap-hint" onclick="event.stopPropagation(); openTrackCommentsModal('${final.id}')"><i class="ri-chat-3-line"></i> 탭해서 댓글 보기</button>` : ''}
             </div>
           </div>
@@ -8277,8 +8283,9 @@ function renderProjectBox(pid, versions) {
         <div class="project-album-card">
           ${coverHtml}
           <div class="project-album-meta">
-            <h3 class="project-title">「${safeTitle}」</h3>
-            ${masterDate ? `<div class="project-master-date">${final ? '발매' : '시작'} · ${masterDate}</div>` : ''}
+            <h3 class="project-title">「${final ? safeTitle : 'Coming Soon'}」</h3>
+            <div class="project-artist-line">${final ? ((final.artist || primary.artist || '').replace(/</g,'&lt;')) : 'Coming Soon'}</div>
+            ${masterDate && final ? `<div class="project-master-date">발매 · ${masterDate}</div>` : ''}
             ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
           </div>
         </div>
