@@ -1749,34 +1749,36 @@ body:has(#shape-shorts-overlay) .deco-shape {
 .follow-row-btn:hover { background: rgba(29,185,84,0.15); }
 .follow-row-btn.is-following:hover { background: #19a04a; }
 
-/* 아티스트 페이지 — 칩 아래의 인라인 자기소개 영역.
-   본인이 비어있을 땐 안내 placeholder, 작성됐을 땐 본 글, 다른 사람 페이지에서
-   비어있으면 hidden. 자기소개프로필 버튼 자리를 대체. */
+/* 아티스트 페이지 — 칩 아래의 인라인 자기소개. 노란 포스트잇 톤. */
 .artist-bio-inline {
   margin: 14px 0 2px;
-  padding: 10px 14px;
-  background: rgba(0,0,0,0.18);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
-  font-size: 13.5px;
+  padding: 14px 18px;
+  background: #FFE066;                        /* 노란 포스트잇 */
+  border: 1px solid #F4B400;
+  border-radius: 6px;
+  font-size: 15px;
   line-height: 1.55;
-  color: var(--text-color, #fff);
-  font-weight: 500;
+  color: #3E2723 !important;                  /* 진한 갈색 — 잘 보이게 */
+  font-weight: 700;
   white-space: pre-wrap;
   word-break: break-word;
+  text-align: left;                           /* 가운데 정렬 방지 */
   max-width: 540px;
-  min-height: 44px;
+  min-height: 52px;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  box-shadow: 2px 4px 12px rgba(0,0,0,0.35);
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 .artist-bio-inline:hover {
-  background: rgba(0,0,0,0.26);
-  border-color: rgba(29,185,84,0.4);
+  transform: translateY(-1px);
+  box-shadow: 2px 6px 16px rgba(0,0,0,0.45);
 }
+/* 본인 + bio 없을 때 안내 */
 .artist-bio-inline-empty {
-  color: var(--text-secondary, #aaa);
-  font-size: 12.5px;
+  color: rgba(62,39,35,0.6);
+  font-size: 13.5px;
   font-style: italic;
+  font-weight: 600;
 }
 .artist-bio-inline-empty i { margin-right: 4px; }
 .artist-bio-inline[hidden] { display: none; }
