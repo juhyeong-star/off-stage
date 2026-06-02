@@ -2301,7 +2301,7 @@ async function renderWall() {
   // (Enter는 줄바꿈으로 자유롭게 쓰게 두고, '남기기' 버튼만 클릭으로 전송)
   const writeComposer = user ? `
     <div class="wall-compose-panel" id="wall-compose-panel" hidden>
-      <textarea id="wall-text" class="form-control" rows="3" placeholder="하고 싶은 말을 자유롭게 ✍️"
+      <textarea id="wall-text" class="form-control" rows="3" placeholder="하고 싶은 말을 자유롭게"
         style="resize:none; margin-bottom:10px;"></textarea>
       <!-- Attached song preview (hidden until a track or URL is picked) -->
       <div id="wall-attach-preview" class="wall-attach-preview" hidden></div>
@@ -3074,7 +3074,7 @@ window.openNoteDetail = function(noteId) {
     const _myId = (window.__currentUser && window.__currentUser.id) || null;
     const _myName = (_me && _me.name) || '';
     if (comments.length === 0) {
-      return '<div class="no-comments">ㄴ 아직 조용하네...<br>ㄴ 첫 낙서를 남겨봐 ✍️</div>';
+      return '<div class="no-comments">ㄴ 아직 조용하네...<br>ㄴ 첫 낙서를 남겨봐</div>';
     }
     return comments.map((cm, i) => {
       const cmSafe = (cm.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -8721,7 +8721,7 @@ window.submitTrackComment = async function(trackId) {
         inputRow.parentNode.insertBefore(lineEl, inputRow);
       }
     }
-    showToast('낙서 남겼어요 ✍️');
+    showToast('낙서 남겼어요');
   } catch (e) {
     console.warn('[submitTrackComment] in-place update', e);
   } finally {
