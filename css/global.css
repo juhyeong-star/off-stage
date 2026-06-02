@@ -4038,28 +4038,27 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 .note-detail-paper .comments-scribble .no-comments {
   color: inherit !important;
   text-shadow: none !important;
-  /* 댓글 글자는 본문(16px)보다 2단계 작게 (사용자 요청) — 가독성 유지하면서
-     일기 본문과 시각적으로 구분. PC 13px / 모바일 12px. */
-  font-size: 13px !important;
-  line-height: 1.55 !important;
+  /* 댓글 글자 — 본문(16px)보다 1단계만 작게 (이전 13 → 14 로 한 단계 다시 키움) */
+  font-size: 14px !important;
+  line-height: 1.6 !important;
 }
 .note-detail-paper .comments-scribble .comment-author {
   opacity: 0.55;
-  font-size: 12px !important;     /* 작성자 라벨은 본문 댓글보다 더 작게 */
+  font-size: 13px !important;     /* 작성자 라벨은 본문 댓글보다 한 단계 더 작게 */
 }
 .note-detail-paper .comments-scribble .no-comments {
-  font-size: 13px !important;
+  font-size: 14px !important;
 }
 @media (max-width: 768px) {
   .note-detail-paper .comments-scribble .comment-line,
   .note-detail-paper .comments-scribble .comment-text,
   .note-detail-paper .comments-scribble .comment-arrow,
   .note-detail-paper .comments-scribble .no-comments {
-    font-size: 12px !important;
-    line-height: 1.5 !important;
+    font-size: 13px !important;
+    line-height: 1.55 !important;
   }
   .note-detail-paper .comments-scribble .comment-author {
-    font-size: 11px !important;
+    font-size: 12px !important;
   }
 }
 .note-detail-paper .comments-scribble .scribble-input {
