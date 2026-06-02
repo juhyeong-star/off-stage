@@ -3384,30 +3384,31 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   gap: 4px;
 }
 .wall-note .note-inline-form { margin-top: 0; }
-/* 작성자 + 음원 미니커버 — 댓글 바로 위에 한 줄로 묶음 */
+/* 작성자 + 음원 미니커버 — 카드 맨 아래 오른쪽 */
 .wall-note .note-meta-row {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  padding-bottom: 4px;
+  padding-top: 6px;
+  margin-top: 4px;
 }
 .wall-note .note-meta-row .note-author {
-  margin: 0 !important;       /* 옛 margin-top 무력화 — meta-row 안에선 갭이 gap 으로 처리됨 */
+  margin: 0 !important;
   font-style: italic;
   opacity: 0.7;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex: 0 1 auto;             /* 길면 줄어들고, 평소엔 자기 크기만 */
+  flex: 0 1 auto;
   min-width: 0;
   text-align: right;
 }
 .wall-note .note-meta-row .note-track-thumb {
-  margin: 0 !important;       /* meta-row 안에선 자체 margin 제거 */
+  margin: 0 !important;
   flex: 0 0 auto;
 }
-/* 음원이 없는 메모는 이름이 그대로 오른쪽에 단독으로 — 자연스러움 */
+/* 음원이 없는 메모는 이름만 오른쪽에 단독 표시 (gap 효과 사라짐, 자연스러움) */
 
 /* ===== 모바일: 우리들의 벽을 2칸 그리드로 정렬 (스크린샷 스타일) ===== */
 @media (max-width: 768px) {

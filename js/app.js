@@ -2270,12 +2270,12 @@ async function renderWall() {
         <div class="note-body" style="-webkit-line-clamp:${bodyClamp};">${safeText}</div>
         ${isClamped ? `<button class="note-more-text" onclick="event.stopPropagation(); openNoteDetail('${note.id}');">더보기</button>` : ''}
         <div class="note-bottom">
+          ${commentsTeaser}
+          ${inlineForm}
           <div class="note-meta-row">
             <div class="note-author">${safeAuthor}</div>
             ${trackChip}
           </div>
-          ${commentsTeaser}
-          ${inlineForm}
         </div>
       </div>
     `;
