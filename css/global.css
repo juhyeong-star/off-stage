@@ -3322,11 +3322,11 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 }
 .wall-note {
   position: absolute;
-  width: 345px;
+  width: 360px;
   /* 짧게 쓰든 길게 쓰든 항상 같은 크기 — 'ㅇㅇ' 글이 기준. 길면 본문은 안에서 잘림. */
-  height: 320px;
-  max-height: 320px;
-  padding: 28px 24px 16px;            /* 위쪽 날짜 자리 살짝 확보 */
+  height: 360px;
+  max-height: 360px;
+  padding: 30px 26px 18px;            /* 위쪽 날짜 자리 살짝 확보 */
   border-radius: 6px;
   font-family: var(--font-hand);
   font-size: 18px;
@@ -3429,9 +3429,14 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   }
   .wall-board > .wall-note {
     /* relative : 그리드 셀로 흘러가게 하면서도 자식 absolute(.note-date 등)의
-       기준점이 카드가 되게. static 이면 .note-date 가 wall-board 기준으로
-       엉뚱한 자리에 떠서 화면 밖으로 사라짐 — 모바일에 날짜 안 보이던 원인. */
+       기준점이 카드가 되게. */
     position: relative !important;
+    /* PC 자유 배치용 inline left/top/transform 이 카드에 박혀 있어서,
+       relative 모드에선 그게 그리드 셀 위치에서 오프셋으로 작용해 카드가
+       엉뚱한 곳으로 튐. 모두 무력화. */
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
     width: auto !important;
     min-width: 0;
     grid-column: span 1;
@@ -3445,6 +3450,12 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
     margin: 0 !important;
     touch-action: pan-y !important;
     overflow: hidden;
+  }
+  /* 드래그 클래스가 붙어도 모바일에선 절대 이동 안 함 */
+  .wall-board > .wall-note.dragging {
+    transform: none !important;
+    left: auto !important;
+    top: auto !important;
   }
   .wall-board > .wall-note .note-date {
     font-size: 10px;
