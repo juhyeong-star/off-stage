@@ -4991,8 +4991,15 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   .note-detail-content.note-detail-paper {
     max-width: 100% !important;
     width: 100% !important;
+    /* iOS Safari 의 동적 하단 chrome(URL 바) 이 100vh 위로 올라와서 모달 아래쪽
+       (음원 썸네일) 을 가리던 문제. dvh = dynamic viewport height — 보이는
+       영역만 잡으므로 가려지지 않음. dvh 미지원 브라우저는 vh fallback. */
     height: 100vh !important;
+    height: 100dvh !important;
     min-height: 100vh;
+    min-height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
     border-radius: 0 !important;
     padding: 0 !important;
     box-shadow: none !important;
@@ -5004,9 +5011,9 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
     padding: 44px 22px 16px !important;   /* 상단 닫기 버튼 자리 확보 */
     flex-shrink: 0;
   }
-  /* 모바일 모달의 작성자+음원 — 입력칸 아래, safe-area 까지 자연스럽게 */
+  /* 모바일 모달의 작성자+음원 — 입력칸 아래, safe-area + iOS chrome 안전영역 확보 */
   .note-detail-paper .note-meta-row-in-modal {
-    padding: 8px 22px calc(14px + env(safe-area-inset-bottom)) !important;
+    padding: 10px 22px calc(20px + env(safe-area-inset-bottom)) !important;
   }
   /* 모바일 모달 날짜 — 닫기 버튼(left:14)과 수집(right:14) 사이, 가운데 위쪽 */
   .note-detail-paper .note-detail-date {
