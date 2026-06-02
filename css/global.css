@@ -15185,7 +15185,7 @@ body:has(#global-player.expanded) .global-back-btn {
    --font-hand (Nanum 손글씨 중학생)은 오직 .floating-shape 만 유지.
    ============================================================ */
 .wall-board,
-.wall-board *:not(i):not([class*="ri-"]),
+.wall-board *:not(i):not([class*="ri-"]):not(.note-card-body):not(.note-card-title),
 .wall-toolbar-v2,
 .wall-toolbar-v2 *:not(i):not([class*="ri-"]),
 .wall-compose-panel,
@@ -15201,6 +15201,22 @@ body:has(#global-player.expanded) .global-back-btn {
 .artist-page,
 .artist-page *:not(i):not([class*="ri-"]) {
   font-family: var(--font-pretendard) !important;
+}
+/* 우리들의 벽 카드 — 일기 톤 (제목 + 본문 serif) — 위 규칙에서 예외처리 */
+.wall-board .wall-note-diary .note-card-title {
+  font-family: 'Noto Serif KR', 'Nanum Myeongjo', serif !important;
+  font-weight: 900 !important;
+}
+.wall-board .wall-note-diary .note-card-body {
+  font-family: 'Noto Serif KR', 'Nanum Myeongjo', serif !important;
+  font-weight: 400 !important;
+}
+/* 댓글 티저도 일기 톤으로 */
+.wall-board .wall-note-diary .note-comments-teaser,
+.wall-board .wall-note-diary .ct-arrow,
+.wall-board .wall-note-diary .ct-preview,
+.wall-board .wall-note-diary .ct-more {
+  font-family: 'Noto Serif KR', 'Nanum Myeongjo', serif !important;
 }
 /* Remixicon은 자기 font-family('remixicon') 그대로 유지 */
 .wall-board i[class*="ri-"],
