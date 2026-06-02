@@ -9193,16 +9193,18 @@ function renderArtistProfile(artistName) {
               <img src="${avatar}" class="artist-avatar" alt="${safeName}">
               <div class="artist-id-text">
                 <h1>${safeName}</h1>
-                <!-- 팔로워 / 팔로잉 + 메세지(본인만) 칩 row — 카운트는 비동기로 채워짐. -->
+                <!-- 팔로워 / 팔로잉 + 메세지(본인만) 칩 row.
+                     실제 클릭 핸들러는 렌더 후 addEventListener 로 바인딩 — 이스케이프
+                     문제 / 비동기 artistId 채움을 깔끔히 처리. -->
                 <div class="artist-follow-chips" id="artist-follow-chips">
-                  <button class="follow-chip" id="follow-chip-followers" onclick="openFollowListModal('followers', '${safeName.replace(/'/g,"\\'")}', '${artistSupabaseId || ''}')">
+                  <button class="follow-chip" id="follow-chip-followers" type="button">
                     <i class="ri-group-line"></i> 팔로워 <strong id="follow-chip-fans-n">${fanCount || 0}</strong>
                   </button>
-                  <button class="follow-chip" id="follow-chip-followings" onclick="openFollowListModal('followings', '${safeName.replace(/'/g,"\\'")}', '${artistSupabaseId || ''}')">
+                  <button class="follow-chip" id="follow-chip-followings" type="button">
                     <i class="ri-user-3-line"></i> 팔로잉 <strong id="follow-chip-followings-n">0</strong>
                   </button>
                   ${isSelf ? `
-                    <button class="follow-chip follow-chip-msg" onclick="openDmInboxModal()" title="받은 메세지 보기">
+                    <button class="follow-chip follow-chip-msg" type="button" title="받은 메세지 보기">
                       <i class="ri-mail-fill"></i> 메세지
                     </button>
                   ` : ''}
@@ -9302,20 +9304,9 @@ function renderArtistProfile(artistName) {
             ` : ''}
           </div>
 
-          <!-- 메세지함 탭은 자기소개프로필 옆 '메세지' 버튼으로 이동(모달).
-               #dm-inbox-mount 는 모달이 동적으로 만들고, 여기서는 hidden 으로만 둠.
-               다른 사람이 보는 응원함은 음악 아래 별도 섹션으로 남김. -->
-          ${!isSelf ? `
-            <div class="reveal" style="margin-top: 28px;">
-              <div style="font-size: 13px; color: var(--text-secondary, #aaa); font-weight: 700; margin-bottom: 10px;">
-                💝 받은 응원
-              </div>
-              <div id="cheer-heart-mount"></div>
-            </div>
-          ` : `
-            <!-- self는 mountCheerHeart 가 안전하게 끝나도록 빈 placeholder 만 둠 -->
-            <div id="cheer-heart-mount" hidden></div>
-          `}
+          <!-- '받은 응원' 섹션 제거 (사용자 요청). mountCheerHeart 가 안전하게
+               끝나도록 빈 placeholder 만 둠 — 본인/타인 모두 hidden. -->
+          <div id="cheer-heart-mount" hidden></div>
 
           ${isSelf ? `
             <div class="artist-content-pane" data-content-tab="stats" hidden>
@@ -9364,6 +9355,51 @@ function renderArtistProfile(artistName) {
     }).catch(_ => {});
   }
 
+  // 안전 바인딩 — 모든 핵심 버튼을 렌더 직후 addEventListener 로 직접 묶음.
+  // (인라인 onclick 이 이스케이프/CSP 등으로 안 먹는 케이스 회피)
+  try {
+    // 팔로워/팔로잉 칩 — 즉시(synchronous) 1차 바인딩. 아래 async 가 finalize.
+    const _chipFs = document.getElementById('follow-chip-followers');
+    const _chipFi = document.getElementById('follow-chip-followings');
+    if (_chipFs) _chipFs.onclick = (e) => { e.preventDefault(); openFollowListModal('followers', artistName, artistSupabaseId || ''); };
+    if (_chipFi) _chipFi.onclick = (e) => { e.preventDefault(); openFollowListModal('followings', artistName, artistSupabaseId || ''); };
+
+    const _msgChip = document.querySelector('#artist-follow-chips .follow-chip-msg');
+    if (_msgChip) {
+      _msgChip.onclick = (e) => {
+        e.preventDefault();
+        if (typeof window.openDmInboxModal === 'function') {
+          window.openDmInboxModal();
+        } else {
+          console.warn('[msg-chip] openDmInboxModal 함수 없음');
+        }
+      };
+    }
+    // 팔로우 / DM 보내기 버튼 (다른 사람 페이지) 도 안전 바인딩
+    const _followBtn = document.querySelector('.artist-action-row .follow-btn-v2');
+    if (_followBtn && !isSelf) {
+      _followBtn.onclick = (e) => {
+        e.preventDefault();
+        if (typeof window.toggleFollowArtist === 'function') {
+          window.toggleFollowArtist(artistSupabaseId || null, artistName);
+        } else {
+          console.warn('[follow-btn] toggleFollowArtist 함수 없음');
+        }
+      };
+    }
+    const _dmBtn = document.querySelector('.artist-action-row .dm-btn-v2');
+    if (_dmBtn && !isSelf) {
+      _dmBtn.onclick = (e) => {
+        e.preventDefault();
+        if (typeof window.openDmModal === 'function') {
+          window.openDmModal(artistName, avatar);
+        } else {
+          console.warn('[dm-btn] openDmModal 함수 없음');
+        }
+      };
+    }
+  } catch (e) { console.warn('[artist-page] safe-bind', e); }
+
   // Async: 팔로우 카운트 칩 — 팔로워(fanCount) + 팔로잉(followingCount) 채우기
   (async () => {
     try {
@@ -9372,11 +9408,15 @@ function renderArtistProfile(artistName) {
         aid = await window.Follows.getArtistIdByName(artistName);
       }
       if (!aid) return;
-      // 칩에 artistId 채워 넣기 (모달 열 때 다시 못 찾는 경우 대비)
+      // 칩에 artistId 채워 넣기 (모달 열 때 다시 못 찾는 경우 대비) — addEventListener 로 바인딩
       const chipFollowers = document.getElementById('follow-chip-followers');
       const chipFollowings = document.getElementById('follow-chip-followings');
-      if (chipFollowers) chipFollowers.setAttribute('onclick', `openFollowListModal('followers', '${safeName.replace(/'/g,"\\'")}', '${aid}')`);
-      if (chipFollowings) chipFollowings.setAttribute('onclick', `openFollowListModal('followings', '${safeName.replace(/'/g,"\\'")}', '${aid}')`);
+      if (chipFollowers) {
+        chipFollowers.onclick = (e) => { e.preventDefault(); openFollowListModal('followers', artistName, aid); };
+      }
+      if (chipFollowings) {
+        chipFollowings.onclick = (e) => { e.preventDefault(); openFollowListModal('followings', artistName, aid); };
+      }
 
       if (window.Follows && window.Follows.fanCount) {
         const fc = await window.Follows.fanCount(aid);
