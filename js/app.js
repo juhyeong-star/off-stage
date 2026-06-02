@@ -2175,7 +2175,16 @@ async function renderWall() {
     // Seeded jitter — different per-viewer so each user sees their own arrangement
     const seed = _hashSeed(_viewerSeed + ':' + note.id);
     const rot = note.rotation != null ? note.rotation : ((((seed >>> 2) % 60) - 30) / 10);
-    const safeText = _esc(note.text).replace(/\n/g,'<br>');
+    // 일기 톤 분리 — 첫 줄을 제목, 나머지를 본문으로 (사용자 요청)
+    const _raw = note.text || '';
+    const _nl = _raw.indexOf('\n');
+    let _ttl = '', _bdy = '';
+    if (_nl > 0) { _ttl = _raw.slice(0, _nl).trim(); _bdy = _raw.slice(_nl + 1); }
+    else if (_raw.length <= 40) { _ttl = _raw.trim(); _bdy = ''; }
+    else { _ttl = ''; _bdy = _raw; }
+    const safeTitleCard = _esc(_ttl);
+    const safeBodyCard  = _esc(_bdy).replace(/\n/g,'<br>');
+    const safeText = _esc(_raw).replace(/\n/g,'<br>');    // legacy fallback
     const safeAuthor = _esc(note.author);
     const isOwner = user && user.name === note.author;
     const deleteBtn = isOwner ? `<button class="note-delete" onclick="event.stopPropagation(); deleteWallNote('${note.id}')" title="삭제"><i class="ri-close-line"></i></button>` : '';
@@ -2266,11 +2275,15 @@ async function renderWall() {
     const dateStr = _wallDate(note.createdAt || note.created_at);
     const dateChip = dateStr ? `<div class="note-date">${dateStr}</div>` : '';
     return `
-      <div class="wall-note" data-note-id="${note.id}" data-author="${safeAuthor}" style="background:${c.bg}; color:${c.text}; left:${x}%; top:${yPx}px;" title="낙서·댓글 보기">
+      <div class="wall-note wall-note-diary" data-note-id="${note.id}" data-author="${safeAuthor}" style="background:${c.bg}; color:${c.text}; left:${x}%; top:${yPx}px;" title="낙서·댓글 보기">
         ${dateChip}
         ${deleteBtn}
         ${bookmarkBtn}
-        <div class="note-body" style="-webkit-line-clamp:${bodyClamp};">${safeText}</div>
+        ${safeTitleCard ? `<h3 class="note-card-title">${safeTitleCard}</h3>` : ''}
+        ${safeBodyCard
+          ? `<div class="note-card-body" style="-webkit-line-clamp:${Math.max(2, bodyClamp - (safeTitleCard ? 1 : 0))};">${safeBodyCard}</div>`
+          : (!safeTitleCard ? `<div class="note-card-body" style="-webkit-line-clamp:${bodyClamp};">${safeText}</div>` : '')
+        }
         ${isClamped ? `<button class="note-more-text" onclick="event.stopPropagation(); openNoteDetail('${note.id}');">더보기</button>` : ''}
         <div class="note-bottom">
           ${commentsTeaser}
@@ -3026,7 +3039,22 @@ window.openNoteDetail = function(noteId) {
   }
 
   const c = NOTE_COLORS[note.color] || NOTE_COLORS.yellow;
-  const safeText = (note.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  // 일기 톤 분리 — 첫 줄을 제목, 나머지를 본문으로 (사용자 요청: 일기처럼)
+  const _rawText = note.text || '';
+  const _nlIdx = _rawText.indexOf('\n');
+  let _title = '', _bodyRest = '';
+  if (_nlIdx > 0) {
+    _title = _rawText.slice(0, _nlIdx).trim();
+    _bodyRest = _rawText.slice(_nlIdx + 1);
+  } else {
+    // 줄바꿈 없음 — 전체를 제목으로(짧으면), 본문으로(길면) 둘 다 보일 수 있게.
+    if (_rawText.length <= 40) { _title = _rawText.trim(); _bodyRest = ''; }
+    else { _title = ''; _bodyRest = _rawText; }
+  }
+  const _esc2 = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const safeTitleText = _esc2(_title);
+  const safeBodyText = _esc2(_bodyRest).replace(/\n/g, '<br>');
+  const safeText = _esc2(_rawText).replace(/\n/g, '<br>');     // legacy compat
   const safeAuthor = (note.author || '').replace(/</g,'&lt;');
   // 작성 날짜 — 모달 왼쪽 위에 작게 (벽 카드와 같은 포맷)
   const _modalDate = (iso) => {
@@ -3098,12 +3126,15 @@ window.openNoteDetail = function(noteId) {
   // 댓글은 엔터로만 전송. 이름은 로그인한 계정 이름이 자동으로 들어감.
   const modalHtml = `
     <div id="note-detail-modal" class="note-detail-modal" onclick="if(event.target===this) closeNoteDetail()">
-      <div class="note-detail-content note-detail-paper" style="background:${c.bg}; color:${c.text};">
+      <div class="note-detail-content note-detail-paper note-detail-diary" style="background:${c.bg}; color:${c.text};">
         ${modalDateChip}
         <button class="note-detail-close" onclick="closeNoteDetail()"><i class="ri-close-line"></i></button>
         <div class="note-detail-postit">
           ${bookmarkBtnModal}
-          <div class="note-body">${safeText}</div>
+          ${safeTitleText ? `<h2 class="note-diary-title">${safeTitleText}</h2>` : ''}
+          ${safeTitleText && safeBodyText ? `<div class="note-diary-divider"></div>` : ''}
+          ${safeBodyText ? `<div class="note-diary-body">${safeBodyText}</div>` : ''}
+          ${!safeTitleText && !safeBodyText ? `<div class="note-diary-body">${safeText}</div>` : ''}
         </div>
 
         <div class="comments-scribble">

@@ -3404,13 +3404,40 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 /* Body of the post-it on the wall — clamped dynamically via inline style
    (set in renderWall based on text length). Full text is still visible
    in the detail modal. */
-.wall-note .note-body {
+.wall-note .note-body,
+.wall-note .note-card-body {
   display: -webkit-box;
   -webkit-line-clamp: 6;
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
   overflow-wrap: anywhere;
+}
+/* 일기 톤 — 카드의 제목 / 본문 */
+.wall-note-diary .note-card-title {
+  font-family: 'Pretendard', 'Noto Sans KR', system-ui, sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 18px !important;
+  line-height: 1.3 !important;
+  margin: 6px 0 8px !important;
+  letter-spacing: -0.2px;
+  color: inherit;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: keep-all;
+}
+.wall-note-diary .note-card-body {
+  font-family: 'Noto Serif KR', 'Nanum Myeongjo', serif !important;
+  font-weight: 400 !important;
+  font-size: 14px !important;
+  line-height: 1.7 !important;
+  word-break: keep-all;
+}
+@media (max-width: 768px) {
+  .wall-note-diary .note-card-title { font-size: 15px !important; margin: 4px 0 6px !important; }
+  .wall-note-diary .note-card-body { font-size: 12.5px !important; line-height: 1.6 !important; }
 }
 /* 포스트잇 아래 묶음(작성자 + 음원 + 댓글 티저 + 입력칸) 을 카드 맨 아래에 한 덩어리로 */
 .wall-note .note-bottom {
@@ -3869,6 +3896,56 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   flex-shrink: 0;
 }
 .note-detail-paper .note-detail-postit .note-body { flex-shrink: 0; }
+
+/* ───── 일기 톤 (note-detail-diary) — 사용자 요청: 첫 줄 = 제목, 본문 = serif ───── */
+.note-detail-diary .note-detail-postit {
+  padding: 28px 30px 18px !important;
+}
+.note-detail-diary .note-diary-title {
+  font-family: 'Pretendard', 'Noto Sans KR', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 1.3;
+  margin: 8px 0 16px;
+  color: inherit;
+  letter-spacing: -0.3px;
+  word-break: keep-all;
+}
+.note-detail-diary .note-diary-divider {
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.15;
+  margin: 0 0 18px;
+}
+.note-detail-diary .note-diary-body {
+  font-family: 'Noto Serif KR', 'Nanum Myeongjo', 'Times New Roman', serif !important;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.85;
+  color: inherit;
+  white-space: pre-wrap;
+  word-break: keep-all;
+}
+.note-detail-diary .note-detail-date {
+  font-family: 'Pretendard', system-ui, sans-serif;
+  font-size: 12px;
+  opacity: 0.7;
+}
+/* 모바일: 패딩/폰트 살짝 작게 */
+@media (max-width: 768px) {
+  .note-detail-diary .note-detail-postit {
+    padding: 44px 22px 16px !important;
+  }
+  .note-detail-diary .note-diary-title {
+    font-size: 22px;
+    margin: 4px 0 12px;
+  }
+  .note-detail-diary .note-diary-body {
+    font-size: 15px;
+    line-height: 1.8;
+  }
+}
 /* 모달 진짜 맨 아래 오른쪽 — comments-scribble 다음에 옴 (입력칸 아래) */
 .note-detail-paper .note-meta-row-in-modal {
   flex-shrink: 0;
@@ -14776,11 +14853,19 @@ body:has(#global-player.expanded) .global-back-btn {
 }
 .demo-card .demo-card-note-empty i { margin-right: 4px; }
 
-/* Note detail modal — 우리들의 벽 포스트잇과 동일 폰트 + 굵기 */
+/* Note detail modal — 기본 Pretendard. 단 일기 모드(.note-diary-*) 는 예외 — 본문 serif. */
 #note-detail-modal,
-#note-detail-modal *:not(i):not([class*="ri-"]) {
+#note-detail-modal *:not(i):not([class*="ri-"]):not(.note-diary-body):not(.note-diary-title) {
   font-family: var(--font-pretendard) !important;
   font-weight: 700 !important;
+}
+#note-detail-modal .note-diary-title {
+  font-family: 'Pretendard', 'Noto Sans KR', system-ui, sans-serif !important;
+  font-weight: 800 !important;
+}
+#note-detail-modal .note-diary-body {
+  font-family: 'Noto Serif KR', 'Nanum Myeongjo', 'Times New Roman', serif !important;
+  font-weight: 400 !important;
 }
 #note-detail-modal i[class*="ri-"] {
   font-family: 'remixicon' !important;
