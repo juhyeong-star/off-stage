@@ -1751,26 +1751,24 @@ body:has(#shape-shorts-overlay) .deco-shape {
 
 /* 아티스트 페이지 — 칩 아래의 인라인 자기소개. 노란 포스트잇 톤. */
 .artist-bio-inline {
-  display: inline-block;                      /* 콘텐츠에 맞춰 자연스러운 크기 */
+  display: block;                             /* 자체 한 줄, 왼쪽 정렬 명확하게 */
+  width: fit-content;                         /* 글자 길이에 맞게 — 빈 공간 X */
   margin: 14px 0 2px !important;
   padding: 14px 18px !important;
-  background: #FFE066 !important;             /* 노란 포스트잇 */
+  background: #FFE066 !important;
   border: 1px solid #F4B400 !important;
   border-radius: 6px !important;
   font-size: 15px !important;
   line-height: 1.55 !important;
-  color: #3E2723 !important;                  /* 진한 갈색 — 잘 보이게 */
+  color: #3E2723 !important;
   font-weight: 700 !important;
   white-space: pre-wrap !important;
   word-break: break-word !important;
-  text-align: left !important;                /* 부모 text-align:center 차단 */
-  min-width: 180px;
-  max-width: 360px;                           /* 너무 길게 안 늘어나게 */
-  min-height: 52px;
+  text-align: left !important;
+  max-width: 360px;
   cursor: pointer;
   box-shadow: 2px 4px 12px rgba(0,0,0,0.35) !important;
   transition: transform 0.15s, box-shadow 0.15s;
-  vertical-align: top;
 }
 .artist-bio-inline:hover {
   transform: translateY(-1px);
