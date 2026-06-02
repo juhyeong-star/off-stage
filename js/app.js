@@ -3194,8 +3194,12 @@ window.openNoteDetail = function(noteId) {
           const dx = t.clientX - tx0;
           const dy = t.clientY - ty0;
           tx0 = ty0 = null;
-          // 좌우 스와이프 우선 — 가로 거리가 더 크고 임계값 넘으면 닫기
-          if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 80) {
+          // 위/아래 스와이프 — 대각선도 포함 (도형 쇼츠와 동일 패턴).
+          // 거의-수평 스와이프(좌/우) 만 모달 닫기, 그 외 위/아래 영역은 다음/이전 메모.
+          const isMostlyHoriz = Math.abs(dx) > Math.abs(dy) * 1.8 && Math.abs(dx) > 80;
+          const isVerticalish = Math.abs(dy) >= 50 && Math.abs(dy) >= Math.abs(dx) * 0.4;
+
+          if (isMostlyHoriz) {
             swiping = true;
             const content = modalEl.querySelector('.note-detail-content');
             if (content) {
@@ -3206,7 +3210,7 @@ window.openNoteDetail = function(noteId) {
             setTimeout(() => { closeNoteDetail(); }, 260);
             return;
           }
-          if (Math.abs(dy) < 70) return;
+          if (!isVerticalish) return;
           const dbCur = window.DB.get();
           const all = (dbCur.notes || []);
           const i = all.findIndex(n => n && n.id === noteId);
@@ -4654,9 +4658,11 @@ function _shapeShortsMount() {
     dragging = false;
     if (wasDragging) _suppressClickUntil = Date.now() + 350;
     if (!stage) return;
-    // 충분히 끌었으면 다음/이전 — 세로 거리가 더 크고 임계값 넘었을 때
-    if (Math.abs(dy) >= 80 && Math.abs(dy) > Math.abs(dx)) {
-      // 그대로 두면 _shapeShortsGo가 새 카드를 슬라이드 인 — 기존 transform은 자연스럽게 사라짐
+    // 위/아래 스와이프 — 대각선도 포함 (위왼쪽/위오른쪽 → 위, 아래왼쪽/아래오른쪽 → 아래).
+    //   · 임계값 50px 로 낮추고 (기존 80)
+    //   · |dy| >= |dx| * 0.4 로 완화 (기존: |dy| > |dx|, 즉 45° 이상만 인정)
+    //     → 약 22° 이상이면 인정 — 대각선 자연스럽게 인식.
+    if (Math.abs(dy) >= 50 && Math.abs(dy) >= Math.abs(dx) * 0.4) {
       _shapeShortsGo(dy < 0 ? 'next' : 'prev');
       return;
     }
