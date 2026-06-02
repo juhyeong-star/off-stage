@@ -3583,13 +3583,13 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 }
 .note-more-comments:hover { opacity: 0.9; }
 
-/* 댓글 티저 — 포스트잇 맨 아래에 살짝 보이는 한 줄. "뭐라고 적혔지?" 호기심을 자극. */
+/* 댓글 티저 — 포스트잇 맨 아래에 최근 댓글 최대 2개 미리보기. */
 .note-comments-teaser {
   padding-top: 8px;
   border-top: 1px dotted rgba(0,0,0,0.18);
   display: flex;
-  gap: 6px;
-  align-items: baseline;
+  flex-direction: column;
+  gap: 2px;
   font-size: 13px;
   font-weight: 600;
   opacity: 0.68;
@@ -3601,12 +3601,29 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 .note-comments-teaser:hover { opacity: 0.95; }
 .note-comments-teaser i { font-size: 13px; opacity: 0.85; font-style: normal; }
 .note-comments-teaser .ct-count { font-weight: 800; font-style: normal; }
+/* 각 댓글 한 줄 — ㄴ 화살표 + 미리보기 텍스트 */
+.note-comments-teaser .ct-line {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  min-width: 0;
+}
+.note-comments-teaser .ct-arrow { flex: 0 0 auto; }
 .note-comments-teaser .ct-preview {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
   min-width: 0;
+}
+/* '+N' 더 있는 댓글 표시 — 작게 흐릿하게 */
+.note-comments-teaser .ct-more {
+  font-size: 10px;
+  font-weight: 700;
+  font-style: normal;
+  opacity: 0.55;
+  align-self: flex-end;
+  margin-top: 1px;
 }
 
 /* 포스트잇 본문이 길어 잘렸을 때 뜨는 "더보기" — 본문 바로 아래 */

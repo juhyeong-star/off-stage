@@ -2228,17 +2228,24 @@ async function renderWall() {
     // "더보기"를 눌러야 전체가 펼쳐지게 한다.
     const isClamped = approxLines > bodyClamp;
 
-    // 댓글 티저 — 카드 맨 아래에 살짝 보이는 한 줄. 'ㄴ "최근 댓글…"' 형태로만 (말풍선/카운트 제거)
+    // 댓글 티저 — 카드 맨 아래에 최근 댓글 최대 2개 미리보기.
+    // 'ㄴ "댓글…"' 한 줄씩, 3개 이상이면 마지막에 작은 '+N개 더' 표시.
     const allComments = Array.isArray(note.comments) ? note.comments : [];
-    const lastComment = allComments.length ? allComments[allComments.length - 1] : null;
     const _ctClip = (s, n) => {
       s = (s || '').replace(/\n/g, ' ');
-      return s.length > n ? s.slice(0, n) + '…' : (s + '…');
+      return s.length > n ? s.slice(0, n) + '…' : s;
     };
-    const commentsTeaser = !lastComment ? '' : `
+    const previewComments = allComments.slice(-2);   // 최근 2개 (오래된 순)
+    const moreCount = Math.max(0, allComments.length - previewComments.length);
+    const commentsTeaser = !previewComments.length ? '' : `
       <div class="note-comments-teaser" onclick="event.stopPropagation(); openNoteDetail('${note.id}')" title="댓글 보기">
-        <span class="ct-arrow">ㄴ</span>
-        <span class="ct-preview">"${_esc(_ctClip(lastComment.text, 20))}"</span>
+        ${previewComments.map(c => `
+          <div class="ct-line">
+            <span class="ct-arrow">ㄴ</span>
+            <span class="ct-preview">"${_esc(_ctClip(c.text, 22))}"</span>
+          </div>
+        `).join('')}
+        ${moreCount > 0 ? `<div class="ct-more">+${moreCount}</div>` : ''}
       </div>
     `;
 
