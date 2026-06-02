@@ -3194,7 +3194,9 @@ window.openNoteDetail = function(noteId) {
     }
   } catch (_) {}
 
-  // 백그라운드로 최신 댓글 가져와서 목록만 조용히 업데이트 (모달은 즉시 떴음)
+  // 백그라운드로 최신 댓글 가져와서 목록만 조용히 업데이트 (모달은 즉시 떴음).
+  // ⚡ 내용이 그대로면 innerHTML 안 건드림 — 매번 DOM 교체하면 슬라이드 인 도중에
+  //    스크롤바가 깜빡일 수 있음 + 불필요한 reflow.
   if (window.Walls && window.Walls.fetchComments) {
     window.Walls.fetchComments(noteId).then(fresh => {
       note.comments = fresh;
@@ -3203,7 +3205,9 @@ window.openNoteDetail = function(noteId) {
         if (cached) cached.comments = fresh;
       }
       const listEl = document.getElementById('note-detail-comments-list');
-      if (listEl) listEl.innerHTML = buildCommentsListHtml();
+      if (!listEl) return;
+      const newHtml = buildCommentsListHtml();
+      if (listEl.innerHTML !== newHtml) listEl.innerHTML = newHtml;
     }).catch(e => console.warn('[openNoteDetail] bg fetchComments', e));
   }
 };

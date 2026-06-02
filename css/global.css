@@ -3847,7 +3847,28 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 .note-detail-paper #note-detail-comments-list {
   flex: 1; min-height: 0; overflow-y: auto;
   display: flex; flex-direction: column;
-  justify-content: flex-end;     /* 댓글이 아래쪽부터 쌓이게 — 위 공간 비움 */
+  /* justify-content: flex-end 는 overflow 와 만나면 모달 슬라이드 인 도중에
+     스크롤바가 깜빡이는 케이스가 있음 → 대신 ::before flex-spacer 로 댓글을
+     아래로 밀어내는 패턴. overflow 시엔 spacer 가 자연스럽게 사라짐. */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.2) transparent;
+}
+/* 위쪽 여유 공간 — 댓글이 적을 땐 이 spacer 가 자리를 차지해서 댓글이 아래에 보임.
+   댓글이 많아 overflow 가 발생하면 spacer 는 flex 로 0 까지 줄어듦. */
+.note-detail-paper #note-detail-comments-list::before {
+  content: '';
+  flex: 1 1 0;
+  min-height: 0;
+}
+.note-detail-paper #note-detail-comments-list::-webkit-scrollbar {
+  width: 4px;
+}
+.note-detail-paper #note-detail-comments-list::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.18);
+  border-radius: 2px;
+}
+.note-detail-paper #note-detail-comments-list::-webkit-scrollbar-track {
+  background: transparent;
 }
 .note-detail-paper .scribble-input-row { flex-shrink: 0; margin-top: auto; }
 
