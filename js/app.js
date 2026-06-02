@@ -3097,12 +3097,6 @@ window.openNoteDetail = function(noteId) {
         <div class="note-detail-postit">
           ${bookmarkBtnModal}
           <div class="note-body">${safeText}</div>
-          <div class="note-meta-row note-meta-row-in-modal">
-            <div class="note-author-line">
-              <a href="#" class="author-link" onclick="event.preventDefault(); closeNoteDetail(); navigateTo('artist:' + encodeURIComponent('${safeAuthor}'))">${safeAuthor}</a>
-            </div>
-            ${_renderNoteTrackChip(note)}
-          </div>
         </div>
 
         <div class="comments-scribble">
@@ -3111,6 +3105,14 @@ window.openNoteDetail = function(noteId) {
           <div class="scribble-input-row">
             <input type="text" id="comment-text" class="scribble-input" placeholder="" onkeypress="if(event.key==='Enter') submitComment('${noteId}')">
           </div>
+        </div>
+
+        <!-- 작성자 + 음원 — 모달 진짜 맨 아래 오른쪽 (사용자 요청) -->
+        <div class="note-meta-row note-meta-row-in-modal">
+          <div class="note-author-line">
+            <a href="#" class="author-link" onclick="event.preventDefault(); closeNoteDetail(); navigateTo('artist:' + encodeURIComponent('${safeAuthor}'))">${safeAuthor}</a>
+          </div>
+          ${_renderNoteTrackChip(note)}
         </div>
       </div>
     </div>

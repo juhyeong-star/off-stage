@@ -3810,23 +3810,20 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   box-shadow: 0 22px 60px rgba(0,0,0,0.55);
   overflow: hidden;
 }
-/* 본문 섹션 — 모달 위쪽 절반을 안정적으로 차지.
-   작성자 + 음원은 .note-meta-row 로 묶여 오른쪽 맨 아래에 자리 잡음. */
+/* 본문 섹션 — 위쪽. 작성자/음원은 별도 섹션으로 모달 맨 아래로 분리됐으니
+   min-height 는 줄여서 짧은 글이 위쪽에 차지하지 않게 한다. */
 .note-detail-paper .note-detail-postit {
   flex-shrink: 0;
-  min-height: 340px;            /* PC 기준 */
-  display: flex;
-  flex-direction: column;
 }
 .note-detail-paper .note-detail-postit .note-body { flex-shrink: 0; }
-/* 모달 안의 작성자 + 음원 meta-row — 본문 섹션 오른쪽 맨 아래로 */
+/* 모달 진짜 맨 아래 오른쪽 — comments-scribble 다음에 옴 (입력칸 아래) */
 .note-detail-paper .note-meta-row-in-modal {
-  margin-top: auto;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
-  padding-top: 8px;
+  padding: 10px 22px 4px;
 }
 .note-detail-paper .note-meta-row-in-modal .note-author-line {
   margin: 0;
@@ -4989,9 +4986,10 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   .note-detail-paper .note-detail-postit {
     padding: 44px 22px 16px !important;   /* 상단 닫기 버튼 자리 확보 */
     flex-shrink: 0;
-    min-height: 38vh !important;          /* 모바일: 본문 섹션이 화면 위 38% 확보 */
-    display: flex !important;
-    flex-direction: column !important;
+  }
+  /* 모바일 모달의 작성자+음원 — 입력칸 아래, safe-area 까지 자연스럽게 */
+  .note-detail-paper .note-meta-row-in-modal {
+    padding: 8px 22px calc(14px + env(safe-area-inset-bottom)) !important;
   }
   /* 모바일 모달 날짜 — 닫기 버튼(left:14)과 수집(right:14) 사이, 가운데 위쪽 */
   .note-detail-paper .note-detail-date {
