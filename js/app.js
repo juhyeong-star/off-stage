@@ -9283,17 +9283,18 @@ function renderArtistProfile(artistName) {
                   </div>
                   `;
                 })() : ''}
-                <!-- 자기소개 인라인 (칩 아래) — 작성됐으면 표시, 본인 + 비어있으면 안내 -->
+                <!-- 자기소개 인라인 (칩 아래) — 작성됐으면 표시, 본인 + 비어있으면 안내.
+                     텍스트를 .artist-bio-text 로 감싸서 박스(자체 너비)와 텍스트(왼쪽 정렬)를 명확히 분리. -->
                 ${isSelf ? `
                   <div id="artist-bio-line" class="artist-bio-inline" onclick="editProfile()" title="프로필 설정에서 수정">
                     ${initialBio
-                      ? initialBio.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')
+                      ? `<span class="artist-bio-text">${initialBio.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</span>`
                       : '<span class="artist-bio-inline-empty"><i class="ri-edit-line"></i> 자기소개를 적어보세요 — 우상단 ⚙️ 에서</span>'
                     }
                   </div>
                 ` : (initialBio ? `
                   <div id="artist-bio-line" class="artist-bio-inline">
-                    ${initialBio.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
+                    <span class="artist-bio-text">${initialBio.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</span>
                   </div>
                 ` : `<div id="artist-bio-line" class="artist-bio-inline" hidden></div>`)}
               </div>

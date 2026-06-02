@@ -1750,28 +1750,35 @@ body:has(#shape-shorts-overlay) .deco-shape {
 .follow-row-btn.is-following:hover { background: #19a04a; }
 
 /* 아티스트 페이지 — 칩 아래의 인라인 자기소개. 노란 포스트잇 톤.
-   flex + justify-start 로 글자를 박스 왼쪽 끝에 확실히 박음. */
+   박스: inline-block 으로 콘텐츠 폭만큼 (왼쪽 박힘 보장).
+   안의 .artist-bio-text 가 block + text-align:left 로 글자 왼쪽 정렬을 보장. */
 .artist-bio-inline {
-  display: flex !important;
-  justify-content: flex-start !important;
-  align-items: flex-start !important;
-  width: fit-content !important;
-  margin: 14px auto 2px 0 !important;        /* margin-right auto → 왼쪽으로 박스 자체도 박힘 */
+  display: inline-block !important;
+  margin: 14px 0 2px !important;
   padding: 14px 22px 14px 18px !important;
   background: #FFE066 !important;
   border: 1px solid #F4B400 !important;
   border-radius: 6px !important;
-  font-size: 15px !important;
-  line-height: 1.55 !important;
   color: #3E2723 !important;
-  font-weight: 700 !important;
-  white-space: pre-wrap !important;
-  word-break: break-word !important;
-  text-align: left !important;
   max-width: 360px;
   cursor: pointer;
   box-shadow: 2px 4px 12px rgba(0,0,0,0.35) !important;
   transition: transform 0.15s, box-shadow 0.15s;
+  vertical-align: top;
+  /* 명시적으로 부모 text-align 차단 — 부모가 center 여도 영향 X */
+  text-align: left !important;
+}
+/* 박스 안의 글자 — 별도 span 으로 감싸서 박스 너비와 분리 + 왼쪽 정렬 명확 */
+.artist-bio-inline .artist-bio-text {
+  display: block !important;
+  text-align: left !important;
+  font-family: 'Pretendard', system-ui, sans-serif !important;
+  font-size: 15px !important;
+  line-height: 1.55 !important;
+  font-weight: 700 !important;
+  color: #3E2723 !important;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .artist-bio-inline:hover {
   transform: translateY(-1px);
@@ -5982,7 +5989,7 @@ html, body { overflow-x: hidden; max-width: 100%; }
   display: flex; align-items: center; gap: 22px;
   min-width: 0; flex: 1;
 }
-.artist-id-text { min-width: 0; flex: 1; }
+.artist-id-text { min-width: 0; flex: 1; text-align: left; }
 .artist-id-text h1 {
   font-family: var(--font-family);
   font-weight: 900;
