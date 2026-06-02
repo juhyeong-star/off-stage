@@ -2219,13 +2219,11 @@ async function renderWall() {
     ` : '';
 
     // ── Dynamic body/comments split ──────────────────────────────────────
-    // Rough line estimate: ~22 Korean / ~30 latin chars per line at 18px on a
-    // 345px-wide card. Newlines force a break.
+    // 일기 분리 이후라 isClamped 는 BODY 만 기준으로 다시 계산해야 정확.
+    // Rough line estimate: serif 14px 에서 카드 320(content) 정도면 약 20자/줄.
     const rawText = note.text || '';
     const explicitBreaks = (rawText.match(/\n/g) || []).length;
     const approxLines = Math.max(1, explicitBreaks + Math.ceil(rawText.length / 22));
-    // Decide body clamp + how many comments to preview, so short posts give
-    // comments room and long posts shrink to make space for at least one.
     let bodyClamp, previewCount;
     if      (approxLines <= 1) { bodyClamp = 1; previewCount = 4; }
     else if (approxLines <= 2) { bodyClamp = 2; previewCount = 4; }
@@ -2233,9 +2231,14 @@ async function renderWall() {
     else if (approxLines <= 4) { bodyClamp = 4; previewCount = 2; }
     else if (approxLines <= 5) { bodyClamp = 5; previewCount = 2; }
     else                        { bodyClamp = 6; previewCount = 1; }
-    // 글자 수 제한은 없지만, 카드를 넘칠 만큼 길면 본문을 잘라서 보여주고
-    // "더보기"를 눌러야 전체가 펼쳐지게 한다.
-    const isClamped = approxLines > bodyClamp;
+    // 실제 본문(제목 제외) 의 줄수가 visible clamp 보다 길면 잘림 = 더보기 노출.
+    const _bodyText = _bdy || (_ttl ? '' : _raw);
+    const _bodyBreaks = (_bodyText.match(/\n/g) || []).length;
+    const _bodyLines = _bodyText
+      ? Math.max(1, _bodyBreaks + Math.ceil(_bodyText.length / 20))
+      : 0;
+    const _bodyVisible = Math.max(2, bodyClamp - (_ttl ? 1 : 0));
+    const isClamped = _bodyLines > _bodyVisible;
 
     // 댓글 티저 — 카드 맨 아래에 최근 댓글 최대 2개 미리보기.
     // 'ㄴ "댓글…"' 한 줄씩, 3개 이상이면 마지막에 작은 '+N개 더' 표시.
