@@ -497,21 +497,40 @@ async function init() {
     if (now - _lastVisRefreshAt < 10000) return;
     _lastVisRefreshAt = now;
     try {
-      // 트랙 / 메모 백그라운드 refresh — 끝나면 현재 화면 재렌더
+      // 트랙 / 메모 / 내 컬렉션 / 폴더 모두 백그라운드 refresh.
+      // 내 우주가 다른 디바이스랑 안 맞던 이유 — Favorites/Bookmarks/Playlists
+      // 가 visibility 복귀 시 안 fetch 되고 있었음.
       const _afterFresh = () => { _maybeRerenderCurrentView(); };
+      const _tasks = [];
       if (window.Tracks && window.Tracks.refreshInto) {
-        window.Tracks.refreshInto(window.DB.get()).then(_afterFresh).catch(_ => {});
+        _tasks.push(window.Tracks.refreshInto(window.DB.get()).catch(_ => {}));
       }
       if (window.Walls && window.Walls.fetchPage) {
-        window.Walls.fetchPage(0, 50).then(fresh => {
+        _tasks.push(window.Walls.fetchPage(0, 50).then(fresh => {
           if (Array.isArray(fresh)) {
             window.__wallNotes = fresh;
             const cached = window.DB.get();
             if (cached) { cached.notes = fresh; window.DB.save(cached); }
-            _afterFresh();
           }
-        }).catch(_ => {});
+        }).catch(_ => {}));
       }
+      // ⭐ 내 우주 동기화의 핵심 — Favorites(❤로 모은 곡) / Bookmarks(📌수집한 메모)
+      //    / Playlists(폴더) 가 다른 디바이스에서 바뀌었을 수 있으니 다 새로고침.
+      if (window.Favorites && window.Favorites.refreshMine) {
+        _tasks.push(window.Favorites.refreshMine().catch(_ => {}));
+      }
+      if (window.Walls && window.Walls.refreshMyBookmarks) {
+        _tasks.push(window.Walls.refreshMyBookmarks().catch(_ => {}));
+      }
+      if (window.Playlists && window.Playlists.refreshInto) {
+        _tasks.push(window.Playlists.refreshInto(window.DB.get()).catch(_ => {}));
+      }
+      // 클라우드 위치 (user_object_positions) 도 가져오기 — 다른 PC 에서 옮긴 위치 반영
+      if (window.Positions && window.Positions.hydrateFromCloud) {
+        _tasks.push(window.Positions.hydrateFromCloud().catch(_ => {}));
+      }
+      // 전부 끝나면 현재 화면 재렌더 (내 우주면 새 데이터로 별 배경 그대로 + 아이템만 갱신)
+      Promise.all(_tasks).then(_afterFresh);
     } catch (e) { console.warn('[visibility] refresh', e); }
   });
   // Backers/함께만드는중 UI removed — keep backend tables for later
@@ -733,7 +752,18 @@ function navigateTo(route) {
       case 'home': renderHome(); break;
       case 'upload': renderUpload(); break;
       case 'library': window.renderLibrary(); break;
-      case 'universe': window.__universeFolderId = null; window.renderUniverse(); break;
+      case 'universe': {
+        window.__universeFolderId = null;
+        // 다른 디바이스에서 바뀐 내 컬렉션 동기화 — 항상 fresh fetch (cooldown 없음 — 사용자 능동 진입)
+        try {
+          if (window.Favorites && window.Favorites.refreshMine) window.Favorites.refreshMine().catch(_ => {});
+          if (window.Walls && window.Walls.refreshMyBookmarks) window.Walls.refreshMyBookmarks().catch(_ => {});
+          if (window.Playlists && window.Playlists.refreshInto) window.Playlists.refreshInto(window.DB.get()).catch(_ => {});
+          if (window.Positions && window.Positions.hydrateFromCloud) window.Positions.hydrateFromCloud().catch(_ => {});
+        } catch (_) {}
+        window.renderUniverse();
+        break;
+      }
       case 'tags': renderTags(); break;
       case 'wall': renderWall(); break;
       case 'events': renderEvents(); break;
