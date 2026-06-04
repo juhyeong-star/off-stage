@@ -9391,13 +9391,21 @@ function renderArtistProfile(artistName) {
   }).join('');
 
   // Artist notes grid — show all, wrapping
+  const _meForCm = window.__currentUser || (window.DB.get && window.DB.get().currentUser);
   const notesGridCards = artistNotes.map((n, i) => {
     const col = NOTE_COLORS[n.color] || NOTE_COLORS.yellow;
     const rot = n.rotation || ((i % 2 === 0 ? -1 : 1) * (Math.random() * 3 + 0.5));
     const safeTxt = (n.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+    // 인라인 댓글 입력 — 로그인 시에만, 클릭 없이도 바로 보임
+    const inlineCm = _meForCm ? `
+      <form class="note-inline-form" onclick="event.stopPropagation();" onsubmit="event.preventDefault(); event.stopPropagation(); submitInlineComment('${n.id}', this);">
+        <input type="text" class="note-inline-input" maxlength="200" placeholder="ㄴ 댓글 남기기" onclick="event.stopPropagation();">
+      </form>
+    ` : '';
     return `
       <div class="artist-postit" style="background:${col.bg}; color:${col.text}; --rot:${rot}deg;" onclick="openNoteDetail('${n.id}')">
         <div class="artist-postit-body">${safeTxt}</div>
+        ${inlineCm}
       </div>
     `;
   }).join('');
