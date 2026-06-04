@@ -6435,8 +6435,8 @@ function renderUpload() {
           <textarea class="form-control" id="up-description" rows="3" placeholder="이 곡에 얽힌 이야기나 리스너들에게 전하고 싶은 멘트를 자유롭게 적어주세요." required></textarea>
         </div>
         <div class="form-group">
-          <label><i class="ri-hashtag" style="color:var(--brand-color);"></i> 태그 (콤마로 구분) <span style="color:#ff6b6b;">(필수)</span></label>
-          <input type="text" class="form-control" id="up-tags" placeholder="예: 1982년 느낌, funky, 고2 기타과 음악" required>
+          <label><i class="ri-hashtag" style="color:var(--brand-color);"></i> 태그 (#으로 시작해서 자유롭게) <span style="color:#ff6b6b;">(필수)</span></label>
+          <input type="text" class="form-control" id="up-tags" placeholder="예: #1982년 느낌 #funky #고2 기타과 음악" required>
           <div class="form-note">장르·무드·학년·연도 등 자유롭게. 다른 학생들이 #태그로 곡을 찾습니다. (#은 자동으로 붙어요)</div>
         </div>
 
@@ -6790,7 +6790,14 @@ function renderUpload() {
       }
 
       const tagsRaw = document.getElementById('up-tags').value || '';
-      const tags = tagsRaw.split(',').map(s => s.trim().replace(/^#/, '')).filter(Boolean);
+      // 태그 파싱 — # 기준 분리. 콤마도 호환 (기존 사용자 데이터 호환).
+      // 예: '#1982년 느낌 #funky' → ['1982년 느낌', 'funky']
+      //     'rock, lofi'           → ['rock', 'lofi']
+      //     '#rock,lofi #emo'      → ['rock', 'lofi', 'emo']
+      const tags = tagsRaw
+        .split(/[#,]/)                    // # 또는 , 로 split
+        .map(s => s.trim())               // 공백 정리
+        .filter(Boolean);                 // 빈 토큰 제외
       const description = document.getElementById('up-description').value;
       const line1 = (document.getElementById('up-line1') || {}).value || '';
       const line2 = (document.getElementById('up-line2') || {}).value || '';
