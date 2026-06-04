@@ -14761,22 +14761,22 @@ body:has(#global-player.expanded) .global-back-btn {
     margin: 0 !important;
   }
 
-  /* Snake demo grid — 2 columns, 살짝 작게 (사용자 요청) */
+  /* Snake demo grid — 2 columns, 살짝 더 줄임 */
   .artist-canvas .projects-grid .demo-snake-grid {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
-    grid-auto-rows: 240px !important;       /* 280 → 240, 살짝 줄임 */
+    grid-auto-rows: 215px !important;       /* 240 → 215, 한 단계 더 줄임 */
     gap: 10px !important;
   }
   .artist-canvas .projects-grid .demo-snake-grid > .demo-card {
     aspect-ratio: auto !important;
     width: auto !important;
-    height: 240px !important;
-    max-height: 240px !important;
+    height: 215px !important;
+    max-height: 215px !important;
     flex: initial !important;
     min-width: 0 !important;
     margin: 0 !important;
-    padding: 12px 12px 10px !important;
+    padding: 11px 12px 10px !important;
     overflow: hidden !important;
   }
   .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-tag {
