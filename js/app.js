@@ -398,6 +398,23 @@ async function init() {
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'track_comments' }, () => {
           if (typeof _refreshNotifications === 'function') _refreshNotifications().catch(()=>{});
         })
+        // ── 삭제/수정 이벤트 — 다른 디바이스(혹은 본인이 다른 탭) 에서 지운 게 즉시 반영 ──
+        // 트랙 / 메모 / 메모 댓글이 어디서든 지워지면 로컬 캐시도 제거 + 현재 화면 재렌더.
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'tracks' }, (payload) => {
+          const id = payload && payload.old && payload.old.id;
+          if (!id) return;
+          _purgeTrackEverywhere(id);
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'wall_notes' }, (payload) => {
+          const id = payload && payload.old && payload.old.id;
+          if (!id) return;
+          _purgeWallNoteEverywhere(id);
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'wall_note_comments' }, (payload) => {
+          const noteId = payload && payload.old && payload.old.note_id;
+          const cid    = payload && payload.old && payload.old.id;
+          if (noteId && cid) _purgeWallNoteCommentEverywhere(noteId, cid);
+        })
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') console.log('[notif] realtime subscribed for', myId);
           else if (status === 'CHANNEL_ERROR') console.warn('[notif] realtime channel error');
@@ -406,6 +423,97 @@ async function init() {
       window.__notifRealtimeUserId = myId;
     } catch (e) { console.warn('[notif] setupNotifRealtime', e); }
   };
+
+  // ── 로컬 캐시에서 삭제 + 현재 화면 재렌더 헬퍼 ──
+  // 어떤 디바이스에서든 DB 에서 사라진 항목을 메모리/localStorage/DOM 에서 모두 정리.
+  function _purgeTrackEverywhere(id) {
+    try {
+      const db = window.DB && window.DB.get();
+      if (db && Array.isArray(db.tracks)) {
+        db.tracks = db.tracks.filter(t => t && t.id !== id);
+        window.DB.save(db);
+      }
+      if (Array.isArray(window.__tracks)) {
+        window.__tracks = window.__tracks.filter(t => t && t.id !== id);
+      }
+      _maybeRerenderCurrentView();
+    } catch (e) { console.warn('[realtime] purgeTrack', e); }
+  }
+  function _purgeWallNoteEverywhere(id) {
+    try {
+      const db = window.DB && window.DB.get();
+      if (db && Array.isArray(db.notes)) {
+        db.notes = db.notes.filter(n => n && n.id !== id);
+        window.DB.save(db);
+      }
+      if (Array.isArray(window.__wallNotes)) {
+        window.__wallNotes = window.__wallNotes.filter(n => n && n.id !== id);
+      }
+      // 열려있던 모달이 그 노트면 닫기
+      if (window.__openNoteDetailId === id && typeof window.closeNoteDetail === 'function') {
+        window.closeNoteDetail();
+      }
+      _maybeRerenderCurrentView();
+    } catch (e) { console.warn('[realtime] purgeNote', e); }
+  }
+  function _purgeWallNoteCommentEverywhere(noteId, cid) {
+    try {
+      const db = window.DB && window.DB.get();
+      const note = db && Array.isArray(db.notes) && db.notes.find(n => n && n.id === noteId);
+      if (note && Array.isArray(note.comments)) {
+        note.comments = note.comments.filter(c => c && c.id !== cid);
+        window.DB.save(db);
+      }
+      if (Array.isArray(window.__wallNotes)) {
+        const cached = window.__wallNotes.find(n => n && n.id === noteId);
+        if (cached && Array.isArray(cached.comments)) {
+          cached.comments = cached.comments.filter(c => c && c.id !== cid);
+        }
+      }
+      _maybeRerenderCurrentView();
+    } catch (e) { console.warn('[realtime] purgeComment', e); }
+  }
+  function _maybeRerenderCurrentView() {
+    try {
+      if (currentView === 'wall' && typeof renderWall === 'function') renderWall();
+      else if (currentView === 'shapes' && typeof renderShapes === 'function') renderShapes();
+      else if (currentView === 'universe' && typeof renderUniverse === 'function') renderUniverse();
+      else if (currentView === 'artist' && typeof renderArtistProfile === 'function') {
+        const m = (window.location.hash || '').match(/#\/artist:([^/?]+)/);
+        if (m) renderArtistProfile(decodeURIComponent(m[1]));
+      }
+    } catch (_) {}
+  }
+
+  // ── 탭이 다시 보이는 순간 — 핵심 데이터 강제 새로고침. ──
+  // 다른 디바이스/탭에서 업데이트한 게 cached 로 박혀있다가 어느 순간 사라지는 현상 해결.
+  // (Realtime 가 못 잡는 케이스 — 잠시 백그라운드였거나 채널 에러 등 — 의 백업 안전망)
+  let _lastVisRefreshAt = 0;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    if (!window.__currentUser || !window.__currentUser.id) return;
+    // 짧은 간격 중복 refresh 방지 (10초 cooldown)
+    const now = Date.now();
+    if (now - _lastVisRefreshAt < 10000) return;
+    _lastVisRefreshAt = now;
+    try {
+      // 트랙 / 메모 백그라운드 refresh — 끝나면 현재 화면 재렌더
+      const _afterFresh = () => { _maybeRerenderCurrentView(); };
+      if (window.Tracks && window.Tracks.refreshInto) {
+        window.Tracks.refreshInto(window.DB.get()).then(_afterFresh).catch(_ => {});
+      }
+      if (window.Walls && window.Walls.fetchPage) {
+        window.Walls.fetchPage(0, 50).then(fresh => {
+          if (Array.isArray(fresh)) {
+            window.__wallNotes = fresh;
+            const cached = window.DB.get();
+            if (cached) { cached.notes = fresh; window.DB.save(cached); }
+            _afterFresh();
+          }
+        }).catch(_ => {});
+      }
+    } catch (e) { console.warn('[visibility] refresh', e); }
+  });
   // Backers/함께만드는중 UI removed — keep backend tables for later
 
   // Keep UI in sync if auth state changes (sign-out in another tab, session
