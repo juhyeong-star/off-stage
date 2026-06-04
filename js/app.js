@@ -11033,20 +11033,88 @@ function _renderFolderUniverse(folderId) {
 
 // 폴더에서 빠져나와 전체 내 우주로
 window.exitFolderToUniverse = function() {
+  const uni = document.querySelector('.shapes-universe.my-universe');
+  if (!uni) {
+    window.__universeFolderId = null;
+    if (typeof window.renderUniverse === 'function') window.renderUniverse();
+    return;
+  }
+
+  // 가드 — 백그라운드 refresh 가 한창 움직이는 도형들을 wipe 못 하게
+  window.__universeFolderEntering = true;
+
+  // 1) 현재 폴더 안 아이템들의 HTML 을 스냅샷 — 뒤에 outgoing 으로 띄울 용도
+  const folderItemsSnapshot = uni.innerHTML;
+
+  // 2) 폴더 모드 해제 후 renderUniverse 호출 — 일반 우주 아이템들이 innerHTML 로 들어옴
   window.__universeFolderId = null;
   if (typeof window.renderUniverse === 'function') window.renderUniverse();
+
+  // 3) 새로 그려진 .shapes-universe 에 접근. async 라도 첫 await 안 거치는 path 라
+  //    innerHTML 은 이미 동기 적용됨 (universeLoadedOnce 인 케이스).
+  const newUni = document.querySelector('.shapes-universe.my-universe');
+  if (!newUni) {
+    window.__universeFolderEntering = false;
+    return;
+  }
+
+  // 4) 폴더 아이템들을 outgoing 레이어로 부활시켜 위에 띄움 (왼쪽 위로 사라질 것)
+  const outgoing = document.createElement('div');
+  outgoing.className = 'univ-outgoing';
+  outgoing.style.cssText = 'position:absolute; inset:0; pointer-events:none; z-index:2; transition:transform 0.62s cubic-bezier(0.22,0.9,0.3,1), opacity 0.55s ease;';
+  outgoing.innerHTML = folderItemsSnapshot;
+  newUni.appendChild(outgoing);
+
+  // 5) 새 우주 아이템들을 오른쪽 아래에 숨겨두기 (애니 시작 위치)
+  const newItems = Array.from(newUni.querySelectorAll(':scope > .floating-shape'));
+  newItems.forEach(el => {
+    el.classList.add('drag-paused');   // 떠다니는 애니 일시정지
+    el.style.transition = 'none';
+    el.style.transformOrigin = 'center';
+    el.style.transform = 'translate(42vw, 38vh) scale(0.3)';
+    el.style.opacity = '0';
+    el.style.pointerEvents = 'none';
+  });
+
+  // 6) 한두 프레임 뒤 양쪽 동시 트리거
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    // outgoing(폴더 안에 있던 애들) → 왼쪽 위로 사라짐
+    outgoing.style.transform = 'translate(-42vw, -38vh) scale(0.3)';
+    outgoing.style.opacity = '0';
+    // incoming(밖에 있던 우주 아이템들) → 오른쪽 아래에서 제자리로
+    newItems.forEach(el => {
+      el.style.transition = 'transform 0.62s cubic-bezier(0.22,0.9,0.3,1), opacity 0.55s ease';
+      el.style.transform = '';
+      el.style.opacity = '';
+    });
+  }));
+
+  // 7) 끝나면 outgoing 레이어 제거 + 새 아이템들 떠다니는 애니 복원
+  setTimeout(() => {
+    if (outgoing.parentElement) outgoing.remove();
+    newItems.forEach(el => {
+      el.classList.remove('drag-paused');
+      el.style.transition = '';
+      el.style.transform = '';
+      el.style.opacity = '';
+      el.style.pointerEvents = '';
+    });
+    window.__universeFolderEntering = false;
+  }, 640);
 };
 
 // 폴더 진입 — 내 우주를 '벗어나지 않고' 그 자리에서 옆 우주로 패닝.
 // 같은 별 하늘 위에서: 원래 애들은 오른쪽 아래로 미끄러져 사라지고,
 // 폴더(옆동네) 애들이 왼쪽 위에서 날아온다. 끝나면 헤더만 바꿔 폴더 모드로(페이지 이동 X).
-window.enterFolderWithAnim = function(folderId) {
+window.enterFolderWithAnim = function(folderId, anchorEl) {
   // ⚠️ 진입 애니메이션 도중에 백그라운드 refresh 가 renderUniverse 를 다시 부르면
   // 한창 움직이던 도형들이 wipe 되어 '왼쪽 위에서 내려오는' 모션이 안 보임.
   // 진입 시작 순간부터 가드 켜고, 완료 후 끄기.
   window.__universeFolderEntering = true;
   const uni = document.querySelector('.shapes-universe.my-universe');
   const built = (typeof _folderItemsHtml === 'function') ? _folderItemsHtml(folderId) : null;
+  // 클릭한 폴더 요소 — 인자가 없으면 DOM 에서 찾기
+  const _enteringFolderEl = anchorEl || (uni && uni.querySelector('[data-folder-id="' + folderId + '"]'));
   if (!uni || !built || !built.html) {
     window.__universeFolderId = folderId;
     window.__universeFolderEntering = false;
@@ -11070,8 +11138,17 @@ window.enterFolderWithAnim = function(folderId) {
     }, 220);
   }
 
-  // 1) 원래 우주 애들 → 다 같이 오른쪽 아래로 미끄러지며 작아져 사라짐
+  // 1) 원래 우주 애들 → 오른쪽 아래로 미끄러지며 사라짐.
+  //    단, 클릭한 폴더 본인은 그대로 두고 (혹은 살짝 페이드아웃만) — 시각적 anchor.
   uni.querySelectorAll('.floating-shape').forEach(el => {
+    if (el === _enteringFolderEl) {
+      // 클릭한 폴더는 부드럽게 페이드아웃만 (위치 변동 X)
+      el.style.transition = 'opacity 0.45s ease, transform 0.45s ease';
+      el.style.transform = 'scale(1.06)';
+      el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
+      return;
+    }
     el.style.animation = 'none';
     el.style.transition = 'transform 0.6s cubic-bezier(0.4,0,0.4,1), opacity 0.55s ease';
     el.style.transformOrigin = 'center';
