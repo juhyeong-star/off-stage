@@ -666,6 +666,8 @@ function navigateTo(route) {
   currentView = route;
   // 외부(supabase.js 등)에서도 라우트 알 수 있게 미러
   window.__currentView = route;
+  // 영구 별 레이어는 universe 일 때만 보임 (다른 페이지엔 숨김)
+  if (route !== 'universe') document.body.classList.remove('is-universe-route');
   // Toggle global back button visibility based on the new route.
   _updateBackButton(route);
   appContent.innerHTML = '';
@@ -5647,8 +5649,12 @@ window.renderUniverse = async function () {
   const cols = 3;
   const universeHeight = Math.max(900, Math.ceil(allItems.length / cols) * 280);
 
-  // Starfield background — same twinkling night sky as the shapes page.
-  const decoHtml = _buildStarfield('universe-sky', 160, 15);
+  // 별 배경은 #app-content 밖의 영구 레이어로 → innerHTML 재설정에 안 영향받음.
+  // _ensurePersistentStarfield() 가 body 에 한 번만 생성, 페이지 .is-universe 클래스로 보이기 토글.
+  _ensurePersistentStarfield();
+  document.body.classList.add('is-universe-route');
+  // 본문 안엔 별 자리 비워 둠 (호환성 차원에서 .universe-starfield 빈 div 만)
+  const decoHtml = '';
 
   // Item nodes
   let itemsHtml = '';
@@ -5720,7 +5726,6 @@ window.renderUniverse = async function () {
       <p style="font-size:13px; color:var(--text-secondary);">폴더 ${myPlaylists.length} · 곡 ${likedTracks.length} · 포스트잇 ${bookmarkedNotes.length} — 끌어서 자리 옮길 수 있어요</p>
     </div>
     <div class="shapes-universe my-universe" style="height: ${universeHeight}px;">
-      ${decoHtml}
       ${itemsHtml}
     </div>
   `;
@@ -5728,6 +5733,17 @@ window.renderUniverse = async function () {
   // Reuse the same drag system as the main shapes page
   if (typeof initShapeDrag === 'function') initShapeDrag();
 };
+
+// body 에 영구 별 레이어 한 번만 생성. 페이지 이동 / innerHTML 재설정 영향 X.
+// .is-universe-route 클래스로 보임/숨김 토글.
+function _ensurePersistentStarfield() {
+  if (document.getElementById('persistent-starfield')) return;
+  const layer = document.createElement('div');
+  layer.id = 'persistent-starfield';
+  layer.className = 'persistent-starfield-layer';
+  layer.innerHTML = _buildStarfield('universe-sky', 160, 15);
+  document.body.appendChild(layer);
+}
 
 // ===================== DRAG SYSTEM FOR FLOATING SHAPES =====================
 function initShapeDrag() {

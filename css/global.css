@@ -782,6 +782,26 @@ body.guest .sidebar-my-channel { display: none; }
   background: #000;
 }
 
+/* 영구 별 배경 레이어 — body 직속, innerHTML 재설정에 안 영향.
+   라우트가 universe 일 때만 보임 (.is-universe-route 클래스 토글). */
+.persistent-starfield-layer {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: #000;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+body.is-universe-route .persistent-starfield-layer {
+  opacity: 1;
+}
+/* /universe 일 때 본문 .shapes-universe 의 검정 배경은 투명하게 — 별 레이어가 비쳐 보이게 */
+body.is-universe-route .shapes-universe.my-universe {
+  background: transparent;
+}
+
 .floating-shape {
   position: absolute;
   cursor: grab;
