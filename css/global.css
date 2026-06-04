@@ -14678,20 +14678,18 @@ body:has(#global-player.expanded) .global-back-btn {
     margin: 0 0 24px !important;
   }
 
-  /* Master block — landscape demo-style WHITE card.
-     Top bar (MASTER badge + heart), middle row (cover thumb LEFT +
-     title/cheer text RIGHT), bottom (master diary + comments + input). */
+  /* Master block — 흰 박스/테두리/그림자 제거 (사용자 요청).
+     Top bar (MASTER badge + heart), middle row (cover + title), 그게 다. */
   .artist-canvas .projects-grid .project-master-mobile {
     display: flex !important;
     flex-direction: column !important;
-    background: #fff !important;
-    border: 1.5px solid #111 !important;
-    border-radius: 4px !important;
-    box-shadow: 2px 2px 0 #111 !important;
-    padding: 12px 14px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 8px 4px !important;
     margin-bottom: 18px !important;
     color: #111 !important;
-    gap: 8px !important;
+    gap: 10px !important;
   }
   /* Top bar — MASTER tag (pink) on left, heart on right */
   .artist-canvas .projects-grid .project-master-mobile .master-top-bar {
@@ -14705,13 +14703,10 @@ body:has(#global-player.expanded) .global-back-btn {
     font-weight: 800 !important;
     font-size: 12px !important;
   }
-  /* Compact 2x2 grid:
-       [Cover ]  [Title       ]
-       [Date  ]  [N명 응원    ]
-     Sized close to a demo card so the master sits as a peer, not a header. */
+  /* Compact 2x2 grid layout (cover left, text right) — 흰 박스 없음 */
   .artist-canvas .projects-grid .project-master-mobile {
-    padding: 10px 12px !important;     /* slimmer than before */
-    margin-bottom: 12px !important;
+    padding: 8px 4px !important;
+    margin-bottom: 14px !important;
   }
   .artist-canvas .projects-grid .project-master-mobile .master-compact-row {
     display: flex !important;
@@ -14719,10 +14714,10 @@ body:has(#global-player.expanded) .global-back-btn {
     align-items: center !important;
     gap: 12px !important;
   }
-  /* 흰 폴라로이드 프레임 제거 + 사진 더 크게 (사용자 요청) */
+  /* 흰 폴라로이드 프레임 제거 + 사진 더 크게 */
   .artist-canvas .projects-grid .project-master-mobile .project-cover-wrap {
-    width: 120px !important;
-    height: 120px !important;
+    width: 150px !important;
+    height: 150px !important;
     aspect-ratio: 1 / 1 !important;
     margin: 0 !important;
     flex-shrink: 0 !important;
@@ -14766,22 +14761,22 @@ body:has(#global-player.expanded) .global-back-btn {
     margin: 0 !important;
   }
 
-  /* Snake demo grid — 2 columns, 우리들의벽 모바일 카드 크기(280px) 정도로 맞춤 */
+  /* Snake demo grid — 2 columns, 살짝 작게 (사용자 요청) */
   .artist-canvas .projects-grid .demo-snake-grid {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
-    grid-auto-rows: 280px !important;       /* wall 모바일 카드 높이와 동일 */
-    gap: 12px !important;
+    grid-auto-rows: 240px !important;       /* 280 → 240, 살짝 줄임 */
+    gap: 10px !important;
   }
   .artist-canvas .projects-grid .demo-snake-grid > .demo-card {
     aspect-ratio: auto !important;
     width: auto !important;
-    height: 280px !important;
-    max-height: 280px !important;
+    height: 240px !important;
+    max-height: 240px !important;
     flex: initial !important;
     min-width: 0 !important;
     margin: 0 !important;
-    padding: 14px 14px 12px !important;
+    padding: 12px 12px 10px !important;
     overflow: hidden !important;
   }
   .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-tag {
