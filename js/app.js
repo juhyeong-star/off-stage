@@ -754,13 +754,9 @@ function navigateTo(route) {
       case 'library': window.renderLibrary(); break;
       case 'universe': {
         window.__universeFolderId = null;
-        // 다른 디바이스에서 바뀐 내 컬렉션 동기화 — 항상 fresh fetch (cooldown 없음 — 사용자 능동 진입)
-        try {
-          if (window.Favorites && window.Favorites.refreshMine) window.Favorites.refreshMine().catch(_ => {});
-          if (window.Walls && window.Walls.refreshMyBookmarks) window.Walls.refreshMyBookmarks().catch(_ => {});
-          if (window.Playlists && window.Playlists.refreshInto) window.Playlists.refreshInto(window.DB.get()).catch(_ => {});
-          if (window.Positions && window.Positions.hydrateFromCloud) window.Positions.hydrateFromCloud().catch(_ => {});
-        } catch (_) {}
+        // navigateTo 의 fire-and-forget 제거 — renderUniverse 가 자기 안에서 모든
+        // refresh 를 묶어 처리하므로 그쪽에 맡긴다. 두 군데서 동시에 fetch 하면
+        // 한쪽 결과가 다른 쪽 결과를 덮어쓰는 경우 발생.
         window.renderUniverse();
         break;
       }
@@ -5561,27 +5557,36 @@ window.renderUniverse = async function () {
   if (window.__universeFolderId) { _renderFolderUniverse(window.__universeFolderId); return; }
 
   // Refresh strategy: render cached state first, refresh in background.
-  // Only block briefly on first visit (when caches are empty) so we have *something* to show.
+  // 내 우주의 모든 데이터 소스를 한 번에 fetch — 다른 디바이스랑 안 맞던 원인이
+  // refreshTasks 에 Playlists/Tracks/Positions 가 빠져있던 거였음.
   const hasFavCache = window.__favoritedTracks && window.__favoritedTracks.size > 0;
   const hasBmkCache = window.__bookmarkedNotes && window.__bookmarkedNotes.size > 0;
   const refreshTasks = [];
   if (window.Walls && window.Walls.refreshMyBookmarks)   refreshTasks.push(window.Walls.refreshMyBookmarks().catch(()=>{}));
   if (window.Favorites && window.Favorites.refreshMine)  refreshTasks.push(window.Favorites.refreshMine().catch(()=>{}));
+  if (window.Playlists && window.Playlists.refreshInto)  refreshTasks.push(window.Playlists.refreshInto(db).catch(()=>{}));
+  if (window.Tracks && window.Tracks.refreshInto)        refreshTasks.push(window.Tracks.refreshInto(db).catch(()=>{}));
+  if (window.Positions && window.Positions.hydrateFromCloud) refreshTasks.push(window.Positions.hydrateFromCloud().catch(()=>{}));
   if (refreshTasks.length) {
-    // 처음 한 번(캐시 전혀 없을 때)만 잠깐 기다리고, 그 이후(뒤로가기 등)는
-    // 항상 백그라운드 새로고침 → 폴더에서 뒤로가기가 즉시 반응.
     if (hasFavCache || hasBmkCache || window.__universeLoadedOnce) {
-      const sigBefore = (Array.from(window.__favoritedTracks || []).join('|')) + '#'
-                      + (Array.from(window.__bookmarkedNotes || []).join('|'));
+      // sig 비교 확장 — 폴더 / 폴더 안 곡 변화도 감지 (다른 PC 에서 폴더에 곡 담은 케이스)
+      const buildSig = () => {
+        const fav = Array.from(window.__favoritedTracks || []).sort().join('|');
+        const bmk = Array.from(window.__bookmarkedNotes || []).sort().join('|');
+        const pls = (window.__playlists || (db.playlists || []))
+          .map(p => p && (p.id + ':' + ((p.trackIds || []).slice().sort().join(','))))
+          .sort().join(';');
+        return fav + '#' + bmk + '@' + pls;
+      };
+      const sigBefore = buildSig();
       Promise.all(refreshTasks).then(() => {
         window.__universeLoadedOnce = true;
         if (currentView !== 'universe' || window.__universeFolderId) return;
-        const sigAfter = (Array.from(window.__favoritedTracks || []).join('|')) + '#'
-                      + (Array.from(window.__bookmarkedNotes || []).join('|'));
+        const sigAfter = buildSig();
         if (sigAfter !== sigBefore) window.renderUniverse();
       });
     } else {
-      // 최초 1회만 — 우주가 비어보이지 않게 최대 1.5s 대기
+      // 최초 1회 — 1.5s 까지 데이터 기다림
       await Promise.race([
         Promise.all(refreshTasks),
         new Promise(r => setTimeout(r, 1500))
