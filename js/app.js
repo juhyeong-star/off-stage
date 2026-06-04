@@ -5582,6 +5582,8 @@ window.renderUniverse = async function () {
       Promise.all(refreshTasks).then(() => {
         window.__universeLoadedOnce = true;
         if (currentView !== 'universe' || window.__universeFolderId) return;
+        // 폴더 진입 애니메이션 중이면 재렌더 스킵 — 애니 wipe 방지
+        if (window.__universeFolderEntering) return;
         const sigAfter = buildSig();
         if (sigAfter !== sigBefore) window.renderUniverse();
       });
@@ -11039,10 +11041,15 @@ window.exitFolderToUniverse = function() {
 // 같은 별 하늘 위에서: 원래 애들은 오른쪽 아래로 미끄러져 사라지고,
 // 폴더(옆동네) 애들이 왼쪽 위에서 날아온다. 끝나면 헤더만 바꿔 폴더 모드로(페이지 이동 X).
 window.enterFolderWithAnim = function(folderId) {
+  // ⚠️ 진입 애니메이션 도중에 백그라운드 refresh 가 renderUniverse 를 다시 부르면
+  // 한창 움직이던 도형들이 wipe 되어 '왼쪽 위에서 내려오는' 모션이 안 보임.
+  // 진입 시작 순간부터 가드 켜고, 완료 후 끄기.
+  window.__universeFolderEntering = true;
   const uni = document.querySelector('.shapes-universe.my-universe');
   const built = (typeof _folderItemsHtml === 'function') ? _folderItemsHtml(folderId) : null;
   if (!uni || !built || !built.html) {
     window.__universeFolderId = folderId;
+    window.__universeFolderEntering = false;
     if (typeof window.renderUniverse === 'function') window.renderUniverse();
     return;
   }
@@ -11087,6 +11094,7 @@ window.enterFolderWithAnim = function(folderId) {
   // 3) 애니 끝나면 — 페이지 이동 없이 그 자리에서 폴더 모드로 전환(아이템 정리만)
   setTimeout(() => {
     window.__universeFolderId = folderId;
+    window.__universeFolderEntering = false;   // 가드 해제
     // 빠져나간 원래 애들 제거 (incoming 은 유지)
     Array.from(uni.children).forEach(ch => {
       if (ch !== incoming && ch.classList && ch.classList.contains('floating-shape')) ch.remove();
