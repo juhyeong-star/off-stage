@@ -3275,22 +3275,31 @@ h3 { font-size: 19px; font-weight: 700; }
   position: fixed;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  width: 520px;
+  width: 640px;
   max-width: calc(100vw - 40px);
   z-index: 9001;
-  padding: 36px 28px 22px !important;   /* 닫기 버튼 자리 확보 */
+  padding: 44px 36px 26px !important;   /* 닫기 버튼 자리 + 넉넉한 여백 */
   animation: slideUp 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .wall-compose-panel[hidden] { display: none !important; }
 .wall-compose-title {
   background: transparent !important;
   border: none !important;
-  border-bottom: 1px solid var(--divider, #2a2a2a) !important;
+  border-bottom: 1.5px solid var(--divider, #2a2a2a) !important;
   border-radius: 0 !important;
-  padding: 6px 0 !important;
+  padding: 10px 0 !important;
   outline: none;
+  font-size: 22px !important;
+  font-weight: 800 !important;
 }
 .wall-compose-title:focus { border-bottom-color: var(--brand-color, #1DB954) !important; }
+.wall-compose-body {
+  font-size: 16px !important;
+  line-height: 1.6 !important;
+  min-height: 160px !important;
+  padding: 12px !important;
+}
+.wall-compose-body::placeholder { font-size: 15px; opacity: 0.5; }
 
 @media (max-width: 768px) {
   /* 모바일은 기존 popover 위치로 — 미디어쿼리 자체가 specificity 가 높아 PC 룰 덮음 */

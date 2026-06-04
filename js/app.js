@@ -2447,9 +2447,9 @@ async function renderWall() {
         <i class="ri-close-line"></i>
       </button>
       <input type="text" id="wall-title" class="form-control wall-compose-title" placeholder="제목 (선택)" maxlength="50"
-        style="margin-bottom:8px; font-weight:700; font-size:16px;">
-      <textarea id="wall-text" class="form-control" rows="3" placeholder="하고 싶은 말을 자유롭게"
-        style="resize:none; margin-bottom:10px;"></textarea>
+        style="margin-bottom:12px; font-weight:800; font-size:22px;">
+      <textarea id="wall-text" class="form-control wall-compose-body" rows="6" placeholder="하고 싶은 말을 자유롭게"
+        style="resize:vertical; margin-bottom:14px; font-size:16px; line-height:1.6; min-height:160px;"></textarea>
       <!-- Attached song preview (hidden until a track or URL is picked) -->
       <div id="wall-attach-preview" class="wall-attach-preview" hidden></div>
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
