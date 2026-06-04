@@ -5924,6 +5924,23 @@ function initShapeDrag() {
     el.style.zIndex = '';
     el.style.transition = '';
 
+    // 드래그가 일어났다면 — touchend 뒤에 따라오는 click 한 번을 swallow.
+    // (안 막으면 폴더 안에서 도형 끌어 놓을 때 inline onclick="openFolderShorts(...)"
+    //  가 터져서 의도 안 한 쇼츠/포스트잇 모달이 즉시 열림)
+    if (moved) {
+      const _swallow = (clickEv) => {
+        clickEv.stopPropagation();
+        clickEv.stopImmediatePropagation();
+        clickEv.preventDefault();
+      };
+      // capture 단계로 → 인라인 onclick 보다 먼저 도달
+      el.addEventListener('click', _swallow, { capture: true, once: true });
+      // 안전망 — 350ms 안에 click 안 오면 그냥 정리
+      setTimeout(() => {
+        try { el.removeEventListener('click', _swallow, { capture: true }); } catch (_) {}
+      }, 350);
+    }
+
     // If long-press menu opened, don't treat as click/drag-end
     if (longPressFired) {
       longPressFired = false;
