@@ -3238,8 +3238,74 @@ h3 { font-size: 19px; font-weight: 700; }
 .wall-fab:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 10px 30px rgba(29,185,84,0.6); }
 .wall-fab i { font-size: 18px; }
 
-/* Compose panel (popover above FAB) */
+/* PC: 글 쓰기 컴포저를 가운데 모달로 띄움 (사용자 요청). 모바일은 아래의 미디어쿼리에서 기존 popover 유지. */
+.wall-compose-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(6px);
+  z-index: 9000;
+  animation: fadeIn 0.18s ease;
+}
+.wall-compose-backdrop[hidden] { display: none !important; }
+@media (max-width: 768px) {
+  /* 모바일은 backdrop 사용 안 함 — 기존 popover 그대로 */
+  .wall-compose-backdrop { display: none !important; }
+}
+.wall-compose-close {
+  position: absolute;
+  top: 10px; right: 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--divider, #2a2a2a);
+  color: var(--text-secondary, #aaa);
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; cursor: pointer;
+  transition: background 0.15s;
+}
+.wall-compose-close:hover { background: rgba(255,255,255,0.12); color: #fff; }
+@media (max-width: 768px) {
+  /* 모바일에선 닫기 버튼 안 보이게 — 기존 FAB 토글로 닫음 */
+  .wall-compose-close { display: none !important; }
+}
+
+/* Compose panel — PC 는 가운데 모달, 모바일은 기존 popover */
 .wall-compose-panel {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 520px;
+  max-width: calc(100vw - 40px);
+  z-index: 9001;
+  padding: 36px 28px 22px !important;   /* 닫기 버튼 자리 확보 */
+  animation: slideUp 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.wall-compose-panel[hidden] { display: none !important; }
+.wall-compose-title {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--divider, #2a2a2a) !important;
+  border-radius: 0 !important;
+  padding: 6px 0 !important;
+  outline: none;
+}
+.wall-compose-title:focus { border-bottom-color: var(--brand-color, #1DB954) !important; }
+
+@media (max-width: 768px) {
+  /* 모바일은 기존 popover 위치로 — 미디어쿼리 자체가 specificity 가 높아 PC 룰 덮음 */
+  .wall-compose-panel {
+    position: fixed;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+    padding: 14px !important;
+    animation: none;
+  }
+}
+.wall-compose-panel-legacy {
   position: fixed;
   bottom: calc(var(--player-height) + 82px);
   right: 22px;

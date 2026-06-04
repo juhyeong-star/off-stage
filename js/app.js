@@ -2439,7 +2439,15 @@ async function renderWall() {
   // Write composer — 텍스트 입력 + 노래 첨부 + 남기기 버튼.
   // (Enter는 줄바꿈으로 자유롭게 쓰게 두고, '남기기' 버튼만 클릭으로 전송)
   const writeComposer = user ? `
+    <!-- PC 백드롭 — 모달처럼 가운데로 띄울 때 뒤를 어둡게 -->
+    <div class="wall-compose-backdrop" id="wall-compose-backdrop" hidden onclick="toggleWallCompose()"></div>
     <div class="wall-compose-panel" id="wall-compose-panel" hidden>
+      <!-- 닫기 — PC 모달 모드에서 보임. 모바일은 hidden 으로. -->
+      <button type="button" class="wall-compose-close" onclick="toggleWallCompose()" aria-label="닫기">
+        <i class="ri-close-line"></i>
+      </button>
+      <input type="text" id="wall-title" class="form-control wall-compose-title" placeholder="제목 (선택)" maxlength="50"
+        style="margin-bottom:8px; font-weight:700; font-size:16px;">
       <textarea id="wall-text" class="form-control" rows="3" placeholder="하고 싶은 말을 자유롭게"
         style="resize:none; margin-bottom:10px;"></textarea>
       <!-- Attached song preview (hidden until a track or URL is picked) -->
@@ -2892,10 +2900,17 @@ window.goAddSoshik = function() {
 window.toggleWallCompose = function() {
   const panel = document.getElementById('wall-compose-panel');
   if (!panel) return;
+  const backdrop = document.getElementById('wall-compose-backdrop');
   panel.hidden = !panel.hidden;
+  // PC 모달 모드일 때 backdrop 도 같이 토글 (모바일은 CSS 로 항상 hidden)
+  if (backdrop) backdrop.hidden = panel.hidden;
   if (!panel.hidden) {
+    const t = document.getElementById('wall-title');
     const ta = document.getElementById('wall-text');
-    if (ta) ta.focus();
+    // PC 는 제목부터, 모바일은 기존처럼 본문부터 focus
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile && t) t.focus();
+    else if (ta) ta.focus();
   }
 };
 
@@ -3062,8 +3077,14 @@ window.submitWallNote = async function() {
     navigateTo('auth');
     return;
   }
+  const titleEl = document.getElementById('wall-title');
+  const titleRaw = (titleEl && titleEl.value || '').trim();
   const textEl = document.getElementById('wall-text');
-  const text = (textEl && textEl.value || '').trim();
+  const bodyRaw = (textEl && textEl.value || '').trim();
+  // 제목 + 본문을 합쳐 저장 — 첫 줄 = 제목 (벽 카드/모달의 일기 톤 파싱과 호환)
+  let text;
+  if (titleRaw && bodyRaw) text = titleRaw + '\n' + bodyRaw;
+  else                     text = titleRaw || bodyRaw;
   if (!text) return;
   const activeColor = document.querySelector('.color-dot.active');
   const color = activeColor ? activeColor.dataset.color : 'yellow';
