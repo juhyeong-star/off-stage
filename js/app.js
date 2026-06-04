@@ -5826,6 +5826,10 @@ function initShapeDrag() {
     startY = ptr.clientY;
     lastX = startX; lastY = startY;
 
+    // 끌어당기는 모션 피드백 — 누르는 순간 살짝 작아지면서 "집었다" 느낌.
+    // 손가락 떠나면 (pointerUp) 제거. 드래그로 넘어가면 .dragging 으로 전환.
+    el.classList.add('pressing');
+
     // ⚠️ Don't modify the shape yet — entering drag mode immediately
     // makes the long-press menu unusable on mobile (shape jiggles as
     // finger lands). We only cache the origin position and start the
@@ -5873,7 +5877,11 @@ function initShapeDrag() {
       // Engage drag mode on first qualifying movement
       if (!dragModeEntered) {
         dragModeEntered = true;
-        dragEl.style.animation = 'none';
+        // 'pressing' (집은 느낌) → 'dragging' 으로 전환
+        dragEl.classList.remove('pressing');
+        // floatDrift 애니메이션은 클래스로 일시정지 (style.animation = 'none' 대신).
+        // 이렇게 하면 pointerUp 에서 클래스만 빼면 원래 animation 이 그대로 살아남.
+        dragEl.classList.add('drag-paused');
         // floatDrift 애니가 주던 축소(--scale)를 드래그 중에도 유지 (안 그러면 커짐)
         const _sc = (getComputedStyle(dragEl).getPropertyValue('--scale') || '').trim();
         if (_sc && _sc !== '1' && _sc !== '') dragEl.style.transform = 'scale(' + _sc + ')';
@@ -5906,6 +5914,11 @@ function initShapeDrag() {
     if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
 
     el.classList.remove('dragging');
+    el.classList.remove('pressing');
+    // 둥둥 떠다니는 floatDrift 애니메이션 복원 — 클래스만 빼면 원래 inline animation 살아남
+    el.classList.remove('drag-paused');
+    // 드래그 중 강제 scale transform 도 정리 → floatDrift 가 다시 transform 을 자기 거로 사용
+    el.style.transform = '';
     el.style.zIndex = '';
     el.style.transition = '';
 

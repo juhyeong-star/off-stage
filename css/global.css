@@ -831,6 +831,19 @@ body.is-universe-route .shapes-universe.my-universe {
   z-index: 50 !important;
   cursor: grabbing;
 }
+/* 누른 직후 — 살짝 작아지며 '집었다' 시각 피드백. 드래그 시작 직전. */
+.floating-shape.pressing {
+  transform: scale(0.92) !important;
+  filter: brightness(0.92);
+  transition: transform 0.14s cubic-bezier(0.4, 0, 0.6, 1), filter 0.14s ease;
+  z-index: 30;
+}
+/* 드래그 중엔 floatDrift 일시정지 — class 로 일시정지하면 pointerUp 에서 클래스만
+   빼면 원래 inline animation 이 살아남. style.animation='none' 으로 덮어쓰면
+   원본을 잃어버려서 둥둥 떠다니는 모션이 사라짐. */
+.floating-shape.drag-paused {
+  animation: none !important;
+}
 .floating-shape.resizing {
   z-index: 60 !important;
   filter: brightness(1.2) drop-shadow(0 0 20px currentColor);
