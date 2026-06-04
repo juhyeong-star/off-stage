@@ -4015,8 +4015,37 @@ window._dropNoteIntoFolder = function (noteId, folderId) {
   if (!noteId || !folderId) return;
   _addNoteToFolder(folderId, noteId);
   if (typeof showToast === 'function') showToast('폴더에 담았어요 📌');
-  if (currentView === 'universe' && typeof renderUniverse === 'function') renderUniverse();
+  // 끊김 방지 — 전체 renderUniverse() 대신 드롭된 노트만 DOM 에서 제거 +
+  // 폴더 배지 카운트 surgical update. (다른 도형들 transform/움직임 보존)
+  _surgicalDropCleanup({ itemSelector: `[data-note-id="${noteId}"]`, folderId });
 };
+
+// 폴더로 떨어뜨린 항목만 DOM 에서 깔끔히 제거 + 폴더 카운트 살짝 갱신.
+// 전체 universe 재렌더 없이 다른 도형/노트의 움직임을 보존한다.
+function _surgicalDropCleanup({ itemSelector, folderId }) {
+  try {
+    // 1) 떨어뜨린 항목은 이미 transform:scale(0.15)+opacity:0 로 사라지는 중 — 정리만.
+    const droppedEls = document.querySelectorAll(itemSelector);
+    setTimeout(() => {
+      droppedEls.forEach(el => { try { el.remove(); } catch (_) {} });
+    }, 260);   // pointerUp 의 0.25s 흡수 애니메이션 끝난 직후
+
+    // 2) 폴더 카운트 배지 갱신 — 없으면 1, 있으면 +1
+    if (folderId) {
+      const folderEl = document.querySelector(`[data-folder-id="${folderId}"]`);
+      if (folderEl) {
+        const badge = folderEl.querySelector('.folder-count, .playlist-count, [data-folder-count]');
+        if (badge) {
+          const cur = parseInt(badge.textContent, 10) || 0;
+          badge.textContent = String(cur + 1);
+        }
+        // 폴더에 살짝 '받았다' 펄스 — 시각 피드백
+        folderEl.classList.add('folder-receive-pulse');
+        setTimeout(() => folderEl.classList.remove('folder-receive-pulse'), 500);
+      }
+    }
+  } catch (e) { console.warn('[universe] surgicalDropCleanup', e); }
+}
 
 // 폴더에서 항목(곡/포스트잇) 빼기 — 잘못 담았을 때. 수집 자체는 유지되니
 // 빼면 다시 떠다니는 내 우주로 돌아온다.
@@ -5141,9 +5170,10 @@ window._dropTrackIntoFolder = async function(trackId, folderId) {
     // 수집(❤)은 그대로 유지 — 폴더에 담긴 곡은 떠다니는 우주에서만 빠진다(폴더 안에 있으니까).
     if (typeof showToast === 'function') showToast('폴더에 담았어요 🎵');
     if (typeof renderSidebarPlaylists === 'function') renderSidebarPlaylists();
+    // 끊김 방지 — 전체 renderUniverse() 대신 surgical 정리만.
+    // 다른 도형/포스트잇 움직임/transform 그대로 보존.
+    _surgicalDropCleanup({ itemSelector: `[data-track-id="${trackId}"]`, folderId });
   }
-  // 우주 다시 그려서 폴더 곡수/배치 갱신
-  if (currentView === 'universe' && typeof renderUniverse === 'function') renderUniverse();
 };
 
 window.toggleTrackHeart = async function(trackId, btnEl) {

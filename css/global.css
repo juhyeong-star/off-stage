@@ -1310,6 +1310,15 @@ body:has(#shape-shorts-overlay) .deco-shape {
     0 0 0 3px rgba(124,77,255,0.95),
     0 18px 40px rgba(124,77,255,0.75);
 }
+/* 폴더로 곡/노트 흡수 직후 — 잠깐 펄스(받았다는 피드백). 전체 재렌더 없이도 OK. */
+.floating-folder.folder-receive-pulse .folder-orb {
+  animation: folderReceivePulse 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes folderReceivePulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.18); box-shadow: 0 0 0 6px rgba(124,77,255,0.45), 0 12px 28px rgba(124,77,255,0.55); }
+  100% { transform: scale(1); }
+}
 @media (max-width: 768px) {
   .floating-folder .folder-orb { width: 118px; height: 118px; border-radius: 30px; }
   .floating-folder .folder-orb .folder-orb-emoji,
