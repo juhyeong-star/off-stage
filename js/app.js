@@ -9465,12 +9465,7 @@ function renderArtistProfile(artistName) {
             </div>
           </div>
           ${'' /* counts box (앨범/프로젝트/싱글) hidden for now — will surface later when there are many songs */}
-          <aside class="artist-postit-aside">
-            <div class="artist-postit-aside-head">소식</div>
-            ${(artistNotes.length > 0 || isSelf)
-              ? `<div class="artist-postit-grid artist-postit-grid-aside">${notesGridHtml}</div>`
-              : `<div class="artist-postit-empty">아직 소식이 없어요</div>`}
-          </aside>
+          ${'' /* 소식 섹션 제거 (사용자 요청) — PC + 모바일 둘 다 */}
         </div>
 
         ${'' /* 기존 별도 postit-section은 프로필 옆으로 이동됨 */ ? `<div class="reveal artist-postit-section">
