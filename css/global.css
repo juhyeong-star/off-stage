@@ -788,7 +788,9 @@ body.guest .sidebar-my-channel { display: none; }
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   pointer-events: none;
-  z-index: 0;
+  /* z-index 0 으로 두면 #universe-head 위로 올라와 제목을 가림.
+     -1 로 내려서 universe 콘텐츠 뒤에 정확히 깔리게. */
+  z-index: -1;
   background: #000;
   overflow: hidden;
   opacity: 0;
@@ -800,6 +802,15 @@ body.is-universe-route .persistent-starfield-layer {
 /* /universe 일 때 본문 .shapes-universe 의 검정 배경은 투명하게 — 별 레이어가 비쳐 보이게 */
 body.is-universe-route .shapes-universe.my-universe {
   background: transparent;
+}
+/* z-index:-1 별 레이어가 보이려면 #app-content / body 가 자기 stacking context
+   를 가지지 않거나 투명해야 함. universe 라우트일 때 body 배경 검정으로 (별 layer
+   와 같은 검정) → 매끄럽게 이어짐, 콘텐츠는 그 위에. */
+body.is-universe-route { background: #000; }
+body.is-universe-route #app-content,
+body.is-universe-route #universe-head {
+  position: relative;
+  z-index: 1;
 }
 
 .floating-shape {
