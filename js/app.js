@@ -11139,19 +11139,37 @@ window.enterFolderWithAnim = function(folderId, anchorEl) {
   }
 
   // 1) 원래 우주 애들 → 오른쪽 아래로 미끄러지며 사라짐.
-  //    단, 클릭한 폴더 본인은 그대로 두고 (혹은 살짝 페이드아웃만) — 시각적 anchor.
+  //    단, 클릭한 폴더 본인은 그대로 두고 페이드아웃만 (시각적 anchor).
+  //    ⚠️ 떠다니는 floatDrift 가 매 프레임 transform 을 바꾸는 중이라, 그냥
+  //    animation:none 으로 끊으면 도형이 identity 위치로 튕긴 뒤 슬라이드해서
+  //    움직임이 부자연스러움. 현재 transform 을 캡처해 그대로 박은 뒤 (reflow)
+  //    목적지로 transition → 끊김 없이 자연스럽게 이어짐.
   uni.querySelectorAll('.floating-shape').forEach(el => {
     if (el === _enteringFolderEl) {
-      // 클릭한 폴더는 부드럽게 페이드아웃만 (위치 변동 X)
-      el.style.transition = 'opacity 0.45s ease, transform 0.45s ease';
-      el.style.transform = 'scale(1.06)';
+      // 클릭한 폴더는 그 자리에서 살짝 부풀며 페이드아웃
+      const _cs = getComputedStyle(el);
+      const _cur = _cs.transform;
+      el.style.animation = 'none';
+      if (_cur && _cur !== 'none') el.style.transform = _cur;
+      void el.offsetWidth;   // force reflow
+      el.style.transition = 'opacity 0.45s ease, transform 0.45s cubic-bezier(0.22, 0.9, 0.3, 1)';
+      el.style.transform = (_cur && _cur !== 'none' ? _cur + ' ' : '') + 'scale(1.06)';
       el.style.opacity = '0';
       el.style.pointerEvents = 'none';
       return;
     }
+    // 현재 floatDrift 가 그리던 transform 을 캡처 → 그 위치에서 자연스럽게 이어감
+    const cs = getComputedStyle(el);
+    const currentT = cs.transform;
     el.style.animation = 'none';
-    el.style.transition = 'transform 0.6s cubic-bezier(0.4,0,0.4,1), opacity 0.55s ease';
+    el.style.willChange = 'transform, opacity';
     el.style.transformOrigin = 'center';
+    if (currentT && currentT !== 'none') {
+      el.style.transform = currentT;   // 그 자리에 박음 (점프 방지)
+    }
+    void el.offsetWidth;   // 강제 reflow 로 시작 상태 고정
+    // 부드러운 ease-out (cubic-bezier 0.22, 0.9, 0.3, 1) — incoming 과 동일 톤
+    el.style.transition = 'transform 0.7s cubic-bezier(0.22, 0.9, 0.3, 1), opacity 0.55s ease';
     el.style.transform = 'translate(42vw, 38vh) scale(0.3)';
     el.style.opacity = '0';
     el.style.pointerEvents = 'none';
