@@ -13512,13 +13512,15 @@ body.polaroid-sheet-open { overflow: hidden; }
   color: #6B46C1 !important;
 }
 
-/* 데모 카드 — 클릭(=is-selected) 했을 때만 댓글 목록/입력 펼침.
-   기본은 글(노트) + 댓글 티저만 보이게 해서 호기심 자극. */
-.artist-canvas .demo-card .demo-card-cm-list,
-.artist-canvas .demo-card .demo-card-cm-input { display: none !important; }
+/* 데모 카드 — 클릭(=is-selected) 했을 때만 댓글 '목록' 펼침.
+   댓글 입력칸은 항상 보이게(사용자 요청), 보내기 버튼만 숨김. */
+.artist-canvas .demo-card .demo-card-cm-list { display: none !important; }
 .artist-canvas .demo-card.is-selected .demo-card-cm-list { display: flex !important; }
-.artist-canvas .demo-card.is-selected .demo-card-cm-input { display: flex !important; }
 .artist-canvas .demo-card.is-selected .demo-card-cm-hint { display: none !important; }
+/* 입력칸: 항상 보임. 보내기(send) 버튼은 선택됐을 때만. */
+.artist-canvas .demo-card .demo-card-cm-input { display: flex !important; }
+.artist-canvas .demo-card .demo-card-cm-send { display: none !important; }
+.artist-canvas .demo-card.is-selected .demo-card-cm-send { display: inline-flex !important; }
 
 /* 댓글 티저 — 카드 맨 아래 한 줄. "뭐라고 적혔지?" 호기심 한방울. */
 .artist-canvas .demo-card-cm-hint {
