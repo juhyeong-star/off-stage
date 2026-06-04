@@ -14710,14 +14710,21 @@ body:has(#global-player.expanded) .global-back-btn {
     align-items: center !important;
     gap: 12px !important;
   }
+  /* 흰 폴라로이드 프레임 제거 + 사진 더 크게 (사용자 요청) */
   .artist-canvas .projects-grid .project-master-mobile .project-cover-wrap {
-    width: 88px !important;
-    height: 88px !important;
+    width: 120px !important;
+    height: 120px !important;
     aspect-ratio: 1 / 1 !important;
     margin: 0 !important;
     flex-shrink: 0 !important;
-    border: 1.5px solid #111 !important;
-    box-shadow: 2px 2px 0 rgba(17,17,17,0.5) !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
+  }
+  .artist-canvas .projects-grid .project-master-mobile .project-cover-wrap .project-cover-large {
+    border-radius: 6px !important;
   }
   .artist-canvas .projects-grid .project-master-mobile .master-compact-text {
     flex: 1 !important;
@@ -14750,22 +14757,23 @@ body:has(#global-player.expanded) .global-back-btn {
     margin: 0 !important;
   }
 
-  /* Snake demo grid — 2 columns, cards placed by inline grid-row/col */
+  /* Snake demo grid — 2 columns, 우리들의벽 모바일 카드 크기(280px) 정도로 맞춤 */
   .artist-canvas .projects-grid .demo-snake-grid {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
-    grid-auto-rows: minmax(150px, auto);   /* 180 → 150 */
-    gap: 10px !important;                  /* 12 → 10 */
+    grid-auto-rows: 280px !important;       /* wall 모바일 카드 높이와 동일 */
+    gap: 12px !important;
   }
   .artist-canvas .projects-grid .demo-snake-grid > .demo-card {
     aspect-ratio: auto !important;
     width: auto !important;
-    height: auto !important;
+    height: 280px !important;
+    max-height: 280px !important;
     flex: initial !important;
     min-width: 0 !important;
     margin: 0 !important;
-    padding: 9px 10px 9px !important;      /* 12/12/10 → 9/10/9 */
-    /* Inline grid-row & grid-column from JS drive the snake position */
+    padding: 14px 14px 12px !important;
+    overflow: hidden !important;
   }
   .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-tag {
     font-size: 11px !important;
