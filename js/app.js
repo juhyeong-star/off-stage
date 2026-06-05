@@ -8261,7 +8261,7 @@ function renderProjectBox(pid, versions) {
         </div>
         ${noteHtml}
         <div class="demo-card-cm-list" onclick="event.stopPropagation(); openDemoWallModal('${v.id}')" title="댓글 모두 보기">
-          ${cmInlineHtml}${pcCmEmptyHtml}${pcCmHintHtml}
+          ${cmInlineHtml}${pcCmEmptyHtml}
         </div>
         ${inputInlineHtml}
       </div>
