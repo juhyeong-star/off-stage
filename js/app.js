@@ -8633,19 +8633,17 @@ function renderProjectBox(pid, versions) {
   // is past early-stage.
   return `
     <div class="project-box reveal" data-project="${pid}">
-      <div class="project-header" style="display:block !important; width:100%;">
-        <div class="project-album-card" style="display:grid !important; grid-template-columns: 320px 1fr; gap:18px; align-items:stretch; width:100%; padding:10px; background:#fff; border:1.5px solid #111; border-radius:8px; box-shadow:5px 5px 0 #111;">
-          <div class="release-card-block" style="display:flex; flex-direction:column; gap:10px; min-width:0;">
+      <div class="release-row" style="display:grid; grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); gap:20px; align-items:stretch; width:100%;">
+        <div class="project-header" style="display:block; margin:0;">
+          <div class="project-album-card" style="display:flex; flex-direction:column; gap:8px; width:100%; padding:10px; background:#fff; border:1.5px solid #111; border-radius:8px; box-shadow:5px 5px 0 #111;">
             ${coverHtml}
-            <div class="project-album-meta">
-              <h3 class="project-title">「${final ? safeTitle : 'Coming Soon'}」</h3>
-              <div class="project-artist-line">${final ? ((final.artist || primary.artist || '').replace(/</g,'&lt;')) : 'Coming Soon'}</div>
-              ${masterDate && final ? `<div class="project-master-date">발매 · ${masterDate}</div>` : ''}
-              ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
-            </div>
+            <h3 class="project-title" style="margin:8px 0 0;">「${final ? safeTitle : 'Coming Soon'}」</h3>
+            <div class="project-artist-line">${final ? ((final.artist || primary.artist || '').replace(/</g,'&lt;')) : 'Coming Soon'}</div>
+            ${masterDate && final ? `<div class="project-master-date">발매 · ${masterDate}</div>` : ''}
+            ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
           </div>
-          ${releaseNoteHtml ? releaseNoteHtml.replace('<div class="release-note-postit demo-card-look"', '<div class="release-note-postit demo-card-look" style="min-width:0; margin:0; padding:18px 22px; align-self:stretch;"') : ''}
         </div>
+        ${releaseNoteHtml ? releaseNoteHtml.replace('<div class="release-note-postit demo-card-look"', '<div class="release-note-postit demo-card-look" style="min-width:0; margin:0; padding:20px 24px; height:100%; box-sizing:border-box;"') : ''}
       </div>
       ${(demos.length > 0 || canEditArtist) ? `
         <div class="demo-path" style="grid-template-columns: repeat(${cols}, 1fr);">
