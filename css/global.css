@@ -14154,9 +14154,37 @@ body.polaroid-sheet-open { overflow: hidden; }
 /* PC 에서 project-album-card 가 horizontal flex 이게 보장 */
 .artist-canvas .project-album-card {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;        /* 자식 높이 row 만큼 stretch — 카드/포스트잇 높이 맞춤 */
   gap: 16px;
   flex-wrap: wrap;
+}
+/* 마스터 cover 와 release-note-postit, 그리고 옆 demo-card 의 높이를 맞추기 위해 */
+.artist-canvas .project-album-card > * {
+  align-self: stretch;
+}
+/* projects-grid 안 project-box 도 row 내에서 같은 높이로 stretch */
+.artist-canvas .projects-grid {
+  align-items: stretch;
+}
+.artist-canvas .projects-grid > .project-box {
+  display: flex;
+  flex-direction: column;
+  height: 100%;                /* grid cell 높이 채움 */
+}
+.artist-canvas .projects-grid > .project-box .project-header {
+  flex-shrink: 0;
+}
+.artist-canvas .projects-grid > .project-box .demo-path {
+  flex: 1 1 auto;              /* 남은 높이 채움 */
+  min-height: 0;
+}
+/* cover-postit 도 부모 높이 다 채우게 (release-note 와 옆에 demo 카드와 균일하게) */
+.artist-canvas .project-album-card .project-cover-wrap.is-postit {
+  height: 100%;
+  min-height: 200px;
+}
+.artist-canvas .project-album-card .project-cover-wrap.is-postit .cover-postit {
+  height: 100%;
 }
 
 /* 모달 안의 ✕ 버튼 — 모바일에서도 명확히 보이고 누르기 쉽게 */
