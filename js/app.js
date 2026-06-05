@@ -9992,13 +9992,51 @@ function renderArtistProfile(artistName) {
           const strong = existingChip.querySelector('strong');
           if (strong) strong.textContent = String(count);
         }
-        // Insert follow button if missing
+        // 팔로우 버튼 — 이미 이름 옆 인라인 알약(.follow-btn-inline) 으로 렌더됨.
+        // 비어있을 때만 (artistSupabaseId 가 초기 렌더 시점에 없었던 경우) fallback 으로
+        // 추가하되, 옛날 큰 검은 .follow-btn-v2 가 아니라 새 .follow-btn-inline 을 이름 옆에.
         const idText = document.querySelector('.artist-id-text');
-        if (idText && !idText.querySelector('.follow-btn-v2')) {
-          const btnWrap = document.createElement('div');
-          btnWrap.style.marginTop = '14px';
-          btnWrap.innerHTML = `<button class="follow-btn-v2 ${following ? 'is-following' : ''}" onclick="toggleFollowArtist('${aid}', '${(artistName||'').replace(/'/g,"\\'")}')">${following ? '<i class="ri-seedling-fill"></i> 함께하는 중' : '<i class="ri-seedling-line"></i> 함께하기'}</button>`;
-          idText.appendChild(btnWrap);
+        const alreadyHas = idText && (
+          idText.querySelector('.follow-btn-inline') ||
+          idText.querySelector('.follow-btn-v2')
+        );
+        if (idText && !alreadyHas) {
+          const h1El = idText.querySelector('h1');
+          if (h1El) {
+            // h1 을 .artist-name-row 로 감싸고 알약 추가
+            const row = document.createElement('div');
+            row.className = 'artist-name-row';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'follow-btn-inline' + (following ? ' is-following' : '');
+            btn.innerHTML = following ? '<i class="ri-user-follow-fill"></i> 팔로잉' : '<i class="ri-user-add-line"></i> 팔로우';
+            btn.addEventListener('click', (e) => {
+              e.preventDefault();
+              if (typeof window.toggleFollowArtist === 'function') {
+                window.toggleFollowArtist(aid, artistName);
+              }
+            });
+            h1El.parentNode.insertBefore(row, h1El);
+            row.appendChild(h1El);
+            row.appendChild(btn);
+          }
+        }
+        // 그리고 메시지 칩(다른 사람용) 이 빠져있으면 추가 (artistSupabaseId 늦게 채워진 케이스)
+        const chipsRow = document.getElementById('artist-follow-chips');
+        if (chipsRow && !chipsRow.querySelector('.follow-chip-msg')) {
+          const msgBtn = document.createElement('button');
+          msgBtn.type = 'button';
+          msgBtn.className = 'follow-chip follow-chip-msg follow-chip-msg-dm';
+          msgBtn.title = artistName + ' 에게 메시지 보내기';
+          msgBtn.innerHTML = '<i class="ri-mail-send-fill"></i> 메시지';
+          msgBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (typeof window.openDmModal === 'function') {
+              const av = document.querySelector('.artist-id .artist-avatar');
+              window.openDmModal(artistName, (av && av.src) || '');
+            }
+          });
+          chipsRow.appendChild(msgBtn);
         }
       } catch (e) { console.warn('[artist] upgrade fan info', e); }
     })();
