@@ -4133,7 +4133,36 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 .note-detail-paper #note-detail-comments-list::-webkit-scrollbar-track {
   background: transparent;
 }
-.note-detail-paper .scribble-input-row { flex-shrink: 0; margin-top: auto; }
+.note-detail-paper .scribble-input-row {
+  flex-shrink: 0;
+  margin-top: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.note-detail-paper .scribble-input-row .scribble-input { flex: 1; min-width: 0; }
+/* 댓글 보내기 버튼 — 기본은 숨김(PC 는 Enter 로 충분), 모바일에만 표시.
+   모바일 IME 의 Enter 키가 안 먹는 경우 백업 + 명확한 어포던스. */
+.note-detail-paper .scribble-send-btn { display: none; }
+@media (max-width: 768px) {
+  .note-detail-paper .scribble-send-btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: #111;
+    color: #FFE500;
+    border: none;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.15s, background 0.15s;
+  }
+  .note-detail-paper .scribble-send-btn:active { transform: scale(0.92); }
+  .note-detail-paper .scribble-send-btn i { line-height: 1; }
+}
 
 /* 모달 왼쪽 위 작성 날짜 칩 — 닫기 버튼 옆 (반대편) */
 .note-detail-date {

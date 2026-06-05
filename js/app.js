@@ -3330,7 +3330,9 @@ window.openNoteDetail = function(noteId) {
           <div id="note-detail-comments-list">${commentsHtml}</div>
 
           <div class="scribble-input-row">
-            <input type="text" id="comment-text" class="scribble-input" placeholder="" onkeypress="if(event.key==='Enter') submitComment('${noteId}')">
+            <input type="text" id="comment-text" class="scribble-input" placeholder="" onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); submitComment('${noteId}'); }">
+            <!-- 모바일 Enter 키가 안 먹는 IME/브라우저 대비 명확한 send 버튼 — PC 에선 CSS 로 숨김 -->
+            <button type="button" class="scribble-send-btn" onclick="submitComment('${noteId}')" aria-label="댓글 남기기"><i class="ri-send-plane-fill"></i></button>
           </div>
         </div>
 
