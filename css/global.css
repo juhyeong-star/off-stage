@@ -14236,6 +14236,17 @@ body.polaroid-sheet-open { overflow: hidden; }
 .artist-canvas .release-card-block .project-album-meta {
   padding: 0;
 }
+/* Coming Soon(마스터 없음) 커버 = 1:1 정사각, 데모 카드 높이(214px)와 맞춰 안정적 배치 (사용자 요청) */
+.artist-canvas .release-card-block:has(.project-cover-wrap.no-master) {
+  min-width: 214px !important;
+  max-width: 214px !important;
+  width: 214px !important;
+}
+.artist-canvas .projects-grid .project-header .project-album-card .project-cover-wrap.no-master {
+  width: 214px !important;
+  height: 214px !important;
+  aspect-ratio: 1 / 1 !important;
+}
 /* 글소개 포스트잇 = 옆에 (오른쪽), 남은 공간 채움 */
 .artist-canvas .project-album-card > .release-note-postit {
   flex: 1 1 auto;                    /* 남은 폭 다 차지 */
