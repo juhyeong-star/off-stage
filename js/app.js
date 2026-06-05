@@ -8162,6 +8162,16 @@ function renderProjectBox(pid, versions) {
   // 댓글 권한 — 로그인된 사용자 누구나 가능 (후원자/아티스트 제한 해제)
   const canComment = !!(db.currentUser || window.__currentUser);
 
+  // 발매 글소개 — 노란 포스트잇으로 앨범 옆에 표시 (사용자 요청). PC + 모바일 공용.
+  const _releaseDesc = (final && final.description || '').trim();
+  const _descEsc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  const releaseNoteHtml = (final && _releaseDesc) ? `
+    <div class="release-note-postit" onclick="event.stopPropagation(); openDemoWallModal('${final.id}')" title="자세히 보기">
+      <div class="release-note-eyebrow">📝 글 소개</div>
+      <div class="release-note-body">${_descEsc(_releaseDesc)}</div>
+    </div>
+  ` : '';
+
   // Snake cards — DEMOS ONLY (with 함께만들기 progress badge per demo)
   // 모두 collapsed 상태로 시작 — 클릭해야 일지·댓글·입력 노출 (사용자 요청)
   const cardsHtml = demos.map((v, i) => {
@@ -8598,6 +8608,7 @@ function renderProjectBox(pid, versions) {
               ${final ? `<button type="button" class="master-tap-hint" onclick="event.stopPropagation(); openTrackCommentsModal('${final.id}')"><i class="ri-chat-3-line"></i> 탭해서 댓글 보기</button>` : ''}
             </div>
           </div>
+          ${releaseNoteHtml}
         </div>
         ${demos.length > 0 ? `<div class="demo-snake-grid">${mobileCardsHtml}</div>` : ''}
       </div>
@@ -8618,6 +8629,7 @@ function renderProjectBox(pid, versions) {
             ${masterDate && final ? `<div class="project-master-date">발매 · ${masterDate}</div>` : ''}
             ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
           </div>
+          ${releaseNoteHtml}
         </div>
       </div>
       ${(demos.length > 0 || canEditArtist) ? `

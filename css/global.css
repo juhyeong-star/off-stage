@@ -14082,6 +14082,74 @@ body.polaroid-sheet-open { overflow: hidden; }
   .cm-del-btn:active { color: #c2185b; }
 }
 
+/* ============================================================
+   발매 글소개 — 노란 포스트잇 (앨범 옆에)
+   ============================================================ */
+.release-note-postit {
+  background: #FFE500;
+  border: 1.5px solid #111;
+  border-radius: 3px;
+  box-shadow: 3px 3px 0 #111;
+  padding: 14px 16px;
+  margin-left: 14px;
+  max-width: 280px;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.15s, box-shadow 0.15s;
+  align-self: flex-start;
+}
+.release-note-postit::before {
+  /* 윗부분 가짜 테이프 */
+  content: '';
+  position: absolute;
+  top: -7px; left: 50%;
+  transform: translateX(-50%);
+  width: 50px; height: 14px;
+  background: rgba(255,255,255,0.55);
+  border-radius: 1px;
+}
+.release-note-postit:hover {
+  transform: translate(-2px, -2px) rotate(-1deg);
+  box-shadow: 5px 5px 0 #111;
+}
+.release-note-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  color: #c2185b;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.release-note-body {
+  font-family: 'Nanum JungShik', 'Caveat', cursive;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #1a1a1a;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* 모바일 — 앨범 아래로 풀폭 */
+@media (max-width: 768px) {
+  .release-note-postit {
+    margin: 14px 0 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+    align-self: stretch !important;
+  }
+  .release-note-body { font-size: 14px; -webkit-line-clamp: 4; }
+}
+/* PC 에서 project-album-card 가 horizontal flex 이게 보장 */
+.artist-canvas .project-album-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
 /* 모달 안의 ✕ 버튼 — 모바일에서도 명확히 보이고 누르기 쉽게 */
 .dwm-cm-line { position: relative; align-items: center; }
 .dwm-cm-del {
