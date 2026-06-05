@@ -8207,19 +8207,19 @@ function renderProjectBox(pid, versions) {
     const pcCmHintHtml = cmList.length > 2
       ? `<div class="demo-card-cm-hint-tap">댓글 ${cmList.length}개 · 탭해서 모두 보기</div>` : '';
 
-    // 로그인한 누구나 인라인 입력 — Enter 만 (한글 IME 호환)
+    // 로그인한 누구나 인라인 입력 — Enter 만 (사용자 요청: send 버튼 제거)
     const inputInlineHtml = canComment ? `
       <div class="demo-card-cm-input" onclick="event.stopPropagation();">
         <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="댓글 남기기…"
                onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); submitTrackComment('${v.id}'); }">
-        <button class="demo-card-cm-send" onclick="event.stopPropagation(); submitTrackComment('${v.id}')" aria-label="남기기"><i class="ri-arrow-right-line"></i></button>
       </div>` : '';
 
     const demoLiked = isTrackLiked(v.id);
+    // 카드 탭 → 우리들의 벽 스타일 풀 모달 (openTrackDetail) + 재생 (사용자 요청)
     return `
       <div class="${cls} page-demo ${v.pinned ? 'is-pinned' : ''}" data-track-id="${v.id}" data-project="${pid}"
            style="grid-row:${pos.row}; grid-column:${pos.col};"
-           onclick="selectProjectVersion('${pid}','${v.id}'); playTrack('${v.id}')">
+           onclick="event.stopPropagation(); openDemoWallModal('${v.id}'); playTrack('${v.id}', 'demo')">
         <div class="demo-card-top">
           <span class="demo-tag">DEMO ${i+1}</span>
           <span class="demo-card-date">· ${dateLabel}</span>
@@ -8233,7 +8233,7 @@ function renderProjectBox(pid, versions) {
           </button>
         </div>
         ${noteHtml}
-        <div class="demo-card-cm-list" ${cmList.length ? `onclick="event.stopPropagation(); openTrackCommentsModal('${v.id}')" title="댓글 모두 보기"` : ''}>
+        <div class="demo-card-cm-list" onclick="event.stopPropagation(); openDemoWallModal('${v.id}')" title="댓글 모두 보기">
           ${cmInlineHtml}${pcCmHintHtml}
         </div>
         ${inputInlineHtml}
@@ -12473,7 +12473,146 @@ window.submitCheer = async function (trackId, trackTitle, artistName) {
   }
 };
 
-// ===================== TRACK COMMENTS MODAL =====================
+// ===================== DEMO WALL MODAL (우리들의 벽 스타일 풀모달) =====================
+// 사용자 요청: 데모 카드 탭 → 우리들의 벽 모달 같은 풀-사이즈 노란 포스트잇 모달.
+// 위에는 노트 (DEMO 태그 / 제목 / 일지), 아래는 댓글 리스트 + 입력칸.
+window.openDemoWallModal = function (trackId) {
+  if (!trackId) return;
+  const db = window.DB.get();
+  const track = (db.tracks || []).find(t => t && t.id === trackId);
+  if (!track) { showToast('곡을 찾을 수 없어요'); return; }
+
+  const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const safeTitle = esc(track.title || '제목 없음');
+  const safeArtist = esc(track.artist || '');
+  const safeNote = esc((track.artistNote || '').trim()).replace(/\n/g, '<br>');
+  const verLabel = track.isDemo ? (track.versionLabel || 'Demo') : '발매 (Release)';
+  const cms = Array.isArray(track.trackComments) ? track.trackComments : [];
+  const user = window.__currentUser || (window.DB.get() && window.DB.get().currentUser);
+  const canComment = !!user;
+
+  const cmsHtml = cms.length === 0
+    ? `<div class="dwm-empty">아직 댓글이 없어요 · 첫 댓글을 남겨보세요</div>`
+    : cms.map(cm => `
+        <div class="dwm-cm-line">
+          <span class="dwm-cm-arrow">ㄴ</span>
+          <span class="dwm-cm-text">${esc(cm.text || '')}</span>
+          <span class="dwm-cm-auth">— ${esc(cm.author || '익명')}</span>
+        </div>
+      `).join('');
+
+  // Enter 만으로 전송 (송신 버튼 없음, 사용자 요청)
+  const inputHtml = canComment ? `
+    <div class="dwm-input-row">
+      <input type="text" class="dwm-input" maxlength="200" placeholder="댓글 남기기…"
+             onkeydown="if(event.key==='Enter' && !event.isComposing){event.preventDefault(); submitDemoWallComment('${trackId}');}">
+    </div>
+  ` : `<div class="dwm-loginhint">로그인하면 댓글을 남길 수 있어요</div>`;
+
+  const existing = document.getElementById('demo-wall-modal');
+  if (existing) existing.remove();
+
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="demo-wall-modal" class="dwm-modal" onclick="if(event.target===this) closeDemoWallModal()">
+      <div class="dwm-content dwm-paper">
+        <button class="dwm-close" onclick="closeDemoWallModal()" aria-label="닫기"><i class="ri-close-line"></i></button>
+        <div class="dwm-postit">
+          <div class="dwm-eyebrow"><span class="dwm-verlabel">${verLabel}</span></div>
+          <h2 class="dwm-title">「${safeTitle}」</h2>
+          ${safeArtist ? `<div class="dwm-artist">— ${safeArtist}</div>` : ''}
+          ${safeNote ? `<div class="dwm-divider"></div><div class="dwm-note">${safeNote}</div>` : ''}
+        </div>
+        <div class="dwm-comments">
+          <div class="dwm-comments-title">댓글 <span class="dwm-cm-count">${cms.length}</span></div>
+          <div class="dwm-cm-list" id="dwm-cm-list">${cmsHtml}</div>
+          ${inputHtml}
+        </div>
+      </div>
+    </div>
+  `);
+
+  // Scroll to latest on open & focus input (PC 만)
+  setTimeout(() => {
+    const modal = document.getElementById('demo-wall-modal');
+    if (!modal) return;
+    const list = modal.querySelector('#dwm-cm-list');
+    if (list) list.scrollTop = list.scrollHeight;
+    const input = modal.querySelector('.dwm-input');
+    const isMobile = window.innerWidth <= 768;
+    if (input && canComment && !isMobile) input.focus();
+  }, 50);
+};
+
+window.closeDemoWallModal = function () {
+  const m = document.getElementById('demo-wall-modal');
+  if (m) m.remove();
+};
+
+// 모달 내부 댓글 전송 — Supabase + 카드 inline 둘 다 in-place 갱신
+window.submitDemoWallComment = async function (trackId) {
+  const modal = document.getElementById('demo-wall-modal');
+  if (!modal) return;
+  const input = modal.querySelector('.dwm-input');
+  const text = (input && input.value || '').trim();
+  if (!text) return;
+
+  const db = window.DB.get();
+  const track = (db.tracks || []).find(t => t && t.id === trackId);
+  if (!track) { showToast('곡을 찾을 수 없어요'); return; }
+  const profileName = (window.__currentUser && window.__currentUser.name) || '';
+  const authorName = profileName || '익명';
+  const isSupabaseTrack = !!track.__supabase;
+
+  let newComment = null;
+  try {
+    if (isSupabaseTrack && window.Tracks) {
+      newComment = await window.Tracks.addComment(trackId, { text, authorName });
+    } else {
+      newComment = { id: 'tc' + Date.now(), author: authorName, text, createdAt: new Date().toISOString() };
+      window.DB.addTrackComment(trackId, newComment);
+    }
+    if (!Array.isArray(track.trackComments)) track.trackComments = [];
+    track.trackComments.push(newComment);
+  } catch (e) {
+    alert('댓글 저장 실패: ' + (e.message || e));
+    return;
+  }
+  if (input) input.value = '';
+
+  // Refresh modal list
+  const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const list = modal.querySelector('#dwm-cm-list');
+  if (list) {
+    list.innerHTML = track.trackComments.map(cm => `
+      <div class="dwm-cm-line">
+        <span class="dwm-cm-arrow">ㄴ</span>
+        <span class="dwm-cm-text">${esc(cm.text || '')}</span>
+        <span class="dwm-cm-auth">— ${esc(cm.author || '익명')}</span>
+      </div>
+    `).join('');
+    list.scrollTop = list.scrollHeight;
+  }
+  const countEl = modal.querySelector('.dwm-cm-count');
+  if (countEl) countEl.textContent = track.trackComments.length;
+
+  // Inline 카드 댓글 리스트도 in-place 갱신 (마지막 2 inline + 카운트)
+  try {
+    const allCms = track.trackComments;
+    const cmVisible = allCms.slice(-2);
+    document.querySelectorAll(`.demo-card[data-track-id="${trackId}"] .demo-card-cm-list`).forEach(l => {
+      const lines = cmVisible.map(cm => {
+        const t = esc(cm.text || '');
+        const a = esc(cm.author || '익명');
+        return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${t}</span><span class="demo-card-cm-author">— ${a}</span></div>`;
+      }).join('');
+      const hint = allCms.length > 2
+        ? `<div class="demo-card-cm-hint-tap">댓글 ${allCms.length}개 · 탭해서 모두 보기</div>` : '';
+      l.innerHTML = lines + hint;
+    });
+  } catch (_) {}
+};
+
+// ===================== TRACK COMMENTS MODAL (legacy, 마스터/모바일 카드에서 사용) =====================
 // One modal that shows every comment for a track (master OR demo) and lets
 // the viewer drop a new one. Triggered from:
 //   - master compact card tap (mobile)

@@ -13825,6 +13825,214 @@ body.polaroid-sheet-open { overflow: hidden; }
 /* ── 데모 카드 내부 ㄴ 댓글 리스트 (낙서 톤) — 고정 높이 카드 안에서 자동 스크롤 ── */
 /* PC 11:33 (c968cc7) 시점 — 기본 layout 유지. wall-stack 오버라이드 다 제거.
    .artist-canvas .projects-grid 는 기본 .projects-grid { 4-col grid } 그대로. */
+
+/* ============================================================
+   DEMO WALL MODAL — 우리들의 벽 스타일 풀-사이즈 노란 포스트잇
+   (사용자 요청: PC 데모 카드 탭 → 벽 모달처럼 띄움)
+   위: 노트 (제목 + 일지)  아래: 댓글 + 입력칸
+   ============================================================ */
+.dwm-modal {
+  position: fixed; inset: 0; z-index: 800;
+  background: rgba(0,0,0,0.55);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: dwmFadeIn 0.2s ease-out;
+}
+@media (max-width: 768px) {
+  .dwm-modal {
+    align-items: stretch;
+    padding: 0;
+  }
+}
+@keyframes dwmFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.dwm-content {
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  background: #FFE500;             /* 노란 포스트잇 — 우리들의 벽 톤 */
+  border: 2px solid #111;
+  border-radius: 6px;
+  box-shadow: 6px 6px 0 #111;
+  color: #111;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  animation: dwmSlideIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (max-width: 768px) {
+  .dwm-content {
+    max-width: none;
+    max-height: 100%;
+    height: 100%;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    box-shadow: none;
+  }
+}
+@keyframes dwmSlideIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.dwm-close {
+  position: absolute;
+  top: 12px; right: 12px;
+  width: 34px; height: 34px;
+  background: #111;
+  color: #FFE500;
+  border: none;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+.dwm-close:active { transform: scale(0.9); }
+.dwm-postit {
+  padding: 32px 28px 22px;
+  flex-shrink: 0;
+}
+.dwm-eyebrow { margin-bottom: 8px; }
+.dwm-verlabel {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 800;
+  color: #c2185b;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.5);
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+.dwm-title {
+  font-family: 'Nanum JungShik', 'Caveat', 'Gaegu', cursive;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 6px 0 6px;
+  color: #1a1a1a;
+  word-break: keep-all;
+}
+.dwm-artist {
+  font-size: 15px;
+  color: #555;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.dwm-divider {
+  height: 1.5px;
+  background: rgba(17,17,17,0.18);
+  border-radius: 1px;
+  margin: 16px 0;
+}
+.dwm-note {
+  font-family: 'Nanum JungShik', 'Caveat', cursive;
+  font-size: 18px;
+  line-height: 1.55;
+  color: #1a1a1a;
+  white-space: pre-wrap;
+  word-break: keep-all;
+}
+.dwm-comments {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0 28px 22px;
+  background: rgba(255,255,255,0.18);
+  border-top: 1.5px dashed rgba(17,17,17,0.25);
+}
+.dwm-comments-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #c2185b;
+  letter-spacing: 0.5px;
+  margin: 16px 0 10px;
+  text-transform: uppercase;
+}
+.dwm-comments-title .dwm-cm-count {
+  display: inline-block;
+  background: #c2185b;
+  color: #fff;
+  padding: 1px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  margin-left: 4px;
+}
+.dwm-cm-list {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0;
+}
+.dwm-cm-list::-webkit-scrollbar { width: 5px; }
+.dwm-cm-list::-webkit-scrollbar-thumb {
+  background: rgba(17,17,17,0.3);
+  border-radius: 2px;
+}
+.dwm-cm-line {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: #1a1a1a;
+  padding: 2px 0;
+}
+.dwm-cm-arrow { color: #c2185b; font-weight: 800; flex-shrink: 0; }
+.dwm-cm-text { flex: 1; word-break: keep-all; word-wrap: break-word; }
+.dwm-cm-auth { color: #777; font-size: 12.5px; flex-shrink: 0; }
+.dwm-empty {
+  padding: 18px 0;
+  text-align: center;
+  font-style: italic;
+  color: rgba(17,17,17,0.5);
+  font-size: 13px;
+}
+.dwm-input-row {
+  display: flex;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1.5px dashed rgba(17,17,17,0.25);
+  flex-shrink: 0;
+}
+.dwm-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-bottom: 1.5px solid rgba(17,17,17,0.4);
+  background: transparent;
+  padding: 10px 4px;
+  font-size: 15px;
+  color: #1a1a1a;
+  outline: none;
+}
+.dwm-input:focus { border-bottom-color: #c2185b; }
+.dwm-input::placeholder { color: rgba(17,17,17,0.4); font-style: italic; }
+.dwm-loginhint {
+  padding: 14px 0;
+  text-align: center;
+  font-size: 13px;
+  color: rgba(17,17,17,0.55);
+}
+
+/* PC 데모 카드 — send 버튼 숨김 (사용자 요청: 보내기 버튼 없애줘) */
+@media (min-width: 769px) {
+  .artist-canvas .demo-card .demo-card-cm-send {
+    display: none !important;
+  }
+}
 .artist-canvas .projects-grid .demo-stack-pc {
   display: flex;
   flex-direction: column;
