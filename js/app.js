@@ -12560,7 +12560,7 @@ window.openDemoWallModal = function (trackId) {
     : cms.map(cm => {
         const isMine = (_myDwmId && cm.authorId && cm.authorId === _myDwmId)
                     || (!cm.authorId && _myDwmName && cm.author === _myDwmName);
-        const delBtn = isMine ? `<button class="dwm-cm-del" onclick="event.stopPropagation(); deleteTrackComment('${trackId}','${cm.id}', true)" title="댓글 삭제"><i class="ri-close-line"></i></button>` : '';
+        const delBtn = isMine ? `<button class="dwm-cm-del" type="button" onclick="event.stopPropagation(); event.preventDefault(); deleteTrackComment('${trackId}','${cm.id}', true); return false;" ontouchend="event.stopPropagation(); event.preventDefault(); deleteTrackComment('${trackId}','${cm.id}', true);" title="댓글 삭제" aria-label="댓글 삭제"><i class="ri-close-line"></i></button>` : '';
         return `
           <div class="dwm-cm-line">
             <span class="dwm-cm-arrow">ㄴ</span>
@@ -12649,17 +12649,25 @@ window.submitDemoWallComment = async function (trackId) {
   }
   if (input) input.value = '';
 
-  // Refresh modal list
+  // Refresh modal list — delete button 포함
   const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const list = modal.querySelector('#dwm-cm-list');
   if (list) {
-    list.innerHTML = track.trackComments.map(cm => `
-      <div class="dwm-cm-line">
-        <span class="dwm-cm-arrow">ㄴ</span>
-        <span class="dwm-cm-text">${esc(cm.text || '')}</span>
-        <span class="dwm-cm-auth">— ${esc(cm.author || '익명')}</span>
-      </div>
-    `).join('');
+    const _myId2 = (window.__currentUser && window.__currentUser.id) || null;
+    const _myName2 = (window.__currentUser && window.__currentUser.name) || '';
+    list.innerHTML = track.trackComments.map(cm => {
+      const isMine = (_myId2 && cm.authorId && cm.authorId === _myId2)
+                  || (!cm.authorId && _myName2 && cm.author === _myName2);
+      const delBtn = isMine ? `<button class="dwm-cm-del" type="button" onclick="event.stopPropagation(); event.preventDefault(); deleteTrackComment('${trackId}','${cm.id}', true); return false;" ontouchend="event.stopPropagation(); event.preventDefault(); deleteTrackComment('${trackId}','${cm.id}', true);" title="댓글 삭제" aria-label="댓글 삭제"><i class="ri-close-line"></i></button>` : '';
+      return `
+        <div class="dwm-cm-line">
+          <span class="dwm-cm-arrow">ㄴ</span>
+          <span class="dwm-cm-text">${esc(cm.text || '')}</span>
+          <span class="dwm-cm-auth">— ${esc(cm.author || '익명')}</span>
+          ${delBtn}
+        </div>
+      `;
+    }).join('');
     list.scrollTop = list.scrollHeight;
   }
   const countEl = modal.querySelector('.dwm-cm-count');
