@@ -8166,17 +8166,16 @@ function renderProjectBox(pid, versions) {
   // 댓글 권한 — 로그인된 사용자 누구나 가능 (후원자/아티스트 제한 해제)
   const canComment = !!(db.currentUser || window.__currentUser);
 
-  // 발매 곡소개 — 데모 카드 스타일 (사용자 요청). 옆에 표시.
+  // 발매 글소개 — 노란 포스트잇으로 앨범 옆에 표시 (사용자 요청). PC + 모바일 공용.
   // 3줄까지만 표시, 길면 "더보기" 로 모달 열기.
   const _releaseDesc = (final && final.description || '').trim();
   const _descEsc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  // 3줄 넘는지 추정 (대략) — 줄바꿈 개수 OR 길이 기반
   const _descLines = _releaseDesc.split(/\r?\n/).length;
   const _maybeLong = (_descLines > 3) || (_releaseDesc.length > 120);
   const releaseNoteHtml = (final && _releaseDesc) ? `
-    <div class="release-note-postit demo-card-look" onclick="event.stopPropagation(); openDemoWallModal('${final.id}')" title="자세히 보기">
-      <div class="release-note-top">
-        <span class="release-note-tag">곡 소개</span>
-      </div>
+    <div class="release-note-postit" onclick="event.stopPropagation(); openDemoWallModal('${final.id}')" title="자세히 보기">
+      <div class="release-note-eyebrow">📝 글 소개</div>
       <div class="release-note-body">${_descEsc(_releaseDesc)}</div>
       ${_maybeLong ? '<div class="release-note-more">— 더보기</div>' : ''}
     </div>
@@ -8633,17 +8632,19 @@ function renderProjectBox(pid, versions) {
   // is past early-stage.
   return `
     <div class="project-box reveal" data-project="${pid}">
-      <div class="release-row" style="display:grid; grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); gap:20px; align-items:stretch; width:100%;">
-        <div class="project-header" style="display:block; margin:0;">
-          <div class="project-album-card" style="display:flex; flex-direction:column; gap:8px; width:100%; padding:10px; background:#fff; border:1.5px solid #111; border-radius:8px; box-shadow:5px 5px 0 #111;">
+      <div class="project-header">
+        <div class="project-album-card">
+          <div class="release-card-block">
             ${coverHtml}
-            <h3 class="project-title" style="margin:8px 0 0;">「${final ? safeTitle : 'Coming Soon'}」</h3>
-            <div class="project-artist-line">${final ? ((final.artist || primary.artist || '').replace(/</g,'&lt;')) : 'Coming Soon'}</div>
-            ${masterDate && final ? `<div class="project-master-date">발매 · ${masterDate}</div>` : ''}
-            ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
+            <div class="project-album-meta">
+              <h3 class="project-title">「${final ? safeTitle : 'Coming Soon'}」</h3>
+              <div class="project-artist-line">${final ? ((final.artist || primary.artist || '').replace(/</g,'&lt;')) : 'Coming Soon'}</div>
+              ${masterDate && final ? `<div class="project-master-date">발매 · ${masterDate}</div>` : ''}
+              ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
+            </div>
           </div>
+          ${releaseNoteHtml}
         </div>
-        ${releaseNoteHtml ? releaseNoteHtml.replace('<div class="release-note-postit demo-card-look"', '<div class="release-note-postit demo-card-look" style="min-width:0; margin:0; padding:20px 24px; height:100%; box-sizing:border-box;"') : ''}
       </div>
       ${(demos.length > 0 || canEditArtist) ? `
         <div class="demo-path" style="grid-template-columns: repeat(${cols}, 1fr);">
@@ -9779,13 +9780,13 @@ function renderArtistProfile(artistName) {
             <!-- 청취곡: 마스터(싱글 포함). Wrapped in projects-grid so albums
                  lay out as 4-per-row on desktop, 2-3 on tablet, 1 on mobile. -->
             ${releasedCount > 0 ? `
-              <div id="artist-section-singles" class="reveal projects-grid" style="display:flex; flex-direction:column; gap:24px; grid-template-columns:none; margin-top:20px; scroll-margin-top:80px;">
+              <div id="artist-section-singles" class="reveal projects-grid" style="margin-top:20px; scroll-margin-top:80px;">
                 ${releasedHtml}
               </div>
             ` : ''}
             <!-- 데모곡: 프로젝트 진행중 -->
             ${demoCount > 0 ? `
-              <div id="artist-section-projects" class="reveal projects-grid" style="display:flex; flex-direction:column; gap:24px; grid-template-columns:none; margin-top:24px; scroll-margin-top:80px;">
+              <div id="artist-section-projects" class="reveal projects-grid" style="margin-top:24px; scroll-margin-top:80px;">
                 ${demoHtml}
               </div>
             ` : ''}
