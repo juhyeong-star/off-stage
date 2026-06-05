@@ -9125,50 +9125,66 @@ window.submitTrackComment = async function(trackId) {
 };
 
 // ===================== 댓글 삭제 (PC + 모바일 + 모달 공용) =====================
+// 사용자 보고: 삭제 후 새로고침 해야 적용되는 이슈.
+// 원인:
+//   1) db.tracks / window.__tracks 의 트랙 객체 reference 가 다른 경우 한쪽만 변경됨
+//   2) 인라인 부분 DOM 갱신 로직이 stale 한 슬라이스(-2) 사용 + 마스터/데모 컨테이너 차이
+//   3) renderProjectBox 가 IIFE 안에서 cmList 캡처 → 객체 자체를 바꿔도 미리 캡처한 게 stale
+// 해결: 1) 양쪽 캐시 모두 명시 갱신  2) 트랙이 속한 페이지 전체를 다시 렌더 (최대한 robust)
 window.deleteTrackComment = async function(trackId, commentId, fromModal) {
   if (!trackId || !commentId) return;
   if (!confirm('이 댓글을 지울까요?')) return;
-  const db = window.DB.get();
-  const track = (db.tracks || []).find(t => t && t.id === trackId);
   const isSupabaseComment = !String(commentId).startsWith('tc');  // local ids: 'tc<timestamp>'
   try {
+    // 1) Supabase 삭제 (네트워크)
     if (window.Tracks && window.Tracks.deleteComment && isSupabaseComment) {
       await window.Tracks.deleteComment(commentId, trackId);
     }
-    // Local cache 동기화
-    if (track && Array.isArray(track.trackComments)) {
-      track.trackComments = track.trackComments.filter(c => c.id !== commentId);
+
+    // 2) 양쪽 인메모리 캐시 (window.__tracks, db.tracks) 의 trackComments 모두 갱신.
+    //    같은 객체 reference 면 한번에 끝나지만, 다른 reference 일 때를 대비.
+    const _filterOut = (arr) => Array.isArray(arr) ? arr.filter(c => c && c.id !== commentId) : arr;
+    if (Array.isArray(window.__tracks)) {
+      const t = window.__tracks.find(x => x && x.id === trackId);
+      if (t && Array.isArray(t.trackComments)) t.trackComments = _filterOut(t.trackComments);
     }
-    if (window.DB && window.DB.removeTrackComment) {
-      try { window.DB.removeTrackComment(trackId, commentId); } catch (_) {}
+    const db = window.DB.get();
+    if (db && Array.isArray(db.tracks)) {
+      const t2 = db.tracks.find(x => x && x.id === trackId);
+      if (t2 && Array.isArray(t2.trackComments)) t2.trackComments = _filterOut(t2.trackComments);
+      try { window.DB.save(db); } catch (_) {}
     }
+
     showToast('댓글 삭제됨');
 
-    // 모달 열려있으면 새로 그리기 (간단), 닫혔으면 inline 만 갱신
-    if (fromModal && document.getElementById('demo-wall-modal')) {
-      window.openDemoWallModal(trackId);
+    // 3) 모달 열려있으면 모달 다시 그리기 (최신 댓글 리스트로).
+    //    note-detail-modal (벽 스타일) 도 같은 식으로 갱신.
+    if (fromModal) {
+      if (document.getElementById('demo-wall-modal') && typeof window.openDemoWallModal === 'function') {
+        window.openDemoWallModal(trackId);
+      } else if (document.getElementById('note-detail-modal') && typeof window.openDemoWallModal === 'function') {
+        // 호환 — 벽 모달이라면 다시 그리기 시도
+        window.openDemoWallModal(trackId);
+      }
     }
-    // Inline 카드 cm-list 갱신
+
+    // 4) 인라인 카드 갱신 — 현재 보고 있는 페이지를 통째로 다시 렌더.
+    //    부분 DOM 패치는 PC_INLINE/마스터/벽 등 컨텍스트마다 셀렉터가 달라서 부정확.
+    //    Re-render 가 가장 robust 하고 다른 곳(우리들의 벽 등) 에도 일관 반영.
     try {
-      const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      const allCms = (track && track.trackComments) || [];
-      const cmVisible = allCms.slice(-2);
-      const _myId = (window.__currentUser && window.__currentUser.id) || null;
-      const _myName = (window.__currentUser && window.__currentUser.name) || '';
-      document.querySelectorAll(`.demo-card[data-track-id="${trackId}"] .demo-card-cm-list`).forEach(l => {
-        const lines = cmVisible.map(cm => {
-          const t = esc(cm.text || '');
-          const a = esc(cm.author || '익명');
-          const isMine = (_myId && cm.authorId && cm.authorId === _myId)
-                      || (!cm.authorId && _myName && cm.author === _myName);
-          const delBtn = isMine ? `<button class="cm-del-btn" onclick="event.stopPropagation(); deleteTrackComment('${trackId}','${cm.id}')" title="댓글 삭제"><i class="ri-close-line"></i></button>` : '';
-          return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${t}</span><span class="demo-card-cm-author">— ${a}</span>${delBtn}</div>`;
-        }).join('');
-        const hint = allCms.length > 2
-          ? `<div class="demo-card-cm-hint-tap"><i class="ri-chat-3-line"></i> 댓글 ${allCms.length}개 · 탭해서 모두 보기</div>` : '';
-        l.innerHTML = lines + hint;
-      });
-    } catch (_) {}
+      const view = (typeof currentView !== 'undefined') ? currentView : '';
+      if (view === 'artist' && typeof renderArtistProfile === 'function') {
+        const m = (window.location.hash || '').match(/#\/artist:([^/?]+)/);
+        if (m) renderArtistProfile(decodeURIComponent(m[1]));
+      } else if (view === 'profile' && typeof renderProfile === 'function') {
+        renderProfile();
+      } else if (view === 'wall' && typeof renderWall === 'function') {
+        renderWall();
+      } else if (view === 'shapes' && typeof renderShapes === 'function') {
+        // 도형 페이지 — 트랙 카드는 없지만 데모 댓글 변경이 다른 페이지에 영향 줄 일 적음.
+        // (혹시 모를 inline 표시 보장)
+      }
+    } catch (e) { console.warn('[deleteTrackComment] re-render fail', e); }
   } catch (e) {
     alert('댓글 삭제 실패: ' + (e.message || e));
   }
