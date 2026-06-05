@@ -14984,42 +14984,73 @@ body:has(#global-player.expanded) .global-back-btn {
   .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-input-field {
     font-size: 11px !important;
   }
-  /* "댓글 남기기" 버튼 (모바일 snake-grid 전용) — 인라인 input 대신 모달 열기.
-     너무 작은 카드에서 인라인 input 은 사용 불가 → 명확한 풀-사이즈 버튼. */
-  .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-open {
-    margin-top: auto !important;
-    width: 100% !important;
-    padding: 6px 8px !important;
-    background: #111 !important;
-    color: #FFE500 !important;
-    border: none !important;
-    border-radius: 4px !important;
-    font-size: 11.5px !important;
-    font-weight: 700 !important;
+  /* 모바일 snake-grid 데모 카드 — 댓글 영역은 탭하면 모달 열림.
+     인라인 input 은 한 줄 얇게, send 버튼은 작게 항상 표시. */
+  .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-list {
+    display: flex !important;          /* 전역 :not(.is-selected) 의 display:none 덮어쓰기 */
+    flex-direction: column !important;
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
     cursor: pointer !important;
+    padding: 4px 0 2px !important;
+    margin: 2px 0 4px !important;
+    border-top: 1.5px dashed rgba(17,17,17,0.18) !important;
+  }
+  .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-list:empty {
+    display: none !important;
+  }
+  /* 댓글 N개 · 탭해서 모두 보기 — 작은 핀트 */
+  .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-hint-tap {
+    font-size: 10px !important;
+    color: #c2185b !important;
+    font-weight: 700 !important;
+    margin-top: 2px !important;
+    text-align: left !important;
+    opacity: 0.85 !important;
+  }
+  /* 한 줄 입력칸 — 항상 보임 (CSS 가 다른 곳에서 숨기지 못하게 !important) */
+  .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-input {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin-top: auto !important;
+    padding-top: 4px !important;
+    flex-shrink: 0 !important;
+  }
+  .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-input-field {
+    flex: 1 !important;
+    min-width: 0 !important;
+    font-size: 12px !important;
+    border: none !important;
+    border-bottom: 1.5px solid rgba(17,17,17,0.45) !important;
+    background: transparent !important;
+    padding: 3px 2px !important;
+    outline: none !important;
+    color: #111 !important;
+  }
+  .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-input-field::placeholder {
+    color: rgba(17,17,17,0.4) !important;
+    font-style: italic !important;
+  }
+  /* send 버튼 — 작은 동그라미, 항상 표시 */
+  .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-send {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 4px !important;
-    flex-shrink: 0 !important;
-  }
-  .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-open i {
+    width: 22px !important;
+    height: 22px !important;
     font-size: 12px !important;
+    background: #111 !important;
+    color: #FFE500 !important;
+    border: none !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    flex-shrink: 0 !important;
+    cursor: pointer !important;
   }
-  .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-open:active {
-    transform: scale(0.97);
-  }
-  /* "+N개 더보기" — opens full comments modal */
-  .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-more {
-    background: transparent;
-    border: none;
-    padding: 2px 0;
-    margin: 2px 0 4px;
-    font-size: 11px;
-    color: #c2185b;
-    cursor: pointer;
-    font-weight: 700;
-    text-align: left;
+  .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-send:active {
+    transform: scale(0.92);
   }
 
   /* Hide the old carousel structures on mobile (in case they're rendered) */

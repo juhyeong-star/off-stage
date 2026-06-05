@@ -8493,23 +8493,33 @@ function renderProjectBox(pid, versions) {
              </div>`
           : '';
       const cmList = v.trackComments || [];
-      // Show last 3 inline; if more, append a "+N개 더보기" button that opens the modal.
-      const DEMO_INLINE_CM = 3;
+      // 마지막 2개만 inline 미리보기 — 클릭하면 모달이 열려 전체 댓글 다 봄.
+      const DEMO_INLINE_CM = 2;
       const cmVisible = cmList.slice(-DEMO_INLINE_CM);
       const cmHidden  = Math.max(0, cmList.length - cmVisible.length);
-      const mCmHtml = cmVisible.map(cm => {
+      const cmLinesHtml = cmVisible.map(cm => {
         const cmSafe = noteEscM(cm.text || '');
         const cmAuth = noteEscM(cm.author || '익명');
         return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span></div>`;
-      }).join('') + (cmHidden > 0
-        ? `<button class="demo-card-cm-more" onclick="event.stopPropagation(); openTrackCommentsModal('${v.id}')">+ ${cmHidden}개 더보기</button>`
-        : '');
-      // 모바일 snake-grid 카드는 너무 작아서 인라인 input 으로는 댓글 달기 어려움 →
-      // 명확한 "댓글 남기기" 버튼을 보여주고, 누르면 풀-사이즈 모달 (openTrackCommentsModal) 열림.
+      }).join('');
+      const cmCountHint = cmList.length > 0
+        ? `<div class="demo-card-cm-hint-tap">댓글 ${cmList.length}개 · 탭해서 모두 보기</div>`
+        : '';
+      // 댓글 영역 전체가 탭하면 모달 열림 — 사용자 요청 ("댓글쪽 누르면 쭉 나오게")
+      const mCmHtml = (cmLinesHtml || cmCountHint)
+        ? `<div class="demo-card-cm-list" onclick="event.stopPropagation(); openTrackCommentsModal('${v.id}')" title="댓글 모두 보기">
+             ${cmLinesHtml}
+             ${cmCountHint}
+           </div>`
+        : '';
+      // 인라인 한 줄 입력칸 — Enter 또는 작은 send 버튼으로 전송.
+      // onkeydown 사용 (모바일 IME Enter 호환), isComposing 체크 (한글 조합 중 무시).
       const mInputHtml = canComment ? `
-        <button class="demo-card-cm-open" onclick="event.stopPropagation(); openTrackCommentsModal('${v.id}')">
-          <i class="ri-chat-3-line"></i> 댓글 남기기
-        </button>` : '';
+        <div class="demo-card-cm-input" onclick="event.stopPropagation();">
+          <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="댓글…"
+                 onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); submitTrackComment('${v.id}'); }">
+          <button class="demo-card-cm-send" onclick="event.stopPropagation(); submitTrackComment('${v.id}')" aria-label="남기기"><i class="ri-arrow-right-line"></i></button>
+        </div>` : '';
       const demoLiked = isTrackLiked(v.id);
       return `
         <div class="demo-card is-demo ${v.pinned ? 'is-pinned' : ''}"
@@ -8529,7 +8539,7 @@ function renderProjectBox(pid, versions) {
             </button>
           </div>
           ${mNoteHtml}
-          <div class="demo-card-cm-list">${mCmHtml}</div>
+          ${mCmHtml}
           ${mInputHtml}
         </div>
       `;
