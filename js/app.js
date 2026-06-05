@@ -8179,12 +8179,11 @@ function renderProjectBox(pid, versions) {
     // "메인 노출 도형 선택" 버튼 폐기 — 이제 모든 데모가 자동으로 도형 페이지에 표시됨.
     const shapeOpenBtnHtml = '';
 
-    // ⭐️ PC 도 우리들의 벽 스타일 — 1열 스택, 모든 컨텐츠 inline 표시
-    //    (사용자 요청: 모바일도 똑같이해줘 → PC 도 동일하게)
+    // PC — 11:33 (c968cc7) 시점 디자인 복귀:
+    // snake-grid, compact 카드, 마지막 2 댓글 inline + "탭해서 모두 보기", input + send.
     const noteRaw = (v.artistNote || '').trim();
     const noteEsc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    // 노트: clamp 제거 — 모든 줄 표시
-    const noteLines = noteRaw ? noteRaw.split(/\r?\n/).map(l => l.trim()).filter(Boolean) : [];
+    const noteLines = noteRaw ? noteRaw.split(/\r?\n/).map(l => l.trim()).filter(Boolean).slice(0, 3) : [];
     const noteHtml = noteLines.length > 0
       ? `<div class="demo-card-note" ${canEditArtist ? `onclick="event.stopPropagation(); editArtistNote('${v.id}')"` : ''} ${canEditArtist ? 'style="cursor: pointer;"' : ''}>
            ${noteLines.map(l => `<span class="demo-card-note-line">${noteEsc(l)}</span>`).join('')}
@@ -8196,22 +8195,24 @@ function renderProjectBox(pid, versions) {
            </div>`
         : '';
 
-    // 댓글: slice 제거 — 모든 댓글 inline 표시 (벽 스타일)
+    // ── 카드 내부 인라인 댓글 + 입력 ──
     const cmList = v.trackComments || [];
-    const cmInlineHtml = cmList.map(cm => {
+    const PC_INLINE = 2;
+    const cmVisible = cmList.slice(-PC_INLINE);
+    const cmInlineHtml = cmVisible.map(cm => {
       const cmSafe = noteEsc(cm.text || '');
       const cmAuth = noteEsc(cm.author || '익명');
       return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span></div>`;
     }).join('');
-    const cmHtmlBlock = cmList.length > 0
-      ? `<div class="demo-card-cm-list">${cmInlineHtml}</div>`
-      : `<div class="demo-card-cm-list demo-card-cm-empty"><span class="dch-empty-text">아직 댓글이 없어요</span></div>`;
+    const pcCmHintHtml = cmList.length > 2
+      ? `<div class="demo-card-cm-hint-tap">댓글 ${cmList.length}개 · 탭해서 모두 보기</div>` : '';
 
-    // 입력칸 — 항상 보임, send 버튼 없이 Enter 만
+    // 로그인한 누구나 인라인 입력 — Enter 만 (한글 IME 호환)
     const inputInlineHtml = canComment ? `
-      <div class="demo-card-cm-input always-show" onclick="event.stopPropagation();">
+      <div class="demo-card-cm-input" onclick="event.stopPropagation();">
         <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="댓글 남기기…"
                onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); submitTrackComment('${v.id}'); }">
+        <button class="demo-card-cm-send" onclick="event.stopPropagation(); submitTrackComment('${v.id}')" aria-label="남기기"><i class="ri-arrow-right-line"></i></button>
       </div>` : '';
 
     const demoLiked = isTrackLiked(v.id);
@@ -8232,7 +8233,9 @@ function renderProjectBox(pid, versions) {
           </button>
         </div>
         ${noteHtml}
-        ${cmHtmlBlock}
+        <div class="demo-card-cm-list" ${cmList.length ? `onclick="event.stopPropagation(); openTrackCommentsModal('${v.id}')" title="댓글 모두 보기"` : ''}>
+          ${cmInlineHtml}${pcCmHintHtml}
+        </div>
         ${inputInlineHtml}
       </div>
     `;

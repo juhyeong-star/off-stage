@@ -13747,6 +13747,34 @@ body.polaroid-sheet-open { overflow: hidden; }
 .artist-canvas .demo-card .demo-card-cm-send { display: none !important; }
 .artist-canvas .demo-card.is-selected .demo-card-cm-send { display: inline-flex !important; }
 
+/* 댓글 리스트 base style — 11:33 (c968cc7) 시점 복원 */
+.artist-canvas .demo-card-cm-list {
+  flex-direction: column;
+  justify-content: flex-end;     /* 댓글이 박스 아래쪽 → 입력칸에 딱 붙음 */
+  gap: 3px;
+  padding: 6px 0 2px;
+  margin: 2px 0 4px;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  cursor: pointer;
+}
+.artist-canvas .demo-card-cm-list:hover,
+.artist-canvas .demo-card-cm-list:active {
+  background: rgba(194, 24, 91, 0.08);
+}
+/* "댓글 N개 · 탭해서 모두 보기" 핀트 (PC + 모바일 공통) */
+.artist-canvas .demo-card-cm-hint-tap {
+  font-size: 11px;
+  color: #c2185b;
+  font-weight: 800;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.artist-canvas .demo-card-cm-hint-tap i { font-size: 12px; }
+
 /* 댓글 티저 — 카드 맨 아래 한 줄. "뭐라고 적혔지?" 호기심 한방울. */
 .artist-canvas .demo-card-cm-hint {
   display: flex;
@@ -13795,129 +13823,8 @@ body.polaroid-sheet-open { overflow: hidden; }
 }
 
 /* ── 데모 카드 내부 ㄴ 댓글 리스트 (낙서 톤) — 고정 높이 카드 안에서 자동 스크롤 ── */
-/* 아티스트 페이지 projects-grid — 프로젝트별 세로 스택, 풀폭.
-   각 project-box 안에 master + demo-path 그리드. PC 가운데 떠있던 문제 해결. */
-.artist-canvas .projects-grid {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 28px !important;
-  width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 0 20px !important;
-}
-.artist-canvas .projects-grid > .project-box {
-  width: 100% !important;
-  margin: 0 !important;
-}
-/* demo-path = 데모 그리드 (master 카드 아래) — JS 가 inline grid-template-columns 설정,
-   각 카드 inline grid-row/col 으로 snake 위치. 마스터 → D1 → D2 → D3 → D4 순서 정렬. */
-.artist-canvas .projects-grid .demo-path {
-  display: grid !important;
-  gap: 16px !important;
-  margin-top: 16px !important;
-  width: 100% !important;
-}
-/* 데모 카드 — wall-stack 컨텐츠 (노트 + 댓글 + 입력 inline) 그대로,
-   다만 그리드 셀 안에 들어가게. */
-.artist-canvas .projects-grid .demo-path > .demo-card {
-  aspect-ratio: auto !important;
-  width: auto !important;
-  height: auto !important;
-  max-height: none !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  padding: 16px 20px !important;
-  overflow: visible !important;
-  display: flex !important;
-  flex-direction: column !important;
-  background: #FFE500 !important;
-  border: 1.5px solid rgba(17,17,17,0.4) !important;
-  border-radius: 5px !important;
-  box-shadow: 2px 2px 0 rgba(17,17,17,0.2) !important;
-  cursor: pointer !important;
-  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s !important;
-}
-.artist-canvas .projects-grid .demo-path > .demo-card.is-selected {
-  border: 2px solid #111 !important;
-  box-shadow: 3px 3px 0 #111 !important;
-}
-.artist-canvas .projects-grid .demo-path > .demo-card::after { display: none !important; }
-.artist-canvas .projects-grid .demo-path > .demo-card .demo-card-top {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  margin-bottom: 8px !important;
-}
-.artist-canvas .projects-grid .demo-path > .demo-card .demo-tag {
-  font-size: 14px !important;
-  color: #c2185b !important;
-  font-weight: 800 !important;
-}
-.artist-canvas .projects-grid .demo-path > .demo-card .demo-card-date {
-  font-size: 13px !important;
-  color: #777 !important;
-}
-.artist-canvas .projects-grid .demo-path > .demo-card .demo-card-note {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 2px !important;
-  -webkit-line-clamp: unset !important;
-  -webkit-box-orient: unset !important;
-  overflow: visible !important;
-  max-height: none !important;
-  margin: 6px 0 8px !important;
-}
-.artist-canvas .projects-grid .demo-path > .demo-card .demo-card-note-line {
-  font-size: 15px !important;
-  line-height: 1.45 !important;
-}
-.artist-canvas .projects-grid .demo-path > .demo-card .demo-card-cm-list {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 4px !important;
-  padding: 8px 0 !important;
-  margin: 6px 0 !important;
-  overflow: visible !important;
-  cursor: default !important;
-  flex: initial !important;
-  min-height: 0 !important;
-  border: none !important;
-}
-.artist-canvas .projects-grid .demo-path > .demo-card .demo-card-cm-line {
-  font-size: 13px !important;
-  line-height: 1.45 !important;
-}
-.artist-canvas .projects-grid .demo-path > .demo-card .dch-empty-text {
-  font-size: 12px !important;
-  color: rgba(17,17,17,0.5) !important;
-  font-style: italic !important;
-}
-.artist-canvas .projects-grid .demo-path > .demo-card .demo-card-cm-input,
-.artist-canvas .projects-grid .demo-path > .demo-card .demo-card-cm-input.always-show {
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  padding: 8px 10px !important;
-  margin-top: 6px !important;
-  border-top: 1px solid rgba(17,17,17,0.15) !important;
-  background: rgba(255,255,255,0.5) !important;
-  border-radius: 4px !important;
-  flex-shrink: 0 !important;
-}
-.artist-canvas .projects-grid .demo-path > .demo-card .demo-card-cm-input-field {
-  flex: 1 !important;
-  min-width: 0 !important;
-  font-size: 14px !important;
-  border: none !important;
-  background: transparent !important;
-  outline: none !important;
-  color: #111 !important;
-  padding: 4px 2px !important;
-}
-.artist-canvas .projects-grid .demo-path > .demo-card .demo-card-cm-send {
-  display: none !important;
-}
+/* PC 11:33 (c968cc7) 시점 — 기본 layout 유지. wall-stack 오버라이드 다 제거.
+   .artist-canvas .projects-grid 는 기본 .projects-grid { 4-col grid } 그대로. */
 .artist-canvas .projects-grid .demo-stack-pc {
   display: flex;
   flex-direction: column;
