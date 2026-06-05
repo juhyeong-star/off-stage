@@ -15863,7 +15863,7 @@ body:has(#global-player.expanded) .global-back-btn {
    Clicked (.is-selected): 곡 재생 + 댓글/입력 펼침.
    Only one .is-selected at a time (selectProjectVersion handles toggle).
    ============================================================ */
-.demo-card:not(.is-selected) .demo-card-cm-list,
+/* 사용자 요청: cm-list 는 항상 표시 (클릭 안 해도) — 여기서 cm-list 제외 */
 .demo-card:not(.is-selected) .demo-card-cm-input,
 .demo-card:not(.is-selected) .demo-card-cm-more {
   display: none !important;
