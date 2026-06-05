@@ -11497,6 +11497,21 @@ window.playTrack = function (trackId, source) {
   if (!track) return;
 
   if (currentPlayingTrack === track.id) {
+    // 같은 트랙 다시 클릭 — 사용자 요청: "왠만하면 안꺼지게".
+    // 데모/마스터 카드, 도형 등에서 클릭 시 재생 중이면 그대로 두고 아무것도 안 함.
+    // togglePlay 는 명시적으로 play 버튼 누를 때만 작동.
+    const isCardLikeSource = source === 'demo' || source === 'shape' || source === 'shapes'
+                          || source === 'universe' || source === 'wall' || source === 'shapeshorts';
+    if (isCardLikeSource) {
+      // 일시정지 상태였으면 다시 재생 (안 꺼지게)
+      if (audioElement.paused) {
+        try { audioElement.play(); } catch (_) {}
+        const icon = playBtn.querySelector('i');
+        if (icon) icon.className = 'ri-pause-circle-fill';
+      }
+      return;
+    }
+    // 기존 동작: 명시적 play 버튼 등에서는 togglePlay
     togglePlay();
     return;
   }
