@@ -4820,6 +4820,39 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   color: #888;
 }
 /* 포스트잇 fallback 호버 — 이미지 zoom 효과 대신 살짝 회전 */
+/* === 사진 없는 발매 cover-postit fallback (사용자 요청) === */
+/* 발매일 있을 때: "2026.09" + "coming" */
+.cover-postit-coming-date {
+  background: linear-gradient(180deg, #FFE500 0%, #FFEB3B 100%);
+}
+.cover-postit-date {
+  font-size: clamp(28px, 6vw, 44px);
+  font-weight: 900;
+  color: #1a1a1a;
+  letter-spacing: 1px;
+}
+.cover-postit-coming-text {
+  font-family: 'Nanum JungShik', 'Caveat', cursive;
+  font-size: clamp(22px, 5vw, 34px);
+  font-weight: 700;
+  color: #c2185b;
+  font-style: italic;
+  transform: rotate(-3deg);
+  margin-top: 4px;
+}
+/* 발매일 없을 때: "coming / soon" 필기체 */
+.cover-postit-script {
+  background: linear-gradient(180deg, #FFE500 0%, #FFEB3B 100%);
+}
+.cover-postit-script-text {
+  font-family: 'Nanum JungShik', 'Caveat', cursive;
+  font-size: clamp(36px, 8vw, 60px);
+  font-weight: 700;
+  color: #1a1a1a;
+  line-height: 1.05;
+  transform: rotate(-2deg);
+}
+
 .project-cover-wrap.is-postit:hover .cover-postit {
   transform: rotate(0.5deg);
   transition: transform 0.3s ease;
@@ -15442,35 +15475,41 @@ body:has(#global-player.expanded) .global-back-btn {
     border: none !important;
     background: transparent !important;
   }
-  /* The album card inside project-header — single bordered card that
-     contains cover image + title + release date. The cover image inside
-     drops its own border so only the OUTER card border is visible. */
+  /* 발매 album-card — 흰 박스/테두리/그림자 제거 (사용자 요청 — 보라색 배경 위 직접). */
   .artist-canvas .projects-grid .project-header .project-album-card {
     max-width: 100% !important;
     width: 100% !important;
     height: auto !important;
-    padding: 10px 10px 14px !important;
-    background: #fff !important;
-    border: 1.5px solid #111 !important;
-    border-radius: 8px !important;
-    box-shadow: 5px 5px 0 #111 !important;
-    overflow: hidden !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
     color: #111 !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 8px !important;
+    gap: 2px !important;                /* 3줄 간격 좁게 */
   }
-  /* Cover inside the album card: no extra border (outer card handles it),
-     trim shadow so it doesn't stack with the outer one. */
+  /* Cover 자체에 액자 (테두리 + 그림자) — outer card 가 없으니 사진에 액자 */
   .artist-canvas .projects-grid .project-header .project-album-card .project-cover-wrap {
     width: 100% !important;
     height: auto !important;
-    aspect-ratio: 4 / 3 !important;     /* 1/1 → 4/3 (세로 줄임) */
-    border: 1px solid rgba(0,0,0,0.12) !important;
+    aspect-ratio: 1 / 1 !important;      /* 1:1 정사각 (사용자 요청) */
+    border: 2px solid #111 !important;
     border-radius: 4px !important;
-    box-shadow: none !important;
+    box-shadow: 5px 5px 0 #111 !important;  /* 사진에 액자 그림자 */
     margin: 0 !important;
     overflow: hidden !important;
+  }
+  /* 이미지 위 "Coming Soon..." 칩 — 사용자 요청으로 제거 */
+  .artist-canvas .projects-grid .project-header .project-album-card .project-wip-badge {
+    display: none !important;
+  }
+  /* 발매 날짜 칩 — 글자만큼만 (stretch 안 되게) */
+  .artist-canvas .projects-grid .project-header .project-album-card .project-master-date {
+    align-self: flex-start !important;
+    width: fit-content !important;
   }
   .artist-canvas .projects-grid .project-header .project-album-card .project-cover-wrap img {
     width: 100% !important;
