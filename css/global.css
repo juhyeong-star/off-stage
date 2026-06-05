@@ -13788,14 +13788,15 @@ body.polaroid-sheet-open { overflow: hidden; }
 }
 .artist-canvas .demo-card .demo-card-cm-send { display: none !important; }
 
-/* 댓글 리스트 base style — 11:33 (c968cc7) 시점 복원 */
+/* 댓글 리스트 — 컨텐츠 기반 높이, 최대 3줄 (사용자 요청 "3줄정도에 맞게 줄여줘") */
 .artist-canvas .demo-card-cm-list {
   flex-direction: column;
-  justify-content: flex-end;     /* 댓글이 박스 아래쪽 → 입력칸에 딱 붙음 */
+  justify-content: flex-start;   /* 위에서부터 채움 */
   gap: 3px;
   padding: 6px 0 2px;
-  margin: 2px 0 4px;
-  flex: 1 1 0;
+  margin: 4px 0;
+  flex: 0 0 auto !important;     /* 컨텐츠 크기 — 안 늘어남 */
+  max-height: 60px !important;   /* 약 3 줄 */
   min-height: 0;
   overflow-y: auto;
   cursor: pointer;
