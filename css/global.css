@@ -1746,6 +1746,8 @@ body:has(#shape-shorts-overlay) .deco-shape {
 .artist-follow-chips {
   display: flex; gap: 8px; flex-wrap: wrap;
   margin: 8px 0 0;
+  position: relative;             /* z-index 작동시키기 위해 */
+  z-index: 5;                     /* 위쪽 h1 text-shadow 등에 덮이지 않게 */
 }
 .follow-chip {
   display: inline-flex; align-items: center; gap: 6px;
@@ -1757,6 +1759,11 @@ body:has(#shape-shorts-overlay) .deco-shape {
   font-size: 12px; font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, transform 0.15s;
+  -webkit-tap-highlight-color: rgba(29, 185, 84, 0.2);   /* 모바일 탭 피드백 */
+  pointer-events: auto;           /* 부모에서 pointer-events:none 상속 차단 */
+  position: relative;
+  z-index: 5;
+  min-height: 36px;               /* 모바일 최소 탭 영역 */
 }
 .follow-chip strong { color: #1DB954; font-weight: 700; }
 .follow-chip:hover {
@@ -14044,6 +14051,56 @@ body.polaroid-sheet-open { overflow: hidden; }
     display: none !important;
   }
 }
+
+/* ===== 댓글 삭제 버튼 ===== */
+/* 인라인 댓글 라인의 ✕ — 내가 단 댓글에만 표시 */
+.demo-card-cm-line {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.cm-del-btn {
+  background: transparent;
+  border: none;
+  color: rgba(17,17,17,0.4);
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 13px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+.demo-card-cm-line:hover .cm-del-btn { opacity: 1; }
+.cm-del-btn:hover { color: #c2185b; }
+/* 모바일에선 항상 보이게 (호버 없음) */
+@media (max-width: 768px) {
+  .cm-del-btn { opacity: 0.55; }
+  .cm-del-btn:active { color: #c2185b; }
+}
+
+/* 모달 안의 ✕ 버튼 */
+.dwm-cm-line { position: relative; align-items: center; }
+.dwm-cm-del {
+  background: transparent;
+  border: none;
+  color: rgba(17,17,17,0.45);
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 14px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: opacity 0.15s, color 0.15s;
+  margin-left: 4px;
+}
+.dwm-cm-del:hover { opacity: 1; color: #c2185b; }
+.dwm-cm-del:active { transform: scale(0.92); }
 .artist-canvas .projects-grid .demo-stack-pc {
   display: flex;
   flex-direction: column;
@@ -14393,11 +14450,22 @@ body.polaroid-sheet-open { overflow: hidden; }
   /* 아티스트 헤더 stats / 액션 row — 한 줄 정렬 보정 */
   .artist-canvas .artist-action-row {
     width: 100%;
+    position: relative;
+    z-index: 5;                    /* 다른 요소에 덮이지 않게 */
   }
   .artist-canvas .artist-action-row .follow-btn-v2,
   .artist-canvas .artist-action-row .dm-btn-v2 {
     flex: 1 1 auto;
-    min-height: 40px;
+    min-height: 44px;              /* iOS HIG 권장 탭 영역 */
+    pointer-events: auto !important;
+    position: relative;
+    z-index: 5;
+    -webkit-tap-highlight-color: rgba(29, 185, 84, 0.2);
+  }
+  /* 팔로워/팔로잉 칩도 동일 — 터치 영역 확보 */
+  .artist-canvas .artist-follow-chips .follow-chip {
+    min-height: 38px;
+    pointer-events: auto !important;
   }
 }
 

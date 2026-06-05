@@ -1229,6 +1229,23 @@
       return mapped;
     },
 
+    // 댓글 삭제 — author_id 본인만 (RLS 가 검증)
+    async deleteComment(commentId, trackId) {
+      if (!window.supabase) throw new Error('Supabase SDK not ready');
+      const { error } = await window.supabase
+        .from('track_comments')
+        .delete()
+        .eq('id', commentId);
+      if (error) throw error;
+      // 로컬 캐시도 동기화
+      if (Array.isArray(window.__tracks) && trackId) {
+        const t = window.__tracks.find(x => x.id === trackId);
+        if (t && Array.isArray(t.trackComments)) {
+          t.trackComments = t.trackComments.filter(c => c.id !== commentId);
+        }
+      }
+    },
+
     // Batch fetch comments for all tracks — one query instead of N.
     // 댓글이 새로고침 후 사라지던 버그 (mapTrackRow 가 trackComments:[] 로 덮어쓰던 문제) 의 fix.
     async fetchAllComments() {

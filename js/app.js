@@ -8199,10 +8199,15 @@ function renderProjectBox(pid, versions) {
     const cmList = v.trackComments || [];
     const PC_INLINE = 2;
     const cmVisible = cmList.slice(-PC_INLINE);
+    const _myId = (window.__currentUser && window.__currentUser.id) || null;
+    const _myName = (window.__currentUser && window.__currentUser.name) || '';
     const cmInlineHtml = cmVisible.map(cm => {
       const cmSafe = noteEsc(cm.text || '');
       const cmAuth = noteEsc(cm.author || '익명');
-      return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span></div>`;
+      const isMine = (_myId && cm.authorId && cm.authorId === _myId)
+                  || (!cm.authorId && _myName && cm.author === _myName);
+      const delBtn = isMine ? `<button class="cm-del-btn" onclick="event.stopPropagation(); deleteTrackComment('${v.id}','${cm.id}')" title="댓글 삭제"><i class="ri-close-line"></i></button>` : '';
+      return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span>${delBtn}</div>`;
     }).join('');
     const pcCmHintHtml = cmList.length > 2
       ? `<div class="demo-card-cm-hint-tap">댓글 ${cmList.length}개 · 탭해서 모두 보기</div>` : '';
@@ -8508,10 +8513,15 @@ function renderProjectBox(pid, versions) {
       const cmList = v.trackComments || [];
       // 작은 카드 — 마지막 2개만 미리보기 (모달에서 다 봄).
       const cmVisible = cmList.slice(-2);
+      const _myIdM = (window.__currentUser && window.__currentUser.id) || null;
+      const _myNameM = (window.__currentUser && window.__currentUser.name) || '';
       const cmLinesHtml = cmVisible.map(cm => {
         const cmSafe = noteEscM(cm.text || '');
         const cmAuth = noteEscM(cm.author || '익명');
-        return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span></div>`;
+        const isMine = (_myIdM && cm.authorId && cm.authorId === _myIdM)
+                    || (!cm.authorId && _myNameM && cm.author === _myNameM);
+        const delBtn = isMine ? `<button class="cm-del-btn" onclick="event.stopPropagation(); deleteTrackComment('${v.id}','${cm.id}')" title="댓글 삭제"><i class="ri-close-line"></i></button>` : '';
+        return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span>${delBtn}</div>`;
       }).join('');
       // 댓글 영역 — 탭하면 우리들의 벽 모달.
       const mCmHtml = cmList.length > 0
@@ -9057,6 +9067,56 @@ window.submitTrackComment = async function(trackId) {
     console.warn('[submitTrackComment] in-place update', e);
   } finally {
     if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '남기기'; }
+  }
+};
+
+// ===================== 댓글 삭제 (PC + 모바일 + 모달 공용) =====================
+window.deleteTrackComment = async function(trackId, commentId, fromModal) {
+  if (!trackId || !commentId) return;
+  if (!confirm('이 댓글을 지울까요?')) return;
+  const db = window.DB.get();
+  const track = (db.tracks || []).find(t => t && t.id === trackId);
+  const isSupabaseComment = !String(commentId).startsWith('tc');  // local ids: 'tc<timestamp>'
+  try {
+    if (window.Tracks && window.Tracks.deleteComment && isSupabaseComment) {
+      await window.Tracks.deleteComment(commentId, trackId);
+    }
+    // Local cache 동기화
+    if (track && Array.isArray(track.trackComments)) {
+      track.trackComments = track.trackComments.filter(c => c.id !== commentId);
+    }
+    if (window.DB && window.DB.removeTrackComment) {
+      try { window.DB.removeTrackComment(trackId, commentId); } catch (_) {}
+    }
+    showToast('댓글 삭제됨');
+
+    // 모달 열려있으면 새로 그리기 (간단), 닫혔으면 inline 만 갱신
+    if (fromModal && document.getElementById('demo-wall-modal')) {
+      window.openDemoWallModal(trackId);
+    }
+    // Inline 카드 cm-list 갱신
+    try {
+      const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const allCms = (track && track.trackComments) || [];
+      const cmVisible = allCms.slice(-2);
+      const _myId = (window.__currentUser && window.__currentUser.id) || null;
+      const _myName = (window.__currentUser && window.__currentUser.name) || '';
+      document.querySelectorAll(`.demo-card[data-track-id="${trackId}"] .demo-card-cm-list`).forEach(l => {
+        const lines = cmVisible.map(cm => {
+          const t = esc(cm.text || '');
+          const a = esc(cm.author || '익명');
+          const isMine = (_myId && cm.authorId && cm.authorId === _myId)
+                      || (!cm.authorId && _myName && cm.author === _myName);
+          const delBtn = isMine ? `<button class="cm-del-btn" onclick="event.stopPropagation(); deleteTrackComment('${trackId}','${cm.id}')" title="댓글 삭제"><i class="ri-close-line"></i></button>` : '';
+          return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${t}</span><span class="demo-card-cm-author">— ${a}</span>${delBtn}</div>`;
+        }).join('');
+        const hint = allCms.length > 2
+          ? `<div class="demo-card-cm-hint-tap"><i class="ri-chat-3-line"></i> 댓글 ${allCms.length}개 · 탭해서 모두 보기</div>` : '';
+        l.innerHTML = lines + hint;
+      });
+    } catch (_) {}
+  } catch (e) {
+    alert('댓글 삭제 실패: ' + (e.message || e));
   }
 };
 
@@ -12493,15 +12553,23 @@ window.openDemoWallModal = function (trackId) {
   const user = window.__currentUser || (window.DB.get() && window.DB.get().currentUser);
   const canComment = !!user;
 
+  const _myDwmId = (window.__currentUser && window.__currentUser.id) || null;
+  const _myDwmName = (window.__currentUser && window.__currentUser.name) || '';
   const cmsHtml = cms.length === 0
     ? `<div class="dwm-empty">아직 댓글이 없어요 · 첫 댓글을 남겨보세요</div>`
-    : cms.map(cm => `
-        <div class="dwm-cm-line">
-          <span class="dwm-cm-arrow">ㄴ</span>
-          <span class="dwm-cm-text">${esc(cm.text || '')}</span>
-          <span class="dwm-cm-auth">— ${esc(cm.author || '익명')}</span>
-        </div>
-      `).join('');
+    : cms.map(cm => {
+        const isMine = (_myDwmId && cm.authorId && cm.authorId === _myDwmId)
+                    || (!cm.authorId && _myDwmName && cm.author === _myDwmName);
+        const delBtn = isMine ? `<button class="dwm-cm-del" onclick="event.stopPropagation(); deleteTrackComment('${trackId}','${cm.id}', true)" title="댓글 삭제"><i class="ri-close-line"></i></button>` : '';
+        return `
+          <div class="dwm-cm-line">
+            <span class="dwm-cm-arrow">ㄴ</span>
+            <span class="dwm-cm-text">${esc(cm.text || '')}</span>
+            <span class="dwm-cm-auth">— ${esc(cm.author || '익명')}</span>
+            ${delBtn}
+          </div>
+        `;
+      }).join('');
 
   // Enter 만으로 전송 (송신 버튼 없음, 사용자 요청)
   const inputHtml = canComment ? `
