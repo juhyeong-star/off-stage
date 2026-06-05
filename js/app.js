@@ -11502,11 +11502,11 @@ window.playTrack = function (trackId, source) {
   if (!track) return;
 
   if (currentPlayingTrack === track.id) {
-    // 같은 트랙 다시 클릭 — 사용자 요청: "왠만하면 안꺼지게".
-    // 데모/마스터 카드, 도형 등에서 클릭 시 재생 중이면 그대로 두고 아무것도 안 함.
-    // togglePlay 는 명시적으로 play 버튼 누를 때만 작동.
+    // 같은 트랙 다시 클릭 — 카드 영역 클릭은 안 꺼지게 (사용자 요청).
+    // 단, 'wall' (우리들의 벽 노트의 ▶/⏸ 썸네일 버튼) 은 명시적 토글 버튼이라 제외.
+    // togglePlay 는 명시적 play/pause 버튼 (wall 썸네일, 헤더) 에서만 작동.
     const isCardLikeSource = source === 'demo' || source === 'shape' || source === 'shapes'
-                          || source === 'universe' || source === 'wall' || source === 'shapeshorts';
+                          || source === 'universe' || source === 'shapeshorts';
     if (isCardLikeSource) {
       // 일시정지 상태였으면 다시 재생 (안 꺼지게)
       if (audioElement.paused) {
@@ -11516,7 +11516,7 @@ window.playTrack = function (trackId, source) {
       }
       return;
     }
-    // 기존 동작: 명시적 play 버튼 등에서는 togglePlay
+    // 'wall' / 'other' / undefined → 명시적 토글 (재생 중이면 정지, 정지 중이면 재생)
     togglePlay();
     return;
   }
