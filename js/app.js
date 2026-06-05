@@ -8216,7 +8216,8 @@ function renderProjectBox(pid, versions) {
 
     const demoLiked = isTrackLiked(v.id);
     return `
-      <div class="${cls} demo-card-stack ${v.pinned ? 'is-pinned' : ''}" data-track-id="${v.id}" data-project="${pid}"
+      <div class="${cls} page-demo ${v.pinned ? 'is-pinned' : ''}" data-track-id="${v.id}" data-project="${pid}"
+           style="grid-row:${pos.row}; grid-column:${pos.col};"
            onclick="selectProjectVersion('${pid}','${v.id}'); playTrack('${v.id}')">
         <div class="demo-card-top">
           <span class="demo-tag">DEMO ${i+1}</span>
@@ -8605,7 +8606,7 @@ function renderProjectBox(pid, versions) {
         </div>
       </div>
       ${(demos.length > 0 || canEditArtist) ? `
-        <div class="demo-stack-pc">
+        <div class="demo-path" style="grid-template-columns: repeat(${cols}, 1fr);">
           ${cardsHtml}
         </div>
       ` : ''}
