@@ -13910,25 +13910,22 @@ body.polaroid-sheet-open { overflow: hidden; }
 }
 
 /* 데모 카드 안의 # 라인 노트 — 검정색 (요청)
-   본문 길어도 카드는 그대로: 기본 3줄 clamp. "... 더보기" 클릭 시 .expanded 가 풀어줌. */
+   본문 길어도 카드 외형은 그대로: 3줄 clamp + 끝에 "…" 자동.
+   더보기 버튼은 사용자 요청으로 없음 — 클릭/펼침 동작 없음. */
 .artist-canvas .demo-card-note {
   font-family: var(--font-hand) !important;
   font-size: 17px !important;
   line-height: 1.35 !important;
   font-weight: 600 !important;
   color: #111 !important;
-  margin: 4px 0 6px !important;
+  margin: 4px 0 10px !important;
   display: -webkit-box !important;
   -webkit-box-orient: vertical !important;
   -webkit-line-clamp: 3 !important;
   line-clamp: 3 !important;
   overflow: hidden !important;
+  text-overflow: ellipsis;
   opacity: 1;
-}
-.artist-canvas .demo-card-note.expanded {
-  -webkit-line-clamp: unset !important;
-  line-clamp: unset !important;
-  overflow: visible !important;
 }
 .artist-canvas .demo-card-note-line { color: #111 !important; }
 .artist-canvas .demo-card-note-line {
@@ -14487,36 +14484,16 @@ body.polaroid-sheet-open { overflow: hidden; }
   color: #777 !important;
 }
 .artist-canvas .projects-grid .demo-stack-pc > .demo-card .demo-card-note {
-  /* 3줄 clamp — 본문이 길어도 카드 외형은 그대로. "더보기" 클릭으로 펼침. */
+  /* 3줄 clamp — 길어도 3줄까지만, 끝에 "…" 자동. 더보기 버튼 없음(사용자 요청). */
   display: -webkit-box !important;
   -webkit-box-orient: vertical !important;
   -webkit-line-clamp: 3 !important;
   line-clamp: 3 !important;
   overflow: hidden !important;
+  text-overflow: ellipsis;
   max-height: none !important;
-  margin: 8px 0 6px !important;     /* 더보기 버튼 자리 확보 위해 bottom 10→6 */
+  margin: 8px 0 10px !important;
 }
-.artist-canvas .projects-grid .demo-stack-pc > .demo-card .demo-card-note.expanded {
-  -webkit-line-clamp: unset !important;
-  line-clamp: unset !important;
-  overflow: visible !important;
-}
-/* "더보기 / 접기" 토글 버튼 — note 바로 아래 */
-.demo-card-note-wrap { display: block; }
-.demo-card-note-more {
-  display: inline-block;
-  background: none;
-  border: none;
-  padding: 0 0 8px;
-  margin: 0;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--brand-color, #4A6FE7);
-  cursor: pointer;
-  text-align: left;
-}
-.demo-card-note-more:hover { text-decoration: underline; }
 .artist-canvas .projects-grid .demo-stack-pc > .demo-card .demo-card-note-line {
   font-size: 16px !important;
   line-height: 1.45 !important;
