@@ -14216,9 +14216,30 @@ body.polaroid-sheet-open { overflow: hidden; }
     flex: 1 1 100%;
   }
 }
-/* projects-grid 안 project-box 도 row 내에서 같은 높이로 stretch */
+/* 아티스트 페이지의 projects-grid — 발매카드 + 글소개 옆에 나란히 둘 공간 확보.
+   기본 4-col grid 무력화 → 1-col (각 프로젝트가 풀폭) */
 .artist-canvas .projects-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 24px !important;
+  grid-template-columns: none !important;
   align-items: stretch;
+}
+.artist-canvas .projects-grid > .project-box {
+  width: 100% !important;
+}
+/* projects-grid 의 cover-wrap full-width 룰 무력화 — release-card-block 안에서만 100% */
+.artist-canvas .projects-grid .project-cover-wrap {
+  width: auto;
+  aspect-ratio: auto;
+}
+.artist-canvas .release-card-block .project-cover-wrap {
+  width: 100% !important;
+  aspect-ratio: 1 !important;
+}
+/* project-header 의 flex-direction: column 무력화 — album-card 자체 옆 정렬 함 */
+.artist-canvas .projects-grid .project-header {
+  flex-direction: row !important;
 }
 .artist-canvas .projects-grid > .project-box {
   display: flex;
