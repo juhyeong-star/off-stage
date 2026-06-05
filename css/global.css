@@ -13763,9 +13763,10 @@ body.polaroid-sheet-open { overflow: hidden; }
 
 /* 데모 카드 — 클릭(=is-selected) 했을 때만 댓글 목록 + 입력칸 펼침 (사용자 요청).
    입력칸은 줄 스타일 (no box) — border-bottom 만, 배경 없음. */
-.artist-canvas .demo-card .demo-card-cm-list { display: none !important; }
+/* 댓글 리스트 — 항상 보임 (사용자 요청: "댓글은 보이게 해줘") */
+.artist-canvas .demo-card .demo-card-cm-list { display: flex !important; }
 .artist-canvas .demo-card.is-selected .demo-card-cm-list { display: flex !important; }
-.artist-canvas .demo-card.is-selected .demo-card-cm-hint { display: none !important; }
+.artist-canvas .demo-card .demo-card-cm-hint { display: none !important; }    /* 호기심 hint 사라짐 */
 /* 입력칸: 선택했을 때만 보임 (사용자 요청: "클릭전까지 댓글남기기 안보이게") */
 .artist-canvas .demo-card .demo-card-cm-input { display: none !important; }
 .artist-canvas .demo-card.is-selected .demo-card-cm-input {
