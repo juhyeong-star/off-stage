@@ -13985,7 +13985,7 @@ body.polaroid-sheet-open { overflow: hidden; }
   max-width: 640px;
   min-height: min(720px, 92vh);    /* 길게 — 사용자 요청 */
   max-height: 92vh;
-  background: #FFE500;             /* 노란 포스트잇 — 우리들의 벽 톤 */
+  background: #FDF3D8;             /* 데모 카드와 동일 크림색 (사용자 요청) */
   border: 2px solid #111;
   border-radius: 6px;
   box-shadow: 6px 6px 0 #111;
@@ -14044,8 +14044,8 @@ body.polaroid-sheet-open { overflow: hidden; }
   border-radius: 999px;
 }
 .dwm-title {
-  font-family: 'Nanum JungShik', 'Caveat', 'Gaegu', cursive;
-  font-size: 28px;
+  font-family: 'Pretendard', -apple-system, system-ui, 'Segoe UI', sans-serif;
+  font-size: 26px;
   font-weight: 700;
   line-height: 1.3;
   margin: 6px 0 6px;
@@ -14065,8 +14065,8 @@ body.polaroid-sheet-open { overflow: hidden; }
   margin: 16px 0;
 }
 .dwm-note {
-  font-family: 'Nanum JungShik', 'Caveat', cursive;
-  font-size: 18px;
+  font-family: 'Pretendard', -apple-system, system-ui, 'Segoe UI', sans-serif;
+  font-size: 16px;
   line-height: 1.55;
   color: #1a1a1a;
   white-space: pre-wrap;
