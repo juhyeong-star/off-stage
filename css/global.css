@@ -14128,9 +14128,18 @@ body.polaroid-sheet-open { overflow: hidden; }
   white-space: pre-wrap;
   word-break: keep-all;
   display: -webkit-box;
-  -webkit-line-clamp: 5;
+  -webkit-line-clamp: 3;          /* 사용자 요청: 3줄까지 */
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+/* "— 더보기" 핀트 — 길면 보임 */
+.release-note-more {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #c2185b;
+  font-style: italic;
+  text-align: right;
 }
 /* 모바일 — 앨범 아래로 풀폭 */
 @media (max-width: 768px) {
@@ -14140,7 +14149,7 @@ body.polaroid-sheet-open { overflow: hidden; }
     width: 100% !important;
     align-self: stretch !important;
   }
-  .release-note-body { font-size: 14px; -webkit-line-clamp: 4; }
+  .release-note-body { font-size: 14px; -webkit-line-clamp: 3; }
 }
 /* PC 에서 project-album-card 가 horizontal flex 이게 보장 */
 .artist-canvas .project-album-card {
@@ -14322,10 +14331,12 @@ body.polaroid-sheet-open { overflow: hidden; }
 }
 .artist-canvas .demo-card-cm-line {
   font-family: var(--font-hand) !important;
-  font-size: 17px;
-  line-height: 1.35;
+  font-size: 13px;            /* PC 메인에 보이는 댓글 — 작게 (사용자 요청 17→13) */
+  line-height: 1.4;
   font-weight: 600;
   color: #111;
+  white-space: nowrap;        /* 각 댓글 1줄 — 길면 ... (총 2줄 보임) */
+  overflow: hidden;
   display: flex;
   gap: 4px;
   align-items: baseline;
@@ -14338,11 +14349,16 @@ body.polaroid-sheet-open { overflow: hidden; }
 .artist-canvas .demo-card-cm-text {
   flex: 1;
   word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;        /* 길면 ... */
+  white-space: nowrap;
+  min-width: 0;
 }
 .artist-canvas .demo-card-cm-author {
   color: #6B46C1;
-  font-size: 14px;
+  font-size: 12px;                /* 작아진 댓글에 맞춰 (14→12) */
   opacity: 0.85;
+  flex-shrink: 0;
 }
 .artist-canvas .demo-card-cm-empty {
   font-family: var(--font-hand) !important;

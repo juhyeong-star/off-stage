@@ -8163,12 +8163,17 @@ function renderProjectBox(pid, versions) {
   const canComment = !!(db.currentUser || window.__currentUser);
 
   // 발매 글소개 — 노란 포스트잇으로 앨범 옆에 표시 (사용자 요청). PC + 모바일 공용.
+  // 3줄까지만 표시, 길면 "더보기" 로 모달 열기.
   const _releaseDesc = (final && final.description || '').trim();
   const _descEsc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  // 3줄 넘는지 추정 (대략) — 줄바꿈 개수 OR 길이 기반
+  const _descLines = _releaseDesc.split(/\r?\n/).length;
+  const _maybeLong = (_descLines > 3) || (_releaseDesc.length > 120);
   const releaseNoteHtml = (final && _releaseDesc) ? `
     <div class="release-note-postit" onclick="event.stopPropagation(); openDemoWallModal('${final.id}')" title="자세히 보기">
       <div class="release-note-eyebrow">📝 글 소개</div>
       <div class="release-note-body">${_descEsc(_releaseDesc)}</div>
+      ${_maybeLong ? '<div class="release-note-more">— 더보기</div>' : ''}
     </div>
   ` : '';
 
