@@ -15523,9 +15523,12 @@ body:has(#global-player.expanded) .global-back-btn {
     margin-top: 2px !important;
     padding-top: 2px !important;
   }
-  /* ⭐️ 입력칸 — 모바일은 항상 보임 (사용자 요청). 클릭 전에도 댓글 가능.
+  /* ⭐️ 입력칸 — 클릭(is-selected) 전엔 숨김, 클릭하면 보임 (사용자 요청).
      줄 스타일 (no box) — 배경/패딩 없음, 위쪽 가는 줄만. */
   .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-input {
+    display: none !important;
+  }
+  .artist-canvas .projects-grid .demo-snake-grid > .demo-card.is-selected .demo-card-cm-input {
     display: flex !important;
     align-items: center !important;
     padding: 0 !important;
@@ -15553,11 +15556,7 @@ body:has(#global-player.expanded) .global-back-btn {
   .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-send {
     display: none !important;
   }
-  /* 모바일에선 전역 ".demo-card:not(.is-selected) .demo-card-cm-input { display: none }"
-     덮어쓰기 — 더 높은 specificity (5 클래스) 로 strong-override */
-  .artist-canvas .projects-grid .demo-snake-grid > .demo-card:not(.is-selected) .demo-card-cm-input {
-    display: flex !important;
-  }
+  /* cm-list 는 항상 표시 (모달 트리거 + 미리보기) */
   .artist-canvas .projects-grid .demo-snake-grid > .demo-card:not(.is-selected) .demo-card-cm-list {
     display: flex !important;
   }
