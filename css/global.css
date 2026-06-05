@@ -15521,13 +15521,19 @@ body:has(#global-player.expanded) .global-back-btn {
     line-height: 1.4 !important;
     font-weight: 700 !important;
   }
-  /* 댓글 17px로 키움 */
+  /* 댓글 — 작게 (사용자 요청) */
   .artist-canvas .projects-grid .demo-path > .demo-card .demo-card-cm-line {
-    font-size: 17px !important;
-    line-height: 1.4 !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+  }
+  .artist-canvas .projects-grid .demo-path > .demo-card .demo-card-cm-text {
+    font-size: 11px !important;
+  }
+  .artist-canvas .projects-grid .demo-path > .demo-card .demo-card-cm-author {
+    font-size: 10px !important;
   }
   .artist-canvas .projects-grid .demo-path > .demo-card .demo-card-cm-input-field {
-    font-size: 17px !important;
+    font-size: 13px !important;
   }
   /* Hide the snake-flow ↗↘ arrows between demos in filmstrip mode */
   .artist-canvas .projects-grid .demo-path > .demo-card::after,
