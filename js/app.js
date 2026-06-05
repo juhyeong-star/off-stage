@@ -8197,12 +8197,17 @@ function renderProjectBox(pid, versions) {
         : '';
 
     // ── 카드 내부 인라인 댓글 + 입력 ── (기본은 접혀있고, 카드 클릭하면 펼침)
+    // PC 도 모바일과 일관되게: 마지막 2개만 inline + cm-list 탭하면 전체 모달.
     const cmList = v.trackComments || [];
-    const cmInlineHtml = cmList.slice(0, 10).map(cm => {
+    const PC_INLINE = 2;
+    const cmVisible = cmList.slice(-PC_INLINE);
+    const cmInlineHtml = cmVisible.map(cm => {
       const cmSafe = noteEsc(cm.text || '');
       const cmAuth = noteEsc(cm.author || '익명');
       return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span></div>`;
     }).join('');
+    const pcCmHintHtml = cmList.length > 2
+      ? `<div class="demo-card-cm-hint-tap">댓글 ${cmList.length}개 · 탭해서 모두 보기</div>` : '';
     // 댓글 티저 — 댓글 있을 때만 카드 맨 아래에 한 줄로 보여줘 호기심 자극
     // (선택되면 숨겨지고 위의 전체 목록이 펼쳐짐)
     const lastCm = cmList.length ? cmList[cmList.length - 1] : null;
@@ -8240,7 +8245,9 @@ function renderProjectBox(pid, versions) {
           </button>
         </div>
         ${noteHtml}
-        <div class="demo-card-cm-list">${cmInlineHtml}</div>
+        <div class="demo-card-cm-list" ${cmList.length ? `onclick="event.stopPropagation(); openTrackCommentsModal('${v.id}')" title="댓글 모두 보기"` : ''}>
+          ${cmInlineHtml}${pcCmHintHtml}
+        </div>
         ${inputInlineHtml}
         ${cmHintHtml}
       </div>

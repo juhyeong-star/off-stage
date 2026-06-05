@@ -13727,6 +13727,7 @@ body.polaroid-sheet-open { overflow: hidden; }
 .artist-canvas .demo-card-cm-list {
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;     /* ⭐️ 댓글이 박스 아래쪽 — 입력칸에 딱 붙음 (사용자 요청) */
   gap: 3px;
   padding: 6px 0 2px;
   margin: 2px 0 4px;
@@ -13734,6 +13735,15 @@ body.polaroid-sheet-open { overflow: hidden; }
   flex: 1 1 0;
   min-height: 0;
   overflow-y: auto;
+  cursor: pointer;               /* 탭 영역임을 시각적으로 */
+}
+/* '댓글 N개 · 탭해서 모두 보기' 핀트 (PC + 모바일 공통) */
+.artist-canvas .demo-card-cm-hint-tap {
+  font-size: 11px;
+  color: #c2185b;
+  font-weight: 700;
+  margin-top: 4px;
+  opacity: 0.85;
 }
 /* 비어있으면 border-top 없음 */
 .artist-canvas .demo-card-cm-list:empty {
