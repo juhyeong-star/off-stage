@@ -8382,30 +8382,35 @@ function renderProjectBox(pid, versions) {
       <div class="project-master-badge">발매 (Release)</div>
       ${editCoverBtn}
     </div>
-  ` : `
+  ` : (() => {
+    // 사진 없는 발매 — 발매일 있으면 "YYYY.MM coming", 없으면 "coming soon" 필기체
+    const _rd = (final.releaseDate || '').trim();
+    const _ym = _rd ? _rd.slice(0,7).replace('-','.') : '';
+    return `
     <div class="project-cover-wrap is-postit" onclick="playTrack('${final.id}'); selectProjectVersion('${pid}','${final.id}')" title="마스터 재생">
-      <div class="cover-postit cover-postit-final">
-        <div class="cover-postit-badge">발매 (Release)</div>
-        <div class="cover-postit-title">${safeTitle || '제목 없음'}</div>
+      <div class="cover-postit ${_ym ? 'cover-postit-coming-date' : 'cover-postit-script'}">
+        ${_ym ? `<div class="cover-postit-date">${_ym}</div><div class="cover-postit-coming-text">coming</div>` : `<div class="cover-postit-script-text">coming<br>soon</div>`}
       </div>
       <div class="project-play-overlay"><i class="ri-play-fill"></i></div>
       ${editCoverBtn}
     </div>
-  `) : (primaryHasCover ? `
+  `;})()) : (primaryHasCover ? `
     <div class="project-cover-wrap no-master">
       <img src="${primary.cover}" class="project-cover-large" alt="${safeTitle}" loading="lazy">
-      <div class="project-wip-badge">Coming Soon...</div>
       ${editCoverBtn}
     </div>
-  ` : `
+  ` : (() => {
+    // 발매 없음 + 사진 없음 — 가장 빠른 데모의 release_date 또는 빈 → coming soon 필기체
+    const _rd = (primary && primary.releaseDate || '').trim();
+    const _ym = _rd ? _rd.slice(0,7).replace('-','.') : '';
+    return `
     <div class="project-cover-wrap no-master is-postit">
-      <div class="cover-postit cover-postit-coming">
-        <div class="cover-postit-badge">Coming Soon</div>
-        <div class="cover-postit-title">${safeTitle || projectTitle || '제목 미정'}</div>
+      <div class="cover-postit ${_ym ? 'cover-postit-coming-date' : 'cover-postit-script'}">
+        ${_ym ? `<div class="cover-postit-date">${_ym}</div><div class="cover-postit-coming-text">coming</div>` : `<div class="cover-postit-script-text">coming<br>soon</div>`}
       </div>
       ${editCoverBtn}
     </div>
-  `);
+  `;})());
 
   // 응원하기 — cheers the master (or primary) track. Hidden on your own work.
   const cheerTarget = final || primary;
@@ -9674,12 +9679,6 @@ function renderArtistProfile(artistName) {
             <i class="ri-settings-3-line"></i>
           </button>
         ` : ''}
-        <div class="reveal" style="margin-bottom:14px;">
-          <a href="#" onclick="event.preventDefault(); navigateTo('wall')" style="color:var(--text-secondary); font-size:13px;">
-            <i class="ri-arrow-left-line"></i> 우리들의 벽으로
-          </a>
-        </div>
-
         <div class="artist-header-row reveal">
           <div class="artist-strip">
             <div class="artist-id">
