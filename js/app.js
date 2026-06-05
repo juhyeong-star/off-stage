@@ -8633,9 +8633,9 @@ function renderProjectBox(pid, versions) {
   // is past early-stage.
   return `
     <div class="project-box reveal" data-project="${pid}">
-      <div class="project-header">
-        <div class="project-album-card">
-          <div class="release-card-block">
+      <div class="project-header" style="display:flex; flex-direction:row; flex-wrap:nowrap; align-items:stretch; gap:18px; width:100%;">
+        <div class="project-album-card" style="display:flex; flex-direction:row; flex-wrap:nowrap; align-items:stretch; gap:18px; width:100%; flex:1 1 auto;">
+          <div class="release-card-block" style="display:flex; flex-direction:column; gap:10px; flex:0 0 320px; min-width:220px; max-width:380px;">
             ${coverHtml}
             <div class="project-album-meta">
               <h3 class="project-title">「${final ? safeTitle : 'Coming Soon'}」</h3>
@@ -8644,7 +8644,7 @@ function renderProjectBox(pid, versions) {
               ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
             </div>
           </div>
-          ${releaseNoteHtml}
+          ${releaseNoteHtml ? releaseNoteHtml.replace('<div class="release-note-postit demo-card-look"', '<div class="release-note-postit demo-card-look" style="flex:1 1 auto; min-width:0; margin:0;"') : ''}
         </div>
       </div>
       ${(demos.length > 0 || canEditArtist) ? `
