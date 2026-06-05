@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>페이지 헤더 — 제목 제거 미리보기</title>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" onload="this.rel='stylesheet'">
+<style>
+  :root {
+    --brand-color: #1DB954;
+    --text-primary: #e9e9ec;
+    --text-secondary: #a0a0a8;
+  }
+  body {
+    background: #0a0a0c;
+    color: var(--text-primary);
+    min-height: 100vh;
+    margin: 0;
+    padding: 30px 20px 60px;
+    font-family: 'Inter', 'Pretendard', system-ui, sans-serif;
+  }
+  h1.section-h {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 6px;
+  }
+  .section-sub {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 12px;
+    margin: 0 0 18px;
+  }
+
+  /* === 공통 페이지 인트로 === */
+  .page-intro {
+    text-align: center;
+    font-size: 18px;
+    color: #ccc;
+    margin: 0 0 18px;
+    font-weight: 600;
+  }
+
+  /* === 각 옵션 박스 === */
+  .opt {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 24px 24px 30px;
+    margin: 0 auto 26px;
+    max-width: 760px;
+  }
+  .opt-label {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #fff;
+    background: var(--brand-color);
+    padding: 4px 9px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  .opt-label.cur { background: #888; }
+
+  /* === [CURRENT] === */
+  .wall-header-v2 {
+    margin-bottom: 14px;
+  }
+  .wall-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .wall-title-row h1 {
+    color: #fff;
+    font-size: 28px;
+    font-weight: 800;
+    margin: 0;
+    flex: 0 0 auto;
+  }
+  .wall-count-v2 {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-left: auto;
+  }
+  .tags-page-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .tags-page-header h1 {
+    color: #fff;
+    font-size: 28px;
+    font-weight: 800;
+    margin: 0;
+  }
+  .tags-page-header .count {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-left: auto;
+  }
+  .brand { color: var(--brand-color); }
+  .sticky-icon { color: #FFD54F; }
+
+  /* === [OPTION A] count chip top-right === */
+  .opt-a-row {
+    position: relative;
+    text-align: center;
+    padding: 6px 0 14px;
+  }
+  .opt-a-row .chip {
+    position: absolute;
+    top: 0; right: 0;
+    background: rgba(255,255,255,0.07);
+    color: var(--text-secondary);
+    font-size: 12px;
+    padding: 5px 11px;
+    border-radius: 999px;
+  }
+
+  /* === [OPTION B] count centered under intro === */
+  .opt-b-count {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 12px;
+    margin: -10px 0 18px;
+    letter-spacing: 0.2px;
+  }
+
+  /* === [OPTION C] inline in page-intro === */
+  .opt-c-intro .meta {
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-left: 6px;
+  }
+
+  /* dummy stuff to make preview feel real */
+  .dummy-cloud {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 10px 0 0;
+    align-items: baseline;
+  }
+  .dummy-cloud .t { font-weight: 700; cursor: pointer; }
+  .dummy-board {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    padding: 10px 0;
+  }
+  .dummy-note {
+    height: 120px;
+    border-radius: 4px;
+    border: 1.5px solid #111;
+    box-shadow: 3px 3px 0 #111;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: #111;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<!-- ╔═══════════════════════════════════════ -->
+<!-- ║       WALL — 우리들의 벽                  -->
+<!-- ╚═══════════════════════════════════════ -->
+<h1 class="section-h">우리들의 벽 — 헤더 정리</h1>
+<p class="section-sub">왼쪽 ‹ 백버튼은 글로벌, 페이지 안에는 제목 X · 카운트만 유지</p>
+
+<div class="opt">
+  <span class="opt-label cur">현재 (BEFORE)</span>
+  <div class="page-intro">게시물을 올려 지금의 기분을 음악과 같이 표현해보세요</div>
+  <div class="wall-header-v2">
+    <div class="wall-title-row">
+      <h1><span class="sticky-icon">📒</span> 우리들의 벽</h1>
+      <div class="wall-count-v2">총 <strong style="color:#fff;">37</strong>개</div>
+    </div>
+  </div>
+  <div class="dummy-board">
+    <div class="dummy-note" style="background:#FFE7A0;">Hello London…</div>
+    <div class="dummy-note" style="background:#FFD2D2;">오늘 기분 좋아</div>
+    <div class="dummy-note" style="background:#C8E7FF;">새벽감성</div>
+    <div class="dummy-note" style="background:#D6FFD8;">시험끝!</div>
+  </div>
+</div>
+
+<div class="opt">
+  <span class="opt-label">옵션 A — 우상단 카운트 칩</span>
+  <div class="page-intro">게시물을 올려 지금의 기분을 음악과 같이 표현해보세요</div>
+  <div class="opt-a-row">
+    <span class="chip">총 <strong style="color:#fff;">37</strong>개</span>
+  </div>
+  <div class="dummy-board">
+    <div class="dummy-note" style="background:#FFE7A0;">Hello London…</div>
+    <div class="dummy-note" style="background:#FFD2D2;">오늘 기분 좋아</div>
+    <div class="dummy-note" style="background:#C8E7FF;">새벽감성</div>
+    <div class="dummy-note" style="background:#D6FFD8;">시험끝!</div>
+  </div>
+</div>
+
+<div class="opt">
+  <span class="opt-label">옵션 B — 인트로 아래 가운데</span>
+  <div class="page-intro">게시물을 올려 지금의 기분을 음악과 같이 표현해보세요</div>
+  <div class="opt-b-count">총 <strong style="color:#fff;">37</strong>개의 게시물</div>
+  <div class="dummy-board">
+    <div class="dummy-note" style="background:#FFE7A0;">Hello London…</div>
+    <div class="dummy-note" style="background:#FFD2D2;">오늘 기분 좋아</div>
+    <div class="dummy-note" style="background:#C8E7FF;">새벽감성</div>
+    <div class="dummy-note" style="background:#D6FFD8;">시험끝!</div>
+  </div>
+</div>
+
+<div class="opt">
+  <span class="opt-label">옵션 C — 인트로 안에 합치기</span>
+  <div class="page-intro opt-c-intro">
+    게시물을 올려 지금의 기분을 음악과 같이 표현해보세요
+    <span class="meta">· 총 <strong style="color:#fff;">37</strong>개</span>
+  </div>
+  <div class="dummy-board">
+    <div class="dummy-note" style="background:#FFE7A0;">Hello London…</div>
+    <div class="dummy-note" style="background:#FFD2D2;">오늘 기분 좋아</div>
+    <div class="dummy-note" style="background:#C8E7FF;">새벽감성</div>
+    <div class="dummy-note" style="background:#D6FFD8;">시험끝!</div>
+  </div>
+</div>
+
+<!-- ╔═══════════════════════════════════════ -->
+<!-- ║       TAGS                              -->
+<!-- ╚═══════════════════════════════════════ -->
+<h1 class="section-h" style="margin-top:40px;">Tags — 헤더 정리</h1>
+<p class="section-sub">동일한 패턴 적용</p>
+
+<div class="opt">
+  <span class="opt-label cur">현재 (BEFORE)</span>
+  <div class="page-intro">지금의 기분을 tag로 노래를 들어보세요</div>
+  <div class="tags-page-header">
+    <h1><span class="brand">#</span> Tags</h1>
+    <span class="count">총 37개의 태그 · 16곡</span>
+  </div>
+  <div class="dummy-cloud">
+    <span class="t" style="font-size:13px; color:#888;">#tag1</span>
+    <span class="t" style="font-size:17px; color:#666;">#tag2</span>
+    <span class="t" style="font-size:22px; color:#4A6FE7;">#tag3</span>
+    <span class="t" style="font-size:28px; color:#E15B5B;">#tag4</span>
+    <span class="t" style="font-size:38px; color:#1DB954;">#tag5</span>
+  </div>
+</div>
+
+<div class="opt">
+  <span class="opt-label">옵션 A — 우상단 카운트 칩</span>
+  <div class="page-intro">지금의 기분을 tag로 노래를 들어보세요</div>
+  <div class="opt-a-row">
+    <span class="chip">총 <strong style="color:#fff;">37</strong>개의 태그 · <strong style="color:#fff;">16</strong>곡</span>
+  </div>
+  <div class="dummy-cloud" style="margin-top:0;">
+    <span class="t" style="font-size:13px; color:#888;">#tag1</span>
+    <span class="t" style="font-size:17px; color:#666;">#tag2</span>
+    <span class="t" style="font-size:22px; color:#4A6FE7;">#tag3</span>
+    <span class="t" style="font-size:28px; color:#E15B5B;">#tag4</span>
+    <span class="t" style="font-size:38px; color:#1DB954;">#tag5</span>
+  </div>
+</div>
+
+<div class="opt">
+  <span class="opt-label">옵션 B — 인트로 아래 가운데</span>
+  <div class="page-intro">지금의 기분을 tag로 노래를 들어보세요</div>
+  <div class="opt-b-count">총 <strong style="color:#fff;">37</strong>개의 태그 · <strong style="color:#fff;">16</strong>곡</div>
+  <div class="dummy-cloud">
+    <span class="t" style="font-size:13px; color:#888;">#tag1</span>
+    <span class="t" style="font-size:17px; color:#666;">#tag2</span>
+    <span class="t" style="font-size:22px; color:#4A6FE7;">#tag3</span>
+    <span class="t" style="font-size:28px; color:#E15B5B;">#tag4</span>
+    <span class="t" style="font-size:38px; color:#1DB954;">#tag5</span>
+  </div>
+</div>
+
+<div class="opt">
+  <span class="opt-label">옵션 C — 인트로 안에 합치기</span>
+  <div class="page-intro opt-c-intro">
+    지금의 기분을 tag로 노래를 들어보세요
+    <span class="meta">· 총 <strong style="color:#fff;">37</strong>개의 태그 · <strong style="color:#fff;">16</strong>곡</span>
+  </div>
+  <div class="dummy-cloud">
+    <span class="t" style="font-size:13px; color:#888;">#tag1</span>
+    <span class="t" style="font-size:17px; color:#666;">#tag2</span>
+    <span class="t" style="font-size:22px; color:#4A6FE7;">#tag3</span>
+    <span class="t" style="font-size:28px; color:#E15B5B;">#tag4</span>
+    <span class="t" style="font-size:38px; color:#1DB954;">#tag5</span>
+  </div>
+</div>
+
+</body>
+</html>

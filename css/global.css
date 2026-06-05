@@ -13958,6 +13958,29 @@ body.polaroid-sheet-open { overflow: hidden; }
   }
 }
 
+/* 페이지 카운트 — page-intro 바로 아래, 가운데 정렬, 작고 은은하게.
+   우리들의 벽 / Tags 헤더에서 h1 을 빼고 카운트만 남겨 깔끔하게.
+   (도형 페이지처럼 제목 없음 + 인트로 + 카운트 라인만) */
+.page-count {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary, rgba(255,255,255,0.6));
+  margin: -10px auto 18px;
+  padding: 0 20px;
+  letter-spacing: 0.1px;
+  font-weight: 500;
+}
+.page-count strong {
+  color: var(--text-primary, #fff);
+  font-weight: 700;
+}
+@media (max-width: 768px) {
+  .page-count {
+    font-size: 12px;
+    margin: -6px auto 14px;
+  }
+}
+
 /* PC 11:33 (c968cc7) 시점 — 기본 layout 유지. wall-stack 오버라이드 다 제거.
    .artist-canvas .projects-grid 는 기본 .projects-grid { 4-col grid } 그대로. */
 

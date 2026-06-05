@@ -2066,9 +2066,6 @@ function renderTags() {
   if (tagList.length === 0) {
     appContent.innerHTML = `
       <div class="page-intro reveal">지금의 기분을 tag의 노래로 들어보세요</div>
-      <div class="tags-page-header reveal">
-        <h1><i class="ri-hashtag" style="color:var(--brand-color);"></i> Tags</h1>
-      </div>
       <div style="text-align:center; padding: 80px 0; color:var(--text-secondary);">
         <i class="ri-price-tag-3-line" style="font-size: 48px; margin-bottom: 16px; display:block;"></i>
         아직 태그가 없습니다. 곡을 업로드할 때 태그를 달아보세요!
@@ -2087,10 +2084,7 @@ function renderTags() {
 
   appContent.innerHTML = `
     <div class="page-intro reveal">지금의 기분을 tag의 노래로 들어보세요</div>
-    <div class="tags-page-header reveal">
-      <h1><i class="ri-hashtag" style="color:var(--brand-color);"></i> Tags</h1>
-      <span class="count">총 ${tagList.length}개의 태그 · ${totalTracks}곡</span>
-    </div>
+    <div class="page-count reveal">총 <strong>${tagList.length}</strong>개의 태그 · <strong>${totalTracks}</strong>곡</div>
     <div class="tags-cloud reveal-scale">
       ${cloudHtml}
     </div>
@@ -2501,17 +2495,19 @@ async function renderWall() {
   // Tap it to slide up the search/sort sheet from the bottom.
   const searchFab = `<button class="wall-search-fab" onclick="toggleWallSearch()" title="검색"><i class="ri-search-line"></i></button>`;
 
-  // Compact toolbar (count only; search/sort only when there are many notes)
+  // 카운트는 page-count 로 분리 (헤더 제목 제거 후 인트로 아래에 가운데 정렬).
+  const pageCountInner = q
+    ? `"${q}" · <strong>${total}</strong>개`
+    : `총 <strong>${allNotes.length}</strong>개`;
+  const pageCountSuffix = total > 0 && shown < total ? ` · 보는 중 ${shown}` : '';
+  const pageCountHtml = `<div class="page-count reveal">${pageCountInner}${pageCountSuffix}</div>`;
+
+  // 검색/정렬 진입 버튼 — 메모가 13개 이상이거나 검색중일 때만 노출.
+  // 제목과 카운트가 빠진 자리에서 단독으로 보이도록 우상단에 둠.
   const showAdvancedControls = allNotes.length > 12 || q;
-  const toolbar = `
+  const toolbar = showAdvancedControls ? `
     <div class="wall-toolbar-v2">
-      <div class="wall-count-v2">
-        ${q ? `"${q}" · <strong>${total}</strong>개` : `총 <strong>${allNotes.length}</strong>개`}
-        ${total > 0 && shown < total ? ` · 보는 중 ${shown}` : ''}
-      </div>
-      ${showAdvancedControls ? `
-        <button class="wall-toolbtn" onclick="document.getElementById('wall-advanced').hidden = !document.getElementById('wall-advanced').hidden"><i class="ri-search-line"></i></button>
-      ` : ''}
+      <button class="wall-toolbtn" onclick="document.getElementById('wall-advanced').hidden = !document.getElementById('wall-advanced').hidden"><i class="ri-search-line"></i></button>
     </div>
     <div class="wall-advanced" id="wall-advanced" ${showAdvancedControls && q ? '' : 'hidden'}>
       <button class="wall-advanced-close" onclick="toggleWallSearch()" title="닫기" aria-label="닫기">
@@ -2530,7 +2526,7 @@ async function renderWall() {
         <button class="wall-sort-btn ${_wallSort==='random'?'active':''}" onclick="wallSetSort('random')">랜덤</button>
       </div>
     </div>
-  `;
+  ` : '';
 
   const loadMoreBtn = hasMore ? `
     <div class="wall-load-more">
@@ -2549,13 +2545,9 @@ async function renderWall() {
 
   appContent.innerHTML = `
     <div class="page-intro reveal">게시물을 올려 지금의 기분을 음악과 같이 표현해보세요</div>
+    ${pageCountHtml}
     <div class="wall-board" style="height:${total > 0 ? boardH : 600}px;">
-      <div class="wall-header-v2">
-        <div class="wall-title-row">
-          <h1><i class="ri-sticky-note-fill" style="color:#FFD54F;"></i> 우리들의 벽</h1>
-          ${toolbar}
-        </div>
-      </div>
+      ${toolbar ? `<div class="wall-header-v2"><div class="wall-title-row">${toolbar}</div></div>` : ''}
       ${writeFab}
       ${searchFab}
       ${writeComposer}
