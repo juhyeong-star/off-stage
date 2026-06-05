@@ -16049,6 +16049,16 @@ body:has(#global-player.expanded) .global-back-btn {
   box-sizing: border-box;
   overflow: hidden;
 }
+/* Coming Soon(마스터 없음) — 감싸는 흰 박스/검은 테두리 제거, 커버만 남김 (사용자 요청) */
+.artist-canvas .projects-grid .project-header .project-album-card:has(.project-cover-wrap.no-master),
+.artist-canvas .projects-grid .project-album-card:has(.project-cover-wrap.no-master) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  height: auto !important;
+  overflow: visible !important;
+}
 .artist-canvas .projects-grid .project-album-card .project-cover-wrap {
   margin: 0 !important;
   width: 100% !important;
