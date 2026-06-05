@@ -8463,11 +8463,12 @@ function renderProjectBox(pid, versions) {
       }).join('') + (cmHidden > 0
         ? `<button class="demo-card-cm-more" onclick="event.stopPropagation(); openTrackCommentsModal('${v.id}')">+ ${cmHidden}개 더보기</button>`
         : '');
+      // 모바일 snake-grid 카드는 너무 작아서 인라인 input 으로는 댓글 달기 어려움 →
+      // 명확한 "댓글 남기기" 버튼을 보여주고, 누르면 풀-사이즈 모달 (openTrackCommentsModal) 열림.
       const mInputHtml = canComment ? `
-        <div class="demo-card-cm-input" onclick="event.stopPropagation();">
-          <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="" onkeypress="if(event.key==='Enter'){ event.preventDefault(); submitTrackComment('${v.id}'); }">
-          <button class="demo-card-cm-send" onclick="event.stopPropagation(); submitTrackComment('${v.id}')" aria-label="남기기"><i class="ri-arrow-right-line"></i></button>
-        </div>` : '';
+        <button class="demo-card-cm-open" onclick="event.stopPropagation(); openTrackCommentsModal('${v.id}')">
+          <i class="ri-chat-3-line"></i> 댓글 남기기
+        </button>` : '';
       const demoLiked = isTrackLiked(v.id);
       return `
         <div class="demo-card is-demo ${v.pinned ? 'is-pinned' : ''}"
