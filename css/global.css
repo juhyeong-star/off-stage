@@ -13873,23 +13873,24 @@ body.polaroid-sheet-open { overflow: hidden; }
 }
 
 /* ── 데모 카드 내부 ㄴ 댓글 리스트 (낙서 톤) — 고정 높이 카드 안에서 자동 스크롤 ── */
-/* 페이지 상단 가운데 안내 문구 (도형/벽/Tags 등) — 내 우주 안내 톤과 일치 */
+/* 페이지 상단 가운데 안내 문구 (도형/벽/Tags 등) */
 .page-intro {
   text-align: center;
-  font-size: 14px;
-  color: var(--text-secondary, rgba(255,255,255,0.55));
-  margin: 12px auto 18px;
+  font-size: 18px;                   /* PC — 키움 (14→18, 사용자 요청) */
+  color: var(--text-secondary, rgba(255,255,255,0.7));
+  margin: 16px auto 22px;
   padding: 0 20px;
-  max-width: 520px;
+  max-width: 720px;
   line-height: 1.5;
-  font-weight: 500;
-  letter-spacing: -0.2px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
 }
 @media (max-width: 768px) {
   .page-intro {
-    font-size: 13px;
+    font-size: 13.5px;
     margin: 10px auto 16px;
     padding: 0 16px;
+    font-weight: 500;
   }
 }
 
