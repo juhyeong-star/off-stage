@@ -13725,26 +13725,36 @@ body.polaroid-sheet-open { overflow: hidden; }
 
 /* ── 데모 카드 내부 ㄴ 댓글 리스트 (낙서 톤) — 고정 높이 카드 안에서 자동 스크롤 ── */
 .artist-canvas .demo-card-cm-list {
-  display: flex;
+  display: flex !important;       /* 항상 보임 — 전역 :not(.is-selected) 의 display:none 덮어쓰기 */
   flex-direction: column;
-  justify-content: flex-end;     /* ⭐️ 댓글이 박스 아래쪽 — 입력칸에 딱 붙음 (사용자 요청) */
+  justify-content: flex-end;     /* 댓글이 박스 아래쪽 — 입력칸에 딱 붙음 */
   gap: 3px;
   padding: 6px 0 2px;
-  margin: 2px 0 4px;
-  border-top: 1.5px dashed rgba(17,17,17,0.18);
+  margin: 4px 0 4px;
+  /* border-top dashed 제거 (사용자 요청) */
   flex: 1 1 0;
-  min-height: 0;
+  min-height: 36px;
   overflow-y: auto;
-  cursor: pointer;               /* 탭 영역임을 시각적으로 */
+  cursor: pointer;
+  border-radius: 3px;
+  -webkit-tap-highlight-color: rgba(194, 24, 91, 0.15);
+  transition: background 0.15s;
+}
+.artist-canvas .demo-card-cm-list:active,
+.artist-canvas .demo-card-cm-list:hover {
+  background: rgba(194, 24, 91, 0.08);
 }
 /* '댓글 N개 · 탭해서 모두 보기' 핀트 (PC + 모바일 공통) */
 .artist-canvas .demo-card-cm-hint-tap {
   font-size: 11px;
   color: #c2185b;
-  font-weight: 700;
+  font-weight: 800;
   margin-top: 4px;
-  opacity: 0.85;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
+.artist-canvas .demo-card-cm-hint-tap i { font-size: 12px; }
 /* 비어있으면 border-top 없음 */
 .artist-canvas .demo-card-cm-list:empty {
   border-top: none;
@@ -14995,7 +15005,7 @@ body:has(#global-player.expanded) .global-back-btn {
     font-size: 11px !important;
   }
   /* 모바일 snake-grid 데모 카드 — 댓글 영역은 탭하면 모달 열림.
-     항상 보이고, 명확하게 탭 가능한 영역. */
+     항상 보이고, 명확하게 탭 가능한 영역. (dashed border 제거 — 사용자 요청) */
   .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-list {
     display: flex !important;          /* 전역 :not(.is-selected) 의 display:none 덮어쓰기 */
     flex-direction: column !important;
@@ -15005,8 +15015,7 @@ body:has(#global-player.expanded) .global-back-btn {
     overflow: hidden !important;
     cursor: pointer !important;
     padding: 6px 4px 4px !important;
-    margin: 2px 0 4px !important;
-    border-top: 1.5px dashed rgba(17,17,17,0.18) !important;
+    margin: 4px 0 4px !important;
     border-radius: 3px !important;
     -webkit-tap-highlight-color: rgba(194, 24, 91, 0.15) !important;  /* 탭 피드백 */
     transition: background 0.15s !important;

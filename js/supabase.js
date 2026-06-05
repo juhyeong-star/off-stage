@@ -1228,16 +1228,62 @@
       return mapped;
     },
 
+    // Batch fetch comments for all tracks — one query instead of N.
+    // 댓글이 새로고침 후 사라지던 버그 (mapTrackRow 가 trackComments:[] 로 덮어쓰던 문제) 의 fix.
+    async fetchAllComments() {
+      if (!window.supabase) return new Map();
+      const { data, error } = await window.supabase
+        .from('track_comments')
+        .select('*')
+        .order('created_at', { ascending: true });
+      if (error) { console.warn('[Tracks] fetchAllComments', error.message); return new Map(); }
+      const byTrack = new Map();
+      (data || []).forEach(row => {
+        const tid = row.track_id;
+        if (!byTrack.has(tid)) byTrack.set(tid, []);
+        byTrack.get(tid).push(mapTrackCommentRow(row));
+      });
+      return byTrack;
+    },
+
     // Merge Supabase tracks with existing db.tracks (Supabase at top).
     // Keeps localStorage mock so the site never looks empty; Supabase uploads appear first.
     async refreshInto(db) {
       const supabaseTracks = await this.fetchAll();
-      // Eagerly fetch comments per track? Too expensive. Defer to when modal opens.
+      // ⭐️ 핵심 fix: 이전 캐시의 trackComments 와 _commentsLoaded 보존.
+      //    안 그러면 매 refresh 마다 mapTrackRow 가 trackComments:[] 로 덮어써
+      //    이미 fetch 한 댓글이 사라짐 → "새로고침하면 댓글이 없어져" 버그.
+      const prevByID = new Map();
+      if (Array.isArray(window.__tracks)) {
+        window.__tracks.forEach(t => { if (t && t.id) prevByID.set(t.id, t); });
+      }
+      supabaseTracks.forEach(t => {
+        const prev = prevByID.get(t.id);
+        if (prev && Array.isArray(prev.trackComments) && prev.trackComments.length) {
+          t.trackComments = prev.trackComments;
+          t._commentsLoaded = prev._commentsLoaded;
+        }
+      });
       window.__tracks = supabaseTracks;
       if (db && typeof db === 'object') {
         const mockTracks = (db.tracks || []).filter(t => !t.__supabase);
         db.tracks = [...supabaseTracks, ...mockTracks];
         try { window.DB.save(db); } catch (_) {}
+      }
+      // 백그라운드로 모든 트랙의 댓글을 한 번에 가져와 cache 갱신 (1 query — N+1 회피).
+      // 첫 로드 시 (캐시 없을 때) 도 댓글이 inline 으로 보이게 됨.
+      try {
+        const byTrack = await this.fetchAllComments();
+        supabaseTracks.forEach(t => {
+          const cms = byTrack.get(t.id);
+          if (cms) { t.trackComments = cms; t._commentsLoaded = true; }
+        });
+        if (db && typeof db === 'object' && Array.isArray(db.tracks)) {
+          // db.tracks 의 참조도 동일 객체이므로 위에서 같이 갱신됨
+          try { window.DB.save(db); } catch (_) {}
+        }
+      } catch (e) {
+        console.warn('[Tracks] refreshInto fetchAllComments', e);
       }
       return supabaseTracks;
     }

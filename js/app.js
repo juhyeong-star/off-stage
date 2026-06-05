@@ -8196,8 +8196,7 @@ function renderProjectBox(pid, versions) {
            </div>`
         : '';
 
-    // ── 카드 내부 인라인 댓글 + 입력 ── (기본은 접혀있고, 카드 클릭하면 펼침)
-    // PC 도 모바일과 일관되게: 마지막 2개만 inline + cm-list 탭하면 전체 모달.
+    // ── 카드 내부 인라인 댓글 ── (모바일과 동일: 항상 표시, 탭하면 모달)
     const cmList = v.trackComments || [];
     const PC_INLINE = 2;
     const cmVisible = cmList.slice(-PC_INLINE);
@@ -8206,8 +8205,10 @@ function renderProjectBox(pid, versions) {
       const cmAuth = noteEsc(cm.author || '익명');
       return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span></div>`;
     }).join('');
-    const pcCmHintHtml = cmList.length > 2
-      ? `<div class="demo-card-cm-hint-tap">댓글 ${cmList.length}개 · 탭해서 모두 보기</div>` : '';
+    // 핀트 — 항상 표시 (0개여도 "첫 댓글 남기기")
+    const pcCmHintHtml = cmList.length > 0
+      ? `<div class="demo-card-cm-hint-tap"><i class="ri-chat-3-line"></i> 댓글 ${cmList.length}개 · 탭해서 모두 보기</div>`
+      : `<div class="demo-card-cm-hint-tap"><i class="ri-chat-3-line"></i> 댓글 보기 · 첫 댓글 남기기</div>`;
     // 댓글 티저 — 댓글 있을 때만 카드 맨 아래에 한 줄로 보여줘 호기심 자극
     // (선택되면 숨겨지고 위의 전체 목록이 펼쳐짐)
     const lastCm = cmList.length ? cmList[cmList.length - 1] : null;
@@ -8218,11 +8219,13 @@ function renderProjectBox(pid, versions) {
         <span class="dch-preview">"${noteEsc((lastCm.text || '').slice(0, 18))}…"</span>
       </div>` : '';
 
-    // 로그인한 누구나 인라인 입력 — 카드를 눌렀을 때만 보이게(CSS로 토글)
+    // 로그인한 누구나 인라인 입력 — 카드 선택 시에만 보이게(CSS로 토글).
+    // send 버튼 제거 (모바일과 일관성) — Enter 만으로 전송.
+    // onkeydown + isComposing (한국어 IME 호환).
     const inputInlineHtml = canComment ? `
       <div class="demo-card-cm-input" onclick="event.stopPropagation();">
-        <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="댓글 남기기…" onkeypress="if(event.key==='Enter'){ event.preventDefault(); submitTrackComment('${v.id}'); }">
-        <button class="demo-card-cm-send" onclick="event.stopPropagation(); submitTrackComment('${v.id}')" aria-label="남기기"><i class="ri-arrow-right-line"></i></button>
+        <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="댓글 남기기…"
+               onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); submitTrackComment('${v.id}'); }">
       </div>` : '';
 
     const demoLiked = isTrackLiked(v.id);
@@ -8245,11 +8248,12 @@ function renderProjectBox(pid, versions) {
           </button>
         </div>
         ${noteHtml}
-        <div class="demo-card-cm-list" ${cmList.length ? `onclick="event.stopPropagation(); openTrackCommentsModal('${v.id}')" title="댓글 모두 보기"` : ''}>
+        <div class="demo-card-cm-list" role="button" tabindex="0"
+             onclick="event.stopPropagation(); openTrackCommentsModal('${v.id}');"
+             title="댓글 모두 보기">
           ${cmInlineHtml}${pcCmHintHtml}
         </div>
         ${inputInlineHtml}
-        ${cmHintHtml}
       </div>
     `;
   }).join('') + (canEditArtist ? (() => {
