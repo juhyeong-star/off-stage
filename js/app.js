@@ -9781,13 +9781,13 @@ function renderArtistProfile(artistName) {
             <!-- 청취곡: 마스터(싱글 포함). Wrapped in projects-grid so albums
                  lay out as 4-per-row on desktop, 2-3 on tablet, 1 on mobile. -->
             ${releasedCount > 0 ? `
-              <div id="artist-section-singles" class="reveal projects-grid" style="margin-top:20px; scroll-margin-top:80px;">
+              <div id="artist-section-singles" class="reveal projects-grid" style="display:flex; flex-direction:column; gap:24px; grid-template-columns:none; margin-top:20px; scroll-margin-top:80px;">
                 ${releasedHtml}
               </div>
             ` : ''}
             <!-- 데모곡: 프로젝트 진행중 -->
             ${demoCount > 0 ? `
-              <div id="artist-section-projects" class="reveal projects-grid" style="margin-top:24px; scroll-margin-top:80px;">
+              <div id="artist-section-projects" class="reveal projects-grid" style="display:flex; flex-direction:column; gap:24px; grid-template-columns:none; margin-top:24px; scroll-margin-top:80px;">
                 ${demoHtml}
               </div>
             ` : ''}
