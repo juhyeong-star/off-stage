@@ -13767,6 +13767,14 @@ body.polaroid-sheet-open { overflow: hidden; }
 .artist-canvas .demo-card .demo-card-cm-list { display: flex !important; }
 .artist-canvas .demo-card.is-selected .demo-card-cm-list { display: flex !important; }
 .artist-canvas .demo-card .demo-card-cm-hint { display: none !important; }    /* 호기심 hint 사라짐 */
+/* 댓글 0개일 때 placeholder */
+.artist-canvas .demo-card .demo-card-cm-empty-hint {
+  font-family: var(--font-hand);
+  font-size: 12px;
+  color: rgba(17,17,17,0.4);
+  font-style: italic;
+  padding: 4px 0;
+}
 /* 입력칸: 선택했을 때만 보임 (사용자 요청: "클릭전까지 댓글남기기 안보이게") */
 .artist-canvas .demo-card .demo-card-cm-input { display: none !important; }
 .artist-canvas .demo-card.is-selected .demo-card-cm-input {

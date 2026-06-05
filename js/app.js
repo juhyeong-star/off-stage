@@ -8224,6 +8224,9 @@ function renderProjectBox(pid, versions) {
       const delBtn = isMine ? `<button class="cm-del-btn" onclick="event.stopPropagation(); deleteTrackComment('${v.id}','${cm.id}')" title="댓글 삭제"><i class="ri-close-line"></i></button>` : '';
       return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span>${delBtn}</div>`;
     }).join('');
+    // 댓글 0개일 때 placeholder — 항상 보이게 (사용자 요청)
+    const pcCmEmptyHtml = cmList.length === 0
+      ? `<div class="demo-card-cm-empty-hint">아직 댓글이 없어요</div>` : '';
     const pcCmHintHtml = cmList.length > 2
       ? `<div class="demo-card-cm-hint-tap">댓글 ${cmList.length}개 · 탭해서 모두 보기</div>` : '';
 
@@ -8254,7 +8257,7 @@ function renderProjectBox(pid, versions) {
         </div>
         ${noteHtml}
         <div class="demo-card-cm-list" onclick="event.stopPropagation(); openDemoWallModal('${v.id}')" title="댓글 모두 보기">
-          ${cmInlineHtml}${pcCmHintHtml}
+          ${cmInlineHtml}${pcCmEmptyHtml}${pcCmHintHtml}
         </div>
         ${inputInlineHtml}
       </div>
