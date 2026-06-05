@@ -14139,44 +14139,40 @@ body.polaroid-sheet-open { overflow: hidden; }
 }
 
 /* ============================================================
-   발매 글소개 — 노란 포스트잇 (앨범 옆에)
+   발매 곡 소개 — 데모 카드 스타일 (앨범 옆에)
+   사용자 요청: "데모카드처럼인데 곡소개만 있는걸로"
    ============================================================ */
-.release-note-postit {
-  background: #FFE500;
-  border: 1.5px solid #111;
-  border-radius: 3px;
-  box-shadow: 3px 3px 0 #111;
-  padding: 14px 16px;
-  margin-left: 14px;
-  max-width: 280px;
+.release-note-postit.demo-card-look {
+  background: #FFE500;                         /* 노란 데모 카드 컬러 */
+  border: 1.5px solid rgba(17,17,17,0.4);      /* demo-card 와 동일 */
+  border-radius: 5px;
+  box-shadow: 2px 2px 0 rgba(17,17,17,0.2);
+  padding: 16px 20px;
   cursor: pointer;
   position: relative;
-  transition: transform 0.15s, box-shadow 0.15s;
-  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
 }
-.release-note-postit::before {
-  /* 윗부분 가짜 테이프 */
-  content: '';
-  position: absolute;
-  top: -7px; left: 50%;
-  transform: translateX(-50%);
-  width: 50px; height: 14px;
-  background: rgba(255,255,255,0.55);
-  border-radius: 1px;
+.release-note-postit.demo-card-look:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 #111;
+  border-color: #111;
 }
-.release-note-postit:hover {
-  transform: translate(-2px, -2px) rotate(-1deg);
-  box-shadow: 5px 5px 0 #111;
+/* 상단 영역 — 데모 태그 같은 핑크 라벨 */
+.release-note-postit.demo-card-look .release-note-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.release-note-eyebrow {
-  font-size: 11px;
+.release-note-postit.demo-card-look .release-note-tag {
+  font-size: 13px;
   font-weight: 800;
-  color: #c2185b;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  margin-bottom: 6px;
+  color: #c2185b;                              /* 데모 태그 핑크와 동일 */
+  letter-spacing: 0.3px;
 }
-.release-note-body {
+.release-note-postit.demo-card-look .release-note-body {
   font-family: 'Nanum JungShik', 'Caveat', cursive;
   font-size: 15px;
   line-height: 1.5;
@@ -14184,13 +14180,14 @@ body.polaroid-sheet-open { overflow: hidden; }
   white-space: pre-wrap;
   word-break: keep-all;
   display: -webkit-box;
-  -webkit-line-clamp: 3;          /* 사용자 요청: 3줄까지 */
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  margin: 0;
 }
-/* "— 더보기" 핀트 — 길면 보임 */
-.release-note-more {
-  margin-top: 6px;
+.release-note-postit.demo-card-look .release-note-more {
+  margin-top: auto;                            /* 카드 맨 아래 */
+  padding-top: 6px;
   font-size: 12px;
   font-weight: 700;
   color: #c2185b;

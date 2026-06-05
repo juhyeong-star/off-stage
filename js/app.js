@@ -8166,16 +8166,17 @@ function renderProjectBox(pid, versions) {
   // 댓글 권한 — 로그인된 사용자 누구나 가능 (후원자/아티스트 제한 해제)
   const canComment = !!(db.currentUser || window.__currentUser);
 
-  // 발매 글소개 — 노란 포스트잇으로 앨범 옆에 표시 (사용자 요청). PC + 모바일 공용.
+  // 발매 곡소개 — 데모 카드 스타일 (사용자 요청). 옆에 표시.
   // 3줄까지만 표시, 길면 "더보기" 로 모달 열기.
   const _releaseDesc = (final && final.description || '').trim();
   const _descEsc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-  // 3줄 넘는지 추정 (대략) — 줄바꿈 개수 OR 길이 기반
   const _descLines = _releaseDesc.split(/\r?\n/).length;
   const _maybeLong = (_descLines > 3) || (_releaseDesc.length > 120);
   const releaseNoteHtml = (final && _releaseDesc) ? `
-    <div class="release-note-postit" onclick="event.stopPropagation(); openDemoWallModal('${final.id}')" title="자세히 보기">
-      <div class="release-note-eyebrow">📝 글 소개</div>
+    <div class="release-note-postit demo-card-look" onclick="event.stopPropagation(); openDemoWallModal('${final.id}')" title="자세히 보기">
+      <div class="release-note-top">
+        <span class="release-note-tag">곡 소개</span>
+      </div>
       <div class="release-note-body">${_descEsc(_releaseDesc)}</div>
       ${_maybeLong ? '<div class="release-note-more">— 더보기</div>' : ''}
     </div>
