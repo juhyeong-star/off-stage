@@ -9003,26 +9003,30 @@ window.submitTrackComment = async function(trackId) {
   }
   if (txtEl) txtEl.value = '';
 
-  // In-place DOM update — 데모 카드 OR 마스터 카드 내부의 .demo-card-cm-list 에 ㄴ 추가
+  // In-place DOM update — 데모 카드 OR 마스터 카드 내부의 .demo-card-cm-list 다시 그리기.
+  // append 만 하면 (a) "댓글 N개 · 탭해서 모두 보기" 핀트 밑에 박혀 어색하고
+  // (b) overflow: hidden 때문에 잘려 안 보이며 (c) 핀트 개수가 stale 됨.
+  // → 전체 list 내용을 track.trackComments 기준으로 재구성.
   try {
-    const cmSafe = (newComment.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const cmAuth = (newComment.author || '익명').replace(/</g,'&lt;');
-
-    // 데모 카드 OR 마스터 카드 (둘 다 data-track-id 갖고 있고 .demo-card-cm-list 내부에 있음)
+    const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const containers = document.querySelectorAll(
       `.demo-card[data-track-id="${trackId}"], .project-master-mobile[data-track-id="${trackId}"]`
     );
+    const allCms = (track && Array.isArray(track.trackComments)) ? track.trackComments : [newComment];
+    const INLINE = 2;
+    const visible = allCms.slice(-INLINE);
+    const linesHtml = visible.map(cm => {
+      const t = esc(cm.text || '');
+      const a = esc(cm.author || '익명');
+      return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${t}</span><span class="demo-card-cm-author">— ${a}</span></div>`;
+    }).join('');
+    const hintHtml = allCms.length > 0
+      ? `<div class="demo-card-cm-hint-tap">댓글 ${allCms.length}개 · 탭해서 모두 보기</div>`
+      : '';
     containers.forEach(card => {
       const list = card.querySelector('.demo-card-cm-list');
       if (!list) return;
-      const empty = list.querySelector('.demo-card-cm-empty');
-      if (empty) empty.remove();
-      const lineEl = document.createElement('div');
-      lineEl.className = 'demo-card-cm-line';
-      lineEl.innerHTML = `<span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span>`;
-      list.appendChild(lineEl);
-      // Scroll comments list to bottom so new comment is visible
-      list.scrollTop = list.scrollHeight;
+      list.innerHTML = linesHtml + hintHtml;
     });
     // 구 구조 호환 (혹시 다른 페이지에서 version-panel 사용 시)
     const panel = document.querySelector(`.version-panel[data-track-id="${trackId}"]`);
