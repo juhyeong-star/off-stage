@@ -8171,20 +8171,9 @@ function renderProjectBox(pid, versions) {
   // 댓글 권한 — 로그인된 사용자 누구나 가능 (후원자/아티스트 제한 해제)
   const canComment = !!(db.currentUser || window.__currentUser);
 
-  // 발매 글소개 — 노란 포스트잇으로 앨범 옆에 표시 (사용자 요청). PC + 모바일 공용.
-  // 3줄까지만 표시, 길면 "더보기" 로 모달 열기.
-  const _releaseDesc = (final && final.description || '').trim();
-  const _descEsc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-  // 3줄 넘는지 추정 (대략) — 줄바꿈 개수 OR 길이 기반
-  const _descLines = _releaseDesc.split(/\r?\n/).length;
-  const _maybeLong = (_descLines > 3) || (_releaseDesc.length > 120);
-  const releaseNoteHtml = (final && _releaseDesc) ? `
-    <div class="release-note-postit" onclick="event.stopPropagation(); openDemoWallModal('${final.id}')" title="자세히 보기">
-      <div class="release-note-eyebrow">📝 글 소개</div>
-      <div class="release-note-body">${_descEsc(_releaseDesc)}</div>
-      ${_maybeLong ? '<div class="release-note-more">— 더보기</div>' : ''}
-    </div>
-  ` : '';
+  // 발매 글소개 — 카드 옆/아래의 노란 포스트잇은 사용자 요청으로 제거.
+  // 대신 마스터 커버 클릭 시 openSongInfoModal(트랙ID) 가 곡소개 모달을 띄움.
+  const releaseNoteHtml = '';
 
   // Snake cards — DEMOS ONLY (with 함께만들기 progress badge per demo)
   // 모두 collapsed 상태로 시작 — 클릭해야 일지·댓글·입력 노출 (사용자 요청)
@@ -8383,7 +8372,7 @@ function renderProjectBox(pid, versions) {
   const finalHasCover = final && final.hasCustomCover;
   const primaryHasCover = primary && primary.hasCustomCover;
   const coverHtml = final ? (finalHasCover ? `
-    <div class="project-cover-wrap" onclick="playTrack('${final.id}'); selectProjectVersion('${pid}','${final.id}')" title="마스터 재생">
+    <div class="project-cover-wrap" onclick="playTrack('${final.id}'); selectProjectVersion('${pid}','${final.id}'); openSongInfoModal('${final.id}');" title="탭하면 곡 소개 + 재생">
       <img src="${final.cover}" class="project-cover-large" alt="${safeTitle}" loading="lazy">
       <div class="project-play-overlay"><i class="ri-play-fill"></i></div>
       <div class="project-master-badge">발매 (Release)</div>
@@ -12601,6 +12590,80 @@ window.submitCheer = async function (trackId, trackTitle, artistName) {
       if (btn) { btn.disabled = false; btn.textContent = '💝 응원 보내기'; }
     }
   }
+};
+
+// ===================== SONG INFO MODAL (곡 소개 모달) =====================
+// 마스터(발매) 카드 커버 클릭 시 뜨는 곡 소개 모달.
+// 디자인: 크림 노란 배경, 좌상단 발매일 핑크 칩, 우상단 검정 ✕,
+//        큰 제목「..」, 우측 정렬 — 아티스트, 구분선, 본문 설명.
+window.openSongInfoModal = function (trackId) {
+  if (!trackId) return;
+  const db = window.DB.get();
+  const track = (db.tracks || []).find(t => t && t.id === trackId);
+  if (!track) { if (typeof showToast === 'function') showToast('곡을 찾을 수 없어요'); return; }
+
+  const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const safeTitle  = esc(track.title || '제목 없음');
+  const safeArtist = esc(track.artist || '');
+  const desc       = (track.description || '').trim();
+  const safeDesc   = esc(desc).replace(/\n/g, '<br>');
+
+  // 발매일 칩 — track.releaseDate (YYYY-MM-DD) → "발매 · YYYY.MM.DD" 포맷
+  const rd = (track.releaseDate || '').trim();
+  let badgeText = '발매';
+  if (rd && /^\d{4}-\d{2}-\d{2}/.test(rd)) {
+    badgeText = '발매 · ' + rd.slice(0, 10).replace(/-/g, '.');
+  } else if (track.createdAt) {
+    try {
+      const d = new Date(track.createdAt);
+      if (!isNaN(d.getTime())) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const dy = String(d.getDate()).padStart(2, '0');
+        badgeText = `발매 · ${y}.${m}.${dy}`;
+      }
+    } catch (_) {}
+  }
+
+  // 기존 모달이 떠있으면 먼저 닫기
+  const prev = document.getElementById('song-info-modal');
+  if (prev && prev.parentNode) prev.parentNode.removeChild(prev);
+
+  const modal = document.createElement('div');
+  modal.id = 'song-info-modal';
+  modal.className = 'song-info-modal';
+  modal.innerHTML = `
+    <div class="song-info-paper" role="dialog" aria-modal="true">
+      <span class="song-info-badge">${esc(badgeText)}</span>
+      <button type="button" class="song-info-close" aria-label="닫기" onclick="closeSongInfoModal()">
+        <i class="ri-close-line"></i>
+      </button>
+      <h2 class="song-info-title">「${safeTitle}」</h2>
+      <p class="song-info-artist">— ${safeArtist || '익명'}</p>
+      <div class="song-info-divider"></div>
+      <div class="song-info-body">${safeDesc || '<em style="opacity:0.5;">아직 소개글이 없어요.</em>'}</div>
+    </div>
+  `;
+  // 백드롭 클릭 시 닫기 (모달 내부 클릭은 stop)
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeSongInfoModal();
+  });
+  document.body.appendChild(modal);
+  // ESC 닫기
+  if (!window.__songInfoEscWired) {
+    window.__songInfoEscWired = true;
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('song-info-modal')) closeSongInfoModal();
+    });
+  }
+  // 애니메이션을 위해 다음 프레임에 .open 추가
+  requestAnimationFrame(() => modal.classList.add('open'));
+};
+window.closeSongInfoModal = function () {
+  const m = document.getElementById('song-info-modal');
+  if (!m) return;
+  m.classList.remove('open');
+  setTimeout(() => { if (m.parentNode) m.parentNode.removeChild(m); }, 180);
 };
 
 // ===================== DEMO WALL MODAL (우리들의 벽 스타일 풀모달) =====================

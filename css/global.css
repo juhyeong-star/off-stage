@@ -14350,12 +14350,14 @@ body.polaroid-sheet-open { overflow: hidden; }
 .artist-canvas .release-card-block .project-album-meta {
   padding: 0;
 }
-/* Coming Soon(마스터 없음) 커버 = 1:1 정사각, 데모 카드 높이(214px)와 맞춰 안정적 배치 (사용자 요청) */
-.artist-canvas .release-card-block:has(.project-cover-wrap.no-master) {
+/* 마스터 카드도 Coming Soon 과 동일하게 214×214 고정 (사용자 요청).
+   사진 있을 때도 같은 크기로 보이고, 큰 사진을 막아 카드 통일감 확보. */
+.artist-canvas .release-card-block {
   min-width: 214px !important;
   max-width: 214px !important;
   width: 214px !important;
 }
+.artist-canvas .projects-grid .project-header .project-album-card .project-cover-wrap,
 .artist-canvas .projects-grid .project-header .project-album-card .project-cover-wrap.no-master {
   width: 214px !important;
   height: 214px !important;
@@ -16518,4 +16520,110 @@ body:has(#global-player.expanded) .global-back-btn {
 .floating-shape,
 .floating-shape .shape-text {
   font-family: 'Nanum JungShik', 'Gaegu', cursive !important;
+}
+
+/* ============================================================
+   SONG INFO MODAL — 마스터 발매 카드 커버 클릭 시 뜨는 곡 소개 모달
+   디자인: 크림 노란 배경, 좌상단 발매일 핑크 칩, 우상단 검정 ✕,
+          큰 제목「」, 우측 정렬 — 아티스트, 구분선, 본문
+   ============================================================ */
+.song-info-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;                          /* 우리들의 벽 모달(1100) 보다 위 */
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+.song-info-modal.open { opacity: 1; }
+.song-info-paper {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  background: #FFF6C8;                    /* 크림 노란 */
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+  padding: 22px 26px 26px;
+  transform: translateY(8px) scale(0.98);
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  font-family: 'Pretendard', system-ui, sans-serif;
+  color: #1a1a1a;
+}
+.song-info-modal.open .song-info-paper {
+  transform: translateY(0) scale(1);
+}
+.song-info-badge {
+  display: inline-block;
+  background: #FFB4C0;                    /* 살구 핑크 */
+  color: #C8233A;                         /* 짙은 핑크/레드 */
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+}
+.song-info-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  transition: background 0.2s, transform 0.1s;
+}
+.song-info-close:hover { background: #333; }
+.song-info-close:active { transform: scale(0.92); }
+.song-info-close i { line-height: 1; }
+.song-info-title {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 6px;
+  color: #111;
+  letter-spacing: -0.5px;
+  line-height: 1.15;
+  word-break: keep-all;
+}
+.song-info-artist {
+  font-size: 14px;
+  color: #1a1a1a;
+  font-weight: 700;
+  margin: 0 0 18px;
+  text-align: right;
+}
+.song-info-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.18);
+  margin: 0 0 18px;
+}
+.song-info-body {
+  font-size: 14.5px;
+  color: #1a1a1a;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+@media (max-width: 480px) {
+  .song-info-modal { padding: 16px; }
+  .song-info-paper { padding: 20px 20px 22px; }
+  .song-info-title { font-size: 24px; }
+  .song-info-body { font-size: 14px; }
 }

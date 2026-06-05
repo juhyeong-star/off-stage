@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>마스터 발매 카드 — 사진 포함 디자인 미리보기</title>
+<style>
+  :root {
+    --brand: #1DB954;
+    --text-pri: #111;
+    --text-sec: #555;
+  }
+  body {
+    background: linear-gradient(135deg, #C8B8F5, #B9A5F0);
+    min-height: 100vh;
+    margin: 0;
+    padding: 30px 24px 60px;
+    font-family: 'Inter', 'Pretendard', system-ui, sans-serif;
+    color: #111;
+  }
+  h1.preview-title {
+    text-align: center;
+    color: #1a1a1a;
+    font-size: 20px;
+    font-weight: 800;
+    margin: 0 0 6px;
+  }
+  .preview-sub {
+    text-align: center;
+    color: rgba(0,0,0,0.55);
+    font-size: 13px;
+    margin: 0 0 28px;
+  }
+  .cols {
+    display: flex;
+    gap: 28px;
+    justify-content: center;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .col {
+    flex: 0 0 360px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 20px;
+  }
+  .col h2 {
+    text-align: center;
+    color: #1a1a1a;
+    font-weight: 800;
+    font-size: 15px;
+    margin: 0 0 16px;
+  }
+
+  /* === 공통 === */
+  .project-cover-wrap {
+    position: relative;
+    border: 2.5px solid #111;
+    border-radius: 6px;
+    box-shadow: 5px 5px 0 #111;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .project-cover-wrap:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 7px 7px 0 #111;
+  }
+  .project-cover-wrap img {
+    width: 100%; height: 100%; object-fit: cover; display:block;
+  }
+  .project-master-badge {
+    position: absolute;
+    top: 6px; right: 6px;
+    background: #FFE500;
+    border: 1.5px solid #111;
+    padding: 3px 8px;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .project-play-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.25);
+    color: #fff;
+    font-size: 56px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .project-cover-wrap:hover .project-play-overlay { opacity: 1; }
+  .project-title { font-size: 20px; font-weight: 800; margin: 12px 0 2px; line-height: 1.2; }
+  .project-artist { font-size: 13px; color: #444; margin: 0 0 4px; }
+  .project-master-date {
+    display: inline-block;
+    background: #1a1a1a; color: #ddd;
+    font-size: 11px; padding: 3px 10px; border-radius: 2px;
+  }
+
+  /* === BEFORE (현재) === */
+  .before .release-card-block {
+    width: 100%;
+    max-width: 320px;
+  }
+  .before .project-cover-wrap {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    margin-bottom: 10px;
+  }
+  .release-note-postit {
+    background: #FFE500;
+    border: 1.5px solid #111;
+    border-radius: 4px;
+    box-shadow: 3px 3px 0 #111;
+    padding: 10px 14px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: #111;
+    cursor: pointer;
+  }
+  .release-note-eyebrow {
+    font-size: 11px;
+    font-weight: 800;
+    color: #5e4a00;
+    margin-bottom: 4px;
+  }
+  .release-note-body { line-height: 1.5; }
+
+  /* === AFTER (제안) — 사진 작게 + 글소개 X + 클릭→모달 === */
+  .after .project-cover-wrap {
+    width: 214px;
+    height: 214px;
+  }
+  /* "Click for description" 힌트 — hover 시만 */
+  .after .project-cover-wrap::after {
+    content: "탭하면 곡 소개";
+    position: absolute;
+    bottom: 8px; left: 0; right: 0;
+    text-align: center;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .after .project-cover-wrap:hover::after { opacity: 1; }
+
+  /* === 클릭 시 뜨는 모달 (미리보기 — 항상 우측 컬럼에 보임) ===
+       사용자가 보낸 스크린샷 디자인 매칭:
+       크림 노란 배경, 좌상단 DEMO/발매 칩, 우상단 검정 ✕, 큰 제목, 작은 — 작가, 점선 구분, 본문 */
+  .modal-preview {
+    margin-top: 20px;
+    background: #FFF6C8;
+    border-radius: 14px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+    padding: 22px 24px 26px;
+    position: relative;
+    overflow: visible;
+  }
+  .modal-preview-badge {
+    display: inline-block;
+    background: #FFB4C0;            /* 살구 핑크 */
+    color: #C8233A;                 /* 짙은 핑크/레드 */
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  .modal-preview-close {
+    position: absolute;
+    top: 14px; right: 14px;
+    width: 32px; height: 32px;
+    background: #111;
+    color: #fff;
+    border-radius: 50%;
+    border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .modal-preview-title {
+    font-size: 28px;
+    font-weight: 800;
+    margin: 0 0 6px;
+    color: #111;
+    letter-spacing: -0.5px;
+    line-height: 1.15;
+  }
+  .modal-preview-artist {
+    font-size: 14px;
+    color: #1a1a1a;
+    font-weight: 700;
+    margin: 0 0 18px;
+    text-align: right;
+  }
+  .modal-preview-divider {
+    height: 1px;
+    background: rgba(0,0,0,0.18);
+    margin: 0 0 18px;
+  }
+  .modal-preview-body {
+    font-size: 14.5px;
+    color: #1a1a1a;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: keep-all;
+  }
+  .modal-cap {
+    text-align: center;
+    font-size: 11px;
+    color: #444;
+    margin-top: 10px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<h1 class="preview-title">마스터 발매 카드 — 사진 포함</h1>
+<p class="preview-sub">왼쪽: 현재 (사진 큼 + 글소개 옆/아래) &nbsp;·&nbsp; 오른쪽: 제안 (사진 Coming Soon 크기로 + 글소개 X + 클릭하면 모달)</p>
+
+<div class="cols">
+
+  <!-- ========== BEFORE ========== -->
+  <div class="col before">
+    <h2>현재 (BEFORE)</h2>
+
+    <div class="release-card-block">
+      <div class="project-cover-wrap">
+        <img src="https://images.unsplash.com/photo-1565299507177-b0ac66763828?auto=format&fit=crop&q=80&w=500" alt="보쌈">
+        <div class="project-master-badge">발매 (Release)</div>
+        <div class="project-play-overlay">▶</div>
+      </div>
+      <h3 class="project-title">「보쌈」</h3>
+      <p class="project-artist">쿠츠</p>
+      <span class="project-master-date">발매 · 2026.06.04</span>
+    </div>
+
+    <div class="release-note-postit">
+      <div class="release-note-eyebrow">📝 글 소개</div>
+      <div class="release-note-body">이 곡은 보사노바 곡으로 여자의 질투심을 귀엽게 표현한 곡입니다!</div>
+    </div>
+  </div>
+
+  <!-- ========== AFTER ========== -->
+  <div class="col after">
+    <h2>제안 (AFTER)</h2>
+
+    <div class="release-card-block">
+      <div class="project-cover-wrap" title="클릭하면 재생 + 곡 소개">
+        <img src="https://images.unsplash.com/photo-1565299507177-b0ac66763828?auto=format&fit=crop&q=80&w=500" alt="보쌈">
+        <div class="project-master-badge">발매</div>
+        <div class="project-play-overlay">▶</div>
+      </div>
+      <h3 class="project-title">「보쌈」</h3>
+      <p class="project-artist">쿠츠</p>
+      <span class="project-master-date">발매 · 2026.06.04</span>
+    </div>
+
+    <div class="modal-preview">
+      <span class="modal-preview-badge">발매 · 2026.06.04</span>
+      <button class="modal-preview-close" aria-label="닫기">✕</button>
+      <h3 class="modal-preview-title">「보쌈」</h3>
+      <p class="modal-preview-artist">— 쿠츠</p>
+      <div class="modal-preview-divider"></div>
+      <div class="modal-preview-body">이 곡은 보사노바 곡으로 여자의 질투심을 귀엽게 표현한 곡입니다!</div>
+    </div>
+    <p class="modal-cap">↑ 사진 클릭 시 위 모달이 뜨면서 곡이 재생돼요</p>
+  </div>
+
+</div>
+
+</body>
+</html>
