@@ -6413,36 +6413,38 @@ function renderUpload() {
     <div style="max-width: 600px; margin: 0 auto; padding: 30px;" class="card">
       <h1 style="margin-bottom: 8px;">음원 업로드 (Upload)</h1>
       <p style="color:var(--text-secondary); font-size:13px; margin-bottom: 24px;">
-        데모부터 발매까지 — 한 프로젝트 안에 여러 버전을 차곡차곡 쌓을 수 있어요.
+        데모부터 발매까지 — 하나의 Demo 안에 여러 버전을 차곡차곡 쌓을 수 있어요.
       </p>
 
-      <!-- Tier 1: 발매 단독 vs 프로젝트 -->
+      <!-- Tier 1: 발매 단독 vs Demo (구 "프로젝트")
+           발매 단독은 "준비중" 으로 막아놓음. 기본은 Demo 선택. -->
       <div class="upload-type-toggle">
-        <label class="upload-type-opt active" data-mode="master_solo">
-          <input type="radio" name="up-mode" value="master_solo" checked>
+        <label class="upload-type-opt is-disabled" data-mode="master_solo" aria-disabled="true" title="준비중 — 곧 열려요!">
+          <input type="radio" name="up-mode" value="master_solo" disabled>
           <div class="upload-type-label">발매 (Release)</div>
-          <div class="upload-type-sub">완성된 단독 곡 (Final solo track)</div>
+          <div class="upload-type-sub"><i class="ri-time-line"></i> 준비중 (Coming soon)</div>
         </label>
-        <label class="upload-type-opt" data-mode="project">
-          <input type="radio" name="up-mode" value="project">
-          <div class="upload-type-label">프로젝트 (Project)</div>
-          <div class="upload-type-sub">시리즈로 진행 (Multi-version)</div>
+        <label class="upload-type-opt active" data-mode="project">
+          <input type="radio" name="up-mode" value="project" checked>
+          <div class="upload-type-label">Demo</div>
+          <div class="upload-type-sub">데모/발매를 하나의 프로젝트로 (Demo &amp; release)</div>
         </label>
       </div>
 
       <form id="upload-form">
-        <!-- Tier 2: 프로젝트 하위 옵션 (mode=project일 때만 보임) -->
-        <div id="project-substep" style="display:none;">
+        <!-- Tier 2: Demo(=project) 하위 옵션 — 기본 mode 가 project 이라 처음부터 보임.
+             "프로젝트" 표기 → 사용자 요청으로 모두 "Demo" 로 통일. -->
+        <div id="project-substep" style="display:block;">
           <div class="form-group">
-            <label>어느 프로젝트? (Which project?)</label>
+            <label>어느 Demo? (Which?)</label>
             <div class="upload-type-toggle compact">
               <label class="upload-type-opt active" data-proj-choice="new">
                 <input type="radio" name="up-proj-choice" value="new" checked>
-                <div class="upload-type-label">새 프로젝트 (New)</div>
+                <div class="upload-type-label">새 Demo (New)</div>
               </label>
               <label class="upload-type-opt" data-proj-choice="existing">
                 <input type="radio" name="up-proj-choice" value="existing">
-                <div class="upload-type-label">기존 프로젝트 (Existing)</div>
+                <div class="upload-type-label">기존 Demo (Existing)</div>
               </label>
             </div>
           </div>
@@ -6598,7 +6600,8 @@ function renderUpload() {
 
   // Resolve which mode/choice/version is selected from the live radios
   function getUploadState() {
-    const mode    = (document.querySelector('input[name="up-mode"]:checked') || {}).value || 'master_solo';
+    // master_solo 는 현재 "준비중" 으로 막혀있음 — checked radio 없으면 project 로 fallback.
+    const mode    = (document.querySelector('input[name="up-mode"]:checked') || {}).value || 'project';
     const choice  = (document.querySelector('input[name="up-proj-choice"]:checked') || {}).value || 'new';
     const verType = (document.querySelector('input[name="up-version-type"]:checked') || {}).value || 'demo';
     // master_solo always uploads a master; project mode follows verType
@@ -6610,7 +6613,7 @@ function renderUpload() {
     if (!window.Tracks) return;
     _myProjects = await window.Tracks.listMyProjects();
     if (!_myProjects.length) {
-      projectSelect.innerHTML = '<option value="">아직 시작한 프로젝트가 없어요 — "새 프로젝트"로 첫 곡 올려보세요 (No projects yet — start a new one)</option>';
+      projectSelect.innerHTML = '<option value="">아직 시작한 Demo 가 없어요 — "새 Demo"로 첫 곡 올려보세요 (No demos yet — start a new one)</option>';
       return;
     }
     projectSelect.innerHTML = _myProjects.map(p =>
@@ -6627,7 +6630,7 @@ function renderUpload() {
     verInfo.innerHTML = `<strong>${p.title}</strong> — 데모 ${p.demoCount}개${p.hasFinal?' + 발매':''}. 다음 데모 (Next demo): <strong>Demo ${next}</strong>`;
     if (titleInput && !titleInput.dataset.userTyped) {
       titleInput.value = p.title;
-      titleHint.textContent = '(프로젝트 제목 자동 반영)';
+      titleHint.textContent = '(Demo 제목 자동 반영)';
     }
     syncVersionLabel();
   }
@@ -6662,10 +6665,17 @@ function renderUpload() {
     }
   }
 
-  // Generic toggle: clicking a label updates the group's active class + checks its radio
+  // Generic toggle: clicking a label updates the group's active class + checks its radio.
+  // .is-disabled 옵션은 클릭/탭/터치 무시 (현재 "발매 단독" 이 준비중으로 막힘).
   function wireToggleGroup(groupSelector, afterChange) {
     document.querySelectorAll(groupSelector + ' .upload-type-opt').forEach(opt => {
-      opt.addEventListener('click', () => {
+      opt.addEventListener('click', (ev) => {
+        if (opt.classList.contains('is-disabled')) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          if (typeof showToast === 'function') showToast('"발매 단독" 은 준비중이에요. 곧 열려요!');
+          return;
+        }
         opt.parentElement.querySelectorAll('.upload-type-opt').forEach(o => o.classList.remove('active'));
         opt.classList.add('active');
         const radio = opt.querySelector('input[type=radio]');
@@ -6713,8 +6723,11 @@ function renderUpload() {
     syncDistributionSection();
     syncMasterFields();
   });
-  // 초기 한 번 — 첫 진입은 master_solo(=master)라 demo-mode 아님
+  // 초기 한 번 — 이제 첫 진입은 project + demo (master_solo 가 준비중으로 막힘).
+  // syncMasterFields() 가 demo-mode 클래스를 form 에 붙여 제목/커버 칸 자동 처리.
   syncMasterFields();
+  syncVersionLabel();
+  syncDistributionSection();
 
   // 아티스트 페이지 '+ DEMO N 추가' 카드에서 넘어왔다면: 프로젝트+기존+데모로 자동 세팅 + 대상 프로젝트 선택
   (async function applyPendingUploadState() {
@@ -6825,9 +6838,9 @@ function renderUpload() {
       const usingExistingProject = (state.mode === 'project' && state.choice === 'existing');
       if (usingExistingProject) {
         const pid = projectSelect.value;
-        if (!pid) throw new Error('기존 프로젝트를 선택해주세요.');
+        if (!pid) throw new Error('기존 Demo 를 선택해주세요.');
         existingProject = _myProjects.find(p => p.projectId === pid);
-        if (!existingProject) throw new Error('선택한 프로젝트를 찾을 수 없어요.');
+        if (!existingProject) throw new Error('선택한 Demo 를 찾을 수 없어요.');
         if (isFinal && existingProject.hasFinal) {
           if (!confirm('이 프로젝트는 이미 발매본이 있어요. 기존 발매본은 이전 버전으로 밀려나고 이 곡이 새 발매본이 돼요. 계속할까요?')) {
             throw new Error('취소됨');

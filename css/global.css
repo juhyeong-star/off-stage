@@ -2957,6 +2957,35 @@ h3 { font-size: 19px; font-weight: 700; }
 .upload-type-opt input[type=radio] {
   position: absolute; opacity: 0; pointer-events: none;
 }
+
+/* "준비중" 옵션 — 회색 + 클릭/터치 차단 + 우상단에 ⏳ 칩 */
+.upload-type-opt.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: var(--surface-color);
+  border-color: var(--divider) !important;
+  transform: none !important;
+}
+.upload-type-opt.is-disabled:hover {
+  border-color: var(--divider) !important;
+  transform: none !important;
+}
+.upload-type-opt.is-disabled .upload-type-sub {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.upload-type-opt.is-disabled::after {
+  content: "준비중";
+  position: absolute;
+  top: 6px; right: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(255,255,255,0.08);
+  color: var(--text-secondary);
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.3px;
+}
 .upload-type-icon {
   font-size: 28px; margin-bottom: 6px;
 }
