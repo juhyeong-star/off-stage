@@ -9058,6 +9058,27 @@ window.submitTrackComment = async function(trackId) {
       if (!list) return;
       list.innerHTML = linesHtml + hintHtml;
     });
+    // ⭐️ 우리들의 벽 모달 (openDemoWallModal) 도 열려있으면 갱신 — 사용자 요청
+    // "밖에서 댓글 달았는데 안에는 댓글이 안달리네" 해결: 양쪽 동기화.
+    const wallModal = document.getElementById('demo-wall-modal');
+    if (wallModal) {
+      const wallList = wallModal.querySelector('#dwm-cm-list');
+      if (wallList) {
+        const _myId = (window.__currentUser && window.__currentUser.id) || null;
+        const _myName = (window.__currentUser && window.__currentUser.name) || '';
+        wallList.innerHTML = allCms.map(cm => {
+          const ct = esc(cm.text || '');
+          const ca = esc(cm.author || '익명');
+          const isMine = (_myId && cm.authorId && cm.authorId === _myId)
+                      || (!cm.authorId && _myName && cm.author === _myName);
+          const dBtn = isMine ? `<button class="dwm-cm-del" type="button" onclick="event.stopPropagation(); event.preventDefault(); deleteTrackComment('${trackId}','${cm.id}', true); return false;" ontouchend="event.stopPropagation(); event.preventDefault(); deleteTrackComment('${trackId}','${cm.id}', true);" title="댓글 삭제" aria-label="댓글 삭제"><i class="ri-close-line"></i></button>` : '';
+          return `<div class="dwm-cm-line"><span class="dwm-cm-arrow">ㄴ</span><span class="dwm-cm-text">${ct}</span><span class="dwm-cm-auth">— ${ca}</span>${dBtn}</div>`;
+        }).join('');
+        wallList.scrollTop = wallList.scrollHeight;
+      }
+      const wallCountEl = wallModal.querySelector('.dwm-cm-count');
+      if (wallCountEl) wallCountEl.textContent = allCms.length;
+    }
     // 구 구조 호환 (혹시 다른 페이지에서 version-panel 사용 시)
     const panel = document.querySelector(`.version-panel[data-track-id="${trackId}"]`);
     if (panel) {
