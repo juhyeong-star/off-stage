@@ -2065,7 +2065,7 @@ function renderTags() {
 
   if (tagList.length === 0) {
     appContent.innerHTML = `
-      <div class="page-intro reveal">지금의 기분을 tag로 노래를 들어보세요</div>
+      <div class="page-intro reveal">지금의 기분을 tag의 노래로 들어보세요</div>
       <div class="tags-page-header reveal">
         <h1><i class="ri-hashtag" style="color:var(--brand-color);"></i> Tags</h1>
       </div>
@@ -2086,7 +2086,7 @@ function renderTags() {
   }).join('');
 
   appContent.innerHTML = `
-    <div class="page-intro reveal">지금의 기분을 tag로 노래를 들어보세요</div>
+    <div class="page-intro reveal">지금의 기분을 tag의 노래로 들어보세요</div>
     <div class="tags-page-header reveal">
       <h1><i class="ri-hashtag" style="color:var(--brand-color);"></i> Tags</h1>
       <span class="count">총 ${tagList.length}개의 태그 · ${totalTracks}곡</span>
