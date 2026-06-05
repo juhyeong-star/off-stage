@@ -4248,14 +4248,26 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 /* PC 기본: 닫기는 왼쪽 위, 수집(북마크)은 오른쪽 위 (모바일과 동일 레이아웃) */
 .note-detail-close {
   position: absolute; top: -6px; left: -6px; right: auto;
-  width: 34px; height: 34px; border-radius: 50%;
-  background: rgba(255,255,255,0.08); color: white;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 20px; cursor: pointer;
+  width: 36px; height: 36px;
+  min-width: 36px; min-height: 36px;        /* flex 부모가 가로/세로 눌러도 정원 유지 */
+  flex-shrink: 0;
+  aspect-ratio: 1 / 1;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.15); color: inherit;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 18px; line-height: 1;
+  padding: 0;
+  cursor: pointer;
   transition: background 0.2s;
   z-index: 5;
 }
-.note-detail-close:hover { background: rgba(255,255,255,0.2); }
+.note-detail-close i {
+  line-height: 1;
+  display: block;
+}
+.note-detail-close:hover { background: rgba(0,0,0,0.28); }
 
 .note-detail-postit {
   padding: 26px 22px 20px;
@@ -5476,8 +5488,10 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
     top: calc(12px + env(safe-area-inset-top)) !important;
     left: 14px !important;
     right: auto !important;
-    width: 38px; height: 38px;
-    font-size: 18px;
+    width: 38px !important; height: 38px !important;
+    min-width: 38px !important; min-height: 38px !important;
+    aspect-ratio: 1 / 1 !important;
+    font-size: 20px !important;
     z-index: 10;
   }
   /* 수집(북마크) 버튼은 오른쪽 위 — 평소엔 테두리만, 수집했을 때만 색이 채워짐 */
