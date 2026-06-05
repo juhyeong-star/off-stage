@@ -6490,12 +6490,13 @@ function renderUpload() {
         <div class="form-group master-only">
           <label>커버 이미지 (Cover image, 선택/optional)</label>
           <input type="file" class="form-control" id="up-cover" accept="image/*">
+          <div class="form-note">"파일 선택" 으로 이미지 첨부 (Click "Choose file" to attach an image)</div>
         </div>
         <div class="form-group">
           <label>오디오 파일 (Audio file) <span id="up-audio-size" style="color:var(--text-secondary); font-weight:normal;"></span></label>
           <input type="file" class="form-control" id="up-audio" accept="audio/*" required
                  onchange="(function(el){var f=el.files[0];if(!f)return;var mb=(f.size/1048576).toFixed(1);var lbl=document.getElementById('up-audio-size');if(lbl)lbl.textContent=' · '+mb+'MB'+(f.size>50*1048576?' (50MB 초과 — 거부됨 / over limit)':'');})(this)">
-          <div class="form-note">최대 50MB · mp3/m4a/wav 지원 (Max 50MB · mp3/m4a/wav supported)</div>
+          <div class="form-note">"파일 선택" 으로 오디오 첨부 · 최대 50MB · mp3/m4a/wav (Click "Choose file" to attach audio · Max 50MB · mp3/m4a/wav)</div>
         </div>
         <div class="form-group">
           <label>곡 소개 (Description) <span style="color:#ff6b6b;">(필수/required)</span></label>
@@ -6563,12 +6564,15 @@ function renderUpload() {
         <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">Off-Stage 플랫폼 업로드 및 재생에 관한 동의서입니다. (Upload & playback agreement.)</p>
 
         <div class="agreement-box">
-          <strong>제 1조 (목적)</strong><br>
-          본 합의는 Off-Stage를 통해 업로드된 음원에 대해 플랫폼 내 스트리밍 및 공유에 필요한 권한을 부여함을 목적으로 합니다.<br><br>
-          <strong>제 2조 (저작권 및 이용 허락)</strong><br>
-          업로더는 창작한 곡에 대한 모든 저작권을 소유하며, Off-Stage는 해당 곡을 플랫폼 스트리밍 및 공유를 위해 재생산·배포할 수 있는 비독점적 권한을 가집니다.<br><br>
-          <strong>제 3조 (외부 유통 연계)</strong><br>
-          유통을 신청한 곡은 플랫폼의 검수를 거친 뒤, 파트너 유통사와의 정식 발매 계약으로 연결될 수 있습니다. 계약 체결 시 별도 서면 계약이 요구될 수 있습니다.
+          <strong>제 1조 (목적) / Article 1 (Purpose)</strong><br>
+          본 합의는 Off-Stage를 통해 업로드된 음원에 대해 플랫폼 내 스트리밍 및 공유에 필요한 권한을 부여함을 목적으로 합니다.<br>
+          <em style="color:var(--text-secondary);">This agreement grants Off-Stage the rights needed to stream and share music uploaded through the platform.</em><br><br>
+          <strong>제 2조 (저작권 및 이용 허락) / Article 2 (Copyright & License)</strong><br>
+          업로더는 창작한 곡에 대한 모든 저작권을 소유하며, Off-Stage는 해당 곡을 플랫폼 스트리밍 및 공유를 위해 재생산·배포할 수 있는 비독점적 권한을 가집니다.<br>
+          <em style="color:var(--text-secondary);">The uploader retains all copyright. Off-Stage holds a non-exclusive right to reproduce and distribute the track for streaming and sharing on the platform.</em><br><br>
+          <strong>제 3조 (외부 유통 연계) / Article 3 (External Distribution)</strong><br>
+          유통을 신청한 곡은 플랫폼의 검수를 거친 뒤, 파트너 유통사와의 정식 발매 계약으로 연결될 수 있습니다. 계약 체결 시 별도 서면 계약이 요구될 수 있습니다.<br>
+          <em style="color:var(--text-secondary);">Tracks submitted for distribution may, after platform review, be connected to formal release contracts with partner distributors. A separate written contract may be required.</em>
         </div>
 
         <div class="form-group">
@@ -6780,7 +6784,7 @@ function renderUpload() {
         });
       }
     });
-    if (graffitiNoteEl) graffitiNoteEl.textContent = `메인에 뜨는 도형에 적힐 내용. 3줄 다 채워주세요! 지금 모양은 한 줄에 최대 ${lim}자(공백 제외). (#은 자동으로 붙어요)`;
+    if (graffitiNoteEl) graffitiNoteEl.textContent = `메인에 뜨는 도형에 적힐 내용. 3줄 다 채워주세요. 지금 모양은 한 줄 최대 ${lim}자 (공백 제외). #은 자동. / Text on the floating shape — fill all 3 lines. Max ${lim} chars per line for this shape (excl. spaces). # auto-added.`;
   }
   if (shapeSelectEl) shapeSelectEl.addEventListener('change', applyShapeLineLimit);
   applyShapeLineLimit();
