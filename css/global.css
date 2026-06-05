@@ -14434,7 +14434,7 @@ body.polaroid-sheet-open { overflow: hidden; }
 }
 .artist-canvas .demo-card-cm-line {
   font-family: var(--font-hand) !important;
-  font-size: 10px;            /* PC 메인 댓글 — 더 더 작게 (11→10, 사용자 요청) */
+  font-size: 9px;             /* PC 메인 댓글 — 더 작게 (10→9, 사용자 요청) */
   line-height: 1.3;
   font-weight: 600;
   color: #111;
@@ -14459,7 +14459,7 @@ body.polaroid-sheet-open { overflow: hidden; }
 }
 .artist-canvas .demo-card-cm-author {
   color: #6B46C1;
-  font-size: 9.5px;               /* 댓글 10px 에 맞춰 (10.5→9.5) */
+  font-size: 8.5px;               /* 댓글 9px 에 맞춰 (9.5→8.5) */
   opacity: 0.85;
   flex-shrink: 0;
 }
