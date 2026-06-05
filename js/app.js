@@ -8484,12 +8484,14 @@ function renderProjectBox(pid, versions) {
       return { row, col };
     };
 
-    // Rebuild demo cards with snake-up positions (positions differ from desktop)
+    // 우리들의 벽 스타일 — 1열 스택, 각 데모 카드 풀폭, 컨텐츠 다 보임.
+    // (사용자 요청: "그냥 데모전체를 나오게 하고 뭔가 우리들의 벽처럼 ...
+    //   그냥 다 나오고 아래 댓글보이게")
     const noteEscM = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const mobileCardsHtml = demos.map((v, i) => {
-      const pos = snakeUpPos(i);
       const noteRaw = (v.artistNote || '').trim();
-      const noteLines = noteRaw ? noteRaw.split(/\r?\n/).map(l => l.trim()).filter(Boolean).slice(0, 3) : [];
+      // ⭐️ 노트: clamp 제거 — 모든 줄 표시 (사용자 요청)
+      const noteLines = noteRaw ? noteRaw.split(/\r?\n/).map(l => l.trim()).filter(Boolean) : [];
       const mNoteHtml = noteLines.length > 0
         ? `<div class="demo-card-note" ${canEditArtist ? `onclick="event.stopPropagation(); editArtistNote('${v.id}')" style="cursor: pointer;"` : ''}>
              ${noteLines.map(l => `<span class="demo-card-note-line">${noteEscM(l)}</span>`).join('')}
@@ -8501,41 +8503,27 @@ function renderProjectBox(pid, versions) {
              </div>`
           : '';
       const cmList = v.trackComments || [];
-      // 마지막 2개만 inline 미리보기 — 클릭하면 모달이 열려 전체 댓글 다 봄.
-      const DEMO_INLINE_CM = 2;
-      const cmVisible = cmList.slice(-DEMO_INLINE_CM);
-      const cmLinesHtml = cmVisible.map(cm => {
+      // ⭐️ 댓글: 다 표시 (slice 제거). 많아도 그냥 다 보임 — 벽 스타일.
+      const cmLinesHtml = cmList.map(cm => {
         const cmSafe = noteEscM(cm.text || '');
         const cmAuth = noteEscM(cm.author || '익명');
         return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span></div>`;
       }).join('');
-      // 핀트 — 댓글 있으면 개수, 없으면 "첫 댓글" 안내. 항상 표시 → 탭 영역 항상 존재.
-      const cmCountHint = cmList.length > 0
-        ? `<div class="demo-card-cm-hint-tap"><i class="ri-chat-3-line"></i> 댓글 ${cmList.length}개 · 탭해서 모두 보기</div>`
-        : `<div class="demo-card-cm-hint-tap"><i class="ri-chat-3-line"></i> 댓글 보기 · 첫 댓글 남기기</div>`;
-      // 댓글 0개여도 항상 렌더 → 모달 항상 열 수 있음. 사용자 요청대로 cm-list 탭 = 모달.
-      // role/aria 와 type='button' 으로 모바일 탭 안정성 ↑
-      const mCmHtml = `
-        <div class="demo-card-cm-list" role="button" tabindex="0"
-             onclick="event.stopPropagation(); openTrackCommentsModal('${v.id}'); return false;"
-             ontouchend="event.stopPropagation(); event.preventDefault(); openTrackCommentsModal('${v.id}');"
-             title="댓글 모두 보기">
-          ${cmLinesHtml}
-          ${cmCountHint}
-        </div>`;
-      // 인라인 한 줄 입력칸 — Enter 만으로 전송 (보내기 버튼 없음, 우리들의 벽 방식).
-      // onkeydown + isComposing — 모바일 IME Enter 호환, 한글 조합 중 무시.
-      // CSS 에서 .demo-card.is-selected 일 때만 보이게 — 평소엔 숨김.
+      // 댓글 영역 — 그냥 나열, tap 으로 모달 안 열림 (다 inline 으로 보임).
+      // 0개면 placeholder.
+      const mCmHtml = cmList.length > 0
+        ? `<div class="demo-card-cm-list">${cmLinesHtml}</div>`
+        : `<div class="demo-card-cm-list demo-card-cm-empty"><span class="dch-empty-text">아직 댓글이 없어요</span></div>`;
+      // ⭐️ 입력칸: 카드 맨 아래 항상 보임 (전역 :not(.is-selected) display:none 무시).
       const mInputHtml = canComment ? `
-        <div class="demo-card-cm-input" onclick="event.stopPropagation();">
-          <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="댓글…"
+        <div class="demo-card-cm-input always-show" onclick="event.stopPropagation();">
+          <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="댓글 남기기…"
                  onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); submitTrackComment('${v.id}'); }">
         </div>` : '';
       const demoLiked = isTrackLiked(v.id);
       return `
-        <div class="demo-card is-demo ${v.pinned ? 'is-pinned' : ''}"
+        <div class="demo-card demo-card-stack is-demo ${v.pinned ? 'is-pinned' : ''}"
              data-track-id="${v.id}" data-project="${pid}"
-             style="grid-row:${pos.row}; grid-column:${pos.col};"
              onclick="selectProjectVersion('${pid}','${v.id}'); playTrack('${v.id}')">
           <div class="demo-card-top">
             <span class="demo-tag">DEMO ${i+1}</span>
@@ -8595,7 +8583,7 @@ function renderProjectBox(pid, versions) {
             </div>
           </div>
         </div>
-        ${demos.length > 0 ? `<div class="demo-snake-grid">${mobileCardsHtml}</div>` : ''}
+        ${demos.length > 0 ? `<div class="demo-stack-mobile">${mobileCardsHtml}</div>` : ''}
       </div>
     `;
   }
