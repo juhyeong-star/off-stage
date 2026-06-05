@@ -13832,7 +13832,7 @@ body.polaroid-sheet-open { overflow: hidden; }
    위: 노트 (제목 + 일지)  아래: 댓글 + 입력칸
    ============================================================ */
 .dwm-modal {
-  position: fixed; inset: 0; z-index: 800;
+  position: fixed; inset: 0; z-index: 1100;     /* player (1001) 위로 올림 — 입력칸 가려짐 방지 */
   background: rgba(0,0,0,0.55);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
@@ -13846,6 +13846,8 @@ body.polaroid-sheet-open { overflow: hidden; }
   .dwm-modal {
     align-items: stretch;
     padding: 0;
+    /* 모달 컨텐츠가 player + tab 위로 올라가게 — 입력칸 가려짐 방지 */
+    padding-bottom: calc(var(--player-height, 72px) + var(--mobile-tab-h, 56px) + env(safe-area-inset-bottom, 0px));
   }
 }
 @keyframes dwmFadeIn { from { opacity: 0; } to { opacity: 1; } }

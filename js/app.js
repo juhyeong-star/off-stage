@@ -8525,10 +8525,12 @@ function renderProjectBox(pid, versions) {
                  onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); submitTrackComment('${v.id}'); }">
         </div>` : '';
       const demoLiked = isTrackLiked(v.id);
+      // 카드 탭 → 우리들의 벽 모달 (PC 와 일관). cm-list 도 탭하면 모달.
+      // 인라인 input 은 stopPropagation 으로 카드 onclick 안 타게.
       return `
         <div class="demo-card demo-card-stack is-demo ${v.pinned ? 'is-pinned' : ''}"
              data-track-id="${v.id}" data-project="${pid}"
-             onclick="selectProjectVersion('${pid}','${v.id}'); playTrack('${v.id}')">
+             onclick="event.stopPropagation(); openDemoWallModal('${v.id}'); playTrack('${v.id}', 'demo')">
           <div class="demo-card-top">
             <span class="demo-tag">DEMO ${i+1}</span>
             <span class="demo-card-date">· ${formatFullDate(v.createdAt)}</span>
