@@ -8202,11 +8202,18 @@ function renderProjectBox(pid, versions) {
     // snake-grid, compact 카드, 마지막 2 댓글 inline + "탭해서 모두 보기", input + send.
     const noteRaw = (v.artistNote || '').trim();
     const noteEsc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const noteLines = noteRaw ? noteRaw.split(/\r?\n/).map(l => l.trim()).filter(Boolean).slice(0, 3) : [];
+    // 줄바꿈 기준 자르지 않고 전체 다 넣음 — CSS line-clamp(3) 가 시각적으로 자름.
+    // "더보기" 버튼은 noteHtml 바깥의 wrapper(.demo-card-note-wrap) 끝에 붙음.
+    const noteLines = noteRaw ? noteRaw.split(/\r?\n/).map(l => l.trim()).filter(Boolean) : [];
     const noteHtml = noteLines.length > 0
-      ? `<div class="demo-card-note" ${canEditArtist ? `onclick="event.stopPropagation(); editArtistNote('${v.id}')"` : ''} ${canEditArtist ? 'style="cursor: pointer;"' : ''}>
-           ${noteLines.map(l => `<span class="demo-card-note-line">${noteEsc(l)}</span>`).join('')}
-           ${canEditArtist ? '<i class="ri-pencil-line demo-card-note-edit"></i>' : ''}
+      ? `<div class="demo-card-note-wrap">
+           <div class="demo-card-note" data-track-id="${v.id}" ${canEditArtist ? `onclick="event.stopPropagation(); editArtistNote('${v.id}')"` : ''} ${canEditArtist ? 'style="cursor: pointer;"' : ''}>
+             ${noteLines.map(l => `<span class="demo-card-note-line">${noteEsc(l)}</span>`).join('')}
+             ${canEditArtist ? '<i class="ri-pencil-line demo-card-note-edit"></i>' : ''}
+           </div>
+           <button type="button" class="demo-card-note-more" data-track-id="${v.id}"
+                   onclick="event.stopPropagation(); event.preventDefault(); toggleDemoNoteMore(this);"
+                   style="display:none;">... 더보기</button>
          </div>`
       : canEditArtist
         ? `<div class="demo-card-note-empty" onclick="event.stopPropagation(); editArtistNote('${v.id}')">
@@ -8216,7 +8223,7 @@ function renderProjectBox(pid, versions) {
 
     // ── 카드 내부 인라인 댓글 + 입력 ──
     const cmList = v.trackComments || [];
-    const PC_INLINE = 2;
+    const PC_INLINE = 1;     // 인라인 댓글 1개만 (예전 2개 → 사용자 요청으로 축소)
     const cmVisible = cmList.slice(-PC_INLINE);
     const _myId = (window.__currentUser && window.__currentUser.id) || null;
     const _myName = (window.__currentUser && window.__currentUser.name) || '';
@@ -9314,6 +9321,34 @@ window.deleteMyTrack = async function(trackId, trackTitle) {
   }
 };
 
+// 데모 본문 더보기/접기 토글 — `.demo-card-note` 의 .expanded 클래스 토글.
+// CSS 의 -webkit-line-clamp 가 .expanded 일 때 풀려서 전체 노출됨.
+window.toggleDemoNoteMore = function(btn) {
+  if (!btn) return;
+  const wrap = btn.closest('.demo-card-note-wrap');
+  if (!wrap) return;
+  const note = wrap.querySelector('.demo-card-note');
+  if (!note) return;
+  const expanded = note.classList.toggle('expanded');
+  btn.textContent = expanded ? '접기' : '... 더보기';
+};
+
+// 렌더 직후 .demo-card-note 마다 scrollHeight 비교해서 3줄 넘는 것만 "더보기" 보이게.
+// 호출 시점: renderProjectBox 가 innerHTML 으로 그린 직후 + DOM resize (lazy).
+window.refreshDemoNoteMoreButtons = function(root) {
+  const scope = root || document;
+  scope.querySelectorAll('.demo-card-note-wrap').forEach(wrap => {
+    const note = wrap.querySelector('.demo-card-note');
+    const btn  = wrap.querySelector('.demo-card-note-more');
+    if (!note || !btn) return;
+    // expanded 상태에선 무조건 노출 (접기 버튼 필요).
+    if (note.classList.contains('expanded')) { btn.style.display = ''; return; }
+    // 본문이 clamp 에 잘리고 있는지 확인.
+    const overflowing = note.scrollHeight > note.clientHeight + 1;
+    btn.style.display = overflowing ? '' : 'none';
+  });
+};
+
 window.editArtistNote = async function(trackId) {
   const db = window.DB.get();
   const t = db.tracks.find(x => x.id === trackId);
@@ -9829,6 +9864,13 @@ function renderArtistProfile(artistName) {
   // Mobile demo swipe: wire up scroll-snap carousels + dot indicators.
   // Safe at any viewport — observers do nothing if dots aren't visible (CSS).
   try { _initDemoSwipe(); } catch (e) { console.warn('[demoSwipe]', e); }
+
+  // Demo 본문 더보기 버튼 가시성 갱신 — 본문이 3줄 넘는 카드만 버튼 노출.
+  // rAF 두 번으로 폰트/이미지 로드 후 layout 확정 시점에 재측정.
+  try {
+    requestAnimationFrame(() => requestAnimationFrame(() => window.refreshDemoNoteMoreButtons && window.refreshDemoNoteMoreButtons()));
+    setTimeout(() => { try { window.refreshDemoNoteMoreButtons && window.refreshDemoNoteMoreButtons(); } catch(_) {} }, 400);
+  } catch (e) { console.warn('[demoNoteMore]', e); }
 
   // Async: fill the 응원 하트 wall (cheers received by this artist)
   if (isArtistRole && typeof window.mountCheerHeart === 'function') {

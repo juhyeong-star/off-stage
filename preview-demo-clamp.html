@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>데모 카드 — 3줄 + 더보기 미리보기</title>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" onload="this.rel='stylesheet'">
+<style>
+  body {
+    background: linear-gradient(135deg, #C8B8F5, #B9A5F0);
+    min-height: 100vh;
+    margin: 0;
+    padding: 40px 24px;
+    font-family: 'Inter', 'Pretendard', system-ui, sans-serif;
+    color: #111;
+  }
+  h1.preview-title {
+    color: #1a1a1a;
+    font-size: 22px;
+    text-align: center;
+    margin: 0 0 6px;
+    font-weight: 800;
+  }
+  .preview-sub {
+    text-align: center;
+    color: rgba(0,0,0,0.55);
+    font-size: 13px;
+    margin: 0 0 28px;
+  }
+  .cols {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .col {
+    flex: 0 0 380px;
+    max-width: 100%;
+  }
+  .col h2 {
+    text-align: center;
+    color: #1a1a1a;
+    margin: 0 0 14px;
+    font-weight: 800;
+    font-size: 16px;
+  }
+  .badge { font-size: 11px; opacity: 0.55; }
+
+  /* === 공통 데모 카드 스타일 (실제 사이트 카드와 거의 동일하게 재현) === */
+  .demo-card {
+    background: #FFF8DC;
+    border: 1.5px solid #111;
+    border-radius: 4px;
+    box-shadow: 4px 4px 0 #111;
+    padding: 14px 16px 14px;
+    position: relative;
+  }
+  .demo-card-top {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .demo-card-title {
+    color: #4A6FE7;
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: 0.3px;
+  }
+  .demo-card-date {
+    margin-left: auto;
+    font-size: 11px;
+    color: #888;
+  }
+  .demo-card-note {
+    color: #111;
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 4px 0 10px;
+  }
+  .demo-card-cm-list {
+    border-top: 1px dashed rgba(0,0,0,0.18);
+    padding-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .demo-card-cm-line {
+    display: flex;
+    gap: 6px;
+    font-size: 12px;
+    align-items: baseline;
+  }
+  .demo-card-cm-arrow { color: #999; }
+  .demo-card-cm-text { flex: 1; color: #333; }
+  .demo-card-cm-author { color: #4A6FE7; }
+
+  /* === 현재 (BEFORE) — 본문 그대로, 댓글이 카드 밖으로 밀려/잘림 === */
+  .before .demo-card-note {
+    /* 현재 사이트와 동일: clamp 없음 → 본문이 5~6줄로 늘어남 */
+  }
+  /* 현재 사이트에서 실제로 카드 높이가 고정돼 있어서 댓글이 잘리는 걸 재현 */
+  .before .demo-card {
+    max-height: 240px;
+    overflow: hidden;            /* 잘림 재현 */
+  }
+
+  /* === 제안 (AFTER) — 본문 3줄 clamp + 더보기, 댓글 정상 노출 === */
+  .after .demo-card-note {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+  }
+  .after .demo-card-note.expanded {
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    overflow: visible;
+  }
+  .demo-card-more {
+    display: inline-block;
+    background: none;
+    border: none;
+    color: #4A6FE7;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0 0 8px;
+    margin: 0;
+    font-family: inherit;
+  }
+  .demo-card-more:hover { text-decoration: underline; }
+
+  /* Hashtag cloud preview (Tags 동작 설명용) */
+  .tags-cloud-demo {
+    margin-top: 60px;
+    padding: 24px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 16px;
+    text-align: center;
+  }
+  .tags-cloud-demo h3 {
+    margin: 0 0 8px;
+    font-size: 15px;
+    color: #1a1a1a;
+  }
+  .tags-cloud-demo p {
+    margin: 0 0 16px;
+    font-size: 12px;
+    color: rgba(0,0,0,0.6);
+  }
+  .tags-cloud-demo .cloud {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+  .tag-chip {
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .tag-chip:hover { opacity: 0.7; }
+</style>
+</head>
+<body>
+
+<h1 class="preview-title">데모카드 — 본문 3줄 + 더보기 · 댓글 1개</h1>
+<p class="preview-sub">왼쪽: 현재 (본문이 길어져서 댓글이 짤림) &nbsp;·&nbsp; 오른쪽: 제안 (3줄까지만 + "더보기" 토글, 댓글은 인라인 1개만)</p>
+
+<div class="cols">
+
+  <!-- ========== BEFORE ========== -->
+  <div class="col before">
+    <h2>현재 <span class="badge">(BEFORE)</span></h2>
+
+    <div class="demo-card">
+      <div class="demo-card-top">
+        <span class="demo-card-title">DEMO 1</span>
+        <span class="demo-card-date">· 2026.06.04</span>
+      </div>
+      <div class="demo-card-note">Ruel 의 Painkiller을 모티브 곡으로 삼아 서정적이지만 절제된 바이브의 팝을 작곡했습니다. 스트링 사운드를 추가해서 더 서정적인 사운드를 추가했고, Painkiller 처럼 중독적인 훅을 사용해 귀에 꽂힐 수 있게 했습니다.</div>
+      <div class="demo-card-cm-list">
+        <div class="demo-card-cm-line">
+          <span class="demo-card-cm-arrow">ㄴ</span>
+          <span class="demo-card-cm-text">like it</span>
+          <span class="demo-card-cm-author">— tang Bal</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== AFTER ========== -->
+  <div class="col after">
+    <h2>제안 <span class="badge">(AFTER)</span></h2>
+
+    <div class="demo-card">
+      <div class="demo-card-top">
+        <span class="demo-card-title">DEMO 1</span>
+        <span class="demo-card-date">· 2026.06.04</span>
+      </div>
+      <div class="demo-card-note" id="note1">Ruel 의 Painkiller을 모티브 곡으로 삼아 서정적이지만 절제된 바이브의 팝을 작곡했습니다. 스트링 사운드를 추가해서 더 서정적인 사운드를 추가했고, Painkiller 처럼 중독적인 훅을 사용해 귀에 꽂힐 수 있게 했습니다.</div>
+      <button class="demo-card-more" data-target="note1" data-label="더보기">... 더보기</button>
+      <div class="demo-card-cm-list">
+        <div class="demo-card-cm-line">
+          <span class="demo-card-cm-arrow">ㄴ</span>
+          <span class="demo-card-cm-text">like it</span>
+          <span class="demo-card-cm-author">— tang Bal</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:14px;"></div>
+
+    <div class="demo-card">
+      <div class="demo-card-top">
+        <span class="demo-card-title">DEMO 2</span>
+        <span class="demo-card-date">· 2026.06.04</span>
+      </div>
+      <div class="demo-card-note" id="note2">Ruel 의 Painkiller 를 모티브로 해서 중독적인 훅과 서정적인 분위기를 구성했습니다. 스트링 사운드를 추가해서 서정적인 느낌을 더 내었고, 단순하지만 절제된 바이브를 유도했습니다.</div>
+      <button class="demo-card-more" data-target="note2">... 더보기</button>
+      <div class="demo-card-cm-list">
+        <div class="demo-card-cm-line">
+          <span class="demo-card-cm-arrow">ㄴ</span>
+          <span class="demo-card-cm-text">볼륨왜이래...</span>
+          <span class="demo-card-cm-author">— Ninniku Pauda</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== Tags 사이즈 동작 설명 ========== -->
+<div class="tags-cloud-demo">
+  <h3># Tags 사이즈 동작 (현재 사이트 그대로)</h3>
+  <p>태그가 달린 <b>곡 수</b>가 많을수록 글씨가 커집니다 — <b>클릭 수가 아니에요</b>. 폰트 13px ~ 38px.</p>
+  <div class="cloud">
+    <span class="tag-chip" style="font-size:13px; color:#888;">#tag1곡</span>
+    <span class="tag-chip" style="font-size:17px; color:#666;">#tag3곡</span>
+    <span class="tag-chip" style="font-size:22px; color:#4A6FE7;">#tag5곡</span>
+    <span class="tag-chip" style="font-size:28px; color:#E15B5B;">#tag10곡</span>
+    <span class="tag-chip" style="font-size:38px; color:#1DB954;">#tag20곡</span>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.demo-card-more').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.target;
+      const note = document.getElementById(id);
+      const isExpanded = note.classList.toggle('expanded');
+      btn.textContent = isExpanded ? '접기' : '... 더보기';
+    });
+  });
+
+  // Hide "더보기" if text actually fits in 3 lines (no overflow)
+  document.querySelectorAll('.after .demo-card-note').forEach(note => {
+    requestAnimationFrame(() => {
+      if (note.scrollHeight <= note.clientHeight + 2) {
+        const btn = document.querySelector(`.demo-card-more[data-target="${note.id}"]`);
+        if (btn) btn.style.display = 'none';
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
