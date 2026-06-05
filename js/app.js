@@ -8340,20 +8340,41 @@ function renderProjectBox(pid, versions) {
     </button>
   ` : '';
 
-  const coverHtml = final ? `
+  // ⭐️ 사진이 없으면 포스트잇 fallback (필기체로 제목) — 사용자 요청.
+  //    hasCustomCover (cover_url 있음) 일 때만 실제 사진. 아니면 노란 포스트잇.
+  const finalHasCover = final && final.hasCustomCover;
+  const primaryHasCover = primary && primary.hasCustomCover;
+  const coverHtml = final ? (finalHasCover ? `
     <div class="project-cover-wrap" onclick="playTrack('${final.id}'); selectProjectVersion('${pid}','${final.id}')" title="마스터 재생">
-      <img src="${final.cover || primary.cover}" class="project-cover-large" alt="${safeTitle}" loading="lazy">
+      <img src="${final.cover}" class="project-cover-large" alt="${safeTitle}" loading="lazy">
       <div class="project-play-overlay"><i class="ri-play-fill"></i></div>
-      <div class="project-master-badge">✦ MASTER</div>
+      <div class="project-master-badge">발매 (Release)</div>
       ${editCoverBtn}
     </div>
   ` : `
+    <div class="project-cover-wrap is-postit" onclick="playTrack('${final.id}'); selectProjectVersion('${pid}','${final.id}')" title="마스터 재생">
+      <div class="cover-postit cover-postit-final">
+        <div class="cover-postit-badge">발매 (Release)</div>
+        <div class="cover-postit-title">${safeTitle || '제목 없음'}</div>
+      </div>
+      <div class="project-play-overlay"><i class="ri-play-fill"></i></div>
+      ${editCoverBtn}
+    </div>
+  `) : (primaryHasCover ? `
     <div class="project-cover-wrap no-master">
       <img src="${primary.cover}" class="project-cover-large" alt="${safeTitle}" loading="lazy">
       <div class="project-wip-badge">Coming Soon...</div>
       ${editCoverBtn}
     </div>
-  `;
+  ` : `
+    <div class="project-cover-wrap no-master is-postit">
+      <div class="cover-postit cover-postit-coming">
+        <div class="cover-postit-badge">Coming Soon</div>
+        <div class="cover-postit-title">${safeTitle || projectTitle || '제목 미정'}</div>
+      </div>
+      ${editCoverBtn}
+    </div>
+  `);
 
   // 응원하기 — cheers the master (or primary) track. Hidden on your own work.
   const cheerTarget = final || primary;
@@ -8530,7 +8551,7 @@ function renderProjectBox(pid, versions) {
              Bottom: full-width 글 (diary) + comments + input. -->
         <div class="project-master-mobile master-as-demo" ${final ? `data-track-id="${final.id}"` : ''}>
           <div class="master-top-bar">
-            <span class="demo-tag master-badge">${final ? '✦ MASTER' : 'Coming Soon...'}</span>
+            <span class="demo-tag master-badge">${final ? '발매 (Release)' : 'Coming Soon'}</span>
             ${final && canEditArtist ? `
               <button class="demo-card-delete" onclick="event.stopPropagation(); event.preventDefault(); deleteMyTrack('${final.id}', '${(final.title||'').replace(/'/g,"\\'")}')" title="삭제">
                 <i class="ri-delete-bin-line"></i>

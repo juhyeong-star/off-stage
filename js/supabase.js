@@ -868,6 +868,7 @@
       description: row.description || '',
       audioUrl: row.audio_url || '',
       cover: row.cover_url || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=500',
+      hasCustomCover: !!row.cover_url,        // ⭐️ 사진 첨부 여부 — 없으면 포스트잇 fallback
       version: row.version || 'final',
       versionLabel: row.version_label || 'Final',
       isDemo: !!row.is_demo,
