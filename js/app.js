@@ -8179,12 +8179,12 @@ function renderProjectBox(pid, versions) {
     // "메인 노출 도형 선택" 버튼 폐기 — 이제 모든 데모가 자동으로 도형 페이지에 표시됨.
     const shapeOpenBtnHtml = '';
 
-    // Artist note shown ON the demo card — # 라인 그대로 (최대 3줄)
-    // 예: #드럼 연주했는데 아쉽다 / #다음 곡은 피아노까지 녹음해볼게
-    // 본인 곡이면 일지 없을 때 "탭해서 일지 적기" placeholder + 작성 prompt 열기.
+    // ⭐️ PC 도 우리들의 벽 스타일 — 1열 스택, 모든 컨텐츠 inline 표시
+    //    (사용자 요청: 모바일도 똑같이해줘 → PC 도 동일하게)
     const noteRaw = (v.artistNote || '').trim();
     const noteEsc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const noteLines = noteRaw ? noteRaw.split(/\r?\n/).map(l => l.trim()).filter(Boolean).slice(0, 3) : [];
+    // 노트: clamp 제거 — 모든 줄 표시
+    const noteLines = noteRaw ? noteRaw.split(/\r?\n/).map(l => l.trim()).filter(Boolean) : [];
     const noteHtml = noteLines.length > 0
       ? `<div class="demo-card-note" ${canEditArtist ? `onclick="event.stopPropagation(); editArtistNote('${v.id}')"` : ''} ${canEditArtist ? 'style="cursor: pointer;"' : ''}>
            ${noteLines.map(l => `<span class="demo-card-note-line">${noteEsc(l)}</span>`).join('')}
@@ -8196,48 +8196,31 @@ function renderProjectBox(pid, versions) {
            </div>`
         : '';
 
-    // ── 카드 내부 인라인 댓글 ── (모바일과 동일: 항상 표시, 탭하면 모달)
+    // 댓글: slice 제거 — 모든 댓글 inline 표시 (벽 스타일)
     const cmList = v.trackComments || [];
-    const PC_INLINE = 2;
-    const cmVisible = cmList.slice(-PC_INLINE);
-    const cmInlineHtml = cmVisible.map(cm => {
+    const cmInlineHtml = cmList.map(cm => {
       const cmSafe = noteEsc(cm.text || '');
       const cmAuth = noteEsc(cm.author || '익명');
       return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span></div>`;
     }).join('');
-    // 핀트 — 항상 표시 (0개여도 "첫 댓글 남기기")
-    const pcCmHintHtml = cmList.length > 0
-      ? `<div class="demo-card-cm-hint-tap"><i class="ri-chat-3-line"></i> 댓글 ${cmList.length}개 · 탭해서 모두 보기</div>`
-      : `<div class="demo-card-cm-hint-tap"><i class="ri-chat-3-line"></i> 댓글 보기 · 첫 댓글 남기기</div>`;
-    // 댓글 티저 — 댓글 있을 때만 카드 맨 아래에 한 줄로 보여줘 호기심 자극
-    // (선택되면 숨겨지고 위의 전체 목록이 펼쳐짐)
-    const lastCm = cmList.length ? cmList[cmList.length - 1] : null;
-    const cmHintHtml = lastCm ? `
-      <div class="demo-card-cm-hint">
-        <i class="ri-chat-3-line"></i>
-        <span class="dch-count">${cmList.length}</span>
-        <span class="dch-preview">"${noteEsc((lastCm.text || '').slice(0, 18))}…"</span>
-      </div>` : '';
+    const cmHtmlBlock = cmList.length > 0
+      ? `<div class="demo-card-cm-list">${cmInlineHtml}</div>`
+      : `<div class="demo-card-cm-list demo-card-cm-empty"><span class="dch-empty-text">아직 댓글이 없어요</span></div>`;
 
-    // 로그인한 누구나 인라인 입력 — 카드 선택 시에만 보이게(CSS로 토글).
-    // send 버튼 제거 (모바일과 일관성) — Enter 만으로 전송.
-    // onkeydown + isComposing (한국어 IME 호환).
+    // 입력칸 — 항상 보임, send 버튼 없이 Enter 만
     const inputInlineHtml = canComment ? `
-      <div class="demo-card-cm-input" onclick="event.stopPropagation();">
+      <div class="demo-card-cm-input always-show" onclick="event.stopPropagation();">
         <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="댓글 남기기…"
                onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); submitTrackComment('${v.id}'); }">
       </div>` : '';
 
     const demoLiked = isTrackLiked(v.id);
     return `
-      <div class="${cls} page-demo ${v.pinned ? 'is-pinned' : ''}" data-track-id="${v.id}" data-project="${pid}"
-           style="grid-row:${pos.row}; grid-column:${pos.col};"
+      <div class="${cls} demo-card-stack ${v.pinned ? 'is-pinned' : ''}" data-track-id="${v.id}" data-project="${pid}"
            onclick="selectProjectVersion('${pid}','${v.id}'); playTrack('${v.id}')">
         <div class="demo-card-top">
           <span class="demo-tag">DEMO ${i+1}</span>
           <span class="demo-card-date">· ${dateLabel}</span>
-          ${shapeOpenBtnHtml}
-          ${stoBadgeHtml}
           ${canEditArtist ? `
             <button class="demo-card-delete" onclick="event.stopPropagation(); event.preventDefault(); deleteMyTrack('${v.id}', '${(v.title||'').replace(/'/g,"\\'")}')" title="삭제">
               <i class="ri-delete-bin-line"></i>
@@ -8248,11 +8231,7 @@ function renderProjectBox(pid, versions) {
           </button>
         </div>
         ${noteHtml}
-        <div class="demo-card-cm-list" role="button" tabindex="0"
-             onclick="event.stopPropagation(); openTrackCommentsModal('${v.id}');"
-             title="댓글 모두 보기">
-          ${cmInlineHtml}${pcCmHintHtml}
-        </div>
+        ${cmHtmlBlock}
         ${inputInlineHtml}
       </div>
     `;
@@ -8605,7 +8584,7 @@ function renderProjectBox(pid, versions) {
         </div>
       </div>
       ${(demos.length > 0 || canEditArtist) ? `
-        <div class="demo-path" style="grid-template-columns: repeat(${cols}, 1fr);">
+        <div class="demo-stack-pc">
           ${cardsHtml}
         </div>
       ` : ''}

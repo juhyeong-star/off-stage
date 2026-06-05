@@ -13724,37 +13724,132 @@ body.polaroid-sheet-open { overflow: hidden; }
 }
 
 /* ── 데모 카드 내부 ㄴ 댓글 리스트 (낙서 톤) — 고정 높이 카드 안에서 자동 스크롤 ── */
-.artist-canvas .demo-card-cm-list {
-  display: flex !important;       /* 항상 보임 — 전역 :not(.is-selected) 의 display:none 덮어쓰기 */
-  flex-direction: column;
-  justify-content: flex-end;     /* 댓글이 박스 아래쪽 — 입력칸에 딱 붙음 */
-  gap: 3px;
-  padding: 6px 0 2px;
-  margin: 4px 0 4px;
-  /* border-top dashed 제거 (사용자 요청) */
-  flex: 1 1 0;
-  min-height: 36px;
-  overflow-y: auto;
-  cursor: pointer;
-  border-radius: 3px;
-  -webkit-tap-highlight-color: rgba(194, 24, 91, 0.15);
-  transition: background 0.15s;
-}
-.artist-canvas .demo-card-cm-list:active,
-.artist-canvas .demo-card-cm-list:hover {
-  background: rgba(194, 24, 91, 0.08);
-}
-/* '댓글 N개 · 탭해서 모두 보기' 핀트 (PC + 모바일 공통) */
-.artist-canvas .demo-card-cm-hint-tap {
-  font-size: 11px;
-  color: #c2185b;
-  font-weight: 800;
-  margin-top: 4px;
+/* ⭐️ 우리들의 벽 스타일 데모 스택 — PC + 모바일 공통.
+   1열 풀폭, 컨텐츠가 높이 결정, 노트/댓글/입력 다 inline 표시. */
+.artist-canvas .demo-stack-pc {
   display: flex;
-  align-items: center;
-  gap: 4px;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
 }
-.artist-canvas .demo-card-cm-hint-tap i { font-size: 12px; }
+.artist-canvas .demo-stack-pc > .demo-card,
+.artist-canvas .demo-stack-pc > .demo-card.demo-card-stack {
+  position: relative !important;
+  width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 16px 20px !important;
+  overflow: visible !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: #FFF3A0 !important;
+  border: 1.5px solid rgba(17,17,17,0.4) !important;
+  border-radius: 5px !important;
+  box-shadow: 2px 2px 0 rgba(17,17,17,0.2) !important;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s !important;
+}
+.artist-canvas .demo-stack-pc > .demo-card.is-selected {
+  background: #FFE500 !important;
+  border: 2px solid #111 !important;
+  box-shadow: 3px 3px 0 #111 !important;
+}
+/* 카드 안에 ::after 화살표 (snake 마커) 가 있으면 보이지 않게 — 1열 스택이라 불필요 */
+.artist-canvas .demo-stack-pc > .demo-card::after { display: none !important; }
+.artist-canvas .demo-stack-pc > .demo-card .demo-card-top {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin-bottom: 8px !important;
+}
+.artist-canvas .demo-stack-pc > .demo-card .demo-tag {
+  font-size: 14px !important;
+  color: #c2185b !important;
+  font-weight: 800 !important;
+}
+.artist-canvas .demo-stack-pc > .demo-card .demo-card-date {
+  font-size: 13px !important;
+  color: #777 !important;
+}
+.artist-canvas .demo-stack-pc > .demo-card .demo-card-note {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: unset !important;
+  overflow: visible !important;
+  max-height: none !important;
+  margin: 8px 0 10px !important;
+}
+.artist-canvas .demo-stack-pc > .demo-card .demo-card-note-line {
+  font-size: 16px !important;
+  line-height: 1.45 !important;
+}
+/* 댓글 리스트 — 항상 보임, 모든 댓글 표시. tap-to-modal 안 함. */
+.artist-canvas .demo-stack-pc > .demo-card .demo-card-cm-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  padding: 8px 0 !important;
+  margin: 8px 0 10px !important;
+  overflow: visible !important;
+  cursor: default !important;
+  flex: initial !important;
+  min-height: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+.artist-canvas .demo-stack-pc > .demo-card .demo-card-cm-list:hover,
+.artist-canvas .demo-stack-pc > .demo-card .demo-card-cm-list:active {
+  background: transparent !important;
+}
+.artist-canvas .demo-stack-pc > .demo-card .demo-card-cm-list.demo-card-cm-empty {
+  padding: 4px 0 !important;
+}
+.artist-canvas .demo-stack-pc > .demo-card .dch-empty-text {
+  font-size: 13px !important;
+  color: rgba(17,17,17,0.5) !important;
+  font-style: italic !important;
+}
+.artist-canvas .demo-stack-pc > .demo-card .demo-card-cm-line {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+/* 입력칸 — 항상 보임 (전역 :not(.is-selected) display:none 덮어쓰기) */
+.artist-canvas .demo-stack-pc > .demo-card .demo-card-cm-input,
+.artist-canvas .demo-stack-pc > .demo-card .demo-card-cm-input.always-show {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 10px 12px !important;
+  margin-top: 6px !important;
+  border-top: 1px solid rgba(17,17,17,0.15) !important;
+  background: rgba(255,255,255,0.5) !important;
+  border-radius: 4px !important;
+  flex-shrink: 0 !important;
+}
+.artist-canvas .demo-stack-pc > .demo-card .demo-card-cm-input-field {
+  flex: 1 !important;
+  min-width: 0 !important;
+  font-size: 15px !important;
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+  color: #111 !important;
+  padding: 4px 2px !important;
+}
+.artist-canvas .demo-stack-pc > .demo-card .demo-card-cm-input-field::placeholder {
+  color: rgba(17,17,17,0.4) !important;
+  font-style: italic !important;
+}
+/* send 버튼 제거 — Enter 만 */
+.artist-canvas .demo-stack-pc > .demo-card .demo-card-cm-send {
+  display: none !important;
+}
 /* 비어있으면 border-top 없음 */
 .artist-canvas .demo-card-cm-list:empty {
   border-top: none;
