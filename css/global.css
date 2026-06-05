@@ -12367,11 +12367,11 @@ body.polaroid-sheet-open { overflow: hidden; }
   width: 420px !important;
   height: 240px !important;
   aspect-ratio: auto !important;
-  background: #FFFBD8 !important;
-  border: 1.5px solid #111 !important;
+  background: #FDF3D8 !important;                         /* 선택 디자인을 기본으로 (사용자 요청) */
+  border: 1.5px solid #C46A6A !important;                 /* 빨간 테두리 기본 적용 */
   border-radius: 4px !important;
   padding: 16px 20px 14px !important;
-  box-shadow: 2px 2px 0 rgba(17,17,17,0.55) !important;
+  box-shadow: 2px 2px 0 rgba(196,106,106,0.7) !important; /* 빨간 그림자 */
   position: relative !important;
   display: flex !important;
   flex-direction: column !important;
@@ -12394,7 +12394,7 @@ body.polaroid-sheet-open { overflow: hidden; }
 .artist-canvas .demo-card:not(.is-selected):nth-child(6n),
 .artist-canvas .demo-card:not(.is-selected):nth-child(7n),
 .artist-canvas .demo-card:not(.is-selected):nth-child(8n) {
-  background: #FFFBD8 !important;
+  background: #FDF3D8 !important;
   transform: none !important;
 }
 .artist-canvas .demo-card:hover {
@@ -12433,7 +12433,7 @@ body.polaroid-sheet-open { overflow: hidden; }
   font-size: 19px !important;          /* 2단 키움 (15 → 19) */
   font-weight: 700 !important;
   letter-spacing: 0.2px !important;
-  color: #111 !important;
+  color: #B5575A !important;           /* DEMO 글씨 빨강 (선택 디자인 기본화) */
   text-transform: uppercase;
   line-height: 1;
   white-space: nowrap !important;
@@ -13808,7 +13808,7 @@ body.polaroid-sheet-open { overflow: hidden; }
   transition: background 0.2s, box-shadow 0.2s;
 }
 /* 선택된 카드의 댓글 영역 — 활성화 느낌 (옅은 핑크 배경 + 가는 윗선) */
-.artist-canvas .demo-card.is-selected .demo-card-cm-list {
+.artist-canvas .demo-card .demo-card-cm-list {
   background: rgba(194, 24, 91, 0.06) !important;
   box-shadow: inset 0 1px 0 rgba(194, 24, 91, 0.18);
 }
