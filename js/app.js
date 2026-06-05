@@ -6415,24 +6415,22 @@ function renderUpload() {
 
   appContent.innerHTML = `
     <div style="max-width: 600px; margin: 0 auto; padding: 30px;" class="card">
-      <h1 style="margin-bottom: 8px;">음원 업로드</h1>
+      <h1 style="margin-bottom: 8px;">음원 업로드 (Upload)</h1>
       <p style="color:var(--text-secondary); font-size:13px; margin-bottom: 24px;">
-        데모부터 마스터까지 — 한 프로젝트 안에 여러 버전을 차곡차곡 쌓을 수 있어요 🎵
+        데모부터 발매까지 — 한 프로젝트 안에 여러 버전을 차곡차곡 쌓을 수 있어요.
       </p>
 
-      <!-- Tier 1: 마스터 단독 vs 프로젝트 -->
+      <!-- Tier 1: 발매 단독 vs 프로젝트 -->
       <div class="upload-type-toggle">
         <label class="upload-type-opt active" data-mode="master_solo">
           <input type="radio" name="up-mode" value="master_solo" checked>
-          <div class="upload-type-icon">🎵</div>
-          <div class="upload-type-label">마스터</div>
-          <div class="upload-type-sub">완성된 단독 곡</div>
+          <div class="upload-type-label">발매 (Release)</div>
+          <div class="upload-type-sub">완성된 단독 곡 (Final solo track)</div>
         </label>
         <label class="upload-type-opt" data-mode="project">
           <input type="radio" name="up-mode" value="project">
-          <div class="upload-type-icon">✏️</div>
-          <div class="upload-type-label">프로젝트</div>
-          <div class="upload-type-sub">시리즈로 진행</div>
+          <div class="upload-type-label">프로젝트 (Project)</div>
+          <div class="upload-type-sub">시리즈로 진행 (Multi-version)</div>
         </label>
       </div>
 
@@ -6440,17 +6438,15 @@ function renderUpload() {
         <!-- Tier 2: 프로젝트 하위 옵션 (mode=project일 때만 보임) -->
         <div id="project-substep" style="display:none;">
           <div class="form-group">
-            <label>어느 프로젝트?</label>
+            <label>어느 프로젝트? (Which project?)</label>
             <div class="upload-type-toggle compact">
               <label class="upload-type-opt active" data-proj-choice="new">
                 <input type="radio" name="up-proj-choice" value="new" checked>
-                <div class="upload-type-icon" style="font-size:20px;">🆕</div>
-                <div class="upload-type-label">새 프로젝트 시작</div>
+                <div class="upload-type-label">새 프로젝트 (New)</div>
               </label>
               <label class="upload-type-opt" data-proj-choice="existing">
                 <input type="radio" name="up-proj-choice" value="existing">
-                <div class="upload-type-icon" style="font-size:20px;">📁</div>
-                <div class="upload-type-label">기존 프로젝트</div>
+                <div class="upload-type-label">기존 프로젝트 (Existing)</div>
               </label>
             </div>
           </div>
@@ -6458,115 +6454,113 @@ function renderUpload() {
           <div id="existing-project-picker" style="display:none;">
             <div class="form-group">
               <select class="form-control" id="up-project-id">
-                <option value="">불러오는 중...</option>
+                <option value="">불러오는 중... (Loading...)</option>
               </select>
               <div id="existing-version-info" style="font-size:13px; color:var(--text-secondary); margin-top:6px;"></div>
             </div>
           </div>
 
           <div class="form-group">
-            <label>이번 업로드는?</label>
+            <label>이번 업로드는? (Upload type)</label>
             <div class="upload-type-toggle compact">
               <label class="upload-type-opt active" data-version-type="demo">
                 <input type="radio" name="up-version-type" value="demo" checked>
-                <div class="upload-type-icon" style="font-size:20px;">📝</div>
-                <div class="upload-type-label">데모</div>
-                <div class="upload-type-sub">진행 중 버전</div>
+                <div class="upload-type-label">데모 (Demo)</div>
+                <div class="upload-type-sub">진행 중 버전 (Work in progress)</div>
               </label>
               <label class="upload-type-opt" data-version-type="master">
                 <input type="radio" name="up-version-type" value="master">
-                <div class="upload-type-icon" style="font-size:20px;">⭐</div>
-                <div class="upload-type-label">마스터</div>
-                <div class="upload-type-sub">최종 완성본</div>
+                <div class="upload-type-label">발매 (Release)</div>
+                <div class="upload-type-sub">최종 완성본 (Final)</div>
               </label>
             </div>
           </div>
         </div>
 
         <div class="form-group master-only">
-          <label>곡 제목 <span id="up-title-hint" style="color:var(--text-secondary); font-weight:normal;"></span></label>
+          <label>곡 제목 (Title) <span id="up-title-hint" style="color:var(--text-secondary); font-weight:normal;"></span></label>
           <input type="text" class="form-control" id="up-title" required placeholder="예: 한밤의 드라이브">
         </div>
         <div class="form-group">
-          <label>버전 라벨</label>
+          <label>버전 라벨 (Version label)</label>
           <input type="text" class="form-control" id="up-version-label" value="Final" placeholder="예: Final, Demo 1, Pre-master">
-          <div class="form-note">카드에 표시될 이름. 자동으로 채워지지만 자유롭게 수정 가능.</div>
+          <div class="form-note">카드에 표시될 이름. 자동으로 채워지지만 자유롭게 수정 가능. (Card display name — auto-filled but editable.)</div>
         </div>
 
         <div class="form-group master-only">
-          <label>커버 이미지 (선택)</label>
+          <label>커버 이미지 (Cover image, 선택/optional)</label>
           <input type="file" class="form-control" id="up-cover" accept="image/*">
         </div>
         <div class="form-group">
-          <label>오디오 파일 첨부 <span id="up-audio-size" style="color:var(--text-secondary); font-weight:normal;"></span></label>
+          <label>오디오 파일 (Audio file) <span id="up-audio-size" style="color:var(--text-secondary); font-weight:normal;"></span></label>
           <input type="file" class="form-control" id="up-audio" accept="audio/*" required
-                 onchange="(function(el){var f=el.files[0];if(!f)return;var mb=(f.size/1048576).toFixed(1);var lbl=document.getElementById('up-audio-size');if(lbl)lbl.textContent=' · '+mb+'MB'+(f.size>50*1048576?' ⚠️ 50MB 초과 - 거부됨':'');})(this)">
-          <div class="form-note">최대 50MB · mp3/m4a/wav 지원 · 크면 업로드가 느림</div>
+                 onchange="(function(el){var f=el.files[0];if(!f)return;var mb=(f.size/1048576).toFixed(1);var lbl=document.getElementById('up-audio-size');if(lbl)lbl.textContent=' · '+mb+'MB'+(f.size>50*1048576?' (50MB 초과 — 거부됨 / over limit)':'');})(this)">
+          <div class="form-note">최대 50MB · mp3/m4a/wav 지원 (Max 50MB · mp3/m4a/wav supported)</div>
         </div>
         <div class="form-group">
-          <label>곡 소개 및 코멘트 <span style="color:#ff6b6b;">(필수)</span></label>
+          <label>곡 소개 (Description) <span style="color:#ff6b6b;">(필수/required)</span></label>
           <textarea class="form-control" id="up-description" rows="3" placeholder="이 곡에 얽힌 이야기나 리스너들에게 전하고 싶은 멘트를 자유롭게 적어주세요." required></textarea>
         </div>
         <div class="form-group">
-          <label><i class="ri-hashtag" style="color:var(--brand-color);"></i> 태그 (#으로 시작해서 자유롭게) <span style="color:#ff6b6b;">(필수)</span></label>
+          <label><i class="ri-hashtag" style="color:var(--brand-color);"></i> 태그 (Tags) <span style="color:#ff6b6b;">(필수/required)</span></label>
           <input type="text" class="form-control" id="up-tags" placeholder="예: #1982년 느낌 #funky #고2 기타과 음악" required>
-          <div class="form-note">장르·무드·학년·연도 등 자유롭게. 다른 학생들이 #태그로 곡을 찾습니다. (#은 자동으로 붙어요)</div>
+          <div class="form-note">장르·무드·학년·연도 등 자유롭게. #은 자동으로 붙어요. (Genre, mood, etc. — # is auto-added.)</div>
         </div>
 
         <!-- Distribution metadata — shown only when uploading a master -->
         <div id="distribution-section" style="display:block;">
           <hr style="border-color: var(--divider); margin: 20px 0;">
-          <h2 style="font-size: 18px; color: var(--brand-color); margin-bottom: 4px;"><i class="ri-folder-zip-line"></i> 유통용 메타데이터</h2>
-          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">유통사 제출용 정보. 비워두면 활동명 + 오늘 날짜로 들어가요.</p>
+          <h2 style="font-size: 18px; color: var(--brand-color); margin-bottom: 4px;"><i class="ri-folder-zip-line"></i> 유통 정보 (Distribution info)</h2>
+          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">유통사 제출용 정보. 비워두면 활동명 + 오늘 날짜로 들어가요. (For distribution — defaults to your artist name + today.)</p>
           <div class="form-group">
-            <label>발매일</label>
+            <label>발매일 (Release date)</label>
             <input type="date" class="form-control" id="up-release-date">
           </div>
           <div class="form-group">
-            <label>유통용 아티스트명 <span style="color:var(--text-secondary); font-weight:normal; font-size:12px;">(실명/예명 — 활동명과 다를 때만)</span></label>
+            <label>유통용 아티스트명 (Artist name) <span style="color:var(--text-secondary); font-weight:normal; font-size:12px;">(실명/예명 — 활동명과 다를 때만)</span></label>
             <input type="text" class="form-control" id="up-dist-artist" placeholder="비워두면 활동명 사용">
           </div>
           <div class="form-group">
-            <label>콜라보 아티스트 <span style="color:var(--text-secondary); font-weight:normal; font-size:12px;">(콤마로 구분)</span></label>
+            <label>콜라보 아티스트 (Collaborators) <span style="color:var(--text-secondary); font-weight:normal; font-size:12px;">(콤마로 구분 / comma-separated)</span></label>
             <input type="text" class="form-control" id="up-collaborators" placeholder="예: 김작곡, 박보컬">
           </div>
         </div>
 
         <hr style="border-color: var(--divider); margin: 20px 0;">
-        <h2 style="font-size: 18px; color: var(--brand-color); margin-bottom: 4px;"><i class="ri-shapes-fill"></i> 도형 낙서 (3줄) <span style="color:#ff6b6b; font-size:13px;">(필수)</span></h2>
-        <p id="up-graffiti-note" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">메인에 뜨는 도형에 적힐 내용. 3줄 다 채워주세요! (#은 자동으로 붙어요)</p>
+        <h2 style="font-size: 18px; color: var(--brand-color); margin-bottom: 4px;"><i class="ri-shapes-fill"></i> 도형 낙서 (Shape graffiti, 3줄/3 lines) <span style="color:#ff6b6b; font-size:13px;">(필수/required)</span></h2>
+        <p id="up-graffiti-note" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">메인에 뜨는 도형에 적힐 내용. 3줄 다 채워주세요. (Text on the floating shape — fill all 3 lines.)</p>
         <div class="form-group">
-          <label>1줄</label>
+          <label>1줄 (Line 1)</label>
           <input type="text" class="form-control" id="up-line1" placeholder="" maxlength="40" required>
         </div>
         <div class="form-group">
-          <label>2줄</label>
+          <label>2줄 (Line 2)</label>
           <input type="text" class="form-control" id="up-line2" placeholder="" maxlength="40" required>
         </div>
         <div class="form-group">
-          <label>3줄</label>
+          <label>3줄 (Line 3)</label>
           <input type="text" class="form-control" id="up-line3" placeholder="" maxlength="40" required>
         </div>
         <div class="form-group">
-          <label>도형 모양</label>
+          <label>도형 모양 (Shape)</label>
           <select class="form-control" id="up-shape">
-            <option value="circle">⬤ 원</option>
-            <option value="oval">⬮ 타원</option>
-            <option value="rect">▢ 둥근 사각형</option>
-            <option value="wide">▭ 직사각형</option>
-            <option value="pill">⬭ 알약</option>
-            <option value="hexagon">⬡ 육각형</option>
+            <option value="circle">원 (Circle)</option>
+            <option value="oval">타원 (Oval)</option>
+            <option value="rect">둥근 사각형 (Rounded square)</option>
+            <option value="wide">직사각형 (Rectangle)</option>
+            <option value="pill">알약 (Pill)</option>
+            <option value="hexagon">육각형 (Hexagon)</option>
           </select>
         </div>
         <div class="form-group">
-          <label>도형 색상</label>
+          <label>도형 색상 (Color)</label>
           <input type="color" class="form-control" id="up-shape-color" value="#FF4081" style="height:44px; padding:4px;">
         </div>
 
         <hr style="border-color: var(--divider); margin: 30px 0;">
 
-        <h2 style="font-size: 18px; color: var(--brand-color);">음원 업로드 약관</h2>
-        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">Off-Stage 플랫폼 업로드 및 재생에 관한 동의서입니다.</p>
+        <h2 style="font-size: 18px; color: var(--brand-color);">이용 약관 (Terms)</h2>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">Off-Stage 플랫폼 업로드 및 재생에 관한 동의서입니다. (Upload & playback agreement.)</p>
 
         <div class="agreement-box">
           <strong>제 1조 (목적)</strong><br>
@@ -6580,12 +6574,12 @@ function renderUpload() {
         <div class="form-group">
           <label class="checkbox-label">
             <input type="checkbox" id="up-agree" required>
-            위 음원 유통 및 서비스 이용 약관에 동의합니다. (필수)
+            위 음원 유통 및 서비스 이용 약관에 동의합니다. (필수 / Agree to terms — required)
           </label>
         </div>
 
         <button type="submit" class="btn-primary" style="width: 100%; padding: 14px; font-size: 16px;">
-          동의하고 업로드 완료하기
+          동의하고 업로드 완료하기 (Upload)
         </button>
       </form>
     </div>
@@ -6616,11 +6610,11 @@ function renderUpload() {
     if (!window.Tracks) return;
     _myProjects = await window.Tracks.listMyProjects();
     if (!_myProjects.length) {
-      projectSelect.innerHTML = '<option value="">아직 시작한 프로젝트가 없어요 — "새 프로젝트 시작"으로 첫 곡 올려보세요</option>';
+      projectSelect.innerHTML = '<option value="">아직 시작한 프로젝트가 없어요 — "새 프로젝트"로 첫 곡 올려보세요 (No projects yet — start a new one)</option>';
       return;
     }
     projectSelect.innerHTML = _myProjects.map(p =>
-      `<option value="${p.projectId}">${(p.title||'무제').replace(/"/g,'&quot;')} · 데모 ${p.demoCount}개${p.hasFinal?' · ✦ 완성됨':''}</option>`
+      `<option value="${p.projectId}">${(p.title||'무제').replace(/"/g,'&quot;')} · 데모 (Demo) ${p.demoCount}${p.hasFinal?' · 발매됨 (Released)':''}</option>`
     ).join('');
     refreshExistingInfo();
   }
@@ -6630,7 +6624,7 @@ function renderUpload() {
     const p = _myProjects.find(x => x.projectId === pid);
     if (!p) { verInfo.innerHTML = ''; return; }
     const next = p.nextDemoNum || (p.demoCount + 1);
-    verInfo.innerHTML = `<strong>${p.title}</strong> — 데모 ${p.demoCount}개${p.hasFinal?' + 마스터':''}. 다음 데모: <strong>Demo ${next}</strong>`;
+    verInfo.innerHTML = `<strong>${p.title}</strong> — 데모 ${p.demoCount}개${p.hasFinal?' + 발매':''}. 다음 데모 (Next demo): <strong>Demo ${next}</strong>`;
     if (titleInput && !titleInput.dataset.userTyped) {
       titleInput.value = p.title;
       titleHint.textContent = '(프로젝트 제목 자동 반영)';
@@ -6835,7 +6829,7 @@ function renderUpload() {
         existingProject = _myProjects.find(p => p.projectId === pid);
         if (!existingProject) throw new Error('선택한 프로젝트를 찾을 수 없어요.');
         if (isFinal && existingProject.hasFinal) {
-          if (!confirm('이 프로젝트는 이미 마스터가 있어요. 기존 마스터는 이전 버전으로 밀려나고 이 곡이 새 마스터가 돼요. 계속할까요?')) {
+          if (!confirm('이 프로젝트는 이미 발매본이 있어요. 기존 발매본은 이전 버전으로 밀려나고 이 곡이 새 발매본이 돼요. 계속할까요?')) {
             throw new Error('취소됨');
           }
         }
@@ -6961,7 +6955,7 @@ function renderUpload() {
         new Promise((_, reject) => setTimeout(() => reject(new Error('DB 저장 타임아웃 (20초). RLS 정책 또는 네트워크 확인 필요.')), 20000))
       ]);
 
-      showToast(isFinal ? '마스터 완성! ✨' : '데모 업로드 완료 🎵');
+      showToast(isFinal ? '발매 완료! (Released)' : '데모 업로드 완료 (Demo uploaded)');
       // refreshInto는 백그라운드 — 여기서 await하면 느릴 때 또 멈춤
       Promise.resolve(window.Tracks.refreshInto(db)).catch(e => console.warn('[upload] refreshInto bg', e));
       // 업로드 완료 → 우리들의 벽 음악일기 권유 (이쁜 모달). 거기서 페이지 이동.
@@ -6986,13 +6980,12 @@ function _afterUploadPrompt(track, artistName) {
   ov.className = 'upload-done-modal';
   ov.innerHTML = `
     <div class="upload-done-card">
-      <div class="upload-done-spark">🎉</div>
       <img class="upload-done-cover" src="${cover}" alt="" draggable="false">
-      <h2 class="upload-done-title">업로드 완료!</h2>
-      <p class="upload-done-sub">「${title}」 가 무대 뒤에 올라왔어요.<br>이 곡의 <b>첫 음악일기</b>를 우리들의 벽에 남겨볼까요? ✍️</p>
+      <h2 class="upload-done-title">업로드 완료! (Done)</h2>
+      <p class="upload-done-sub">「${title}」 가 무대 뒤에 올라왔어요.<br>이 곡의 <b>첫 음악일기</b>를 우리들의 벽에 남겨볼까요?</p>
       <div class="upload-done-actions">
-        <button class="btn-primary upload-done-write"><i class="ri-quill-pen-line"></i> 음악일기 쓰기</button>
-        <button class="upload-done-later">나중에 할게요</button>
+        <button class="btn-primary upload-done-write"><i class="ri-quill-pen-line"></i> 음악일기 쓰기 (Write diary)</button>
+        <button class="upload-done-later">나중에 (Later)</button>
       </div>
     </div>`;
   document.body.appendChild(ov);
