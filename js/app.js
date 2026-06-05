@@ -613,7 +613,36 @@ async function init() {
       window.Analytics.trackPlayEnd().catch(()=>{});
     }
     syncNoteTrackThumbIcons();
+    // 🎵 자동 다음 곡 — 큐에 다음 곡이 있으면 0.4s 후 재생
+    const q = window.__playQueue;
+    if (q && Array.isArray(q.tracks) && q.idx + 1 < q.tracks.length) {
+      const nextId = q.tracks[q.idx + 1];
+      if (nextId) {
+        setTimeout(() => {
+          // 동일 큐 안에서 이동 — _qNav 표시로 큐 rebuild 방지
+          window.__playTrackFromQueue = true;
+          try { window.playTrack(nextId, q.source); }
+          finally { window.__playTrackFromQueue = false; }
+        }, 400);
+      }
+    }
   });
+  // 🎵 이전/다음 곡 버튼 (헤더 컨트롤) — 큐 안에서 이동
+  const _prevBtn = document.querySelector('#global-player .control-btn[aria-label="이전 곡"]');
+  const _nextBtn = document.querySelector('#global-player .control-btn[aria-label="다음 곡"]');
+  const _navQueue = (delta) => {
+    const q = window.__playQueue;
+    if (!q || !Array.isArray(q.tracks)) return;
+    const ni = q.idx + delta;
+    if (ni < 0 || ni >= q.tracks.length) return;
+    const nextId = q.tracks[ni];
+    if (!nextId) return;
+    window.__playTrackFromQueue = true;
+    try { window.playTrack(nextId, q.source); }
+    finally { window.__playTrackFromQueue = false; }
+  };
+  if (_prevBtn) _prevBtn.addEventListener('click', () => _navQueue(-1));
+  if (_nextBtn) _nextBtn.addEventListener('click', () => _navQueue(+1));
   // 우리들의 벽 / 곳곳에 흩어진 .note-track-thumb 미니 커버의 ▶/⏸ 아이콘을
   // 실제 audio 상태와 동기화한다. (재생/일시정지/소스 변경/종료 어디서든)
   audioElement.addEventListener('play', syncNoteTrackThumbIcons);
@@ -3788,10 +3817,12 @@ function renderHome() {
         ? `border-bottom-color: ${item.color}; color: ${item.color};`
         : `background: ${item.color};`;
       const safeLines = item.lines.map(l => (l || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+      // 홈 페이지 — 드래그 핸들러 안 붙으니까 인라인 onclick 으로 재생.
+      // source='universe' 로 큐 자동 빌드 → 즐겨찾기 곡 흐르듯이 이어 재생.
       itemsHtml += `
         <div class="floating-shape shape-${item.shape} univ-shape" data-track-id="${item.id}"
              style="${bgStyle} ${posStyle}"
-             onclick="playTrack('${item.id}')"
+             onclick="playTrack('${item.id}', 'universe')"
              title="${(item.title||'').replace(/</g,'&lt;')} — ${(item.artist||'').replace(/</g,'&lt;')}">
           <div class="shape-text">${safeLines.join('\n')}</div>
         </div>
@@ -3809,7 +3840,7 @@ function renderHome() {
       const safeTitle = (item.title || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       const safeArtist = (item.artist || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       itemsHtml += `
-        <div class="univ-album" style="${posStyle}" onclick="playTrack('${item.id}')" title="${safeTitle} — ${safeArtist}">
+        <div class="univ-album" style="${posStyle}" onclick="playTrack('${item.id}', 'universe')" title="${safeTitle} — ${safeArtist}">
           <img src="${item.cover}" class="univ-album-cover" alt="${safeTitle}" loading="lazy">
           <div class="univ-album-play"><i class="ri-play-fill"></i></div>
           <div class="univ-album-title">「${safeTitle}」</div>
@@ -4731,8 +4762,13 @@ function _shapeShortsGo(dir) {
   // 두 카드가 한 덩어리처럼 한 viewport 만큼 움직임 — 이어붙여 슬라이드.
   // dir='next' (위로 스와이프): cur 은 위로(−vh), next 는 아래에서(+vh)
   // dir='prev' (아래로 스와이프): cur 은 아래로(+vh), next 는 위에서(−vh)
+  //
+  // ⭐️ 자연스러움 핵심: cur 과 next 가 같은 거리를 같은 시간에 이동해야 한 덩어리처럼 보임.
+  // 이전엔 curTarget 을 curY 기준으로 계산해서 cur 은 항상 vh 만큼 이동, 하지만
+  // next 는 (vh − |curY|) 만큼만 이동 → 두 카드 속도가 달라 "끊기는" 느낌.
+  // 수정: curTarget 을 절대 위치 dirSign*vh 로 고정 → 두 카드 모두 (vh − |curY|) 만큼만 이동.
   const dirSign = dir === 'next' ? -1 : 1;
-  const curTarget = curY + dirSign * vh;
+  const curTarget = dirSign * vh;              // 끝 위치 절대 좌표 (curY 와 무관)
   const nextStart = curY - dirSign * vh;       // cur 의 반대편에 딱 붙여 시작
 
   const wrap = document.createElement('div');
@@ -6077,7 +6113,10 @@ function initShapeDrag() {
         navigateTo('artist:' + artistEnc);
       } else {
         window.__lastClickedShape = el;
-        if (trackId) playTrack(trackId, 'shape');
+        // source 를 currentView 에 맞게 정함 → 큐 자동 빌드. 'universe' 면 즐겨찾기
+        // 곡 전체, 'shapes' 면 도형 페이지 곡 전체가 다음 곡으로 흐름.
+        const _src = (currentView === 'universe') ? 'universe' : 'shape';
+        if (trackId) playTrack(trackId, _src);
       }
     }
   }
@@ -11287,6 +11326,52 @@ window.createAndAddPlaylist = async function() {
    AUDIO PLAYER
 ========================================================= */
 
+// ============================================================
+// 🎵 Play queue — 즐겨찾기 / 도형 / 쇼츠에서 재생 시 자동으로 다음 곡 이어가는 큐.
+// "하나씩 일일이 누르지 말고 플레이리스트처럼 흐르게" 가 핵심.
+// ============================================================
+function _buildPlayQueue(currentTrackId, source) {
+  const db = window.DB.get();
+  let ids = [];
+  if (source === 'universe') {
+    // 모은 곡 (♥ 즐겨찾기) — 전부 큐로
+    const liked = new Set();
+    if (db.currentUser && Array.isArray(db.currentUser.likedTracks)) {
+      db.currentUser.likedTracks.forEach(id => liked.add(id));
+    }
+    if (window.__favoritedTracks && window.__favoritedTracks.forEach) {
+      window.__favoritedTracks.forEach(id => liked.add(id));
+    }
+    if (window.CollectedTracks && window.CollectedTracks.all) {
+      window.CollectedTracks.all().forEach(id => liked.add(id));
+    }
+    ids = Array.from(liked).sort();
+  } else if (source === 'shape' || source === 'shapes' || source === 'shapeshorts') {
+    // 도형 / 쇼츠 — 도형 페이지에 보이는 모든 곡 (정렬 동일하게 id 순)
+    const st = window.__shapeShorts;
+    if (source === 'shapeshorts' && st && Array.isArray(st.tracks)) {
+      ids = st.tracks.map(t => t && t.id).filter(Boolean);
+    } else {
+      ids = (db.tracks || [])
+        .filter(t => t && t.version !== 'demo_retired')
+        .map(t => t.id)
+        .sort();
+    }
+  } else if (source === 'playlist' || source === 'folder') {
+    // 폴더 안에서 재생 — 그 폴더의 곡들만
+    const pid = window.__universeFolderId;
+    if (pid) {
+      const pl = (window.__playlists || (db.playlists || [])).find(p => p && p.id === pid);
+      if (pl && Array.isArray(pl.trackIds)) ids = pl.trackIds.slice();
+    }
+  }
+  // 빈 큐 (또는 source 가 단일 곡) — 자기 자신만
+  if (!ids.length) ids = [currentTrackId];
+  if (!ids.includes(currentTrackId)) ids.unshift(currentTrackId);
+  const idx = ids.indexOf(currentTrackId);
+  return { tracks: ids, idx: Math.max(0, idx), source: source || 'other' };
+}
+
 window.playTrack = function (trackId, source) {
   const db = window.DB.get();
   const track = db.tracks.find(t => t.id === trackId);
@@ -11299,6 +11384,21 @@ window.playTrack = function (trackId, source) {
 
   currentPlayingTrack = track.id;
   window.currentPlayingTrack = currentPlayingTrack;
+
+  // 큐 갱신 — universe / shape / shapeshorts / folder 에서 시작하면 그 컨텍스트의 곡들을
+  // 이어서 자동 재생. 다른 곳 (wall, 검색 등) 은 단일 곡만 — 자동 진행 X.
+  // 단, 큐 내부 곡으로 이동 (next 버튼/ended) 한 경우엔 큐를 다시 빌드하지 않음 —
+  // _qNav flag 로 자기 자신을 호출했음을 표시.
+  if (!window.__playTrackFromQueue) {
+    window.__playQueue = _buildPlayQueue(track.id, source);
+  } else {
+    // 큐 내부 이동 — 큐는 그대로, idx 만 동기화
+    const q = window.__playQueue;
+    if (q && Array.isArray(q.tracks)) {
+      const i = q.tracks.indexOf(track.id);
+      if (i >= 0) q.idx = i;
+    }
+  }
 
   // Analytics: fire 'start' event (also wraps up the previous track's 'end').
   // source is used to count "shape clicks" vs other play surfaces.
