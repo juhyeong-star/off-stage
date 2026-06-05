@@ -14995,29 +14995,38 @@ body:has(#global-player.expanded) .global-back-btn {
     font-size: 11px !important;
   }
   /* 모바일 snake-grid 데모 카드 — 댓글 영역은 탭하면 모달 열림.
-     인라인 input 은 한 줄 얇게, send 버튼은 작게 항상 표시. */
+     항상 보이고, 명확하게 탭 가능한 영역. */
   .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-list {
     display: flex !important;          /* 전역 :not(.is-selected) 의 display:none 덮어쓰기 */
     flex-direction: column !important;
+    justify-content: flex-end !important;  /* 컨텐츠 아래쪽 정렬 (입력칸과 가깝게) */
     flex: 1 1 0 !important;
-    min-height: 0 !important;
+    min-height: 36px !important;       /* 최소 탭 가능 영역 보장 */
     overflow: hidden !important;
     cursor: pointer !important;
-    padding: 4px 0 2px !important;
+    padding: 6px 4px 4px !important;
     margin: 2px 0 4px !important;
     border-top: 1.5px dashed rgba(17,17,17,0.18) !important;
+    border-radius: 3px !important;
+    -webkit-tap-highlight-color: rgba(194, 24, 91, 0.15) !important;  /* 탭 피드백 */
+    transition: background 0.15s !important;
   }
-  .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-list:empty {
-    display: none !important;
+  .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-list:active {
+    background: rgba(194, 24, 91, 0.1) !important;
   }
-  /* 댓글 N개 · 탭해서 모두 보기 — 작은 핀트 */
+  /* 댓글 N개 · 탭해서 모두 보기 — 명확하게 보이는 핀트 (작아도 핑크 굵게) */
   .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-hint-tap {
-    font-size: 10px !important;
+    font-size: 11px !important;
     color: #c2185b !important;
-    font-weight: 700 !important;
-    margin-top: 2px !important;
+    font-weight: 800 !important;
+    margin-top: 4px !important;
     text-align: left !important;
-    opacity: 0.85 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+  }
+  .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-hint-tap i {
+    font-size: 12px !important;
   }
   /* 한 줄 입력칸 — 선택된 카드 (.is-selected) 일 때만 보임. 평소엔 숨김.
      (사용자 요청: 평소에 "댓글…" 숨기고, 선택 시에만 노출) */
