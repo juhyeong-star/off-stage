@@ -13854,7 +13854,8 @@ body.polaroid-sheet-open { overflow: hidden; }
 .dwm-content {
   width: 100%;
   max-width: 640px;
-  max-height: 90vh;
+  min-height: min(720px, 92vh);    /* 길게 — 사용자 요청 */
+  max-height: 92vh;
   background: #FFE500;             /* 노란 포스트잇 — 우리들의 벽 톤 */
   border: 2px solid #111;
   border-radius: 6px;

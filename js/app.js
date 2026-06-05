@@ -8215,11 +8215,11 @@ function renderProjectBox(pid, versions) {
       </div>` : '';
 
     const demoLiked = isTrackLiked(v.id);
-    // 카드 탭 → 우리들의 벽 스타일 풀 모달 (openTrackDetail) + 재생 (사용자 요청)
+    // 카드 클릭 = 선택 (is-selected) + 재생. 댓글 영역 클릭 = 모달 (사용자 요청).
     return `
       <div class="${cls} page-demo ${v.pinned ? 'is-pinned' : ''}" data-track-id="${v.id}" data-project="${pid}"
            style="grid-row:${pos.row}; grid-column:${pos.col};"
-           onclick="event.stopPropagation(); openDemoWallModal('${v.id}'); playTrack('${v.id}', 'demo')">
+           onclick="selectProjectVersion('${pid}','${v.id}'); playTrack('${v.id}', 'demo')">
         <div class="demo-card-top">
           <span class="demo-tag">DEMO ${i+1}</span>
           <span class="demo-card-date">· ${dateLabel}</span>
@@ -8513,11 +8513,11 @@ function renderProjectBox(pid, versions) {
         const cmAuth = noteEscM(cm.author || '익명');
         return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span></div>`;
       }).join('');
-      // 댓글 영역 — 그냥 나열, tap 으로 모달 안 열림 (다 inline 으로 보임).
-      // 0개면 placeholder.
+      // 댓글 영역 — 탭하면 우리들의 벽 모달 (사용자 요청).
+      // 댓글이 많을 때 모달로 다 볼 수 있게. 0개여도 탭해서 첫 댓글.
       const mCmHtml = cmList.length > 0
-        ? `<div class="demo-card-cm-list">${cmLinesHtml}</div>`
-        : `<div class="demo-card-cm-list demo-card-cm-empty"><span class="dch-empty-text">아직 댓글이 없어요</span></div>`;
+        ? `<div class="demo-card-cm-list" onclick="event.stopPropagation(); openDemoWallModal('${v.id}')" title="댓글 모두 보기">${cmLinesHtml}<div class="demo-card-cm-hint-tap"><i class="ri-chat-3-line"></i> 댓글 ${cmList.length}개 · 탭해서 모두 보기</div></div>`
+        : `<div class="demo-card-cm-list demo-card-cm-empty" onclick="event.stopPropagation(); openDemoWallModal('${v.id}')" title="댓글 보기"><span class="dch-empty-text">아직 댓글이 없어요</span><div class="demo-card-cm-hint-tap"><i class="ri-chat-3-line"></i> 첫 댓글 남기기</div></div>`;
       // ⭐️ 입력칸: 카드 맨 아래 항상 보임 (전역 :not(.is-selected) display:none 무시).
       const mInputHtml = canComment ? `
         <div class="demo-card-cm-input always-show" onclick="event.stopPropagation();">
@@ -8525,12 +8525,12 @@ function renderProjectBox(pid, versions) {
                  onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); submitTrackComment('${v.id}'); }">
         </div>` : '';
       const demoLiked = isTrackLiked(v.id);
-      // 카드 탭 → 우리들의 벽 모달 (PC 와 일관). cm-list 도 탭하면 모달.
+      // 카드 탭 = 선택 (is-selected) + 재생. 댓글 영역 탭 = 모달 (cm-list 의 onclick).
       // 인라인 input 은 stopPropagation 으로 카드 onclick 안 타게.
       return `
         <div class="demo-card demo-card-stack is-demo ${v.pinned ? 'is-pinned' : ''}"
              data-track-id="${v.id}" data-project="${pid}"
-             onclick="event.stopPropagation(); openDemoWallModal('${v.id}'); playTrack('${v.id}', 'demo')">
+             onclick="selectProjectVersion('${pid}','${v.id}'); playTrack('${v.id}', 'demo')">
           <div class="demo-card-top">
             <span class="demo-tag">DEMO ${i+1}</span>
             <span class="demo-card-date">· ${formatFullDate(v.createdAt)}</span>
