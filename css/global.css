@@ -7064,13 +7064,13 @@ html, body { overflow-x: hidden; max-width: 100%; }
 .mobile-tab-bar {
   display: none;
   position: fixed;
-  bottom: 0; left: 0; right: 0;
+  top: 0; left: 0; right: 0;                  /* ⭐️ 맨 위로 (사용자 요청) */
   z-index: 1100;
   background: rgba(10, 6, 24, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid rgba(255,255,255,0.08);
-  padding: 6px 0 calc(6px + env(safe-area-inset-bottom, 0));
+  border-bottom: 1px solid rgba(255,255,255,0.08);    /* border-top → border-bottom */
+  padding: calc(6px + env(safe-area-inset-top, 0)) 0 6px;     /* safe-area-top */
   justify-content: space-around;
   align-items: stretch;
 }
@@ -7116,10 +7116,13 @@ html, body { overflow-x: hidden; max-width: 100%; }
 @media (max-width: 768px) {
   .mobile-tab-bar { display: flex; }
   .hamburger-btn { display: none !important; }
-  /* Add bottom padding so player + tab bar don't cover content */
-  body { padding-bottom: calc(var(--player-height) + 64px) !important; }
-  /* Push player above the tab bar */
-  #global-player { bottom: 60px !important; }
+  /* Tab bar 가 위로 갔으니 padding-top 으로 컨텐츠 내림 + player 위한 padding-bottom 만 */
+  body {
+    padding-top: calc(var(--mobile-tab-h, 56px) + env(safe-area-inset-top, 0px) + 8px) !important;
+    padding-bottom: calc(var(--player-height) + 8px) !important;
+  }
+  /* Player 는 그대로 바닥에 (위 tab 안 신경 써도 됨) */
+  #global-player { bottom: 0 !important; }
 }
 
 @media (max-width: 768px) {
@@ -11537,16 +11540,17 @@ body {
 /* --- M5: body padding-bottom — player + tab-bar + safe-area + buffer --- */
 @media (max-width: 768px) {
   body {
-    padding-bottom: calc(var(--player-height) + var(--mobile-tab-h) + var(--safe-bottom) + 8px) !important;
+    padding-top: calc(var(--mobile-tab-h, 56px) + env(safe-area-inset-top, 0px) + 8px) !important;
+    padding-bottom: calc(var(--player-height) + var(--safe-bottom) + 8px) !important;
   }
-  /* Push player above the tab bar including safe-area */
+  /* Player 바닥 — tab 이 위로 갔으니 그대로 */
   #global-player {
-    bottom: calc(var(--mobile-tab-h) + var(--safe-bottom)) !important;
+    bottom: var(--safe-bottom) !important;
   }
-  /* mobile-tab-bar — already uses env(safe-area-inset-bottom); reaffirm so the
-     visual band keeps a consistent height regardless of device. */
+  /* mobile-tab-bar — top safe area 사용 */
   .mobile-tab-bar {
-    padding-bottom: calc(6px + var(--safe-bottom));
+    padding-top: calc(6px + env(safe-area-inset-top, 0px));
+    padding-bottom: 6px;
   }
 }
 
@@ -11557,20 +11561,20 @@ body {
 }
 @media (max-width: 768px) {
   .upload-fab {
-    /* Sit above player + tab-bar with comfortable margin */
-    bottom: calc(var(--player-height) + var(--mobile-tab-h) + var(--safe-bottom) + 16px) !important;
+    /* Tab 이 위로 갔으니 player 위에만 떠있으면 됨 */
+    bottom: calc(var(--player-height) + var(--safe-bottom) + 16px) !important;
     right: max(16px, var(--safe-right));
     width: 52px; height: 52px;
     font-size: 26px;
   }
   .wall-fab {
-    bottom: calc(var(--player-height) + var(--mobile-tab-h) + var(--safe-bottom) + 16px) !important;
+    bottom: calc(var(--player-height) + var(--safe-bottom) + 16px) !important;
     right: max(16px, var(--safe-right));
     padding: 12px 20px;
     font-size: 14px;
   }
   .wall-compose-panel {
-    bottom: calc(var(--player-height) + var(--mobile-tab-h) + var(--safe-bottom) + 76px) !important;
+    bottom: calc(var(--player-height) + var(--safe-bottom) + 76px) !important;
     right: max(14px, var(--safe-right));
     left: max(14px, var(--safe-left));
     width: auto;
