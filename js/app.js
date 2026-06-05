@@ -3325,10 +3325,16 @@ window.openNoteDetail = function(noteId) {
         : 'noteSlideInFromTop 0.3s cubic-bezier(0.22,1,0.36,1)';
     }
   }
-  setTimeout(() => {
-    const input = document.getElementById('comment-text');
-    if (input) input.focus();
-  }, 100);
+  // 모바일에선 자동 포커스 안 함 — 모달 열자마자 키보드가 튀어올라 '바로 댓글로
+  // 끌려가는' 느낌이 났음. 사용자가 입력칸을 직접 탭해야 키보드 뜨도록 변경.
+  // PC 만 자동 포커스 유지.
+  const _isMobile = window.innerWidth <= 768;
+  if (!_isMobile) {
+    setTimeout(() => {
+      const input = document.getElementById('comment-text');
+      if (input) input.focus();
+    }, 100);
+  }
 
   // ── 모바일 — 쇼츠처럼 위아래 스와이프로 다음/이전 메모, 좌우 스와이프로 닫기(메인 복귀) ──
   try {
@@ -4748,12 +4754,10 @@ function _shapeShortsGo(dir) {
   next.style.transform = 'translate(0px, 0px)';
 
   _shapeShortsRenderChrome();
-  // 트랙 전환(playTrack) 은 슬라이드가 끝난 뒤에 — 도중에 player UI 가
-  // 바뀌면서 reflow 가 일어나면 뚝뚝 끊겨 보임.
+  // 스와이프는 슬라이드만 — 다음 트랙은 사용자가 탭해야 재생 (사용자 요청).
   setTimeout(() => {
     if (cur && cur.parentElement) cur.remove();
     st._animating = false;
-    _shapeShortsPlayCurrent();
   }, 400);
 }
 
@@ -4874,26 +4878,33 @@ function _shapeShortsMount() {
   }, { passive: true });
 
   // 탭 처리(스와이프는 위 touchend가, 탭은 click이 담당):
-  //  · 도형을 더블클릭/더블탭 → 그 아티스트 페이지
+  //  · 도형 한 번 탭 → 현재 트랙 재생/일시정지 (사용자 요청)
+  //  · 도형 더블탭 → 그 아티스트 페이지
   //  · 빈 공간 탭 → 뒤로가기(닫기)
   //  · 아래 이름/닫기 버튼은 자기 onclick 처리
   let _lastShapeClick = 0;
+  let _singleTapTimer = null;
   const _mountedAt = Date.now();
   ov.addEventListener('click', (e) => {
-    // 드래그 직후 유령 클릭이 따라와 모달을 닫지 않게.
     if (Date.now() < _suppressClickUntil) return;
-    // 도형을 탭해서 열릴 때 따라오는 '유령 클릭'이 오버레이를 바로 닫지 않게.
     if (Date.now() - _mountedAt < 450) return;
     if (e.target.closest('.sshorts-artist, .sshorts-close')) return;
     if (e.target.closest('.sshorts-shape')) {
       const now = Date.now();
       if (now - _lastShapeClick < 320) {
+        // 더블탭 — single-tap 예약된 재생을 취소하고 아티스트 페이지로
+        if (_singleTapTimer) { clearTimeout(_singleTapTimer); _singleTapTimer = null; }
         _lastShapeClick = 0;
         const s = window.__shapeShorts;
         const t = s && s.tracks[s.idx];
         _shapeShortsGoArtist(encodeURIComponent((t && t.artist) || ''));
       } else {
         _lastShapeClick = now;
+        // single-tap 액션: 더블탭 윈도우(330ms) 끝나면 현재 트랙 재생/일시정지
+        _singleTapTimer = setTimeout(() => {
+          _shapeShortsPlayCurrent();
+          _singleTapTimer = null;
+        }, 330);
       }
       return;
     }
