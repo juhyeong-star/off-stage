@@ -2701,10 +2701,11 @@ body:has(#shape-shorts-overlay) .deco-shape {
   to   { background-position: 0 0, 0 0, -440% 0; }
 }
 @media (max-width: 768px) {
-  /* 업로드 FAB(= player + tab-h + safe + 16, 높이 52) 바로 위에 띄워 겹침 방지 */
+  /* 업로드 FAB(player + safe + 8) 바로 위에 띄워 겹침 방지.
+     mobile-tab-bar 가 상단으로 이동했으므로 --mobile-tab-h 안 더함 (사용자 요청으로 아래로). */
   .planet-fab {
     right: 16px; width: 62px; height: 62px;
-    bottom: calc(var(--player-height, 88px) + var(--mobile-tab-h, 56px) + var(--safe-bottom, 0px) + 84px);
+    bottom: calc(var(--player-height, 88px) + var(--safe-bottom, 0px) + 70px);
   }
   .planet-sphere { width: 44px; height: 44px; }
   .planet-ring { width: 68px; height: 20px; }
@@ -2712,7 +2713,7 @@ body:has(#shape-shorts-overlay) .deco-shape {
 @media (max-width: 420px) {
   .planet-fab {
     right: 16px; width: 54px; height: 54px;
-    bottom: calc(var(--player-height, 88px) + var(--mobile-tab-h, 56px) + var(--safe-bottom, 0px) + 80px);
+    bottom: calc(var(--player-height, 88px) + var(--safe-bottom, 0px) + 66px);
   }
   .planet-sphere { width: 38px; height: 38px; }
   .planet-ring { width: 58px; height: 18px; }
@@ -11650,20 +11651,21 @@ body {
 }
 @media (max-width: 768px) {
   .upload-fab {
-    /* Tab 이 위로 갔으니 player 위에만 떠있으면 됨 */
-    bottom: calc(var(--player-height) + var(--safe-bottom) + 16px) !important;
+    /* Tab 이 위로 갔으니 player 위에만 떠있으면 됨.
+       사용자 요청으로 16 → 8px 살짝 아래로 (player 와 거리 좁힘) */
+    bottom: calc(var(--player-height) + var(--safe-bottom) + 8px) !important;
     right: max(16px, var(--safe-right));
     width: 52px; height: 52px;
     font-size: 26px;
   }
   .wall-fab {
-    bottom: calc(var(--player-height) + var(--safe-bottom) + 16px) !important;
+    bottom: calc(var(--player-height) + var(--safe-bottom) + 8px) !important;
     right: max(16px, var(--safe-right));
     padding: 12px 20px;
     font-size: 14px;
   }
   .wall-compose-panel {
-    bottom: calc(var(--player-height) + var(--safe-bottom) + 76px) !important;
+    bottom: calc(var(--player-height) + var(--safe-bottom) + 68px) !important;
     right: max(14px, var(--safe-right));
     left: max(14px, var(--safe-left));
     width: auto;
