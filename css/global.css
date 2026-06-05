@@ -7084,7 +7084,20 @@ html, body { overflow-x: hidden; max-width: 100%; }
   padding: 7px 2px 5px;
   color: rgba(255,255,255,0.5);
   text-decoration: none;
-  transition: color 0.15s, transform 0.12s;
+  transition: color 0.15s, transform 0.12s, background 0.15s;
+  /* ⭐️ 칸칸이 — 탭 사이 구분선 + 약간의 배경 카드 느낌 */
+  background: rgba(255,255,255,0.025);
+  border-right: 1px solid rgba(255,255,255,0.08);
+  position: relative;
+}
+.mobile-tab:last-child {
+  border-right: none;
+}
+.mobile-tab.is-active {
+  background: rgba(255,255,255,0.08);   /* 활성 탭 살짝 진하게 */
+}
+.mobile-tab:active {
+  background: rgba(255,255,255,0.12);
 }
 .mobile-tab i { font-size: 22px; }
 .mobile-tab .mobile-tab-label {
