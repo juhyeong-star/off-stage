@@ -8620,19 +8620,21 @@ function renderProjectBox(pid, versions) {
     `;
   }
 
-  // Desktop — cover/title/date wrapped in one unified "album card" container.
+  // Desktop — release card (cover + meta) 묶음 + 글소개 포스트잇이 옆에 (사용자 요청).
   // 응원하기 button intentionally hidden (user request) until the platform
   // is past early-stage.
   return `
     <div class="project-box reveal" data-project="${pid}">
       <div class="project-header">
         <div class="project-album-card">
-          ${coverHtml}
-          <div class="project-album-meta">
-            <h3 class="project-title">「${final ? safeTitle : 'Coming Soon'}」</h3>
-            <div class="project-artist-line">${final ? ((final.artist || primary.artist || '').replace(/</g,'&lt;')) : 'Coming Soon'}</div>
-            ${masterDate && final ? `<div class="project-master-date">발매 · ${masterDate}</div>` : ''}
-            ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
+          <div class="release-card-block">
+            ${coverHtml}
+            <div class="project-album-meta">
+              <h3 class="project-title">「${final ? safeTitle : 'Coming Soon'}」</h3>
+              <div class="project-artist-line">${final ? ((final.artist || primary.artist || '').replace(/</g,'&lt;')) : 'Coming Soon'}</div>
+              ${masterDate && final ? `<div class="project-master-date">발매 · ${masterDate}</div>` : ''}
+              ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
+            </div>
           </div>
           ${releaseNoteHtml}
         </div>
