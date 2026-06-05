@@ -2065,6 +2065,7 @@ function renderTags() {
 
   if (tagList.length === 0) {
     appContent.innerHTML = `
+      <div class="page-intro reveal">지금의 기분을 tag로 노래를 들어보세요</div>
       <div class="tags-page-header reveal">
         <h1><i class="ri-hashtag" style="color:var(--brand-color);"></i> Tags</h1>
       </div>
@@ -2085,6 +2086,7 @@ function renderTags() {
   }).join('');
 
   appContent.innerHTML = `
+    <div class="page-intro reveal">지금의 기분을 tag로 노래를 들어보세요</div>
     <div class="tags-page-header reveal">
       <h1><i class="ri-hashtag" style="color:var(--brand-color);"></i> Tags</h1>
       <span class="count">총 ${tagList.length}개의 태그 · ${totalTracks}곡</span>
@@ -2546,6 +2548,7 @@ async function renderWall() {
     : '';
 
   appContent.innerHTML = `
+    <div class="page-intro reveal">게시물을 올려 지금의 기분을 음악과 같이 표현해보세요</div>
     <div class="wall-board" style="height:${total > 0 ? boardH : 600}px;">
       <div class="wall-header-v2">
         <div class="wall-title-row">
@@ -5185,6 +5188,7 @@ function renderShapes() {
   `;
 
   appContent.innerHTML = `
+    <div class="page-intro reveal">도형을 클릭해 누군가의 감성을 발견해보세요</div>
     <div class="shapes-universe" style="height: ${universeHeight}px;">
       ${decoHtml}
       ${shapesHtml}
