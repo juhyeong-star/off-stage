@@ -12225,7 +12225,7 @@ body.polaroid-sheet-open { overflow: hidden; }
   flex-direction: row !important;
   flex-wrap: wrap !important;
   align-items: stretch !important;
-  gap: 28px !important;
+  gap: 16px !important;                 /* 코밍↔데모 간격 좁힘 (28→16) */
   padding: 28px 28px 32px !important;
   /* Y2K flat — 눈금 그리드 제거, 댓글이 잘 보이도록 단색 크림 */
   background: #FFFBF0 !important;
@@ -14248,6 +14248,9 @@ body.polaroid-sheet-open { overflow: hidden; }
   width: 214px !important;
   height: 214px !important;
   aspect-ratio: 1 / 1 !important;
+  border: 2.5px solid #111 !important;          /* 검은 테두리 (사용자 요청) */
+  border-radius: 6px !important;
+  box-shadow: 5px 5px 0 #111 !important;         /* 3D Y2K 하드 입체 그림자 */
 }
 /* 글소개 포스트잇 = 옆에 (오른쪽), 남은 공간 채움 */
 .artist-canvas .project-album-card > .release-note-postit {
@@ -16071,6 +16074,14 @@ body:has(#global-player.expanded) .global-back-btn {
   padding: 0 !important;
   height: auto !important;
   overflow: visible !important;
+  width: 214px !important;          /* 커버 폭에 맞춰 — 빈 공간 제거 */
+  max-width: 214px !important;
+  flex: 0 0 214px !important;
+}
+/* 코밍 헤더도 커버 폭에 맞춤 (데모와 간격 좁힘) */
+.artist-canvas .project-box > .project-header:has(.project-cover-wrap.no-master) {
+  flex: 0 0 auto !important;
+  width: 214px !important;
 }
 .artist-canvas .projects-grid .project-album-card .project-cover-wrap {
   margin: 0 !important;
