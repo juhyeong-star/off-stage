@@ -12453,8 +12453,8 @@ body.polaroid-sheet-open { overflow: hidden; }
 /* 선택된 데모 = 부드러운 로즈 톤 + 살짝 다른 크림 배경으로 구분 */
 /* 클릭(선택) = 플레이어 녹색(#1DB954)으로 변화 — 느낌은 동일 (사용자 요청) */
 .artist-canvas .demo-card.is-selected {
-  --cm-rgb: 29, 185, 84 !important;                     /* 댓글 박스 색도 녹색으로 */
-  background: #EAF7EE !important;                       /* 살짝 녹색 배경 */
+  --cm-rgb: 29, 185, 84 !important;                     /* 댓글 박스 강조색만 녹색 */
+  background: #FDF3D8 !important;                       /* 배경은 원래 크림 유지 (사용자 요청) */
   color: #111 !important;
   border: 1.5px solid #1DB954 !important;               /* 녹색 테두리 */
   box-shadow: 2px 2px 0 rgba(29,185,84,0.7) !important; /* 녹색 그림자 */
