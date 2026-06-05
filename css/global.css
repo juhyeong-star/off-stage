@@ -13794,7 +13794,7 @@ body.polaroid-sheet-open { overflow: hidden; }
 /* 입력칸: 선택했을 때만 보임 (사용자 요청: "클릭전까지 댓글남기기 안보이게") */
 .artist-canvas .demo-card .demo-card-cm-input { display: none !important; }
 .artist-canvas .demo-card.is-selected .demo-card-cm-input {
-  display: none !important;   /* 클릭해도 댓글 입력 박스 안 띄움 — 기본 디자인 유지 (댓글은 탭→모달) */
+  display: flex !important;   /* 클릭 시 댓글 입력 박스 표시 (원래대로) */
   background: transparent !important;
   border: none !important;
   border-top: 1px solid rgba(17,17,17,0.25) !important;
