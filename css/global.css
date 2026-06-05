@@ -15617,7 +15617,7 @@ body:has(#global-player.expanded) .global-back-btn {
   }
   .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-note {
     display: -webkit-box !important;
-    -webkit-line-clamp: 2 !important;
+    -webkit-line-clamp: 4 !important;     /* 본문 더 보여줌 — 사용자 요청 (2→4) */
     -webkit-box-orient: vertical !important;
     overflow: hidden !important;
     font-size: 12px !important;
@@ -15646,6 +15646,23 @@ body:has(#global-player.expanded) .global-back-btn {
   .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-line {
     font-size: 10.5px !important;
     line-height: 1.25 !important;
+    white-space: nowrap !important;          /* 1줄 고정 — 안 잘리고 ... (사용자 요청) */
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: baseline !important;
+    flex-wrap: nowrap !important;            /* baseline 룰의 wrap 무력화 */
+  }
+  /* 텍스트도 1줄 + ellipsis */
+  .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-line .demo-card-cm-text {
+    flex: 1 !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+  .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-line .demo-card-cm-author,
+  .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-line .demo-card-cm-arrow {
+    flex-shrink: 0 !important;
   }
   .artist-canvas .projects-grid .demo-snake-grid > .demo-card .demo-card-cm-hint-tap {
     font-size: 10px !important;
