@@ -9702,10 +9702,28 @@ function renderArtistProfile(artistName) {
             <div class="artist-id">
               <img src="${avatar}" class="artist-avatar" alt="${safeName}">
               <div class="artist-id-text">
-                <h1>${safeName}</h1>
-                <!-- 팔로워 / 팔로잉 + 메세지(본인만) 칩 row.
-                     실제 클릭 핸들러는 렌더 후 addEventListener 로 바인딩 — 이스케이프
-                     문제 / 비동기 artistId 채움을 깔끔히 처리. -->
+                ${(() => {
+                  // 이름 옆에 인라인 팔로우 알약 — 다른 사람 + isArtistRole 일 때만.
+                  // (사용자 요청: 큰 검은 버튼 줄 제거 → 이름 옆 작은 알약 + 메시지 칩 row 통합)
+                  if (isArtistRole && !isSelf) {
+                    const isFollowingNow = artistSupabaseId
+                      ? iFollow
+                      : (typeof window._isFollowingName === 'function' && window._isFollowingName(artistName));
+                    const followArg = artistSupabaseId
+                      ? `'${artistSupabaseId}', '${safeName.replace(/'/g,"\\'")}'`
+                      : `null, '${safeName.replace(/'/g,"\\'")}'`;
+                    return `
+                    <div class="artist-name-row">
+                      <h1>${safeName}</h1>
+                      <button class="follow-btn-inline ${isFollowingNow ? 'is-following' : ''}" type="button" onclick="toggleFollowArtist(${followArg})">
+                        ${isFollowingNow ? '<i class="ri-user-follow-fill"></i> 팔로잉' : '<i class="ri-user-add-line"></i> 팔로우'}
+                      </button>
+                    </div>`;
+                  }
+                  return `<h1>${safeName}</h1>`;
+                })()}
+                <!-- 팔로워 / 팔로잉 + 메세지 칩 row. 본인이면 받은 메세지함, 다른 사람이면 DM.
+                     실제 클릭 핸들러는 렌더 후 addEventListener 로 바인딩. -->
                 <div class="artist-follow-chips" id="artist-follow-chips">
                   <button class="follow-chip" id="follow-chip-followers" type="button">
                     <i class="ri-group-line"></i> 팔로워 <strong id="follow-chip-fans-n">${fanCount || 0}</strong>
@@ -9717,7 +9735,14 @@ function renderArtistProfile(artistName) {
                     <button class="follow-chip follow-chip-msg" type="button" title="받은 메세지 보기">
                       <i class="ri-mail-fill"></i> 메세지
                     </button>
-                  ` : ''}
+                  ` : `
+                    <button class="follow-chip follow-chip-msg follow-chip-msg-dm" type="button"
+                            data-target-name="${safeName.replace(/"/g,'&quot;')}"
+                            data-target-avatar="${(avatar||'').replace(/"/g,'&quot;')}"
+                            title="${safeName} 에게 메시지 보내기">
+                      <i class="ri-mail-send-fill"></i> 메시지
+                    </button>
+                  `}
                 </div>
                 <!-- 역할 라벨('아티스트') 숨김 — 사용자 요청. id/style은 유지해 다른 코드 안 깨지게. -->
                 <div style="display:none;" aria-hidden="true">
@@ -9727,25 +9752,6 @@ function renderArtistProfile(artistName) {
                 <div class="artist-stats" style="display:none;" aria-hidden="true">
                   ${artistSupabaseId ? `<span class="fan-count-inline">❤ <strong id="fan-count-inline">${fanCount}</strong> 팔로워</span>` : ''}
                 </div>
-                ${isArtistRole && !isSelf ? (() => {
-                  // Supabase ID 우선, 없으면 이름 기반 로컬 팔로우 상태
-                  const isFollowingNow = artistSupabaseId
-                    ? iFollow
-                    : (typeof window._isFollowingName === 'function' && window._isFollowingName(artistName));
-                  const followArg = artistSupabaseId
-                    ? `'${artistSupabaseId}', '${safeName.replace(/'/g,"\\'")}'`
-                    : `null, '${safeName.replace(/'/g,"\\'")}'`;
-                  return `
-                  <div class="artist-action-row" style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
-                    <button class="follow-btn-v2 ${isFollowingNow ? 'is-following' : ''}" onclick="toggleFollowArtist(${followArg})">
-                      ${isFollowingNow ? '<i class="ri-user-follow-fill"></i> 팔로잉' : '<i class="ri-user-add-line"></i> 팔로우'}
-                    </button>
-                    <button class="dm-btn-v2" onclick="openDmModal('${safeName.replace(/'/g,"\\'")}', '${(avatar||'').replace(/'/g,"\\'")}')">
-                      <i class="ri-mail-send-fill"></i> 메시지
-                    </button>
-                  </div>
-                  `;
-                })() : ''}
                 <!-- 자기소개 인라인 (칩 아래) — 작성됐으면 표시, 본인 + 비어있으면 안내.
                      텍스트를 .artist-bio-text 로 감싸서 박스(자체 너비)와 텍스트(왼쪽 정렬)를 명확히 분리. -->
                 ${isSelf ? `
@@ -9878,19 +9884,34 @@ function renderArtistProfile(artistName) {
     if (_chipFs) _chipFs.onclick = (e) => { e.preventDefault(); openFollowListModal('followers', artistName, _initialId); };
     if (_chipFi) _chipFi.onclick = (e) => { e.preventDefault(); openFollowListModal('followings', artistName, _initialId); };
 
+    // 메시지 칩 — 본인이면 받은 메세지함, 다른 사람이면 DM 보내기.
+    // (다른 사람용은 .follow-chip-msg-dm 클래스 추가로 구분)
     const _msgChip = document.querySelector('#artist-follow-chips .follow-chip-msg');
     if (_msgChip) {
       _msgChip.onclick = (e) => {
         e.preventDefault();
-        if (typeof window.openDmInboxModal === 'function') {
-          window.openDmInboxModal();
+        if (_msgChip.classList.contains('follow-chip-msg-dm')) {
+          // 다른 사람에게 DM
+          const targetName = _msgChip.getAttribute('data-target-name') || artistName;
+          const targetAvatar = _msgChip.getAttribute('data-target-avatar') || '';
+          if (typeof window.openDmModal === 'function') {
+            window.openDmModal(targetName, targetAvatar);
+          } else {
+            console.warn('[msg-chip-dm] openDmModal 함수 없음');
+          }
         } else {
-          console.warn('[msg-chip] openDmInboxModal 함수 없음');
+          // 본인 받은 메세지함
+          if (typeof window.openDmInboxModal === 'function') {
+            window.openDmInboxModal();
+          } else {
+            console.warn('[msg-chip] openDmInboxModal 함수 없음');
+          }
         }
       };
     }
     // 팔로우 / DM 보내기 버튼 (다른 사람 페이지) 도 안전 바인딩
-    const _followBtn = document.querySelector('.artist-action-row .follow-btn-v2');
+    // 새 인라인 팔로우 알약 (.follow-btn-inline) — 이름 옆에 위치.
+    const _followBtn = document.querySelector('.artist-name-row .follow-btn-inline');
     if (_followBtn && !isSelf) {
       _followBtn.onclick = (e) => {
         e.preventDefault();

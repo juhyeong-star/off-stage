@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko" data-lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>i18n 토글 — KO / EN</title>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" onload="this.rel='stylesheet'">
+<style>
+  :root {
+    --brand: #1DB954;
+    --bg: #0a0a0c;
+    --surface: #14141a;
+    --divider: rgba(255,255,255,0.08);
+    --text-pri: #e9e9ec;
+    --text-sec: #a0a0a8;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text-pri);
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', 'Pretendard', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ===== TOP BAR ===== */
+  .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--divider);
+    background: rgba(20, 20, 26, 0.7);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .top-brand { font-weight: 800; font-size: 18px; letter-spacing: -0.3px; }
+
+  /* === 언어 토글 (이 자리에 두는 게 자연스러움) === */
+  .lang-toggle {
+    display: inline-flex;
+    background: rgba(255,255,255,0.06);
+    border-radius: 999px;
+    padding: 3px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    border: 1px solid var(--divider);
+  }
+  .lang-toggle .opt {
+    padding: 5px 12px;
+    border-radius: 999px;
+    color: var(--text-sec);
+    transition: color 0.18s, background 0.18s;
+  }
+  .lang-toggle .opt.active {
+    background: var(--brand);
+    color: #fff;
+  }
+
+  /* ===== MAIN ===== */
+  .wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 30px 24px 80px;
+  }
+  .section {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--divider);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 18px;
+  }
+  .section h2 {
+    margin: 0 0 14px;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--brand);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .section p { margin: 0 0 8px; }
+  .section .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .btn {
+    background: var(--brand); color: #fff; border: none; padding: 8px 14px;
+    border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px;
+  }
+  .btn.ghost { background: transparent; border: 1px solid var(--divider); color: var(--text-pri); }
+  .chip {
+    background: rgba(255,255,255,0.07); padding: 4px 10px;
+    border-radius: 999px; font-size: 12px; color: var(--text-sec);
+  }
+  .page-intro {
+    text-align: center; font-size: 18px; color: #ccc;
+    margin: 12px 0; font-weight: 600;
+  }
+  .page-count {
+    text-align: center; font-size: 13px; color: var(--text-sec);
+    margin-top: -4px; margin-bottom: 14px;
+  }
+  .page-count strong { color: #fff; font-weight: 700; }
+
+  /* ===== i18n CORE — 핵심 룰 ===== */
+  /* data-lang="ko" 일 때 → [data-i18n-en] 숨김, [data-i18n-ko] 보임 */
+  /* data-lang="en" 일 때 → [data-i18n-ko] 숨김, [data-i18n-en] 보임 */
+  html[data-lang="ko"] [data-i18n-en] { display: none !important; }
+  html[data-lang="en"] [data-i18n-ko] { display: none !important; }
+
+  /* 사용자 콘텐츠 (트랙 제목, 댓글 등) 는 i18n 클래스 안 붙이므로 그대로 보임 */
+  .user-content { color: #FFE500; font-weight: 700; }
+
+  /* note */
+  .note {
+    background: rgba(29,185,84,0.08);
+    border: 1px dashed rgba(29,185,84,0.3);
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 13px;
+    color: var(--text-sec);
+    line-height: 1.55;
+  }
+  .note strong { color: var(--brand); }
+  code {
+    background: rgba(255,255,255,0.07);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: 'Menlo', 'Consolas', monospace;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== TOP BAR with 언어 토글 ===== -->
+<div class="top">
+  <div class="top-brand">Off-Stage</div>
+  <div class="lang-toggle" onclick="toggleLang()" title="언어 / Language">
+    <span class="opt" id="opt-ko">KO</span>
+    <span class="opt" id="opt-en">EN</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ===== Section 1 — 동작 데모 ===== -->
+  <div class="section">
+    <h2 data-i18n-ko>핵심 동작</h2>
+    <h2 data-i18n-en>How It Works</h2>
+
+    <p data-i18n-ko>우상단 <strong>KO / EN</strong> 버튼을 눌러보세요. 화면 안의 모든 정적 텍스트가 즉시 전환돼요. 새로고침 안 해도 적용되고, 새로고침 후에도 마지막 선택이 유지돼요.</p>
+    <p data-i18n-en>Tap the <strong>KO / EN</strong> button at the top right. All static text on the page switches instantly. No refresh required, and your choice persists across reloads.</p>
+  </div>
+
+  <!-- ===== Section 2 — 네비게이션 ===== -->
+  <div class="section">
+    <h2 data-i18n-ko>네비게이션</h2>
+    <h2 data-i18n-en>Navigation</h2>
+
+    <div class="row">
+      <button class="btn ghost">
+        <span data-i18n-ko>도형</span>
+        <span data-i18n-en>Shapes</span>
+      </button>
+      <button class="btn ghost">
+        <span data-i18n-ko>우리들의 벽</span>
+        <span data-i18n-en>The Wall</span>
+      </button>
+      <button class="btn ghost">
+        <span data-i18n-ko>태그</span>
+        <span data-i18n-en>Tags</span>
+      </button>
+      <button class="btn">
+        <span data-i18n-ko>업로드</span>
+        <span data-i18n-en>Upload</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== Section 3 — 페이지 인트로 ===== -->
+  <div class="section">
+    <h2 data-i18n-ko>페이지 인트로</h2>
+    <h2 data-i18n-en>Page Intro Text</h2>
+
+    <div class="page-intro" data-i18n-ko>도형을 클릭해 누군가의 감성을 발견해보세요</div>
+    <div class="page-intro" data-i18n-en>Click a shape to discover someone's vibe</div>
+
+    <div class="page-intro" data-i18n-ko>게시물을 올려 지금의 기분을 음악과 같이 표현해보세요</div>
+    <div class="page-intro" data-i18n-en>Post your mood — share it with music</div>
+
+    <div class="page-intro" data-i18n-ko>지금의 기분을 tag로 노래를 들어보세요</div>
+    <div class="page-intro" data-i18n-en>Find songs that match your mood by tag</div>
+
+    <div class="page-count">
+      <span data-i18n-ko>총 <strong>37</strong>개의 태그 · <strong>16</strong>곡</span>
+      <span data-i18n-en><strong>37</strong> tags · <strong>16</strong> tracks</span>
+    </div>
+  </div>
+
+  <!-- ===== Section 4 — 사용자 콘텐츠는 그대로 ===== -->
+  <div class="section">
+    <h2 data-i18n-ko>사용자가 올린 콘텐츠는 그대로</h2>
+    <h2 data-i18n-en>User Content Stays As-Is</h2>
+
+    <p data-i18n-ko>곡 제목, 댓글, 작가 닉네임, 본문 같은 사용자가 입력한 내용은 자동 번역하지 않아요. 원본 그대로 표시됩니다.</p>
+    <p data-i18n-en>Track titles, comments, author nicknames, and body text — anything users input — are not translated. They stay in their original form.</p>
+
+    <div class="row" style="margin-top: 12px;">
+      <span class="chip">🎵 <span class="user-content">「보쌈」</span> — 쿠츠</span>
+      <span class="chip">💬 <span class="user-content">진짜 좋다 잘들었어요</span></span>
+      <span class="chip">🏷️ <span class="user-content">#새벽감성 #1982년느낌</span></span>
+    </div>
+  </div>
+
+  <!-- ===== Section 5 — 구현 메모 ===== -->
+  <div class="section">
+    <h2 data-i18n-ko>구현 방식 (참고)</h2>
+    <h2 data-i18n-en>Implementation (Reference)</h2>
+
+    <div class="note">
+      <p data-i18n-ko style="margin:0 0 8px;"><strong>방식:</strong> CSS 클래스 토글로 가장 가벼움. 두 언어 텍스트가 DOM 에 같이 있고 <code>html[data-lang="..."]</code> 룰이 한쪽을 숨김.</p>
+      <p data-i18n-en style="margin:0 0 8px;"><strong>How:</strong> Lightweight CSS class toggle. Both KO &amp; EN strings live in the DOM, hidden via <code>html[data-lang="..."]</code> rules.</p>
+
+      <p data-i18n-ko style="margin:0 0 8px;"><strong>장점:</strong> 깜빡임 없음 · 빠름 · 외부 라이브러리 X · 새 텍스트도 <code>&lt;span data-i18n-ko&gt;</code> / <code>&lt;span data-i18n-en&gt;</code> 두 개로 두면 끝.</p>
+      <p data-i18n-en style="margin:0 0 8px;"><strong>Pros:</strong> No flicker · fast · zero dependencies · just add two spans <code>&lt;span data-i18n-ko&gt;</code> / <code>&lt;span data-i18n-en&gt;</code> for new strings.</p>
+
+      <p data-i18n-ko style="margin:0;"><strong>단점:</strong> 현재 사이트에 한글 문자열이 약 <strong>2000여 곳</strong> 박혀있어서, 점진적으로 번역해야 함 (우선순위: 네비/인트로/버튼 → 폼/모달 → 알림).</p>
+      <p data-i18n-en style="margin:0;"><strong>Cons:</strong> ~<strong>2,000 Korean strings</strong> already embedded in the site — needs progressive translation (priority: nav/intro/buttons → forms/modals → toasts).</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function setLang(lang) {
+    document.documentElement.setAttribute('data-lang', lang);
+    document.documentElement.setAttribute('lang', lang);
+    document.getElementById('opt-ko').classList.toggle('active', lang === 'ko');
+    document.getElementById('opt-en').classList.toggle('active', lang === 'en');
+    try { localStorage.setItem('off-stage-lang', lang); } catch(_) {}
+  }
+  function toggleLang() {
+    const cur = document.documentElement.getAttribute('data-lang') || 'ko';
+    setLang(cur === 'ko' ? 'en' : 'ko');
+  }
+  // 페이지 진입 — 마지막 선택 복원, 없으면 브라우저 언어로 추측
+  (function initLang() {
+    let saved = null;
+    try { saved = localStorage.getItem('off-stage-lang'); } catch(_) {}
+    if (!saved) {
+      const nav = (navigator.language || 'ko').toLowerCase();
+      saved = nav.startsWith('ko') ? 'ko' : 'en';
+    }
+    setLang(saved);
+  })();
+</script>
+
+</body>
+</html>

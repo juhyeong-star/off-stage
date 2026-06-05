@@ -1854,7 +1854,7 @@ body:has(#shape-shorts-overlay) .deco-shape {
 .artist-bio-inline-empty i { margin-right: 4px; }
 .artist-bio-inline[hidden] { display: none; }
 
-/* 메세지 칩 — 팔로워/팔로잉 옆에 들어가는 본인 전용 액션 칩 */
+/* 메세지 칩 — 팔로워/팔로잉 옆 액션 칩. 본인 = 받은 메세지함, 다른 사람 = DM. */
 .follow-chip.follow-chip-msg {
   background: rgba(29,185,84,0.12);
   border-color: rgba(29,185,84,0.4);
@@ -1863,6 +1863,52 @@ body:has(#shape-shorts-overlay) .deco-shape {
 .follow-chip.follow-chip-msg:hover {
   background: rgba(29,185,84,0.22);
   border-color: rgba(29,185,84,0.7);
+}
+
+/* 아티스트 이름 + 인라인 팔로우 알약 행 — 다른 사람 페이지 한정 */
+.artist-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 6px;
+}
+.artist-name-row h1 {
+  margin: 0;                      /* 상위 h1 의 외부 마진 죽임 */
+}
+/* 작은 알약 팔로우 버튼 — 이름 baseline 에 자연스럽게 */
+.follow-btn-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #1a1a1a;
+  color: #fff;
+  border: 1.5px solid #1a1a1a;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.18s, color 0.18s, transform 0.1s;
+  font-family: inherit;
+  line-height: 1;
+  white-space: nowrap;
+}
+.follow-btn-inline:hover { background: #333; }
+.follow-btn-inline:active { transform: scale(0.96); }
+.follow-btn-inline.is-following {
+  background: #fff;
+  color: #1a1a1a;
+  border-color: rgba(0,0,0,0.5);
+}
+.follow-btn-inline.is-following:hover {
+  background: rgba(0,0,0,0.05);
+  border-color: #1a1a1a;
+}
+.follow-btn-inline i { font-size: 14px; }
+@media (max-width: 480px) {
+  .follow-btn-inline { padding: 5px 11px; font-size: 11.5px; }
 }
 
 /* ───── 팔로워 별자리 (constellation) — 본인 페이지 전용 ───── */
