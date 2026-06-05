@@ -12699,6 +12699,17 @@ body.polaroid-sheet-open { overflow: hidden; }
   color: rgba(17,17,17,0.55) !important;
   cursor: pointer !important;
   transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.18s !important;
+  min-height: 200px;                        /* 곡 없을 때 placeholder 의 최소 높이 */
+}
+/* 본인 빈 프로필 — 곡 0개 일 때 처음 등장하는 가짜 "DEMO 1 추가" 카드.
+   기본 demo-card-add 보다 좀 더 크고 가운데에. */
+.artist-canvas .demo-card.demo-card-add.is-empty-placeholder {
+  min-height: 240px !important;
+  background: rgba(255, 251, 216, 0.25) !important;
+  border-width: 2.5px !important;
+}
+.artist-canvas .demo-card.demo-card-add.is-empty-placeholder i {
+  font-size: 56px !important;
 }
 .artist-canvas .demo-card.demo-card-add:hover {
   background: rgba(255, 251, 216, 0.95) !important;

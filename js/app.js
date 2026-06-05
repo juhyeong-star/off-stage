@@ -9814,11 +9814,32 @@ function renderArtistProfile(artistName) {
               </div>
             ` : ''}
             <div id="artist-section-albums" style="scroll-margin-top:80px;"></div>
-            ${(releasedCount + demoCount) === 0 ? `
-              <div class="reveal" style="margin-top:36px;">
-                <p style="color:var(--text-secondary);">아직 업로드한 곡이 없어요.</p>
-              </div>
-            ` : ''}
+            ${(releasedCount + demoCount) === 0 ? (
+              isSelf
+                ? `
+                  <!-- 본인 페이지 + 곡 0개 — 가짜 "DEMO 1" 카드 (+) 로 업로드 유도.
+                       기존 demo-card-add 스타일 재사용. 클릭하면 업로드 페이지.
+                       projects-grid 안에 single demo-card 만 들어가도록 wrap. -->
+                  <div class="reveal projects-grid" style="margin-top:24px;">
+                    <div class="project-box">
+                      <div class="demo-path empty-demo-path" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;">
+                        <div class="demo-card demo-card-add is-empty-placeholder"
+                             onclick="navigateTo('upload')"
+                             title="첫 곡 업로드하기"
+                             style="grid-column:1; grid-row:1;">
+                          <i class="ri-add-line"></i>
+                          <span class="demo-card-add-label">DEMO 1 추가</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                `
+                : `
+                  <div class="reveal" style="margin-top:36px;">
+                    <p style="color:var(--text-secondary);">아직 업로드한 곡이 없어요.</p>
+                  </div>
+                `
+            ) : ''}
           </div>
 
           <!-- '받은 응원' 섹션 제거 (사용자 요청). mountCheerHeart 가 안전하게
