@@ -12428,8 +12428,54 @@ body.polaroid-sheet-open { overflow: hidden; }
   transform: translate(-2px, -2px) !important;
   box-shadow: 6px 6px 0 #111 !important;
 }
-/* Hide the "✦ MASTER" overlay badge on the cover image itself */
-.artist-canvas .project-master-badge { display: none !important; }
+/* 사용자 요청으로 다시 보이게 풀어둠 — 우상단 노란 "발매" 칩 */
+.artist-canvas .project-master-badge {
+  display: inline-block !important;
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  left: auto !important;
+  background: #FFE500 !important;
+  color: #111 !important;
+  border: 1.5px solid #111 !important;
+  padding: 3px 9px !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.6px !important;
+  border-radius: 3px !important;
+  box-shadow: 2px 2px 0 #111;
+  z-index: 3;
+}
+/* 좌상단 발매일 칩 — 검정 배경 + 노란 글자 (사용자 요청으로 카드 하단의 검정 띠 → 사진 좌상단으로) */
+.project-release-chip {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: #1a1a1a;
+  color: #FFE500;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1.5px solid #111;
+  letter-spacing: 0.3px;
+  box-shadow: 2px 2px 0 #111;
+  z-index: 3;
+  pointer-events: none;        /* 위에 떠있어도 사진 클릭 이벤트 가로채지 않음 */
+  white-space: nowrap;
+}
+@media (max-width: 480px) {
+  .project-release-chip {
+    font-size: 10px;
+    padding: 3px 8px;
+    top: 6px; left: 6px;
+  }
+  .artist-canvas .project-master-badge {
+    font-size: 9px !important;
+    padding: 2px 7px !important;
+    top: 6px !important; right: 6px !important;
+  }
+}
 /* legacy overrides 정리 — 위쪽 master info 블럭 rule이 권한 가짐 */
 .artist-canvas .project-header-info {
   flex: 0 0 auto !important;

@@ -8371,11 +8371,17 @@ function renderProjectBox(pid, versions) {
   //    hasCustomCover (cover_url 있음) 일 때만 실제 사진. 아니면 노란 포스트잇.
   const finalHasCover = final && final.hasCustomCover;
   const primaryHasCover = primary && primary.hasCustomCover;
+  // 발매일 칩 — 사진 좌상단 (사용자 요청). 발매일 있으면 "발매 · YYYY.MM.DD", 없으면 "발매"
+  const _finalReleaseRaw = (final && (final.releaseDate || '').trim()) || '';
+  const _finalReleaseChipText = /^\d{4}-\d{2}-\d{2}/.test(_finalReleaseRaw)
+    ? `발매 · ${_finalReleaseRaw.slice(0, 10).replace(/-/g, '.')}`
+    : (final && masterDate ? `발매 · ${masterDate}` : '발매');
   const coverHtml = final ? (finalHasCover ? `
     <div class="project-cover-wrap" onclick="playTrack('${final.id}'); selectProjectVersion('${pid}','${final.id}'); openSongInfoModal('${final.id}');" title="탭하면 곡 소개 + 재생">
       <img src="${final.cover}" class="project-cover-large" alt="${safeTitle}" loading="lazy">
+      <span class="project-release-chip">${_finalReleaseChipText.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>
       <div class="project-play-overlay"><i class="ri-play-fill"></i></div>
-      <div class="project-master-badge">발매 (Release)</div>
+      <div class="project-master-badge">발매</div>
       ${editCoverBtn}
     </div>
   ` : (() => {
@@ -8640,7 +8646,7 @@ function renderProjectBox(pid, versions) {
             <div class="project-album-meta">
               <h3 class="project-title">「${final ? safeTitle : 'Coming Soon'}」</h3>
               <div class="project-artist-line">${final ? ((final.artist || primary.artist || '').replace(/</g,'&lt;')) : 'Coming Soon'}</div>
-              ${masterDate && final ? `<div class="project-master-date">발매 · ${masterDate}</div>` : ''}
+              ${/* 발매일 검정 띠 — 사진 좌상단으로 이동했으므로 여기선 제거 (사용자 요청) */ ''}
               ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명이 응원해</div>` : ''}
             </div>
           </div>

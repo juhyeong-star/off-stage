@@ -77,6 +77,22 @@
     font-size: 10px;
     font-weight: 800;
   }
+  /* 새 발매일 칩 — 사진 좌상단에 배치 (사용자 요청) */
+  .project-release-chip {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: #1a1a1a;
+    color: #FFE500;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1.5px solid #111;
+    letter-spacing: 0.3px;
+    box-shadow: 2px 2px 0 #111;
+    z-index: 2;
+  }
   .project-play-overlay {
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
@@ -253,12 +269,13 @@
     <div class="release-card-block">
       <div class="project-cover-wrap" title="클릭하면 재생 + 곡 소개">
         <img src="https://images.unsplash.com/photo-1565299507177-b0ac66763828?auto=format&fit=crop&q=80&w=500" alt="보쌈">
+        <span class="project-release-chip">발매 · 2026.06.04</span>
         <div class="project-master-badge">발매</div>
         <div class="project-play-overlay">▶</div>
       </div>
       <h3 class="project-title">「보쌈」</h3>
       <p class="project-artist">쿠츠</p>
-      <span class="project-master-date">발매 · 2026.06.04</span>
+      <!-- 발매일 칩을 사진 좌상단으로 옮김 — 카드 하단의 검정 띠는 제거 -->
     </div>
 
     <div class="modal-preview">
