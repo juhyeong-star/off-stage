@@ -9679,12 +9679,6 @@ function renderArtistProfile(artistName) {
             <i class="ri-settings-3-line"></i>
           </button>
         ` : ''}
-        <div class="reveal" style="margin-bottom:14px;">
-          <a href="#" onclick="event.preventDefault(); navigateTo('wall')" style="color:var(--text-secondary); font-size:13px;">
-            <i class="ri-arrow-left-line"></i> 우리들의 벽으로
-          </a>
-        </div>
-
         <div class="artist-header-row reveal">
           <div class="artist-strip">
             <div class="artist-id">
