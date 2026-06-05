@@ -8410,8 +8410,7 @@ function renderProjectBox(pid, versions) {
       </div>
       ${editCoverBtn}
     </div>
-  `;})()
-  `);
+  `;})());
 
   // 응원하기 — cheers the master (or primary) track. Hidden on your own work.
   const cheerTarget = final || primary;
