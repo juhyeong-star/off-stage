@@ -15439,23 +15439,25 @@ body:has(#global-player.expanded) .global-back-btn {
     border: none !important;
     background: transparent !important;
   }
-  /* The album card inside project-header — single bordered card that
-     contains cover image + title + release date. The cover image inside
-     drops its own border so only the OUTER card border is visible. */
+  /* The album card inside project-header — flex row 로 변경 (cover+meta 한 덩어리 +
+     곡소개 포스트잇이 옆에 나란히, 사용자 요청).
+     기존의 white bordered card 룩은 제거 — release-card-block 이 cover+meta 를 묶음. */
   .artist-canvas .projects-grid .project-header .project-album-card {
     max-width: 100% !important;
     width: 100% !important;
     height: auto !important;
-    padding: 10px 10px 14px !important;
+    padding: 10px !important;
     background: #fff !important;
     border: 1.5px solid #111 !important;
     border-radius: 8px !important;
     box-shadow: 5px 5px 0 #111 !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     color: #111 !important;
     display: flex !important;
-    flex-direction: column !important;
-    gap: 8px !important;
+    flex-direction: row !important;          /* ⭐️ column → row (사용자 요청) */
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    gap: 18px !important;
   }
   /* Cover inside the album card: no extra border (outer card handles it),
      trim shadow so it doesn't stack with the outer one. */
