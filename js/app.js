@@ -8505,13 +8505,13 @@ function renderProjectBox(pid, versions) {
              ${cmCountHint}
            </div>`
         : '';
-      // 인라인 한 줄 입력칸 — Enter 또는 작은 send 버튼으로 전송.
-      // onkeydown 사용 (모바일 IME Enter 호환), isComposing 체크 (한글 조합 중 무시).
+      // 인라인 한 줄 입력칸 — Enter 만으로 전송 (보내기 버튼 없음, 우리들의 벽 방식).
+      // onkeydown + isComposing — 모바일 IME Enter 호환, 한글 조합 중 무시.
+      // CSS 에서 .demo-card.is-selected 일 때만 보이게 — 평소엔 숨김.
       const mInputHtml = canComment ? `
         <div class="demo-card-cm-input" onclick="event.stopPropagation();">
           <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="댓글…"
                  onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); submitTrackComment('${v.id}'); }">
-          <button class="demo-card-cm-send" onclick="event.stopPropagation(); submitTrackComment('${v.id}')" aria-label="남기기"><i class="ri-arrow-right-line"></i></button>
         </div>` : '';
       const demoLiked = isTrackLiked(v.id);
       return `
