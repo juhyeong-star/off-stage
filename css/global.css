@@ -15521,19 +15521,19 @@ body:has(#global-player.expanded) .global-back-btn {
     line-height: 1.4 !important;
     font-weight: 700 !important;
   }
-  /* 댓글 — 작게 (사용자 요청) */
+  /* 댓글 — 사용자 요청 "2개씩 키워줘" (11→13, 10→12, 13→15) */
   .artist-canvas .projects-grid .demo-path > .demo-card .demo-card-cm-line {
-    font-size: 11px !important;
-    line-height: 1.35 !important;
+    font-size: 13px !important;
+    line-height: 1.4 !important;
   }
   .artist-canvas .projects-grid .demo-path > .demo-card .demo-card-cm-text {
-    font-size: 11px !important;
+    font-size: 13px !important;
   }
   .artist-canvas .projects-grid .demo-path > .demo-card .demo-card-cm-author {
-    font-size: 10px !important;
+    font-size: 12px !important;
   }
   .artist-canvas .projects-grid .demo-path > .demo-card .demo-card-cm-input-field {
-    font-size: 13px !important;
+    font-size: 15px !important;
   }
   /* Hide the snake-flow ↗↘ arrows between demos in filmstrip mode */
   .artist-canvas .projects-grid .demo-path > .demo-card::after,
