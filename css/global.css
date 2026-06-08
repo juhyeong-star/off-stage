@@ -1726,22 +1726,29 @@ body:has(#shape-shorts-overlay) .deco-shape {
   border-radius: 8px;
 }
 
-/* Postits on the artist page aside: horizontal scroller (포스트잇 옆으로 쭉쭉) */
+/* Postits on the artist page aside: 작은 핀 노트 가로 스크롤 (사용자 요청 — 음악이
+   더 잘 보이게). 스크롤바는 평소엔 숨김, 사용 중(hover/native overlay) 만 보임. */
 .artist-postit-grid-aside {
   display: flex !important;
   flex-direction: row;
   gap: 10px;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 4px 4px 10px;
+  padding: 14px 4px 10px;          /* 위 패딩 ↑ — 압정 머리가 잘리지 않게 */
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
+  scrollbar-width: none;            /* Firefox — 평소엔 숨김 */
 }
-.artist-postit-grid-aside::-webkit-scrollbar { height: 8px; }
-.artist-postit-grid-aside::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.25); border-radius: 4px;
+/* WebKit — 평소엔 숨김 */
+.artist-postit-grid-aside::-webkit-scrollbar { height: 0; background: transparent; }
+.artist-postit-grid-aside::-webkit-scrollbar-thumb { background: transparent; }
+/* hover (PC) 시 얇게 등장 */
+.artist-postit-grid-aside:hover { scrollbar-width: thin; }
+.artist-postit-grid-aside:hover::-webkit-scrollbar { height: 5px; }
+.artist-postit-grid-aside:hover::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.25); border-radius: 3px;
 }
+/* 모바일 — :hover 안 먹지만 iOS native overlay 가 scroll 중 보임 */
 /* 아티스트 페이지 — 팔로워/팔로잉 카운트 칩 */
 .artist-follow-chips {
   display: flex; gap: 8px; flex-wrap: wrap;
@@ -2120,11 +2127,57 @@ body:has(#shape-shorts-overlay) .deco-shape {
 }
 .artist-postit-add-card::before,
 .artist-postit-add-card::after { display: none !important; }
+/* 사용자 요청 — 작고 핀(압정) 달린 노트로 축소. 음악 영역에 더 포커스. */
 .artist-postit-grid-aside .artist-postit {
-  flex: 0 0 200px;
-  min-height: 130px;
+  flex: 0 0 110px !important;       /* 200 → 110 */
+  width: 110px !important;
+  min-height: 0 !important;
+  height: 120px !important;
+  padding: 14px 10px 8px !important; /* 위에 압정 자리 살짝 */
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  font-weight: 700 !important;
   scroll-snap-align: start;
+  overflow: hidden !important;
+  position: relative;
 }
+.artist-postit-grid-aside .artist-postit-body {
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 압정 — 카드 위 가운데 살짝 떠올라 보이게 */
+.artist-postit-grid-aside .artist-postit::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #FF8585 0%, #C42626 70%, #7A0F0F 100%);
+  box-shadow: 0 2px 3px rgba(0,0,0,0.5);
+  z-index: 3;
+  pointer-events: none;
+}
+/* 노트 색 바꿔서 압정 색도 다양하게 */
+.artist-postit-grid-aside .artist-postit:nth-child(3n)::before {
+  background: radial-gradient(circle at 35% 35%, #85B7FF 0%, #2649C4 70%, #0F1F7A 100%);
+}
+.artist-postit-grid-aside .artist-postit:nth-child(4n)::before {
+  background: radial-gradient(circle at 35% 35%, #B6FF85 0%, #2EC424 70%, #0F7A18 100%);
+}
+.artist-postit-grid-aside .artist-postit:nth-child(5n)::before {
+  background: radial-gradient(circle at 35% 35%, #FFD085 0%, #D69B38 70%, #8B651F 100%);
+}
+/* add card 는 압정 없음 */
+.artist-postit-grid-aside .artist-postit.artist-postit-add-card::before { display: none; }
+/* 내부 댓글 입력칸은 작은 노트에선 숨김 */
+.artist-postit-grid-aside .artist-postit .note-inline-form { display: none !important; }
 
 /* ── New artist page (/artist:<name>) — simple portfolio layout ──── */
 .artist-page-v2 {
