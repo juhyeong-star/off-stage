@@ -11916,6 +11916,53 @@ window.playTrack = function (trackId, source) {
   document.getElementById('player-title').innerText = track.title;
   document.getElementById('player-artist').innerText = track.artist;
 
+  // MediaSession API — iOS 락스크린/컨트롤센터 위젯 + 미디어 볼륨 라우팅.
+  // 이게 있어야 iOS 컨트롤센터 볼륨 슬라이더가 "벨소리" 가 아니라 "미디어" 로 인식됨.
+  try {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: track.title || '제목 없음',
+        artist: track.artist || '',
+        album: 'Off-Stage',
+        artwork: track.cover ? [
+          { src: track.cover, sizes: '96x96',   type: 'image/png' },
+          { src: track.cover, sizes: '192x192', type: 'image/png' },
+          { src: track.cover, sizes: '512x512', type: 'image/png' }
+        ] : []
+      });
+      navigator.mediaSession.playbackState = 'playing';
+      // 액션 핸들러 — 락스크린/AirPods/자동차 컨트롤에서 호출됨
+      try { navigator.mediaSession.setActionHandler('play', () => { try { audioElement.play(); } catch(_){} }); } catch(_){}
+      try { navigator.mediaSession.setActionHandler('pause', () => { try { audioElement.pause(); } catch(_){} }); } catch(_){}
+      try { navigator.mediaSession.setActionHandler('previoustrack', () => {
+        const q = window.__playQueue;
+        if (q && Array.isArray(q.tracks) && q.idx > 0) {
+          const prevId = q.tracks[q.idx - 1];
+          window.__playTrackFromQueue = true;
+          try { window.playTrack(prevId, q.source); } finally { window.__playTrackFromQueue = false; }
+        }
+      }); } catch(_){}
+      try { navigator.mediaSession.setActionHandler('nexttrack', () => {
+        const q = window.__playQueue;
+        if (q && Array.isArray(q.tracks) && q.idx < q.tracks.length - 1) {
+          const nextId = q.tracks[q.idx + 1];
+          window.__playTrackFromQueue = true;
+          try { window.playTrack(nextId, q.source); } finally { window.__playTrackFromQueue = false; }
+        }
+      }); } catch(_){}
+      // 진행도 동기화 (Chromium 만 — iOS Safari 도 점차 지원 중)
+      try {
+        if ('setPositionState' in navigator.mediaSession && audioElement.duration && !isNaN(audioElement.duration)) {
+          navigator.mediaSession.setPositionState({
+            duration: audioElement.duration,
+            playbackRate: audioElement.playbackRate || 1,
+            position: audioElement.currentTime || 0
+          });
+        }
+      } catch(_) {}
+    }
+  } catch (e) { console.warn('[mediaSession]', e); }
+
   const icon = playBtn.querySelector('i');
   icon.className = 'ri-pause-circle-fill';
 
@@ -11943,9 +11990,11 @@ function togglePlay() {
   if (audioElement.paused) {
     audioElement.play();
     icon.className = 'ri-pause-circle-fill';
+    try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'; } catch(_){}
   } else {
     audioElement.pause();
     icon.className = 'ri-play-circle-fill';
+    try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'; } catch(_){}
   }
   if (typeof window.syncNoteTrackThumbIcons === 'function') window.syncNoteTrackThumbIcons();
 }

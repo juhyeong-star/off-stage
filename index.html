@@ -39,7 +39,7 @@
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=609">
+  <link rel="stylesheet" href="css/global.css?v=610">
 </head>
 <body>
 
@@ -174,7 +174,7 @@
       <input class="vol-slider" id="vol-slider" type="range" min="0" max="100" step="1" value="60" aria-label="볼륨">
       <span class="vol-percent" id="vol-percent">60%</span>
     </div>
-    <audio id="audio-element" style="display:none;"></audio>
+    <audio id="audio-element" playsinline preload="metadata" style="display:none;"></audio>
   </div>
 
   <!-- 가운데 볼륨 토스트 — 키보드 단축키 (↑/↓/M) 누를 때 1.5초 등장 -->
@@ -190,12 +190,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=609"></script>
-  <script defer src="js/data.js?v=609"></script>
-  <script defer src="js/supabase.js?v=609"></script>
-  <script defer src="js/analytics.js?v=609"></script>
-  <script defer src="js/distribute.js?v=609"></script>
-  <script defer src="js/app.js?v=609"></script>
-  <script defer src="js/polaroid.js?v=609"></script>
+  <script defer src="js/supabase-init.js?v=610"></script>
+  <script defer src="js/data.js?v=610"></script>
+  <script defer src="js/supabase.js?v=610"></script>
+  <script defer src="js/analytics.js?v=610"></script>
+  <script defer src="js/distribute.js?v=610"></script>
+  <script defer src="js/app.js?v=610"></script>
+  <script defer src="js/polaroid.js?v=610"></script>
 </body>
 </html>
