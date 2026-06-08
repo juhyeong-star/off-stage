@@ -11835,9 +11835,8 @@ function _buildPlayQueue(currentTrackId, source) {
   const db = window.DB.get();
   let ids = [];
   if (source === 'universe') {
-    // 사용자 요청: "전체를 트는게 아니고 폴더 안에서 틀어야".
-    // 트랙이 속한 폴더(playlist) 를 찾아서 그 폴더의 트랙들만 큐로.
-    // 폴더에 안 속해 있으면 단일 트랙만 (autoplay X).
+    // 사용자 요청: 폴더 안 트랙은 그 폴더 안에서만 / 폴더 외부 트랙은 외부끼리 자동재생.
+    // 트랙이 어느 폴더에도 안 속하면 "loose 트랙" → 모든 loose 트랙끼리 큐.
     const playlists = (Array.isArray(window.__playlists) && window.__playlists.length)
       ? window.__playlists
       : (db.playlists || []);
@@ -11849,9 +11848,28 @@ function _buildPlayQueue(currentTrackId, source) {
       }
     }
     if (homeFolder && Array.isArray(homeFolder.trackIds)) {
+      // 폴더 안 트랙 → 그 폴더만
       ids = homeFolder.trackIds.slice();
     } else {
-      ids = [currentTrackId];   // 폴더 안 속함 → 단일 곡 (자동재생 X)
+      // 폴더 외부 (loose) 트랙 → 어느 폴더에도 안 속한 모든 모은-곡 끼리
+      const allCollected = new Set();
+      if (db.currentUser && Array.isArray(db.currentUser.likedTracks)) {
+        db.currentUser.likedTracks.forEach(id => allCollected.add(id));
+      }
+      if (window.__favoritedTracks && window.__favoritedTracks.forEach) {
+        window.__favoritedTracks.forEach(id => allCollected.add(id));
+      }
+      if (window.CollectedTracks && window.CollectedTracks.all) {
+        window.CollectedTracks.all().forEach(id => allCollected.add(id));
+      }
+      // 어느 폴더에도 속하지 않은 트랙만 추출
+      const inAnyFolder = new Set();
+      playlists.forEach(pl => {
+        if (pl && Array.isArray(pl.trackIds)) pl.trackIds.forEach(id => inAnyFolder.add(id));
+      });
+      ids = Array.from(allCollected).filter(id => !inAnyFolder.has(id)).sort();
+      // 클릭한 트랙이 빠져있으면 (방어) 추가
+      if (!ids.includes(currentTrackId)) ids.unshift(currentTrackId);
     }
   } else if (source === 'shorts') {
     // 폴더 쇼츠 — 현재 쇼츠 컨텍스트의 트랙들 (note 제외, 순서 유지)
