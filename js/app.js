@@ -5198,11 +5198,20 @@ function renderShapes() {
       // 나중에 트래픽 늘면 master + pinned 만 노출하도록 다시 조이면 됨.
       return true;
     })
-    // Sort by id so the grid placement (col/row) is identical on every reload —
-    // otherwise Supabase fetch order shuffles items into different cells even
-    // though the seeded jitter is stable.
+    // 정렬 — createdAt 오름차순 (오래된 곡 먼저).
+    // 사용자 요청: 신곡이 진짜 랜덤 자리에 떨어지면 발견성↓ + 기존 도형이 밀려서 산만함.
+    // ASC 정렬을 쓰면:
+    //   · 기존 트랙들의 si(인덱스)가 변하지 않음 → 자기 자리 그대로
+    //   · 신곡은 항상 배열 끝 → 마지막 si → grid 의 다음 빈 자리(위에서부터 차곡차곡)
+    //   · 사용자가 드래그한 도형은 _loadShapePos(stored) 가 우선이라 어디든 그대로 고정.
+    // tie-breaker: createdAt 같으면 id 로 (같은 시점 업로드 안정성).
     .slice()
-    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    .sort((a, b) => {
+      const ta = new Date(a.createdAt || 0).getTime() || 0;
+      const tb = new Date(b.createdAt || 0).getTime() || 0;
+      if (ta !== tb) return ta - tb;
+      return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+    });
 
   // Starfield background — replaces the old "조잡한" floating shapes with
   // a real twinkling night sky. Positions are seeded so the sky is the same
