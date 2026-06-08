@@ -80,6 +80,9 @@ window.audioElement = audioElement;
       localStorage.setItem(STORAGE_VOL, String(volume));
       localStorage.setItem(STORAGE_MUTED, muted ? '1' : '0');
     } catch (_) {}
+
+    // 모바일 팝업 UI 도 갱신 (열려있을 때)
+    try { if (typeof syncPopupUI === 'function') syncPopupUI(); } catch (_) {}
   }
 
   // ─── 슬라이더 드래그 ───
@@ -92,12 +95,106 @@ window.audioElement = audioElement;
   }
 
   // ─── 음소거 버튼 ───
-  if (muteBtn) {
-    muteBtn.addEventListener('click', (e) => {
+  // PC: 단순 음소거 토글
+  // Mobile (≤768): 팝업 슬라이더 열기 (iOS 안내 포함)
+  const _isMobileVol = () => window.innerWidth <= 768;
+  const _isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent)
+                 || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  // 볼륨 팝업 DOM — body 끝에 한 번만 생성
+  let volPopup = null;
+  function ensureVolPopup() {
+    if (volPopup) return volPopup;
+    volPopup = document.createElement('div');
+    volPopup.id = 'vol-popup';
+    volPopup.innerHTML = `
+      <div class="vol-popup-row">
+        <button type="button" class="vol-popup-mute" aria-label="음소거 토글">
+          <i class="ri-volume-up-fill"></i>
+        </button>
+        <input type="range" class="vol-popup-slider" min="0" max="100" step="1" value="60" aria-label="볼륨">
+        <span class="vol-popup-pct">60%</span>
+      </div>
+      <div class="vol-popup-hint">
+        ${_isIOS()
+          ? '📱 iOS는 폰 측면 <span class="key">+ / −</span> 키로 조절돼요'
+          : '🔊 폰 측면 <span class="key">+ / −</span> 키로도 조절 가능'}
+      </div>
+    `;
+    document.body.appendChild(volPopup);
+
+    // 팝업 안 슬라이더 / 음소거 핸들러
+    const pSlider = volPopup.querySelector('.vol-popup-slider');
+    const pMute   = volPopup.querySelector('.vol-popup-mute');
+    pSlider.addEventListener('input', () => {
+      volume = parseInt(pSlider.value, 10) || 0;
+      if (volume > 0 && muted) muted = false;
+      apply(false);
+      syncPopupUI();
+    });
+    pMute.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       muted = !muted;
       apply(true);
+      syncPopupUI();
+    });
+
+    // 외부 탭 시 닫기
+    document.addEventListener('click', (ev) => {
+      if (!volPopup.classList.contains('open')) return;
+      if (volPopup.contains(ev.target)) return;
+      if (muteBtn && (ev.target === muteBtn || muteBtn.contains(ev.target))) return;
+      closeVolPopup();
+    });
+
+    return volPopup;
+  }
+  function syncPopupUI() {
+    if (!volPopup) return;
+    const pSlider = volPopup.querySelector('.vol-popup-slider');
+    const pMute   = volPopup.querySelector('.vol-popup-mute');
+    const pPct    = volPopup.querySelector('.vol-popup-pct');
+    if (pSlider) pSlider.value = volume;
+    if (pPct)    pPct.textContent = (muted ? 0 : volume) + '%';
+    if (pMute) {
+      pMute.classList.toggle('muted', muted);
+      const i = pMute.querySelector('i');
+      if (i) i.className = iconClass(volume, muted);
+    }
+  }
+  function openVolPopup() {
+    const p = ensureVolPopup();
+    syncPopupUI();
+    // 음소거 버튼 위치 위에 위치시킴 (우측 끝)
+    if (muteBtn) {
+      const rect = muteBtn.getBoundingClientRect();
+      p.style.bottom = `${Math.max(8, window.innerHeight - rect.top + 10)}px`;
+      p.style.right = `${Math.max(8, window.innerWidth - rect.right + 0)}px`;
+      p.style.left = 'auto';
+    }
+    p.classList.add('open');
+  }
+  function closeVolPopup() {
+    if (volPopup) volPopup.classList.remove('open');
+  }
+
+  if (muteBtn) {
+    muteBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (_isMobileVol()) {
+        // 모바일: 팝업 토글 (이미 열려있으면 닫기)
+        if (volPopup && volPopup.classList.contains('open')) {
+          closeVolPopup();
+        } else {
+          openVolPopup();
+        }
+      } else {
+        // PC: 단순 음소거 토글
+        muted = !muted;
+        apply(true);
+      }
     });
   }
 
