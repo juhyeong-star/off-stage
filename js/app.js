@@ -851,6 +851,10 @@ async function init() {
           window.__playTrackFromQueue = true;
           try { window.playTrack(nextId, q.source); }
           finally { window.__playTrackFromQueue = false; }
+          // shorts 모드면 카드 UI 도 다음 카드로 자동 advance (시각 동기화)
+          if (q.source === 'shorts' && typeof _shortsGo === 'function' && document.getElementById('shorts-stage')) {
+            try { _shortsGo('next'); } catch (_) {}
+          }
         }, 400);
       }
     }
@@ -11843,6 +11847,12 @@ function _buildPlayQueue(currentTrackId, source) {
       window.CollectedTracks.all().forEach(id => liked.add(id));
     }
     ids = Array.from(liked).sort();
+  } else if (source === 'shorts') {
+    // 폴더 쇼츠 — 현재 쇼츠 컨텍스트의 트랙들 (note 제외, 순서 유지)
+    const st = window.__shorts;
+    if (st && Array.isArray(st.items)) {
+      ids = st.items.filter(it => it && it.kind === 'track').map(it => it.id);
+    }
   } else if (source === 'shape' || source === 'shapes' || source === 'shapeshorts') {
     // 도형 / 쇼츠 — 도형 페이지에 보이는 모든 곡 (정렬 동일하게 id 순)
     const st = window.__shapeShorts;
@@ -11879,7 +11889,8 @@ window.playTrack = function (trackId, source) {
     // 단, 'wall' (우리들의 벽 노트의 ▶/⏸ 썸네일 버튼) 은 명시적 토글 버튼이라 제외.
     // togglePlay 는 명시적 play/pause 버튼 (wall 썸네일, 헤더) 에서만 작동.
     const isCardLikeSource = source === 'demo' || source === 'shape' || source === 'shapes'
-                          || source === 'universe' || source === 'shapeshorts';
+                          || source === 'universe' || source === 'shapeshorts'
+                          || source === 'shorts';
     if (isCardLikeSource) {
       // 일시정지 상태였으면 다시 재생 (안 꺼지게)
       if (audioElement.paused) {
