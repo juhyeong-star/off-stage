@@ -9408,7 +9408,9 @@ window._refreshTrackCommentUI = function (trackId) {
     ).forEach(l => { l.innerHTML = linesHtml + hintHtml; });
   } catch (_) {}
 
-  // 2) 우리들의 벽 모달 (openDemoWallModal)
+  // 2) 우리들의 벽 모달 (openDemoWallModal) — 인플레이스 갱신.
+  //    실패하면 fallback: 모달 통째로 재오픈 (input focus 잃지만 데이터는 최신).
+  let wallUpdated = false;
   try {
     const wallModal = document.getElementById('demo-wall-modal');
     if (wallModal) {
@@ -9422,11 +9424,16 @@ window._refreshTrackCommentUI = function (trackId) {
           return `<div class="dwm-cm-line"><span class="dwm-cm-arrow">ㄴ</span><span class="dwm-cm-text">${ct}</span><span class="dwm-cm-auth">— ${ca}</span>${dBtn}</div>`;
         }).join('');
         wallList.scrollTop = wallList.scrollHeight;
+        wallUpdated = true;
       }
       const cnt = wallModal.querySelector('.dwm-cm-count');
       if (cnt) cnt.textContent = allCms.length;
     }
-  } catch (_) {}
+  } catch (e) { console.warn('[_refreshTrackCommentUI] wallModal', e); }
+  // Fallback — wall 모달 있는데 list 가 안 찾혔으면 모달 통째로 재오픈
+  if (!wallUpdated && document.getElementById('demo-wall-modal') && typeof window.openDemoWallModal === 'function') {
+    try { window.openDemoWallModal(trackId); } catch (_) {}
+  }
 
   // 3) 트랙 댓글 모달 (openTrackCommentsModal) — 마스터/모바일 카드에서 사용
   try {
