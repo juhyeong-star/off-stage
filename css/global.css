@@ -14819,13 +14819,13 @@ body.polaroid-sheet-open { overflow: hidden; }
   margin-top: 2px;
 }
 
-/* ── 데모 카드 내부 입력 ── */
+/* ── 데모 카드 내부 입력 ── 사용자 요청: 위 점선 구분 제거 */
 .artist-canvas .demo-card-cm-input {
   display: flex;
   gap: 6px;
   align-items: center;
   padding-top: 6px;
-  border-top: 1.5px dashed rgba(17,17,17,0.18);
+  border-top: none !important;          /* 점선 제거 */
   margin-top: auto;
 }
 .artist-canvas .demo-card-cm-input-field {

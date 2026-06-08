@@ -8472,7 +8472,7 @@ function renderProjectBox(pid, versions) {
     // 댓글 0개일 때 placeholder — 항상 보이게 (사용자 요청)
     const pcCmEmptyHtml = cmList.length === 0
       ? `<div class="demo-card-cm-empty-hint">아직 댓글이 없어요</div>` : '';
-    const pcCmHintHtml = cmList.length > 2
+    const pcCmHintHtml = cmList.length > 1
       ? `<div class="demo-card-cm-hint-tap">댓글 ${cmList.length}개 · 탭해서 모두 보기</div>` : '';
 
     // 로그인한 누구나 인라인 입력 — Enter 만 (사용자 요청: send 버튼 제거)
@@ -8795,8 +8795,8 @@ function renderProjectBox(pid, versions) {
              </div>`
           : '';
       const cmList = v.trackComments || [];
-      // 작은 카드 — 마지막 2개만 미리보기 (모달에서 다 봄).
-      const cmVisible = cmList.slice(-2);
+      // 작은 카드 — 마지막 1개만 미리보기 (모달에서 다 봄, 사용자 요청).
+      const cmVisible = cmList.slice(-1);
       const _myIdM = (window.__currentUser && window.__currentUser.id) || null;
       const _myNameM = (window.__currentUser && window.__currentUser.name) || '';
       const cmLinesHtml = cmVisible.map(cm => {
@@ -8809,7 +8809,7 @@ function renderProjectBox(pid, versions) {
       }).join('');
       // 댓글 영역 — 탭하면 우리들의 벽 모달.
       const mCmHtml = cmList.length > 0
-        ? `<div class="demo-card-cm-list" onclick="event.stopPropagation(); openDemoWallModal('${v.id}')" title="댓글 모두 보기">${cmLinesHtml}${cmList.length > 2 ? `<div class="demo-card-cm-hint-tap"><i class="ri-chat-3-line"></i> 댓글 ${cmList.length}개 · 탭해서 모두 보기</div>` : ''}</div>`
+        ? `<div class="demo-card-cm-list" onclick="event.stopPropagation(); openDemoWallModal('${v.id}')" title="댓글 모두 보기">${cmLinesHtml}${cmList.length > 1 ? `<div class="demo-card-cm-hint-tap"><i class="ri-chat-3-line"></i> 댓글 ${cmList.length}개 · 탭해서 모두 보기</div>` : ''}</div>`
         : `<div class="demo-card-cm-list demo-card-cm-empty" onclick="event.stopPropagation(); openDemoWallModal('${v.id}')" title="댓글 보기"><div class="demo-card-cm-hint-tap"><i class="ri-chat-3-line"></i> 첫 댓글 남기기</div></div>`;
       // 입력칸 — 클릭(is-selected) 했을 때만 보임. 줄 스타일 (no box).
       const mInputHtml = canComment ? `
@@ -9393,16 +9393,16 @@ window._refreshTrackCommentUI = function (trackId) {
   const isMineFn = (cm) => (myId && cm.authorId && cm.authorId === myId)
                        || (!cm.authorId && myName && cm.author === myName);
 
-  // 1) 인라인 카드 (데모/마스터)
+  // 1) 인라인 카드 (데모/마스터) — 마지막 1개만 (사용자 요청)
   try {
-    const INLINE = 2;
+    const INLINE = 1;
     const visible = allCms.slice(-INLINE);
     const linesHtml = visible.map(cm => {
       const t = esc(cm.text || '');
       const a = esc(cm.author || '익명');
       return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${t}</span><span class="demo-card-cm-author">— ${a}</span></div>`;
     }).join('');
-    const hintHtml = allCms.length > 2
+    const hintHtml = allCms.length > 1
       ? `<div class="demo-card-cm-hint-tap">댓글 ${allCms.length}개 · 탭해서 모두 보기</div>` : '';
     document.querySelectorAll(
       `.demo-card[data-track-id="${trackId}"] .demo-card-cm-list, .project-master-mobile[data-track-id="${trackId}"] .demo-card-cm-list`
