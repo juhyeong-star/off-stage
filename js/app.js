@@ -33,46 +33,13 @@ window.audioElement = audioElement;
   // 외부에서 호출 가능하게 노출 (선택)
   window.__volume = { get: () => volume, getMuted: () => muted };
 
-  // ─── Web Audio API GainNode — iOS audio.volume read-only 우회 (재시도) ───
-  // 핵심: 첫 user gesture 시 ctx 즉시 resume + source 생성. 매번 play 시 resume 보강.
-  let _webAudio = null;
-  function ensureWebAudio() {
-    if (_webAudio) {
-      if (_webAudio.ctx.state === 'suspended') {
-        try { _webAudio.ctx.resume(); } catch (_) {}
-      }
-      return _webAudio;
-    }
-    try {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return null;
-      const ctx = new AC();
-      // 1) gesture 컨텍스트에서 즉시 resume (await 안 함 — Promise 무시 OK)
-      try { ctx.resume(); } catch (_) {}
-      // 2) source 생성 — 한 번만 가능 (audio element 당)
-      const src  = ctx.createMediaElementSource(audioElement);
-      const gain = ctx.createGain();
-      gain.gain.value = (muted ? 0 : volume) / 100;
-      src.connect(gain);
-      gain.connect(ctx.destination);
-      _webAudio = { ctx, src, gain };
-      window.__audioGraph = _webAudio;
-      return _webAudio;
-    } catch (e) {
-      console.warn('[webAudio] setup failed:', e && e.message);
-      return null;
-    }
-  }
-  // 첫 user gesture (click/touch/keydown) 시 한 번 setup
-  ['click', 'touchstart', 'keydown'].forEach(ev => {
-    document.addEventListener(ev, () => ensureWebAudio(), { once: true, capture: true });
-  });
-  // audio play 마다 context resume 보강 — iOS 가 종종 다시 suspend 시킴
-  audioElement.addEventListener('play', () => {
-    if (_webAudio && _webAudio.ctx.state === 'suspended') {
-      try { _webAudio.ctx.resume(); } catch (_) {}
-    }
-  });
+  // ⚠ Web Audio API GainNode 우회 — 두 번 시도했지만 iOS Safari 에서 매번
+  //    오디오 라우팅 깨짐 (소리 안 남). createMediaElementSource 가 audio
+  //    element 의 직접 출력을 빼앗고 graph 가 안정적이지 못함.
+  //    → iOS 에서는 인앱 슬라이더가 시각 전용. 실제 볼륨은:
+  //       · 폰 측면 +/- 버튼
+  //       · 컨트롤센터 슬라이더 (MediaSession 으로 미디어 볼륨 라우팅됨)
+  //    Spotify Web / YouTube Music Web 도 동일한 한계.
 
   // ─── DOM 요소 (defer 로 로드돼서 안전) ───
   const slider   = document.getElementById('vol-slider');
@@ -91,13 +58,8 @@ window.audioElement = audioElement;
 
   let toastTimer = null;
   function apply(showToast) {
-    const v01 = (muted ? 0 : volume) / 100;
-    audioElement.volume = v01;          // PC / Android 작동
-    audioElement.muted = muted;         // iOS 도 작동 (단순 음소거)
-    // iOS 우회 — Web Audio GainNode (graph 가 활성화된 경우)
-    if (_webAudio && _webAudio.gain) {
-      try { _webAudio.gain.gain.value = v01; } catch (_) {}
-    }
+    audioElement.volume = (muted ? 0 : volume) / 100;
+    audioElement.muted = muted;
 
     if (slider)  slider.value = volume;
     if (pctLbl)  pctLbl.textContent = (muted ? 0 : volume) + '%';
