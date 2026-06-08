@@ -8707,12 +8707,13 @@ function renderProjectBox(pid, versions) {
       const demoLiked = isTrackLiked(v.id);
       // 카드 탭 = 선택 (is-selected) + 재생. 댓글 영역 탭 = 모달 (cm-list 의 onclick).
       // 인라인 input 은 stopPropagation 으로 카드 onclick 안 타게.
-      // 모바일 — 작은 정사각 포스트잇. 본문은 2줄까지 + 클릭하면 모달.
-      // 댓글/입력칸은 카드 밖 (모달) 로 옮김 — 작은 카드에 다 들어가면 답답해서.
+      // 모바일 — 작은 정사각 포스트잇. 본문은 5줄까지 + 클릭하면 모달.
+      // grid-row/column 은 CSS 변수로 (--gr/--gc) — 기존 .demo-card 의
+      // `grid-row: auto !important` override 를 우회.
       return `
         <div class="demo-card demo-postit-sq is-demo ${v.pinned ? 'is-pinned' : ''}"
              data-track-id="${v.id}" data-project="${pid}"
-             style="grid-row:${pos.row}; grid-column:${pos.col};"
+             style="--gr:${pos.row}; --gc:${pos.col};"
              onclick="selectProjectVersion('${pid}','${v.id}'); playTrack('${v.id}', 'demo'); openDemoWallModal('${v.id}');">
           <div class="demo-postit-tag">DEMO ${i+1}</div>
           ${mNoteHtml || `<div class="demo-postit-body-empty">탭해서 듣기</div>`}
@@ -8727,6 +8728,7 @@ function renderProjectBox(pid, versions) {
 
     // 빈 슬롯 — 본인 페이지에서만. Demo 1-4 중 안 올라온 슬롯에 점선 + 큰 + 표시.
     // 클릭 시 그 데모 번호로 업로드 페이지 진입.
+    // grid-row/column 은 CSS 변수 (--gr/--gc) 로 — 기존 !important override 회피.
     const emptySlotsHtml = canEditArtist ? (() => {
       let html = '';
       const filledCount = demos.length;
@@ -8736,7 +8738,7 @@ function renderProjectBox(pid, versions) {
         const nextDemoNum = i + 1;
         html += `
           <div class="demo-card demo-postit-sq is-empty"
-               style="grid-row:${pos.row}; grid-column:${pos.col};"
+               style="--gr:${pos.row}; --gc:${pos.col};"
                onclick="quickUploadDemoToProject('${pid}')"
                title="DEMO ${nextDemoNum} 업로드">
             <i class="ri-add-line demo-postit-plus"></i>
@@ -8752,7 +8754,7 @@ function renderProjectBox(pid, versions) {
     const masterChipDate = (final && masterDate) ? `발매 · ${masterDate}` : '';
     const masterMobileHtml = `
       <div class="master-postit-sq ${final ? 'has-cover' : 'no-cover'} ${final && finalHasCover ? '' : 'no-img'}"
-           style="grid-row:1; grid-column:1;"
+           style="--gr:1; --gc:1;"
            ${final ? `onclick="event.stopPropagation(); playTrack('${final.id}'); openSongInfoModal('${final.id}');"` : ''}
            ${final ? `title="탭하면 곡 소개 + 재생"` : ''}>
         ${final && finalHasCover ? `<img src="${finalMobileCover}" alt="${safeTitle}" loading="lazy">` : ''}

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>모바일 우리들의 벽 — 핀/클립 디자인 옵션</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    background: #0a0a0c;
+    color: #e9e9ec;
+    margin: 0;
+    padding: 24px 0 60px;
+    font-family: 'Inter', 'Pretendard', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  h1.title { text-align: center; margin: 0 0 6px; font-size: 18px; font-weight: 800; }
+  .sub { text-align: center; color: rgba(255,255,255,0.55); font-size: 12px; margin: 0 0 28px; padding: 0 24px; }
+  .scenes {
+    display: flex;
+    gap: 22px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 0 18px;
+    align-items: flex-start;
+  }
+  .scene {
+    flex: 0 0 320px;
+    max-width: 100%;
+    padding: 18px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .scene h2 {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 800;
+    color: #FFE500;
+    margin: 0 0 16px;
+    letter-spacing: 0.4px;
+  }
+  .scene .desc {
+    text-align: center;
+    color: rgba(255,255,255,0.5);
+    font-size: 11px;
+    margin: -10px 0 16px;
+    line-height: 1.5;
+  }
+
+  /* ========================================================
+     CURRENT (BEFORE) — 큰 노란 포스트잇 그리드
+     ======================================================== */
+  .scene-current { background: rgba(255,255,255,0.03); }
+  .current-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .current-note {
+    background: #FFE066;
+    border-radius: 4px;
+    padding: 16px 16px 18px;
+    aspect-ratio: 1 / 1;
+    box-shadow: 4px 4px 14px rgba(0,0,0,0.45);
+    position: relative;
+    color: #111;
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+  .current-note .author {
+    position: absolute;
+    bottom: 8px; right: 12px;
+    font-size: 11px;
+    color: #666;
+    font-weight: 600;
+  }
+
+  /* ========================================================
+     OPTION A — Pin board (코르크보드 스타일)
+     작은 노트 + 위에 압정 (push-pin)
+     ======================================================== */
+  .scene-a {
+    background:
+      linear-gradient(135deg, #8B5A2B 0%, #6B4423 100%);
+  }
+  .pinboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 14px;
+    padding: 14px 6px 6px;
+  }
+  .pin-note {
+    background: #FFE066;
+    border-radius: 2px;
+    padding: 18px 12px 12px;
+    aspect-ratio: 1 / 1;
+    box-shadow: 3px 4px 10px rgba(0,0,0,0.55);
+    position: relative;
+    color: #111;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+    transform: rotate(-1.5deg);
+  }
+  .pin-note:nth-child(2n) { transform: rotate(1.8deg); }
+  .pin-note:nth-child(3n) { transform: rotate(-0.8deg); }
+  /* 압정 (push-pin) — top center */
+  .pin-note::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #FF8585 0%, #D63838 70%, #8B1F1F 100%);
+    box-shadow: 1px 2px 3px rgba(0,0,0,0.5);
+    z-index: 2;
+  }
+  .pin-note:nth-child(3n)::before {
+    background: radial-gradient(circle at 35% 35%, #85B7FF 0%, #386FD6 70%, #1F3B8B 100%);
+  }
+  .pin-note:nth-child(4n)::before {
+    background: radial-gradient(circle at 35% 35%, #FFD085 0%, #D69B38 70%, #8B651F 100%);
+  }
+  .pin-note .author {
+    position: absolute;
+    bottom: 6px; right: 8px;
+    font-size: 9px;
+    color: #666;
+  }
+
+  /* ========================================================
+     OPTION B — Paperclip cluster (종이클립 묶음)
+     여러 노트 살짝 겹치며 클립 하나로 묶음
+     ======================================================== */
+  .scene-b { background: #1a1a22; }
+  .clip-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px 14px;
+    padding-top: 8px;
+  }
+  .clip-wrap {
+    position: relative;
+    aspect-ratio: 1 / 1;
+  }
+  /* 클립 SVG 모양 — 위 가운데 */
+  .clip-wrap::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 18px;
+    background:
+      linear-gradient(180deg, #BCC0C7 0%, #8A8E94 100%);
+    border-radius: 4px 4px 8px 8px;
+    border: 1px solid #5a5d62;
+    border-bottom: 2px solid #5a5d62;
+    z-index: 3;
+  }
+  .clip-wrap::after {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 4px;
+    background: rgba(0,0,0,0.35);
+    border-radius: 2px;
+    z-index: 4;
+  }
+  .clip-note-back, .clip-note-front {
+    position: absolute;
+    inset: 0;
+    background: #FFE066;
+    border-radius: 4px;
+    box-shadow: 3px 3px 10px rgba(0,0,0,0.4);
+  }
+  .clip-note-back {
+    background: #FFF7D6;
+    transform: translate(3px, 4px) rotate(2deg);
+    z-index: 1;
+  }
+  .clip-note-front {
+    padding: 14px 12px 12px;
+    color: #111;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+    z-index: 2;
+  }
+  .clip-note-front .author {
+    position: absolute;
+    bottom: 6px; right: 8px;
+    font-size: 9px;
+    color: #666;
+  }
+
+  /* ========================================================
+     OPTION C — Sticky strip (붙임쪽지 띠)
+     작고 가로로 긴 카드 + 위에 마스킹테이프 띠
+     ======================================================== */
+  .scene-c { background: #14141a; }
+  .strip-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding-top: 10px;
+  }
+  .strip-note {
+    background: #FFE066;
+    border-radius: 3px;
+    padding: 14px 14px 12px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+    position: relative;
+    color: #111;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.4;
+    min-height: 75px;
+  }
+  /* 마스킹 테이프 — top center 살짝 기울게 */
+  .strip-note::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 35%;
+    width: 80px;
+    height: 14px;
+    background: rgba(220, 200, 150, 0.6);
+    border: 1px dashed rgba(150, 130, 90, 0.4);
+    transform: rotate(-2deg);
+    z-index: 2;
+  }
+  .strip-note:nth-child(2n)::before {
+    left: 50%;
+    transform: rotate(1.5deg);
+    background: rgba(200, 220, 240, 0.55);
+    border-color: rgba(130, 150, 180, 0.4);
+  }
+  .strip-note .strip-author {
+    display: block;
+    margin-top: 8px;
+    text-align: right;
+    font-size: 10px;
+    color: #666;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<h1 class="title">모바일 우리들의 벽 — 핀/클립 디자인 옵션</h1>
+<p class="sub">현재 (왼쪽) vs 3가지 제안 — 마음에 드는 것 골라주세요</p>
+
+<div class="scenes">
+
+  <!-- ========== CURRENT ========== -->
+  <div class="scene scene-current">
+    <h2>현재 (BEFORE)</h2>
+    <p class="desc">큰 노란 사각 + 그림자<br>특별한 장식 없음</p>
+    <div class="current-grid">
+      <div class="current-note">오늘 새 곡 작업 중<span class="author">— 쿠츠</span></div>
+      <div class="current-note">새벽 감성 좋다<span class="author">— 김</span></div>
+      <div class="current-note">스튜디오 짱<span class="author">— 박</span></div>
+      <div class="current-note">기분 좋은 하루<span class="author">— 이</span></div>
+    </div>
+  </div>
+
+  <!-- ========== OPTION A ========== -->
+  <div class="scene scene-a">
+    <h2>A · 코르크보드 + 압정</h2>
+    <p class="desc" style="color:rgba(255,255,255,0.7);">갈색 보드 위 작은 노트 + 빨강/파랑 압정 + 살짝 기울어진 각도</p>
+    <div class="pinboard">
+      <div class="pin-note">오늘 새 곡 작업<span class="author">— 쿠츠</span></div>
+      <div class="pin-note">새벽 감성<span class="author">— 김</span></div>
+      <div class="pin-note">스튜디오 짱<span class="author">— 박</span></div>
+      <div class="pin-note">기분 좋은 하루<span class="author">— 이</span></div>
+      <div class="pin-note">곧 발매<span class="author">— 정</span></div>
+      <div class="pin-note">감사합니다<span class="author">— 최</span></div>
+    </div>
+  </div>
+
+  <!-- ========== OPTION B ========== -->
+  <div class="scene scene-b">
+    <h2>B · 종이클립 묶음</h2>
+    <p class="desc">노트 2장이 클립으로 묶임 — 답글/모음 느낌</p>
+    <div class="clip-grid">
+      <div class="clip-wrap">
+        <div class="clip-note-back"></div>
+        <div class="clip-note-front">
+          오늘 새 곡 작업
+          <span class="author">— 쿠츠</span>
+        </div>
+      </div>
+      <div class="clip-wrap">
+        <div class="clip-note-back"></div>
+        <div class="clip-note-front">
+          새벽 감성
+          <span class="author">— 김</span>
+        </div>
+      </div>
+      <div class="clip-wrap">
+        <div class="clip-note-back"></div>
+        <div class="clip-note-front">
+          스튜디오 짱
+          <span class="author">— 박</span>
+        </div>
+      </div>
+      <div class="clip-wrap">
+        <div class="clip-note-back"></div>
+        <div class="clip-note-front">
+          기분 좋은 하루
+          <span class="author">— 이</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== OPTION C ========== -->
+  <div class="scene scene-c">
+    <h2>C · 마스킹 테이프 띠</h2>
+    <p class="desc">세로 1열, 작은 가로 노트 + 위에 마스킹 테이프 = 스크롤 잘됨</p>
+    <div class="strip-list">
+      <div class="strip-note">오늘 새 곡 작업 중<span class="strip-author">— 쿠츠</span></div>
+      <div class="strip-note">새벽 감성 좋다 ✨<span class="strip-author">— 김</span></div>
+      <div class="strip-note">스튜디오 짱<span class="strip-author">— 박</span></div>
+      <div class="strip-note">기분 좋은 하루<span class="strip-author">— 이</span></div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin: 36px auto 0; max-width: 600px; padding: 20px 26px; color: rgba(255,255,255,0.65); font-size: 12px; line-height: 1.7; background: rgba(255,255,255,0.04); border-radius: 12px;">
+  <strong style="color:#FFE500;">선택 가이드</strong><br><br>
+  <strong>A 코르크보드 + 압정</strong>: 가장 "벽" 느낌 살아남. 갈색 배경 + 작은 노트 + 압정.<br>
+  <strong>B 종이클립</strong>: 답글/묶음 느낌. 2장이 한 세트로 보임.<br>
+  <strong>C 마스킹 테이프</strong>: 스크롤 깔끔. 1열로 길게.<br><br>
+  <strong style="color:#FFE500;">공통:</strong> 현재보다 노트가 작아짐 + 장식이 들어가서 덜 단조롭게 보임.
+</div>
+
+</body>
+</html>

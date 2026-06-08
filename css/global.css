@@ -16882,33 +16882,45 @@ body:has(#global-player.expanded) .global-back-btn {
    모두 1:1 정사각, 둥근 포스트잇 (radius 10, 접힌 코너 X), 노란.
    빈 데모 슬롯 = 점선 + 큰 + (클릭 시 그 번호로 업로드).
    ============================================================ */
+.artist-canvas .mobile-demo-grid,
 .mobile-demo-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding: 4px 4px 12px;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  grid-auto-rows: auto !important;
+  gap: 12px !important;
+  padding: 4px 4px 12px !important;
 }
 
-/* ── 데모 포스트잇 (정사각) ── */
-.demo-card.demo-postit-sq {
+/* ── 데모 포스트잇 (정사각) ── selector 강화: .artist-canvas .mobile-demo-grid 안 */
+.artist-canvas .mobile-demo-grid > .demo-card.demo-postit-sq,
+.mobile-demo-grid > .demo-card.demo-postit-sq {
+  /* grid 위치 — CSS 변수로 받음 (기존 .demo-card 의 grid-row: auto !important 회피) */
+  grid-row: var(--gr, auto) !important;
+  grid-column: var(--gc, auto) !important;
+  /* 정사각, 노란, 둥근 */
   background: #FFE066 !important;
   border: none !important;
   border-radius: 10px !important;
   padding: 12px 14px 14px !important;
   aspect-ratio: 1 / 1 !important;
   box-shadow: 0 6px 14px rgba(0,0,0,0.32), 0 1px 3px rgba(0,0,0,0.22) !important;
-  position: relative;
+  position: relative !important;
   display: flex !important;
   flex-direction: column !important;
   color: #111 !important;
   overflow: hidden !important;
-  transition: transform 0.18s, box-shadow 0.18s;
-  cursor: pointer;
+  cursor: pointer !important;
+  /* 기존 .artist-canvas .demo-card 의 고정 사이즈 모두 무력화 */
+  flex: initial !important;
   width: auto !important;
   height: auto !important;
+  min-width: 0 !important;
   min-height: 0 !important;
   max-height: none !important;
   margin: 0 !important;
+  /* 기존 색/테두리/그림자도 무력화 후 새 값 위 적용 */
+  transform: none !important;
+  transition: transform 0.18s, box-shadow 0.18s !important;
 }
 .demo-card.demo-postit-sq:active {
   transform: translateY(-1px);
@@ -16965,7 +16977,8 @@ body:has(#global-player.expanded) .global-back-btn {
 .demo-postit-del:hover { background: rgba(0,0,0,0.22); }
 
 /* ── 빈 데모 슬롯 (안 올라온 Demo N) ── */
-.demo-card.demo-postit-sq.is-empty {
+.artist-canvas .mobile-demo-grid > .demo-card.demo-postit-sq.is-empty,
+.mobile-demo-grid > .demo-card.demo-postit-sq.is-empty {
   background: rgba(255, 224, 102, 0.10) !important;
   border: 2px dashed rgba(255, 224, 102, 0.45) !important;
   box-shadow: none !important;
@@ -16973,10 +16986,11 @@ body:has(#global-player.expanded) .global-back-btn {
   justify-content: center !important;
   gap: 6px;
 }
-.demo-card.demo-postit-sq.is-empty:active {
+.artist-canvas .mobile-demo-grid > .demo-card.demo-postit-sq.is-empty:active,
+.mobile-demo-grid > .demo-card.demo-postit-sq.is-empty:active {
   background: rgba(255, 224, 102, 0.22) !important;
   border-color: rgba(255, 224, 102, 0.85) !important;
-  transform: none;
+  transform: none !important;
   box-shadow: none !important;
 }
 .demo-postit-plus {
@@ -16992,16 +17006,23 @@ body:has(#global-player.expanded) .global-back-btn {
   letter-spacing: 0.5px;
 }
 
-/* ── 마스터 정사각 (Demo 4 위) ── */
-.master-postit-sq {
+/* ── 마스터 정사각 (Demo 4 위) ── selector 강화 + CSS 변수 grid 위치 */
+.artist-canvas .mobile-demo-grid > .master-postit-sq,
+.mobile-demo-grid > .master-postit-sq {
+  grid-row: var(--gr, 1) !important;
+  grid-column: var(--gc, 1) !important;
   background: #1a1a1a;
   border-radius: 10px;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 1 / 1 !important;
   position: relative;
   overflow: hidden;
   box-shadow: 0 6px 16px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3);
   cursor: pointer;
   transition: transform 0.18s, box-shadow 0.18s;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  margin: 0 !important;
 }
 .master-postit-sq.no-img {
   background: linear-gradient(135deg, #C8B8F5 0%, #FFB4C0 100%);
