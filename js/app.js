@@ -8868,7 +8868,7 @@ function renderProjectBox(pid, versions) {
       return html;
     })();
 
-    // 마스터 — 정사각 카드 (좌상단, Demo 4 위). 사진 있으면 그대로, 없으면 그라데이션.
+    // 마스터 — 정사각 카드 (좌상단, Demo 4 위). 사진 있으면 그대로, 없으면 검정 + 필기체 coming soon.
     const finalMobileCover = final && final.cover ? final.cover : '';
     const masterChipDate = (final && masterDate) ? `발매 · ${masterDate}` : '';
     const masterMobileHtml = `
@@ -8876,13 +8876,21 @@ function renderProjectBox(pid, versions) {
            style="--gr:1; --gc:1;"
            ${final ? `onclick="event.stopPropagation(); playTrack('${final.id}'); openSongInfoModal('${final.id}');"` : ''}
            ${final ? `title="탭하면 곡 소개 + 재생"` : ''}>
-        ${final && finalHasCover ? `<img src="${finalMobileCover}" alt="${safeTitle}" loading="lazy">` : ''}
+        ${final && finalHasCover
+          ? `<img src="${finalMobileCover}" alt="${safeTitle}" loading="lazy">`
+          : `<div class="m-coming-script">coming<br>soon</div>`}
         ${masterChipDate ? `<span class="m-chip-date">${masterChipDate}</span>` : ''}
-        <span class="m-chip-rel">${final ? '발매' : 'Coming'}</span>
-        <div class="m-info-grad">
-          <div class="m-title-sq">「${final ? safeTitle : 'Coming Soon'}」</div>
-          <div class="m-artist-sq">${final ? ((final.artist || primary.artist || '').replace(/</g,'&lt;')) : ''}</div>
-        </div>
+      </div>
+    `;
+    // 마스터 옆 (row 1, col 2) — 제목 + 아티스트 + 발매일 작은 메타 박스.
+    // 사용자 요청: 마스터 옆 빈 공간에 [제목] [발매일] 같이 표시.
+    const masterMetaHtml = `
+      <div class="master-meta-sq" style="--gr:1; --gc:2;"
+           ${final ? `onclick="event.stopPropagation(); openSongInfoModal('${final.id}');" title="곡 소개 보기"` : ''}>
+        <div class="mm-title">${final ? `「${safeTitle}」` : '「Coming Soon」'}</div>
+        ${final ? `<div class="mm-artist">${((final.artist || primary.artist || '').replace(/</g,'&lt;'))}</div>` : ''}
+        ${masterDate && final ? `<div class="mm-date">${masterDate}</div>` : ''}
+        ${final ? `<div class="mm-tag">발매 (Release)</div>` : `<div class="mm-tag mm-tag-coming">준비중</div>`}
       </div>
     `;
 
@@ -8890,6 +8898,7 @@ function renderProjectBox(pid, versions) {
       <div class="project-box reveal project-box-mobile" data-project="${pid}">
         <div class="mobile-demo-grid">
           ${masterMobileHtml}
+          ${masterMetaHtml}
           ${mobileCardsHtml}
           ${emptySlotsHtml}
         </div>

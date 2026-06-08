@@ -17226,3 +17226,106 @@ body:has(#global-player.expanded) .global-back-btn {
   font-weight: 700;
   margin: 0 2px;
 }
+
+/* ============================================================
+   MOBILE MASTER 추가 (사용자 요청 2026-06-XX):
+   - master 사진 없을 때 검정 + 흰 "coming soon" 필기체
+   - 우상단 노란 Coming 칩 제거 → display:none
+   - 옆 빈칸 (row 1 col 2) 에 작은 메타 박스: 제목 + 발매일 + 라벨
+   ============================================================ */
+
+/* 우상단 노란 Coming 칩 — 더 이상 사용 안 함 */
+.artist-canvas .mobile-demo-grid > .master-postit-sq .m-chip-rel,
+.mobile-demo-grid > .master-postit-sq .m-chip-rel {
+  display: none !important;
+}
+
+/* 사진 없을 때 — 검정 배경 + 흰 필기체 coming soon */
+.artist-canvas .mobile-demo-grid > .master-postit-sq.no-img,
+.mobile-demo-grid > .master-postit-sq.no-img {
+  background: #1a1a1a !important;       /* 검정 (그라데이션 X) */
+}
+.master-postit-sq .m-coming-script {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: 'Nanum JungShik', 'Gaegu', 'Caveat', cursive !important;
+  font-size: 40px;
+  line-height: 1.05;
+  text-align: center;
+  letter-spacing: 1px;
+  transform: rotate(-4deg);
+  opacity: 0.95;
+}
+.master-postit-sq.no-img .m-info-grad,
+.master-postit-sq.no-img .m-title-sq,
+.master-postit-sq.no-img .m-artist-sq {
+  display: none !important;             /* 사진 없을 때 하단 텍스트 그라데이션 숨김 — 필기체만 */
+}
+
+/* 마스터 옆 메타 박스 (row 1 col 2) — 작고 깔끔하게 */
+.artist-canvas .mobile-demo-grid > .master-meta-sq,
+.mobile-demo-grid > .master-meta-sq {
+  grid-row: var(--gr, 1) !important;
+  grid-column: var(--gc, 2) !important;
+  aspect-ratio: 1 / 1 !important;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 10px;
+  padding: 14px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-primary, #fff);
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+.master-meta-sq:hover,
+.master-meta-sq:active {
+  background: rgba(255,255,255,0.09);
+  border-color: rgba(255,255,255,0.18);
+}
+.master-meta-sq .mm-title {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+  word-break: keep-all;
+  color: #fff;
+}
+.master-meta-sq .mm-artist {
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+  font-weight: 600;
+}
+.master-meta-sq .mm-date {
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+  margin-top: 2px;
+}
+.master-meta-sq .mm-tag {
+  display: inline-block;
+  align-self: flex-start;
+  background: #FFE500;
+  color: #111;
+  font-size: 9px;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 3px;
+  border: 1.5px solid #111;
+  margin-top: 6px;
+  letter-spacing: 0.3px;
+}
+.master-meta-sq .mm-tag.mm-tag-coming {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.7);
+  border-color: rgba(255,255,255,0.3);
+}
