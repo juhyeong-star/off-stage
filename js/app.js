@@ -8472,8 +8472,8 @@ function renderProjectBox(pid, versions) {
     // 댓글 0개일 때 placeholder — 항상 보이게 (사용자 요청)
     const pcCmEmptyHtml = cmList.length === 0
       ? `<div class="demo-card-cm-empty-hint">아직 댓글이 없어요</div>` : '';
-    const pcCmHintHtml = cmList.length > 1
-      ? `<div class="demo-card-cm-hint-tap">댓글 ${cmList.length}개 · 탭해서 모두 보기</div>` : '';
+    // "댓글 N개 · 탭해서 모두 보기" 빨간 hint 제거 — 사용자 요청.
+    const pcCmHintHtml = '';
 
     // 로그인한 누구나 인라인 입력 — Enter 만 (사용자 요청: send 버튼 제거)
     const inputInlineHtml = canComment ? `
@@ -8809,7 +8809,7 @@ function renderProjectBox(pid, versions) {
       }).join('');
       // 댓글 영역 — 탭하면 우리들의 벽 모달.
       const mCmHtml = cmList.length > 0
-        ? `<div class="demo-card-cm-list" onclick="event.stopPropagation(); openDemoWallModal('${v.id}')" title="댓글 모두 보기">${cmLinesHtml}${cmList.length > 1 ? `<div class="demo-card-cm-hint-tap"><i class="ri-chat-3-line"></i> 댓글 ${cmList.length}개 · 탭해서 모두 보기</div>` : ''}</div>`
+        ? `<div class="demo-card-cm-list" onclick="event.stopPropagation(); openDemoWallModal('${v.id}')" title="댓글 모두 보기">${cmLinesHtml}</div>`
         : `<div class="demo-card-cm-list demo-card-cm-empty" onclick="event.stopPropagation(); openDemoWallModal('${v.id}')" title="댓글 보기"><div class="demo-card-cm-hint-tap"><i class="ri-chat-3-line"></i> 첫 댓글 남기기</div></div>`;
       // 입력칸 — 클릭(is-selected) 했을 때만 보임. 줄 스타일 (no box).
       const mInputHtml = canComment ? `
@@ -9402,8 +9402,7 @@ window._refreshTrackCommentUI = function (trackId) {
       const a = esc(cm.author || '익명');
       return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${t}</span><span class="demo-card-cm-author">— ${a}</span></div>`;
     }).join('');
-    const hintHtml = allCms.length > 1
-      ? `<div class="demo-card-cm-hint-tap">댓글 ${allCms.length}개 · 탭해서 모두 보기</div>` : '';
+    const hintHtml = '';      // 빨간 "댓글 N개 · 탭해서 모두 보기" 제거 (사용자 요청)
     document.querySelectorAll(
       `.demo-card[data-track-id="${trackId}"] .demo-card-cm-list, .project-master-mobile[data-track-id="${trackId}"] .demo-card-cm-list`
     ).forEach(l => { l.innerHTML = linesHtml + hintHtml; });
@@ -13370,19 +13369,17 @@ window.__submitDemoWallCommentLegacy = async function (trackId) {
   const countEl = modal.querySelector('.dwm-cm-count');
   if (countEl) countEl.textContent = track.trackComments.length;
 
-  // Inline 카드 댓글 리스트도 in-place 갱신 (마지막 2 inline + 카운트)
+  // Inline 카드 댓글 리스트도 in-place 갱신 (마지막 1개만, 사용자 요청)
   try {
     const allCms = track.trackComments;
-    const cmVisible = allCms.slice(-2);
+    const cmVisible = allCms.slice(-1);
     document.querySelectorAll(`.demo-card[data-track-id="${trackId}"] .demo-card-cm-list`).forEach(l => {
       const lines = cmVisible.map(cm => {
         const t = esc(cm.text || '');
         const a = esc(cm.author || '익명');
         return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${t}</span><span class="demo-card-cm-author">— ${a}</span></div>`;
       }).join('');
-      const hint = allCms.length > 2
-        ? `<div class="demo-card-cm-hint-tap">댓글 ${allCms.length}개 · 탭해서 모두 보기</div>` : '';
-      l.innerHTML = lines + hint;
+      l.innerHTML = lines;     // hint 텍스트 제거 — 사용자 요청 ("빨간글 없애줘")
     });
   } catch (_) {}
 };
