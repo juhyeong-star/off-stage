@@ -304,12 +304,11 @@
   .cheer-postit-from { font-size: 9px; }
 }
 
-/* Artist page content tabs (음악 / 응원함) */
+/* Artist page content tabs (음악 / 응원함)
+   사용자 요청 — "음악" 탭 + 핑크 구분선 시각이 불필요. 그냥 전부 숨김.
+   stats 패널은 self 일 때 별도 진입로 (자기소개프로필 옆 ⚙️) 로 가능. */
 .artist-content-tabs {
-  display: flex;
-  gap: 4px;
-  border-bottom: 1.5px solid var(--divider, #2a2a2a);
-  margin-bottom: 4px;
+  display: none !important;
 }
 .content-tab {
   display: inline-flex;
@@ -1820,18 +1819,23 @@ body:has(#shape-shorts-overlay) .deco-shape {
    박스: inline-block 으로 콘텐츠 폭만큼 (왼쪽 박힘 보장).
    안의 .artist-bio-text 가 block + text-align:left 로 글자 왼쪽 정렬을 보장. */
 .artist-bio-inline {
-  display: inline-block !important;
-  margin: 14px 0 2px !important;
+  /* 사용자 요청 — 항상 왼쪽 정렬. block + width:fit-content + margin-right:auto
+     로 inline-block 의 부모 text-align 영향을 받지 않게 안정화. */
+  display: block !important;
+  width: fit-content !important;
+  max-width: 360px;
+  margin: 14px auto 2px 0 !important;     /* left:0 right:auto → 왼쪽 정렬 */
   padding: 14px 22px 14px 18px !important;
   background: #FFE066 !important;
   border: 1px solid #F4B400 !important;
   border-radius: 6px !important;
   color: #3E2723 !important;
-  max-width: 360px;
   cursor: pointer;
   box-shadow: 2px 4px 12px rgba(0,0,0,0.35) !important;
   transition: transform 0.15s, box-shadow 0.15s;
+  text-align: left !important;
   vertical-align: top;
+  align-self: flex-start;
   /* 명시적으로 부모 text-align 차단 — 부모가 center 여도 영향 X */
   text-align: left !important;
 }
