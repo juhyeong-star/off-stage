@@ -16995,11 +16995,11 @@ body:has(#global-player.expanded) .global-back-btn {
 }
 
 /* ── 빈 데모 슬롯 (방문자 — + 없이 점선만, 비활성) ──
-   사용자 요청: 좀 더 잘 보이게 — alpha 0.05 → 0.14 / 0.28 → 0.55 / 라벨 0.5 → 0.85 */
+   사용자 요청: 살짝만 더 노란색 — alpha 0.14 → 0.28 / 0.55 → 0.7 */
 .artist-canvas .mobile-demo-grid > .demo-card.demo-postit-sq.is-empty-visitor,
 .mobile-demo-grid > .demo-card.demo-postit-sq.is-empty-visitor {
-  background: rgba(255, 224, 102, 0.14) !important;
-  border: 2px dashed rgba(255, 224, 102, 0.55) !important;
+  background: rgba(255, 224, 102, 0.28) !important;
+  border: 2px dashed rgba(255, 224, 102, 0.7) !important;
   box-shadow: none !important;
   align-items: center !important;
   justify-content: center !important;
@@ -17009,8 +17009,8 @@ body:has(#global-player.expanded) .global-back-btn {
 .artist-canvas .mobile-demo-grid > .demo-card.demo-postit-sq.is-empty-visitor:active,
 .mobile-demo-grid > .demo-card.demo-postit-sq.is-empty-visitor:hover,
 .mobile-demo-grid > .demo-card.demo-postit-sq.is-empty-visitor:active {
-  background: rgba(255, 224, 102, 0.14) !important;
-  border-color: rgba(255, 224, 102, 0.55) !important;
+  background: rgba(255, 224, 102, 0.28) !important;
+  border-color: rgba(255, 224, 102, 0.7) !important;
   transform: none !important;
   box-shadow: none !important;
 }
