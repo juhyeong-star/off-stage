@@ -8637,21 +8637,31 @@ function renderProjectBox(pid, versions) {
   const _isMobile = (typeof window !== 'undefined') && window.innerWidth <= 768;
 
   if (_isMobile) {
-    // Mobile snake-up: master 위에, demos 아래 2x2 grid에서 좌하단부터 휘어 올라감.
-    //   Demo 1 ┐                       [ DEMO 4 ] ← [ DEMO 3 ]
-    //   Demo 2 ┘ bottom row                ↑
-    //   Demo 3 ┐                       [ DEMO 1 ] → [ DEMO 2 ]
-    //   Demo 4 ┘ next-up row
+    // ───── 사용자 요청 (2026-06-XX): 모바일 새 레이아웃 ─────
+    //   Row 1: [MASTER]  [           ]      ← 마스터 좌상단 (Demo 4 바로 위), 우상단 빈
+    //   Row 2: [Demo 4]  [Demo 3]
+    //   Row 3: [Demo 1]  [Demo 2]
+    // 모두 1:1 정사각, 둥근 포스트잇 (접힌 코너 X), 노란색.
+    // 데모 슬롯 4개 사전 배치 — 안 올라온 슬롯은 점선+큰 + (탭→그 번호로 업로드).
+    // demos.length > 4 면 그 다음 행에 snake 로 추가됨.
     const SNAKE_COLS = 2;
-    const totalRows = Math.max(1, Math.ceil(demos.length / SNAKE_COLS));
+    // i=0 → Demo 1 (row N, col 1)
+    // i=1 → Demo 2 (row N, col 2)
+    // i=2 → Demo 3 (row N-1, col 2)
+    // i=3 → Demo 4 (row N-1, col 1)
+    // i=4 → Demo 5 (row N-2, col 1)  ← 다시 좌→우 시작 (마스터는 row 0 col 1 차지)
+    // demos 4 개까지는 row 1(master) / row 2(D4,D3) / row 3(D1,D2)
+    // 5번째부터는 마스터 위 row 0 인데 col 1 이 차있음 → col 2 (마스터 옆) 부터 시작.
+    // 일단 간단하게: demos i 의 row/col 계산 — Demo 1,2 = row=totalDemoRows, Demo 3,4 = row=totalDemoRows-1, ...
+    const demoRows = Math.max(2, Math.ceil(Math.max(4, demos.length) / SNAKE_COLS));
     const snakeUpPos = (i) => {
       const pairIdx = Math.floor(i / SNAKE_COLS);
       const pairOffset = i % SNAKE_COLS;
-      const row = totalRows - pairIdx;             // bottom row is biggest, fills first
-      const col = (pairIdx % 2 === 0)              // even pair → left-to-right
-        ? (pairOffset + 1)
-        : (SNAKE_COLS - pairOffset);               // odd pair → right-to-left
-      return { row, col };
+      // 데모 grid 안에서의 row (1-based; 1 = 가장 위, demoRows = 가장 아래)
+      const innerRow = demoRows - pairIdx;
+      const col = (pairIdx % 2 === 0) ? (pairOffset + 1) : (SNAKE_COLS - pairOffset);
+      // 전체 grid 에서는 row 1 이 master. demo 는 row 2 부터.
+      return { row: innerRow + 1, col };
     };
 
     // 2x2 snake-grid (사용자 요청: "마스터카드 / 데모1 > 데모2 / 데모4 < 데모3 이거야~ 맘대로 키우지마")
@@ -8697,71 +8707,71 @@ function renderProjectBox(pid, versions) {
       const demoLiked = isTrackLiked(v.id);
       // 카드 탭 = 선택 (is-selected) + 재생. 댓글 영역 탭 = 모달 (cm-list 의 onclick).
       // 인라인 input 은 stopPropagation 으로 카드 onclick 안 타게.
+      // 모바일 — 작은 정사각 포스트잇. 본문은 2줄까지 + 클릭하면 모달.
+      // 댓글/입력칸은 카드 밖 (모달) 로 옮김 — 작은 카드에 다 들어가면 답답해서.
       return `
-        <div class="demo-card is-demo ${v.pinned ? 'is-pinned' : ''}"
+        <div class="demo-card demo-postit-sq is-demo ${v.pinned ? 'is-pinned' : ''}"
              data-track-id="${v.id}" data-project="${pid}"
              style="grid-row:${pos.row}; grid-column:${pos.col};"
-             onclick="selectProjectVersion('${pid}','${v.id}'); playTrack('${v.id}', 'demo')">
-          <div class="demo-card-top">
-            <span class="demo-tag">DEMO ${i+1}</span>
-            <span class="demo-card-date">· ${formatFullDate(v.createdAt)}</span>
-            ${canEditArtist ? `
-              <button class="demo-card-delete" onclick="event.stopPropagation(); event.preventDefault(); deleteMyTrack('${v.id}', '${(v.title||'').replace(/'/g,"\\'")}')" title="삭제">
-                <i class="ri-delete-bin-line"></i>
-              </button>
-            ` : ''}
-            <button class="demo-card-like ${demoLiked ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${v.id}', this)" title="내 우주에 모으기">
-              <i class="${demoLiked ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
+             onclick="selectProjectVersion('${pid}','${v.id}'); playTrack('${v.id}', 'demo'); openDemoWallModal('${v.id}');">
+          <div class="demo-postit-tag">DEMO ${i+1}</div>
+          ${mNoteHtml || `<div class="demo-postit-body-empty">탭해서 듣기</div>`}
+          ${canEditArtist ? `
+            <button class="demo-postit-del" onclick="event.stopPropagation(); event.preventDefault(); deleteMyTrack('${v.id}', '${(v.title||'').replace(/'/g,"\\'")}')" title="삭제">
+              <i class="ri-close-line"></i>
             </button>
-          </div>
-          ${mNoteHtml}
-          ${mCmHtml}
-          ${mInputHtml}
+          ` : ''}
         </div>
       `;
     }).join('');
 
+    // 빈 슬롯 — 본인 페이지에서만. Demo 1-4 중 안 올라온 슬롯에 점선 + 큰 + 표시.
+    // 클릭 시 그 데모 번호로 업로드 페이지 진입.
+    const emptySlotsHtml = canEditArtist ? (() => {
+      let html = '';
+      const filledCount = demos.length;
+      // 4개 미만이면 부족한 만큼 + 슬롯. 최소 4개 슬롯 보장.
+      for (let i = filledCount; i < 4; i++) {
+        const pos = snakeUpPos(i);
+        const nextDemoNum = i + 1;
+        html += `
+          <div class="demo-card demo-postit-sq is-empty"
+               style="grid-row:${pos.row}; grid-column:${pos.col};"
+               onclick="quickUploadDemoToProject('${pid}')"
+               title="DEMO ${nextDemoNum} 업로드">
+            <i class="ri-add-line demo-postit-plus"></i>
+            <div class="demo-postit-plus-label">DEMO ${nextDemoNum}</div>
+          </div>
+        `;
+      }
+      return html;
+    })() : '';
+
+    // 마스터 — 정사각 카드 (좌상단, Demo 4 위). 사진 있으면 그대로, 없으면 그라데이션.
+    const finalMobileCover = final && final.cover ? final.cover : '';
+    const masterChipDate = (final && masterDate) ? `발매 · ${masterDate}` : '';
+    const masterMobileHtml = `
+      <div class="master-postit-sq ${final ? 'has-cover' : 'no-cover'} ${final && finalHasCover ? '' : 'no-img'}"
+           style="grid-row:1; grid-column:1;"
+           ${final ? `onclick="event.stopPropagation(); playTrack('${final.id}'); openSongInfoModal('${final.id}');"` : ''}
+           ${final ? `title="탭하면 곡 소개 + 재생"` : ''}>
+        ${final && finalHasCover ? `<img src="${finalMobileCover}" alt="${safeTitle}" loading="lazy">` : ''}
+        ${masterChipDate ? `<span class="m-chip-date">${masterChipDate}</span>` : ''}
+        <span class="m-chip-rel">${final ? '발매' : 'Coming'}</span>
+        <div class="m-info-grad">
+          <div class="m-title-sq">「${final ? safeTitle : 'Coming Soon'}」</div>
+          <div class="m-artist-sq">${final ? ((final.artist || primary.artist || '').replace(/</g,'&lt;')) : ''}</div>
+        </div>
+      </div>
+    `;
+
     return `
       <div class="project-box reveal project-box-mobile" data-project="${pid}">
-        <!-- Master = wide landscape demo-style WHITE card.
-             Top: MASTER tag + heart. Mid: cover thumb (left) + title/cheer/text (right).
-             Bottom: full-width 글 (diary) + comments + input. -->
-        <div class="project-master-mobile master-as-demo" ${final ? `data-track-id="${final.id}"` : ''}>
-          <div class="master-top-bar">
-            <span class="demo-tag master-badge">${final ? '발매 (Release)' : 'Coming Soon'}</span>
-            ${final && canEditArtist ? `
-              <button class="demo-card-delete" onclick="event.stopPropagation(); event.preventDefault(); deleteMyTrack('${final.id}', '${(final.title||'').replace(/'/g,"\\'")}')" title="삭제">
-                <i class="ri-delete-bin-line"></i>
-              </button>
-            ` : ''}
-            ${final ? `
-              <button class="demo-card-like ${isTrackLiked(final.id) ? 'is-liked' : ''}" onclick="event.stopPropagation(); event.preventDefault(); toggleTrackHeart('${final.id}', this)" title="내 우주에 모으기">
-                <i class="${isTrackLiked(final.id) ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
-              </button>
-            ` : ''}
-          </div>
-          <!-- Compact row: cover (left) + stacked text (right):
-                 [Cover]  Title
-                          N명 응원
-                          발매일
-                          [탭해서 댓글 보기] ← button only
-               Cover click   → playTrack
-               Hint click    → openTrackCommentsModal                       -->
-          <div class="master-compact-row">
-            <div class="master-cover-wrap-click" ${final ? `onclick="event.stopPropagation(); playTrack('${final.id}')" style="cursor: pointer;"` : ''}>
-              ${coverHtml}
-            </div>
-            <div class="master-compact-text">
-              <h3 class="project-title">「${final ? safeTitle : 'Coming Soon'}」</h3>
-              <div class="project-artist-line">${final ? ((final.artist || primary.artist || '').replace(/</g,'&lt;')) : 'Coming Soon'}</div>
-              ${participantCount > 0 ? `<div class="project-participants project-cheers"><i class="ri-heart-pulse-fill"></i> ${participantCount}명 응원</div>` : ''}
-              ${masterDate && final ? `<div class="project-master-date">발매 · ${masterDate}</div>` : ''}
-              ${final ? `<button type="button" class="master-tap-hint" onclick="event.stopPropagation(); openTrackCommentsModal('${final.id}')"><i class="ri-chat-3-line"></i> 탭해서 댓글 보기</button>` : ''}
-            </div>
-          </div>
-          ${releaseNoteHtml}
+        <div class="mobile-demo-grid">
+          ${masterMobileHtml}
+          ${mobileCardsHtml}
+          ${emptySlotsHtml}
         </div>
-        ${demos.length > 0 ? `<div class="demo-snake-grid">${mobileCardsHtml}</div>` : ''}
       </div>
     `;
   }

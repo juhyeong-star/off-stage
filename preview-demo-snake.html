@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>모바일 데모 — 둥근 포스트잇 + 마스터 좌상단</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    background: #0a0a0c;
+    color: #e9e9ec;
+    margin: 0;
+    padding: 24px 0 60px;
+    font-family: 'Inter', 'Pretendard', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  h1.title {
+    text-align: center; margin: 0 0 6px; font-size: 18px; font-weight: 800;
+  }
+  .sub {
+    text-align: center;
+    color: rgba(255,255,255,0.55);
+    font-size: 12px;
+    margin: 0 0 28px;
+    padding: 0 24px;
+    line-height: 1.6;
+  }
+  .scenes {
+    display: flex;
+    gap: 26px;
+    justify-content: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding: 0 18px;
+  }
+  .scene {
+    flex: 0 0 360px;
+    max-width: 100%;
+    background: transparent;
+    padding: 12px;
+  }
+  .scene h2 {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 800;
+    color: #FFE500;
+    margin: 0 0 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  /* ===== 그리드 ===== */
+  .grid-wrap { position: relative; }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  /* ===== 둥근 포스트잇 (접힌 코너 X, 부드러운 그림자) ===== */
+  .postit {
+    background: #FFE066;
+    border-radius: 10px;                       /* 둥글둥글 */
+    padding: 14px 16px 16px;
+    aspect-ratio: 1 / 1;                       /* 정사각 (사용자 요청) */
+    box-shadow:
+      0 6px 16px rgba(0,0,0,0.35),
+      0 1px 3px rgba(0,0,0,0.25);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    color: #111;
+    overflow: hidden;
+    transition: transform 0.18s, box-shadow 0.18s;
+    cursor: pointer;
+  }
+  .postit:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 10px 22px rgba(0,0,0,0.45),
+      0 2px 4px rgba(0,0,0,0.25);
+  }
+  .postit .p-tag {
+    font-size: 11px;
+    font-weight: 900;
+    color: #555;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+  }
+  .postit .p-title {
+    font-size: 17px;
+    font-weight: 900;
+    line-height: 1.18;
+    margin: 0 0 8px;
+    word-break: keep-all;
+  }
+  .postit .p-body {
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1.45;
+    flex: 1;
+    word-break: keep-all;
+    color: #2a2a2a;
+  }
+
+  /* ===== 빈 슬롯 — 점선 + 큰 + ===== */
+  .postit.empty {
+    background: rgba(255, 224, 102, 0.08);
+    border: 2px dashed rgba(255, 224, 102, 0.4);
+    box-shadow: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .postit.empty:hover {
+    transform: none;
+    background: rgba(255, 224, 102, 0.18);
+    border-color: rgba(255, 224, 102, 0.75);
+    box-shadow: none;
+  }
+  .postit.empty .plus {
+    font-size: 46px;
+    color: rgba(255, 224, 102, 0.75);
+    line-height: 1;
+    font-weight: 300;
+  }
+  .postit.empty .plus-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: rgba(255, 224, 102, 0.85);
+    letter-spacing: 0.6px;
+  }
+
+  /* ===== 마스터 — Demo 4 바로 위 (좌측 정렬, 데모와 완전히 같은 크기) ===== */
+  .master {
+    background: #1a1a1a;
+    border-radius: 10px;
+    aspect-ratio: 1 / 1;              /* 정사각 — 데모와 동일 (사용자 요청) */
+    grid-row: 1;                      /* 그리드 row 1 */
+    grid-column: 1;                   /* 좌측 컬럼 — Demo 4 위 */
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      0 6px 16px rgba(0,0,0,0.5),
+      0 1px 3px rgba(0,0,0,0.3);
+    cursor: pointer;
+    transition: transform 0.18s, box-shadow 0.18s;
+  }
+  .master:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 10px 22px rgba(0,0,0,0.6),
+      0 2px 4px rgba(0,0,0,0.3);
+  }
+  .master.no-cover {
+    background: linear-gradient(135deg, #C8B8F5 0%, #FFB4C0 100%);
+  }
+  .master img { width:100%; height:100%; object-fit:cover; display:block; }
+  .master .chip-rel {
+    position: absolute; top:8px; right:8px;
+    background: #FFE500; color: #111;
+    font-size: 10px; font-weight: 900;
+    padding: 3px 9px; border-radius: 4px;
+    border: 1.5px solid #111;
+    box-shadow: 1.5px 1.5px 0 #111;
+  }
+  .master .chip-date {
+    position: absolute; top:8px; left:8px;
+    background: #1a1a1a; color: #FFE500;
+    font-size: 10px; font-weight: 800;
+    padding: 3px 8px; border-radius: 4px;
+    border: 1.5px solid #111;
+    box-shadow: 1.5px 1.5px 0 #111;
+  }
+  .master .m-info {
+    position: absolute; bottom:0; left:0; right:0;
+    padding: 12px 14px 14px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+    color: #fff;
+  }
+  .master .m-title { font-size: 16px; font-weight: 900; margin: 0; }
+  .master .m-artist { font-size: 11px; color: rgba(255,255,255,0.85); margin: 3px 0 0; }
+
+  /* ===== 작은 chevron 방향 표시 (선택) ===== */
+  .chev {
+    position: absolute;
+    color: rgba(255, 224, 102, 0.6);
+    font-size: 22px;
+    font-weight: 700;
+    pointer-events: none;
+    z-index: 3;
+    line-height: 1;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  }
+  /* 위치 — 그리드 셀 사이 작은 공간 */
+  /* Row 3: D1 → D2 (right) */
+  .chev-1to2 { bottom: calc((100% / 3) / 2); left: calc(50% - 8px); }
+  /* Row 3 → Row 2 (D2 → D3, up) — right side */
+  .chev-2to3 { right: calc(50% - 50%); top: calc((100% / 3) + 4px); transform: rotate(-90deg) translateY(-50%); right: 8px; }
+  /* Row 2: D3 → D4 (left) — middle */
+  .chev-3to4 { top: calc((100% / 3) + (100% / 3) / 2); left: calc(50% - 8px); transform: rotate(180deg); }
+  /* Row 2 → Row 1 (D4 → Master, up) — left side */
+  .chev-4to-master { left: 8px; top: 4px; transform: rotate(-90deg); }
+</style>
+</head>
+<body>
+
+<h1 class="title">모바일 데모 — 마스터가 Demo 4 위에 딱</h1>
+<p class="sub">
+  마스터 = 좌상단 (Demo 4 바로 위, 같은 컬럼) · 우상단은 빈 공간<br>
+  Row 2: [Demo 4] [Demo 3] · Row 3: [Demo 1] [Demo 2]<br>
+  포스트잇 = 둥근 (radius 10px), 접힌 코너 X, 화살표 X
+</p>
+
+<div class="scenes">
+
+  <!-- ============ A: 데모 2개만 올림 ============ -->
+  <div class="scene">
+    <h2>A · 데모 2개만</h2>
+
+    <div class="grid">
+      <!-- Row 1: MASTER 만 (Demo 4 위) — 우측은 빈 공간 -->
+      <div class="master no-cover">
+        <span class="chip-date">발매 · 26.06.04</span>
+        <span class="chip-rel">발매</span>
+        <div class="m-info">
+          <div class="m-title">「보쌈」</div>
+          <div class="m-artist">쿠츠</div>
+        </div>
+      </div>
+      <!-- Row 2: Demo 4, Demo 3 -->
+      <div class="postit empty" style="grid-row:2; grid-column:1;">
+        <i class="plus">+</i>
+        <span class="plus-label">DEMO 4</span>
+      </div>
+      <div class="postit empty" style="grid-row:2; grid-column:2;">
+        <i class="plus">+</i>
+        <span class="plus-label">DEMO 3</span>
+      </div>
+      <!-- Row 3: Demo 1, Demo 2 -->
+      <div class="postit" style="grid-row:3; grid-column:1;">
+        <div class="p-tag">DEMO 1</div>
+        <div class="p-title">「초안」</div>
+        <div class="p-body">새벽 3시 작업. 보컬 가이드만 깔아둠.</div>
+      </div>
+      <div class="postit" style="grid-row:3; grid-column:2;">
+        <div class="p-tag">DEMO 2</div>
+        <div class="p-title">「2차」</div>
+        <div class="p-body">스트링 추가 + 후렴 다듬음.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ B: 데모 4개 다 ============ -->
+  <div class="scene">
+    <h2>B · 데모 4개 다</h2>
+
+    <div class="grid">
+      <div class="master no-cover">
+        <span class="chip-date">발매 · 26.06.04</span>
+        <span class="chip-rel">발매</span>
+        <div class="m-info">
+          <div class="m-title">「보쌈」</div>
+          <div class="m-artist">쿠츠</div>
+        </div>
+      </div>
+      <div class="postit" style="grid-row:2; grid-column:1;">
+        <div class="p-tag">DEMO 4</div>
+        <div class="p-title">「마스터링 직전」</div>
+        <div class="p-body">EQ + 컴프 마무리. 거의 final.</div>
+      </div>
+      <div class="postit" style="grid-row:2; grid-column:2;">
+        <div class="p-tag">DEMO 3</div>
+        <div class="p-title">「믹스」</div>
+        <div class="p-body">파라미터 다 잡음. 보컬만 더 위로.</div>
+      </div>
+      <div class="postit" style="grid-row:3; grid-column:1;">
+        <div class="p-tag">DEMO 1</div>
+        <div class="p-title">「초안」</div>
+        <div class="p-body">새벽 3시 작업.</div>
+      </div>
+      <div class="postit" style="grid-row:3; grid-column:2;">
+        <div class="p-tag">DEMO 2</div>
+        <div class="p-title">「2차」</div>
+        <div class="p-body">스트링 추가 + 후렴 다듬음.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin: 36px auto 0; max-width: 600px; padding: 20px 26px; color: rgba(255,255,255,0.65); font-size: 12px; line-height: 1.7; background: rgba(255,255,255,0.04); border-radius: 12px;">
+  <strong style="color:#FFE500;">레이아웃</strong><br><br>
+  <code style="background:rgba(255,255,255,0.08); padding:8px 12px; border-radius:6px; display:block; font-family:monospace; color:#fff; line-height: 1.8;">
+  [ MASTER ] [ &nbsp; &nbsp; &nbsp; ]<br>
+  [ Demo 4 ] [ Demo 3 ]<br>
+  [ Demo 1 ] [ Demo 2 ]
+  </code><br>
+  · 마스터 = 좌상단, Demo 4 와 같은 컬럼 → Demo 4 바로 위에 딱<br>
+  · 우상단은 빈 공간 (아무것도 없음)<br>
+  · 데모 2x2 그리드 (둥근 포스트잇, 접힌 코너 X)<br>
+  · 빈 슬롯 = 점선 + 큰 <strong>+</strong> → 클릭 시 그 번호로 업로드<br>
+  · 화살표 X — DEMO 번호로 순서 자명
+</div>
+
+</body>
+</html>

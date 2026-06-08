@@ -16872,3 +16872,185 @@ body:has(#global-player.expanded) .global-back-btn {
   #vol-toast .vol-toast-icon { font-size: 22px; }
   #vol-toast .vol-toast-pct { font-size: 16px; }
 }
+
+/* ============================================================
+   MOBILE ARTIST PAGE — 새 데모 그리드 (사용자 요청 2026-06-XX)
+   레이아웃 (3행 × 2열):
+     Row 1: [MASTER]  [      ]      ← 마스터 좌상단, 우상단 빈
+     Row 2: [Demo 4]  [Demo 3]
+     Row 3: [Demo 1]  [Demo 2]
+   모두 1:1 정사각, 둥근 포스트잇 (radius 10, 접힌 코너 X), 노란.
+   빈 데모 슬롯 = 점선 + 큰 + (클릭 시 그 번호로 업로드).
+   ============================================================ */
+.mobile-demo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 4px 4px 12px;
+}
+
+/* ── 데모 포스트잇 (정사각) ── */
+.demo-card.demo-postit-sq {
+  background: #FFE066 !important;
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 12px 14px 14px !important;
+  aspect-ratio: 1 / 1 !important;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.32), 0 1px 3px rgba(0,0,0,0.22) !important;
+  position: relative;
+  display: flex !important;
+  flex-direction: column !important;
+  color: #111 !important;
+  overflow: hidden !important;
+  transition: transform 0.18s, box-shadow 0.18s;
+  cursor: pointer;
+  width: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+}
+.demo-card.demo-postit-sq:active {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(0,0,0,0.42), 0 2px 4px rgba(0,0,0,0.25) !important;
+}
+.demo-postit-tag {
+  font-size: 10px;
+  font-weight: 900;
+  color: #555;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.demo-card.demo-postit-sq .demo-card-note {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  color: #2a2a2a !important;
+  flex: 1 !important;
+  -webkit-line-clamp: 5 !important;
+  line-clamp: 5 !important;
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  margin: 0 !important;
+}
+.demo-card.demo-postit-sq .demo-card-note-line {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  color: #2a2a2a !important;
+}
+.demo-postit-body-empty {
+  font-size: 12px;
+  color: rgba(0,0,0,0.45);
+  font-style: italic;
+  margin-top: 8px;
+  flex: 1;
+}
+.demo-postit-del {
+  position: absolute;
+  top: 6px; right: 6px;
+  background: rgba(0,0,0,0.12);
+  color: #111;
+  border: none;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+.demo-postit-del:hover { background: rgba(0,0,0,0.22); }
+
+/* ── 빈 데모 슬롯 (안 올라온 Demo N) ── */
+.demo-card.demo-postit-sq.is-empty {
+  background: rgba(255, 224, 102, 0.10) !important;
+  border: 2px dashed rgba(255, 224, 102, 0.45) !important;
+  box-shadow: none !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px;
+}
+.demo-card.demo-postit-sq.is-empty:active {
+  background: rgba(255, 224, 102, 0.22) !important;
+  border-color: rgba(255, 224, 102, 0.85) !important;
+  transform: none;
+  box-shadow: none !important;
+}
+.demo-postit-plus {
+  font-size: 36px !important;
+  color: rgba(255, 224, 102, 0.75);
+  line-height: 1 !important;
+  font-weight: 300;
+}
+.demo-postit-plus-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(255, 224, 102, 0.85);
+  letter-spacing: 0.5px;
+}
+
+/* ── 마스터 정사각 (Demo 4 위) ── */
+.master-postit-sq {
+  background: #1a1a1a;
+  border-radius: 10px;
+  aspect-ratio: 1 / 1;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3);
+  cursor: pointer;
+  transition: transform 0.18s, box-shadow 0.18s;
+}
+.master-postit-sq.no-img {
+  background: linear-gradient(135deg, #C8B8F5 0%, #FFB4C0 100%);
+}
+.master-postit-sq:active {
+  transform: translateY(-1px);
+}
+.master-postit-sq img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.master-postit-sq .m-chip-date {
+  position: absolute; top: 6px; left: 6px;
+  background: #1a1a1a; color: #FFE500;
+  font-size: 9px; font-weight: 800;
+  padding: 3px 7px; border-radius: 3px;
+  border: 1.5px solid #111;
+  box-shadow: 1.5px 1.5px 0 #111;
+  letter-spacing: 0.2px;
+  z-index: 3;
+}
+.master-postit-sq .m-chip-rel {
+  position: absolute; top: 6px; right: 6px;
+  background: #FFE500; color: #111;
+  font-size: 9px; font-weight: 900;
+  padding: 3px 7px; border-radius: 3px;
+  border: 1.5px solid #111;
+  box-shadow: 1.5px 1.5px 0 #111;
+  z-index: 3;
+}
+.master-postit-sq .m-info-grad {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 16px 10px 8px;
+  background: linear-gradient(0deg, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0) 100%);
+  color: #fff;
+  z-index: 2;
+}
+.master-postit-sq .m-title-sq {
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.15;
+  margin: 0 0 2px;
+}
+.master-postit-sq .m-artist-sq {
+  font-size: 10px;
+  color: rgba(255,255,255,0.85);
+}
+
+/* 기존 모바일 마스터/데모 wrapper 가 안 꼬이도록 보호 */
+.project-box-mobile { background: transparent !important; padding: 0 !important; border: none !important; }
