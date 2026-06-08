@@ -16993,6 +16993,33 @@ body:has(#global-player.expanded) .global-back-btn {
   transform: none !important;
   box-shadow: none !important;
 }
+
+/* ── 빈 데모 슬롯 (방문자 — + 없이 점선만, 비활성) ── */
+.artist-canvas .mobile-demo-grid > .demo-card.demo-postit-sq.is-empty-visitor,
+.mobile-demo-grid > .demo-card.demo-postit-sq.is-empty-visitor {
+  background: rgba(255, 224, 102, 0.05) !important;
+  border: 2px dashed rgba(255, 224, 102, 0.28) !important;
+  box-shadow: none !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: default !important;
+}
+.artist-canvas .mobile-demo-grid > .demo-card.demo-postit-sq.is-empty-visitor:hover,
+.artist-canvas .mobile-demo-grid > .demo-card.demo-postit-sq.is-empty-visitor:active,
+.mobile-demo-grid > .demo-card.demo-postit-sq.is-empty-visitor:hover,
+.mobile-demo-grid > .demo-card.demo-postit-sq.is-empty-visitor:active {
+  background: rgba(255, 224, 102, 0.05) !important;
+  border-color: rgba(255, 224, 102, 0.28) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.demo-postit-vlabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 224, 102, 0.5);
+  letter-spacing: 0.6px;
+}
+
 .demo-postit-plus {
   font-size: 36px !important;
   color: rgba(255, 224, 102, 0.75);

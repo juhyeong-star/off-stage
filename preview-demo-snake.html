@@ -102,7 +102,7 @@
     color: #2a2a2a;
   }
 
-  /* ===== 빈 슬롯 — 점선 + 큰 + ===== */
+  /* ===== 빈 슬롯 (본인) — 점선 + 큰 + ===== */
   .postit.empty {
     background: rgba(255, 224, 102, 0.08);
     border: 2px dashed rgba(255, 224, 102, 0.4);
@@ -127,6 +127,28 @@
     font-size: 11px;
     font-weight: 800;
     color: rgba(255, 224, 102, 0.85);
+    letter-spacing: 0.6px;
+  }
+
+  /* ===== 빈 슬롯 (남이 볼 때) — 점선만, + 없이, 살짝 더 옅게 ===== */
+  .postit.empty-visitor {
+    background: rgba(255, 224, 102, 0.05);
+    border: 2px dashed rgba(255, 224, 102, 0.28);
+    box-shadow: none;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+  }
+  .postit.empty-visitor:hover {
+    transform: none;
+    background: rgba(255, 224, 102, 0.05);
+    border-color: rgba(255, 224, 102, 0.28);
+    box-shadow: none;
+  }
+  .postit.empty-visitor .empty-vlabel {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255, 224, 102, 0.45);
     letter-spacing: 0.6px;
   }
 
@@ -204,21 +226,19 @@
 </head>
 <body>
 
-<h1 class="title">모바일 데모 — 마스터가 Demo 4 위에 딱</h1>
+<h1 class="title">모바일 데모 — 본인 시점 vs 남이 볼 때</h1>
 <p class="sub">
-  마스터 = 좌상단 (Demo 4 바로 위, 같은 컬럼) · 우상단은 빈 공간<br>
-  Row 2: [Demo 4] [Demo 3] · Row 3: [Demo 1] [Demo 2]<br>
-  포스트잇 = 둥근 (radius 10px), 접힌 코너 X, 화살표 X
+  본인 (왼쪽): 빈 슬롯에 + 표시 (탭하면 업로드)<br>
+  남이 볼 때 (오른쪽): + 없이 점선만 (탭 못 함, 시각만)
 </p>
 
 <div class="scenes">
 
-  <!-- ============ A: 데모 2개만 올림 ============ -->
+  <!-- ============ 본인 시점 ============ -->
   <div class="scene">
-    <h2>A · 데모 2개만</h2>
+    <h2>본인 (Artist) — 빈 슬롯에 +</h2>
 
     <div class="grid">
-      <!-- Row 1: MASTER 만 (Demo 4 위) — 우측은 빈 공간 -->
       <div class="master no-cover">
         <span class="chip-date">발매 · 26.06.04</span>
         <span class="chip-rel">발매</span>
@@ -227,7 +247,6 @@
           <div class="m-artist">쿠츠</div>
         </div>
       </div>
-      <!-- Row 2: Demo 4, Demo 3 -->
       <div class="postit empty" style="grid-row:2; grid-column:1;">
         <i class="plus">+</i>
         <span class="plus-label">DEMO 4</span>
@@ -236,7 +255,6 @@
         <i class="plus">+</i>
         <span class="plus-label">DEMO 3</span>
       </div>
-      <!-- Row 3: Demo 1, Demo 2 -->
       <div class="postit" style="grid-row:3; grid-column:1;">
         <div class="p-tag">DEMO 1</div>
         <div class="p-title">「초안」</div>
@@ -248,11 +266,14 @@
         <div class="p-body">스트링 추가 + 후렴 다듬음.</div>
       </div>
     </div>
+    <p class="pad-note" style="margin-top:14px; font-size:11px; color:rgba(255,255,255,0.5);">
+      본인 페이지 — 빈 슬롯 탭하면 그 데모 번호로 업로드 페이지로 감
+    </p>
   </div>
 
-  <!-- ============ B: 데모 4개 다 ============ -->
+  <!-- ============ 남이 볼 때 ============ -->
   <div class="scene">
-    <h2>B · 데모 4개 다</h2>
+    <h2>남이 볼 때 (Visitor) — + 없이 점선만</h2>
 
     <div class="grid">
       <div class="master no-cover">
@@ -263,20 +284,16 @@
           <div class="m-artist">쿠츠</div>
         </div>
       </div>
-      <div class="postit" style="grid-row:2; grid-column:1;">
-        <div class="p-tag">DEMO 4</div>
-        <div class="p-title">「마스터링 직전」</div>
-        <div class="p-body">EQ + 컴프 마무리. 거의 final.</div>
+      <div class="postit empty-visitor" style="grid-row:2; grid-column:1;">
+        <span class="empty-vlabel">DEMO 4</span>
       </div>
-      <div class="postit" style="grid-row:2; grid-column:2;">
-        <div class="p-tag">DEMO 3</div>
-        <div class="p-title">「믹스」</div>
-        <div class="p-body">파라미터 다 잡음. 보컬만 더 위로.</div>
+      <div class="postit empty-visitor" style="grid-row:2; grid-column:2;">
+        <span class="empty-vlabel">DEMO 3</span>
       </div>
       <div class="postit" style="grid-row:3; grid-column:1;">
         <div class="p-tag">DEMO 1</div>
         <div class="p-title">「초안」</div>
-        <div class="p-body">새벽 3시 작업.</div>
+        <div class="p-body">새벽 3시 작업. 보컬 가이드만 깔아둠.</div>
       </div>
       <div class="postit" style="grid-row:3; grid-column:2;">
         <div class="p-tag">DEMO 2</div>
@@ -284,6 +301,9 @@
         <div class="p-body">스트링 추가 + 후렴 다듬음.</div>
       </div>
     </div>
+    <p class="pad-note" style="margin-top:14px; font-size:11px; color:rgba(255,255,255,0.5);">
+      방문자 — + 표시 없음, 점선만. 탭 못 함. 작은 라벨로 어떤 슬롯인지만.
+    </p>
   </div>
 
 </div>

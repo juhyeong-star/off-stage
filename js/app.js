@@ -8823,28 +8823,38 @@ function renderProjectBox(pid, versions) {
       `;
     }).join('');
 
-    // 빈 슬롯 — 본인 페이지에서만. Demo 1-4 중 안 올라온 슬롯에 점선 + 큰 + 표시.
-    // 클릭 시 그 데모 번호로 업로드 페이지 진입.
+    // 빈 슬롯 — 본인 + 방문자 모두 렌더.
+    // 본인 (canEditArtist): .is-empty 클래스 + 큰 + + 클릭 업로드
+    // 방문자: .is-empty-visitor 클래스 + + 없이 점선만 + 작은 라벨 + 비활성
     // grid-row/column 은 CSS 변수 (--gr/--gc) 로 — 기존 !important override 회피.
-    const emptySlotsHtml = canEditArtist ? (() => {
+    const emptySlotsHtml = (() => {
       let html = '';
       const filledCount = demos.length;
-      // 4개 미만이면 부족한 만큼 + 슬롯. 최소 4개 슬롯 보장.
       for (let i = filledCount; i < 4; i++) {
         const pos = snakeUpPos(i);
         const nextDemoNum = i + 1;
-        html += `
-          <div class="demo-card demo-postit-sq is-empty"
-               style="--gr:${pos.row}; --gc:${pos.col};"
-               onclick="quickUploadDemoToProject('${pid}')"
-               title="DEMO ${nextDemoNum} 업로드">
-            <i class="ri-add-line demo-postit-plus"></i>
-            <div class="demo-postit-plus-label">DEMO ${nextDemoNum}</div>
-          </div>
-        `;
+        if (canEditArtist) {
+          html += `
+            <div class="demo-card demo-postit-sq is-empty"
+                 style="--gr:${pos.row}; --gc:${pos.col};"
+                 onclick="quickUploadDemoToProject('${pid}')"
+                 title="DEMO ${nextDemoNum} 업로드">
+              <i class="ri-add-line demo-postit-plus"></i>
+              <div class="demo-postit-plus-label">DEMO ${nextDemoNum}</div>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="demo-card demo-postit-sq is-empty-visitor"
+                 style="--gr:${pos.row}; --gc:${pos.col};"
+                 aria-hidden="true">
+              <div class="demo-postit-vlabel">DEMO ${nextDemoNum}</div>
+            </div>
+          `;
+        }
       }
       return html;
-    })() : '';
+    })();
 
     // 마스터 — 정사각 카드 (좌상단, Demo 4 위). 사진 있으면 그대로, 없으면 그라데이션.
     const finalMobileCover = final && final.cover ? final.cover : '';
