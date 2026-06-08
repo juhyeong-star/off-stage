@@ -5479,9 +5479,11 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 /* ===== SMALL PHONE (<=420) ===== */
 @media (max-width: 420px) {
   .artist-canvas .sub-page { padding: 14px 12px 60px; }
-  .artist-id-text h1 { font-size: 36px; letter-spacing: -1px; }
-  .artist-avatar { width: 70px; height: 70px; }
-  .artist-id { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .artist-id-text h1 { font-size: 32px; letter-spacing: -1px; line-height: 1; }
+  .artist-avatar { width: 56px !important; height: 56px !important; border-width: 2px; flex-shrink: 0; }
+  /* 사용자 요청 — 작은 폰에서도 가로 레이아웃 유지 (아바타 좌 + 이름/칩 우)
+     이전: flex-direction: column 강제 → 아바타 위로, 이름이 아래로 떨어져서 어색 */
+  .artist-id { flex-direction: row !important; align-items: flex-start !important; gap: 12px; }
   .artist-canvas .notes-stack { height: 190px; }
   .artist-canvas .stack-note { width: 150px; height: 130px; font-size: 14px; padding: 12px 10px 10px; }
 
