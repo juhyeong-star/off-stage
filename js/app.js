@@ -33,6 +33,44 @@ window.audioElement = audioElement;
   // 외부에서 호출 가능하게 노출 (선택)
   window.__volume = { get: () => volume, getMuted: () => muted };
 
+  // ─── Web Audio API GainNode — iOS audio.volume read-only 우회 ───
+  // iOS Safari 는 audio.volume 을 무시함 → AudioContext 의 graph 안 GainNode 로 우회.
+  // user gesture (첫 클릭/탭) 시 setup — autoplay policy 에 걸리지 않게.
+  let _audioCtx = null;
+  let _gainNode = null;
+  let _srcNode  = null;
+  function setupWebAudioGraph() {
+    if (_audioCtx) {
+      if (_audioCtx.state === 'suspended') {
+        try { _audioCtx.resume(); } catch (_) {}
+      }
+      return;
+    }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    try {
+      _audioCtx = new AC();
+      _srcNode  = _audioCtx.createMediaElementSource(audioElement);
+      _gainNode = _audioCtx.createGain();
+      _srcNode.connect(_gainNode);
+      _gainNode.connect(_audioCtx.destination);
+      _gainNode.gain.value = (muted ? 0 : volume) / 100;
+      if (_audioCtx.state === 'suspended') {
+        try { _audioCtx.resume(); } catch (_) {}
+      }
+      window.__audioGraph = { ctx: _audioCtx, gain: _gainNode, src: _srcNode };
+    } catch (e) {
+      console.warn('[webAudio setup]', e);
+      _audioCtx = null;
+      _gainNode = null;
+      _srcNode  = null;
+    }
+  }
+  // 첫 사용자 제스처에 한 번 setup — iOS autoplay policy 통과용
+  ['click', 'touchstart', 'keydown'].forEach(ev => {
+    document.addEventListener(ev, setupWebAudioGraph, { once: true, capture: true });
+  });
+
   // ─── DOM 요소 (defer 로 로드돼서 안전) ───
   const slider   = document.getElementById('vol-slider');
   const muteBtn  = document.getElementById('vol-mute-btn');
@@ -50,8 +88,13 @@ window.audioElement = audioElement;
 
   let toastTimer = null;
   function apply(showToast) {
-    audioElement.volume = (muted ? 0 : volume) / 100;
-    audioElement.muted = muted;
+    const v01 = (muted ? 0 : volume) / 100;
+    audioElement.volume = v01;          // PC / Android 작동
+    audioElement.muted = muted;         // iOS 도 작동 (단순 음소거)
+    // iOS 우회 — GainNode 로 실제 볼륨 조절 (가능할 때만)
+    if (_gainNode) {
+      try { _gainNode.gain.value = v01; } catch (_) {}
+    }
 
     if (slider)  slider.value = volume;
     if (pctLbl)  pctLbl.textContent = (muted ? 0 : volume) + '%';
@@ -116,9 +159,7 @@ window.audioElement = audioElement;
         <span class="vol-popup-pct">60%</span>
       </div>
       <div class="vol-popup-hint">
-        ${_isIOS()
-          ? '📱 iOS는 폰 측면 <span class="key">+ / −</span> 키로 조절돼요'
-          : '🔊 폰 측면 <span class="key">+ / −</span> 키로도 조절 가능'}
+        🔊 폰 측면 <span class="key">+ / −</span> 키로도 조절 가능
       </div>
     `;
     document.body.appendChild(volPopup);
