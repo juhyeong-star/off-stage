@@ -33,9 +33,46 @@ window.audioElement = audioElement;
   // 외부에서 호출 가능하게 노출 (선택)
   window.__volume = { get: () => volume, getMuted: () => muted };
 
-  // ⚠ Web Audio API GainNode 우회 시도 → iOS 에서 오디오 라우팅을 깨버려서 revert.
-  //   iOS Safari 는 audio.volume read-only 가 정책이라 인앱 슬라이더로 우회 못 함.
-  //   iOS 사용자는 폰 측면 +/- 버튼 또는 컨트롤센터 슬라이더 (MediaSession 으로 라우팅됨) 사용.
+  // ─── Web Audio API GainNode — iOS audio.volume read-only 우회 (재시도) ───
+  // 핵심: 첫 user gesture 시 ctx 즉시 resume + source 생성. 매번 play 시 resume 보강.
+  let _webAudio = null;
+  function ensureWebAudio() {
+    if (_webAudio) {
+      if (_webAudio.ctx.state === 'suspended') {
+        try { _webAudio.ctx.resume(); } catch (_) {}
+      }
+      return _webAudio;
+    }
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      const ctx = new AC();
+      // 1) gesture 컨텍스트에서 즉시 resume (await 안 함 — Promise 무시 OK)
+      try { ctx.resume(); } catch (_) {}
+      // 2) source 생성 — 한 번만 가능 (audio element 당)
+      const src  = ctx.createMediaElementSource(audioElement);
+      const gain = ctx.createGain();
+      gain.gain.value = (muted ? 0 : volume) / 100;
+      src.connect(gain);
+      gain.connect(ctx.destination);
+      _webAudio = { ctx, src, gain };
+      window.__audioGraph = _webAudio;
+      return _webAudio;
+    } catch (e) {
+      console.warn('[webAudio] setup failed:', e && e.message);
+      return null;
+    }
+  }
+  // 첫 user gesture (click/touch/keydown) 시 한 번 setup
+  ['click', 'touchstart', 'keydown'].forEach(ev => {
+    document.addEventListener(ev, () => ensureWebAudio(), { once: true, capture: true });
+  });
+  // audio play 마다 context resume 보강 — iOS 가 종종 다시 suspend 시킴
+  audioElement.addEventListener('play', () => {
+    if (_webAudio && _webAudio.ctx.state === 'suspended') {
+      try { _webAudio.ctx.resume(); } catch (_) {}
+    }
+  });
 
   // ─── DOM 요소 (defer 로 로드돼서 안전) ───
   const slider   = document.getElementById('vol-slider');
@@ -54,8 +91,13 @@ window.audioElement = audioElement;
 
   let toastTimer = null;
   function apply(showToast) {
-    audioElement.volume = (muted ? 0 : volume) / 100;
-    audioElement.muted = muted;
+    const v01 = (muted ? 0 : volume) / 100;
+    audioElement.volume = v01;          // PC / Android 작동
+    audioElement.muted = muted;         // iOS 도 작동 (단순 음소거)
+    // iOS 우회 — Web Audio GainNode (graph 가 활성화된 경우)
+    if (_webAudio && _webAudio.gain) {
+      try { _webAudio.gain.gain.value = v01; } catch (_) {}
+    }
 
     if (slider)  slider.value = volume;
     if (pctLbl)  pctLbl.textContent = (muted ? 0 : volume) + '%';
