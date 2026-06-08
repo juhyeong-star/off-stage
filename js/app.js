@@ -11835,18 +11835,24 @@ function _buildPlayQueue(currentTrackId, source) {
   const db = window.DB.get();
   let ids = [];
   if (source === 'universe') {
-    // 모은 곡 (♥ 즐겨찾기) — 전부 큐로
-    const liked = new Set();
-    if (db.currentUser && Array.isArray(db.currentUser.likedTracks)) {
-      db.currentUser.likedTracks.forEach(id => liked.add(id));
+    // 사용자 요청: "전체를 트는게 아니고 폴더 안에서 틀어야".
+    // 트랙이 속한 폴더(playlist) 를 찾아서 그 폴더의 트랙들만 큐로.
+    // 폴더에 안 속해 있으면 단일 트랙만 (autoplay X).
+    const playlists = (Array.isArray(window.__playlists) && window.__playlists.length)
+      ? window.__playlists
+      : (db.playlists || []);
+    let homeFolder = null;
+    for (const pl of playlists) {
+      if (pl && Array.isArray(pl.trackIds) && pl.trackIds.includes(currentTrackId)) {
+        homeFolder = pl;
+        break;
+      }
     }
-    if (window.__favoritedTracks && window.__favoritedTracks.forEach) {
-      window.__favoritedTracks.forEach(id => liked.add(id));
+    if (homeFolder && Array.isArray(homeFolder.trackIds)) {
+      ids = homeFolder.trackIds.slice();
+    } else {
+      ids = [currentTrackId];   // 폴더 안 속함 → 단일 곡 (자동재생 X)
     }
-    if (window.CollectedTracks && window.CollectedTracks.all) {
-      window.CollectedTracks.all().forEach(id => liked.add(id));
-    }
-    ids = Array.from(liked).sort();
   } else if (source === 'shorts') {
     // 폴더 쇼츠 — 현재 쇼츠 컨텍스트의 트랙들 (note 제외, 순서 유지)
     const st = window.__shorts;
