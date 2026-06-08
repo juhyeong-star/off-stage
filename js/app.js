@@ -8823,9 +8823,12 @@ function renderProjectBox(pid, versions) {
       `;
     }).join('');
 
-    // 빈 슬롯 — 본인 + 방문자 모두 렌더.
-    // 본인 (canEditArtist): .is-empty 클래스 + 큰 + + 클릭 업로드
-    // 방문자: .is-empty-visitor 클래스 + + 없이 점선만 + 작은 라벨 + 비활성
+    // 빈 슬롯 — 본인 + 방문자 모두 렌더, 그러나 + 표시는 본인의 "바로 다음 슬롯"에만.
+    //   · 본인 + 다음 슬롯 (i === filledCount): .is-empty + 큰 + + 클릭→업로드
+    //   · 본인 + 그 뒤 슬롯들 (i > filledCount): 방문자 style (점선만)
+    //   · 방문자: 모든 빈 슬롯이 점선만
+    // 이유: 사용자 요청 — Demo 1 만 올렸으면 Demo 2 만 +, Demo 3/4 는 점선만.
+    //       skip 방지 + 다음 단계 명확.
     // grid-row/column 은 CSS 변수 (--gr/--gc) 로 — 기존 !important override 회피.
     const emptySlotsHtml = (() => {
       let html = '';
@@ -8833,7 +8836,8 @@ function renderProjectBox(pid, versions) {
       for (let i = filledCount; i < 4; i++) {
         const pos = snakeUpPos(i);
         const nextDemoNum = i + 1;
-        if (canEditArtist) {
+        const isNextUploadSlot = canEditArtist && (i === filledCount);
+        if (isNextUploadSlot) {
           html += `
             <div class="demo-card demo-postit-sq is-empty"
                  style="--gr:${pos.row}; --gc:${pos.col};"
