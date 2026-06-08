@@ -6,6 +6,129 @@ const playBtn = document.getElementById('player-play-btn');
 // 인라인 HTML(쇼츠, 우리들의 벽 등)이 재생 상태를 확인할 수 있도록 노출.
 window.audioElement = audioElement;
 
+// ====================================================================
+// VOLUME CONTROL — 글로벌 플레이어 슬라이더 + 키보드 단축키 (↑/↓/M)
+//                + 가운데 토스트 + localStorage 영구 저장
+// 모든 페이지 공용 — 어디서 노래 틀어도 동작.
+// 사용자 요청: 노래 재생 위치마다 슬라이더 박지 말고 한 곳에만.
+// ====================================================================
+(function initVolumeControl() {
+  if (!audioElement) return;
+  const STORAGE_VOL = 'off-stage-volume';
+  const STORAGE_MUTED = 'off-stage-muted';
+
+  // 초기값 복원
+  let volume = 60;
+  let muted  = false;
+  try {
+    const sv = parseInt(localStorage.getItem(STORAGE_VOL) || '60', 10);
+    if (!isNaN(sv)) volume = Math.max(0, Math.min(100, sv));
+    muted = localStorage.getItem(STORAGE_MUTED) === '1';
+  } catch (_) {}
+
+  // audio element 에 즉시 적용
+  audioElement.volume = (muted ? 0 : volume) / 100;
+  audioElement.muted = muted;
+
+  // 외부에서 호출 가능하게 노출 (선택)
+  window.__volume = { get: () => volume, getMuted: () => muted };
+
+  // ─── DOM 요소 (defer 로 로드돼서 안전) ───
+  const slider   = document.getElementById('vol-slider');
+  const muteBtn  = document.getElementById('vol-mute-btn');
+  const pctLbl   = document.getElementById('vol-percent');
+  const toast    = document.getElementById('vol-toast');
+  const toastFill= document.getElementById('vol-toast-fill');
+  const toastPct = document.getElementById('vol-toast-pct');
+  const toastIcon= toast && toast.querySelector('.vol-toast-icon');
+
+  function iconClass(v, m) {
+    if (m || v === 0) return 'ri-volume-mute-fill';
+    if (v < 35)       return 'ri-volume-down-fill';
+    return 'ri-volume-up-fill';
+  }
+
+  let toastTimer = null;
+  function apply(showToast) {
+    audioElement.volume = (muted ? 0 : volume) / 100;
+    audioElement.muted = muted;
+
+    if (slider)  slider.value = volume;
+    if (pctLbl)  pctLbl.textContent = (muted ? 0 : volume) + '%';
+    if (muteBtn) {
+      muteBtn.classList.toggle('muted', muted);
+      const i = muteBtn.querySelector('i');
+      if (i) i.className = iconClass(volume, muted);
+    }
+    if (slider) {
+      const filled = muted ? 0 : volume;
+      slider.style.background = `linear-gradient(to right, var(--brand-color, #1DB954) 0%, var(--brand-color, #1DB954) ${filled}%, rgba(255,255,255,0.14) ${filled}%, rgba(255,255,255,0.14) 100%)`;
+    }
+
+    if (showToast && toast) {
+      if (toastFill) toastFill.style.width = (muted ? 0 : volume) + '%';
+      if (toastPct)  toastPct.textContent  = (muted ? 0 : volume) + '%';
+      if (toastIcon) toastIcon.className = 'vol-toast-icon ' + iconClass(volume, muted);
+      toast.classList.toggle('muted', muted);
+      toast.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 1500);
+    }
+
+    // 저장
+    try {
+      localStorage.setItem(STORAGE_VOL, String(volume));
+      localStorage.setItem(STORAGE_MUTED, muted ? '1' : '0');
+    } catch (_) {}
+  }
+
+  // ─── 슬라이더 드래그 ───
+  if (slider) {
+    slider.addEventListener('input', () => {
+      volume = parseInt(slider.value, 10) || 0;
+      if (volume > 0 && muted) muted = false;
+      apply(false);
+    });
+  }
+
+  // ─── 음소거 버튼 ───
+  if (muteBtn) {
+    muteBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      muted = !muted;
+      apply(true);
+    });
+  }
+
+  // ─── 키보드 단축키 — ↑/↓ ±5%, M 음소거 ───
+  // 입력 필드 안에선 무시 (텍스트 입력 방해 안 함).
+  document.addEventListener('keydown', (e) => {
+    const tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (e.target && e.target.isContentEditable) return;
+    // 검색/모달 등의 단축키와 충돌 막기 — meta/ctrl/alt 있으면 무시
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      volume = Math.min(100, volume + 5);
+      if (muted) muted = false;
+      apply(true);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      volume = Math.max(0, volume - 5);
+      apply(true);
+    } else if (e.key === 'm' || e.key === 'M') {
+      muted = !muted;
+      apply(true);
+    }
+  });
+
+  // 초기 1회 — 토스트 없이
+  apply(false);
+})();
+
 let currentView = 'home';
 let currentPlayingTrack = null;
 

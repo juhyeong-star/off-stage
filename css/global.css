@@ -16730,3 +16730,145 @@ body:has(#global-player.expanded) .global-back-btn {
   .song-info-title { font-size: 24px; }
   .song-info-body { font-size: 14px; }
 }
+
+/* ============================================================
+   VOLUME CONTROL — 글로벌 플레이어 우측 슬라이더 + 음소거
+   + 키보드 단축키 (↑/↓/M) → 가운데 토스트 1.5초
+   사용자 요청 (2026-06-XX): "여러 군데 안 만들고 한 곳에만"
+   ============================================================ */
+.player-volume {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-left: 16px;
+  min-width: 160px;
+}
+.vol-btn {
+  background: none;
+  border: none;
+  color: var(--text-primary, #fff);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s;
+}
+.vol-btn:hover { color: var(--brand-color, #1DB954); }
+.vol-btn.muted { color: #ff5b5b; }
+.vol-btn i { line-height: 1; }
+.vol-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.14);
+  height: 4px;
+  border-radius: 2px;
+  width: 96px;
+  cursor: pointer;
+  margin: 0;
+  outline: none;
+}
+.vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  cursor: grab;
+  border: none;
+  transition: transform 0.1s;
+}
+.vol-slider:active::-webkit-slider-thumb {
+  cursor: grabbing;
+  transform: scale(1.2);
+}
+.vol-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  cursor: grab;
+  border: none;
+}
+.vol-percent {
+  font-size: 11px;
+  color: var(--text-secondary, #a0a0a8);
+  min-width: 32px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.3px;
+}
+/* 모바일에서는 슬라이더 숨김 — OS 볼륨 키가 audio element 볼륨을 같이 조절.
+   대신 음소거 버튼만 노출 (선택적). */
+@media (max-width: 768px) {
+  .player-volume {
+    min-width: 0;
+    margin-left: 8px;
+    gap: 4px;
+  }
+  .vol-slider, .vol-percent { display: none; }
+}
+
+/* 가운데 볼륨 토스트 — 키보드/슬라이더 변경 시 1.5초 등장 */
+#vol-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.92);
+  background: rgba(0, 0, 0, 0.78);
+  color: #fff;
+  padding: 22px 28px;
+  border-radius: 18px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 260px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+#vol-toast.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+#vol-toast .vol-toast-icon {
+  font-size: 28px;
+  color: var(--brand-color, #1DB954);
+  line-height: 1;
+}
+#vol-toast.muted .vol-toast-icon { color: #ff5b5b; }
+#vol-toast .vol-toast-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 140px;
+}
+#vol-toast .vol-toast-fill {
+  height: 100%;
+  width: 60%;
+  background: var(--brand-color, #1DB954);
+  border-radius: 3px;
+  transition: width 0.18s ease;
+}
+#vol-toast.muted .vol-toast-fill { background: #ff5b5b; width: 0% !important; }
+#vol-toast .vol-toast-pct {
+  font-weight: 800;
+  font-size: 18px;
+  min-width: 50px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 480px) {
+  #vol-toast { padding: 16px 20px; min-width: 220px; gap: 12px; }
+  #vol-toast .vol-toast-icon { font-size: 22px; }
+  #vol-toast .vol-toast-pct { font-size: 16px; }
+}

@@ -39,7 +39,7 @@
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=601">
+  <link rel="stylesheet" href="css/global.css?v=602">
 </head>
 <body>
 
@@ -165,7 +165,23 @@
         <div class="player-artist" id="player-artist">-</div>
       </div>
     </div>
+    <!-- 볼륨 컨트롤 — PC 에서만 표시 (모바일은 OS 볼륨 키 사용).
+         🔊 음소거 토글 + 슬라이더 + 퍼센트 -->
+    <div class="player-volume" id="player-volume">
+      <button class="vol-btn" id="vol-mute-btn" aria-label="음소거 토글 (M)" title="음소거 (M)">
+        <i class="ri-volume-up-fill"></i>
+      </button>
+      <input class="vol-slider" id="vol-slider" type="range" min="0" max="100" step="1" value="60" aria-label="볼륨">
+      <span class="vol-percent" id="vol-percent">60%</span>
+    </div>
     <audio id="audio-element" style="display:none;"></audio>
+  </div>
+
+  <!-- 가운데 볼륨 토스트 — 키보드 단축키 (↑/↓/M) 누를 때 1.5초 등장 -->
+  <div id="vol-toast" aria-hidden="true">
+    <i class="ri-volume-up-fill vol-toast-icon"></i>
+    <div class="vol-toast-bar"><div class="vol-toast-fill" id="vol-toast-fill"></div></div>
+    <span class="vol-toast-pct" id="vol-toast-pct">60%</span>
   </div>
 
   <!-- Supabase SDK (UMD build — defer so it doesn't block parsing) -->
@@ -174,12 +190,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=601"></script>
-  <script defer src="js/data.js?v=601"></script>
-  <script defer src="js/supabase.js?v=601"></script>
-  <script defer src="js/analytics.js?v=601"></script>
-  <script defer src="js/distribute.js?v=601"></script>
-  <script defer src="js/app.js?v=601"></script>
-  <script defer src="js/polaroid.js?v=601"></script>
+  <script defer src="js/supabase-init.js?v=602"></script>
+  <script defer src="js/data.js?v=602"></script>
+  <script defer src="js/supabase.js?v=602"></script>
+  <script defer src="js/analytics.js?v=602"></script>
+  <script defer src="js/distribute.js?v=602"></script>
+  <script defer src="js/app.js?v=602"></script>
+  <script defer src="js/polaroid.js?v=602"></script>
 </body>
 </html>
