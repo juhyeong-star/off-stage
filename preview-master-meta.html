@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>마스터 옆 메타 — 박스 vs 글만</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    background: linear-gradient(135deg, #C8B8F5, #B9A5F0);
+    margin: 0;
+    padding: 28px 0 60px;
+    font-family: 'Inter', 'Pretendard', system-ui, sans-serif;
+    color: #fff;
+    min-height: 100vh;
+  }
+  h1.t { text-align: center; color: #111; margin: 0 0 6px; font-size: 18px; font-weight: 800; }
+  .sub { text-align: center; color: rgba(0,0,0,0.6); font-size: 12px; margin: 0 0 24px; padding: 0 16px; }
+
+  .scenes {
+    display: flex;
+    gap: 22px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 0 18px;
+    align-items: flex-start;
+  }
+  .scene {
+    flex: 0 0 280px;
+    max-width: 100%;
+    background: #0a0a0c;
+    border-radius: 22px;
+    padding: 16px 14px;
+  }
+  .scene h2 {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 800;
+    color: #FFE500;
+    margin: 0 0 16px;
+    letter-spacing: 0.5px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* 마스터 정사각 카드 (사진 없는 검정 + 필기체) */
+  .master {
+    aspect-ratio: 1 / 1;
+    background: #1a1a1a;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-family: 'Nanum JungShik', 'Caveat', cursive;
+    font-size: 28px;
+    text-align: center;
+    line-height: 1.05;
+    transform: rotate(-3deg);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+    letter-spacing: 1px;
+    position: relative;
+  }
+  .master::before {
+    content: "발매";
+    position: absolute;
+    top: 6px; right: 6px;
+    background: #FFE500;
+    color: #111;
+    font-size: 8px;
+    font-weight: 900;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1.5px solid #111;
+    font-family: 'Inter', sans-serif;
+    transform: rotate(3deg);
+  }
+
+  /* === OPTION A — 박스 (현재) === */
+  .meta-box {
+    aspect-ratio: 1 / 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+  }
+  .meta-box .t { font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2; }
+  .meta-box .a { font-size: 12px; color: rgba(255,255,255,0.7); }
+  .meta-box .d { font-size: 11px; color: rgba(255,255,255,0.55); }
+  .meta-box .chip {
+    display: inline-block;
+    align-self: flex-start;
+    background: #FFE500;
+    color: #111;
+    font-size: 9px;
+    font-weight: 900;
+    padding: 3px 8px;
+    border-radius: 3px;
+    border: 1.5px solid #111;
+    margin-top: 6px;
+  }
+
+  /* === OPTION B — 박스 없이 글만 === */
+  .meta-plain {
+    aspect-ratio: 1 / 1;
+    padding: 12px 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+  }
+  .meta-plain .t {
+    font-size: 17px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.2;
+    letter-spacing: -0.3px;
+  }
+  .meta-plain .a {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    font-weight: 600;
+  }
+  .meta-plain .d {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 6px;
+  }
+
+  /* === OPTION C — 박스 없고 정사각 비율도 X === */
+  .meta-flow {
+    align-self: center;
+    padding: 4px 0 4px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .meta-flow .t {
+    font-size: 18px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.2;
+  }
+  .meta-flow .a {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    font-weight: 600;
+  }
+  .meta-flow .d {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 4px;
+  }
+
+  /* 데모 슬롯 (참고) */
+  .demo-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .demo-sq {
+    aspect-ratio: 1/1;
+    background: #FFE066;
+    border-radius: 10px;
+    padding: 10px;
+    color: #111;
+    font-size: 11px;
+    font-weight: 700;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+  }
+  .demo-sq.empty {
+    background: rgba(255, 224, 102, 0.28);
+    border: 2px dashed rgba(255, 224, 102, 0.7);
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255, 224, 102, 0.85);
+    font-size: 10px;
+  }
+</style>
+</head>
+<body>
+
+<h1 class="t">마스터 옆 메타 — 박스 vs 글만</h1>
+<p class="sub">현재 (박스) vs 박스 X (글만) — 어떤 게 더 깔끔한지 비교</p>
+
+<div class="scenes">
+
+  <!-- ============ A: 현재 (박스) ============ -->
+  <div class="scene">
+    <h2>A · 현재 (박스 있음)</h2>
+    <div class="grid">
+      <div class="master">coming<br>soon</div>
+      <div class="meta-box">
+        <div class="t">「곡」</div>
+        <div class="a">아티스트</div>
+        <div class="d">26.06.04</div>
+        <span class="chip">발매</span>
+      </div>
+    </div>
+    <div class="demo-row">
+      <div class="demo-sq">DEMO 1</div>
+      <div class="demo-sq empty">+</div>
+    </div>
+  </div>
+
+  <!-- ============ B: 박스 없이 정사각 ============ -->
+  <div class="scene">
+    <h2>B · 박스 X (정사각 자리만 유지)</h2>
+    <div class="grid">
+      <div class="master">coming<br>soon</div>
+      <div class="meta-plain">
+        <div class="t">「곡」</div>
+        <div class="a">아티스트</div>
+        <div class="d">26.06.04</div>
+      </div>
+    </div>
+    <div class="demo-row">
+      <div class="demo-sq">DEMO 1</div>
+      <div class="demo-sq empty">+</div>
+    </div>
+  </div>
+
+  <!-- ============ C: 박스 없고 자유 흐름 ============ -->
+  <div class="scene">
+    <h2>C · 박스 X + 자유 흐름</h2>
+    <div class="grid" style="grid-template-columns: auto 1fr;">
+      <div class="master" style="width: 130px;">coming<br>soon</div>
+      <div class="meta-flow">
+        <div class="t">「곡」</div>
+        <div class="a">아티스트</div>
+        <div class="d">26.06.04</div>
+      </div>
+    </div>
+    <div class="demo-row">
+      <div class="demo-sq">DEMO 1</div>
+      <div class="demo-sq empty">+</div>
+    </div>
+  </div>
+
+</div>
+
+<div style="max-width:600px; margin:30px auto 0; padding:18px 24px; background:rgba(255,255,255,0.85); color:#111; border-radius:12px; font-size:13px; line-height:1.7;">
+  <strong>비교</strong><br><br>
+  <strong>A 박스</strong>: 명확한 카드, 정렬됨, 그러나 두 박스가 충돌해 보일 수 있음<br>
+  <strong>B 박스 X, 정사각</strong>: 글만, 마스터와 같은 정사각 자리 — 가장 깔끔하면서 정렬은 그대로<br>
+  <strong>C 박스 X + 자유 흐름</strong>: 메타가 텍스트만, 마스터 옆에 자연스럽게. 정사각 자리 X — 데모 카드 그리드와 살짝 어색할 수 있음<br><br>
+  추천: <strong>B</strong> — 박스만 제거, 자리(정사각 grid cell)는 유지해서 그리드 일관성 ✓
+</div>
+
+</body>
+</html>
