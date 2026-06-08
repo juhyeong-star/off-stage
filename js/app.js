@@ -855,6 +855,10 @@ async function init() {
           if (q.source === 'shorts' && typeof _shortsGo === 'function' && document.getElementById('shorts-stage')) {
             try { _shortsGo('next'); } catch (_) {}
           }
+          // 모바일 도형 쇼츠도 동일 — 다음 쇼츠 카드로 advance
+          if (q.source === 'shapeshorts' && typeof _shapeShortsGo === 'function' && document.getElementById('sshorts-stage')) {
+            try { _shapeShortsGo('next'); } catch (_) {}
+          }
         }, 400);
       }
     }
@@ -11878,15 +11882,23 @@ function _buildPlayQueue(currentTrackId, source) {
       ids = st.items.filter(it => it && it.kind === 'track').map(it => it.id);
     }
   } else if (source === 'shape' || source === 'shapes' || source === 'shapeshorts') {
-    // 도형 / 쇼츠 — 도형 페이지에 보이는 모든 곡 (정렬 동일하게 id 순)
+    // 도형 / 쇼츠 — 도형 페이지에 보이는 모든 곡.
+    // 큐 순서를 도형 페이지의 시각 순서(createdAt ASC)와 일치시켜 자연스러운 흐름:
+    //   현재 곡 끝나면 다음(시간순)으로 자동 진행.
     const st = window.__shapeShorts;
     if (source === 'shapeshorts' && st && Array.isArray(st.tracks)) {
       ids = st.tracks.map(t => t && t.id).filter(Boolean);
     } else {
       ids = (db.tracks || [])
         .filter(t => t && t.version !== 'demo_retired')
-        .map(t => t.id)
-        .sort();
+        .slice()
+        .sort((a, b) => {
+          const ta = new Date(a.createdAt || 0).getTime() || 0;
+          const tb = new Date(b.createdAt || 0).getTime() || 0;
+          if (ta !== tb) return ta - tb;
+          return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+        })
+        .map(t => t.id);
     }
   } else if (source === 'playlist' || source === 'folder') {
     // 폴더 안에서 재생 — 그 폴더의 곡들만
