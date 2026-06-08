@@ -9308,7 +9308,30 @@ window.submitTrackComment = async function(trackId) {
   const db = window.DB.get();
   const track = db.tracks.find(t => t.id === trackId);
   const isSupabaseTrack = track && track.__supabase;
+  const myId = (window.__currentUser && window.__currentUser.id) || null;
 
+  // ── OPTIMISTIC UPDATE ── 사용자 요청: 즉시 반응 + 모달 실시간 동기.
+  //   1) 임시 ID 로 즉시 local cache + DOM 업데이트 → UI 즉시 응답
+  //   2) 백그라운드로 네트워크 전송 (await)
+  //   3) 성공: 임시 id 를 real id 로 교체  /  실패: rollback
+  const tempId = 'tmp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+  const tempComment = {
+    id: tempId,
+    author: authorName || '익명',
+    authorId: myId,
+    text,
+    createdAt: new Date().toISOString(),
+    __optimistic: true
+  };
+  if (track) {
+    if (!Array.isArray(track.trackComments)) track.trackComments = [];
+    track.trackComments.push(tempComment);
+  }
+  if (txtEl) txtEl.value = '';        // 입력칸 즉시 비우기
+  // 모든 곳 DOM 업데이트 (inline + 모든 모달)
+  _refreshTrackCommentUI(trackId);
+
+  // 백그라운드 — 실제 저장
   let newComment = null;
   try {
     if (isSupabaseTrack && window.Tracks) {
@@ -9317,33 +9340,61 @@ window.submitTrackComment = async function(trackId) {
       newComment = {
         id: 'tc' + Date.now(),
         author: authorName || '익명',
+        authorId: myId,
         text,
         createdAt: new Date().toISOString()
       };
       window.DB.addTrackComment(trackId, newComment);
     }
-    // Sync into db.tracks cache so future renders show it
-    if (track) {
-      if (!Array.isArray(track.trackComments)) track.trackComments = [];
-      track.trackComments.push(newComment);
+    // 임시 → real 교체 (id 만 다름, 나머지는 동일)
+    if (track && Array.isArray(track.trackComments)) {
+      const tmpIdx = track.trackComments.findIndex(c => c && c.id === tempId);
+      if (tmpIdx >= 0) {
+        track.trackComments[tmpIdx] = newComment;
+      } else {
+        // 못 찾으면 그냥 append (race 보호)
+        track.trackComments.push(newComment);
+      }
     }
+    // real id 로 갱신된 DOM (삭제 버튼 onclick 의 commentId 가 바뀜)
+    _refreshTrackCommentUI(trackId);
   } catch (e) {
+    // rollback — 임시 댓글 제거
+    if (track && Array.isArray(track.trackComments)) {
+      track.trackComments = track.trackComments.filter(c => c && c.id !== tempId);
+    }
+    _refreshTrackCommentUI(trackId);
     alert('댓글 저장 실패: ' + (e.message || e));
     if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '남기기'; }
+    if (txtEl) txtEl.value = text;    // 입력 복원
     return;
   }
-  if (txtEl) txtEl.value = '';
 
-  // In-place DOM update — 데모 카드 OR 마스터 카드 내부의 .demo-card-cm-list 다시 그리기.
-  // append 만 하면 (a) "댓글 N개 · 탭해서 모두 보기" 핀트 밑에 박혀 어색하고
-  // (b) overflow: hidden 때문에 잘려 안 보이며 (c) 핀트 개수가 stale 됨.
-  // → 전체 list 내용을 track.trackComments 기준으로 재구성.
+  // 최종 DOM 동기화 — optimistic update 후 real id 받은 상태에서 재호출
+  // (deleteBtn 의 commentId 가 real id 로 정확히 들어가야 함)
+  try { _refreshTrackCommentUI(trackId); } catch (_) {}
+  if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '남기기'; }
+  showToast('낙서 남겼어요');
+};
+
+// ===================== 댓글 UI 동기 helper (single source of truth) =====================
+// trackId 의 모든 댓글 표시 영역을 track.trackComments 기준으로 재구성.
+// - 인라인 카드 (.demo-card-cm-list)
+// - openDemoWallModal (#demo-wall-modal #dwm-cm-list + .dwm-cm-count)
+// - openTrackCommentsModal (#track-comments-modal #tcm-list + count)
+// 호출: submit/delete/optimistic insert 후 어디서든.
+window._refreshTrackCommentUI = function (trackId) {
+  const db = window.DB.get();
+  const track = (db.tracks || []).find(t => t && t.id === trackId);
+  const allCms = (track && Array.isArray(track.trackComments)) ? track.trackComments : [];
+  const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const myId   = (window.__currentUser && window.__currentUser.id) || null;
+  const myName = (window.__currentUser && window.__currentUser.name) || '';
+  const isMineFn = (cm) => (myId && cm.authorId && cm.authorId === myId)
+                       || (!cm.authorId && myName && cm.author === myName);
+
+  // 1) 인라인 카드 (데모/마스터)
   try {
-    const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const containers = document.querySelectorAll(
-      `.demo-card[data-track-id="${trackId}"], .project-master-mobile[data-track-id="${trackId}"]`
-    );
-    const allCms = (track && Array.isArray(track.trackComments)) ? track.trackComments : [newComment];
     const INLINE = 2;
     const visible = allCms.slice(-INLINE);
     const linesHtml = visible.map(cm => {
@@ -9351,57 +9402,52 @@ window.submitTrackComment = async function(trackId) {
       const a = esc(cm.author || '익명');
       return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${t}</span><span class="demo-card-cm-author">— ${a}</span></div>`;
     }).join('');
-    const hintHtml = allCms.length > 0
-      ? `<div class="demo-card-cm-hint-tap">댓글 ${allCms.length}개 · 탭해서 모두 보기</div>`
-      : '';
-    containers.forEach(card => {
-      const list = card.querySelector('.demo-card-cm-list');
-      if (!list) return;
-      list.innerHTML = linesHtml + hintHtml;
-    });
-    // ⭐️ 우리들의 벽 모달 (openDemoWallModal) 도 열려있으면 갱신 — 사용자 요청
-    // "밖에서 댓글 달았는데 안에는 댓글이 안달리네" 해결: 양쪽 동기화.
+    const hintHtml = allCms.length > 2
+      ? `<div class="demo-card-cm-hint-tap">댓글 ${allCms.length}개 · 탭해서 모두 보기</div>` : '';
+    document.querySelectorAll(
+      `.demo-card[data-track-id="${trackId}"] .demo-card-cm-list, .project-master-mobile[data-track-id="${trackId}"] .demo-card-cm-list`
+    ).forEach(l => { l.innerHTML = linesHtml + hintHtml; });
+  } catch (_) {}
+
+  // 2) 우리들의 벽 모달 (openDemoWallModal)
+  try {
     const wallModal = document.getElementById('demo-wall-modal');
     if (wallModal) {
       const wallList = wallModal.querySelector('#dwm-cm-list');
       if (wallList) {
-        const _myId = (window.__currentUser && window.__currentUser.id) || null;
-        const _myName = (window.__currentUser && window.__currentUser.name) || '';
         wallList.innerHTML = allCms.map(cm => {
           const ct = esc(cm.text || '');
           const ca = esc(cm.author || '익명');
-          const isMine = (_myId && cm.authorId && cm.authorId === _myId)
-                      || (!cm.authorId && _myName && cm.author === _myName);
+          const isMine = isMineFn(cm);
           const dBtn = isMine ? `<button class="dwm-cm-del" type="button" onclick="event.stopPropagation(); event.preventDefault(); deleteTrackComment('${trackId}','${cm.id}', true); return false;" ontouchend="event.stopPropagation(); event.preventDefault(); deleteTrackComment('${trackId}','${cm.id}', true);" title="댓글 삭제" aria-label="댓글 삭제"><i class="ri-close-line"></i></button>` : '';
           return `<div class="dwm-cm-line"><span class="dwm-cm-arrow">ㄴ</span><span class="dwm-cm-text">${ct}</span><span class="dwm-cm-auth">— ${ca}</span>${dBtn}</div>`;
         }).join('');
         wallList.scrollTop = wallList.scrollHeight;
       }
-      const wallCountEl = wallModal.querySelector('.dwm-cm-count');
-      if (wallCountEl) wallCountEl.textContent = allCms.length;
+      const cnt = wallModal.querySelector('.dwm-cm-count');
+      if (cnt) cnt.textContent = allCms.length;
     }
-    // 구 구조 호환 (혹시 다른 페이지에서 version-panel 사용 시)
-    const panel = document.querySelector(`.version-panel[data-track-id="${trackId}"]`);
-    if (panel) {
-      const list = panel.querySelector('.demo-comments');
-      const inputRow = panel.querySelector('.scribble-input-row');
-      if (list && inputRow) {
-        const noOne = list.querySelector('.no-comments');
-        if (noOne) noOne.remove();
-        const ci = list.querySelectorAll('.comment-line').length;
-        const lineEl = document.createElement('div');
-        lineEl.className = 'comment-line';
-        lineEl.style.paddingLeft = (Math.min(ci, 4) * 14 + 4) + 'px';
-        lineEl.innerHTML = `<span class="comment-arrow">ㄴ</span><span class="comment-text">${cmSafe}</span><span class="comment-author">— ${cmAuth}</span>`;
-        inputRow.parentNode.insertBefore(lineEl, inputRow);
+  } catch (_) {}
+
+  // 3) 트랙 댓글 모달 (openTrackCommentsModal) — 마스터/모바일 카드에서 사용
+  try {
+    const tcm = document.getElementById('track-comments-modal');
+    if (tcm) {
+      const tcmList = tcm.querySelector('#tcm-list, .tcm-list');
+      if (tcmList) {
+        tcmList.innerHTML = allCms.map(cm => {
+          const ct = esc(cm.text || '');
+          const ca = esc(cm.author || '익명');
+          const isMine = isMineFn(cm);
+          const dBtn = isMine ? `<button class="tcm-cm-del" type="button" onclick="event.stopPropagation(); event.preventDefault(); deleteTrackComment('${trackId}','${cm.id}', true); return false;" title="댓글 삭제" aria-label="댓글 삭제"><i class="ri-close-line"></i></button>` : '';
+          return `<div class="tcm-cm-line"><span class="tcm-cm-arrow">ㄴ</span><span class="tcm-cm-text">${ct}</span><span class="tcm-cm-auth">— ${ca}</span>${dBtn}</div>`;
+        }).join('');
+        tcmList.scrollTop = tcmList.scrollHeight;
       }
+      const tcmCnt = tcm.querySelector('.tcm-count, #tcm-count');
+      if (tcmCnt) tcmCnt.textContent = allCms.length;
     }
-    showToast('낙서 남겼어요');
-  } catch (e) {
-    console.warn('[submitTrackComment] in-place update', e);
-  } finally {
-    if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '남기기'; }
-  }
+  } catch (_) {}
 };
 
 // ===================== 댓글 삭제 (PC + 모바일 + 모달 공용) =====================
@@ -13219,7 +13265,7 @@ window.closeDemoWallModal = function () {
   if (m) m.remove();
 };
 
-// 모달 내부 댓글 전송 — Supabase + 카드 inline 둘 다 in-place 갱신
+// 모달 내부 댓글 전송 — optimistic + 모든 곳 sync via _refreshTrackCommentUI
 window.submitDemoWallComment = async function (trackId) {
   const modal = document.getElementById('demo-wall-modal');
   if (!modal) return;
@@ -13230,6 +13276,56 @@ window.submitDemoWallComment = async function (trackId) {
   const db = window.DB.get();
   const track = (db.tracks || []).find(t => t && t.id === trackId);
   if (!track) { showToast('곡을 찾을 수 없어요'); return; }
+  const profileName = (window.__currentUser && window.__currentUser.name) || '';
+  const authorName = profileName || '익명';
+  const myId = (window.__currentUser && window.__currentUser.id) || null;
+  const isSupabaseTrack = !!track.__supabase;
+
+  // Optimistic — 임시 ID 로 즉시 cache + DOM
+  const tempId = 'tmp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+  const tempComment = {
+    id: tempId, author: authorName, authorId: myId, text,
+    createdAt: new Date().toISOString(), __optimistic: true
+  };
+  if (!Array.isArray(track.trackComments)) track.trackComments = [];
+  track.trackComments.push(tempComment);
+  if (input) input.value = '';
+  try { _refreshTrackCommentUI(trackId); } catch (_) {}
+
+  // 백그라운드 저장
+  let newComment = null;
+  try {
+    if (isSupabaseTrack && window.Tracks) {
+      newComment = await window.Tracks.addComment(trackId, { text, authorName });
+    } else {
+      newComment = { id: 'tc' + Date.now(), author: authorName, authorId: myId, text, createdAt: new Date().toISOString() };
+      window.DB.addTrackComment(trackId, newComment);
+    }
+    // 임시 → real 교체
+    const tmpIdx = track.trackComments.findIndex(c => c && c.id === tempId);
+    if (tmpIdx >= 0) track.trackComments[tmpIdx] = newComment;
+    else track.trackComments.push(newComment);
+  } catch (e) {
+    track.trackComments = track.trackComments.filter(c => c && c.id !== tempId);
+    try { _refreshTrackCommentUI(trackId); } catch (_) {}
+    alert('댓글 저장 실패: ' + (e.message || e));
+    if (input) input.value = text;
+    return;
+  }
+  try { _refreshTrackCommentUI(trackId); } catch (_) {}
+  return;
+};
+
+// === 이전 duplicate update 코드 (아래는 안 도달함, 주석 처리 보존 위해 남김) ===
+window.__submitDemoWallCommentLegacy = async function (trackId) {
+  const modal = document.getElementById('demo-wall-modal');
+  if (!modal) return;
+  const input = modal.querySelector('.dwm-input');
+  const text = (input && input.value || '').trim();
+  if (!text) return;
+  const db = window.DB.get();
+  const track = (db.tracks || []).find(t => t && t.id === trackId);
+  if (!track) return;
   const profileName = (window.__currentUser && window.__currentUser.name) || '';
   const authorName = profileName || '익명';
   const isSupabaseTrack = !!track.__supabase;
