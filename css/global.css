@@ -1818,13 +1818,18 @@ body:has(#shape-shorts-overlay) .deco-shape {
 /* 아티스트 페이지 — 칩 아래의 인라인 자기소개. 노란 포스트잇 톤.
    박스: inline-block 으로 콘텐츠 폭만큼 (왼쪽 박힘 보장).
    안의 .artist-bio-text 가 block + text-align:left 로 글자 왼쪽 정렬을 보장. */
-.artist-bio-inline {
-  /* 사용자 요청 — 항상 왼쪽 정렬. block + width:fit-content + margin-right:auto
-     로 inline-block 의 부모 text-align 영향을 받지 않게 안정화. */
+.artist-bio-inline,
+.artist-canvas .artist-bio-inline,
+#artist-bio-line {
+  /* 사용자 요청 — 항상 왼쪽 정렬 (단축 margin 이 안 먹는 케이스 대비해서
+     property 분리 + 다중 selector + float:none + position 보강). */
   display: block !important;
   width: fit-content !important;
   max-width: 360px;
-  margin: 14px auto 2px 0 !important;     /* left:0 right:auto → 왼쪽 정렬 */
+  margin-top: 14px !important;
+  margin-right: auto !important;        /* 오른쪽 빈 공간 모두 차지 → 박스가 왼쪽으로 */
+  margin-bottom: 2px !important;
+  margin-left: 0 !important;             /* 왼쪽엔 여백 없음 */
   padding: 14px 22px 14px 18px !important;
   background: #FFE066 !important;
   border: 1px solid #F4B400 !important;
@@ -1835,9 +1840,11 @@ body:has(#shape-shorts-overlay) .deco-shape {
   transition: transform 0.15s, box-shadow 0.15s;
   text-align: left !important;
   vertical-align: top;
-  align-self: flex-start;
-  /* 명시적으로 부모 text-align 차단 — 부모가 center 여도 영향 X */
-  text-align: left !important;
+  align-self: flex-start !important;
+  float: none !important;
+  position: relative !important;
+  left: 0 !important;
+  right: auto !important;
 }
 /* 박스 안의 글자 — 별도 span 으로 감싸서 박스 너비와 분리 + 왼쪽 정렬 명확 */
 .artist-bio-inline .artist-bio-text {
