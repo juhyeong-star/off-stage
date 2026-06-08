@@ -9323,6 +9323,15 @@ window.submitTrackComment = async function(trackId) {
     createdAt: new Date().toISOString(),
     __optimistic: true
   };
+  // ⚠ window.DB.get() 는 매번 새 parse → 다른 reference. window.__tracks 가
+  //   진짜 in-memory 단일 진실원이므로 거기에도 반드시 push.
+  if (Array.isArray(window.__tracks)) {
+    const tMem = window.__tracks.find(t => t && t.id === trackId);
+    if (tMem) {
+      if (!Array.isArray(tMem.trackComments)) tMem.trackComments = [];
+      tMem.trackComments.push(tempComment);
+    }
+  }
   if (track) {
     if (!Array.isArray(track.trackComments)) track.trackComments = [];
     track.trackComments.push(tempComment);
@@ -9346,23 +9355,29 @@ window.submitTrackComment = async function(trackId) {
       };
       window.DB.addTrackComment(trackId, newComment);
     }
-    // 임시 → real 교체 (id 만 다름, 나머지는 동일)
-    if (track && Array.isArray(track.trackComments)) {
-      const tmpIdx = track.trackComments.findIndex(c => c && c.id === tempId);
-      if (tmpIdx >= 0) {
-        track.trackComments[tmpIdx] = newComment;
-      } else {
-        // 못 찾으면 그냥 append (race 보호)
-        track.trackComments.push(newComment);
-      }
+    // 임시 → real 교체 (id 만 다름) — window.__tracks 와 db.tracks 양쪽 다
+    const _replaceTmp = (arr) => {
+      if (!Array.isArray(arr)) return;
+      const i = arr.findIndex(c => c && c.id === tempId);
+      if (i >= 0) arr[i] = newComment;
+      else arr.push(newComment);
+    };
+    if (Array.isArray(window.__tracks)) {
+      const tMem = window.__tracks.find(t => t && t.id === trackId);
+      if (tMem) _replaceTmp(tMem.trackComments);
     }
+    if (track) _replaceTmp(track.trackComments);
     // real id 로 갱신된 DOM (삭제 버튼 onclick 의 commentId 가 바뀜)
     _refreshTrackCommentUI(trackId);
   } catch (e) {
-    // rollback — 임시 댓글 제거
-    if (track && Array.isArray(track.trackComments)) {
-      track.trackComments = track.trackComments.filter(c => c && c.id !== tempId);
+    // rollback — window.__tracks + db.tracks 양쪽에서 임시 제거
+    const _filterOut = (arr) => Array.isArray(arr)
+      ? arr.filter(c => c && c.id !== tempId) : arr;
+    if (Array.isArray(window.__tracks)) {
+      const tMem = window.__tracks.find(t => t && t.id === trackId);
+      if (tMem) tMem.trackComments = _filterOut(tMem.trackComments);
     }
+    if (track) track.trackComments = _filterOut(track.trackComments);
     _refreshTrackCommentUI(trackId);
     alert('댓글 저장 실패: ' + (e.message || e));
     if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '남기기'; }
@@ -9384,8 +9399,17 @@ window.submitTrackComment = async function(trackId) {
 // - openTrackCommentsModal (#track-comments-modal #tcm-list + count)
 // 호출: submit/delete/optimistic insert 후 어디서든.
 window._refreshTrackCommentUI = function (trackId) {
-  const db = window.DB.get();
-  const track = (db.tracks || []).find(t => t && t.id === trackId);
+  // ⚠ window.DB.get() 는 localStorage 에서 매번 새로 parse 해서 다른 reference 반환.
+  //   → 인메모리 변경(optimistic push)은 안 보임.
+  //   해결: window.__tracks (Supabase 가 직접 mutate 하는 in-memory) 우선 조회.
+  let track = null;
+  if (Array.isArray(window.__tracks)) {
+    track = window.__tracks.find(t => t && t.id === trackId);
+  }
+  if (!track) {
+    const db = window.DB.get();
+    track = (db.tracks || []).find(t => t && t.id === trackId);
+  }
   const allCms = (track && Array.isArray(track.trackComments)) ? track.trackComments : [];
   const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const myId   = (window.__currentUser && window.__currentUser.id) || null;
@@ -13287,12 +13311,19 @@ window.submitDemoWallComment = async function (trackId) {
   const myId = (window.__currentUser && window.__currentUser.id) || null;
   const isSupabaseTrack = !!track.__supabase;
 
-  // Optimistic — 임시 ID 로 즉시 cache + DOM
+  // Optimistic — 임시 ID 로 즉시 cache + DOM (window.__tracks 가 진짜 단일 진실원)
   const tempId = 'tmp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
   const tempComment = {
     id: tempId, author: authorName, authorId: myId, text,
     createdAt: new Date().toISOString(), __optimistic: true
   };
+  if (Array.isArray(window.__tracks)) {
+    const tMem = window.__tracks.find(t => t && t.id === trackId);
+    if (tMem) {
+      if (!Array.isArray(tMem.trackComments)) tMem.trackComments = [];
+      tMem.trackComments.push(tempComment);
+    }
+  }
   if (!Array.isArray(track.trackComments)) track.trackComments = [];
   track.trackComments.push(tempComment);
   if (input) input.value = '';
@@ -13307,12 +13338,27 @@ window.submitDemoWallComment = async function (trackId) {
       newComment = { id: 'tc' + Date.now(), author: authorName, authorId: myId, text, createdAt: new Date().toISOString() };
       window.DB.addTrackComment(trackId, newComment);
     }
-    // 임시 → real 교체
-    const tmpIdx = track.trackComments.findIndex(c => c && c.id === tempId);
-    if (tmpIdx >= 0) track.trackComments[tmpIdx] = newComment;
-    else track.trackComments.push(newComment);
+    // 임시 → real 교체 (양쪽 모두)
+    const _replaceTmp = (arr) => {
+      if (!Array.isArray(arr)) return;
+      const i = arr.findIndex(c => c && c.id === tempId);
+      if (i >= 0) arr[i] = newComment;
+      else arr.push(newComment);
+    };
+    if (Array.isArray(window.__tracks)) {
+      const tMem = window.__tracks.find(t => t && t.id === trackId);
+      if (tMem) _replaceTmp(tMem.trackComments);
+    }
+    _replaceTmp(track.trackComments);
   } catch (e) {
-    track.trackComments = track.trackComments.filter(c => c && c.id !== tempId);
+    // rollback — 양쪽에서 임시 제거
+    const _filterOut = (arr) => Array.isArray(arr)
+      ? arr.filter(c => c && c.id !== tempId) : arr;
+    if (Array.isArray(window.__tracks)) {
+      const tMem = window.__tracks.find(t => t && t.id === trackId);
+      if (tMem) tMem.trackComments = _filterOut(tMem.trackComments);
+    }
+    track.trackComments = _filterOut(track.trackComments);
     try { _refreshTrackCommentUI(trackId); } catch (_) {}
     alert('댓글 저장 실패: ' + (e.message || e));
     if (input) input.value = text;
