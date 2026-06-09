@@ -1255,13 +1255,7 @@ async function _refreshNotifications() {
 
     // ── 8. 받은 응원 — cheers (다른 사람이 내 곡에 보낸 응원 메시지) ──
     try {
-      const { data: receivedCheers } = await sb.from('cheers')
-        .select('id, supporter_id, supporter_name, message, track_title, created_at')
-        .eq('artist_id', myId)
-        .neq('supporter_id', myId)
-        .gte('created_at', since30)
-        .order('created_at', { ascending: false })
-        .limit(20);
+      const receivedCheers = []; // 응원 기능 미사용 — 비활성
       (receivedCheers || []).forEach(c => {
         items.push({
           id: 'cheer_' + c.id,
@@ -1381,7 +1375,12 @@ function _getNotifReadSet() {
   catch (_) { return new Set(); }
 }
 function _saveNotifReadSet(set) {
-  try { localStorage.setItem('offstage_notif_read', JSON.stringify(Array.from(set))); } catch(_) {}
+  try {
+    // 무한 누적 방지 — 최근 1000개만 보관 (Set 은 삽입 순서 유지)
+    let arr = Array.from(set);
+    if (arr.length > 1000) arr = arr.slice(-1000);
+    localStorage.setItem('offstage_notif_read', JSON.stringify(arr));
+  } catch(_) {}
 }
 
 // PC 간 알림 읽음 상태 동기화 — 부팅 시 한 번 클라우드에서 받아와 localStorage 에 합쳐 둠.
@@ -2228,20 +2227,20 @@ window.generateTrackCard = function (track, idx = 0) {
         <div class="play-overlay" onclick="event.stopPropagation(); playTrack('${track.id}')">
           <i class="ri-play-fill"></i>
         </div>
-        <button class="add-to-playlist-btn" onclick="event.stopPropagation(); openPlaylistModal('${track.id}')" title="Add to Playlist">
+        ${/^[0-9a-f-]{36}$/i.test(track.id||'') ? `<button class="add-to-playlist-btn" onclick="event.stopPropagation(); openPlaylistModal('${track.id}')" title="Add to Playlist">
           <i class="ri-add-line"></i>
-        </button>
+        </button>` : ''}
       </div>
       <div class="track-info">
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-          <div class="track-title" style="flex:1;">${track.title}</div>
+          <div class="track-title" style="flex:1;">${(track.title||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
           <button onclick="event.stopPropagation(); window.toggleLike('${track.id}')" style="background:none; border:none; color:var(--text-primary); font-size:18px; cursor:pointer; padding:0;">
             ${likeIcon}
           </button>
         </div>
         <div class="track-artist">
           <img src="${track.artistAvatar}" style="width:16px;height:16px;border-radius:50%">
-          ${track.artist}
+          ${(track.artist||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
         </div>
         <div style="margin-top: 8px; display:flex; gap: 12px; color: var(--text-secondary); font-size: 12px;">
           <span><i class="ri-heart-fill"></i> ${track.likes || 0}</span>
@@ -3561,7 +3560,7 @@ window.openNoteDetail = function(noteId) {
           <div id="note-detail-comments-list">${commentsHtml}</div>
 
           <div class="scribble-input-row">
-            <input type="text" id="comment-text" class="scribble-input" placeholder="" onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); submitComment('${noteId}'); }">
+            <input type="text" id="comment-text" class="scribble-input" placeholder="댓글 남기기…" onkeyup="if(event.key==='Enter' && !event.isComposing){ submitComment('${noteId}'); }">
             <!-- 모바일 Enter 키가 안 먹는 IME/브라우저 대비 명확한 send 버튼 — PC 에선 CSS 로 숨김 -->
             <button type="button" class="scribble-send-btn" onclick="submitComment('${noteId}')" aria-label="댓글 남기기"><i class="ri-send-plane-fill"></i></button>
           </div>
@@ -3722,8 +3721,8 @@ window.submitComment = async function(noteId) {
   if (!text) return;
   const authorName = (authorEl && authorEl.value || '').trim();
 
-  const btn = document.querySelector('#note-detail-modal .scribble-send');
-  if (btn) { btn.disabled = true; btn.textContent = '남기는 중…'; }
+  const btn = document.querySelector('#note-detail-modal .scribble-send-btn');
+  if (btn) { btn.disabled = true; }
   try {
     if (window.Walls) {
       await window.Walls.addComment(noteId, { text, authorName });
@@ -3738,7 +3737,7 @@ window.submitComment = async function(noteId) {
   } catch (e) {
     alert('댓글 저장 실패: ' + (e.message || e));
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '남기기'; }
+    if (btn) { btn.disabled = false; }
   }
 };
 
@@ -3780,6 +3779,19 @@ window.submitInlineComment = async function(noteId, formEl) {
       }
     }
     if (input) input.value = '';
+    // 방금 쓴 댓글을 그 포스트잇에 바로 한 줄 추가 (새로고침 없이 보이게)
+    try {
+      const postit = formEl.closest('.artist-postit');
+      const listEl = postit && postit.querySelector('.artist-postit-cm-list');
+      if (listEl && newCm) {
+        const _esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const line = document.createElement('div');
+        line.className = 'artist-postit-cm-line';
+        line.innerHTML = `ㄴ ${_esc(newCm.text)} <span class="artist-postit-cm-auth">— ${_esc(newCm.author || '익명')}</span>`;
+        listEl.innerHTML = ''; listEl.appendChild(line); // 최신 1개만 보이게
+      }
+    } catch (_) {}
+    if (typeof showToast === 'function') showToast('댓글 남겼어요 ✏');
     // Re-render the wall to show the new comment inline. Preserve scroll.
     if (currentView === 'wall' && typeof renderWall === 'function') {
       const scrollY = window.scrollY;
@@ -6528,14 +6540,14 @@ window.openTrackDetail = function (trackId) {
   if (artistTracks.length > 0) {
     trackListHtml = `
       <div style="margin-top: 30px; border-top: 1px solid var(--divider); padding-top: 24px;">
-        <h3 style="font-size: 16px; margin-bottom: 16px;">More from ${track.artist}</h3>
+        <h3 style="font-size: 16px; margin-bottom: 16px;">More from ${(track.artist||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</h3>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           ${artistTracks.map((t, idx) => `
             <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: var(--surface-color); border-radius: 6px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='var(--surface-color)'" onclick="openTrackDetail('${t.id}')">
               <div style="display: flex; align-items: center; gap: 16px;">
                 <img src="${t.cover}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover;">
                 <div style="color: var(--text-secondary); font-size: 12px; width: 20px; text-align: center;">${idx + 1}</div>
-                <div style="font-size: 14px; font-weight: 500;">${t.title}</div>
+                <div style="font-size: 14px; font-weight: 500;">${(t.title||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
               </div>
               <div style="color: var(--text-secondary); font-size: 12px;">
                 <i class="ri-play-fill"></i> ${t.plays || 0}
@@ -6555,8 +6567,8 @@ window.openTrackDetail = function (trackId) {
           <i class="ri-play-fill"></i>
         </button>
         <div style="display: flex; flex-direction: column; justify-content: flex-start; padding-top: 4px;">
-          <h1 style="font-size: 36px; line-height: 1.2; margin-bottom: 8px;">${track.title}</h1>
-          <h2 style="font-size: 18px; color: var(--text-secondary); margin-bottom: 0;">${track.artist} <i class="ri-verified-badge-fill" style="color: var(--brand-color); font-size: 16px; vertical-align: middle;"></i></h2>
+          <h1 style="font-size: 36px; line-height: 1.2; margin-bottom: 8px;">${(track.title||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</h1>
+          <h2 style="font-size: 18px; color: var(--text-secondary); margin-bottom: 0;">${(track.artist||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')} <i class="ri-verified-badge-fill" style="color: var(--brand-color); font-size: 16px; vertical-align: middle;"></i></h2>
         </div>
       </div>
       <img src="${track.cover}" style="width: 220px; height: 220px; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); object-fit: cover;">
@@ -6565,11 +6577,11 @@ window.openTrackDetail = function (trackId) {
     <!-- Action Bar -->
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--divider); padding-bottom: 12px; margin-bottom: 24px;">
       <div style="display: flex; gap: 8px;">
-        <button style="background: transparent; border: 1px solid var(--divider); color: var(--text-primary); padding: 8px 16px; font-size: 13px; border-radius: 20px; cursor:pointer; transition: border-color 0.2s;" onclick="window.toggleLike('${track.id}')" onmouseover="this.style.borderColor='white'" onmouseout="this.style.borderColor='var(--divider)'"><i class="ri-heart-line"></i> Like</button>
+        <button style="background: transparent; border: 1px solid var(--divider); color: var(--text-primary); padding: 8px 16px; font-size: 13px; border-radius: 20px; cursor:pointer; transition: border-color 0.2s;" onclick="window.toggleLike('${track.id}', this)" onmouseover="this.style.borderColor='white'" onmouseout="this.style.borderColor='var(--divider)'"><i class="${isTrackLiked(track.id) ? 'ri-heart-fill' : 'ri-heart-line'}"></i> Like</button>
         <button style="background: transparent; border: 1px solid var(--divider); color: var(--text-primary); padding: 8px 16px; font-size: 13px; border-radius: 20px; cursor:pointer; transition: border-color 0.2s;" onmouseover="this.style.borderColor='white'" onmouseout="this.style.borderColor='var(--divider)'"><i class="ri-repeat-2-line"></i> Repost</button>
         <button style="background: linear-gradient(135deg,#FFD54F,#FF6F61); color:#111; border:none; padding: 8px 16px; font-size: 13px; font-weight:700; border-radius: 20px; cursor:pointer; transition: transform 0.2s, box-shadow 0.2s;" onclick="window.openTrackCard && window.openTrackCard('${track.id}')" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 14px rgba(255,111,97,0.35)'" onmouseout="this.style.transform=''; this.style.boxShadow=''"><i class="ri-image-line"></i> 카드 만들기</button>
         <button style="background: transparent; border: 1px solid var(--divider); color: var(--text-primary); padding: 8px 16px; font-size: 13px; border-radius: 20px; cursor:pointer; transition: border-color 0.2s;" onclick="window.shareTrackCard && window.shareTrackCard('${track.id}')" onmouseover="this.style.borderColor='white'" onmouseout="this.style.borderColor='var(--divider)'"><i class="ri-share-forward-line"></i> Share</button>
-        <button style="background: var(--brand-color); color: white; padding: 8px 16px; font-size: 13px; border-radius: 20px; cursor:pointer; border:none; transition: background 0.2s;" onclick="openPlaylistModal('${track.id}')" onmouseover="this.style.background='var(--brand-hover)'" onmouseout="this.style.background='var(--brand-color)'"><i class="ri-add-line"></i> Playlist</button>
+        ${/^[0-9a-f-]{36}$/i.test(track.id||'') ? `<button style="background: var(--brand-color); color: white; padding: 8px 16px; font-size: 13px; border-radius: 20px; cursor:pointer; border:none; transition: background 0.2s;" onclick="openPlaylistModal('${track.id}')" onmouseover="this.style.background='var(--brand-hover)'" onmouseout="this.style.background='var(--brand-color)'"><i class="ri-add-line"></i> Playlist</button>` : ''}
       </div>
       <div style="display: flex; gap: 16px; color: var(--text-secondary); font-size: 14px;">
         <span><i class="ri-play-fill"></i> ${(track.plays || 0).toLocaleString()}</span>
@@ -6585,12 +6597,12 @@ window.openTrackDetail = function (trackId) {
         <div style="display: flex; gap: 20px; align-items: flex-start; margin-bottom: 24px;">
           <div style="text-align: center; flex-shrink: 0;">
             <img src="${track.artistAvatar || 'https://i.pravatar.cc/150?img=11'}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 8px;">
-            <div style="font-weight: 600; font-size: 14px; margin-bottom: 6px;">${track.artist}</div>
+            <div style="font-weight: 600; font-size: 14px; margin-bottom: 6px;">${(track.artist||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
             ${snsHtml}
             <button class="btn-primary" style="padding: 6px 16px; font-size: 12px; margin-top: 8px;"><i class="ri-user-follow-line"></i> Follow</button>
           </div>
           <div style="flex-grow: 1;">
-            ${track.description ? `<div style="line-height: 1.7; color: var(--text-secondary); padding-top: 10px; font-size: 14px; white-space: pre-line;">${track.description}</div>` : '<div style="line-height: 1.7; color: var(--text-secondary); padding-top: 10px; font-size: 14px; font-style: italic;">코멘트가 없습니다.</div>'}
+            ${track.description ? `<div style="line-height: 1.7; color: var(--text-secondary); padding-top: 10px; font-size: 14px; white-space: pre-line;">${(track.description||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>` : '<div style="line-height: 1.7; color: var(--text-secondary); padding-top: 10px; font-size: 14px; font-style: italic;">코멘트가 없습니다.</div>'}
             ${(track.tags && track.tags.length) ? `
               <div class="tag-pills-row" style="margin-top: 16px;">
                 ${track.tags.map(tag => {
@@ -6744,6 +6756,11 @@ function renderUpload() {
         <div class="form-group">
           <label>곡 소개 (Description) <span style="color:#ff6b6b;">(필수/required)</span></label>
           <textarea class="form-control" id="up-description" rows="3" placeholder="이 곡에 얽힌 이야기나 리스너들에게 전하고 싶은 멘트를 자유롭게 적어주세요." required></textarea>
+        </div>
+        <div class="form-group">
+          <label><i class="ri-double-quotes-l" style="color:var(--brand-color);"></i> 가사 (Lyrics) <span style="color:var(--text-secondary); font-weight:normal; font-size:12px;">(발매 시 필수 · 데모는 선택 / required for release)</span></label>
+          <textarea class="form-control" id="up-lyrics" rows="6" placeholder="가사를 적어주세요. 곡과 함께 자동으로 '우리들의 벽'에 게시돼요. (데모는 비워둬도 돼요)"></textarea>
+          <div class="form-note">가사를 적으면 노래와 함께 우리들의 벽에 자동 게시됩니다. 발매(마스터)는 가사가 필수예요. (Auto-posts to the wall; required for releases.)</div>
         </div>
         <div class="form-group">
           <label><i class="ri-hashtag" style="color:var(--brand-color);"></i> 태그 (Tags) <span style="color:#ff6b6b;">(필수/required)</span></label>
@@ -7070,6 +7087,8 @@ function renderUpload() {
           || !((document.getElementById('up-line2')?.value || '').trim())
           || !((document.getElementById('up-line3')?.value || '').trim()))
         throw new Error('도형 낙서 3줄을 모두 적어주세요. (필수)');
+      if (getUploadState().isFinal && !((document.getElementById('up-lyrics')?.value || '').trim()))
+        throw new Error('발매(마스터)는 가사가 필요해요. 데모는 비워둬도 됩니다. (가사를 적으면 곡과 함께 벽에 게시돼요)');
 
       // Determine upload type from new two-tier state
       const state = getUploadState();
@@ -7124,6 +7143,7 @@ function renderUpload() {
         .map(s => s.trim())               // 공백 정리
         .filter(Boolean);                 // 빈 토큰 제외
       const description = document.getElementById('up-description').value;
+      const lyrics = (document.getElementById('up-lyrics')?.value || '').trim();
       const line1 = (document.getElementById('up-line1') || {}).value || '';
       const line2 = (document.getElementById('up-line2') || {}).value || '';
       const line3 = (document.getElementById('up-line3') || {}).value || '';
@@ -7216,7 +7236,23 @@ function renderUpload() {
       showToast(isFinal ? '발매 완료! (Released)' : '데모 업로드 완료 (Demo uploaded)');
       // refreshInto는 백그라운드 — 여기서 await하면 느릴 때 또 멈춤
       Promise.resolve(window.Tracks.refreshInto(db)).catch(e => console.warn('[upload] refreshInto bg', e));
-      // 업로드 완료 → 우리들의 벽 음악일기 권유 (이쁜 모달). 거기서 페이지 이동.
+      // 가사 → 곡과 함께 우리들의 벽에 자동 게시 (첫 줄 = 곡 제목, 본문 = 가사, 곡 첨부)
+      try {
+        if (lyrics && window.Walls && inserted && inserted.id) {
+          const wallText = (title ? title + '\n' : '') + lyrics;
+          const wallNote = await Promise.race([
+            window.Walls.insert({ text: wallText, color: 'yellow', rotation: Math.random() * 5 - 2.5, trackId: inserted.id, externalUrl: null }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('벽 게시 타임아웃')), 10000))
+          ]);
+          // 로컬 미러 — 벽에 가면 바로 보이게 (submitWallNote 와 동일 패턴)
+          if (wallNote) {
+            const _d = window.DB.get();
+            if (!Array.isArray(_d.notes)) _d.notes = [];
+            if (!_d.notes.some(n => n && n.id === wallNote.id)) { _d.notes.unshift(wallNote); try { window.DB.save(_d); } catch (_) {} }
+          }
+        }
+      } catch (wallErr) { console.warn('[upload] 가사 벽 자동게시 실패', wallErr); }
+      // 업로드 완료 → 가사가 벽에 게시됐음을 알리는 모달.
       _afterUploadPrompt(inserted, user.name);
     } catch (err) {
       alert('업로드 실패: ' + (err.message || err));
@@ -7240,9 +7276,9 @@ function _afterUploadPrompt(track, artistName) {
     <div class="upload-done-card">
       <img class="upload-done-cover" src="${cover}" alt="" draggable="false">
       <h2 class="upload-done-title">업로드 완료! (Done)</h2>
-      <p class="upload-done-sub">「${title}」 가 무대 뒤에 올라왔어요.<br>이 곡의 <b>첫 음악일기</b>를 우리들의 벽에 남겨볼까요?</p>
+      <p class="upload-done-sub">「${title}」 가 무대 뒤에 올라왔어요.<br>가사도 <b>우리들의 벽</b>에 자동으로 게시됐어요 📌</p>
       <div class="upload-done-actions">
-        <button class="btn-primary upload-done-write"><i class="ri-quill-pen-line"></i> 음악일기 쓰기 (Write diary)</button>
+        <button class="btn-primary upload-done-write"><i class="ri-sticky-note-line"></i> 벽에서 보기 (See on wall)</button>
         <button class="upload-done-later">나중에 (Later)</button>
       </div>
     </div>`;
@@ -7252,18 +7288,6 @@ function _afterUploadPrompt(track, artistName) {
   const close = () => { ov.classList.remove('show'); setTimeout(() => ov.remove(), 200); };
 
   ov.querySelector('.upload-done-write').onclick = () => {
-    // 새 곡을 db.tracks 에 즉시 넣어 미리보기 칩이 바로 뜨게
-    try {
-      const d = window.DB.get();
-      if (track.id && !(d.tracks || []).some(t => t && t.id === track.id)) {
-        d.tracks = [track].concat(d.tracks || []);
-        window.DB.save(d);
-      }
-    } catch (_) {}
-    window.__songAttachTarget = 'wall';
-    window.__wallAttachedSong = track.id ? { kind: 'track', id: track.id } : null;
-    // 컴포저만 열어주고 텍스트는 빈 상태 — 사용자가 직접 적게.
-    window.__pendingWallCompose = '';
     close();
     navigateTo('wall');
   };
@@ -7873,12 +7897,6 @@ async function _renderProfileImpl() {
         </div>`;
     }).join('');
     const tab1Content = `
-      ${mySentCheers.length > 0 ? `
-        <h3 class="tab-section-head"><i class="ri-heart-3-fill" style="color:#ff2e63;"></i> 응원하는 곡 <span class="section-count">${mySentCheers.length}</span></h3>
-        <div class="cheered-song-list">${cheeredSongsHtml}</div>
-      ` : `
-        <div class="empty-tab-message">아직 응원한 곡이 없어요.<br>아티스트 페이지에서 💝 응원하기를 눌러보세요.</div>
-      `}
       ${followingSection}
     `;
 
@@ -7934,7 +7952,7 @@ async function _renderProfileImpl() {
     // ── Assemble listener body — 2 tabs: 세모(응원하는곡) + 동그라미(즐겨듣기) ──
     listenerBody = `
       <div class="reveal listener-tabs" role="tablist">
-        <button class="listener-tab active" data-tab="cards" onclick="switchListenerTab('cards')" role="tab" title="응원하는 곡">
+        <button class="listener-tab active" data-tab="cards" onclick="switchListenerTab('cards')" role="tab" title="함께하는 아티스트">
           <i class="ri-triangle-fill"></i>
         </button>
         <button class="listener-tab" data-tab="folders" onclick="switchListenerTab('folders')" role="tab" title="즐겨듣기">
@@ -8476,10 +8494,15 @@ function renderProjectBox(pid, versions) {
     const pcCmHintHtml = '';
 
     // 로그인한 누구나 인라인 입력 — Enter 만 (사용자 요청: send 버튼 제거)
+    // 종이비행기 송신 버튼 — 한글 IME Enter 두 번 눌러야 하는 문제 우회 (사용자 audit).
+    // Enter 도 지원하되 (compositionend 확인) 버튼이 항상 작동하는 fallback.
     const inputInlineHtml = canComment ? `
       <div class="demo-card-cm-input" onclick="event.stopPropagation();">
         <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="댓글 남기기…"
-               onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); submitTrackComment('${v.id}'); }">
+               onkeyup="if(event.key==='Enter' && !event.isComposing && event.keyCode !== 229){ submitTrackComment('${v.id}'); }">
+        <button type="button" class="cm-send-btn" onclick="event.stopPropagation(); submitTrackComment('${v.id}');" aria-label="댓글 보내기" title="보내기">
+          <i class="ri-send-plane-fill"></i>
+        </button>
       </div>` : '';
 
     const demoLiked = isTrackLiked(v.id);
@@ -8661,14 +8684,7 @@ function renderProjectBox(pid, versions) {
 
   // 응원하기 — cheers the master (or primary) track. Hidden on your own work.
   const cheerTarget = final || primary;
-  const cheerBtnHtml = (!canEditArtist && cheerTarget) ? (() => {
-    const argT  = (cheerTarget.id || '').replace(/'/g,"\\'");
-    const argTi = (cheerTarget.title || projectTitle || '').replace(/'/g,"\\'");
-    const argA  = (cheerTarget.artist || '').replace(/'/g,"\\'");
-    return `<button class="cheer-btn" onclick="event.stopPropagation(); openCheerModal('${argT}','${argTi}','${argA}')" title="응원 메시지 보내기">
-      <i class="ri-heart-3-fill"></i> 응원하기
-    </button>`;
-  })() : '';
+  const cheerBtnHtml = ''; // 응원 기능 미사용 (안 쓰기로 함)
 
   // version-panels는 데모 카드 안으로 흡수됨 — 하단 MEMO & COMMENTS 섹션 제거
   // Master content (diary + comments + input) — shown on the cover page
@@ -8815,7 +8831,7 @@ function renderProjectBox(pid, versions) {
       const mInputHtml = canComment ? `
         <div class="demo-card-cm-input" onclick="event.stopPropagation();">
           <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="댓글 남기기…"
-                 onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); submitTrackComment('${v.id}'); }">
+                 onkeyup="if(event.key==='Enter' && !event.isComposing){ submitTrackComment('${v.id}'); }">
         </div>` : '';
       const demoLiked = isTrackLiked(v.id);
       // 카드 탭 = 선택 (is-selected) + 재생. 댓글 영역 탭 = 모달 (cm-list 의 onclick).
@@ -8835,6 +8851,7 @@ function renderProjectBox(pid, versions) {
               <i class="ri-close-line"></i>
             </button>
           ` : ''}
+          ${mInputHtml}
         </div>
       `;
     }).join('');
@@ -10019,6 +10036,10 @@ function renderArtistProfile(artistName) {
     const col = NOTE_COLORS[n.color] || NOTE_COLORS.yellow;
     const rot = n.rotation || ((i % 2 === 0 ? -1 : 1) * (Math.random() * 3 + 0.5));
     const safeTxt = (n.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+    // 댓글 목록 — 최근 3개. submitInlineComment 가 여기에 바로 한 줄 추가함.
+    const _escCm = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const _noteCms = Array.isArray(n.comments) ? n.comments : [];
+    const cmListHtml = `<div class="artist-postit-cm-list">${_noteCms.slice(-1).map(c => `<div class="artist-postit-cm-line">ㄴ ${_escCm(c.text)} <span class="artist-postit-cm-auth">— ${_escCm(c.author || '익명')}</span></div>`).join('')}</div>`;
     // 인라인 댓글 입력 — 로그인 시에만, 클릭 없이도 바로 보임
     const inlineCm = _meForCm ? `
       <form class="note-inline-form" onclick="event.stopPropagation();" onsubmit="event.preventDefault(); event.stopPropagation(); submitInlineComment('${n.id}', this);">
@@ -10028,6 +10049,7 @@ function renderArtistProfile(artistName) {
     return `
       <div class="artist-postit" style="background:${col.bg}; color:${col.text}; --rot:${rot}deg;" onclick="openNoteDetail('${n.id}')">
         <div class="artist-postit-body">${safeTxt}</div>
+        ${cmListHtml}
         ${inlineCm}
       </div>
     `;
@@ -10593,7 +10615,7 @@ window.renderLibrary = function (tab = window.currentLibraryTab) {
 
 // ===================== LIKE / UNLIKE =====================
 
-window.toggleLike = async function (trackId) {
+window.toggleLike = async function (trackId, btnEl) {
   const db = window.DB.get();
   if (!db.currentUser) {
     alert("로그인 후 이용 가능합니다!");
@@ -10614,6 +10636,9 @@ window.toggleLike = async function (trackId) {
     db.currentUser.likedTracks.push(trackId);
     if (track) track.likes = (track.likes || 0) + 1;
   }
+
+  const nowLiked = db.currentUser.likedTracks.indexOf(trackId) > -1;
+  if (btnEl) { const _ic = btnEl.querySelector('i'); if (_ic) _ic.className = nowLiked ? 'ri-heart-fill' : 'ri-heart-line'; }
 
   window.DB.save(db);
 
@@ -10640,6 +10665,7 @@ window.toggleLike = async function (trackId) {
   if (currentView === 'home') renderHome();
   else if (currentView === 'library') window.renderLibrary();
   else if (currentView === 'profile') renderProfile();
+  else if (currentView === 'artist' && typeof renderArtistProfile === 'function' && window.__currentArtistName) renderArtistProfile(window.__currentArtistName);
 }
 
 // ===================== PLAYLIST MODAL =====================
@@ -10691,7 +10717,7 @@ window.addToPlaylist = async function(playlistId) {
     renderSidebarPlaylists();
     showToast('플레이리스트에 추가됐어요!');
   } catch (e) {
-    alert('추가 실패: ' + (e.message || e));
+    if (typeof showToast === 'function') showToast(e.message || '추가 실패'); else alert('추가 실패: ' + (e.message || e));
   }
 };
 
@@ -12725,6 +12751,7 @@ function renderAuth() {
   googleBtn.onclick = async () => {
     if (!supabaseReady) { alert('Supabase 키가 설정되지 않았어요.'); return; }
     if (!consent.checked) { alert('약관 동의가 필요해요.'); return; }
+    const _origGoogleHtml = googleBtn.innerHTML;
     googleBtn.disabled = true;
     googleBtn.innerHTML = '<span>이동 중…</span>';
     try {
@@ -12732,7 +12759,7 @@ function renderAuth() {
     } catch (err) {
       alert('Google 로그인 시작 실패: ' + (err.message || err));
       googleBtn.disabled = false;
-      window.location.reload();
+      googleBtn.innerHTML = _origGoogleHtml;
     }
   };
 
@@ -13248,11 +13275,14 @@ window.openDemoWallModal = function (trackId) {
         `;
       }).join('');
 
-  // Enter 만으로 전송 (송신 버튼 없음, 사용자 요청)
+  // Enter + 송신 버튼 (한글 IME audit fix — 버튼 추가)
   const inputHtml = canComment ? `
     <div class="dwm-input-row">
       <input type="text" class="dwm-input" maxlength="200" placeholder="댓글 남기기…"
-             onkeydown="if(event.key==='Enter' && !event.isComposing){event.preventDefault(); submitDemoWallComment('${trackId}');}">
+             onkeyup="if(event.key==='Enter' && !event.isComposing && event.keyCode !== 229){ submitDemoWallComment('${trackId}'); }">
+      <button type="button" class="dwm-send-btn" onclick="submitDemoWallComment('${trackId}')" aria-label="댓글 보내기" title="보내기">
+        <i class="ri-send-plane-fill"></i>
+      </button>
     </div>
   ` : `<div class="dwm-loginhint">로그인하면 댓글을 남길 수 있어요</div>`;
 
