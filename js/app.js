@@ -6,6 +6,37 @@ const playBtn = document.getElementById('player-play-btn');
 // 인라인 HTML(쇼츠, 우리들의 벽 등)이 재생 상태를 확인할 수 있도록 노출.
 window.audioElement = audioElement;
 
+// ============================================================
+// 한글 IME Enter 안전 처리 — 사용자 audit (보내기 버튼 없이도 한 번에 전송)
+// 패턴:
+//   1) compositionstart/end 추적 → input.dataset.imeComposing 토글
+//   2) compositionend 후 짧은 시간 (140ms) 동안은 Enter 가 "ime 종료 Enter" 일
+//      가능성이 높음. 그 안에 들어온 Enter 는 → 즉시 submit (사용자가 원하는 패턴)
+//   3) 인라인 핸들러는 window._safeEnterSubmit(input, fn) 호출
+// ============================================================
+(() => {
+  const _imeJustEnded = new WeakMap();
+  document.addEventListener('compositionstart', (e) => {
+    const t = e.target;
+    if (!t || (t.tagName !== 'INPUT' && t.tagName !== 'TEXTAREA')) return;
+    t.dataset.imeComposing = '1';
+  }, true);
+  document.addEventListener('compositionend', (e) => {
+    const t = e.target;
+    if (!t || (t.tagName !== 'INPUT' && t.tagName !== 'TEXTAREA')) return;
+    delete t.dataset.imeComposing;
+    _imeJustEnded.set(t, Date.now());
+  }, true);
+  // 인라인에서 호출 — Enter 한 번이면 즉시 submit. 한글이든 영어든 OK.
+  window._safeEnterSubmit = function (input, submitFn) {
+    if (!input || !submitFn) return;
+    // 합성 중이면 Enter 무시 (다음 글자 진행)
+    if (input.dataset.imeComposing === '1') return;
+    // 모든 경우에 submit
+    submitFn();
+  };
+})();
+
 // ====================================================================
 // VOLUME CONTROL — 글로벌 플레이어 슬라이더 + 키보드 단축키 (↑/↓/M)
 //                + 가운데 토스트 + localStorage 영구 저장
@@ -8494,15 +8525,12 @@ function renderProjectBox(pid, versions) {
     const pcCmHintHtml = '';
 
     // 로그인한 누구나 인라인 입력 — Enter 만 (사용자 요청: send 버튼 제거)
-    // 종이비행기 송신 버튼 — 한글 IME Enter 두 번 눌러야 하는 문제 우회 (사용자 audit).
-    // Enter 도 지원하되 (compositionend 확인) 버튼이 항상 작동하는 fallback.
+    // Enter 한 번 = 즉시 전송. 한글 IME 도 OK (_safeEnterSubmit 가 compositionend 추적).
+    // 보내기 버튼 없음 — 사용자 요청.
     const inputInlineHtml = canComment ? `
       <div class="demo-card-cm-input" onclick="event.stopPropagation();">
         <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="댓글 남기기…"
-               onkeyup="if(event.key==='Enter' && !event.isComposing && event.keyCode !== 229){ submitTrackComment('${v.id}'); }">
-        <button type="button" class="cm-send-btn" onclick="event.stopPropagation(); submitTrackComment('${v.id}');" aria-label="댓글 보내기" title="보내기">
-          <i class="ri-send-plane-fill"></i>
-        </button>
+               onkeydown="if(event.key==='Enter'){ event.preventDefault(); window._safeEnterSubmit(this, () => submitTrackComment('${v.id}')); }">
       </div>` : '';
 
     const demoLiked = isTrackLiked(v.id);
@@ -13275,14 +13303,11 @@ window.openDemoWallModal = function (trackId) {
         `;
       }).join('');
 
-  // Enter + 송신 버튼 (한글 IME audit fix — 버튼 추가)
+  // Enter 한 번 = 전송. 한글 IME 안전 (_safeEnterSubmit). 버튼 없음.
   const inputHtml = canComment ? `
     <div class="dwm-input-row">
       <input type="text" class="dwm-input" maxlength="200" placeholder="댓글 남기기…"
-             onkeyup="if(event.key==='Enter' && !event.isComposing && event.keyCode !== 229){ submitDemoWallComment('${trackId}'); }">
-      <button type="button" class="dwm-send-btn" onclick="submitDemoWallComment('${trackId}')" aria-label="댓글 보내기" title="보내기">
-        <i class="ri-send-plane-fill"></i>
-      </button>
+             onkeydown="if(event.key==='Enter'){ event.preventDefault(); window._safeEnterSubmit(this, () => submitDemoWallComment('${trackId}')); }">
     </div>
   ` : `<div class="dwm-loginhint">로그인하면 댓글을 남길 수 있어요</div>`;
 
