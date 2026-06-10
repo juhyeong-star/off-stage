@@ -10164,7 +10164,7 @@ function renderArtistProfile(artistName) {
                   <div id="artist-bio-line" class="artist-bio-inline" onclick="editProfile()" title="프로필 설정에서 수정">
                     ${initialBio
                       ? `<span class="artist-bio-text">${initialBio.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</span>`
-                      : '<span class="artist-bio-inline-empty"><i class="ri-edit-line"></i> 자기소개를 적어보세요 — 우상단 ⚙️ 에서</span>'
+                      : '<span class="artist-bio-inline-empty"><i class="ri-edit-line"></i> 자신을 소개해보아요</span>'
                     }
                   </div>
                 ` : (initialBio ? `
