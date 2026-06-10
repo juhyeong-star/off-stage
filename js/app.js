@@ -9370,6 +9370,7 @@ window.submitTrackComment = async function(trackId) {
   };
   // ⚠ window.DB.get() 는 매번 새 parse → 다른 reference. window.__tracks 가
   //   진짜 in-memory 단일 진실원이므로 거기에도 반드시 push.
+  //   + localStorage 에도 즉시 save → 다음 DB.get() 호출도 최신 데이터 봄.
   if (Array.isArray(window.__tracks)) {
     const tMem = window.__tracks.find(t => t && t.id === trackId);
     if (tMem) {
@@ -9380,6 +9381,7 @@ window.submitTrackComment = async function(trackId) {
   if (track) {
     if (!Array.isArray(track.trackComments)) track.trackComments = [];
     track.trackComments.push(tempComment);
+    try { window.DB.save(db); } catch (_) {}    // localStorage 즉시 반영
   }
   if (txtEl) txtEl.value = '';        // 입력칸 즉시 비우기
   // 모든 곳 DOM 업데이트 (inline + 모든 모달)
@@ -9444,18 +9446,22 @@ window.submitTrackComment = async function(trackId) {
 // - openTrackCommentsModal (#track-comments-modal #tcm-list + count)
 // 호출: submit/delete/optimistic insert 후 어디서든.
 window._refreshTrackCommentUI = function (trackId) {
-  // ⚠ window.DB.get() 는 localStorage 에서 매번 새로 parse 해서 다른 reference 반환.
-  //   → 인메모리 변경(optimistic push)은 안 보임.
-  //   해결: window.__tracks (Supabase 가 직접 mutate 하는 in-memory) 우선 조회.
-  let track = null;
+  // ⚠ window.DB.get() 는 localStorage 에서 매번 새로 parse → 다른 reference.
+  //   해결: window.__tracks (in-memory) 우선, 둘 다 검사 후 댓글 합집합 사용.
+  //   이렇게 하면 push 가 어느 한쪽만 됐어도 최신 데이터가 보임.
+  const cmsByDriver = [];
   if (Array.isArray(window.__tracks)) {
-    track = window.__tracks.find(t => t && t.id === trackId);
+    const t = window.__tracks.find(t => t && t.id === trackId);
+    if (t && Array.isArray(t.trackComments)) cmsByDriver.push(t.trackComments);
   }
-  if (!track) {
+  try {
     const db = window.DB.get();
-    track = (db.tracks || []).find(t => t && t.id === trackId);
-  }
-  const allCms = (track && Array.isArray(track.trackComments)) ? track.trackComments : [];
+    const t = (db.tracks || []).find(t => t && t.id === trackId);
+    if (t && Array.isArray(t.trackComments)) cmsByDriver.push(t.trackComments);
+  } catch (_) {}
+  // 가장 긴 배열 = 가장 최신 (둘 다 동일이면 동일).
+  let allCms = [];
+  cmsByDriver.forEach(arr => { if (arr.length > allCms.length) allCms = arr; });
   const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const myId   = (window.__currentUser && window.__currentUser.id) || null;
   const myName = (window.__currentUser && window.__currentUser.name) || '';
@@ -13381,6 +13387,7 @@ window.submitDemoWallComment = async function (trackId) {
   }
   if (!Array.isArray(track.trackComments)) track.trackComments = [];
   track.trackComments.push(tempComment);
+  try { window.DB.save(db); } catch (_) {}    // localStorage 즉시 반영
   if (input) input.value = '';
   try { _refreshTrackCommentUI(trackId); } catch (_) {}
 
