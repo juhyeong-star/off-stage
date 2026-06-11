@@ -37,6 +37,70 @@ window.audioElement = audioElement;
   };
 })();
 
+// ============================================================
+// i18n — KO / EN 토글 (옵션 B, 점진적 도입)
+// CSS 가 [data-lang="ko"] / [data-lang="en"] 기반으로 한쪽만 표시.
+// 1) 저장된 선택 → localStorage 'offstage_lang'
+// 2) 없으면 브라우저 언어로 감지 (한국어 → ko, 그 외 → en)
+// 3) 토글 버튼 클릭 → 즉시 전환 + 저장
+// ============================================================
+(() => {
+  const KEY = 'offstage_lang';
+  const SUPPORTED = ['ko', 'en'];
+
+  function detectInitialLang() {
+    try {
+      const saved = localStorage.getItem(KEY);
+      if (saved && SUPPORTED.includes(saved)) return saved;
+    } catch (_) {}
+    const browser = (navigator.language || 'ko').toLowerCase();
+    return browser.startsWith('ko') ? 'ko' : 'en';
+  }
+
+  function applyLang(lang) {
+    if (!SUPPORTED.includes(lang)) lang = 'ko';
+    document.documentElement.dataset.lang = lang;
+    try { localStorage.setItem(KEY, lang); } catch (_) {}
+
+    // 토글 버튼 active 상태
+    document.querySelectorAll('.lang-toggle .opt').forEach(el => {
+      el.classList.toggle('active', el.dataset.langOpt === lang);
+    });
+
+    // Search placeholder (input 은 자식 노드 X 라서 attr 로 처리)
+    const search = document.getElementById('global-search');
+    if (search) search.placeholder = lang === 'ko' ? '검색...' : 'Search...';
+
+    // 다른 컴포넌트가 listen 하고 싶을 때 (나중에 동적 렌더 컨텐츠)
+    window.dispatchEvent(new CustomEvent('langchange', { detail: { lang } }));
+  }
+
+  function bindToggle() {
+    const toggle = document.getElementById('lang-toggle');
+    if (!toggle) return;
+    toggle.addEventListener('click', (e) => {
+      const opt = e.target.closest('.opt');
+      if (!opt) return;
+      applyLang(opt.dataset.langOpt);
+    });
+  }
+
+  // 첫 페인트 전에 lang 적용 (DOM 이 이미 파싱돼있음)
+  const initial = detectInitialLang();
+  applyLang(initial);
+
+  // DOM 로드 후 토글 바인딩
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindToggle);
+  } else {
+    bindToggle();
+  }
+
+  // 외부에서 부를 수 있게 노출
+  window.setLang = applyLang;
+  window.getLang = () => document.documentElement.dataset.lang || 'ko';
+})();
+
 // ====================================================================
 // VOLUME CONTROL — 글로벌 플레이어 슬라이더 + 키보드 단축키 (↑/↓/M)
 //                + 가운데 토스트 + localStorage 영구 저장

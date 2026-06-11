@@ -17449,3 +17449,44 @@ body:has(#global-player.expanded) .global-back-btn {
   gap: 8px;
 }
 .dwm-input-row .dwm-input { flex: 1; min-width: 0; }
+
+/* ============================================================
+   i18n — KO/EN 토글 (사용자 요청 옵션 B, 점진적 도입)
+   1) html[data-lang="ko"] 일 때 [data-i18n-en] 숨김
+   2) html[data-lang="en"] 일 때 [data-i18n-ko] 숨김
+   3) 양쪽 문자열을 DOM 에 같이 두고 CSS 가 한쪽만 보여줌 (깜빡임 X)
+   4) 사용자 콘텐츠 (제목, 댓글) 는 자동 번역 안 함 — 원본 그대로.
+   ============================================================ */
+html[data-lang="ko"] [data-i18n-en] { display: none !important; }
+html[data-lang="en"] [data-i18n-ko] { display: none !important; }
+
+/* 토글 버튼 — 사이드바 상단 */
+.lang-toggle {
+  display: inline-flex;
+  background: rgba(255,255,255,0.06);
+  border-radius: 999px;
+  padding: 3px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid rgba(255,255,255,0.10);
+  margin: 6px 0 12px;
+  align-self: flex-start;
+}
+.lang-toggle .opt {
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: rgba(255,255,255,0.6);
+  transition: color 0.18s, background 0.18s;
+  letter-spacing: 0.4px;
+}
+.lang-toggle .opt.active {
+  background: var(--brand-color, #1DB954);
+  color: #fff;
+}
+/* 모바일 — 탭바 안에 작은 토글 (or 더보기 메뉴 안). 일단 사이드바만 */
+@media (max-width: 768px) {
+  .lang-toggle { font-size: 10px; }
+  .lang-toggle .opt { padding: 3px 8px; }
+}
