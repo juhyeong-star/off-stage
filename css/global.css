@@ -7273,13 +7273,17 @@ html, body { overflow-x: hidden; max-width: 100%; }
   position: fixed;
   top: 0; left: 0; right: 0;                  /* ⭐️ 맨 위로 (사용자 요청) */
   z-index: 1100;
-  background: rgba(10, 6, 24, 0.95);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255,255,255,0.08);    /* border-top → border-bottom */
+  /* 사용자 요청 — 탭바 검정 박스 제거. 글씨/아이콘만 떠있게,
+     도형 우주 배경이 그대로 비치게 (탭바 박스로 까매 보이던 문제 해결). */
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: none;
   padding: calc(6px + env(safe-area-inset-top, 0)) 0 6px;     /* safe-area-top */
   justify-content: space-around;
   align-items: stretch;
+  /* 글씨가 배경 위에 떠있을 때 가독성을 위해 살짝 그림자 (배경 차이 흡수) */
+  pointer-events: none;             /* a 태그 안에서만 받게 */
 }
 .mobile-tab {
   flex: 1;
@@ -7289,22 +7293,25 @@ html, body { overflow-x: hidden; max-width: 100%; }
   justify-content: center;
   gap: 2px;
   padding: 7px 2px 5px;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255,255,255,0.75);
   text-decoration: none;
-  transition: color 0.15s, transform 0.12s, background 0.15s;
-  /* ⭐️ 칸칸이 — 탭 사이 구분선 + 약간의 배경 카드 느낌 */
-  background: rgba(255,255,255,0.025);
-  border-right: 1px solid rgba(255,255,255,0.08);
-  position: relative;
-}
-.mobile-tab:last-child {
+  transition: color 0.15s, transform 0.12s;
+  /* 배경/보더 제거 — 글씨만 (사용자 요청) */
+  background: transparent;
   border-right: none;
+  position: relative;
+  pointer-events: auto;             /* 위 부모가 none 이라 다시 풀어줌 */
+  /* 가독성 — 배경 색이 어떤 페이지든 흰 글씨가 잘 보이게 약한 글로우 */
+  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+}
+.mobile-tab i {
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.7));
 }
 .mobile-tab.is-active {
-  background: rgba(255,255,255,0.08);   /* 활성 탭 살짝 진하게 */
+  /* 활성 탭은 약간 진한 색 + drop-shadow 글로우 (기존 색별 active 글로우 유지) */
 }
 .mobile-tab:active {
-  background: rgba(255,255,255,0.12);
+  /* 누르는 순간 살짝 scale (transform) — 기존 :active scale(0.94) 그대로 */
 }
 .mobile-tab i { font-size: 22px; }
 .mobile-tab .mobile-tab-label {
