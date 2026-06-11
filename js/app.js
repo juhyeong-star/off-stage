@@ -99,6 +99,31 @@ window.audioElement = audioElement;
   // 외부에서 부를 수 있게 노출
   window.setLang = applyLang;
   window.getLang = () => document.documentElement.dataset.lang || 'ko';
+
+  // JS 템플릿용 헬퍼 — 양쪽 span 을 출력 (CSS 가 한쪽만 보여줌)
+  // 사용: ${_i18n('도형', 'Shapes')}
+  window._i18n = (ko, en) =>
+    `<span data-i18n-ko>${ko}</span><span data-i18n-en>${en}</span>`;
+
+  // placeholder/aria-label 등 attribute 용 — 현재 lang 기준 즉시 문자열 반환
+  // 사용: input.placeholder = _t('검색...', 'Search...')
+  // 단점: lang 바뀌면 다시 렌더해야 함. 정적 HTML/JS innerHTML 만 쓰는 곳에 OK.
+  window._t = (ko, en) => (window.getLang() === 'en' ? en : ko);
+
+  // 언어 바뀌면 _t() 로 박힌 텍스트들 (auth 헤더, 검색 placeholder, 현재 라우트 등)
+  // 을 새 언어로 다시 그리기. _i18n() span 들은 CSS 가 자동으로 처리.
+  window.addEventListener('langchange', () => {
+    try { if (typeof updateHeaderAuth === 'function') updateHeaderAuth(); } catch (_) {}
+    // 현재 라우트 재렌더 — _t() 로 박힌 placeholder/내용이 바뀌게.
+    // navigateTo 의 dedupe (같은 라우트 0.5초 내 무시) 우회 필요.
+    try {
+      if (typeof currentView !== 'undefined' && typeof navigateTo === 'function' && currentView) {
+        if (typeof _lastNavTs !== 'undefined') _lastNavTs = 0;
+        if (typeof _lastNavRoute !== 'undefined') _lastNavRoute = null;
+        setTimeout(() => navigateTo(currentView), 0);
+      }
+    } catch (_) {}
+  });
 })();
 
 // ====================================================================
@@ -1503,10 +1528,11 @@ window.openNotifPanel = function() {
   const fmtTime = (t) => {
     if (!t) return '';
     const diff = Date.now() - t;
-    if (diff < 60000) return '방금';
-    if (diff < 3600000) return Math.floor(diff/60000) + '분 전';
-    if (diff < 86400000) return Math.floor(diff/3600000) + '시간 전';
-    return Math.floor(diff/86400000) + '일 전';
+    const isEn = window.getLang() === 'en';
+    if (diff < 60000) return isEn ? 'just now' : '방금';
+    if (diff < 3600000) return isEn ? Math.floor(diff/60000) + 'm ago' : Math.floor(diff/60000) + '분 전';
+    if (diff < 86400000) return isEn ? Math.floor(diff/3600000) + 'h ago' : Math.floor(diff/3600000) + '시간 전';
+    return isEn ? Math.floor(diff/86400000) + 'd ago' : Math.floor(diff/86400000) + '일 전';
   };
 
   const renderDrawer = () => {
@@ -1515,14 +1541,14 @@ window.openNotifPanel = function() {
     drawer.innerHTML = `
       <div class="notif-head">
         <button class="notif-close" onclick="closeNotifPanel()" aria-label="닫기"><i class="ri-close-line"></i></button>
-        <div class="notif-title">알림</div>
-        <button class="notif-mark-all" onclick="window.markAllNotifsRead()">모두 읽음</button>
+        <div class="notif-title">${_t('알림', 'Notifications')}</div>
+        <button class="notif-mark-all" onclick="window.markAllNotifsRead()">${_t('모두 읽음', 'Mark all read')}</button>
       </div>
       <div class="notif-list">
         ${items.length === 0 ? `
           <div class="notif-empty">
             <i class="ri-notification-off-line"></i>
-            <p>새 알림이 없어요</p>
+            <p>${_t('새 알림이 없어요', 'No new notifications')}</p>
           </div>
         ` : items.map(n => {
           const isRead = readSet.has(n.id);
@@ -2194,18 +2220,18 @@ function updateHeaderAuth() {
         <img src="${user.avatar}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" alt="${(user.name||'').replace(/"/g,'&quot;')}">
         <div style="flex:1;min-width:0;">
           <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${user.name}</div>
-          <div style="font-size:11px;color:var(--text-secondary);">${isAdmin ? '관리자' : '@' + (user.name || '').replace(/\s+/g,'').toLowerCase()}</div>
+          <div style="font-size:11px;color:var(--text-secondary);">${isAdmin ? _t('관리자', 'Admin') : '@' + (user.name || '').replace(/\s+/g,'').toLowerCase()}</div>
         </div>
         <i class="ri-settings-3-line" style="color:var(--text-secondary);font-size:16px;"></i>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         ${isAdmin ? `<button class="btn-primary" style="padding:6px 14px;font-size:12px;background:#9C27B0;" onclick="navigateTo('admin')"><i class="ri-dashboard-fill"></i> Admin</button>` : ''}
-        <button style="color:var(--text-secondary);font-size:12px;padding:6px 8px;" onclick="logout()">로그아웃</button>
+        <button style="color:var(--text-secondary);font-size:12px;padding:6px 8px;" onclick="logout()">${_t('로그아웃', 'Sign out')}</button>
       </div>
     `;
   } else {
     container.innerHTML = `
-      <button class="btn-primary" style="width:100%;padding:10px;font-size:13px;" onclick="navigateTo('auth')">로그인 / 가입</button>
+      <button class="btn-primary" style="width:100%;padding:10px;font-size:13px;" onclick="navigateTo('auth')">${_t('로그인 / 가입', 'Sign in / up')}</button>
     `;
   }
 }
@@ -2395,10 +2421,10 @@ function renderTags() {
 
   if (tagList.length === 0) {
     appContent.innerHTML = `
-      <div class="page-intro reveal">지금의 기분을 tag의 노래로 들어보세요</div>
+      <div class="page-intro reveal">${_i18n('지금의 기분을 tag의 노래로 들어보세요', 'Find music that matches your mood, through tags')}</div>
       <div style="text-align:center; padding: 80px 0; color:var(--text-secondary);">
         <i class="ri-price-tag-3-line" style="font-size: 48px; margin-bottom: 16px; display:block;"></i>
-        아직 태그가 없습니다. 곡을 업로드할 때 태그를 달아보세요!
+        ${_i18n('아직 태그가 없습니다. 곡을 업로드할 때 태그를 달아보세요!', 'No tags yet. Add some when you upload music!')}
       </div>
     `;
     return;
@@ -2413,8 +2439,8 @@ function renderTags() {
   }).join('');
 
   appContent.innerHTML = `
-    <div class="page-intro reveal">지금의 기분을 tag의 노래로 들어보세요</div>
-    <div class="page-count reveal">총 <strong>${tagList.length}</strong>개의 태그 · <strong>${totalTracks}</strong>곡</div>
+    <div class="page-intro reveal">${_i18n('지금의 기분을 tag의 노래로 들어보세요', 'Find music that matches your mood, through tags')}</div>
+    <div class="page-count reveal">${_i18n(`총 <strong>${tagList.length}</strong>개의 태그 · <strong>${totalTracks}</strong>곡`, `<strong>${tagList.length}</strong> tags · <strong>${totalTracks}</strong> tracks`)}</div>
     <div class="tags-cloud reveal-scale">
       ${cloudHtml}
     </div>
@@ -2439,13 +2465,13 @@ function renderTagDetail(tag) {
         <div class="sub-page artist-page">
           <div class="reveal" style="margin-bottom:14px;">
             <a href="#" onclick="event.preventDefault(); navigateTo('tags')">
-              <i class="ri-arrow-left-line"></i> 모든 태그
+              <i class="ri-arrow-left-line"></i> ${_i18n('모든 태그', 'All tags')}
             </a>
           </div>
           <div class="tag-hero">
             <h1 class="tag-hero-title">#${safeTag}</h1>
           </div>
-          <p style="color:#2a2240; margin-top: 40px; text-align:center; font-weight:600;">이 태그를 가진 곡이 아직 없어요.</p>
+          <p style="color:#2a2240; margin-top: 40px; text-align:center; font-weight:600;">${_i18n('이 태그를 가진 곡이 아직 없어요.', 'No tracks with this tag yet.')}</p>
         </div>
       </div>
     `;
@@ -2869,12 +2895,12 @@ async function renderWall() {
   const emptyMsg = total === 0
     ? (q
         ? `<div class="wall-empty">"${q}" 검색 결과가 없어요 🔍</div>`
-        : `<div class="wall-empty">아직 아무도 안 적었어.<br>첫 번째가 되어봐! 🖊️</div>`
+        : `<div class="wall-empty">${_i18n('아직 아무도 안 적었어.<br>첫 번째가 되어봐! 🖊️', 'No notes yet.<br>Be the first! 🖊️')}</div>`
       )
     : '';
 
   appContent.innerHTML = `
-    <div class="page-intro reveal">게시물을 올려 지금의 기분을 음악과 같이 표현해보세요</div>
+    <div class="page-intro reveal">${_i18n('게시물을 올려 지금의 기분을 음악과 같이 표현해보세요', 'Post a note and share your mood through music')}</div>
     ${pageCountHtml}
     <div class="wall-board" style="height:${total > 0 ? boardH : 600}px;">
       ${toolbar ? `<div class="wall-header-v2"><div class="wall-title-row">${toolbar}</div></div>` : ''}
@@ -3588,7 +3614,7 @@ window.openNoteDetail = function(noteId) {
     const _myId = (window.__currentUser && window.__currentUser.id) || null;
     const _myName = (_me && _me.name) || '';
     if (comments.length === 0) {
-      return '<div class="no-comments">ㄴ 아직 조용하네...<br>ㄴ 첫 낙서를 남겨봐</div>';
+      return `<div class="no-comments">${_t('ㄴ 아직 조용하네...<br>ㄴ 첫 낙서를 남겨봐', 'ㄴ All quiet here...<br>ㄴ Leave the first scribble')}</div>`;
     }
     return comments.map((cm, i) => {
       const cmSafe = (cm.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -3655,7 +3681,7 @@ window.openNoteDetail = function(noteId) {
           <div id="note-detail-comments-list">${commentsHtml}</div>
 
           <div class="scribble-input-row">
-            <input type="text" id="comment-text" class="scribble-input" placeholder="댓글 남기기…" onkeyup="if(event.key==='Enter' && !event.isComposing){ submitComment('${noteId}'); }">
+            <input type="text" id="comment-text" class="scribble-input" placeholder="${_t('댓글 남기기…', 'Leave a comment…')}" onkeyup="if(event.key==='Enter' && !event.isComposing){ submitComment('${noteId}'); }">
             <!-- 모바일 Enter 키가 안 먹는 IME/브라우저 대비 명확한 send 버튼 — PC 에선 CSS 로 숨김 -->
             <button type="button" class="scribble-send-btn" onclick="submitComment('${noteId}')" aria-label="댓글 남기기"><i class="ri-send-plane-fill"></i></button>
           </div>
@@ -5532,7 +5558,7 @@ function renderShapes() {
   `;
 
   appContent.innerHTML = `
-    <div class="page-intro reveal">도형을 클릭해 누군가의 감성을 발견해보세요</div>
+    <div class="page-intro reveal">${_i18n('도형을 클릭해 누군가의 감성을 발견해보세요', 'Tap a shape and discover an artist\'s vibe')}</div>
     <div class="shapes-universe" style="height: ${universeHeight}px;">
       ${decoHtml}
       ${shapesHtml}
@@ -6763,9 +6789,9 @@ function renderUpload() {
 
   appContent.innerHTML = `
     <div style="max-width: 600px; margin: 0 auto; padding: 30px;" class="card">
-      <h1 style="margin-bottom: 8px;">음원 업로드 (Upload)</h1>
+      <h1 style="margin-bottom: 8px;">${_i18n('음원 업로드', 'Upload Music')}</h1>
       <p style="color:var(--text-secondary); font-size:13px; margin-bottom: 24px;">
-        데모부터 발매까지 — 하나의 Demo 안에 여러 버전을 차곡차곡 쌓을 수 있어요.
+        ${_i18n('데모부터 발매까지 — 하나의 Demo 안에 여러 버전을 차곡차곡 쌓을 수 있어요.', 'From demo to release — stack multiple versions inside a single Demo.')}
       </p>
 
       <!-- Tier 1: 발매 단독 vs Demo (구 "프로젝트")
@@ -6828,39 +6854,39 @@ function renderUpload() {
         </div>
 
         <div class="form-group master-only">
-          <label>곡 제목 (Title) <span id="up-title-hint" style="color:var(--text-secondary); font-weight:normal;"></span></label>
-          <input type="text" class="form-control" id="up-title" required placeholder="예: 한밤의 드라이브">
+          <label>${_i18n('곡 제목', 'Title')} <span id="up-title-hint" style="color:var(--text-secondary); font-weight:normal;"></span></label>
+          <input type="text" class="form-control" id="up-title" required placeholder="${_t('예: 한밤의 드라이브', 'e.g. Midnight Drive')}">
         </div>
         <div class="form-group">
-          <label>버전 라벨 (Version label)</label>
-          <input type="text" class="form-control" id="up-version-label" value="Final" placeholder="예: Final, Demo 1, Pre-master">
-          <div class="form-note">카드에 표시될 이름. 자동으로 채워지지만 자유롭게 수정 가능. (Card display name — auto-filled but editable.)</div>
+          <label>${_i18n('버전 라벨', 'Version label')}</label>
+          <input type="text" class="form-control" id="up-version-label" value="Final" placeholder="${_t('예: Final, Demo 1, Pre-master', 'e.g. Final, Demo 1, Pre-master')}">
+          <div class="form-note">${_i18n('카드에 표시될 이름. 자동으로 채워지지만 자유롭게 수정 가능.', 'Card display name — auto-filled but editable.')}</div>
         </div>
 
         <div class="form-group master-only">
-          <label>커버 이미지 (Cover image, 선택/optional)</label>
+          <label>${_i18n('커버 이미지 (선택)', 'Cover image (optional)')}</label>
           <input type="file" class="form-control" id="up-cover" accept="image/*">
-          <div class="form-note">"파일 선택" 으로 이미지 첨부 (Click "Choose file" to attach an image)</div>
+          <div class="form-note">${_i18n('"파일 선택" 으로 이미지 첨부', 'Click "Choose file" to attach an image')}</div>
         </div>
         <div class="form-group">
-          <label>오디오 파일 (Audio file) <span id="up-audio-size" style="color:var(--text-secondary); font-weight:normal;"></span></label>
+          <label>${_i18n('오디오 파일', 'Audio file')} <span id="up-audio-size" style="color:var(--text-secondary); font-weight:normal;"></span></label>
           <input type="file" class="form-control" id="up-audio" accept="audio/*" required
                  onchange="(function(el){var f=el.files[0];if(!f)return;var mb=(f.size/1048576).toFixed(1);var lbl=document.getElementById('up-audio-size');if(lbl)lbl.textContent=' · '+mb+'MB'+(f.size>50*1048576?' (50MB 초과 — 거부됨 / over limit)':'');})(this)">
-          <div class="form-note">"파일 선택" 으로 오디오 첨부 · 최대 50MB · mp3/m4a/wav (Click "Choose file" to attach audio · Max 50MB · mp3/m4a/wav)</div>
+          <div class="form-note">${_i18n('"파일 선택" 으로 오디오 첨부 · 최대 50MB · mp3/m4a/wav', 'Click "Choose file" to attach audio · Max 50MB · mp3/m4a/wav')}</div>
         </div>
         <div class="form-group">
-          <label>곡 소개 (Description) <span style="color:#ff6b6b;">(필수/required)</span></label>
-          <textarea class="form-control" id="up-description" rows="3" placeholder="이 곡에 얽힌 이야기나 리스너들에게 전하고 싶은 멘트를 자유롭게 적어주세요." required></textarea>
+          <label>${_i18n('곡 소개', 'Description')} <span style="color:#ff6b6b;">${_i18n('(필수)', '(required)')}</span></label>
+          <textarea class="form-control" id="up-description" rows="3" placeholder="${_t('이 곡에 얽힌 이야기나 리스너들에게 전하고 싶은 멘트를 자유롭게 적어주세요.', 'Share the story behind this track or a message for your listeners.')}" required></textarea>
         </div>
         <div class="form-group">
-          <label><i class="ri-double-quotes-l" style="color:var(--brand-color);"></i> 가사 (Lyrics) <span style="color:var(--text-secondary); font-weight:normal; font-size:12px;">(발매 시 필수 · 데모는 선택 / required for release)</span></label>
-          <textarea class="form-control" id="up-lyrics" rows="6" placeholder="가사를 적어주세요. 곡과 함께 자동으로 '우리들의 벽'에 게시돼요. (데모는 비워둬도 돼요)"></textarea>
-          <div class="form-note">가사를 적으면 노래와 함께 우리들의 벽에 자동 게시됩니다. 발매(마스터)는 가사가 필수예요. (Auto-posts to the wall; required for releases.)</div>
+          <label><i class="ri-double-quotes-l" style="color:var(--brand-color);"></i> ${_i18n('가사', 'Lyrics')} <span style="color:var(--text-secondary); font-weight:normal; font-size:12px;">${_i18n('(발매 시 필수 · 데모는 선택)', '(required for release · optional for demo)')}</span></label>
+          <textarea class="form-control" id="up-lyrics" rows="6" placeholder="${_t(`가사를 적어주세요. 곡과 함께 자동으로 '우리들의 벽'에 게시돼요. (데모는 비워둬도 돼요)`, `Write the lyrics. They'll auto-post to Our Wall with the track. (Optional for demos.)`)}"></textarea>
+          <div class="form-note">${_i18n('가사를 적으면 노래와 함께 우리들의 벽에 자동 게시됩니다. 발매(마스터)는 가사가 필수예요.', 'Lyrics auto-post to the wall with your track; required for releases (masters).')}</div>
         </div>
         <div class="form-group">
-          <label><i class="ri-hashtag" style="color:var(--brand-color);"></i> 태그 (Tags) <span style="color:#ff6b6b;">(필수/required)</span></label>
-          <input type="text" class="form-control" id="up-tags" placeholder="예: #1982년 느낌 #funky #고2 기타과 음악" required>
-          <div class="form-note">장르·무드·학년·연도 등 자유롭게. #은 자동으로 붙어요. (Genre, mood, etc. — # is auto-added.)</div>
+          <label><i class="ri-hashtag" style="color:var(--brand-color);"></i> ${_i18n('태그', 'Tags')} <span style="color:#ff6b6b;">${_i18n('(필수)', '(required)')}</span></label>
+          <input type="text" class="form-control" id="up-tags" placeholder="${_t('예: #1982년 느낌 #funky #고2 기타과 음악', 'e.g. #1982 vibe #funky #11thGradeGuitar')}" required>
+          <div class="form-note">${_i18n('장르·무드·학년·연도 등 자유롭게. #은 자동으로 붙어요.', 'Genre, mood, year, etc. — # is auto-added.')}</div>
         </div>
 
         <!-- Distribution metadata — shown only when uploading a master -->
@@ -6883,40 +6909,40 @@ function renderUpload() {
         </div>
 
         <hr style="border-color: var(--divider); margin: 20px 0;">
-        <h2 style="font-size: 18px; color: var(--brand-color); margin-bottom: 4px;"><i class="ri-shapes-fill"></i> 도형 낙서 (Shape graffiti, 3줄/3 lines) <span style="color:#ff6b6b; font-size:13px;">(필수/required)</span></h2>
-        <p id="up-graffiti-note" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">메인에 뜨는 도형에 적힐 내용. 3줄 다 채워주세요. (Text on the floating shape — fill all 3 lines.)</p>
+        <h2 style="font-size: 18px; color: var(--brand-color); margin-bottom: 4px;"><i class="ri-shapes-fill"></i> ${_i18n('도형 낙서 (3줄)', 'Shape graffiti (3 lines)')} <span style="color:#ff6b6b; font-size:13px;">${_i18n('(필수)', '(required)')}</span></h2>
+        <p id="up-graffiti-note" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">${_i18n('메인에 뜨는 도형에 적힐 내용. 3줄 다 채워주세요.', 'Text on the floating shape — fill all 3 lines.')}</p>
         <div class="form-group">
-          <label>1줄 (Line 1)</label>
+          <label>${_i18n('1줄', 'Line 1')}</label>
           <input type="text" class="form-control" id="up-line1" placeholder="" maxlength="40" required>
         </div>
         <div class="form-group">
-          <label>2줄 (Line 2)</label>
+          <label>${_i18n('2줄', 'Line 2')}</label>
           <input type="text" class="form-control" id="up-line2" placeholder="" maxlength="40" required>
         </div>
         <div class="form-group">
-          <label>3줄 (Line 3)</label>
+          <label>${_i18n('3줄', 'Line 3')}</label>
           <input type="text" class="form-control" id="up-line3" placeholder="" maxlength="40" required>
         </div>
         <div class="form-group">
-          <label>도형 모양 (Shape)</label>
+          <label>${_i18n('도형 모양', 'Shape')}</label>
           <select class="form-control" id="up-shape">
-            <option value="circle">원 (Circle)</option>
-            <option value="oval">타원 (Oval)</option>
-            <option value="rect">둥근 사각형 (Rounded square)</option>
-            <option value="wide">직사각형 (Rectangle)</option>
-            <option value="pill">알약 (Pill)</option>
-            <option value="hexagon">육각형 (Hexagon)</option>
+            <option value="circle">${_t('원', 'Circle')}</option>
+            <option value="oval">${_t('타원', 'Oval')}</option>
+            <option value="rect">${_t('둥근 사각형', 'Rounded square')}</option>
+            <option value="wide">${_t('직사각형', 'Rectangle')}</option>
+            <option value="pill">${_t('알약', 'Pill')}</option>
+            <option value="hexagon">${_t('육각형', 'Hexagon')}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>도형 색상 (Color)</label>
+          <label>${_i18n('도형 색상', 'Color')}</label>
           <input type="color" class="form-control" id="up-shape-color" value="#FF4081" style="height:44px; padding:4px;">
         </div>
 
         <hr style="border-color: var(--divider); margin: 30px 0;">
 
-        <h2 style="font-size: 18px; color: var(--brand-color);">이용 약관 (Terms)</h2>
-        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">Off-Stage 플랫폼 업로드 및 재생에 관한 동의서입니다. (Upload & playback agreement.)</p>
+        <h2 style="font-size: 18px; color: var(--brand-color);">${_i18n('이용 약관', 'Terms')}</h2>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">${_i18n('Off-Stage 플랫폼 업로드 및 재생에 관한 동의서입니다.', 'Off-Stage upload & playback agreement.')}</p>
 
         <div class="agreement-box">
           <strong>제 1조 (목적) / Article 1 (Purpose)</strong><br>
@@ -6933,12 +6959,12 @@ function renderUpload() {
         <div class="form-group">
           <label class="checkbox-label">
             <input type="checkbox" id="up-agree" required>
-            위 음원 유통 및 서비스 이용 약관에 동의합니다. (필수 / Agree to terms — required)
+            ${_i18n('위 음원 유통 및 서비스 이용 약관에 동의합니다. (필수)', 'I agree to the upload & playback terms above. (required)')}
           </label>
         </div>
 
         <button type="submit" class="btn-primary" style="width: 100%; padding: 14px; font-size: 16px;">
-          동의하고 업로드 완료하기 (Upload)
+          ${_i18n('동의하고 업로드 완료하기', 'Agree & Upload')}
         </button>
       </form>
     </div>
@@ -11017,10 +11043,10 @@ window.openDmModal = async function(artistName, artistAvatar) {
         <img src="${safeAvatar}" class="dm-header-avatar" alt="${safeName}">
         <div class="dm-header-text">
           <div class="dm-header-name">${safeName}</div>
-          <div class="dm-header-status"><span class="dm-status-dot"></span> 답장 가능</div>
+          <div class="dm-header-status"><span class="dm-status-dot"></span> ${_t('답장 가능', 'Online')}</div>
         </div>
       </div>
-      <div class="dm-messages"><div class="dm-empty"><div class="dm-empty-text">메시지 불러오는 중…</div></div></div>
+      <div class="dm-messages"><div class="dm-empty"><div class="dm-empty-text">${_t('메시지 불러오는 중…', 'Loading messages…')}</div></div></div>
     </div>
   `;
 
@@ -11060,15 +11086,15 @@ window.openDmModal = async function(artistName, artistAvatar) {
     messagesHtml = `
       <div class="dm-empty">
         <div class="dm-empty-emoji">📭</div>
-        <div class="dm-empty-text">${safeName}님은 아직 메시지를 받을 수 없어요</div>
-        <div class="dm-empty-sub">상대방이 로그인 후 프로필을 생성하면 가능해요</div>
+        <div class="dm-empty-text">${_t(`${safeName}님은 아직 메시지를 받을 수 없어요`, `${safeName} can't receive messages yet`)}</div>
+        <div class="dm-empty-sub">${_t('상대방이 로그인 후 프로필을 생성하면 가능해요', 'Available once they sign in and create a profile')}</div>
       </div>`;
   } else if (messages.length === 0) {
     messagesHtml = `
       <div class="dm-empty">
         <div class="dm-empty-emoji">💌</div>
-        <div class="dm-empty-text">${safeName}에게 첫 메시지를 보내봐</div>
-        <div class="dm-empty-sub">응원 · 의견 · 협업 제안 — 뭐든 환영</div>
+        <div class="dm-empty-text">${_t(`${safeName}에게 첫 메시지를 보내봐`, `Send the first message to ${safeName}`)}</div>
+        <div class="dm-empty-sub">${_t('응원 · 의견 · 협업 제안 — 뭐든 환영', 'Cheer · feedback · collab — anything')}</div>
       </div>`;
   } else {
     messagesHtml = messages.map(m => {
@@ -11096,7 +11122,9 @@ window.openDmModal = async function(artistName, artistAvatar) {
 
   const canSend = !!conversationId;
   const inputDisabled = canSend ? '' : 'disabled';
-  const placeholder = canSend ? `${safeName}에게 메시지...` : '메시지를 보낼 수 없는 상대예요';
+  const placeholder = canSend
+    ? _t(`${safeName}에게 메시지...`, `Message ${safeName}...`)
+    : _t('메시지를 보낼 수 없는 상대예요', `Can't message this user`);
 
   content.innerHTML = `
     <div class="dm-card">
@@ -12743,9 +12771,9 @@ function renderAuth() {
 
   appContent.innerHTML = `
     <div style="max-width: 420px; margin: 40px auto;" class="card">
-      <h1 style="text-align: center; margin-bottom: 8px;">시작하기</h1>
+      <h1 style="text-align: center; margin-bottom: 8px;">${_i18n('시작하기', 'Get started')}</h1>
       <p style="text-align:center; color:var(--text-secondary); font-size:13px; margin-bottom: 24px;">
-        가입 없이도 곡 감상은 가능해요.<br>좋아요·댓글·업로드는 로그인이 필요합니다.
+        ${_i18n('가입 없이도 곡 감상은 가능해요.<br>좋아요·댓글·업로드는 로그인이 필요합니다.', 'Listen without an account.<br>Likes, comments, and uploads require sign-in.')}
       </p>
       ${notice}
 
@@ -12754,8 +12782,8 @@ function renderAuth() {
         <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; font-size:14px; line-height:1.5;">
           <input type="checkbox" id="auth-consent" style="margin-top:3px; flex-shrink:0;">
           <span>
-            <strong>(필수)</strong> 개인정보 수집·이용 및 서비스 이용약관에 동의합니다.
-            <a href="#" id="show-terms" style="color: var(--brand-color); margin-left:6px; font-size:13px;">자세히 ▼</a>
+            ${_i18n('<strong>(필수)</strong> 개인정보 수집·이용 및 서비스 이용약관에 동의합니다.', '<strong>(Required)</strong> I agree to privacy collection and the terms of service.')}
+            <a href="#" id="show-terms" style="color: var(--brand-color); margin-left:6px; font-size:13px;">${_i18n('자세히 ▼', 'Details ▼')}</a>
           </span>
         </label>
         <div id="terms-detail" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--divider); font-size:12.5px; color:var(--text-secondary); line-height:1.7; max-height:240px; overflow-y:auto;">
@@ -12775,7 +12803,7 @@ function renderAuth() {
       <!-- ── Google (primary) ───────────────────────────────── -->
       <button type="button" id="google-btn" disabled style="width:100%; padding:14px; background:#fff; color:#3c4043; border:1px solid #dadce0; border-radius:8px; font-size:15px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; opacity:0.4; transition: opacity 0.15s; margin-bottom:8px;">
         <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
-        Google로 계속하기
+        ${_i18n('Google로 계속하기', 'Continue with Google')}
       </button>
 
       <!-- Kakao login removed — provider not configured. Re-add when OAuth is set up. -->
@@ -12783,35 +12811,35 @@ function renderAuth() {
       <!-- ── Divider ────────────────────────────────────────── -->
       <div style="display:flex; align-items:center; gap:10px; margin:18px 0; color:var(--text-secondary); font-size:12px;">
         <div style="flex:1; height:1px; background:var(--divider);"></div>
-        <span>또는</span>
+        <span>${_i18n('또는', 'or')}</span>
         <div style="flex:1; height:1px; background:var(--divider);"></div>
       </div>
 
       <!-- ── Magic link ─────────────────────────────────────── -->
       <form id="magic-form">
         <div class="form-group" style="margin-bottom:10px;">
-          <input type="email" class="form-control" id="magic-email" required autocomplete="email" placeholder="이메일 주소">
+          <input type="email" class="form-control" id="magic-email" required autocomplete="email" placeholder="${_t('이메일 주소', 'Email address')}">
         </div>
         <button type="submit" id="magic-btn" disabled class="btn-primary" style="width:100%; opacity:0.4; transition: opacity 0.15s;">
-          이메일로 로그인 링크 받기
+          ${_i18n('이메일로 로그인 링크 받기', 'Send me a sign-in link')}
         </button>
         <p style="font-size:12px; color:var(--text-secondary); margin-top:8px; text-align:center;">
-          비밀번호 없이 메일에 도착한 링크로 로그인돼요.
+          ${_i18n('비밀번호 없이 메일에 도착한 링크로 로그인돼요.', 'No password — sign in via the link sent to your email.')}
         </p>
       </form>
 
       <!-- ── Legacy email+password (collapsed) ──────────────── -->
       <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--divider); text-align:center;">
-        <a href="#" id="show-legacy" style="color:var(--text-secondary); font-size:12px;">기존 비밀번호로 로그인 ▼</a>
+        <a href="#" id="show-legacy" style="color:var(--text-secondary); font-size:12px;">${_i18n('기존 비밀번호로 로그인 ▼', 'Sign in with password ▼')}</a>
       </div>
       <form id="legacy-login" style="display:none; margin-top:12px;">
         <div class="form-group">
-          <input type="email" class="form-control" id="legacy-email" required autocomplete="email" placeholder="이메일">
+          <input type="email" class="form-control" id="legacy-email" required autocomplete="email" placeholder="${_t('이메일', 'Email')}">
         </div>
         <div class="form-group">
-          <input type="password" class="form-control" id="legacy-pw" required autocomplete="current-password" placeholder="비밀번호">
+          <input type="password" class="form-control" id="legacy-pw" required autocomplete="current-password" placeholder="${_t('비밀번호', 'Password')}">
         </div>
-        <button type="submit" class="btn-primary" style="width:100%;">로그인</button>
+        <button type="submit" class="btn-primary" style="width:100%;">${_i18n('로그인', 'Sign in')}</button>
       </form>
     </div>
   `;
@@ -13310,9 +13338,9 @@ window.openSongInfoModal = function (trackId) {
         <i class="ri-close-line"></i>
       </button>
       <h2 class="song-info-title">「${safeTitle}」</h2>
-      <p class="song-info-artist">— ${safeArtist || '익명'}</p>
+      <p class="song-info-artist">— ${safeArtist || _t('익명', 'Anonymous')}</p>
       <div class="song-info-divider"></div>
-      <div class="song-info-body">${safeDesc || '<em style="opacity:0.5;">아직 소개글이 없어요.</em>'}</div>
+      <div class="song-info-body">${safeDesc || `<em style="opacity:0.5;">${_t('아직 소개글이 없어요.', 'No description yet.')}</em>`}</div>
     </div>
   `;
   // 백드롭 클릭 시 닫기 (모달 내부 클릭은 stop)
@@ -13358,7 +13386,7 @@ window.openDemoWallModal = function (trackId) {
   const _myDwmId = (window.__currentUser && window.__currentUser.id) || null;
   const _myDwmName = (window.__currentUser && window.__currentUser.name) || '';
   const cmsHtml = cms.length === 0
-    ? `<div class="dwm-empty">아직 댓글이 없어요 · 첫 댓글을 남겨보세요</div>`
+    ? `<div class="dwm-empty">${_t('아직 댓글이 없어요 · 첫 댓글을 남겨보세요', 'No comments yet · Be the first')}</div>`
     : cms.map(cm => {
         const isMine = (_myDwmId && cm.authorId && cm.authorId === _myDwmId)
                     || (!cm.authorId && _myDwmName && cm.author === _myDwmName);
@@ -13376,10 +13404,10 @@ window.openDemoWallModal = function (trackId) {
   // Enter 한 번 = 전송. 한글 IME 안전 (_safeEnterSubmit). 버튼 없음.
   const inputHtml = canComment ? `
     <div class="dwm-input-row">
-      <input type="text" class="dwm-input" maxlength="200" placeholder="댓글 남기기…"
+      <input type="text" class="dwm-input" maxlength="200" placeholder="${_t('댓글 남기기…', 'Leave a comment…')}"
              onkeydown="if(event.key==='Enter'){ event.preventDefault(); window._safeEnterSubmit(this, () => submitDemoWallComment('${trackId}')); }">
     </div>
-  ` : `<div class="dwm-loginhint">로그인하면 댓글을 남길 수 있어요</div>`;
+  ` : `<div class="dwm-loginhint">${_t('로그인하면 댓글을 남길 수 있어요', 'Sign in to leave a comment')}</div>`;
 
   const existing = document.getElementById('demo-wall-modal');
   if (existing) existing.remove();
