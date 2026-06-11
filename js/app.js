@@ -1889,7 +1889,24 @@ window.togglePlayerExpand = function(e) {
   // Skip if click was on a control button
   const target = e && e.target;
   if (target && target.closest('.control-btn, .progress-bar, .progress-container')) return;
-  player.classList.toggle('expanded');
+  const willExpand = !player.classList.contains('expanded');
+  player.classList.toggle('expanded', willExpand);
+
+  // 🔒 body lock — iOS Safari < 16 은 body:has() 미지원이라
+  //    CSS selector 만으론 안 됨. JS 에서 직접 class 토글.
+  document.body.classList.toggle('player-fullscreen', willExpand);
+
+  // 🔒 iOS 모멘텀 스크롤 추가 차단 — touchmove preventDefault.
+  //    한 번만 wire 하고 캡처 단계 + 컨트롤 영역은 제외.
+  if (willExpand && !window.__playerLockWired) {
+    window.__playerLockWired = true;
+    document.addEventListener('touchmove', (ev) => {
+      if (!document.body.classList.contains('player-fullscreen')) return;
+      // 슬라이더 / 컨트롤 위에선 허용 (볼륨 슬라이더 등)
+      if (ev.target && ev.target.closest('input[type="range"], .progress-bar, .progress-container, .vol-slider')) return;
+      ev.preventDefault();
+    }, { passive: false, capture: true });
+  }
 };
 
 // (event banner removed)

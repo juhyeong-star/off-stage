@@ -17495,33 +17495,53 @@ html[data-lang="en"] [data-i18n-ko] { display: none !important; }
 
 /* ============================================================
    풀스크린 플레이어 (expanded) — 뒤 페이지 스크롤/터치 차단
-   사용자 보고: 풀스크린 모달 열었는데 뒤 도형들 반응 + 화면이 막 내려감.
-   원인: backdrop 없음 + body scroll lock 없음.
+   사용자 보고 (2번째): body:has() 가 iOS Safari 옛 버전에서 미지원이라
+   여전히 뒤 도형이 반응. JS 에서 직접 body.player-fullscreen class 토글
+   + 터치 모멘텀까지 차단.
    ============================================================ */
 @media (max-width: 768px) {
-  /* 1) body 스크롤 + 터치 잠금 — 뒤 페이지가 같이 안 내려감 */
-  body:has(#global-player.expanded) {
+  /* 1) body 스크롤 + 터치 잠금 — JS 가 추가한 .player-fullscreen 활용
+        (body:has() 의존 X → iOS Safari 14/15 도 OK).
+        position:fixed 안 씀 — 닫을 때 scroll 위치 안 잃게.
+        JS 의 touchmove preventDefault 가 모멘텀까지 차단. */
+  body.player-fullscreen,
+  html:has(body.player-fullscreen) {
     overflow: hidden !important;
     touch-action: none !important;
+    -webkit-overflow-scrolling: auto !important;
   }
-  /* 2) 플레이어 자체를 진짜 풀스크린으로 — 뒤 클릭 막힘
-        (이전 height 만 키워서 뒤 일부 보였던 문제) */
+  /* 2) 플레이어 자체를 진짜 풀스크린으로.
+        body 가 position:fixed 가 되니 그 안의 fixed 도 viewport 기준 그대로. */
+  body.player-fullscreen #global-player.expanded,
   #global-player.expanded {
     position: fixed !important;
-    top: 0; left: 0; right: 0; bottom: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
     width: 100% !important;
+    /* 100vh + 100dvh (모바일 주소창 고려) — fallback chain */
     height: 100vh !important;
-    z-index: 9000;            /* 모바일 탭바(1100) 보다 위 */
+    height: 100dvh !important;
+    z-index: 9000 !important;            /* 모바일 탭바(1100) 보다 위 */
     background: var(--bg, #0a0a0c) !important;
+    padding-top: max(env(safe-area-inset-top, 0px), 24px) !important;
+    /* ⭐️ 핵심 — 기본 #global-player 에 있던 transform: translateY(100%)
+       (화면 밖 숨김) 을 reset. 이게 빠져있어서 expanded 가 화면 밖에 위치했음. */
+    transform: none !important;
   }
-  /* 3) backdrop — 뒤 도형/UI 안 보이게 + pointer-events 흡수 */
+  /* 3) backdrop — 뒤 도형/UI 안 보이게 */
   #global-player.expanded::before {
     content: '';
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0,0,0,0.55);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     z-index: -1;
+  }
+  /* 4) 풀스크린 상태에선 모바일 탭바도 숨김 — 우연한 탭 전환 방지 */
+  body.player-fullscreen .mobile-tab-bar {
+    display: none !important;
   }
 }
