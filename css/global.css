@@ -17492,3 +17492,36 @@ html[data-lang="en"] [data-i18n-ko] { display: none !important; }
   .lang-toggle { font-size: 10px; }
   .lang-toggle .opt { padding: 3px 8px; }
 }
+
+/* ============================================================
+   풀스크린 플레이어 (expanded) — 뒤 페이지 스크롤/터치 차단
+   사용자 보고: 풀스크린 모달 열었는데 뒤 도형들 반응 + 화면이 막 내려감.
+   원인: backdrop 없음 + body scroll lock 없음.
+   ============================================================ */
+@media (max-width: 768px) {
+  /* 1) body 스크롤 + 터치 잠금 — 뒤 페이지가 같이 안 내려감 */
+  body:has(#global-player.expanded) {
+    overflow: hidden !important;
+    touch-action: none !important;
+  }
+  /* 2) 플레이어 자체를 진짜 풀스크린으로 — 뒤 클릭 막힘
+        (이전 height 만 키워서 뒤 일부 보였던 문제) */
+  #global-player.expanded {
+    position: fixed !important;
+    top: 0; left: 0; right: 0; bottom: 0 !important;
+    width: 100% !important;
+    height: 100vh !important;
+    z-index: 9000;            /* 모바일 탭바(1100) 보다 위 */
+    background: var(--bg, #0a0a0c) !important;
+  }
+  /* 3) backdrop — 뒤 도형/UI 안 보이게 + pointer-events 흡수 */
+  #global-player.expanded::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: -1;
+  }
+}
