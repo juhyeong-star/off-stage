@@ -11926,6 +11926,36 @@ body {
 /* The legacy expand-handle (absorbed by button) — hide */
 .player-expand-handle { display: none !important; }
 
+/* 풀스크린 상태일 때 접기 버튼 — 크고 또렷하게 (사용자 요청).
+   기본은 작은 핸들 같은 chip, 펼친 상태에선 명확한 ✕ 같은 큰 버튼. */
+@media (max-width: 768px) {
+  #global-player.expanded .player-expand-btn {
+    position: absolute !important;
+    top: max(env(safe-area-inset-top, 0px), 14px) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 72px !important;
+    height: 40px !important;
+    border-radius: 999px !important;
+    background: rgba(255,255,255,0.14) !important;
+    border: 1px solid rgba(255,255,255,0.22) !important;
+    color: #fff !important;
+    font-size: 28px !important;
+    z-index: 9100 !important;        /* expanded(9000) 보다 위 */
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  }
+  /* 아이콘 180도 회전은 유지 (↓). 부모 transform 으로 인해 i 의 회전도 함께
+     translateX 영향받지 않게 명시. */
+  #global-player.expanded .player-expand-btn i {
+    transform: rotate(180deg) !important;
+    display: block;
+  }
+  #global-player.expanded .player-expand-btn:active {
+    background: rgba(255,255,255,0.24) !important;
+    transform: translateX(-50%) scale(0.96) !important;
+  }
+}
+
 /* --- M6: 플레이어 가로 스크롤 방지 (모바일에서 width 고정 해제) --- */
 @media (max-width: 768px) {
   #global-player {
