@@ -15154,10 +15154,11 @@ body:has(.pl-page) .global-back-btn { display: none !important; }
 }
 .global-back-btn i { display: inline-block; transform: translateX(-1px); }
 
-/* Mobile — same position, but ensure it doesn't overlap with page content padding */
+/* Mobile — 상단 탭바(상단 fixed) 아래로 내려서 안 겹치게.
+   사용자 보고: 메뉴(탭바) 와 뒤로가기 버튼이 겹친다. */
 @media (max-width: 768px) {
   .global-back-btn {
-    top: calc(10px + var(--safe-top, 0px));
+    top: calc(var(--mobile-tab-h, 56px) + env(safe-area-inset-top, 0px) + 10px);
     left: calc(10px + var(--safe-left, 0px));
     width: 42px;
     height: 42px;
