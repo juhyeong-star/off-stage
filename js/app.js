@@ -308,22 +308,32 @@ window.audioElement = audioElement;
   }
 
   if (muteBtn) {
-    muteBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (_isMobileVol()) {
-        // 모바일: 팝업 토글 (이미 열려있으면 닫기)
-        if (volPopup && volPopup.classList.contains('open')) {
-          closeVolPopup();
+    // iOS 는 audio.volume 이 read-only + 팝업 슬라이더도 작동 X.
+    // 사용자 요청 — iOS 에선 버튼 자체 숨기고 클릭도 무반응.
+    // 안드로이드는 그대로 (팝업 슬라이더 + OS 키 안내 유지).
+    if (_isIOS()) {
+      muteBtn.style.display = 'none';
+      // 볼륨 percent 도 같이 숨김 — 어차피 의미 없음
+      const pctLblIos = document.getElementById('vol-percent');
+      if (pctLblIos) pctLblIos.style.display = 'none';
+    } else {
+      muteBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (_isMobileVol()) {
+          // 모바일(안드로이드 등): 팝업 토글 (이미 열려있으면 닫기)
+          if (volPopup && volPopup.classList.contains('open')) {
+            closeVolPopup();
+          } else {
+            openVolPopup();
+          }
         } else {
-          openVolPopup();
+          // PC: 단순 음소거 토글
+          muted = !muted;
+          apply(true);
         }
-      } else {
-        // PC: 단순 음소거 토글
-        muted = !muted;
-        apply(true);
-      }
-    });
+      });
+    }
   }
 
   // ─── 키보드 단축키 — ↑/↓ ±5%, M 음소거 ───
