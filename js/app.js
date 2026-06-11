@@ -1087,6 +1087,14 @@ function navigateTo(route) {
   // Toggle global back button visibility based on the new route.
   _updateBackButton(route);
   appContent.innerHTML = '';
+  // 사용자 요청 — 페이지 이동 시 항상 맨 위로 스크롤.
+  // 도형 페이지에서 스크롤 내려간 채로 우리들의 벽 등으로 이동하면
+  // 새 페이지가 같은 스크롤 위치에 보이던 문제.
+  try {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  } catch (_) {}
   // Re-trigger page fade-in animation
   appContent.style.animation = 'none';
   // eslint-disable-next-line no-unused-expressions
