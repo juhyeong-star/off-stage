@@ -1082,6 +1082,8 @@ function navigateTo(route) {
   window.__currentView = route;
   // 영구 별 레이어는 universe 일 때만 보임 (다른 페이지엔 숨김)
   if (route !== 'universe') document.body.classList.remove('is-universe-route');
+  // 도형 페이지일 때 body 클래스 — CSS 가 page-intro 를 fixed 로 띄우는 데 사용
+  document.body.classList.toggle('is-shapes-route', route === 'shapes');
   // Toggle global back button visibility based on the new route.
   _updateBackButton(route);
   appContent.innerHTML = '';

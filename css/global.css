@@ -14203,6 +14203,22 @@ body.polaroid-sheet-open { overflow: hidden; }
     padding: 0 16px;
     font-weight: 500;
   }
+  /* 도형 페이지 — page-intro 영역이 검정 영역 처럼 보여 끊긴 느낌.
+     사용자 요청: 별 배경 위에 글자만 둥둥, 자리 유지, 스크롤 시 안 따라옴.
+     → position: fixed 로 탭바 바로 아래에 고정. 도형/카드는 그 아래로 흐름. */
+  body.is-shapes-route .page-intro {
+    position: fixed !important;
+    top: calc(var(--mobile-tab-h, 56px) + env(safe-area-inset-top, 0px) + 14px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 !important;
+    z-index: 50;                    /* 탭바(1100) 아래 + 도형 위 */
+    background: transparent !important;
+    /* 별 배경 위에서도 글씨 잘 보이게 — 약한 그림자 */
+    text-shadow: 0 1px 6px rgba(0,0,0,0.85), 0 0 12px rgba(0,0,0,0.6);
+    pointer-events: none;           /* 클릭이 뒤 도형까지 통과 */
+    color: rgba(255,255,255,0.85);
+  }
 }
 
 /* 페이지 카운트 — page-intro 바로 아래, 가운데 정렬, 작고 은은하게.
