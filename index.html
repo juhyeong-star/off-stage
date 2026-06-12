@@ -39,7 +39,7 @@
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=663">
+  <link rel="stylesheet" href="css/global.css?v=664">
 </head>
 <body>
 
@@ -61,11 +61,6 @@
       <span><span data-i18n-ko>알림</span><span data-i18n-en>Alerts</span></span>
       <span class="sidebar-bell-badge" id="notif-badge" style="display:none;">0</span>
     </button>
-    <!-- 언어 토글 — KO / EN -->
-    <div class="lang-toggle" id="lang-toggle" role="group" aria-label="Language">
-      <span class="opt" data-lang-opt="ko">KO</span>
-      <span class="opt" data-lang-opt="en">EN</span>
-    </div>
     <div class="sidebar-divider"></div>
     <div class="sidebar-user" id="auth-header-container"></div>
   </aside>
@@ -122,6 +117,12 @@
   <button class="global-back-btn" id="global-back" type="button" aria-label="뒤로" hidden onclick="window.goBack && window.goBack()">
     <i class="ri-arrow-left-s-line"></i>
   </button>
+
+  <!-- 언어 토글 — KO / EN. 화면 오른쪽 위 고정 (모바일·PC 공통, 보이기 쉽게). -->
+  <div class="lang-toggle" id="lang-toggle" role="group" aria-label="Language">
+    <span class="opt" data-lang-opt="ko">KO</span>
+    <span class="opt" data-lang-opt="en">EN</span>
+  </div>
 
   <!-- Hamburger Menu Button -->
   <button class="hamburger-btn" id="hamburger-btn" onclick="toggleMenu()" aria-label="메뉴">
@@ -195,12 +196,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=663"></script>
-  <script defer src="js/data.js?v=663"></script>
-  <script defer src="js/supabase.js?v=663"></script>
-  <script defer src="js/analytics.js?v=663"></script>
-  <script defer src="js/distribute.js?v=663"></script>
-  <script defer src="js/app.js?v=663"></script>
-  <script defer src="js/polaroid.js?v=663"></script>
+  <script defer src="js/supabase-init.js?v=664"></script>
+  <script defer src="js/data.js?v=664"></script>
+  <script defer src="js/supabase.js?v=664"></script>
+  <script defer src="js/analytics.js?v=664"></script>
+  <script defer src="js/distribute.js?v=664"></script>
+  <script defer src="js/app.js?v=664"></script>
+  <script defer src="js/polaroid.js?v=664"></script>
 </body>
 </html>
