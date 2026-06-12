@@ -153,7 +153,19 @@ window.audioElement = audioElement;
     '곡을 찾을 수 없어요': 'Track not found',
     '이 댓글을 지울까요?': 'Delete this comment?',
     '약관 동의가 필요해요.': 'Please agree to the terms first.',
-    '추가 실패': 'Add failed'
+    '추가 실패': 'Add failed',
+    // 업로드/프로필 검증 에러 (throw → alert 경유)
+    '오디오 파일을 선택해주세요.': 'Please choose an audio file.',
+    '오디오 파일은 50MB 이하만 업로드 가능해요.': 'Audio files must be under 50MB.',
+    '곡 소개 및 코멘트를 적어주세요. (필수)': 'Please write a description. (required)',
+    '태그를 한 개 이상 적어주세요. (필수)': 'Please add at least one tag. (required)',
+    '도형 낙서 3줄을 모두 적어주세요. (필수)': 'Please fill in all 3 graffiti lines. (required)',
+    '발매(마스터)는 가사가 필요해요. 데모는 비워둬도 됩니다. (가사를 적으면 곡과 함께 벽에 게시돼요)': 'Releases (masters) require lyrics. Demos may leave it empty. (Lyrics auto-post to the wall.)',
+    '기존 Demo 를 선택해주세요.': 'Please select an existing Demo.',
+    '선택한 Demo 를 찾을 수 없어요.': 'Selected Demo not found.',
+    '활동명은 비워둘 수 없어요': 'Artist name cannot be empty',
+    '자기소개가 저장되지 않았어요. 로그아웃 후 다시 로그인 해보세요.': 'Bio was not saved. Try signing out and back in.',
+    '로그인 세션이 없어요. 다시 로그인해주세요.': 'No session — please sign in again.'
   };
   const MSG_PREFIX = [
     ['저장 실패: ', 'Save failed: '],
@@ -2177,7 +2189,7 @@ window.renderSearch = function(query) {
     <div class="search-page">
       <div class="search-input-wrap">
         <i class="ri-search-line"></i>
-        <input type="text" id="search-page-input" placeholder="아티스트 · 곡 · #태그 · 응원글 검색" value="${(query||'').replace(/"/g,'&quot;')}"
+        <input type="text" id="search-page-input" placeholder="${_t('아티스트 · 곡 · #태그 · 응원글 검색', 'Search artists · tracks · #tags · notes')}" value="${(query||'').replace(/"/g,'&quot;')}"
                oninput="window.searchOnInput()" onkeypress="if(event.key==='Enter') window.doSearch()">
         ${q ? `<button class="search-clear-btn" onclick="document.getElementById('search-page-input').value=''; window.renderSearch('');"><i class="ri-close-circle-fill"></i></button>` : ''}
       </div>
@@ -2187,7 +2199,7 @@ window.renderSearch = function(query) {
     // Empty state — trending tags + popular tracks
     html += `
       <div class="search-section">
-        <h3 class="search-section-title"><i class="ri-fire-fill" style="color:#FF6B9D;"></i> 인기 태그</h3>
+        <h3 class="search-section-title"><i class="ri-fire-fill" style="color:#FF6B9D;"></i> ${_i18n('인기 태그', 'Trending tags')}</h3>
         <div class="search-tag-cloud">
           ${popularTags.map(t => `
             <button class="search-tag-chip" onclick="navigateToTag('${jsEscape(t.name)}')">
@@ -2199,7 +2211,7 @@ window.renderSearch = function(query) {
       </div>
       ${popularTracks.length > 0 ? `
         <div class="search-section">
-          <h3 class="search-section-title"><i class="ri-music-2-fill" style="color:var(--brand-color);"></i> 인기 곡</h3>
+          <h3 class="search-section-title"><i class="ri-music-2-fill" style="color:var(--brand-color);"></i> ${_i18n('인기 곡', 'Popular tracks')}</h3>
           <div class="search-track-list">
             ${popularTracks.map(t => `
               <div class="search-track-row" onclick="playTrack('${t.id}')">
@@ -2219,17 +2231,17 @@ window.renderSearch = function(query) {
     html += `
       <div class="search-empty">
         <i class="ri-search-eye-line"></i>
-        <p>"${(query||'').replace(/</g,'&lt;')}" 에 대한 결과가 없어요</p>
-        <p class="search-empty-sub">다른 키워드로 검색해보세요</p>
+        <p>${_t(`"${(query||'').replace(/</g,'&lt;')}" 에 대한 결과가 없어요`, `No results for "${(query||'').replace(/</g,'&lt;')}"`)}</p>
+        <p class="search-empty-sub">${_t('다른 키워드로 검색해보세요', 'Try a different keyword')}</p>
       </div>
     `;
   } else {
-    html += `<div class="search-result-count">"${(query||'').replace(/</g,'&lt;')}" — ${totalResults}개 결과</div>`;
+    html += `<div class="search-result-count">${_t(`"${(query||'').replace(/</g,'&lt;')}" — ${totalResults}개 결과`, `"${(query||'').replace(/</g,'&lt;')}" — ${totalResults} results`)}</div>`;
 
     if (matchedArtists.length > 0) {
       html += `
         <div class="search-section">
-          <h3 class="search-section-title"><i class="ri-user-3-fill" style="color:#7C4DFF;"></i> 아티스트 <span class="search-count">${matchedArtists.length}</span></h3>
+          <h3 class="search-section-title"><i class="ri-user-3-fill" style="color:#7C4DFF;"></i> ${_i18n('아티스트', 'Artists')} <span class="search-count">${matchedArtists.length}</span></h3>
           <div class="search-artist-grid">
             ${matchedArtists.slice(0, 12).map(a => `
               <div class="search-artist-card" onclick="navigateTo('artist:${encodeURIComponent(a.name)}')">
@@ -2245,7 +2257,7 @@ window.renderSearch = function(query) {
     if (matchedTracks.length > 0) {
       html += `
         <div class="search-section">
-          <h3 class="search-section-title"><i class="ri-music-2-fill" style="color:var(--brand-color);"></i> 곡 <span class="search-count">${matchedTracks.length}</span></h3>
+          <h3 class="search-section-title"><i class="ri-music-2-fill" style="color:var(--brand-color);"></i> ${_i18n('곡', 'Tracks')} <span class="search-count">${matchedTracks.length}</span></h3>
           <div class="search-track-list">
             ${matchedTracks.slice(0, 20).map(t => {
               const safeTitle = (t.title||'').replace(/</g,'&lt;');
@@ -2269,7 +2281,7 @@ window.renderSearch = function(query) {
     if (matchedTags.length > 0) {
       html += `
         <div class="search-section">
-          <h3 class="search-section-title"><i class="ri-hashtag" style="color:#4ECDC4;"></i> 태그 <span class="search-count">${matchedTags.length}</span></h3>
+          <h3 class="search-section-title"><i class="ri-hashtag" style="color:#4ECDC4;"></i> ${_i18n('태그', 'Tags')} <span class="search-count">${matchedTags.length}</span></h3>
           <div class="search-tag-cloud">
             ${matchedTags.map(t => `
               <button class="search-tag-chip" onclick="navigateToTag('${jsEscape(t.name)}')">
@@ -2285,7 +2297,7 @@ window.renderSearch = function(query) {
     if (matchedNotes.length > 0) {
       html += `
         <div class="search-section">
-          <h3 class="search-section-title"><i class="ri-sticky-note-fill" style="color:#FFD54F;"></i> 응원글 <span class="search-count">${matchedNotes.length}</span></h3>
+          <h3 class="search-section-title"><i class="ri-sticky-note-fill" style="color:#FFD54F;"></i> ${_i18n('응원글', 'Notes')} <span class="search-count">${matchedNotes.length}</span></h3>
           <div class="search-notes-grid">
             ${matchedNotes.slice(0, 12).map(n => {
               const c = NOTE_COLORS[n.color] || NOTE_COLORS.yellow;
@@ -3265,13 +3277,13 @@ window.openDmInboxModal = function () {
       <div class="profile-modal-card">
         <div class="profile-modal-head">
           <i class="ri-mail-fill" style="color:#1DB954;"></i>
-          <div class="profile-modal-title">메세지함</div>
+          <div class="profile-modal-title">${_t('메세지함', 'Inbox')}</div>
           <button class="profile-modal-close" onclick="closeDmInboxModal()" aria-label="닫기">
             <i class="ri-close-line"></i>
           </button>
         </div>
         <div class="profile-modal-body">
-          <div id="dm-inbox-mount"><div style="text-align:center; padding:30px 0; color:var(--text-secondary);">불러오는 중…</div></div>
+          <div id="dm-inbox-mount"><div style="text-align:center; padding:30px 0; color:var(--text-secondary);">${_t('불러오는 중…', 'Loading…')}</div></div>
         </div>
       </div>
     </div>
@@ -4593,7 +4605,7 @@ async function renderPlaylistUniverse(playlistId) {
     section3Html = `
       <section class="pl-section pl-section-notes">
         <h2 class="pl-section-title"><i class="ri-sticky-note-fill"></i> 담은 포스트잇</h2>
-        <p class="pl-section-empty">내 우주에서 포스트잇을 이 폴더로 끌어다 담아보세요 📌</p>
+        <p class="pl-section-empty">${_t('내 우주에서 포스트잇을 이 폴더로 끌어다 담아보세요 📌', 'Drag notes from My Universe into this folder 📌')}</p>
       </section>
     `;
   }
@@ -4649,7 +4661,7 @@ async function renderPlaylistUniverse(playlistId) {
         </div>
         <div class="pl-empty-page">
           <div style="font-size:40px; margin-bottom:12px;">🎵</div>
-          <p>이 폴더는 아직 비어 있어요.<br>내 우주에서 곡이나 포스트잇을 이 폴더로 끌어다 담아보세요.</p>
+          <p>${_t('이 폴더는 아직 비어 있어요.<br>내 우주에서 곡이나 포스트잇을 이 폴더로 끌어다 담아보세요.', 'This folder is empty.<br>Drag tracks or notes here from My Universe.')}</p>
         </div>
       </div>`;
     return;
@@ -7020,14 +7032,14 @@ function renderUpload() {
         <div id="distribution-section" style="display:block;">
           <hr style="border-color: var(--divider); margin: 20px 0;">
           <h2 style="font-size: 18px; color: var(--brand-color); margin-bottom: 4px;"><i class="ri-folder-zip-line"></i> 유통 정보 (Distribution info)</h2>
-          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">유통사 제출용 정보. 비워두면 활동명 + 오늘 날짜로 들어가요. (For distribution — defaults to your artist name + today.)</p>
+          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">${_i18n('유통사 제출용 정보. 비워두면 활동명 + 오늘 날짜로 들어가요.', 'For distribution — defaults to your artist name + today.')}</p>
           <div class="form-group">
             <label>발매일 (Release date)</label>
             <input type="date" class="form-control" id="up-release-date">
           </div>
           <div class="form-group">
-            <label>유통용 아티스트명 (Artist name) <span style="color:var(--text-secondary); font-weight:normal; font-size:12px;">(실명/예명 — 활동명과 다를 때만)</span></label>
-            <input type="text" class="form-control" id="up-dist-artist" placeholder="비워두면 활동명 사용">
+            <label>${_i18n('유통용 아티스트명', 'Distribution artist name')} <span style="color:var(--text-secondary); font-weight:normal; font-size:12px;">${_i18n('(실명/예명 — 활동명과 다를 때만)', '(only if different from display name)')}</span></label>
+            <input type="text" class="form-control" id="up-dist-artist" placeholder="${_t('비워두면 활동명 사용', 'Defaults to display name')}">
           </div>
           <div class="form-group">
             <label>콜라보 아티스트 (Collaborators) <span style="color:var(--text-secondary); font-weight:normal; font-size:12px;">(콤마로 구분 / comma-separated)</span></label>
@@ -8270,25 +8282,25 @@ window.editProfile = function () {
 
   appContent.innerHTML = `
     <div style="max-width: 500px; margin: 40px auto;" class="card">
-      <h1 style="margin-bottom: 24px;"><i class="ri-settings-4-fill"></i> 프로필 설정</h1>
+      <h1 style="margin-bottom: 24px;"><i class="ri-settings-4-fill"></i> ${_i18n('프로필 설정', 'Profile settings')}</h1>
       <form id="edit-profile-form">
         <div class="form-group">
-          <label>활동명 (Artist Name)</label>
+          <label>${_i18n('활동명', 'Artist name')}</label>
           <input type="text" class="form-control" id="edit-name" value="${db.currentUser.name}" required>
         </div>
         <div class="form-group">
-          <label>프로필 이미지 (URL 또는 파일 업로드)</label>
-          <input type="text" class="form-control" id="edit-avatar-url" value="${db.currentUser.avatar}" placeholder="이미지 URL (예: https://...)">
-          <div style="text-align: center; margin: 12px 0; color: var(--text-secondary); font-size: 13px;">&mdash; 또는 &mdash;</div>
+          <label>${_i18n('프로필 이미지 (URL 또는 파일 업로드)', 'Profile image (URL or file upload)')}</label>
+          <input type="text" class="form-control" id="edit-avatar-url" value="${db.currentUser.avatar}" placeholder="${_t('이미지 URL (예: https://...)', 'Image URL (e.g. https://...)')}">
+          <div style="text-align: center; margin: 12px 0; color: var(--text-secondary); font-size: 13px;">&mdash; ${_i18n('또는', 'or')} &mdash;</div>
           <input type="file" class="form-control" id="edit-avatar-file" accept="image/*">
-          <div class="form-note">파일을 업로드하면 입력된 URL보다 우선 적용됩니다.</div>
+          <div class="form-note">${_i18n('파일을 업로드하면 입력된 URL보다 우선 적용됩니다.', 'An uploaded file takes priority over the URL.')}</div>
         </div>
 
         <div class="form-group">
-          <label>자기소개 <span style="color:var(--text-secondary); font-weight:400; font-size:12px;">— 100자까지, 아티스트 페이지에 표시</span></label>
+          <label>${_i18n('자기소개', 'Bio')} <span style="color:var(--text-secondary); font-weight:400; font-size:12px;">${_i18n('— 100자까지, 아티스트 페이지에 표시', '— up to 100 chars, shown on your page')}</span></label>
           <textarea class="form-control" id="edit-bio" maxlength="100" rows="3"
             style="resize:vertical;"
-            placeholder="자유롭게 — 어떤 음악 하는지, 무엇을 좋아하는지">${((db.currentUser.bio || '')).replace(/</g,'&lt;').replace(/"/g,'&quot;')}</textarea>
+            placeholder="${_t('자유롭게 — 어떤 음악 하는지, 무엇을 좋아하는지', 'Anything — what music you make, what you love')}">${((db.currentUser.bio || '')).replace(/</g,'&lt;').replace(/"/g,'&quot;')}</textarea>
           <div class="form-note">
             <span id="edit-bio-counter">${(db.currentUser.bio || '').length} / 100</span>
           </div>
@@ -8315,17 +8327,17 @@ window.editProfile = function () {
           </div>
         </div>
 
-        <h2 style="font-size: 18px; border-bottom: 1px solid var(--divider); padding-bottom: 10px; margin: 30px 0 20px;">계정 설정</h2>
+        <h2 style="font-size: 18px; border-bottom: 1px solid var(--divider); padding-bottom: 10px; margin: 30px 0 20px;">${_i18n('계정 설정', 'Account')}</h2>
 
         <div class="form-group">
-          <label>이메일</label>
+          <label>${_i18n('이메일', 'Email')}</label>
           <input type="text" class="form-control" value="${db.currentUser.email || '-'}" disabled style="opacity: 0.5; background: var(--bg-color);">
-          <div class="form-note">이메일은 변경할 수 없습니다.</div>
+          <div class="form-note">${_i18n('이메일은 변경할 수 없습니다.', 'Email cannot be changed.')}</div>
         </div>
 
         <div style="display: flex; gap: 12px; margin-top: 30px;">
-          <button type="submit" class="btn-primary" style="flex: 1;">변경사항 저장</button>
-          <button type="button" class="btn-primary" style="flex: 1; background: #333;" onclick="navigateTo('profile')">취소</button>
+          <button type="submit" class="btn-primary" style="flex: 1;">${_i18n('변경사항 저장', 'Save changes')}</button>
+          <button type="button" class="btn-primary" style="flex: 1; background: #333;" onclick="navigateTo('profile')">${_i18n('취소', 'Cancel')}</button>
         </div>
       </form>
     </div>
@@ -13922,7 +13934,7 @@ window.switchArtistContentTab = function (name) {
 window.mountDmInbox = async function (containerId) {
   const mount = document.getElementById(containerId);
   if (!mount) return;
-  mount.innerHTML = `<div class="dm-inbox-section"><div class="dm-inbox-header"><i class="ri-mail-fill"></i> 받은 메시지</div><div class="dm-inbox-empty">불러오는 중…</div></div>`;
+  mount.innerHTML = `<div class="dm-inbox-section"><div class="dm-inbox-header"><i class="ri-mail-fill"></i> ${_t('받은 메시지', 'Messages')}</div><div class="dm-inbox-empty">${_t('불러오는 중…', 'Loading…')}</div></div>`;
 
   let convs = [];
   try {
@@ -13938,11 +13950,11 @@ window.mountDmInbox = async function (containerId) {
     mount2.innerHTML = `
       <div class="dm-inbox-section">
         <div class="dm-inbox-header">
-          <i class="ri-mail-fill"></i> 받은 메시지
+          <i class="ri-mail-fill"></i> ${_t('받은 메시지', 'Messages')}
         </div>
         <div class="dm-inbox-empty">
-          아직 받은 개인 메시지가 없어요.<br>
-          <small>누군가 메시지를 보내면 여기 쌓여요.</small>
+          ${_t('아직 받은 개인 메시지가 없어요.', 'No messages yet.')}<br>
+          <small>${_t('누군가 메시지를 보내면 여기 쌓여요.', "They'll appear here when someone writes you.")}</small>
         </div>
       </div>
     `;
