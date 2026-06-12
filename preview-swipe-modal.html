@@ -74,14 +74,16 @@
   }
   .sw-grab.light { background: rgba(255,255,255,0.35); }
 
-  /* ── ① 포스트잇 모달 (우리들의 벽 스타일) ── */
+  /* ── ① 포스트잇 모달 (우리들의 벽 스타일) — 실제 앱처럼 풀스크린 ── */
   .postit-modal {
-    top: 8vh;
+    top: 0;
+    height: 100vh; height: 100dvh;
     background: #FFE066;
     color: #2a2200;
-    border-radius: 22px 22px 0 0;
+    border-radius: 0;
     box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
     padding: 0 22px 30px;
+    padding-top: max(env(safe-area-inset-top, 0px), 8px);
     overflow: hidden;
   }
   .postit-modal h2 { font-size: 21px; margin: 14px 0 6px; font-weight: 800; }
