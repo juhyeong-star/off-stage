@@ -17616,6 +17616,14 @@ html[data-lang="en"] [data-i18n-ko] { display: none !important; }
   margin: 6px auto 0;
   padding-top: 14px;            /* 핀 자리 */
 }
+/* 데스크탑 — 소식 핀을 우측 코너에서 이름 옆(좌측)으로 당김 (사용자 요청).
+   ≤960px 에선 aside 가 full-width 라 중앙 유지. */
+@media (min-width: 961px) {
+  .artist-header-row .artist-postit-aside .soshik-stack {
+    margin-left: 0 !important;
+    margin-right: auto !important;
+  }
+}
 .soshik-pin-deco {
   position: absolute;
   top: -2px; left: 50%;
@@ -17931,9 +17939,4 @@ html[data-lang="en"] [data-i18n-ko] { display: none !important; }
   flex-shrink: 0;
   align-self: baseline;
   font-size: 12px;
-}
-
-/* 데모 카드들이 왼쪽에 몰려 오른쪽이 비는 불균형 → 행 안에서 고르게 분산 (사용자 요청) */
-.artist-canvas .projects-grid .demo-path {
-  justify-content: space-evenly !important;
 }
