@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>스와이프 모달 모션 미리보기</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: #0a0a0c;
+    color: #fff;
+    font-family: 'Pretendard', 'Inter', system-ui, sans-serif;
+    margin: 0;
+    min-height: 100vh;
+    padding: 24px 16px 120px;
+    overscroll-behavior: none;
+  }
+  h1 { font-size: 18px; text-align: center; margin: 8px 0 4px; }
+  .sub { text-align: center; color: rgba(255,255,255,0.55); font-size: 12.5px; margin: 0 0 26px; line-height: 1.6; }
+
+  /* 데모 버튼들 */
+  .demo-grid { display: grid; gap: 12px; max-width: 420px; margin: 0 auto; }
+  .demo-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
+    color: #fff;
+    padding: 18px 16px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: background 0.15s;
+  }
+  .demo-btn:active { background: rgba(255,255,255,0.12); }
+  .demo-btn .emoji { font-size: 22px; }
+  .demo-btn small { display:block; font-weight: 500; color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 3px; }
+
+  /* ════════════ 공통 모달 셸 ════════════ */
+  .sw-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    z-index: 100;
+    display: none;
+  }
+  .sw-backdrop.open { opacity: 1; }
+
+  .sw-modal {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 101;
+    display: none;
+    flex-direction: column;
+    touch-action: none;             /* 우리가 제스처 처리 */
+    will-change: transform;
+    transform: translateY(100%);
+  }
+  .sw-modal.anim { transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+  .sw-modal.open { transform: translateY(0); }
+
+  /* 위쪽 grabber (잡는 손잡이) */
+  .sw-grab {
+    width: 44px; height: 5px;
+    border-radius: 3px;
+    background: rgba(0,0,0,0.25);
+    margin: 10px auto 6px;
+    flex-shrink: 0;
+  }
+  .sw-grab.light { background: rgba(255,255,255,0.35); }
+
+  /* ── ① 포스트잇 모달 (우리들의 벽 스타일) ── */
+  .postit-modal {
+    top: 8vh;
+    background: #FFE066;
+    color: #2a2200;
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+    padding: 0 22px 30px;
+    overflow: hidden;
+  }
+  .postit-modal h2 { font-size: 21px; margin: 14px 0 6px; font-weight: 800; }
+  .postit-modal .body { font-size: 15px; line-height: 1.7; color: #4a3c00; }
+  .postit-modal .cm { margin-top: 18px; border-top: 2px dashed rgba(0,0,0,0.15); padding-top: 14px; font-size: 13.5px; color: #5a4a00; }
+  .postit-modal .cm div { margin-bottom: 7px; }
+
+  /* ── ② 풀스크린 플레이어 ── */
+  .player-modal {
+    top: 0;
+    height: 100vh; height: 100dvh;
+    background: #0d0d11;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    gap: 22px;
+  }
+  .player-cover-sq {
+    width: 230px; height: 230px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #FFE066, #FFC400);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Comic Sans MS', cursive;
+    font-size: 30px; font-weight: 800; color: #3a2a00;
+    text-align: center; line-height: 1.15;
+    box-shadow: 0 14px 44px rgba(0,0,0,0.55);
+  }
+  .player-title-l { font-size: 21px; font-weight: 800; margin-top: 4px; }
+  .player-artist-l { font-size: 14px; color: rgba(255,255,255,0.55); margin-top: 4px; }
+  .player-ctrls { display: flex; gap: 34px; align-items: center; margin-top: 12px; font-size: 30px; }
+  .player-ctrls .play { font-size: 60px; }
+  .player-bar { width: 100%; max-width: 320px; height: 4px; background: rgba(255,255,255,0.18); border-radius: 2px; margin-top: 18px; position: relative; }
+  .player-bar::after { content:''; position: absolute; left: 0; top: 0; bottom: 0; width: 42%; background: #1DB954; border-radius: 2px; }
+
+  /* ── ③ 곡소개 모달 (가운데 카드 스타일) ── */
+  .songinfo-modal {
+    top: auto; bottom: 0;
+    background: #FFF6D8;
+    color: #2a2200;
+    border-radius: 22px 22px 0 0;
+    padding: 0 24px 36px;
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+  }
+  .songinfo-modal .badge {
+    display: inline-block;
+    background: #FF6B9D; color: #fff;
+    font-size: 11px; font-weight: 900;
+    padding: 4px 10px; border-radius: 4px;
+    transform: rotate(-2deg);
+    margin-top: 6px;
+  }
+  .songinfo-modal h2 { font-size: 24px; margin: 12px 0 2px; font-weight: 800; }
+  .songinfo-modal .artist { text-align: right; color: #6a5a00; font-size: 14px; }
+  .songinfo-modal .divider { height: 2px; background: rgba(0,0,0,0.12); margin: 12px 0; }
+  .songinfo-modal .desc { font-size: 14.5px; line-height: 1.75; color: #4a3c00; }
+
+  /* 하단 안내 footer */
+  .hint-foot {
+    position: fixed; bottom: 18px; left: 0; right: 0;
+    text-align: center;
+    font-size: 12px; color: rgba(255,255,255,0.45);
+    pointer-events: none;
+    z-index: 50;
+  }
+
+  /* 닫힘 임계 도달 시 시각 피드백 — grabber 강조 */
+  .sw-modal.will-close .sw-grab { background: #FF5252; }
+  .sw-modal.will-close .sw-grab.light { background: #FF8A80; }
+</style>
+</head>
+<body>
+
+<h1>📱 모달 스와이프 모션 미리보기</h1>
+<p class="sub">
+  카드를 <strong>아래로 드래그</strong> → 손가락 따라 내려감<br>
+  <strong>120px 이상</strong> 내리거나 <strong>빠르게 휙</strong> → 닫힘<br>
+  덜 내리면 → 통! 하고 제자리로 (스냅백) · 마우스 드래그도 OK
+</p>
+
+<div class="demo-grid">
+  <button class="demo-btn" onclick="openModal('postit')">
+    <span class="emoji">📌</span>
+    <span>포스트잇 모달<small>우리들의 벽 / 데모 댓글 모달 스타일</small></span>
+  </button>
+  <button class="demo-btn" onclick="openModal('player')">
+    <span class="emoji">🎵</span>
+    <span>풀스크린 플레이어<small>어제 만든 그 화면 — 아래로 내리면 닫힘</small></span>
+  </button>
+  <button class="demo-btn" onclick="openModal('songinfo')">
+    <span class="emoji">💿</span>
+    <span>곡 소개 모달<small>마스터 커버 탭하면 뜨는 카드</small></span>
+  </button>
+</div>
+
+<!-- 백드롭 (공용) -->
+<div class="sw-backdrop" id="backdrop" onclick="closeActive()"></div>
+
+<!-- ① 포스트잇 모달 -->
+<div class="sw-modal postit-modal" id="m-postit">
+  <div class="sw-grab"></div>
+  <h2>오늘 데모 하나 올렸어요</h2>
+  <div class="body">
+    새벽에 작업한 곡인데 코드 진행이 마음에 들어서<br>
+    바로 올려봅니다. 피드백 환영! 🎸<br><br>
+    #새벽감성 #어쿠스틱
+  </div>
+  <div class="cm">
+    <div>ㄴ 와 분위기 너무 좋아요 — 수아</div>
+    <div>ㄴ 후렴 부분 중독성 있어요 — 지안</div>
+    <div>ㄴ 다음 버전 기대할게요! — 가온</div>
+  </div>
+</div>
+
+<!-- ② 풀스크린 플레이어 -->
+<div class="sw-modal player-modal" id="m-player">
+  <div class="sw-grab light"></div>
+  <div class="player-cover-sq">Coming<br>Soon...</div>
+  <div style="text-align:center;">
+    <div class="player-title-l">김가온, 강수아, 정지안</div>
+    <div class="player-artist-l">강수아</div>
+  </div>
+  <div class="player-ctrls">
+    <span>⏮</span><span class="play">⏸</span><span>⏭</span>
+  </div>
+  <div class="player-bar"></div>
+</div>
+
+<!-- ③ 곡소개 모달 -->
+<div class="sw-modal songinfo-modal" id="m-songinfo">
+  <div class="sw-grab"></div>
+  <span class="badge">발매 · 2026.06.04</span>
+  <h2>「보쌈」</h2>
+  <div class="artist">— 한승수</div>
+  <div class="divider"></div>
+  <div class="desc">
+    야식이 너무 먹고 싶던 밤, 보쌈을 시키고 기다리면서 만든 곡입니다.
+    배달 오토바이 소리가 가까워질 때의 설렘을 베이스라인에 담았어요.
+  </div>
+</div>
+
+<div class="hint-foot">실제 적용 시: 벽 모달 · 데모 모달 · 곡소개 · DM · 알림 · 풀스크린 플레이어 전부</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   스와이프-디스미스 엔진 (미리보기 버전)
+   - touchstart/move/end + mouse 지원
+   - 아래로만 드래그 허용 (위로는 저항)
+   - 임계: 120px 이상 OR 속도 0.5px/ms 이상 → 닫기
+   - 미달 → 스냅백
+   ═══════════════════════════════════════════════════════ */
+const backdrop = document.getElementById('backdrop');
+let activeId = null;
+
+function openModal(kind) {
+  const m = document.getElementById('m-' + kind);
+  if (!m) return;
+  activeId = kind;
+  backdrop.style.display = 'block';
+  m.style.display = 'flex';
+  // 강제 reflow 후 트랜지션 시작
+  m.classList.add('anim');
+  void m.offsetHeight;
+  backdrop.classList.add('open');
+  m.classList.add('open');
+}
+
+function closeActive() {
+  if (!activeId) return;
+  const m = document.getElementById('m-' + activeId);
+  if (!m) return;
+  m.classList.add('anim');
+  m.classList.remove('open');
+  backdrop.classList.remove('open');
+  const mid = activeId;
+  activeId = null;
+  setTimeout(() => {
+    m.style.display = 'none';
+    m.style.transform = '';
+    backdrop.style.display = 'none';
+    m.classList.remove('will-close');
+  }, 320);
+}
+
+/* 제스처 부착 */
+document.querySelectorAll('.sw-modal').forEach(modal => {
+  let startY = 0, curY = 0, dragging = false, startT = 0;
+
+  const onStart = (y) => {
+    dragging = true;
+    startY = y; curY = y;
+    startT = Date.now();
+    modal.classList.remove('anim');     // 드래그 중엔 트랜지션 끔 (즉각 따라옴)
+  };
+  const onMove = (y, e) => {
+    if (!dragging) return;
+    curY = y;
+    let dy = curY - startY;
+    if (dy < 0) dy = dy / 8;            // 위로는 저항 (살짝만)
+    modal.style.transform = `translateY(${dy}px)`;
+    // 백드롭 점점 투명하게
+    const h = modal.offsetHeight || 600;
+    const p = Math.max(0, Math.min(1, dy / h));
+    backdrop.style.opacity = String(1 - p * 0.9);
+    modal.classList.toggle('will-close', dy > 120);
+    if (e && e.cancelable) e.preventDefault();
+  };
+  const onEnd = () => {
+    if (!dragging) return;
+    dragging = false;
+    const dy = curY - startY;
+    const dt = Math.max(1, Date.now() - startT);
+    const velocity = dy / dt;           // px/ms
+    modal.classList.add('anim');
+    backdrop.style.opacity = '';
+    if (dy > 120 || velocity > 0.5) {
+      closeActive();                     // 임계 초과 → 닫기
+    } else {
+      modal.style.transform = '';        // 스냅백
+      modal.classList.remove('will-close');
+    }
+  };
+
+  // touch
+  modal.addEventListener('touchstart', (e) => onStart(e.touches[0].clientY), { passive: true });
+  modal.addEventListener('touchmove',  (e) => onMove(e.touches[0].clientY, e), { passive: false });
+  modal.addEventListener('touchend', onEnd);
+  modal.addEventListener('touchcancel', onEnd);
+  // mouse (PC 테스트용)
+  modal.addEventListener('mousedown', (e) => { onStart(e.clientY); e.preventDefault(); });
+  window.addEventListener('mousemove', (e) => onMove(e.clientY, e));
+  window.addEventListener('mouseup', onEnd);
+});
+</script>
+</body>
+</html>
