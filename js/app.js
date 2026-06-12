@@ -3055,7 +3055,9 @@ async function renderWall() {
       const _raw = localStorage.getItem('wallpos:' + note.id);
       if (_raw) _savedPos = JSON.parse(_raw);
     } catch (_) { _savedPos = null; }
-    if (_savedPos && typeof _savedPos.xPct === 'number' && typeof _savedPos.yPx === 'number') {
+    // 사용자가 드래그해 옮긴 노트 = 고정(부유 멈춤). 아래 class 로 표시.
+    const _isFixed = !!(_savedPos && typeof _savedPos.xPct === 'number' && typeof _savedPos.yPx === 'number');
+    if (_isFixed) {
       x   = _savedPos.xPct;
       yPx = _savedPos.yPx;
     } else if (_isMobileWall) {
@@ -3137,7 +3139,7 @@ async function renderWall() {
     const dateStr = _wallDate(note.createdAt || note.created_at);
     const dateChip = dateStr ? `<div class="note-date">${dateStr}</div>` : '';
     return `
-      <div class="wall-note wall-note-diary" data-note-id="${note.id}" data-author="${safeAuthor}" style="background:${c.bg}; color:${c.text}; left:${x}%; top:${yPx}px; z-index:${zi};" title="낙서·댓글 보기">
+      <div class="wall-note wall-note-diary${_isFixed ? ' wall-fixed' : ''}" data-note-id="${note.id}" data-author="${safeAuthor}" style="background:${c.bg}; color:${c.text}; left:${x}%; top:${yPx}px; z-index:${zi};" title="낙서·댓글 보기">
         ${dateChip}
         ${deleteBtn}
         ${bookmarkBtn}
@@ -4232,10 +4234,8 @@ function _noteMove(e) {
   // Higher threshold on touch: fingers shake
   const threshold = e.touches ? 14 : 6;
   if (Math.abs(dx) > threshold || Math.abs(dy) > threshold) s.moved = true;
-  // 모바일은 포스트잇이 그리드라 드래그 이동이 무의미 — 스크롤 막지 말고 left/top도 안 건드림.
-  // (moved 플래그는 그대로 두니 다음 _noteUp이 wasMoved 보고 탭 액션을 건너뜀)
-  const isMobile = (typeof window !== 'undefined' && window.innerWidth <= 768);
-  if (isMobile) return;
+  // 📱 모바일도 도형처럼 드래그로 이동 (사용자 요청) — 옮긴 위치는 _noteUp 이
+  //    wallpos: 에 저장해 고정. (이전엔 그리드라 막아뒀던 것 해제.)
   s.dragEl.style.left = (s.origLeft + dx) + 'px';
   s.dragEl.style.top = (s.origTop + dy) + 'px';
   if (s.moved) e.preventDefault();
@@ -4264,6 +4264,8 @@ function _noteUp() {
         const topPx  = elRect.top  - boardRect.top  + (board.scrollTop || 0);
         const xPct   = boardRect.width > 0 ? (leftPx / boardRect.width) * 100 : 0;
         localStorage.setItem('wallpos:' + noteId, JSON.stringify({ xPct, yPx: topPx }));
+        // 옮긴 노트 = 고정 → 부유(둥둥) 멈추고 그 자리에 딱 (사용자 요청)
+        el.classList.add('wall-fixed');
       } catch (_) {}
     }
     return;   // Don't open detail modal on drag-release

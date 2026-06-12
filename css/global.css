@@ -17599,3 +17599,8 @@ html[data-lang="en"] [data-i18n-ko] { display: none !important; }
 .wall-board .wall-note.wall-note-diary {
   box-shadow: 0 8px 22px rgba(0,0,0,0.22), 0 2px 6px rgba(0,0,0,0.14);
 }
+/* 📌 사용자가 드래그해 옮긴(고정한) 노트 — 부유 정지 + 살짝 또렷한 그림자 */
+.wall-board .wall-note.wall-note-diary.wall-fixed {
+  animation: none !important;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.30), 0 2px 8px rgba(0,0,0,0.18);
+}
