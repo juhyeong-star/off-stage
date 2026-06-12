@@ -17858,3 +17858,69 @@ html[data-lang="en"] [data-i18n-ko] { display: none !important; }
 }
 .story-prev { left: 0; }
 .story-next { right: 0; }
+
+/* ============================================================
+   PC 데모 카드 (page-demo) — 소식 노란 포스트잇 색(#FFE066).
+   눌렀을(선택) 때만 살짝 진한 노랑(#FFD23F).
+   .projects-grid + .page-demo 로만 스코프 → 모바일(demo-postit-sq) 무영향.
+   본문 2줄(…) · 댓글 최신 1개 + "...더보기" · 인라인 입력 없음. (사용자 요청)
+   ============================================================ */
+.artist-canvas .projects-grid .demo-card.page-demo,
+.artist-canvas .projects-grid .demo-card.page-demo:not(.is-selected) {
+  background: #FFE066 !important;                 /* 소식 노란색 */
+  border: 1.5px solid rgba(0,0,0,0.12) !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.16), 0 2px 5px rgba(0,0,0,0.10) !important;
+  color: #3E2723 !important;
+}
+.artist-canvas .projects-grid .demo-card.page-demo:hover {
+  box-shadow: 0 9px 22px rgba(0,0,0,0.22) !important;
+  transform: translate(-1px, -1px) !important;
+}
+/* 눌렀을 때(선택) — 약간 진한 노랑 + 안쪽 강조선만 (살짝 차이) */
+.artist-canvas .projects-grid .demo-card.page-demo.is-selected {
+  background: #FFD23F !important;
+  border: 1.5px solid rgba(0,0,0,0.22) !important;
+  box-shadow: 0 9px 22px rgba(0,0,0,0.24), inset 0 0 0 2px rgba(0,0,0,0.08) !important;
+  transform: translate(-1px, -1px) !important;
+}
+/* 노란 배경에 맞춘 글자색 (선택 전/후 동일 — 레거시 파랑/노랑 텍스트 무력화) */
+.artist-canvas .projects-grid .demo-card.page-demo .demo-tag,
+.artist-canvas .projects-grid .demo-card.page-demo.is-selected .demo-tag {
+  color: #B5575A !important; background: transparent !important;
+}
+.artist-canvas .projects-grid .demo-card.page-demo .demo-card-date,
+.artist-canvas .projects-grid .demo-card.page-demo.is-selected .demo-card-date {
+  color: rgba(62,39,35,0.5) !important;
+}
+.artist-canvas .projects-grid .demo-card.page-demo .demo-card-note,
+.artist-canvas .projects-grid .demo-card.page-demo .demo-card-note-line,
+.artist-canvas .projects-grid .demo-card.page-demo.is-selected .demo-card-note,
+.artist-canvas .projects-grid .demo-card.page-demo.is-selected .demo-card-note-line {
+  color: #3E2723 !important; opacity: 0.95 !important;
+}
+/* 본문 2줄 클램프 + … (레거시 3줄 !important 이김) */
+.artist-canvas .projects-grid .demo-card.page-demo .demo-card-note {
+  -webkit-line-clamp: 2 !important;
+  line-clamp: 2 !important;
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+/* 댓글 리스트 — 박스/색 제거, 깔끔한 줄 (모바일과 동일 느낌) */
+.artist-canvas .projects-grid .demo-card.page-demo .demo-card-cm-list,
+.artist-canvas .projects-grid .demo-path .demo-card.page-demo.is-selected .demo-card-cm-list {
+  display: flex !important; flex-direction: column !important; gap: 2px !important;
+  margin-top: auto !important; padding: 0 !important; max-height: none !important;
+  overflow: visible !important; cursor: default !important;
+  background: transparent !important; box-shadow: none !important;
+}
+/* "...더보기" 링크 */
+.artist-canvas .projects-grid .demo-card.page-demo .demo-card-more {
+  background: none; border: none; padding: 4px 0 0; margin: 0;
+  color: rgba(62,39,35,0.62); font-size: 13px; font-weight: 700;
+  cursor: pointer; align-self: flex-start; text-align: left;
+  font-family: 'Inter', sans-serif;
+}
+.artist-canvas .projects-grid .demo-card.page-demo .demo-card-more:hover {
+  color: rgba(62,39,35,0.95);
+}

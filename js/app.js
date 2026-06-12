@@ -8959,23 +8959,16 @@ function renderProjectBox(pid, versions) {
       const delBtn = isMine ? `<button class="cm-del-btn" onclick="event.stopPropagation(); deleteTrackComment('${v.id}','${cm.id}')" title="댓글 삭제"><i class="ri-close-line"></i></button>` : '';
       return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span>${delBtn}</div>`;
     }).join('');
-    // 댓글 0개일 때 placeholder — 항상 보이게 (사용자 요청)
-    const pcCmEmptyHtml = cmList.length === 0
-      ? `<div class="demo-card-cm-empty-hint">아직 댓글이 없어요</div>` : '';
-    // "댓글 N개 · 탭해서 모두 보기" 빨간 hint 제거 — 사용자 요청.
-    const pcCmHintHtml = '';
-
-    // 로그인한 누구나 인라인 입력 — Enter 만 (사용자 요청: send 버튼 제거)
-    // Enter 한 번 = 즉시 전송. 한글 IME 도 OK (_safeEnterSubmit 가 compositionend 추적).
-    // 보내기 버튼 없음 — 사용자 요청.
-    const inputInlineHtml = canComment ? `
-      <div class="demo-card-cm-input" onclick="event.stopPropagation();">
-        <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="${_t('댓글 남기기…', 'Leave a comment…')}"
-               onkeydown="if(event.key==='Enter'){ event.preventDefault(); window._safeEnterSubmit(this, () => submitTrackComment('${v.id}')); }">
-      </div>` : '';
-
     const demoLiked = isTrackLiked(v.id);
-    // 카드 클릭 = 선택 (is-selected) + 재생. 댓글 영역 클릭 = 모달 (사용자 요청).
+    // 댓글: 최신 1개만 + "...더보기" → 누르면 우리들의 벽 모달 (사용자 요청).
+    //   인라인 입력칸 제거 — 댓글은 무조건 모달 안에서.
+    //   카드 어디를 눌러도 재생. 더보기/삭제/하트 버튼만 stopPropagation 으로 예외.
+    const moreLabel = cmList.length > 0 ? _t('...더보기', '...more') : _t('💬 댓글 달기', '💬 Comment');
+    const cmBlockHtml = `
+        <div class="demo-card-cm-list">
+          ${cmInlineHtml}
+          <button class="demo-card-more" onclick="event.stopPropagation(); event.preventDefault(); openDemoWallModal('${v.id}')">${moreLabel}</button>
+        </div>`;
     return `
       <div class="${cls} page-demo ${v.pinned ? 'is-pinned' : ''}" data-track-id="${v.id}" data-project="${pid}"
            style="grid-row:${pos.row}; grid-column:${pos.col};"
@@ -8993,10 +8986,7 @@ function renderProjectBox(pid, versions) {
           </button>
         </div>
         ${noteHtml}
-        <div class="demo-card-cm-list" onclick="event.stopPropagation(); openDemoWallModal('${v.id}')" title="댓글 모두 보기">
-          ${cmInlineHtml}${pcCmEmptyHtml}
-        </div>
-        ${inputInlineHtml}
+        ${cmBlockHtml}
       </div>
     `;
   }).join('') + (canEditArtist ? (() => {
