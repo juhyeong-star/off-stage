@@ -93,6 +93,7 @@ window.audioElement = audioElement;
 
     let startX = 0, startY = 0, curX = 0, curY = 0, startT = 0;
     let pending = false, active = false, gScroller = null;
+    let lastAxis = 0, lastT2 = 0, recentVel = 0;     // 순간속도 추적용
 
     const axisVal = () => (dir === 'right' ? (curX - startX) : (curY - startY));
 
@@ -157,9 +158,16 @@ window.audioElement = audioElement;
           if (dx > 0 && Math.abs(dx) > Math.abs(dy)) active = true;
           else { pending = false; return; }
         }
+        // commit 시점 — 순간속도 추적 기준점 초기화
+        lastAxis = axisVal(); lastT2 = Date.now(); recentVel = 0;
       }
       if (!active) return;
-      let v = axisVal();
+      // 최근 구간 속도 — 평균이 아니라 "지금" 의 속도 (천천히 끌다 휙 던지기 인식)
+      const a = axisVal();
+      const now = Date.now();
+      const dtt = now - lastT2;
+      if (dtt > 0) { recentVel = (a - lastAxis) / dtt; lastAxis = a; lastT2 = now; }
+      let v = a;
       if (v < 0) v = v / 8;               // 반대 방향 저항
       el.style.transition = '';
       setTransform(v);
@@ -169,9 +177,9 @@ window.audioElement = audioElement;
     const end = () => {
       if (!active) { pending = false; return; }
       const v = axisVal();
-      const vel = v / Math.max(1, Date.now() - startT);
       pending = false; active = false;
-      if (Math.abs(v) > THRESH || vel > VEL) dismiss();
+      // 거리 임계 OR 마지막 순간속도가 dismiss 방향으로 충분히 빠르면 닫기
+      if (Math.abs(v) > THRESH || recentVel > VEL) dismiss();
       else snapBack();
     };
 
@@ -4737,7 +4745,7 @@ async function renderPlaylistUniverse(playlistId) {
     section3Html = `
       <section class="pl-section pl-section-notes">
         <h2 class="pl-section-title"><i class="ri-sticky-note-fill"></i> 담은 포스트잇</h2>
-        <p class="pl-section-empty">${_t('내 우주에서 포스트잇을 이 폴더로 끌어다 담아보세요 📌', 'Drag notes from My Universe into this folder 📌')}</p>
+        <p class="pl-section-empty">${_t('즐겨찾기에서 포스트잇을 이 폴더로 끌어다 담아보세요 📌', 'Drag notes from Favorites into this folder 📌')}</p>
       </section>
     `;
   }
@@ -4785,7 +4793,7 @@ async function renderPlaylistUniverse(playlistId) {
     appContent.innerHTML = `
       <div class="pl-page pl-universe-page">
         <div class="pl-header">
-          <button class="pl-back" onclick="navigateTo('universe')" aria-label="내 우주로"><i class="ri-arrow-left-line"></i></button>
+          <button class="pl-back" onclick="navigateTo('universe')" aria-label="즐겨찾기로"><i class="ri-arrow-left-line"></i></button>
           <div class="pl-title-block">
             <div class="pl-eyebrow">내 음악 폴더</div>
             <h1 class="pl-title">${safePlaylistTitle}</h1>
@@ -4793,7 +4801,7 @@ async function renderPlaylistUniverse(playlistId) {
         </div>
         <div class="pl-empty-page">
           <div style="font-size:40px; margin-bottom:12px;">🎵</div>
-          <p>${_t('이 폴더는 아직 비어 있어요.<br>내 우주에서 곡이나 포스트잇을 이 폴더로 끌어다 담아보세요.', 'This folder is empty.<br>Drag tracks or notes here from My Universe.')}</p>
+          <p>${_t('이 폴더는 아직 비어 있어요.<br>즐겨찾기에서 곡이나 포스트잇을 이 폴더로 끌어다 담아보세요.', 'This folder is empty.<br>Drag tracks or notes here from Favorites.')}</p>
         </div>
       </div>`;
     return;
@@ -12128,8 +12136,8 @@ window.openMyPlaylist = function(playlistId) {
 // 뒤로가기는 좌상단 글로벌 백버튼이 담당, 쇼츠는 아이템 클릭으로 진입.
 function _folderHeadHtml(folderId, built, title) {
   return `
-    <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-galaxy-fill" style="color:#9C27B0;"></i> 내 우주</h1>
-    <p style="font-size:13px; color:var(--text-secondary);">📁 ${title} · 곡 ${built.trackCount} · 포스트잇 ${built.noteCount}</p>`;
+    <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-star-smile-fill" style="color:#FFC107;"></i> ${_t('즐겨찾기', 'Favorites')}</h1>
+    <p style="font-size:13px; color:var(--text-secondary);">📁 ${title} · ${_t('곡', 'tracks')} ${built.trackCount} · ${_t('포스트잇', 'notes')} ${built.noteCount}</p>`;
 }
 
 // 내 우주 '안'에서 폴더 내용을 그린다(별도 페이지 X). 새로고침/쇼츠 복귀 등에 사용.
