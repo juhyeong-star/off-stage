@@ -18009,10 +18009,10 @@ body:has(#global-player.expanded) .lang-toggle { display: none !important; }
 }
 .player-collect-btn i { font-size: 15px; line-height: 1; }
 .player-collect-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
-.player-collect-btn.is-liked {
-  color: #ff4d6d;
-  border-color: rgba(255,77,109,0.5);
-  background: rgba(255,77,109,0.12);
+.player-collect-btn.is-collected {
+  color: var(--brand-color, #1DB954);
+  border-color: rgba(29,185,84,0.5);
+  background: rgba(29,185,84,0.12);
 }
 .player-collect-btn.pop { animation: collectPop 0.36s ease; }
 @keyframes collectPop {

@@ -6156,7 +6156,7 @@ window.toggleTrackHeart = async function(trackId, btnEl) {
   }
 };
 
-// ── 플레이어 바 "담기" — 현재 재생 곡을 즐겨찾기에 모으기 ──
+// ── 플레이어 바 "담기" — 현재 재생 곡을 즐겨찾기에 모으기 (북마크 아이콘) ──
 window.togglePlayerCollect = function (btn) {
   const id = window.currentPlayingTrack;
   if (!id) {
@@ -6164,19 +6164,41 @@ window.togglePlayerCollect = function (btn) {
     return;
   }
   const el = btn || document.getElementById('player-collect-btn');
-  if (typeof window.toggleTrackHeart === 'function') window.toggleTrackHeart(id, el);
+  const willCollect = (typeof isTrackLiked === 'function') ? !isTrackLiked(id) : true;
+  // 낙관적 북마크 플립 (toggleTrackHeart 에 btn 안 넘김 → 하트 아이콘 강제 안 됨).
+  if (el) {
+    el.classList.toggle('is-collected', willCollect);
+    const icon = el.querySelector('i');
+    if (icon) icon.className = willCollect ? 'ri-bookmark-fill' : 'ri-bookmark-line';
+    if (willCollect) { el.classList.add('pop'); setTimeout(() => el.classList.remove('pop'), 380); }
+  }
+  if (typeof window.toggleTrackHeart === 'function') window.toggleTrackHeart(id, null);
 };
-// 곡이 바뀔 때 담기 버튼의 채움/비움 상태 동기화.
+// 곡이 바뀔 때 담기 버튼의 채움/비움 상태 동기화 (북마크).
 function _updatePlayerCollectState() {
   const btn = document.getElementById('player-collect-btn');
   if (!btn) return;
   const id = window.currentPlayingTrack;
-  const liked = !!(id && typeof isTrackLiked === 'function' && isTrackLiked(id));
-  btn.classList.toggle('is-liked', liked);
+  const collected = !!(id && typeof isTrackLiked === 'function' && isTrackLiked(id));
+  btn.classList.toggle('is-collected', collected);
   const icon = btn.querySelector('i');
-  if (icon) icon.className = liked ? 'ri-heart-fill' : 'ri-heart-line';
+  if (icon) icon.className = collected ? 'ri-bookmark-fill' : 'ri-bookmark-line';
 }
 window._updatePlayerCollectState = _updatePlayerCollectState;
+
+// ── 플레이어 제목/아티스트 클릭 → 그 아티스트 페이지로 ──
+window.goToPlayerArtist = function (e) {
+  if (e) { try { e.stopPropagation(); e.preventDefault(); } catch (_) {} }
+  const name = window.__playerArtistName;
+  if (!name || name === '-') return;
+  // 풀스크린 플레이어 열려있으면 접고 이동
+  const player = document.getElementById('global-player');
+  if (player && player.classList.contains('expanded')) {
+    player.classList.remove('expanded');
+    document.body.classList.remove('player-fullscreen');
+  }
+  navigateTo('artist:' + encodeURIComponent(name));
+};
 
 // Long-press the dice to enter drag mode. Short click still triggers bounce+play.
 function initDiceDrag() {
@@ -10488,6 +10510,32 @@ window._layoutSoshikStack = function (stack) {
   dots.forEach((dot, i) => dot.classList.toggle('on', i === idx));
 };
 
+// 데스크탑 — 소식 핀을 헤더 둘째 열에서 'DEMO 2' 칸 위로 정렬 (사용자 요청).
+// 이름 길이/화면폭에 안 휘둘리게 DEMO 2 의 실제 위치를 측정해 margin-left 로 맞춤.
+window._alignSoshikAboveDemo2 = function () {
+  const stack = document.querySelector('.artist-postit-aside .soshik-stack');
+  if (!stack) return;
+  const aside = stack.parentElement;
+  // 모바일(≤960) — aside 가 full-width 라 인라인 정렬 제거 → CSS 중앙 유지.
+  if (window.innerWidth <= 960) {
+    stack.style.removeProperty('margin-left');
+    stack.style.removeProperty('margin-right');
+    return;
+  }
+  const demoPath = document.querySelector('.projects-grid .demo-path');
+  if (!demoPath) return;
+  const demos = demoPath.querySelectorAll(':scope > .demo-card');
+  const target = demos[1] || demos[0];                 // DEMO 2 우선, 없으면 DEMO 1
+  if (!target) return;
+  const a = aside.getBoundingClientRect();
+  const t = target.getBoundingClientRect();
+  let ml = Math.round(t.left - a.left);
+  const maxMl = Math.max(0, Math.round(a.width - stack.offsetWidth));  // aside 밖으로 안 나가게
+  ml = Math.min(Math.max(0, ml), maxMl);
+  stack.style.setProperty('margin-left', ml + 'px', 'important');
+  stack.style.setProperty('margin-right', 'auto', 'important');
+};
+
 // 스와이프(좌/우)로 스택 넘기기 + 탭 → 상세. 모바일 터치 + 마우스.
 window._initSoshikStack = function (stack) {
   if (!stack || stack._soshikWired) return;
@@ -11122,6 +11170,18 @@ function renderArtistProfile(artistName) {
 
   // 📌 소식 핀-스택 — 스와이프 넘기기 + 탭 상세 바인딩
   try { window._initSoshikStack(document.getElementById('soshik-stack')); } catch (e) { console.warn('[soshikStack]', e); }
+  // 소식 핀을 DEMO 2 칸 위로 정렬 (데스크탑). 레이아웃 끝난 뒤 한 번 더.
+  try {
+    window._alignSoshikAboveDemo2();
+    setTimeout(() => { try { window._alignSoshikAboveDemo2(); } catch (_) {} }, 80);
+    if (!window.__soshikAlignWired) {
+      window.__soshikAlignWired = true;
+      window.addEventListener('resize', () => {
+        clearTimeout(window.__soshikAlignTimer);
+        window.__soshikAlignTimer = setTimeout(() => { try { window._alignSoshikAboveDemo2(); } catch (_) {} }, 120);
+      });
+    }
+  } catch (_) {}
 
   // Async: fill the 응원 하트 wall (cheers received by this artist)
   if (isArtistRole && typeof window.mountCheerHeart === 'function') {
@@ -12968,6 +13028,7 @@ window.playTrack = function (trackId, source) {
   document.getElementById('player-cover').src = track.cover;
   document.getElementById('player-title').innerText = track.title;
   document.getElementById('player-artist').innerText = track.artist;
+  window.__playerArtistName = track.artist;   // 제목/아티스트 클릭 시 이동 대상
   if (typeof _updatePlayerCollectState === 'function') _updatePlayerCollectState();
 
   // MediaSession API — iOS 락스크린/컨트롤센터 위젯 + 미디어 볼륨 라우팅.
