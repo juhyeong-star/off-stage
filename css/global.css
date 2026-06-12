@@ -17516,6 +17516,27 @@ body:has(#global-player.expanded) .lang-toggle { display: none !important; }
   }
 }
 
+/* ── 아티스트 헤더 상단 정리 (사용자 요청: 너무 지저분) ── */
+/* 자기소개가 비어 있으면 줄(죽은 공간) 접기.
+   #artist-bio-line { display:block !important }(ID, 1,0,0) 를 이기려고 ID+:empty 로. */
+#artist-bio-line:empty,
+#artist-bio-line[hidden] { display: none !important; margin: 0 !important; }
+/* 팔로워/팔로잉/메시지 칩 — 모바일에서 2줄로 줄바꿈되던 것을 한 줄에 컴팩트하게 */
+@media (max-width: 768px) {
+  .artist-canvas .artist-follow-chips {
+    gap: 6px !important;
+    margin-top: 6px !important;
+    flex-wrap: nowrap !important;
+  }
+  .artist-canvas .artist-follow-chips .follow-chip {
+    padding: 5px 9px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+    min-height: 32px !important;
+    white-space: nowrap;
+  }
+}
+
 /* ============================================================
    풀스크린 플레이어 (expanded) — 뒤 페이지 스크롤/터치 차단
    사용자 보고 (2번째): body:has() 가 iOS Safari 옛 버전에서 미지원이라
@@ -17962,4 +17983,9 @@ body:has(#global-player.expanded) .lang-toggle { display: none !important; }
   flex-shrink: 0;
   align-self: baseline;
   font-size: 12px;
+}
+/* 댓글 없을 때 단독 "💬 댓글 달기" 버튼도 오른쪽 아래로 (사용자 요청). */
+.artist-canvas .projects-grid .demo-card.page-demo .demo-card-cm-list > .demo-card-more {
+  align-self: flex-end;
+  text-align: right;
 }
