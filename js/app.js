@@ -8951,23 +8951,24 @@ function renderProjectBox(pid, versions) {
     const cmVisible = cmList.slice(-PC_INLINE);
     const _myId = (window.__currentUser && window.__currentUser.id) || null;
     const _myName = (window.__currentUser && window.__currentUser.name) || '';
+    const demoLiked = isTrackLiked(v.id);
+    // 댓글: 최신 1개만 표시. 작성자 이름은 빼고 → 그 자리(우측)에 "...더보기" (사용자 요청).
+    //   더보기 누르면 우리들의 벽 모달. 인라인 입력칸 없음 — 댓글은 모달 안에서만.
+    //   카드 어디를 눌러도 재생. 더보기/삭제/하트 버튼만 stopPropagation 으로 예외.
+    const moreLabel = cmList.length > 0 ? _t('...더보기', '...more') : _t('💬 댓글 달기', '💬 Comment');
+    const moreBtnHtml = `<button class="demo-card-more" onclick="event.stopPropagation(); event.preventDefault(); openDemoWallModal('${v.id}')">${moreLabel}</button>`;
     const cmInlineHtml = cmVisible.map(cm => {
       const cmSafe = noteEsc(cm.text || '');
-      const cmAuth = noteEsc(cm.author || '익명');
       const isMine = (_myId && cm.authorId && cm.authorId === _myId)
                   || (!cm.authorId && _myName && cm.author === _myName);
       const delBtn = isMine ? `<button class="cm-del-btn" onclick="event.stopPropagation(); deleteTrackComment('${v.id}','${cm.id}')" title="댓글 삭제"><i class="ri-close-line"></i></button>` : '';
-      return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span><span class="demo-card-cm-author">— ${cmAuth}</span>${delBtn}</div>`;
+      // 작성자 이름 자리에 "...더보기" 링크.
+      return `<div class="demo-card-cm-line"><span class="demo-card-cm-arrow">ㄴ</span><span class="demo-card-cm-text">${cmSafe}</span>${moreBtnHtml}${delBtn}</div>`;
     }).join('');
-    const demoLiked = isTrackLiked(v.id);
-    // 댓글: 최신 1개만 + "...더보기" → 누르면 우리들의 벽 모달 (사용자 요청).
-    //   인라인 입력칸 제거 — 댓글은 무조건 모달 안에서.
-    //   카드 어디를 눌러도 재생. 더보기/삭제/하트 버튼만 stopPropagation 으로 예외.
-    const moreLabel = cmList.length > 0 ? _t('...더보기', '...more') : _t('💬 댓글 달기', '💬 Comment');
+    // 댓글 있으면 줄 안에 더보기, 없으면 단독 "댓글 달기" 버튼.
     const cmBlockHtml = `
         <div class="demo-card-cm-list">
-          ${cmInlineHtml}
-          <button class="demo-card-more" onclick="event.stopPropagation(); event.preventDefault(); openDemoWallModal('${v.id}')">${moreLabel}</button>
+          ${cmInlineHtml || moreBtnHtml}
         </div>`;
     return `
       <div class="${cls} page-demo ${v.pinned ? 'is-pinned' : ''}" data-track-id="${v.id}" data-project="${pid}"

@@ -17924,3 +17924,16 @@ html[data-lang="en"] [data-i18n-ko] { display: none !important; }
 .artist-canvas .projects-grid .demo-card.page-demo .demo-card-more:hover {
   color: rgba(62,39,35,0.95);
 }
+/* 댓글 줄 안의 "...더보기" — 작성자 이름 자리(우측). 컴팩트하게. (사용자 요청) */
+.artist-canvas .projects-grid .demo-card.page-demo .demo-card-cm-line .demo-card-more {
+  margin-left: auto !important;
+  padding: 0 !important;
+  flex-shrink: 0;
+  align-self: baseline;
+  font-size: 12px;
+}
+
+/* 데모 카드들이 왼쪽에 몰려 오른쪽이 비는 불균형 → 행 안에서 고르게 분산 (사용자 요청) */
+.artist-canvas .projects-grid .demo-path {
+  justify-content: space-evenly !important;
+}
