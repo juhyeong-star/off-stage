@@ -6150,7 +6150,33 @@ window.toggleTrackHeart = async function(trackId, btnEl) {
     try { await window.Favorites.toggle(trackId); }
     catch (e) { console.warn('[toggleTrackHeart] Favorites.toggle', e); }
   }
+  // 플레이어 바 담기 버튼도 같은 곡이면 동기화 (카드에서 담아도 반영)
+  if (typeof _updatePlayerCollectState === 'function' && trackId === window.currentPlayingTrack) {
+    _updatePlayerCollectState();
+  }
 };
+
+// ── 플레이어 바 "담기" — 현재 재생 곡을 즐겨찾기에 모으기 ──
+window.togglePlayerCollect = function (btn) {
+  const id = window.currentPlayingTrack;
+  if (!id) {
+    if (typeof showToast === 'function') showToast(_t('재생 중인 곡이 없어요', 'No track playing'));
+    return;
+  }
+  const el = btn || document.getElementById('player-collect-btn');
+  if (typeof window.toggleTrackHeart === 'function') window.toggleTrackHeart(id, el);
+};
+// 곡이 바뀔 때 담기 버튼의 채움/비움 상태 동기화.
+function _updatePlayerCollectState() {
+  const btn = document.getElementById('player-collect-btn');
+  if (!btn) return;
+  const id = window.currentPlayingTrack;
+  const liked = !!(id && typeof isTrackLiked === 'function' && isTrackLiked(id));
+  btn.classList.toggle('is-liked', liked);
+  const icon = btn.querySelector('i');
+  if (icon) icon.className = liked ? 'ri-heart-fill' : 'ri-heart-line';
+}
+window._updatePlayerCollectState = _updatePlayerCollectState;
 
 // Long-press the dice to enter drag mode. Short click still triggers bounce+play.
 function initDiceDrag() {
@@ -12942,6 +12968,7 @@ window.playTrack = function (trackId, source) {
   document.getElementById('player-cover').src = track.cover;
   document.getElementById('player-title').innerText = track.title;
   document.getElementById('player-artist').innerText = track.artist;
+  if (typeof _updatePlayerCollectState === 'function') _updatePlayerCollectState();
 
   // MediaSession API — iOS 락스크린/컨트롤센터 위젯 + 미디어 볼륨 라우팅.
   // 이게 있어야 iOS 컨트롤센터 볼륨 슬라이더가 "벨소리" 가 아니라 "미디어" 로 인식됨.
