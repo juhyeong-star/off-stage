@@ -38,6 +38,155 @@ window.audioElement = audioElement;
 })();
 
 // ============================================================
+// 모바일 모달 스와이프-디스미스 (drag-down → close, 일반 앱 모션)
+//   _attachSwipeDismiss(el, { onClose, direction, threshold, velocity,
+//                             scrollGuard, exclude, grabber, backdrop })
+//   - 손가락 따라 모달이 움직이고, 임계(기본 110px) 넘거나 빠르게 휙(0.5px/ms)
+//     던지면 닫힘. 미달이면 통! 하고 스냅백.
+//   - 모바일(≤768px)에서만 동작 — PC 는 닫기버튼/백드롭 사용.
+//   - 멱등: 같은 el 에 두 번 호출돼도 1회만 wire (open 마다 불러도 안전).
+//   - direction:'down'(기본) | 'right'(우측 드로어, 예: 알림 패널)
+//   - scrollGuard: 내부 스크롤 영역 — 그게 top 일 때만 down-drag 닫힘 발동.
+//   - exclude: 드래그 시작 금지 셀렉터 (입력칸/버튼/슬라이더 등).
+// ============================================================
+(() => {
+  const isMobile = () => window.innerWidth <= 768;
+
+  window._attachSwipeDismiss = function (el, opts) {
+    if (!el || el._swipeDismissWired) return;
+    el._swipeDismissWired = true;
+    opts = opts || {};
+    const dir = opts.direction === 'right' ? 'right' : 'down';
+    const THRESH = opts.threshold || 110;
+    const VEL = opts.velocity || 0.5;          // px/ms — 빠른 플릭 닫기
+    const exclude = opts.exclude ||
+      'input, textarea, button, select, a, .progress-bar, .progress-container, .vol-slider, [contenteditable="true"]';
+    const onClose = typeof opts.onClose === 'function' ? opts.onClose : null;
+    const backdrop = opts.backdrop || null;
+
+    // 내부 스크롤러 탐지 — 'auto' 면 터치 시작점의 가장 가까운 스크롤 조상.
+    //   그게 top 일 때만 down-drag 닫힘 발동 (스크롤 중이면 양보).
+    const findScroller = (target) => {
+      if (opts.scrollGuard === 'auto' || opts.scrollGuard === true) {
+        let n = target;
+        while (n && n !== el && n.nodeType === 1) {
+          try {
+            const s = getComputedStyle(n);
+            if (/(auto|scroll)/.test(s.overflowY) && n.scrollHeight > n.clientHeight + 2) return n;
+          } catch (_) {}
+          n = n.parentElement;
+        }
+        return null;
+      }
+      if (!opts.scrollGuard) return null;
+      return (typeof opts.scrollGuard === 'string') ? el.querySelector(opts.scrollGuard) : opts.scrollGuard;
+    };
+
+    // 잡는 손잡이(grabber) 주입 — 레이아웃 안 흔들게 absolute. opts.grabber: 'dark'|'light'|false
+    if (opts.grabber && dir === 'down' && !el.querySelector('.swipe-grabber')) {
+      // el 이 static 이면 relative 로 (offset 없어서 위치 안 바뀜)
+      try { if (getComputedStyle(el).position === 'static') el.style.position = 'relative'; } catch (_) {}
+      const g = document.createElement('div');
+      g.className = 'swipe-grabber' + (opts.grabber === 'light' ? ' on-dark' : '');
+      el.insertBefore(g, el.firstChild);
+    }
+
+    let startX = 0, startY = 0, curX = 0, curY = 0, startT = 0;
+    let pending = false, active = false, gScroller = null;
+
+    const axisVal = () => (dir === 'right' ? (curX - startX) : (curY - startY));
+
+    // transform 은 !important 로 — 일부 모달(#global-player.expanded)이 CSS 에서
+    // transform: none !important 를 쓰기 때문에 inline 으로는 이김.
+    const applyTf = (val) => el.style.setProperty('transform', val, 'important');
+    const clearTf = () => el.style.removeProperty('transform');
+
+    const setTransform = (v) => {
+      applyTf(dir === 'right' ? `translateX(${v}px)` : `translateY(${v}px)`);
+      if (backdrop) {
+        const span = (dir === 'right' ? el.offsetWidth : el.offsetHeight) || 600;
+        const p = Math.max(0, Math.min(1, v / span));
+        backdrop.style.opacity = String(1 - p * 0.85);
+      }
+    };
+
+    const cleanup = () => {
+      el.style.transition = ''; clearTf();
+      el.classList.remove('swipe-will-close');
+      if (backdrop) { backdrop.style.transition = ''; backdrop.style.opacity = ''; }
+    };
+
+    const snapBack = () => {
+      el.style.transition = 'transform 0.3s cubic-bezier(0.22,1,0.36,1)';
+      applyTf(dir === 'right' ? 'translateX(0)' : 'translateY(0)');
+      el.classList.remove('swipe-will-close');
+      if (backdrop) { backdrop.style.transition = 'opacity 0.3s'; backdrop.style.opacity = ''; }
+      setTimeout(() => { el.style.transition = ''; clearTf(); if (backdrop) backdrop.style.transition = ''; }, 320);
+    };
+
+    const dismiss = () => {
+      el.style.transition = 'transform 0.26s cubic-bezier(0.4,0,1,1)';
+      applyTf(dir === 'right' ? 'translateX(110%)' : 'translateY(110%)');
+      if (backdrop) { backdrop.style.transition = 'opacity 0.26s'; backdrop.style.opacity = '0'; }
+      setTimeout(() => {
+        cleanup();                       // 재사용 대비 inline 정리 후 실제 close
+        if (onClose) { try { onClose(); } catch (_) {} }
+      }, 270);
+    };
+
+    const start = (x, y, target) => {
+      if (!isMobile()) return;
+      // 영구 요소(예: 플레이어)는 열린 상태일 때만 — opts.enabled 가드.
+      if (typeof opts.enabled === 'function' && !opts.enabled()) return;
+      if (target && exclude && target.closest && target.closest(exclude)) return;
+      startX = curX = x; startY = curY = y; startT = Date.now();
+      pending = true; active = false;
+      gScroller = findScroller(target);     // 터치 시작점 기준 스크롤러 캡처
+    };
+    const move = (x, y, ev) => {
+      if (!pending && !active) return;
+      curX = x; curY = y;
+      const dx = curX - startX, dy = curY - startY;
+      if (!active) {
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;   // 아직 방향 모름
+        if (dir === 'down') {
+          const atTop = !gScroller || gScroller.scrollTop <= 0;
+          if (dy > 0 && Math.abs(dy) > Math.abs(dx) && atTop) active = true;
+          else { pending = false; return; }                  // 가로/위/스크롤 → 양보
+        } else {
+          if (dx > 0 && Math.abs(dx) > Math.abs(dy)) active = true;
+          else { pending = false; return; }
+        }
+      }
+      if (!active) return;
+      let v = axisVal();
+      if (v < 0) v = v / 8;               // 반대 방향 저항
+      el.style.transition = '';
+      setTransform(v);
+      el.classList.toggle('swipe-will-close', Math.abs(v) > THRESH);
+      if (ev && ev.cancelable) ev.preventDefault();
+    };
+    const end = () => {
+      if (!active) { pending = false; return; }
+      const v = axisVal();
+      const vel = v / Math.max(1, Date.now() - startT);
+      pending = false; active = false;
+      if (Math.abs(v) > THRESH || vel > VEL) dismiss();
+      else snapBack();
+    };
+
+    el.addEventListener('touchstart', (e) => { const t = e.touches[0]; if (t) start(t.clientX, t.clientY, e.target); }, { passive: true });
+    el.addEventListener('touchmove', (e) => { const t = e.touches[0]; if (t) move(t.clientX, t.clientY, e); }, { passive: false });
+    el.addEventListener('touchend', end);
+    el.addEventListener('touchcancel', end);
+    // 마우스 (데스크탑 폭 줄였을 때 / 디버그)
+    el.addEventListener('mousedown', (e) => start(e.clientX, e.clientY, e.target));
+    window.addEventListener('mousemove', (e) => { if (active || pending) move(e.clientX, e.clientY, e); });
+    window.addEventListener('mouseup', () => { if (active || pending) end(); });
+  };
+})();
+
+// ============================================================
 // i18n — KO / EN 토글 (옵션 B, 점진적 도입)
 // CSS 가 [data-lang="ko"] / [data-lang="en"] 기반으로 한쪽만 표시.
 // 1) 저장된 선택 → localStorage 'offstage_lang'
@@ -1695,6 +1844,13 @@ window.openNotifPanel = function() {
   renderDrawer();
   panel.style.display = 'flex';
   document.body.style.overflow = 'hidden';
+  // 📱 우측 드로어 — 오른쪽으로 스와이프하면 닫기 (들어온 방향으로).
+  //    drawer 는 위에서 이미 선언됨 (재사용).
+  if (drawer) window._attachSwipeDismiss(drawer, {
+    direction: 'right',
+    onClose: () => window.closeNotifPanel(),
+    scrollGuard: 'auto', backdrop: panel
+  });
 
   // 2) 백그라운드로 새 데이터 받아오면 조용히 다시 그림.
   _refreshNotifications()
@@ -2017,6 +2173,21 @@ window.togglePlayerExpand = function(e) {
   // 🔒 body lock — iOS Safari < 16 은 body:has() 미지원이라
   //    CSS selector 만으론 안 됨. JS 에서 직접 class 토글.
   document.body.classList.toggle('player-fullscreen', willExpand);
+
+  // 📱 풀스크린 펼친 상태에서 아래로 스와이프 → 미니로 접기.
+  //    엔진은 멱등이라 매 expand 마다 불러도 1회만 wire. 컨트롤/슬라이더는 exclude.
+  if (willExpand) {
+    window._attachSwipeDismiss(player, {
+      // 플레이어는 영구 요소 — 펼친(expanded) 상태일 때만 드래그 발동.
+      //   (미니 바 상태에서 드래그로 움직이는 것 방지)
+      enabled: () => player.classList.contains('expanded'),
+      onClose: () => {
+        player.classList.remove('expanded');
+        document.body.classList.remove('player-fullscreen');
+      },
+      exclude: '.control-btn, .play-btn, .progress-bar, .progress-container, .vol-slider, input[type="range"], .player-expand-btn, button'
+    });
+  }
 
   // 🔒 iOS 모멘텀 스크롤 추가 차단 — touchmove preventDefault.
   //    한 번만 wire 하고 캡처 단계 + 컨트롤 영역은 제외.
@@ -3857,68 +4028,18 @@ window.openNoteDetail = function(noteId) {
     }, 100);
   }
 
-  // ── 모바일 — 쇼츠처럼 위아래 스와이프로 다음/이전 메모, 좌우 스와이프로 닫기(메인 복귀) ──
+  // ── 📱 모바일 — 아래로 스와이프 → 닫기 (모든 모달 통일 모션, _attachSwipeDismiss) ──
+  //    (이전: 좌우=닫기 / 상하=다음·이전 메모. 사용자 요청으로 "아래로 드래그=닫기" 통일.)
   try {
-    const isMobile = (window.innerWidth <= 768);
-    if (isMobile) {
-      const modalEl = document.getElementById('note-detail-modal');
-      if (modalEl) {
-        let tx0 = null, ty0 = null;
-        let swiping = false;
-        modalEl.addEventListener('touchstart', (ev) => {
-          if (ev.target.closest('.scribble-input-row, .scribble-input, .note-track-thumb, .note-bookmark, .note-detail-close')) {
-            tx0 = ty0 = null; return;
-          }
-          if (swiping) { tx0 = ty0 = null; return; }
-          const t = ev.touches[0];
-          if (!t) return;
-          tx0 = t.clientX; ty0 = t.clientY;
-        }, { passive: true });
-        modalEl.addEventListener('touchend', (ev) => {
-          if (tx0 == null || ty0 == null || swiping) return;
-          const t = ev.changedTouches[0];
-          if (!t) { tx0 = ty0 = null; return; }
-          const dx = t.clientX - tx0;
-          const dy = t.clientY - ty0;
-          tx0 = ty0 = null;
-          // 위/아래 스와이프 — 대각선도 포함 (도형 쇼츠와 동일 패턴).
-          // 거의-수평 스와이프(좌/우) 만 모달 닫기, 그 외 위/아래 영역은 다음/이전 메모.
-          const isMostlyHoriz = Math.abs(dx) > Math.abs(dy) * 1.8 && Math.abs(dx) > 80;
-          const isVerticalish = Math.abs(dy) >= 50 && Math.abs(dy) >= Math.abs(dx) * 0.4;
-
-          if (isMostlyHoriz) {
-            swiping = true;
-            const content = modalEl.querySelector('.note-detail-content');
-            if (content) {
-              content.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.6,1), opacity 0.22s';
-              content.style.transform = `translateX(${dx < 0 ? -100 : 100}vw)`;
-              content.style.opacity = '0';
-            }
-            setTimeout(() => { closeNoteDetail(); }, 260);
-            return;
-          }
-          if (!isVerticalish) return;
-          const dbCur = window.DB.get();
-          const all = (dbCur.notes || []);
-          const i = all.findIndex(n => n && n.id === noteId);
-          if (i < 0) return;
-          const ni = dy < 0 ? i + 1 : i - 1;
-          if (ni < 0 || ni >= all.length) return;
-          const target = all[ni];
-          if (!target || !target.id) return;
-
-          // 현재 카드를 부드럽게 화면 밖으로 슬라이드 — 동시에 다음 카드를 같은 방향에서 슬라이드인.
-          swiping = true;
-          const content = modalEl.querySelector('.note-detail-content');
-          if (content) {
-            content.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.6,1)';
-            content.style.transform = `translateY(${dy < 0 ? -100 : 100}vh)`;
-          }
-          window.__noteDetailEnterFrom = dy < 0 ? 'bottom' : 'top';
-          setTimeout(() => openNoteDetail(target.id), 30);
-        }, { passive: true });
-      }
-    }
+    const modalEl = document.getElementById('note-detail-modal');
+    const content = modalEl && modalEl.querySelector('.note-detail-content');
+    if (content) window._attachSwipeDismiss(content, {
+      onClose: () => closeNoteDetail(),
+      scrollGuard: 'auto',
+      grabber: 'dark',
+      backdrop: modalEl,
+      exclude: '.scribble-input-row, .scribble-input, .note-track-thumb, .note-bookmark, .note-detail-close, input, textarea, button, a, [contenteditable="true"]'
+    });
   } catch (_) {}
 
   // 백그라운드로 최신 댓글 가져와서 목록만 조용히 업데이트 (모달은 즉시 떴음).
@@ -11308,6 +11429,14 @@ window.openDmModal = async function(artistName, artistAvatar) {
     if (msgs) msgs.scrollTop = msgs.scrollHeight;
     const input = document.getElementById('dm-input');
     if (input && canSend) input.focus();
+    // 📱 아래로 스와이프 → 닫기 (.dm-card 가 실제 카드)
+    const card = content.querySelector('.dm-card') || content;
+    window._attachSwipeDismiss(card, {
+      onClose: () => window.closeDmModal(),
+      scrollGuard: 'auto', grabber: 'light',
+      backdrop: document.getElementById('dm-modal'),
+      exclude: 'input, textarea, button, a, .dm-input-row, [contenteditable="true"]'
+    });
   }, 100);
 };
 
@@ -13519,6 +13648,12 @@ window.openSongInfoModal = function (trackId) {
   }
   // 애니메이션을 위해 다음 프레임에 .open 추가
   requestAnimationFrame(() => modal.classList.add('open'));
+  // 📱 아래로 스와이프 → 닫기
+  const paper = modal.querySelector('.song-info-paper');
+  if (paper) window._attachSwipeDismiss(paper, {
+    onClose: () => window.closeSongInfoModal(),
+    scrollGuard: 'auto', grabber: 'dark', backdrop: modal
+  });
 };
 window.closeSongInfoModal = function () {
   const m = document.getElementById('song-info-modal');
@@ -13602,6 +13737,12 @@ window.openDemoWallModal = function (trackId) {
     const input = modal.querySelector('.dwm-input');
     const isMobile = window.innerWidth <= 768;
     if (input && canComment && !isMobile) input.focus();
+    // 📱 아래로 스와이프 → 닫기
+    const content = modal.querySelector('.dwm-content');
+    if (content) window._attachSwipeDismiss(content, {
+      onClose: () => window.closeDemoWallModal(),
+      scrollGuard: 'auto', grabber: 'dark', backdrop: modal
+    });
   }, 50);
 };
 

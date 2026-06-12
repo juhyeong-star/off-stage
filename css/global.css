@@ -17592,3 +17592,26 @@ html[data-lang="en"] [data-i18n-ko] { display: none !important; }
     display: none !important;
   }
 }
+
+/* ============================================================
+   모바일 모달 스와이프-디스미스 — 잡는 손잡이(grabber)
+   _attachSwipeDismiss 가 down-direction 모달 상단에 absolute 로 주입.
+   레이아웃 안 흔들게 absolute + pointer-events:none.
+   ============================================================ */
+.swipe-grabber {
+  position: absolute;
+  top: calc(7px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.16);
+  z-index: 20;
+  pointer-events: none;            /* 드래그는 부모 el 이 처리 */
+  transition: background 0.15s, width 0.15s;
+}
+.swipe-grabber.on-dark { background: rgba(255, 255, 255, 0.32); }   /* 어두운 배경 모달용 */
+/* 닫힘 임계 도달 — 빨갛게 + 살짝 넓어져서 "놓으면 닫혀요" 신호 */
+.swipe-will-close > .swipe-grabber { background: #FF5A5A; width: 52px; }
+.swipe-will-close > .swipe-grabber.on-dark { background: #FF7A7A; }
