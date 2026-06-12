@@ -3913,7 +3913,59 @@ window.expandNoteBody = function(btn) {
 };
 
 // ===================== NOTE DETAIL MODAL (comments) =====================
-window.openNoteDetail = function(noteId) {
+// 상세 모달 안에서 좌/우 스와이프로 시퀀스(소식 스택 등) 넘기기.
+//   nav = { seq:[noteId...], idx }. 세로 제스처는 닫기/스크롤에 양보.
+function _attachNoteHorizNav(content, nav) {
+  if (!content || content._horizNavWired) return;
+  content._horizNavWired = true;
+  const exclude = '.scribble-input-row, .scribble-input, .note-track-thumb, .note-bookmark, .note-detail-close, input, textarea, button, a, [contenteditable="true"]';
+  let sx = 0, sy = 0, drag = false, active = false;
+  const onStart = (x, y, t) => {
+    if (window.innerWidth > 768) return;
+    if (t && t.closest && t.closest(exclude)) return;
+    sx = x; sy = y; drag = true; active = false;
+  };
+  const onMove = (x, y, ev) => {
+    if (!drag) return;
+    const dx = x - sx, dy = y - sy;
+    if (!active) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if (Math.abs(dx) > Math.abs(dy)) active = true;
+      else { drag = false; return; }            // 세로 → 닫기/스크롤에 양보
+    }
+    content.style.transition = 'none';
+    content.style.transform = `translateX(${x - sx}px)`;
+    if (ev && ev.cancelable) ev.preventDefault();
+  };
+  const onEnd = (x) => {
+    if (!drag || !active) { drag = false; return; }
+    drag = false;
+    const dx = x - sx;
+    const N = nav.seq.length;
+    content.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1)';
+    if (Math.abs(dx) > 70) {
+      const dir = dx < 0 ? 1 : -1;
+      let ni = nav.idx + dir;
+      if (ni < 0) ni = 0;
+      if (ni >= N) ni = N - 1;
+      if (ni === nav.idx) { content.style.transform = ''; return; }   // 끝 → 스냅백
+      content.style.transform = `translateX(${dx < 0 ? -100 : 100}vw)`;
+      const targetId = nav.seq[ni];
+      window.__noteDetailEnterFrom = dx < 0 ? 'right' : 'left';
+      setTimeout(() => { window.openNoteDetail(targetId, { seq: nav.seq, idx: ni }); }, 230);
+    } else {
+      content.style.transform = '';                                   // 스냅백
+    }
+  };
+  content.addEventListener('touchstart', (e) => { const t = e.touches[0]; if (t) onStart(t.clientX, t.clientY, e.target); }, { passive: true });
+  content.addEventListener('touchmove', (e) => { const t = e.touches[0]; if (t) onMove(t.clientX, t.clientY, e); }, { passive: false });
+  content.addEventListener('touchend', (e) => onEnd((e.changedTouches[0] && e.changedTouches[0].clientX != null) ? e.changedTouches[0].clientX : sx));
+  const wm = (e) => onMove(e.clientX, e.clientY, e);
+  const wu = (e) => { window.removeEventListener('mousemove', wm); window.removeEventListener('mouseup', wu); onEnd(e.clientX); };
+  content.addEventListener('mousedown', (e) => { onStart(e.clientX, e.clientY, e.target); if (drag) { window.addEventListener('mousemove', wm); window.addEventListener('mouseup', wu); } });
+}
+
+window.openNoteDetail = function(noteId, nav) {
   const db = window.DB.get();
   let note = (db.notes || []).find(n => n.id === noteId);
   if (!note) return;
@@ -4075,6 +4127,10 @@ window.openNoteDetail = function(noteId) {
       backdrop: modalEl,
       exclude: '.scribble-input-row, .scribble-input, .note-track-thumb, .note-bookmark, .note-detail-close, input, textarea, button, a, [contenteditable="true"]'
     });
+    // 시퀀스(소식 스택 등)로 들어왔으면 좌/우 스와이프로 다음·이전 글 넘기기
+    if (content && nav && Array.isArray(nav.seq) && nav.seq.length > 1) {
+      _attachNoteHorizNav(content, nav);
+    }
   } catch (_) {}
 
   // 백그라운드로 최신 댓글 가져와서 목록만 조용히 업데이트 (모달은 즉시 떴음).
@@ -10463,7 +10519,12 @@ window._initSoshikStack = function (stack) {
   stack.addEventListener('click', (e) => {
     if (moved) { moved = false; return; }
     const card = e.target.closest('.soshik-card.is-front');
-    if (card && card.dataset.noteId && !e.target.closest('.soshik-pin-btn')) openNoteDetail(card.dataset.noteId);
+    if (card && card.dataset.noteId && !e.target.closest('.soshik-pin-btn')) {
+      // 스택 카드 순서(고정 우선 → 최신)를 시퀀스로 넘겨, 상세에서도 좌/우 스와이프로 넘김
+      const ids = Array.from(stack.querySelectorAll('.soshik-card')).map(c => c.dataset.noteId);
+      const idx = Math.max(0, ids.indexOf(card.dataset.noteId));
+      openNoteDetail(card.dataset.noteId, { seq: ids, idx });
+    }
   });
   stack.addEventListener('touchstart', (e) => { const t = e.touches[0]; if (t) onStart(t.clientX, t.clientY, e.target); }, { passive: true });
   stack.addEventListener('touchmove', (e) => { const t = e.touches[0]; if (t) onMove(t.clientX, t.clientY, e); }, { passive: false });
