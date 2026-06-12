@@ -2994,6 +2994,10 @@ async function renderWall() {
   // on narrow viewports.
   const _vw = (typeof window !== 'undefined' ? window.innerWidth : 1024) || 1024;
   const cols = _vw < 800 ? 1 : (_vw < 1200 ? 2 : 4);
+  // 📱 모바일 — 도형처럼 사방에 흩뿌림 (그리드 X). 최신이 맨 위 + 앞으로 오게.
+  //    카드를 작게(아래 CSS) + 세로로 겹쳐 쌓되 가로로 흩어 'wall' 느낌.
+  const _isMobileWall = _vw <= 700;
+  const _MOBI_STEP = 168;                  // 카드 세로 겹침 간격 (카드보다 작게 → 겹침)
   // Each note can now grow tall with inline comments + input — give rows more vertical room.
   // Also expand for any user-dragged positions that sit below the default grid.
   let _maxSavedY = 0;
@@ -3005,7 +3009,9 @@ async function renderWall() {
       if (_p && typeof _p.yPx === 'number' && _p.yPx > _maxSavedY) _maxSavedY = _p.yPx;
     } catch (_) {}
   }
-  const boardH = Math.max(820, Math.ceil(visibleNotes.length / cols) * 390 + 300, _maxSavedY + 420);
+  const boardH = _isMobileWall
+    ? Math.max(620, 90 + visibleNotes.length * _MOBI_STEP + 340, _maxSavedY + 360)
+    : Math.max(820, Math.ceil(visibleNotes.length / cols) * 390 + 300, _maxSavedY + 420);
 
   // Helper: escape user text for HTML
   const _esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -3040,6 +3046,8 @@ async function renderWall() {
     // x is a % so post-its scale with the viewport. Column spacing depends
     // on how many cols we picked above.
     let x, yPx;
+    // 최신이 맨 위 + 앞으로 — i=0 이 newest(정렬 'new'). z-index 도 높게.
+    const zi = Math.max(1, visibleNotes.length - i);
     // Honor any user-curated position saved on drop. Falls back to the seeded
     // grid layout when there's nothing in localStorage (or the parse fails).
     let _savedPos = null;
@@ -3050,6 +3058,11 @@ async function renderWall() {
     if (_savedPos && typeof _savedPos.xPct === 'number' && typeof _savedPos.yPx === 'number') {
       x   = _savedPos.xPct;
       yPx = _savedPos.yPx;
+    } else if (_isMobileWall) {
+      // 📱 도형처럼 사방 흩뿌림 — 가로는 seed 로 흩어지고(작은 카드라 화면 안),
+      //    세로는 index 로 차곡(겹침). 최신(i=0)이 맨 위에서 시작.
+      x   = 2 + (seed % 44);                                          // 2-46% (카드 right edge 화면 안)
+      yPx = 80 + i * _MOBI_STEP + ((seed >>> 8) % 46);                // 겹치며 아래로
     } else {
       if (cols === 1)      x =  4 + (seed % 8);                       //  4-12%
       else if (cols === 2) x =  4 + col * 46 + (seed % 6);            //  4-10 | 50-56
@@ -3124,7 +3137,7 @@ async function renderWall() {
     const dateStr = _wallDate(note.createdAt || note.created_at);
     const dateChip = dateStr ? `<div class="note-date">${dateStr}</div>` : '';
     return `
-      <div class="wall-note wall-note-diary" data-note-id="${note.id}" data-author="${safeAuthor}" style="background:${c.bg}; color:${c.text}; left:${x}%; top:${yPx}px;" title="낙서·댓글 보기">
+      <div class="wall-note wall-note-diary" data-note-id="${note.id}" data-author="${safeAuthor}" style="background:${c.bg}; color:${c.text}; left:${x}%; top:${yPx}px; z-index:${zi};" title="낙서·댓글 보기">
         ${dateChip}
         ${deleteBtn}
         ${bookmarkBtn}
