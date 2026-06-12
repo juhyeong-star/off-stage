@@ -3658,10 +3658,15 @@ function _detectProvider(url) {
 
 function _renderAttachPreview() {
   // Target depends on which composer the user opened the attacher from
-  const isComment = window.__songAttachTarget === 'comment';
-  const preview = document.getElementById(isComment ? 'comment-attach-preview' : 'wall-attach-preview');
+  const tgt = window.__songAttachTarget;
+  const previewId = tgt === 'comment' ? 'comment-attach-preview'
+                  : tgt === 'story'   ? 'story-attach-preview'
+                  : 'wall-attach-preview';
+  const preview = document.getElementById(previewId);
   if (!preview) return;
-  const a = isComment ? window.__commentAttachedSong : window.__wallAttachedSong;
+  const a = tgt === 'comment' ? window.__commentAttachedSong
+          : tgt === 'story'   ? window.__storyAttachedSong
+          : window.__wallAttachedSong;
   if (!a) { preview.innerHTML = ''; preview.hidden = true; return; }
   preview.hidden = false;
   if (a.kind === 'track') {
@@ -3692,11 +3697,9 @@ function _renderAttachPreview() {
 }
 
 window.clearAttachedSong = function() {
-  if (window.__songAttachTarget === 'comment') {
-    window.__commentAttachedSong = null;
-  } else {
-    window.__wallAttachedSong = null;
-  }
+  if (window.__songAttachTarget === 'comment') window.__commentAttachedSong = null;
+  else if (window.__songAttachTarget === 'story') window.__storyAttachedSong = null;
+  else window.__wallAttachedSong = null;
   _renderAttachPreview();
 };
 
@@ -3769,11 +3772,9 @@ window._filterAttachTracks = function(q) {
 };
 
 function _storeAttachedSong(value) {
-  if (window.__songAttachTarget === 'comment') {
-    window.__commentAttachedSong = value;
-  } else {
-    window.__wallAttachedSong = value;
-  }
+  if (window.__songAttachTarget === 'comment') window.__commentAttachedSong = value;
+  else if (window.__songAttachTarget === 'story') window.__storyAttachedSong = value;
+  else window.__wallAttachedSong = value;
 }
 
 window.pickAttachedTrack = function(trackId) {
@@ -10473,6 +10474,204 @@ window._initSoshikStack = function (stack) {
   stack.addEventListener('mousedown', (e) => { onStart(e.clientX, e.clientY, e.target); if (drag) { window.addEventListener('mousemove', wm); window.addEventListener('mouseup', wu); } });
 };
 
+// ============================================================
+// 스토리 — 인스타식 24h 휘발. 프로필 사진 탭 → 올리기/보기.
+//   포스트잇으로 감정 한마디 + 노래 첨부. 풀화면 뷰어(탭 넘기기/스와이프 닫기).
+//   저장: localStorage 'offstage_stories' = { [artist]: [ {id,text,color,song,createdAt} ] }
+//   24h 지난 건 읽을 때 자동 prune.
+// ============================================================
+const _STORY_TTL = 24 * 60 * 60 * 1000;
+function _storyAllData() {
+  try { return JSON.parse(localStorage.getItem('offstage_stories') || '{}') || {}; } catch (_) { return {}; }
+}
+function _storySave(d) { try { localStorage.setItem('offstage_stories', JSON.stringify(d)); } catch (_) {} }
+function _storyNow() { return new Date().getTime(); }
+function _getStories(artist) {
+  const all = _storyAllData();
+  const list = Array.isArray(all[artist]) ? all[artist] : [];
+  const now = _storyNow();
+  const active = list.filter(s => s && (now - (s.createdAt || 0)) < _STORY_TTL);
+  if (active.length !== list.length) {           // prune 만료분
+    if (active.length) all[artist] = active; else delete all[artist];
+    _storySave(all);
+  }
+  return active.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+}
+window._hasActiveStory = function (artist) { return _getStories(artist).length > 0; };
+
+// 프로필 사진 탭 라우팅 — 스토리 있으면 보기, 없고 본인이면 올리기.
+window.openStoryFor = function (artist, isSelf) {
+  if (_getStories(artist).length > 0) { window.openStoryViewer(artist, isSelf); return; }
+  if (isSelf) window.openStoryComposer(artist);
+};
+
+// ── 컴포저 (풀화면 포스트잇 + 노래) ──
+window.openStoryComposer = function (artist) {
+  const user = window.__currentUser || (window.DB.get() && window.DB.get().currentUser);
+  if (!user) { showToast(_t('로그인이 필요해요', 'Sign-in required')); navigateTo('auth'); return; }
+  window.__storyAttachedSong = null;
+  window.__songAttachTarget = 'story';
+  const keys = Object.keys(NOTE_COLORS);
+  const prev = document.getElementById('story-composer');
+  if (prev) prev.remove();
+  const el = document.createElement('div');
+  el.id = 'story-composer';
+  el.className = 'story-composer';
+  el.innerHTML = `
+    <div class="story-composer-top">
+      <button class="story-x" onclick="closeStoryComposer()" aria-label="닫기"><i class="ri-close-line"></i></button>
+      <div class="story-composer-title">${_t('스토리 올리기', 'Add story')}</div>
+      <button class="story-post-btn" onclick="submitStory('${(artist||'').replace(/'/g,"\\'")}')">${_t('올리기', 'Post')}</button>
+    </div>
+    <div class="story-composer-card" id="story-card" style="background:${NOTE_COLORS[keys[0]].bg}; color:${NOTE_COLORS[keys[0]].text};">
+      <textarea id="story-text" maxlength="120" placeholder="${_t('지금 기분을 한마디로 ✍️', 'Your mood in a word ✍️')}"></textarea>
+      <div id="story-attach-preview" class="story-attach-preview" hidden></div>
+    </div>
+    <div class="story-composer-tools">
+      <div class="story-colors">
+        ${keys.map((k, i) => `<button class="story-color ${i === 0 ? 'on' : ''}" data-color="${k}" style="background:${NOTE_COLORS[k].bg}; border-color:${NOTE_COLORS[k].border};" onclick="_pickStoryColor('${k}')"></button>`).join('')}
+      </div>
+      <button class="story-attach" onclick="openSongAttacher('story')"><i class="ri-music-2-fill"></i> ${_t('노래', 'Song')}</button>
+    </div>`;
+  document.body.appendChild(el);
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => { const ta = document.getElementById('story-text'); if (ta) ta.focus(); }, 60);
+  requestAnimationFrame(() => el.classList.add('open'));
+};
+window._pickStoryColor = function (k) {
+  const card = document.getElementById('story-card');
+  if (card && NOTE_COLORS[k]) { card.style.background = NOTE_COLORS[k].bg; card.style.color = NOTE_COLORS[k].text; }
+  document.querySelectorAll('.story-color').forEach(b => b.classList.toggle('on', b.dataset.color === k));
+};
+window.closeStoryComposer = function () {
+  const el = document.getElementById('story-composer');
+  if (!el) return;
+  el.classList.remove('open');
+  document.body.style.overflow = '';
+  setTimeout(() => { if (el.parentNode) el.remove(); }, 200);
+};
+window.submitStory = function (artist) {
+  const ta = document.getElementById('story-text');
+  const text = (ta && ta.value || '').trim();
+  const song = window.__storyAttachedSong || null;
+  if (!text && !song) { showToast(_t('한마디 적거나 노래를 붙여줘', 'Write something or attach a song')); return; }
+  const activeColorBtn = document.querySelector('.story-color.on');
+  const color = (activeColorBtn && activeColorBtn.dataset.color) || Object.keys(NOTE_COLORS)[0];
+  const all = _storyAllData();
+  if (!Array.isArray(all[artist])) all[artist] = [];
+  all[artist].push({ id: 'st' + _storyNow() + Math.random().toString(36).slice(2, 6), text, color, song, createdAt: _storyNow() });
+  _storySave(all);
+  window.__storyAttachedSong = null;
+  closeStoryComposer();
+  showToast(_t('스토리 올렸어요 ✨ (24시간 후 사라져요)', 'Story posted ✨ (gone in 24h)'));
+  try { if (currentView === 'artist' && typeof renderArtistProfile === 'function') renderArtistProfile(artist); } catch (_) {}
+};
+
+// ── 뷰어 (풀화면, 진행바 + 탭 넘기기 + 스와이프 닫기) ──
+window.__storyTimer = null;
+window.openStoryViewer = function (artist, isSelf) {
+  const stories = _getStories(artist);
+  if (!stories.length) { if (isSelf) window.openStoryComposer(artist); return; }
+  const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  const prev = document.getElementById('story-viewer');
+  if (prev) prev.remove();
+  const el = document.createElement('div');
+  el.id = 'story-viewer';
+  el.className = 'story-viewer';
+  el.dataset.artist = artist;
+  el.dataset.idx = '0';
+  el._stories = stories;
+  el._isSelf = !!isSelf;
+  el.innerHTML = `
+    <div class="story-bars">${stories.map((_, i) => `<div class="story-bar"><span></span></div>`).join('')}</div>
+    <div class="story-head">
+      <div class="story-author">${esc(artist)}</div>
+      ${isSelf ? `<button class="story-del" onclick="_deleteCurrentStory()" title="${_t('삭제','Delete')}"><i class="ri-delete-bin-line"></i></button>` : ''}
+      ${isSelf ? `<button class="story-add-more" onclick="openStoryComposer('${(artist||'').replace(/'/g,"\\'")}')" title="${_t('추가','Add')}"><i class="ri-add-line"></i></button>` : ''}
+      <button class="story-x" onclick="closeStoryViewer()" aria-label="닫기"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="story-stage" id="story-stage"></div>
+    <button class="story-nav story-prev" onclick="_storyStep(-1)" aria-label="이전"></button>
+    <button class="story-nav story-next" onclick="_storyStep(1)" aria-label="다음"></button>`;
+  document.body.appendChild(el);
+  document.body.style.overflow = 'hidden';
+  // 스와이프 다운 → 닫기 (엔진 재활용)
+  try { window._attachSwipeDismiss(el, { onClose: () => closeStoryViewer(), exclude: '.story-nav, .story-x, .story-del, .story-add-more, button, a, .note-track-chip' }); } catch (_) {}
+  requestAnimationFrame(() => el.classList.add('open'));
+  _renderStoryAt(0);
+};
+function _renderStoryAt(idx) {
+  const el = document.getElementById('story-viewer');
+  if (!el) return;
+  const stories = el._stories || [];
+  if (idx < 0) idx = 0;
+  if (idx >= stories.length) { closeStoryViewer(); return; }
+  el.dataset.idx = String(idx);
+  const s = stories[idx];
+  const c = NOTE_COLORS[s.color] || NOTE_COLORS.yellow;
+  const esc = (t) => (t || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  // 노래 칩
+  let songChip = '';
+  if (s.song) {
+    if (s.song.kind === 'track') {
+      const t = (window.DB.get().tracks || []).find(x => x.id === s.song.id);
+      if (t) songChip = `<button class="story-song" onclick="event.stopPropagation(); playTrack('${t.id}')"><img src="${t.cover||''}" alt=""><span class="story-song-t">${esc(t.title)}</span> <i class="ri-play-circle-fill"></i></button>`;
+    } else if (s.song.kind === 'url') {
+      songChip = `<a class="story-song" href="${(s.song.url||'').replace(/"/g,'&quot;')}" target="_blank" rel="noopener" onclick="event.stopPropagation();"><i class="ri-link"></i> <span class="story-song-t">${esc((s.song.url||'').replace(/^https?:\/\//,''))}</span></a>`;
+    }
+  }
+  const stage = document.getElementById('story-stage');
+  stage.innerHTML = `<div class="story-postit" style="background:${c.bg}; color:${c.text};">
+      <div class="story-postit-text">${esc(s.text) || ''}</div>
+      ${songChip}
+    </div>`;
+  // 진행바
+  const bars = el.querySelectorAll('.story-bar');
+  bars.forEach((bar, i) => {
+    const fill = bar.querySelector('span');
+    if (i < idx) { fill.style.transition = 'none'; fill.style.width = '100%'; }
+    else if (i > idx) { fill.style.transition = 'none'; fill.style.width = '0%'; }
+    else {
+      fill.style.transition = 'none'; fill.style.width = '0%';
+      // 다음 프레임에 6초 동안 채우기
+      requestAnimationFrame(() => { fill.style.transition = 'width 6s linear'; fill.style.width = '100%'; });
+    }
+  });
+  if (window.__storyTimer) clearTimeout(window.__storyTimer);
+  window.__storyTimer = setTimeout(() => _storyStep(1), 6000);
+}
+window._storyStep = function (delta) {
+  const el = document.getElementById('story-viewer');
+  if (!el) return;
+  const idx = parseInt(el.dataset.idx || '0', 10) + delta;
+  _renderStoryAt(idx);
+};
+window._deleteCurrentStory = function () {
+  const el = document.getElementById('story-viewer');
+  if (!el) return;
+  const artist = el.dataset.artist;
+  const idx = parseInt(el.dataset.idx || '0', 10);
+  const stories = el._stories || [];
+  const target = stories[idx];
+  if (!target) return;
+  if (!confirm(_t('이 스토리를 지울까요?', 'Delete this story?'))) return;
+  const all = _storyAllData();
+  all[artist] = (all[artist] || []).filter(x => x.id !== target.id);
+  if (!all[artist].length) delete all[artist];
+  _storySave(all);
+  showToast(_t('스토리 삭제됨', 'Story deleted'));
+  closeStoryViewer();
+  try { if (currentView === 'artist') renderArtistProfile(artist); } catch (_) {}
+};
+window.closeStoryViewer = function () {
+  if (window.__storyTimer) { clearTimeout(window.__storyTimer); window.__storyTimer = null; }
+  const el = document.getElementById('story-viewer');
+  if (!el) return;
+  el.classList.remove('open');
+  document.body.style.overflow = '';
+  setTimeout(() => { if (el.parentNode) el.remove(); }, 200);
+};
+
 // === Active artist profile (restored) ===
 function renderArtistProfile(artistName) {
   // Defensive decode — if the caller passed a URL-encoded name like
@@ -10663,7 +10862,12 @@ function renderArtistProfile(artistName) {
         <div class="artist-header-row reveal">
           <div class="artist-strip">
             <div class="artist-id">
-              <img src="${avatar}" class="artist-avatar" alt="${safeName}">
+              <button type="button" class="artist-avatar-wrap ${window._hasActiveStory && window._hasActiveStory(artistName) ? 'has-story' : ''} ${isSelf ? 'is-self-avatar' : ''}"
+                      onclick="openStoryFor('${(artistName||'').replace(/'/g,"\\'")}', ${isSelf ? 'true' : 'false'})"
+                      title="${isSelf ? _t('스토리 올리기/보기','Add / view story') : _t('스토리 보기','View story')}">
+                <img src="${avatar}" class="artist-avatar" alt="${safeName}">
+                ${isSelf && !(window._hasActiveStory && window._hasActiveStory(artistName)) ? `<span class="artist-avatar-plus"><i class="ri-add-line"></i></span>` : ''}
+              </button>
               <div class="artist-id-text">
                 ${(() => {
                   // 이름 옆에 인라인 팔로우 알약 — 다른 사람 + isArtistRole 일 때만.
