@@ -17505,6 +17505,16 @@ html[data-lang="en"] [data-i18n-ko] { display: none !important; }
 }
 /* 풀스크린 플레이어 열렸을 땐 언어 토글 숨김 (재생 UI 와 겹침 방지) */
 body:has(#global-player.expanded) .lang-toggle { display: none !important; }
+/* 모바일 — 우상단 언어 토글과 인트로 글자 겹침 방지.
+   인트로를 좁혀 가운데 유지(양옆 여백 확보) → 토글 영역(우측) 안 침범. (사용자 요청) */
+@media (max-width: 768px) {
+  .page-intro,
+  body.is-shapes-route .page-intro {
+    max-width: calc(100% - 180px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
 
 /* ============================================================
    풀스크린 플레이어 (expanded) — 뒤 페이지 스크롤/터치 차단

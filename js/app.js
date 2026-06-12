@@ -5909,7 +5909,7 @@ function renderShapes() {
   `;
 
   appContent.innerHTML = `
-    <div class="page-intro reveal">${_i18n('도형을 클릭해 누군가의 감성을 발견해보세요', 'Tap a shape and discover an artist\'s vibe')}</div>
+    <div class="page-intro reveal">${_i18n('도형을 발견해보세요', 'Discover the shapes')}</div>
     <div class="shapes-universe" style="height: ${universeHeight}px;">
       ${decoHtml}
       ${shapesHtml}
@@ -6554,8 +6554,8 @@ window.renderUniverse = async function () {
 
   appContent.innerHTML = `
     <div id="universe-head" style="padding:20px 24px 8px; text-align:center;">
-      <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-galaxy-fill" style="color:#9C27B0;"></i> 내 우주</h1>
-      <p style="font-size:13px; color:var(--text-secondary);">폴더 ${myPlaylists.length} · 곡 ${likedTracks.length} · 포스트잇 ${bookmarkedNotes.length} — 끌어서 자리 옮길 수 있어요</p>
+      <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-galaxy-fill" style="color:#9C27B0;"></i> ${_i18n('즐겨찾기', 'Favorites')}</h1>
+      <p style="font-size:13px; color:var(--text-secondary);">${_i18n(`폴더 ${myPlaylists.length} · 곡 ${likedTracks.length} · 포스트잇 ${bookmarkedNotes.length} — 끌어서 자리 옮길 수 있어요`, `${myPlaylists.length} folders · ${likedTracks.length} tracks · ${bookmarkedNotes.length} notes — drag to rearrange`)}</p>
     </div>
     <div class="shapes-universe my-universe" style="height: ${universeHeight}px;">
       ${itemsHtml}
@@ -10993,7 +10993,7 @@ function renderArtistProfile(artistName) {
             ${'' /* 소식 — 핀에 박힌 스택 (고정 ~4 앞, 나머지 뒤 겹침, 스와이프로 넘김) */}
             ${(artistNotes.length > 0 || isSelf)
               ? _soshikStackHtml(artistNotes, isSelf, artistName)
-              : `<div class="artist-postit-empty">${_i18n('아직 소식이 없어요', 'No updates yet')}</div>`}
+              : '' /* 방문자 + 소식 없음 → 빈 메시지 없이 그냥 비움 (사용자 요청) */}
           </aside>
         </div>
 
