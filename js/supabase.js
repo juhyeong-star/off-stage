@@ -666,10 +666,16 @@
     async refreshInto(db) {
       const notes = await this.fetchAll();
       window.__wallNotes = notes;
-      if (db && typeof db === 'object') {
-        db.notes = notes;
-        try { window.DB.save(db); } catch (_) {}
-      }
+      // 호출자의 (오래됐을 수 있는) db 스냅샷에는 메모리 반영만.
+      if (db && typeof db === 'object') db.notes = notes;
+      // ⚠ TOCTOU 방지 — 저장은 "지금" 의 localStorage 를 새로 읽어 내 필드만 쓴다.
+      //   stale 스냅샷을 통째로 save 하면 그 사이 다른 코드가 저장한
+      //   댓글/트랙 등을 옛 데이터로 되돌려버림.
+      try {
+        const fresh = window.DB.get();
+        fresh.notes = notes;
+        window.DB.save(fresh);
+      } catch (_) {}
       return notes;
     },
 
@@ -1283,11 +1289,21 @@
         }
       });
       window.__tracks = supabaseTracks;
-      if (db && typeof db === 'object') {
-        const mockTracks = (db.tracks || []).filter(t => !t.__supabase);
-        db.tracks = [...supabaseTracks, ...mockTracks];
-        try { window.DB.save(db); } catch (_) {}
-      }
+      // supabase 트랙 + (대상 db 의) mock 트랙 병합 — 공용 헬퍼
+      const _mergeTracksInto = (target) => {
+        if (!target || typeof target !== 'object') return;
+        const mocks = (target.tracks || []).filter(t => t && !t.__supabase);
+        target.tracks = [...supabaseTracks, ...mocks];
+      };
+      // 호출자의 (오래됐을 수 있는) db 스냅샷에는 메모리 반영만.
+      _mergeTracksInto(db);
+      // ⚠ TOCTOU 방지 — 저장은 fresh DB.get() 에 내 필드만. stale 스냅샷을
+      //   통째로 save 하면 그 사이 저장된 댓글 등을 옛 데이터로 되돌림.
+      try {
+        const fresh = window.DB.get();
+        _mergeTracksInto(fresh);
+        window.DB.save(fresh);
+      } catch (_) {}
       // 백그라운드로 모든 트랙의 댓글을 한 번에 가져와 cache 갱신 (1 query — N+1 회피).
       // 첫 로드 시 (캐시 없을 때) 도 댓글이 inline 으로 보이게 됨.
       try {
@@ -1296,10 +1312,12 @@
           const cms = byTrack.get(t.id);
           if (cms) { t.trackComments = cms; t._commentsLoaded = true; }
         });
-        if (db && typeof db === 'object' && Array.isArray(db.tracks)) {
-          // db.tracks 의 참조도 동일 객체이므로 위에서 같이 갱신됨
-          try { window.DB.save(db); } catch (_) {}
-        }
+        // 댓글 합쳐진 상태를 다시 fresh 스냅샷에 저장 (위와 같은 이유)
+        try {
+          const fresh2 = window.DB.get();
+          _mergeTracksInto(fresh2);
+          window.DB.save(fresh2);
+        } catch (_) {}
       } catch (e) {
         console.warn('[Tracks] refreshInto fetchAllComments', e);
       }
@@ -1683,11 +1701,13 @@
     async refreshInto(db) {
       const playlists = await this.fetchMine();
       window.__playlists = playlists;
-      if (db && typeof db === 'object') {
-        // Replace legacy mock playlists with Supabase ones
-        db.playlists = playlists;
-        try { window.DB.save(db); } catch (_) {}
-      }
+      // 호출자 스냅샷엔 메모리 반영만 — 저장은 fresh 스냅샷에 내 필드만 (TOCTOU 방지)
+      if (db && typeof db === 'object') db.playlists = playlists;
+      try {
+        const fresh = window.DB.get();
+        fresh.playlists = playlists;
+        window.DB.save(fresh);
+      } catch (_) {}
       return playlists;
     }
   };
@@ -1872,15 +1892,7 @@
 
     // Cheers received by an artist (for the heart wall).
     async fetchForArtist(artistId, limit) {
-      if (!window.supabase || !artistId) return [];
-      const { data, error } = await window.supabase
-        .from('cheers')
-        .select('*')
-        .eq('artist_id', artistId)
-        .order('created_at', { ascending: false })
-        .limit(limit || 200);
-      if (error) { console.warn('[Cheers] fetchForArtist', error.message); return []; }
-      return data || [];
+      return []; // 응원 기능 미사용 — 비활성
     },
 
     // Resolve an artist name → id, then fetch their cheers.
@@ -1894,17 +1906,7 @@
 
     // Cheers the current user has sent (for the 응원하는곡 tab).
     async fetchMySent() {
-      if (!window.supabase) return [];
-      const { data: { user } } = await window.supabase.auth.getUser();
-      if (!user) return [];
-      const { data, error } = await window.supabase
-        .from('cheers')
-        .select('*')
-        .eq('supporter_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(200);
-      if (error) { console.warn('[Cheers] fetchMySent', error.message); return []; }
-      return data || [];
+      return []; // 응원 기능 미사용 — 비활성
     },
 
     async remove(cheerId) {

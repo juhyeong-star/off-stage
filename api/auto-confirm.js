@@ -35,6 +35,15 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, id: user.id, alreadyConfirmed: true });
     }
 
+    // 보안 가드 — 방금 가입한 계정만 자동 confirm (10분 창).
+    // 정상 플로우는 signUp 직후 1~2초 안에 이 API 를 부른다.
+    // 이 창 밖의 (묵은) 미인증 계정을 임의 이메일로 활성화하는 공격 차단.
+    const createdAt = new Date(user.created_at || 0).getTime();
+    const ageMs = Date.now() - createdAt;
+    if (!createdAt || ageMs > 10 * 60 * 1000) {
+      return res.status(403).json({ ok: false, error: 'account too old for auto-confirm' });
+    }
+
     // Step 2: confirm
     const updateResp = await fetch(
       `${SUPABASE_URL}/auth/v1/admin/users/${user.id}`,

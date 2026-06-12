@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>볼륨 컨트롤 옵션 — 4가지 비교</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    background: #0a0a0c;
+    color: #e9e9ec;
+    margin: 0;
+    padding: 28px 20px 60px;
+    font-family: 'Inter', 'Pretendard', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  h1.t { text-align: center; margin: 0 0 6px; font-size: 22px; font-weight: 800; }
+  .sub { text-align: center; color: rgba(255,255,255,0.55); font-size: 13px; margin: 0 0 30px; }
+
+  .options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 26px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  @media (max-width: 768px) {
+    .options { grid-template-columns: 1fr; }
+  }
+  .opt {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 22px 22px 24px;
+  }
+  .opt-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .opt-letter {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #1DB954; color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 800;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .opt-letter.b { background: #4A6FE7; }
+  .opt-letter.c { background: #FFB347; color: #111; }
+  .opt-letter.d { background: #888; }
+  .opt-name { font-size: 16px; font-weight: 800; }
+  .opt-tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.6);
+  }
+  .opt-tag.rec { background: rgba(29, 185, 84, 0.18); color: #1DB954; }
+  .opt-tag.warn { background: rgba(255, 91, 91, 0.18); color: #ff5b5b; }
+  .opt-desc {
+    color: rgba(255,255,255,0.65);
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 8px 0 18px;
+  }
+
+  /* === 두 디바이스 미리보기 박스 === */
+  .devices {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+  @media (max-width: 480px) {
+    .devices { grid-template-columns: 1fr; }
+  }
+
+  /* 모바일 미리보기 — 폰 frame */
+  .phone {
+    border: 4px solid #333;
+    border-radius: 22px;
+    background: #1a1a22;
+    padding: 8px;
+    width: 130px;
+    height: 240px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  .phone-label {
+    position: absolute;
+    top: -18px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 700;
+  }
+  .phone-content {
+    flex: 1;
+    padding: 8px;
+    color: rgba(255,255,255,0.3);
+    font-size: 10px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .phone-player {
+    background: #14141a;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    margin: 0 -8px -8px;
+    padding: 8px 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 9px;
+  }
+  .phone-player .pp-cover {
+    width: 22px; height: 22px;
+    background: linear-gradient(135deg, #1DB954, #4A6FE7);
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .phone-player .pp-text { flex: 1; min-width: 0; overflow: hidden; }
+  .phone-player .pp-title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .phone-player .pp-icon {
+    width: 18px; height: 18px;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* PC 미리보기 — 가로로 긴 플레이어 바 */
+  .pc-player {
+    background: linear-gradient(180deg, #1a1a22 0%, #0e0e14 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 11px;
+    position: relative;
+  }
+  .pc-label {
+    position: absolute;
+    top: -16px;
+    left: 0;
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 700;
+  }
+  .pc-player .pp-cover { width: 28px; height: 28px; background: linear-gradient(135deg, #1DB954, #4A6FE7); border-radius: 4px; flex-shrink: 0; }
+  .pc-player .pp-text { flex: 1; min-width: 0; }
+  .pc-player .pp-controls { display: flex; gap: 8px; color: rgba(255,255,255,0.7); flex-shrink: 0; }
+  .pc-player .pp-volume {
+    display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+  }
+
+  /* === 슬라이더/버튼 컴포넌트 (옵션별로 다양) === */
+  .vol-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255,255,255,0.16);
+    height: 4px;
+    border-radius: 2px;
+    width: 70px;
+    margin: 0;
+    outline: none;
+  }
+  .vol-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 10px; height: 10px;
+    background: #fff;
+    border-radius: 50%;
+    border: none;
+  }
+  .vol-pct { font-weight: 700; min-width: 30px; text-align: right; }
+  .vol-icon {
+    width: 22px; height: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .vol-icon.lg { width: 36px; height: 36px; font-size: 18px; }
+  .vol-icon.xl { font-size: 28px; padding: 8px; background: rgba(255,255,255,0.06); border-radius: 50%; width: 56px; height: 56px; }
+
+  /* 옵션 A — 모바일 자리에 큰 안내 박스 */
+  .mobile-a-popup {
+    background: rgba(20,20,26,0.95);
+    border-radius: 8px;
+    padding: 10px 8px;
+    color: #fff;
+    text-align: center;
+  }
+  .mobile-a-popup .big-mute {
+    background: rgba(255,255,255,0.08);
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    margin-bottom: 6px;
+  }
+  .mobile-a-popup .hint {
+    font-size: 8px;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.4;
+    margin-top: 4px;
+  }
+  .mobile-a-popup .hint .key {
+    display: inline-block;
+    background: rgba(255,255,255,0.12);
+    padding: 1px 4px;
+    border-radius: 2px;
+    font-weight: 700;
+  }
+
+  /* 옵션 B/C/D — 슬라이더 (모바일 popup 안에) */
+  .mobile-bcd-popup {
+    background: rgba(20,20,26,0.95);
+    border-radius: 8px;
+    padding: 8px 6px;
+    color: #fff;
+  }
+  .mobile-bcd-popup .row { display: flex; align-items: center; gap: 4px; }
+
+  /* === 동작 표 === */
+  .behavior {
+    margin-top: 14px;
+    font-size: 11px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 8px;
+    padding: 8px 12px;
+    line-height: 1.7;
+  }
+  .behavior strong { color: #FFE500; }
+  .behavior .ok { color: #1DB954; font-weight: 700; }
+  .behavior .no { color: #ff5b5b; font-weight: 700; }
+  .behavior .partial { color: #FFB347; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<h1 class="t">볼륨 컨트롤 — 4가지 옵션 비교</h1>
+<p class="sub">iOS 에서 실제로 어떻게 보이고 동작하는지 + PC 동작</p>
+
+<div class="options">
+
+  <!-- ============ OPTION A ============ -->
+  <div class="opt">
+    <div class="opt-head">
+      <span class="opt-letter">A</span>
+      <span class="opt-name">시스템 볼륨 강조</span>
+      <span class="opt-tag rec">추천</span>
+    </div>
+    <p class="opt-desc">iOS 에서는 슬라이더 자체를 숨김. 큰 음소거 토글 + 폰 측면 키/컨트롤센터 안내만. 가장 정직, Spotify/YouTube Music 패턴.</p>
+
+    <div class="devices">
+      <!-- 모바일 — 슬라이더 X, 큰 안내 -->
+      <div class="phone">
+        <span class="phone-label">iOS</span>
+        <div class="phone-content">
+          <div class="mobile-a-popup" style="position:absolute; bottom:50px; right:8px; left:8px;">
+            <div class="big-mute">🔊</div>
+            <div style="font-size:9px; font-weight:700;">탭해서 음소거</div>
+            <div class="hint">📱 폰 측면 <span class="key">+/−</span> 키<br>또는 컨트롤센터</div>
+          </div>
+        </div>
+        <div class="phone-player">
+          <div class="pp-cover"></div>
+          <div class="pp-text"><div class="pp-title">곡</div></div>
+          <span class="pp-icon">⏯</span>
+          <span class="pp-icon">🔊</span>
+        </div>
+      </div>
+      <!-- PC — 일반 슬라이더 -->
+      <div>
+        <div class="pc-player" style="margin-top: 18px;">
+          <span class="pc-label">PC (모든 옵션 동일)</span>
+          <div class="pp-cover"></div>
+          <div class="pp-text">「곡」<br><small style="color:rgba(255,255,255,0.5);">아티스트</small></div>
+          <div class="pp-controls">⏮ ▶ ⏭</div>
+          <div class="pp-volume">
+            🔊 <input class="vol-slider" type="range" value="60"> <span class="vol-pct">60%</span>
+          </div>
+        </div>
+        <div class="behavior">
+          <strong>iOS</strong>: 슬라이더 없음 · 음소거 <span class="ok">✓</span> · 시스템 볼륨 사용<br>
+          <strong>PC/Android</strong>: 슬라이더 <span class="ok">✓</span> · 음소거 <span class="ok">✓</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ OPTION B ============ -->
+  <div class="opt">
+    <div class="opt-head">
+      <span class="opt-letter b">B</span>
+      <span class="opt-name">AudioBufferSource 재구축</span>
+      <span class="opt-tag warn">위험</span>
+    </div>
+    <p class="opt-desc">노래를 전체 다운로드 → 디코드 → AudioBufferSourceNode 로 재생. iOS 에서도 GainNode 로 진짜 볼륨 조절. 단점: 매 곡 시작 지연 + 메모리 ↑ + 재생 코드 대규모 재작성.</p>
+
+    <div class="devices">
+      <div class="phone">
+        <span class="phone-label">iOS</span>
+        <div class="phone-content">
+          <div class="mobile-bcd-popup" style="position:absolute; bottom:50px; right:8px; left:8px;">
+            <div class="row">
+              <span style="font-size:11px;">🔊</span>
+              <input class="vol-slider" type="range" value="60" style="width:60px;">
+              <span style="font-size:9px;">60%</span>
+            </div>
+            <div style="font-size:8px; color:rgba(255,255,255,0.6); text-align:center; margin-top:4px;">
+              ⏳ 로딩 시 2-5초 지연
+            </div>
+          </div>
+        </div>
+        <div class="phone-player">
+          <div class="pp-cover"></div>
+          <div class="pp-text"><div class="pp-title">곡</div></div>
+          <span class="pp-icon">⏯</span>
+          <span class="pp-icon">🔊</span>
+        </div>
+      </div>
+      <div>
+        <div class="pc-player" style="margin-top: 18px;">
+          <span class="pc-label">PC</span>
+          <div class="pp-cover"></div>
+          <div class="pp-text">「곡」</div>
+          <div class="pp-controls">⏮ ▶ ⏭</div>
+          <div class="pp-volume">
+            🔊 <input class="vol-slider" type="range" value="60"> <span class="vol-pct">60%</span>
+          </div>
+        </div>
+        <div class="behavior">
+          <strong>iOS</strong>: 슬라이더 <span class="partial">~작동 가능</span> · 곡 시작 시 다운로드 대기<br>
+          <strong>PC/Android</strong>: 동일하게 지연 + 큰 메모리<br>
+          <strong>⚠ 위험</strong>: <span class="no">테스트 없이 적용 못 함</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ OPTION C ============ -->
+  <div class="opt">
+    <div class="opt-head">
+      <span class="opt-letter c">C</span>
+      <span class="opt-name">슬라이더 = 음소거 임계값</span>
+      <span class="opt-tag">편법</span>
+    </div>
+    <p class="opt-desc">슬라이더 드래그는 됨. 0% 도달하면 muted, &gt;0% 면 unmute. 실제 볼륨은 안 변함 (시스템). 정직하지 못함 — 사용자가 "10%, 50%, 100% 다 똑같은데?" 라 느낄 수 있음.</p>
+
+    <div class="devices">
+      <div class="phone">
+        <span class="phone-label">iOS</span>
+        <div class="phone-content">
+          <div class="mobile-bcd-popup" style="position:absolute; bottom:50px; right:8px; left:8px;">
+            <div class="row">
+              <span style="font-size:11px;">🔊</span>
+              <input class="vol-slider" type="range" value="60" style="width:60px;">
+              <span style="font-size:9px;">60%</span>
+            </div>
+            <div style="font-size:8px; color:rgba(255,255,255,0.6); text-align:center; margin-top:4px;">
+              0% = 음소거 (시각만)
+            </div>
+          </div>
+        </div>
+        <div class="phone-player">
+          <div class="pp-cover"></div>
+          <div class="pp-text"><div class="pp-title">곡</div></div>
+          <span class="pp-icon">⏯</span>
+          <span class="pp-icon">🔊</span>
+        </div>
+      </div>
+      <div>
+        <div class="pc-player" style="margin-top: 18px;">
+          <span class="pc-label">PC</span>
+          <div class="pp-cover"></div>
+          <div class="pp-text">「곡」</div>
+          <div class="pp-controls">⏮ ▶ ⏭</div>
+          <div class="pp-volume">
+            🔊 <input class="vol-slider" type="range" value="60"> <span class="vol-pct">60%</span>
+          </div>
+        </div>
+        <div class="behavior">
+          <strong>iOS</strong>: 0%/그 외 만 구분 <span class="partial">~음소거 토글</span> · 실제 볼륨 X<br>
+          <strong>PC/Android</strong>: 슬라이더 <span class="ok">✓</span> · 실제 볼륨 조절<br>
+          <strong>혼동</strong>: 사용자가 "10%인데 왜 안 작아져?" 라 느낌
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ OPTION D ============ -->
+  <div class="opt">
+    <div class="opt-head">
+      <span class="opt-letter d">D</span>
+      <span class="opt-name">현재 상태 유지</span>
+      <span class="opt-tag">현재</span>
+    </div>
+    <p class="opt-desc">지금 그대로. 슬라이더 보이긴 함, iOS 에서 드래그 가능, 퍼센트 변함, 하지만 실제 audio.volume 변화 X. 음소거만 작동.</p>
+
+    <div class="devices">
+      <div class="phone">
+        <span class="phone-label">iOS</span>
+        <div class="phone-content">
+          <div class="mobile-bcd-popup" style="position:absolute; bottom:50px; right:8px; left:8px;">
+            <div class="row">
+              <span style="font-size:11px;">🔊</span>
+              <input class="vol-slider" type="range" value="60" style="width:60px;">
+              <span style="font-size:9px;">60%</span>
+            </div>
+            <div style="font-size:8px; color:rgba(255,255,255,0.6); text-align:center; margin-top:4px;">
+              📱 폰 측면 +/− 키
+            </div>
+          </div>
+        </div>
+        <div class="phone-player">
+          <div class="pp-cover"></div>
+          <div class="pp-text"><div class="pp-title">곡</div></div>
+          <span class="pp-icon">⏯</span>
+          <span class="pp-icon">🔊</span>
+        </div>
+      </div>
+      <div>
+        <div class="pc-player" style="margin-top: 18px;">
+          <span class="pc-label">PC</span>
+          <div class="pp-cover"></div>
+          <div class="pp-text">「곡」</div>
+          <div class="pp-controls">⏮ ▶ ⏭</div>
+          <div class="pp-volume">
+            🔊 <input class="vol-slider" type="range" value="60"> <span class="vol-pct">60%</span>
+          </div>
+        </div>
+        <div class="behavior">
+          <strong>iOS</strong>: 슬라이더 <span class="no">시각만</span> · 음소거 <span class="ok">✓</span><br>
+          <strong>PC/Android</strong>: 슬라이더 <span class="ok">✓</span> · 음소거 <span class="ok">✓</span><br>
+          <strong>장점</strong>: 가장 안전, 변경 없음
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="max-width:760px; margin:36px auto 0; padding:20px 26px; background:rgba(29,185,84,0.08); border:1px solid rgba(29,185,84,0.25); border-radius:12px; color:rgba(255,255,255,0.8); font-size:13px; line-height:1.7;">
+  <strong style="color:#1DB954;">정직한 권고</strong><br><br>
+  <strong>A 추천</strong> — Spotify/YouTube Music Web 등 모든 메이저가 가는 길. 사용자가 처음엔 헷갈리지만 결국 시스템 볼륨에 익숙해짐. iOS 정책 한계를 솔직히 인정.<br><br>
+  <strong>B 도전</strong> — 시간/위험 감수하면 iOS 슬라이더 진짜 작동. 단, 곡 시작 지연 + 큰 메모리 + 재생 아키텍처 재작성.<br><br>
+  <strong>C 편법</strong> — 짧게 가는 길이지만 사용자가 진짜 안 변하는 거 알면 신뢰 잃음.<br><br>
+  <strong>D 현재</strong> — 변경 없음. 가장 위험 없지만 인앱 슬라이더가 무용지물.
+</div>
+
+</body>
+</html>

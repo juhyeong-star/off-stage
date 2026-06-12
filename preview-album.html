@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>발매 카드 미리보기</title>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" onload="this.rel='stylesheet'">
+<style>
+  body {
+    background: linear-gradient(135deg, #C8B8F5, #B9A5F0);
+    min-height: 100vh;
+    margin: 0;
+    padding: 40px;
+    font-family: 'Inter', system-ui, sans-serif;
+    display: flex;
+    gap: 40px;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .col {
+    flex: 0 0 380px;
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    border-radius: 16px;
+  }
+  .col h2 {
+    text-align: center;
+    color: #1a1a1a;
+    margin: 0 0 18px;
+    font-weight: 800;
+    font-size: 18px;
+  }
+
+  /* === 현재 (BEFORE) === */
+  .before .project-album-card {
+    background: #fff;
+    border: 1.5px solid #111;
+    border-radius: 8px;
+    box-shadow: 5px 5px 0 #111;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .before .project-cover-wrap {
+    width: 100%;
+    aspect-ratio: 1;
+    border: 1.5px solid #111;
+    border-radius: 2px;
+    box-shadow: 3px 3px 0 #111;
+    overflow: hidden;
+    position: relative;
+  }
+  .before .project-cover-wrap img {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .before .project-wip-badge {
+    position: absolute;
+    top: 8px; left: 8px;
+    background: #FFE500;
+    border: 1.5px solid #111;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    border-radius: 2px;
+  }
+  .before .project-title { font-size: 18px; font-weight: 800; color: #111; margin: 8px 0 2px; }
+  .before .project-artist-line { font-size: 13px; color: #666; }
+  .before .project-master-date {
+    display: inline-block; background: #1a1a1a; color: #ddd;
+    font-size: 11px; padding: 3px 10px; border-radius: 2px; margin-top: 4px;
+  }
+
+  /* === 변경 후 (AFTER) === */
+  .after .project-album-card {
+    background: transparent;          /* 흰 배경 X */
+    border: none;                      /* 테두리 X */
+    border-radius: 0;
+    box-shadow: none;                  /* 그림자 X */
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;                          /* 3줄 간격 줄임 (10 → 2) */
+  }
+  .after .project-cover-wrap {
+    width: 100%;
+    aspect-ratio: 1;
+    border: 2px solid #111;            /* 사진에만 검은 테두리 */
+    border-radius: 4px;
+    box-shadow: 5px 5px 0 #111;        /* 사진에 그림자 */
+    overflow: hidden;
+    position: relative;
+  }
+  .after .project-cover-wrap img {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .after .project-wip-badge {
+    display: none;                     /* 이미지 위 Coming Soon 칩 제거 (사용자 요청) */
+  }
+  .after .project-title { font-size: 20px; font-weight: 800; color: #111; margin: 12px 0 0; line-height: 1.2; }
+  .after .project-artist-line { font-size: 14px; color: #444; margin: 0; line-height: 1.2; }
+  .after .project-master-date {
+    align-self: flex-start;            /* flex column 에서 stretch 안 되게 */
+    width: fit-content;
+    background: #1a1a1a; color: #ddd;
+    font-size: 11px; padding: 3px 10px; border-radius: 2px; margin-top: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="col before">
+  <h2>현재 (BEFORE)</h2>
+  <div class="project-album-card">
+    <div class="project-cover-wrap">
+      <div class="project-wip-badge">Coming Soon...</div>
+      <img src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=80&w=500" alt="Cover">
+    </div>
+    <h3 class="project-title">「Coming Soon」</h3>
+    <div class="project-artist-line">Coming Soon</div>
+    <div class="project-master-date">발매 · 2026.06.04</div>
+  </div>
+</div>
+
+<div class="col after">
+  <h2>변경 후 (AFTER) — 흰 배경 X</h2>
+  <div class="project-album-card">
+    <div class="project-cover-wrap">
+      <div class="project-wip-badge">Coming Soon...</div>
+      <img src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=80&w=500" alt="Cover">
+    </div>
+    <h3 class="project-title">「Coming Soon」</h3>
+    <div class="project-artist-line">Coming Soon</div>
+    <div class="project-master-date">발매 · 2026.06.04</div>
+  </div>
+</div>
+
+</body>
+</html>

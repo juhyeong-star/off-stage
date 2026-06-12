@@ -110,6 +110,82 @@ window.audioElement = audioElement;
   // 단점: lang 바뀌면 다시 렌더해야 함. 정적 HTML/JS innerHTML 만 쓰는 곳에 OK.
   window._t = (ko, en) => (window.getLang() === 'en' ? en : ko);
 
+  // ── 토스트/alert/confirm 메시지 사전 — EN 모드에서 자동 번역.
+  //    호출부 60곳+ 을 일일이 안 고치고 진입점(showToast/alert/confirm) 1곳에서 처리.
+  const MSG_EN = {
+    '로그아웃 되었어요': 'Signed out',
+    '로그인이 필요해요': 'Sign-in required',
+    '로그인이 필요해요.': 'Sign-in required.',
+    '내용을 적어줘': 'Write something first',
+    '자기소개 저장됨 ✨': 'Bio saved ✨',
+    '벽에 글을 남기려면 로그인이 필요해요.': 'Sign in to post on the wall.',
+    '벽에 붙었어요 📌': 'Posted to the wall 📌',
+    '아직 준비 중이에요. 잠시 후 다시 시도해주세요.': 'Still loading — try again shortly.',
+    '삭제됐어요': 'Deleted',
+    '삭제 완료': 'Deleted',
+    '댓글 삭제됨': 'Comment deleted',
+    '댓글 남겼어요 ✏': 'Comment posted ✏',
+    '낙서 남겼어요': 'Scribble posted',
+    '폴더에 담았어요 📌': 'Added to folder 📌',
+    '폴더에 담았어요 🎵': 'Added to folder 🎵',
+    '폴더에서 뺐어요': 'Removed from folder',
+    '이 폴더는 비어 있어요': 'This folder is empty',
+    '로그인 후 이용 가능합니다': 'Sign in to use this',
+    '프로필 저장 완료 ✨': 'Profile saved ✨',
+    '메인 노출 해제': 'Removed from main',
+    '로그인 후 투표 가능': 'Sign in to vote',
+    '표 취소됨': 'Vote removed',
+    '단계 변경됨 ✨': 'Stage updated ✨',
+    '커버 이미지는 5MB 이하만 가능해요.': 'Cover image must be under 5MB.',
+    '커버 업로드 중…': 'Uploading cover…',
+    '커버 바꿨어요 ✨': 'Cover updated ✨',
+    '플레이리스트에 추가됐어요!': 'Added to playlist!',
+    '로그인 후 메시지를 보낼 수 있어요': 'Sign in to send messages',
+    '대화방을 찾을 수 없어요': 'Conversation not found',
+    '로그인 후 함께 만들 수 있어요': 'Sign in to join',
+    '카드 정보를 못 찾았어요': 'Card info not found',
+    '이미지 생성 실패': 'Image generation failed',
+    '예시 카드입니다 ✨': 'Sample card ✨',
+    '폴더 만들었어요 ✨': 'Folder created ✨',
+    '플레이리스트 만들었어요 ✨': 'Playlist created ✨',
+    '역할이 변경됐어요': 'Role updated',
+    '트랙 삭제됨': 'Track deleted',
+    '곡을 찾을 수 없어요': 'Track not found',
+    '이 댓글을 지울까요?': 'Delete this comment?',
+    '약관 동의가 필요해요.': 'Please agree to the terms first.',
+    '추가 실패': 'Add failed'
+  };
+  const MSG_PREFIX = [
+    ['저장 실패: ', 'Save failed: '],
+    ['삭제 실패: ', 'Delete failed: '],
+    ['댓글 저장 실패: ', 'Comment save failed: '],
+    ['댓글 삭제 실패: ', 'Comment delete failed: '],
+    ['업로드 실패: ', 'Upload failed: '],
+    ['추가 실패: ', 'Add failed: '],
+    ['만들기 실패: ', 'Create failed: '],
+    ['생성 실패: ', 'Create failed: '],
+    ['변경 실패: ', 'Update failed: '],
+    ['승격 실패: ', 'Promote failed: '],
+    ['단계 변경 실패: ', 'Stage change failed: '],
+    ['메시지 전송 실패: ', 'Send failed: '],
+    ['커버 변경 실패: ', 'Cover change failed: ']
+  ];
+  window._msgEn = (msg) => {
+    if (typeof msg !== 'string' || window.getLang() !== 'en') return msg;
+    if (MSG_EN[msg]) return MSG_EN[msg];
+    for (const [k, en] of MSG_PREFIX) {
+      if (msg.startsWith(k)) return en + msg.slice(k.length);
+    }
+    return msg;
+  };
+  // alert / confirm 도 같은 사전으로 — 호출부 무수정 커버
+  try {
+    const _nAlert = window.alert.bind(window);
+    window.alert = (m) => _nAlert(window._msgEn(m));
+    const _nConfirm = window.confirm.bind(window);
+    window.confirm = (m) => _nConfirm(window._msgEn(m));
+  } catch (_) {}
+
   // 언어 바뀌면 _t() 로 박힌 텍스트들 (auth 헤더, 검색 placeholder, 현재 라우트 등)
   // 을 새 언어로 다시 그리기. _i18n() span 들은 CSS 가 자동으로 처리.
   window.addEventListener('langchange', () => {
@@ -975,11 +1051,15 @@ async function init() {
     }
     syncNoteTrackThumbIcons();
     // 🎵 자동 다음 곡 — 큐에 다음 곡이 있으면 0.4s 후 재생
+    // 타이머 id 를 저장해 두고, 그 사이 유저가 직접 next/곡 선택을 하면 취소.
+    // (안 하면 0.4s 창 안에 next 누를 때 자동+수동 둘 다 실행 → 2곡 점프)
     const q = window.__playQueue;
     if (q && Array.isArray(q.tracks) && q.idx + 1 < q.tracks.length) {
       const nextId = q.tracks[q.idx + 1];
       if (nextId) {
-        setTimeout(() => {
+        if (window.__autoNextTimer) clearTimeout(window.__autoNextTimer);
+        window.__autoNextTimer = setTimeout(() => {
+          window.__autoNextTimer = null;
           // 동일 큐 안에서 이동 — _qNav 표시로 큐 rebuild 방지
           window.__playTrackFromQueue = true;
           try { window.playTrack(nextId, q.source); }
@@ -1256,7 +1336,7 @@ async function _refreshNotifications() {
       (cmts || []).filter(c => c.author_id !== myId).forEach(c => {
         items.push({
           id: 'tc_' + c.id, kind: 'track_comment', icon: '💬', color: '#FF6B9D',
-          title: `${c.author_name || '익명'}님이 내 곡에 댓글`,
+          title: _t(`${c.author_name || '익명'}님이 내 곡에 댓글`, `${c.author_name || 'Someone'} commented on your track`),
           body: `「${trackTitleById[c.track_id] || ''}」 — "${(c.text||'').slice(0,40)}"`,
           time: new Date(c.created_at).getTime(),
           onClickRoute: myName ? ('artist:' + encodeURIComponent(myName)) : ''
@@ -1275,7 +1355,7 @@ async function _refreshNotifications() {
       (replies || []).filter(r => r.author_id !== myId).forEach(r => {
         items.push({
           id: 'nc_' + r.id, kind: 'note_reply', icon: '✏', color: '#7C5CFF',
-          title: `${r.author_name || '익명'}님이 내 글에 답글`,
+          title: _t(`${r.author_name || '익명'}님이 내 글에 답글`, `${r.author_name || 'Someone'} replied to your note`),
           body: `"${(r.text||'').slice(0,60)}"`,
           time: new Date(r.created_at).getTime(),
           onClickRoute: 'wall'
@@ -1297,8 +1377,8 @@ async function _refreshNotifications() {
       items.push({
         id: 'fan_' + f.follower_id + '_' + f.created_at,
         kind: 'new_fan', icon: '❤', color: '#E91E63',
-        title: `${fanNames[f.follower_id] || '익명'}님이 팬이 됐어요`,
-        body: '내 페이지에서 확인해봐 ✨',
+        title: _t(`${fanNames[f.follower_id] || '익명'}님이 팬이 됐어요`, `${fanNames[f.follower_id] || 'Someone'} became your fan`),
+        body: _t('내 페이지에서 확인해봐 ✨', 'Check it on your page ✨'),
         time: new Date(f.created_at).getTime(),
         onClickRoute: myName ? ('artist:' + encodeURIComponent(myName)) : ''
       });
@@ -1324,7 +1404,7 @@ async function _refreshNotifications() {
         items.push({
           id: 'fav_' + info.trackId + '_d' + info.day,
           kind: 'track_likes', icon: '♥', color: '#F44336',
-          title: `${info.count}명이 좋아해요`,
+          title: _t(`${info.count}명이 좋아해요`, `${info.count} ${info.count === 1 ? 'person likes' : 'people like'} this`),
           body: `「${trackTitleById[info.trackId] || '내 곡'}」`,
           time: info.latest,
           onClickRoute: myName ? ('artist:' + encodeURIComponent(myName)) : ''
@@ -1349,7 +1429,7 @@ async function _refreshNotifications() {
           id: 'newt_' + t.id, kind: 'new_track',
           icon: t.is_demo ? '✏' : '🎵',
           color: t.is_demo ? '#FF9800' : '#1DB954',
-          title: `${an}님이 새 ${t.is_demo ? '데모' : '곡'}을 올렸어요`,
+          title: _t(`${an}님이 새 ${t.is_demo ? '데모' : '곡'}을 올렸어요`, `${an} uploaded a new ${t.is_demo ? 'demo' : 'track'}`),
           body: `「${t.title || ''}」`,
           time: new Date(t.created_at).getTime(),
           onClickRoute: an ? ('artist:' + encodeURIComponent(an)) : ''
@@ -1363,7 +1443,7 @@ async function _refreshNotifications() {
       (newPosts || []).forEach(p => {
         items.push({
           id: 'newp_' + p.id, kind: 'new_post', icon: '📝', color: '#FFD54F',
-          title: `${p.author_name || '아티스트'}님의 새 소식`,
+          title: _t(`${p.author_name || '아티스트'}님의 새 소식`, `New post from ${p.author_name || 'an artist'}`),
           body: `"${(p.text||'').slice(0,60)}"`,
           time: new Date(p.created_at).getTime(),
           onClickRoute: 'wall'
@@ -1395,7 +1475,7 @@ async function _refreshNotifications() {
         items.push({
           id: 'dm_' + d.id,
           kind: 'dm', icon: '✉', color: '#42A5F5',
-          title: `${senderName}님이 메시지를 보냈어요`,
+          title: _t(`${senderName}님이 메시지를 보냈어요`, `${senderName} sent you a message`),
           body: `"${(d.body || '').slice(0, 60)}"`,
           time: new Date(d.created_at).getTime(),
           onClickRoute: myName ? ('artist:' + encodeURIComponent(myName)) : ''   // 자기 아티스트 페이지 → 거기서 메세지 버튼
@@ -2336,7 +2416,7 @@ window.toggleFollowArtist = async function (artistId, artistName) {
     } catch (e) {
       console.warn('[follow] supabase fail, fallback to local', e);
       if (e && /자기 자신/.test(e.message || '')) {
-        showToast('자기 자신은 팔로우 할 수 없어요');
+        showToast(_t('자기 자신은 팔로우 할 수 없어요', "You can't follow yourself"));
         return;
       }
     }
@@ -2357,7 +2437,7 @@ window.toggleFollowArtist = async function (artistId, artistName) {
     window._setFollowedNames(s);
   }
 
-  showToast(following ? `${artistName} 팔로우 ❤` : `${artistName} 언팔로우`);
+  showToast(following ? _t(`${artistName} 팔로우 ❤`, `Following ${artistName} ❤`) : _t(`${artistName} 언팔로우`, `Unfollowed ${artistName}`));
   // 즉시 다시 그려서 버튼/팔로워수 반영 (현재 페이지에 맞게)
   if (currentView === 'artist' && typeof renderArtistProfile === 'function') {
     renderArtistProfile(artistName);
@@ -2874,9 +2954,9 @@ async function renderWall() {
       <button type="button" class="wall-compose-close" onclick="toggleWallCompose()" aria-label="닫기">
         <i class="ri-close-line"></i>
       </button>
-      <input type="text" id="wall-title" class="form-control wall-compose-title" placeholder="제목 (선택)" maxlength="50"
+      <input type="text" id="wall-title" class="form-control wall-compose-title" placeholder="${_t('제목 (선택)', 'Title (optional)')}" maxlength="50"
         style="margin-bottom:12px; font-weight:800; font-size:22px;">
-      <textarea id="wall-text" class="form-control wall-compose-body" rows="6" placeholder="하고 싶은 말을 자유롭게"
+      <textarea id="wall-text" class="form-control wall-compose-body" rows="6" placeholder="${_t('하고 싶은 말을 자유롭게', 'Say anything you like')}"
         style="resize:vertical; margin-bottom:14px; font-size:16px; line-height:1.6; min-height:160px;"></textarea>
       <!-- Attached song preview (hidden until a track or URL is picked) -->
       <div id="wall-attach-preview" class="wall-attach-preview" hidden></div>
@@ -2884,15 +2964,15 @@ async function renderWall() {
         <div style="display:flex; gap:6px;" id="wall-color-picker">
           ${colorKeys.map((key,i) => `<button class="color-dot ${i===0?'active':''}" data-color="${key}" style="background:${NOTE_COLORS[key].bg}; border:2px solid ${NOTE_COLORS[key].border};" onclick="document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('active')); this.classList.add('active');"></button>`).join('')}
         </div>
-        <button type="button" class="wall-attach-btn" onclick="openSongAttacher()" title="노래 첨부"><i class="ri-music-2-fill"></i> 노래</button>
-        <button class="btn-primary" onclick="submitWallNote()" style="margin-left:auto; padding:8px 18px; font-size:13px;">남기기 📌</button>
+        <button type="button" class="wall-attach-btn" onclick="openSongAttacher()" title="${_t('노래 첨부', 'Attach a song')}"><i class="ri-music-2-fill"></i> ${_i18n('노래', 'Song')}</button>
+        <button class="btn-primary" onclick="submitWallNote()" style="margin-left:auto; padding:8px 18px; font-size:13px;">${_i18n('남기기 📌', 'Post 📌')}</button>
       </div>
     </div>
   ` : '';
 
   const writeFab = user
-    ? `<button class="wall-fab" onclick="toggleWallCompose()" title="벽에 남기기"><i class="ri-add-line"></i> 남기기</button>`
-    : `<button class="wall-fab" onclick="navigateTo('auth')" title="로그인하고 글 남기기"><i class="ri-login-box-line"></i> 로그인</button>`;
+    ? `<button class="wall-fab" onclick="toggleWallCompose()" title="${_t('벽에 남기기', 'Post to the wall')}"><i class="ri-add-line"></i> ${_i18n('남기기', 'Post')}</button>`
+    : `<button class="wall-fab" onclick="navigateTo('auth')" title="${_t('로그인하고 글 남기기', 'Sign in to post')}"><i class="ri-login-box-line"></i> ${_i18n('로그인', 'Sign in')}</button>`;
 
   // Mobile-only floating search button — hidden on desktop via CSS.
   // Tap it to slide up the search/sort sheet from the bottom.
@@ -2900,9 +2980,9 @@ async function renderWall() {
 
   // 카운트는 page-count 로 분리 (헤더 제목 제거 후 인트로 아래에 가운데 정렬).
   const pageCountInner = q
-    ? `"${q}" · <strong>${total}</strong>개`
-    : `총 <strong>${allNotes.length}</strong>개`;
-  const pageCountSuffix = total > 0 && shown < total ? ` · 보는 중 ${shown}` : '';
+    ? `"${q}" · <strong>${total}</strong>${_t('개', '')}`
+    : _t(`총 <strong>${allNotes.length}</strong>개`, `<strong>${allNotes.length}</strong> notes`);
+  const pageCountSuffix = total > 0 && shown < total ? _t(` · 보는 중 ${shown}`, ` · showing ${shown}`) : '';
   const pageCountHtml = `<div class="page-count reveal">${pageCountInner}${pageCountSuffix}</div>`;
 
   // 검색/정렬 진입 버튼 — 메모가 13개 이상이거나 검색중일 때만 노출.
@@ -2918,15 +2998,15 @@ async function renderWall() {
       </button>
       <div class="wall-search-v2">
         <i class="ri-search-line"></i>
-        <input type="text" id="wall-search-input" placeholder="검색 (내용 / 작성자)" value="${q.replace(/"/g,'&quot;')}"
+        <input type="text" id="wall-search-input" placeholder="${_t('검색 (내용 / 작성자)', 'Search (text / author)')}" value="${q.replace(/"/g,'&quot;')}"
                oninput="wallSetSearch(this.value)"
                onkeydown="if(event.key==='Enter'){event.target.blur();}">
         ${q ? `<button class="wall-search-clear" onclick="wallSetSearch('')"><i class="ri-close-line"></i></button>` : ''}
       </div>
       <div class="wall-sort-v2">
-        <button class="wall-sort-btn ${_wallSort==='new'?'active':''}" onclick="wallSetSort('new')">최신</button>
-        <button class="wall-sort-btn ${_wallSort==='old'?'active':''}" onclick="wallSetSort('old')">오래된</button>
-        <button class="wall-sort-btn ${_wallSort==='random'?'active':''}" onclick="wallSetSort('random')">랜덤</button>
+        <button class="wall-sort-btn ${_wallSort==='new'?'active':''}" onclick="wallSetSort('new')">${_t('최신', 'New')}</button>
+        <button class="wall-sort-btn ${_wallSort==='old'?'active':''}" onclick="wallSetSort('old')">${_t('오래된', 'Old')}</button>
+        <button class="wall-sort-btn ${_wallSort==='random'?'active':''}" onclick="wallSetSort('random')">${_t('랜덤', 'Random')}</button>
       </div>
     </div>
   ` : '';
@@ -2934,7 +3014,7 @@ async function renderWall() {
   const loadMoreBtn = hasMore ? `
     <div class="wall-load-more">
       <button onclick="wallLoadMore()" class="btn-primary" style="font-size:14px; padding:10px 28px;">
-        <i class="ri-arrow-down-line"></i> 더 보기 (${total - shown}개 더)
+        <i class="ri-arrow-down-line"></i> ${_t(`더 보기 (${total - shown}개 더)`, `Load more (${total - shown} left)`)}
       </button>
     </div>
   ` : '';
@@ -3034,14 +3114,14 @@ window.openFollowerConstellation = async function () {
   const shell = `
     <div id="constellation-overlay" class="constellation-overlay">
       <button class="constellation-close" onclick="closeFollowerConstellation()" aria-label="닫기">
-        <i class="ri-close-line"></i> 닫기
+        <i class="ri-close-line"></i> ${_t('닫기', 'Close')}
       </button>
       <div class="constellation-stage" id="constellation-stage">
         <div class="constellation-center">
           <img src="${me.avatar || ('https://i.pravatar.cc/150?u=' + me.id)}" alt="${(me.name||'').replace(/</g,'&lt;')}">
           <div class="constellation-center-name">${(me.name||'').replace(/</g,'&lt;')}</div>
         </div>
-        <div class="constellation-loading">팔로워를 불러오는 중…</div>
+        <div class="constellation-loading">${_t('팔로워를 불러오는 중…', 'Loading followers…')}</div>
       </div>
     </div>
   `;
@@ -3058,7 +3138,7 @@ window.openFollowerConstellation = async function () {
   if (loader) loader.remove();
   if (!followers.length) {
     stage.insertAdjacentHTML('beforeend',
-      `<div class="constellation-empty">아직 팔로워가 없어요<br><small>곡 / 메모를 올리면 친구가 생길지도!</small></div>`);
+      `<div class="constellation-empty">${_t('아직 팔로워가 없어요', 'No followers yet')}<br><small>${_t('곡 / 메모를 올리면 친구가 생길지도!', 'Upload tracks or notes — friends may follow!')}</small></div>`);
     return;
   }
   const SHAPES = (typeof SHAPE_TYPES !== 'undefined' && SHAPE_TYPES.length) ? SHAPE_TYPES
@@ -3112,11 +3192,11 @@ window.openFollowListModal = async function (mode, displayName, userId) {
     if (window.Follows && window.Follows.getArtistIdByName) {
       userId = await window.Follows.getArtistIdByName(displayName);
     }
-    if (!userId) { alert('아직 정보를 불러오는 중이에요. 잠시 후 다시 시도해주세요.'); return; }
+    if (!userId) { alert(_t('아직 정보를 불러오는 중이에요. 잠시 후 다시 시도해주세요.', 'Still loading — please try again in a moment.')); return; }
   }
   const old = document.getElementById('follow-list-modal');
   if (old) old.remove();
-  const title = mode === 'followers' ? '팔로워' : '팔로잉';
+  const title = mode === 'followers' ? _t('팔로워', 'Followers') : _t('팔로잉', 'Following');
   const icon = mode === 'followers' ? 'ri-group-line' : 'ri-user-3-line';
   const html = `
     <div id="follow-list-modal" class="profile-modal" onclick="if(event.target===this) closeFollowListModal()">
@@ -3129,7 +3209,7 @@ window.openFollowListModal = async function (mode, displayName, userId) {
           </button>
         </div>
         <div class="profile-modal-body" id="follow-list-body">
-          <div style="text-align:center; padding:36px 0; color:var(--text-secondary);">불러오는 중…</div>
+          <div style="text-align:center; padding:36px 0; color:var(--text-secondary);">${_t('불러오는 중…', 'Loading…')}</div>
         </div>
       </div>
     </div>
@@ -3143,7 +3223,7 @@ window.openFollowListModal = async function (mode, displayName, userId) {
     if (!body) return;
     if (!list.length) {
       body.innerHTML = `<div style="text-align:center; padding:36px 0; color:var(--text-secondary); font-size:13px;">
-        ${mode === 'followers' ? '아직 팔로워가 없어요' : '아직 팔로잉이 없어요'}
+        ${mode === 'followers' ? _t('아직 팔로워가 없어요', 'No followers yet') : _t('아직 팔로잉이 없어요', 'Not following anyone yet')}
       </div>`;
       return;
     }
@@ -3158,8 +3238,8 @@ window.openFollowListModal = async function (mode, displayName, userId) {
           <div class="follow-row-name">${safeName2}</div>
           ${isSelf2 ? '' : `
             <button class="follow-row-btn ${iFollow ? 'is-following' : ''}"
-              onclick="event.stopPropagation(); toggleFollowArtist('${u.id}', '${safeName2}'); this.classList.toggle('is-following'); this.innerHTML = this.classList.contains('is-following') ? '<i class=\\'ri-user-follow-fill\\'></i> 팔로잉' : '<i class=\\'ri-user-add-line\\'></i> 팔로우';">
-              ${iFollow ? '<i class="ri-user-follow-fill"></i> 팔로잉' : '<i class="ri-user-add-line"></i> 팔로우'}
+              onclick="event.stopPropagation(); toggleFollowArtist('${u.id}', '${safeName2}'); this.classList.toggle('is-following'); this.innerHTML = this.classList.contains('is-following') ? '<i class=\\'ri-user-follow-fill\\'></i> ' + _t('팔로잉','Following') : '<i class=\\'ri-user-add-line\\'></i> ' + _t('팔로우','Follow');">
+              ${iFollow ? '<i class="ri-user-follow-fill"></i> ' + _t('팔로잉', 'Following') : '<i class="ri-user-add-line"></i> ' + _t('팔로우', 'Follow')}
             </button>
           `}
         </div>
@@ -3167,7 +3247,7 @@ window.openFollowListModal = async function (mode, displayName, userId) {
     }).join('');
   } catch (e) {
     const body = document.getElementById('follow-list-body');
-    if (body) body.innerHTML = `<div style="text-align:center; padding:36px 0; color:#ff8080; font-size:13px;">불러오기 실패: ${e.message || e}</div>`;
+    if (body) body.innerHTML = `<div style="text-align:center; padding:36px 0; color:#ff8080; font-size:13px;">${_t('불러오기 실패', 'Failed to load')}: ${e.message || e}</div>`;
   }
 };
 window.closeFollowListModal = function () {
@@ -3428,21 +3508,21 @@ window.openSongAttacher = function(target) {
   modal.innerHTML = `
     <div class="wall-song-modal-content" onclick="event.stopPropagation()">
       <div class="wall-song-modal-head">
-        <h3 style="margin:0; font-size:16px;">노래 첨부</h3>
+        <h3 style="margin:0; font-size:16px;">${_t('노래 첨부', 'Attach a song')}</h3>
         <button class="wall-song-close" onclick="closeSongAttacher()" aria-label="닫기"><i class="ri-close-line"></i></button>
       </div>
       <div class="wall-song-tabs">
-        <button class="wall-song-tab active" data-tab="track" onclick="_switchSongAttachTab('track')"><i class="ri-music-2-line"></i> Off-Stage 곡</button>
+        <button class="wall-song-tab active" data-tab="track" onclick="_switchSongAttachTab('track')"><i class="ri-music-2-line"></i> ${_t('Off-Stage 곡', 'Off-Stage track')}</button>
         <button class="wall-song-tab"        data-tab="url"   onclick="_switchSongAttachTab('url')"><i class="ri-link"></i> URL</button>
       </div>
       <div class="wall-song-pane" data-pane="track">
-        <input type="text" class="form-control" placeholder="곡 제목·아티스트 검색" oninput="_filterAttachTracks(this.value)" style="margin-bottom:10px;">
-        <div class="wall-song-list" id="wall-song-list">${trackList || '<div style="text-align:center; padding:24px; color:var(--text-secondary); font-size:13px;">아직 업로드된 Off-Stage 곡이 없어요.<br>옆 탭에서 YouTube/Spotify URL은 첨부 가능 →</div>'}</div>
+        <input type="text" class="form-control" placeholder="${_t('곡 제목·아티스트 검색', 'Search title · artist')}" oninput="_filterAttachTracks(this.value)" style="margin-bottom:10px;">
+        <div class="wall-song-list" id="wall-song-list">${trackList || `<div style="text-align:center; padding:24px; color:var(--text-secondary); font-size:13px;">${_t('아직 업로드된 Off-Stage 곡이 없어요.<br>옆 탭에서 YouTube/Spotify URL은 첨부 가능 →', 'No Off-Stage tracks yet.<br>You can attach a YouTube/Spotify URL in the other tab →')}</div>`}</div>
       </div>
       <div class="wall-song-pane" data-pane="url" style="display:none;">
         <input type="url" id="wall-song-url" class="form-control" placeholder="YouTube · Spotify · Apple Music URL" style="margin-bottom:12px;">
-        <button class="btn-primary" style="width:100%;" onclick="pickAttachedUrl()">첨부</button>
-        <p style="font-size:11px; color:var(--text-secondary); margin-top:10px;">지원: youtube.com · open.spotify.com · music.apple.com</p>
+        <button class="btn-primary" style="width:100%;" onclick="pickAttachedUrl()">${_t('첨부', 'Attach')}</button>
+        <p style="font-size:11px; color:var(--text-secondary); margin-top:10px;">${_t('지원', 'Supported')}: youtube.com · open.spotify.com · music.apple.com</p>
       </div>
     </div>
   `;
@@ -6003,7 +6083,7 @@ function _floatingFolderHtml(it, pos) {
         <div class="folder-orb">
           <i class="ri-add-line"></i>
         </div>
-        <div class="folder-orb-title">새 폴더</div>
+        <div class="folder-orb-title">${_t('새 폴더', 'New folder')}</div>
       </div>`;
   }
 
@@ -7670,13 +7750,13 @@ async function _renderProfileImpl() {
     <div class="reveal artist-actions-grid">
       <div class="artist-action-card upload-action" onclick="navigateTo('upload')">
         <div class="artist-action-icon"><i class="ri-upload-cloud-2-fill"></i></div>
-        <div class="artist-action-title">새 음악 올리기</div>
-        <div class="artist-action-sub">데모 / 마스터</div>
+        <div class="artist-action-title">${_i18n('새 음악 올리기', 'Upload music')}</div>
+        <div class="artist-action-sub">${_i18n('데모 / 마스터', 'Demo / Master')}</div>
       </div>
       <div class="artist-action-card diary-action" onclick="openArtistDiary()">
         <div class="artist-action-icon"><i class="ri-quill-pen-fill"></i></div>
-        <div class="artist-action-title">작업일지 / 미션</div>
-        <div class="artist-action-sub">우리들의 벽에 글쓰기</div>
+        <div class="artist-action-title">${_i18n('작업일지 / 미션', 'Work log / Mission')}</div>
+        <div class="artist-action-sub">${_i18n('우리들의 벽에 글쓰기', 'Write on Our Wall')}</div>
       </div>
       <!-- SPO 관리 카드 임시 숨김 (사용자 요청) -->
     </div>
@@ -7972,7 +8052,7 @@ async function _renderProfileImpl() {
   const showDefaultFolders = myPlaylists.length === 0;
   const playlistSection = (myPlaylists.length > 0 || showDefaultFolders) ? `
     <div class="reveal" style="margin-top:36px;">
-      <h2 class="section-title"><i class="ri-folder-music-fill"></i> 내 음악 폴더${myPlaylists.length > 0 ? ` <span class="section-count">${myPlaylists.length}</span>` : ''}</h2>
+      <h2 class="section-title"><i class="ri-folder-music-fill"></i> ${_i18n('내 음악 폴더', 'My music folders')}${myPlaylists.length > 0 ? ` <span class="section-count">${myPlaylists.length}</span>` : ''}</h2>
       <div class="folder-grid">
         ${userFolderCardsHtml}
         ${showDefaultFolders ? defaultFolderCardsHtml : ''}
@@ -7981,7 +8061,7 @@ async function _renderProfileImpl() {
             <i class="ri-add-line"></i>
           </div>
           <div class="folder-card-body">
-            <div class="folder-card-title">새 폴더</div>
+            <div class="folder-card-title">${_t('새 폴더', 'New folder')}</div>
           </div>
         </div>
       </div>
@@ -8139,7 +8219,7 @@ async function _renderProfileImpl() {
     <div class="reveal" style="margin-bottom:24px;">
       <h2 class="section-title" style="display:flex; align-items:center; gap:8px; margin:0 0 14px;">
         <i class="ri-user-heart-fill" style="color:#FF4081;"></i>
-        팔로우 중인 아티스트 <span class="section-count">${followedArtists.length}</span>
+        ${_i18n('팔로우 중인 아티스트', 'Artists you follow')} <span class="section-count">${followedArtists.length}</span>
       </h2>
       <div class="follow-list-grid">
         ${followedArtists.map(a => {
@@ -8666,7 +8746,7 @@ function renderProjectBox(pid, versions) {
     // 보내기 버튼 없음 — 사용자 요청.
     const inputInlineHtml = canComment ? `
       <div class="demo-card-cm-input" onclick="event.stopPropagation();">
-        <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="댓글 남기기…"
+        <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="${_t('댓글 남기기…', 'Leave a comment…')}"
                onkeydown="if(event.key==='Enter'){ event.preventDefault(); window._safeEnterSubmit(this, () => submitTrackComment('${v.id}')); }">
       </div>` : '';
 
@@ -8766,18 +8846,18 @@ function renderProjectBox(pid, versions) {
           <i class="ri-arrow-down-s-line"></i>
         </button>
         <div class="demo-comments">
-          <div class="scribble-title">✎ 이 ${isDemo ? '데모' : '마스터'}에 낙서 <span class="scribble-title-hint">— 후원한 분만</span></div>
+          <div class="scribble-title">✎ ${_t(`이 ${isDemo ? '데모' : '마스터'}에 낙서`, `Scribble on this ${isDemo ? 'demo' : 'master'}`)} <span class="scribble-title-hint">${_t('— 후원한 분만', '— supporters only')}</span></div>
           ${commentsHtml}
           ${canComment ? `
             <div class="scribble-input-row">
-              <input type="text" id="tca-${v.id}" class="scribble-input scribble-name-input" placeholder="이름 (없어도 됨)" value="${db.currentUser?.name || ''}">
-              <input type="text" id="tct-${v.id}" class="scribble-input" placeholder="ㄴ 하고 싶은 말 적어봐..." onkeypress="if(event.key==='Enter') submitTrackComment('${v.id}')">
-              <button class="scribble-send" onclick="submitTrackComment('${v.id}')">남기기</button>
+              <input type="text" id="tca-${v.id}" class="scribble-input scribble-name-input" placeholder="${_t('이름 (없어도 됨)', 'Name (optional)')}" value="${db.currentUser?.name || ''}">
+              <input type="text" id="tct-${v.id}" class="scribble-input" placeholder="${_t('ㄴ 하고 싶은 말 적어봐...', 'ㄴ Say something...')}" onkeypress="if(event.key==='Enter') submitTrackComment('${v.id}')">
+              <button class="scribble-send" onclick="submitTrackComment('${v.id}')">${_t('남기기', 'Post')}</button>
             </div>
           ` : `
             <div class="scribble-locked">
-              <div class="scribble-locked-text">로그인하면 댓글을 남길 수 있어요</div>
-              <button class="scribble-locked-cta" onclick="event.stopPropagation(); navigateTo('auth')">로그인하기 →</button>
+              <div class="scribble-locked-text">${_t('로그인하면 댓글을 남길 수 있어요', 'Sign in to leave a comment')}</div>
+              <button class="scribble-locked-cta" onclick="event.stopPropagation(); navigateTo('auth')">${_t('로그인하기 →', 'Sign in →')}</button>
             </div>
           `}
         </div>
@@ -8870,7 +8950,7 @@ function renderProjectBox(pid, versions) {
     }).join('');
     const masterInput = canComment ? `
       <div class="demo-card-cm-input" onclick="event.stopPropagation();">
-        <input type="text" id="tct-${final.id}" class="demo-card-cm-input-field" placeholder="댓글 남기기…" onkeypress="if(event.key==='Enter'){ event.preventDefault(); submitTrackComment('${final.id}'); }">
+        <input type="text" id="tct-${final.id}" class="demo-card-cm-input-field" placeholder="${_t('댓글 남기기…', 'Leave a comment…')}" onkeypress="if(event.key==='Enter'){ event.preventDefault(); submitTrackComment('${final.id}'); }">
         <button class="demo-card-cm-send" onclick="event.stopPropagation(); submitTrackComment('${final.id}')" aria-label="남기기"><i class="ri-arrow-right-line"></i></button>
       </div>` : '';
     return `${masterNoteHtml}<div class="demo-card-cm-list">${masterCmHtml}</div>${masterInput}`;
@@ -8990,12 +9070,12 @@ function renderProjectBox(pid, versions) {
       }).join('');
       // 댓글 영역 — 탭하면 우리들의 벽 모달.
       const mCmHtml = cmList.length > 0
-        ? `<div class="demo-card-cm-list" onclick="event.stopPropagation(); openDemoWallModal('${v.id}')" title="댓글 모두 보기">${cmLinesHtml}</div>`
-        : `<div class="demo-card-cm-list demo-card-cm-empty" onclick="event.stopPropagation(); openDemoWallModal('${v.id}')" title="댓글 보기"><div class="demo-card-cm-hint-tap"><i class="ri-chat-3-line"></i> 첫 댓글 남기기</div></div>`;
+        ? `<div class="demo-card-cm-list" onclick="event.stopPropagation(); openDemoWallModal('${v.id}')" title="${_t('댓글 모두 보기', 'View all comments')}">${cmLinesHtml}</div>`
+        : `<div class="demo-card-cm-list demo-card-cm-empty" onclick="event.stopPropagation(); openDemoWallModal('${v.id}')" title="${_t('댓글 보기', 'View comments')}"><div class="demo-card-cm-hint-tap"><i class="ri-chat-3-line"></i> ${_t('첫 댓글 남기기', 'Be the first to comment')}</div></div>`;
       // 입력칸 — 클릭(is-selected) 했을 때만 보임. 줄 스타일 (no box).
       const mInputHtml = canComment ? `
         <div class="demo-card-cm-input" onclick="event.stopPropagation();">
-          <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="댓글 남기기…"
+          <input type="text" id="tct-${v.id}" class="demo-card-cm-input-field" placeholder="${_t('댓글 남기기…', 'Leave a comment…')}"
                  onkeyup="if(event.key==='Enter' && !event.isComposing){ submitTrackComment('${v.id}'); }">
         </div>` : '';
       const demoLiked = isTrackLiked(v.id);
@@ -10251,10 +10331,10 @@ function renderArtistProfile(artistName) {
 
       <div class="sub-page artist-page">
         ${isSelf ? `
-          <button class="artist-constellation-btn" onclick="openFollowerConstellation()" title="팔로워 별자리 보기" aria-label="팔로워 별자리">
+          <button class="artist-constellation-btn" onclick="openFollowerConstellation()" title="${_t('팔로워 별자리 보기', 'View follower constellation')}" aria-label="${_t('팔로워 별자리', 'Follower constellation')}">
             <i class="ri-sparkling-2-line"></i>
           </button>
-          <button class="artist-settings-gear" onclick="editProfile()" title="설정 / 프로필 편집" aria-label="설정">
+          <button class="artist-settings-gear" onclick="editProfile()" title="${_t('설정 / 프로필 편집', 'Settings / Edit profile')}" aria-label="${_t('설정', 'Settings')}">
             <i class="ri-settings-3-line"></i>
           </button>
         ` : ''}
@@ -10277,7 +10357,7 @@ function renderArtistProfile(artistName) {
                     <div class="artist-name-row">
                       <h1>${safeName}</h1>
                       <button class="follow-btn-inline ${isFollowingNow ? 'is-following' : ''}" type="button" onclick="toggleFollowArtist(${followArg})">
-                        ${isFollowingNow ? '<i class="ri-user-follow-fill"></i> 팔로잉' : '<i class="ri-user-add-line"></i> 팔로우'}
+                        ${isFollowingNow ? '<i class="ri-user-follow-fill"></i> ' + _t('팔로잉', 'Following') : '<i class="ri-user-add-line"></i> ' + _t('팔로우', 'Follow')}
                       </button>
                     </div>`;
                   }
@@ -10287,21 +10367,21 @@ function renderArtistProfile(artistName) {
                      실제 클릭 핸들러는 렌더 후 addEventListener 로 바인딩. -->
                 <div class="artist-follow-chips" id="artist-follow-chips">
                   <button class="follow-chip" id="follow-chip-followers" type="button">
-                    <i class="ri-group-line"></i> 팔로워 <strong id="follow-chip-fans-n">${fanCount || 0}</strong>
+                    <i class="ri-group-line"></i> ${_i18n('팔로워', 'Followers')} <strong id="follow-chip-fans-n">${fanCount || 0}</strong>
                   </button>
                   <button class="follow-chip" id="follow-chip-followings" type="button">
-                    <i class="ri-user-3-line"></i> 팔로잉 <strong id="follow-chip-followings-n">0</strong>
+                    <i class="ri-user-3-line"></i> ${_i18n('팔로잉', 'Following')} <strong id="follow-chip-followings-n">0</strong>
                   </button>
                   ${isSelf ? `
-                    <button class="follow-chip follow-chip-msg" type="button" title="받은 메세지 보기">
-                      <i class="ri-mail-fill"></i> 메세지
+                    <button class="follow-chip follow-chip-msg" type="button" title="${_t('받은 메세지 보기', 'View inbox')}">
+                      <i class="ri-mail-fill"></i> ${_i18n('메세지', 'Messages')}
                     </button>
                   ` : `
                     <button class="follow-chip follow-chip-msg follow-chip-msg-dm" type="button"
                             data-target-name="${safeName.replace(/"/g,'&quot;')}"
                             data-target-avatar="${(avatar||'').replace(/"/g,'&quot;')}"
-                            title="${safeName} 에게 메시지 보내기">
-                      <i class="ri-mail-send-fill"></i> 메시지
+                            title="${_t(`${safeName} 에게 메시지 보내기`, `Message ${safeName}`)}">
+                      <i class="ri-mail-send-fill"></i> ${_i18n('메시지', 'Message')}
                     </button>
                   `}
                 </div>
@@ -10319,7 +10399,7 @@ function renderArtistProfile(artistName) {
                   <div id="artist-bio-line" class="artist-bio-inline" onclick="editProfile()" title="프로필 설정에서 수정">
                     ${initialBio
                       ? `<span class="artist-bio-text">${initialBio.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</span>`
-                      : '<span class="artist-bio-inline-empty"><i class="ri-edit-line"></i> 자신을 소개해보아요</span>'
+                      : `<span class="artist-bio-inline-empty"><i class="ri-edit-line"></i> ${_i18n('자신을 소개해보아요', 'Introduce yourself')}</span>`
                     }
                   </div>
                 ` : (initialBio ? `
@@ -10335,7 +10415,7 @@ function renderArtistProfile(artistName) {
             ${'' /* '소식' 제목만 제거 (사용자 요청) — 포스트잇 그리드는 유지 */}
             ${(artistNotes.length > 0 || isSelf)
               ? `<div class="artist-postit-grid artist-postit-grid-aside">${notesGridHtml}</div>`
-              : `<div class="artist-postit-empty">아직 소식이 없어요</div>`}
+              : `<div class="artist-postit-empty">${_i18n('아직 소식이 없어요', 'No updates yet')}</div>`}
           </aside>
         </div>
 
@@ -10351,11 +10431,11 @@ function renderArtistProfile(artistName) {
           <!-- Artist content tabs: 음악 / 통계(본인만). 메세지함 탭은 자기소개프로필 옆 버튼으로 이동. -->
           <div class="artist-content-tabs reveal" style="margin-top: 28px;">
             <button type="button" class="content-tab active" data-content-tab="music" onclick="switchArtistContentTab('music')">
-              <i class="ri-music-2-fill"></i> 음악
+              <i class="ri-music-2-fill"></i> ${_i18n('음악', 'Music')}
             </button>
             ${isSelf ? `
               <button type="button" class="content-tab" data-content-tab="stats" onclick="switchArtistContentTab('stats')">
-                <i class="ri-bar-chart-2-fill"></i> 통계
+                <i class="ri-bar-chart-2-fill"></i> ${_i18n('통계', 'Stats')}
               </button>
             ` : ''}
           </div>
@@ -10386,10 +10466,10 @@ function renderArtistProfile(artistName) {
                       <div class="demo-path empty-demo-path" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;">
                         <div class="demo-card demo-card-add is-empty-placeholder"
                              onclick="navigateTo('upload')"
-                             title="첫 곡 업로드하기"
+                             title="${_t('첫 곡 업로드하기', 'Upload your first track')}"
                              style="grid-column:1; grid-row:1;">
                           <i class="ri-add-line"></i>
-                          <span class="demo-card-add-label">DEMO 1 추가</span>
+                          <span class="demo-card-add-label">${_i18n('DEMO 1 추가', 'Add DEMO 1')}</span>
                         </div>
                       </div>
                     </div>
@@ -10397,7 +10477,7 @@ function renderArtistProfile(artistName) {
                 `
                 : `
                   <div class="reveal" style="margin-top:36px;">
-                    <p style="color:var(--text-secondary);">아직 업로드한 곡이 없어요.</p>
+                    <p style="color:var(--text-secondary);">${_i18n('아직 업로드한 곡이 없어요.', 'No tracks uploaded yet.')}</p>
                   </div>
                 `
             ) : ''}
@@ -10591,7 +10671,7 @@ function renderArtistProfile(artistName) {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'follow-btn-inline' + (following ? ' is-following' : '');
-            btn.innerHTML = following ? '<i class="ri-user-follow-fill"></i> 팔로잉' : '<i class="ri-user-add-line"></i> 팔로우';
+            btn.innerHTML = following ? '<i class="ri-user-follow-fill"></i> ' + _t('팔로잉', 'Following') : '<i class="ri-user-add-line"></i> ' + _t('팔로우', 'Follow');
             btn.addEventListener('click', (e) => {
               e.preventDefault();
               if (typeof window.toggleFollowArtist === 'function') {
@@ -10609,8 +10689,8 @@ function renderArtistProfile(artistName) {
           const msgBtn = document.createElement('button');
           msgBtn.type = 'button';
           msgBtn.className = 'follow-chip follow-chip-msg follow-chip-msg-dm';
-          msgBtn.title = artistName + ' 에게 메시지 보내기';
-          msgBtn.innerHTML = '<i class="ri-mail-send-fill"></i> 메시지';
+          msgBtn.title = _t(artistName + ' 에게 메시지 보내기', 'Message ' + artistName);
+          msgBtn.innerHTML = '<i class="ri-mail-send-fill"></i> ' + _t('메시지', 'Message');
           msgBtn.addEventListener('click', (e) => {
             e.preventDefault();
             if (typeof window.openDmModal === 'function') {
@@ -10640,6 +10720,8 @@ function _renderError(err, what) {
 }
 
 function showToast(msg) {
+  // EN 모드일 때 알려진 한국어 메시지 자동 번역 (사전 기반, _msgEn)
+  if (typeof window._msgEn === 'function') msg = window._msgEn(msg);
   let t = document.getElementById('os-toast');
   if (t) t.remove();
   t = document.createElement('div');
@@ -11849,7 +11931,7 @@ window.__followedArtistsCache = window.__followedArtistsCache || [];
 
 // Profile folder helpers
 window.promptNewPlaylist = async function() {
-  const name = prompt('새 폴더 이름을 정해줘 ✨', '');
+  const name = prompt(_t('새 폴더 이름을 정해줘 ✨', 'Name your new folder ✨'), '');
   if (!name || !name.trim()) return;
   try {
     if (window.Playlists) {
@@ -12203,6 +12285,11 @@ function _buildPlayQueue(currentTrackId, source) {
 }
 
 window.playTrack = function (trackId, source) {
+  // 대기 중인 자동다음곡 타이머 취소 — 수동 재생/스킵과 겹쳐 2곡 점프 방지
+  if (window.__autoNextTimer) {
+    clearTimeout(window.__autoNextTimer);
+    window.__autoNextTimer = null;
+  }
   const db = window.DB.get();
   const track = db.tracks.find(t => t.id === trackId);
   if (!track) return;

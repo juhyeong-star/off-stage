@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>모바일 소식 — 핀 스타일 미리보기</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    background: linear-gradient(135deg, #C8B8F5, #B9A5F0);
+    color: #111;
+    margin: 0;
+    padding: 24px 0 60px;
+    font-family: 'Inter', 'Pretendard', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  h1.t { text-align: center; margin: 0 0 6px; font-size: 18px; font-weight: 800; }
+  .sub { text-align: center; color: rgba(0,0,0,0.55); font-size: 12px; margin: 0 0 30px; padding: 0 18px; }
+
+  .scenes {
+    display: flex;
+    gap: 22px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 0 16px;
+    align-items: flex-start;
+  }
+  .scene {
+    flex: 0 0 320px;
+    max-width: 100%;
+    background: #0a0a0c;
+    color: #fff;
+    border-radius: 22px;
+    overflow: hidden;
+    padding: 14px 14px 18px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.3);
+  }
+  .scene h2 {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 800;
+    color: #FFE500;
+    margin: 4px 0 12px;
+    letter-spacing: 0.5px;
+  }
+
+  /* 아티스트 헤더 미니 */
+  .artist-header-mini {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .avatar-mini {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #C8B8F5, #FFB4C0);
+    border: 2px solid #111;
+    flex-shrink: 0;
+  }
+  .name-mini { font-size: 22px; font-weight: 900; color: #FFE500; -webkit-text-stroke: 1px #111; line-height: 1; }
+  .chips-mini {
+    display: flex; gap: 4px; margin-top: 4px;
+  }
+  .chip-mini {
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.7);
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 999px;
+  }
+
+  /* 음악 섹션 헤더 */
+  .music-head {
+    margin: 8px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #FF2E63;
+    font-size: 12px;
+    font-weight: 700;
+    color: #FF2E63;
+  }
+
+  /* ========================================================
+     CURRENT — 큰 포스트잇 그리드 (현재)
+     ======================================================== */
+  .current-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .cur-note {
+    background: #FFE066;
+    border-radius: 4px;
+    padding: 10px;
+    aspect-ratio: 1 / 1;
+    color: #111;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.3;
+    box-shadow: 3px 3px 8px rgba(0,0,0,0.4);
+    position: relative;
+  }
+  .cur-note::after {
+    content: "";
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 14px; height: 14px;
+    background: linear-gradient(135deg, transparent 50%, #C58E00 50%);
+    border-top-left-radius: 3px;
+  }
+
+  /* ========================================================
+     OPTION 1 — 작은 가로 핀 (Push pin + 노트)
+     ======================================================== */
+  .pin-strip {
+    margin-bottom: 18px;
+    padding-top: 6px;
+  }
+  .pin-strip-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+  }
+  .pin-row {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 8px 4px 12px;
+    margin: 0 -4px;
+  }
+  .pin-note-mini {
+    flex: 0 0 90px;
+    background: #FFE066;
+    border-radius: 3px;
+    padding: 14px 8px 8px;
+    font-size: 10px;
+    color: #111;
+    font-weight: 700;
+    line-height: 1.3;
+    height: 100px;
+    position: relative;
+    transform: rotate(-1.5deg);
+    box-shadow: 2px 3px 6px rgba(0,0,0,0.4);
+    overflow: hidden;
+  }
+  .pin-note-mini:nth-child(2n) { transform: rotate(1.8deg); background: #FFCAB1; }
+  .pin-note-mini:nth-child(3n) { transform: rotate(-0.5deg); background: #FFB4C0; }
+  /* 압정 */
+  .pin-note-mini::before {
+    content: "";
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #FF8585, #C42626);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  }
+  .pin-note-mini:nth-child(2n)::before {
+    background: radial-gradient(circle at 35% 35%, #85B7FF, #2649C4);
+  }
+
+  /* ========================================================
+     OPTION 2 — 한 줄 압정 클러스터 (핀들만, 클릭=상세)
+     ======================================================== */
+  .pin-cluster {
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    background: rgba(139, 90, 43, 0.18);
+    border: 1px solid rgba(139, 90, 43, 0.3);
+    border-radius: 8px;
+  }
+  .pin-cluster-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 10px;
+  }
+  .pin-cluster-head .count {
+    background: rgba(255,255,255,0.1);
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-weight: 800;
+  }
+  .pin-cluster-row {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    padding: 4px;
+  }
+  .pin-only {
+    flex: 0 0 28px;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #FFE466, #B89400);
+    border: 2px solid #4A3700;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    position: relative;
+    cursor: pointer;
+  }
+  .pin-only:nth-child(2n) { background: radial-gradient(circle at 35% 35%, #FF8585, #C42626); border-color: #5C0000; }
+  .pin-only:nth-child(3n) { background: radial-gradient(circle at 35% 35%, #85B7FF, #2649C4); border-color: #001A5C; }
+  .pin-only:nth-child(4n) { background: radial-gradient(circle at 35% 35%, #B6FF85, #2EC424); border-color: #003C00; }
+
+  /* ========================================================
+     OPTION 3 — 접힌 카드 (제목만, 탭→펼침)
+     ======================================================== */
+  .fold-list {
+    margin-bottom: 18px;
+  }
+  .fold-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-left: 3px solid #FFE500;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .fold-item:hover { background: rgba(255,255,255,0.09); }
+  .fold-pin {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #FFE500;
+    flex-shrink: 0;
+  }
+  .fold-pin:nth-child(odd) { background: #FF2E63; }
+  .fold-title { flex: 1; color: rgba(255,255,255,0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fold-date { color: rgba(255,255,255,0.4); font-size: 10px; flex-shrink: 0; }
+
+  /* ========================================================
+     Music section (모든 옵션 공통) — 마스터 카드 강조
+     ======================================================== */
+  .master-card-mini {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .master-sq {
+    aspect-ratio: 1/1;
+    background: #1a1a1a;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-family: 'Caveat', cursive;
+    font-size: 26px;
+    transform: rotate(-3deg);
+    line-height: 1;
+    text-align: center;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+  }
+  .master-meta {
+    aspect-ratio: 1/1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #fff;
+  }
+  .master-meta .t { font-size: 13px; font-weight: 800; }
+  .master-meta .a { color: rgba(255,255,255,0.7); }
+  .master-meta .d { color: rgba(255,255,255,0.5); font-size: 10px; }
+  .demo-row-mini {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .demo-sq {
+    aspect-ratio: 1/1;
+    background: #FFE066;
+    border-radius: 8px;
+    padding: 6px;
+    font-size: 9px;
+    color: #111;
+    font-weight: 700;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+  }
+  .demo-sq.empty {
+    background: rgba(255, 224, 102, 0.28);
+    border: 2px dashed rgba(255, 224, 102, 0.7);
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255, 224, 102, 0.85);
+  }
+</style>
+</head>
+<body>
+
+<h1 class="t">소식 포스트잇 — 핀 스타일 미리보기</h1>
+<p class="sub">현재 (왼쪽) vs 핀 옵션 3개 — 소식이 작아져서 음악이 더 잘 보임</p>
+
+<div class="scenes">
+
+  <!-- ============ 현재 ============ -->
+  <div class="scene">
+    <h2>현재 (BEFORE)</h2>
+    <div class="artist-header-mini">
+      <div class="avatar-mini"></div>
+      <div>
+        <div class="name-mini">DJ KARLIN</div>
+        <div class="chips-mini">
+          <span class="chip-mini">팔로워 1</span>
+          <span class="chip-mini">팔로잉 5</span>
+          <span class="chip-mini">📧 메시지</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 큰 포스트잇 그리드 (현재) -->
+    <div class="current-grid">
+      <div class="cur-note">새 곡 작업 중</div>
+      <div class="cur-note">스튜디오 좋아</div>
+      <div class="cur-note">곧 발매!</div>
+      <div class="cur-note">감사합니다</div>
+    </div>
+
+    <div class="music-head">🎵 음악</div>
+    <div class="master-card-mini">
+      <div class="master-sq">coming<br>soon</div>
+      <div class="master-meta">
+        <div class="t">「곡」</div>
+        <div class="a">아티스트</div>
+        <div class="d">26.06.04</div>
+      </div>
+    </div>
+    <div class="demo-row-mini">
+      <div class="demo-sq empty">+</div>
+      <div class="demo-sq empty">·</div>
+    </div>
+    <div class="demo-row-mini" style="margin-top:8px;">
+      <div class="demo-sq">DEMO 1<br>초안</div>
+      <div class="demo-sq">DEMO 2<br>2차</div>
+    </div>
+  </div>
+
+  <!-- ============ OPTION 1 ============ -->
+  <div class="scene">
+    <h2>옵션 1 · 작은 핀 노트 (가로 스크롤)</h2>
+    <div class="artist-header-mini">
+      <div class="avatar-mini"></div>
+      <div>
+        <div class="name-mini">DJ KARLIN</div>
+        <div class="chips-mini">
+          <span class="chip-mini">팔로워 1</span>
+          <span class="chip-mini">팔로잉 5</span>
+          <span class="chip-mini">📧</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="pin-strip">
+      <div class="pin-strip-label">📌 소식 4개</div>
+      <div class="pin-row">
+        <div class="pin-note-mini">새 곡 작업 중</div>
+        <div class="pin-note-mini">스튜디오 좋아</div>
+        <div class="pin-note-mini">곧 발매!</div>
+        <div class="pin-note-mini">감사합니다</div>
+      </div>
+    </div>
+
+    <div class="music-head">🎵 음악</div>
+    <div class="master-card-mini">
+      <div class="master-sq">coming<br>soon</div>
+      <div class="master-meta">
+        <div class="t">「곡」</div>
+        <div class="a">아티스트</div>
+        <div class="d">26.06.04</div>
+      </div>
+    </div>
+    <div class="demo-row-mini">
+      <div class="demo-sq empty">+</div>
+      <div class="demo-sq empty">·</div>
+    </div>
+    <div class="demo-row-mini" style="margin-top:8px;">
+      <div class="demo-sq">DEMO 1<br>초안</div>
+      <div class="demo-sq">DEMO 2<br>2차</div>
+    </div>
+  </div>
+
+  <!-- ============ OPTION 2 ============ -->
+  <div class="scene">
+    <h2>옵션 2 · 핀만 한 줄 (탭 → 모달)</h2>
+    <div class="artist-header-mini">
+      <div class="avatar-mini"></div>
+      <div>
+        <div class="name-mini">DJ KARLIN</div>
+        <div class="chips-mini">
+          <span class="chip-mini">팔로워 1</span>
+          <span class="chip-mini">팔로잉 5</span>
+          <span class="chip-mini">📧</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="pin-cluster">
+      <div class="pin-cluster-head">
+        <span>📌 소식</span>
+        <span class="count">4</span>
+      </div>
+      <div class="pin-cluster-row">
+        <div class="pin-only" title="새 곡 작업 중"></div>
+        <div class="pin-only" title="스튜디오 좋아"></div>
+        <div class="pin-only" title="곧 발매!"></div>
+        <div class="pin-only" title="감사합니다"></div>
+      </div>
+    </div>
+
+    <div class="music-head">🎵 음악</div>
+    <div class="master-card-mini">
+      <div class="master-sq">coming<br>soon</div>
+      <div class="master-meta">
+        <div class="t">「곡」</div>
+        <div class="a">아티스트</div>
+        <div class="d">26.06.04</div>
+      </div>
+    </div>
+    <div class="demo-row-mini">
+      <div class="demo-sq empty">+</div>
+      <div class="demo-sq empty">·</div>
+    </div>
+    <div class="demo-row-mini" style="margin-top:8px;">
+      <div class="demo-sq">DEMO 1<br>초안</div>
+      <div class="demo-sq">DEMO 2<br>2차</div>
+    </div>
+  </div>
+
+  <!-- ============ OPTION 3 ============ -->
+  <div class="scene">
+    <h2>옵션 3 · 한 줄 리스트 (제목만)</h2>
+    <div class="artist-header-mini">
+      <div class="avatar-mini"></div>
+      <div>
+        <div class="name-mini">DJ KARLIN</div>
+        <div class="chips-mini">
+          <span class="chip-mini">팔로워 1</span>
+          <span class="chip-mini">팔로잉 5</span>
+          <span class="chip-mini">📧</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="fold-list">
+      <div style="font-size:10px; font-weight:800; color:rgba(255,255,255,0.5); margin-bottom:6px;">📌 소식 4개</div>
+      <div class="fold-item">
+        <div class="fold-pin"></div>
+        <div class="fold-title">새 곡 작업 중...</div>
+        <div class="fold-date">2일 전</div>
+      </div>
+      <div class="fold-item">
+        <div class="fold-pin"></div>
+        <div class="fold-title">스튜디오 좋아요!</div>
+        <div class="fold-date">5일 전</div>
+      </div>
+      <div class="fold-item">
+        <div class="fold-pin"></div>
+        <div class="fold-title">곧 발매!</div>
+        <div class="fold-date">1주 전</div>
+      </div>
+      <div class="fold-item">
+        <div class="fold-pin"></div>
+        <div class="fold-title">감사합니다</div>
+        <div class="fold-date">2주 전</div>
+      </div>
+    </div>
+
+    <div class="music-head">🎵 음악</div>
+    <div class="master-card-mini">
+      <div class="master-sq">coming<br>soon</div>
+      <div class="master-meta">
+        <div class="t">「곡」</div>
+        <div class="a">아티스트</div>
+        <div class="d">26.06.04</div>
+      </div>
+    </div>
+    <div class="demo-row-mini">
+      <div class="demo-sq empty">+</div>
+      <div class="demo-sq empty">·</div>
+    </div>
+    <div class="demo-row-mini" style="margin-top:8px;">
+      <div class="demo-sq">DEMO 1<br>초안</div>
+      <div class="demo-sq">DEMO 2<br>2차</div>
+    </div>
+  </div>
+
+</div>
+
+<div style="max-width:720px; margin:30px auto 0; padding:18px 24px; color:rgba(0,0,0,0.7); font-size:13px; line-height:1.7; background:rgba(255,255,255,0.55); border-radius:12px;">
+  <strong style="color:#111;">정리</strong><br><br>
+  <strong>옵션 1</strong> — 작은 노트 (90×100px) + 살짝 기울임 + 압정. 가로 스크롤. 글 일부 보임.<br>
+  <strong>옵션 2</strong> — 핀(원형 압정)만 한 줄. 글 안 보이고 탭하면 모달. 가장 작음.<br>
+  <strong>옵션 3</strong> — 한 줄 리스트, 제목 + 날짜. Notion 스타일.<br><br>
+  <strong>공통:</strong> 어떤 옵션이든 <strong>음악 섹션이 더 잘 보임</strong> — 사용자 의도와 일치.
+</div>
+
+</body>
+</html>
