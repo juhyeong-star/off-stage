@@ -10318,6 +10318,161 @@ function _renderArtistProfileV2_unused(artistName) {
   `;
 }
 
+// ============================================================
+// 소식 핀-스택 — 포스트잇이 핀에 박힌 더미. 고정(pin)한 게 앞(최대 4),
+//   나머지는 뒤에 겹쳐 보임. 스와이프(좌/우)로 한 장씩 넘김. 탭 → 상세.
+//   고정한 게 없으면 최신 1장이 앞 + 뒤로 몇 장 peek (여러 장처럼).
+// ============================================================
+function _soshikPinKey(artistName) { return 'soshikpin:' + (artistName || ''); }
+function _soshikGetPins(artistName) {
+  try { const a = JSON.parse(localStorage.getItem(_soshikPinKey(artistName)) || '[]'); return Array.isArray(a) ? a : []; }
+  catch (_) { return []; }
+}
+window.toggleSoshikPin = function (noteId, artistName) {
+  if (!noteId) return;
+  let pins = _soshikGetPins(artistName);
+  if (pins.includes(noteId)) pins = pins.filter(id => id !== noteId);
+  else { pins = [noteId, ...pins.filter(id => id !== noteId)]; if (pins.length > 4) pins = pins.slice(0, 4); }
+  try { localStorage.setItem(_soshikPinKey(artistName), JSON.stringify(pins)); } catch (_) {}
+  if (typeof showToast === 'function') showToast(pins.includes(noteId) ? _t('소식 고정됨 📌', 'Pinned 📌') : _t('고정 해제됨', 'Unpinned'));
+  // 현재 아티스트 페이지 다시 그리기
+  try { if (typeof renderArtistProfile === 'function' && currentView === 'artist') renderArtistProfile(artistName); } catch (_) {}
+};
+
+function _soshikStackHtml(notes, isSelf, artistName) {
+  const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  // 최신순 정렬 (rest 용)
+  const sorted = [...notes].sort((a, b) => new Date(b.createdAt || b.created_at || 0) - new Date(a.createdAt || a.created_at || 0));
+  const pins = _soshikGetPins(artistName);
+  const byId = new Map(sorted.map(n => [n.id, n]));
+  const pinnedNotes = pins.map(id => byId.get(id)).filter(Boolean).slice(0, 4);
+  const pinnedSet = new Set(pinnedNotes.map(n => n.id));
+  const rest = sorted.filter(n => !pinnedSet.has(n.id));
+  const ordered = [...pinnedNotes, ...rest];
+
+  const cardsHtml = ordered.map((n) => {
+    const c = NOTE_COLORS[n.color] || NOTE_COLORS.yellow;
+    const isPin = pinnedSet.has(n.id);
+    const pinBtn = isSelf
+      ? `<button class="soshik-pin-btn ${isPin ? 'on' : ''}" onclick="event.stopPropagation(); toggleSoshikPin('${n.id}','${(artistName||'').replace(/'/g,"\\'")}')" title="${isPin ? _t('고정 해제','Unpin') : _t('고정','Pin')}"><i class="ri-pushpin-${isPin ? '2-fill' : 'line'}"></i></button>`
+      : '';
+    const chip = (typeof _renderNoteTrackChip === 'function') ? _renderNoteTrackChip(n) : '';
+    return `<div class="soshik-card" data-note-id="${n.id}" style="background:${c.bg}; color:${c.text};">
+      ${pinBtn}
+      <div class="soshik-card-body">${esc(n.text)}</div>
+      ${chip}
+    </div>`;
+  }).join('');
+
+  const addBtn = isSelf
+    ? `<button class="soshik-add" onclick="goAddSoshik()" title="${_t('새 소식 쓰기','New post')}"><i class="ri-add-line"></i> ${_i18n('소식','Post')}</button>`
+    : '';
+  const multi = ordered.length > 1;
+  const dots = multi ? `<div class="soshik-dots">${ordered.map((_, i) => `<span class="${i === 0 ? 'on' : ''}"></span>`).join('')}</div>` : '';
+  const hint = multi ? `<div class="soshik-stack-hint"><i class="ri-arrow-left-right-line"></i> ${_t('넘겨보기','swipe')}</div>` : '';
+  const emptyMsg = ordered.length === 0 ? `<div class="soshik-empty">${_t('첫 소식을 남겨보세요','Post your first update')}</div>` : '';
+  // 카드가 1~2장이라도 '여러 장 쌓인' 더미처럼 보이게 뒤에 빈 peek 레이어.
+  const peeks = ordered.length >= 1
+    ? `<div class="soshik-peek soshik-peek-2"></div><div class="soshik-peek soshik-peek-1"></div>`
+    : '';
+
+  return `<div class="soshik-stack ${multi ? 'is-multi' : ''}" id="soshik-stack" data-idx="0">
+    <div class="soshik-pin-deco"><i class="ri-pushpin-2-fill"></i></div>
+    <div class="soshik-cards">${peeks}${cardsHtml}${emptyMsg}</div>
+    ${dots}
+    <div class="soshik-foot">${hint}${addBtn}</div>
+  </div>`;
+}
+
+// 스택 레이아웃 — data-idx 기준 각 카드 depth 계산해 transform 적용.
+window._layoutSoshikStack = function (stack) {
+  if (!stack) return;
+  const cards = Array.from(stack.querySelectorAll('.soshik-card'));
+  const N = cards.length;
+  if (!N) return;
+  const idx = ((parseInt(stack.dataset.idx || '0', 10) % N) + N) % N;
+  cards.forEach((card, i) => {
+    const d = (i - idx + N) % N;                      // 0 = 맨 앞
+    card.style.zIndex = String(100 - d);
+    card.style.transition = 'transform 0.28s cubic-bezier(0.22,1,0.36,1), opacity 0.28s';
+    if (d === 0) {
+      card.style.transform = 'translateX(0) translateY(0) scale(1) rotate(0deg)';
+      card.style.opacity = '1';
+      card.classList.add('is-front');
+    } else if (d <= 3) {
+      const rot = (d % 2 ? 1 : -1) * (1.5 + d);
+      card.style.transform = `translateY(${d * 9}px) scale(${1 - d * 0.05}) rotate(${rot}deg)`;
+      card.style.opacity = String(Math.max(0.35, 1 - d * 0.22));
+      card.classList.remove('is-front');
+    } else {
+      card.style.transform = `translateY(30px) scale(0.84) rotate(0deg)`;
+      card.style.opacity = '0';
+      card.classList.remove('is-front');
+    }
+  });
+  const dots = stack.querySelectorAll('.soshik-dots span');
+  dots.forEach((dot, i) => dot.classList.toggle('on', i === idx));
+};
+
+// 스와이프(좌/우)로 스택 넘기기 + 탭 → 상세. 모바일 터치 + 마우스.
+window._initSoshikStack = function (stack) {
+  if (!stack || stack._soshikWired) return;
+  stack._soshikWired = true;
+  window._layoutSoshikStack(stack);
+  const N = () => stack.querySelectorAll('.soshik-card').length;
+  let sx = 0, sy = 0, drag = false, moved = false, front = null;
+
+  const onStart = (x, y, target) => {
+    if (target && target.closest && target.closest('.soshik-pin-btn, .soshik-add, button, a, input, form')) return;
+    front = stack.querySelector('.soshik-card.is-front');
+    if (!front) return;
+    sx = x; sy = y; drag = true; moved = false;
+    front.style.transition = 'none';
+  };
+  const onMove = (x, y, ev) => {
+    if (!drag || !front) return;
+    const dx = x - sx, dy = y - sy;
+    if (Math.abs(dx) < Math.abs(dy)) { return; }       // 세로 우세 → 페이지 스크롤 양보
+    if (Math.abs(dx) > 5) moved = true;
+    front.style.transform = `translateX(${dx}px) rotate(${dx / 22}deg)`;
+    if (ev && ev.cancelable) ev.preventDefault();
+  };
+  const onEnd = (x) => {
+    if (!drag || !front) { drag = false; return; }
+    drag = false;
+    const dx = x - sx;
+    const n = N();
+    const outgoing = front;     // setTimeout 에서 쓸 카드 — 지역 캡처 (front 는 곧 null)
+    front = null;
+    outgoing.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1)';
+    if (n > 1 && Math.abs(dx) > 64) {
+      const dir = dx < 0 ? 1 : -1;
+      outgoing.style.transform = `translateX(${dx < 0 ? -150 : 150}%) rotate(${dx < 0 ? -14 : 14}deg)`;
+      setTimeout(() => {
+        const cur = parseInt(stack.dataset.idx || '0', 10);
+        stack.dataset.idx = String(((cur + dir) % n + n) % n);
+        outgoing.style.transition = 'none';
+        window._layoutSoshikStack(stack);
+      }, 270);
+    } else {
+      window._layoutSoshikStack(stack);                // 스냅백
+    }
+  };
+
+  stack.addEventListener('click', (e) => {
+    if (moved) { moved = false; return; }
+    const card = e.target.closest('.soshik-card.is-front');
+    if (card && card.dataset.noteId && !e.target.closest('.soshik-pin-btn')) openNoteDetail(card.dataset.noteId);
+  });
+  stack.addEventListener('touchstart', (e) => { const t = e.touches[0]; if (t) onStart(t.clientX, t.clientY, e.target); }, { passive: true });
+  stack.addEventListener('touchmove', (e) => { const t = e.touches[0]; if (t) onMove(t.clientX, t.clientY, e); }, { passive: false });
+  stack.addEventListener('touchend', (e) => onEnd((e.changedTouches[0] || {}).clientX != null ? e.changedTouches[0].clientX : sx));
+  // 마우스 — 드래그 중에만 window 리스너 (누수 방지)
+  const wm = (e) => onMove(e.clientX, e.clientY, e);
+  const wu = (e) => { window.removeEventListener('mousemove', wm); window.removeEventListener('mouseup', wu); onEnd(e.clientX); };
+  stack.addEventListener('mousedown', (e) => { onStart(e.clientX, e.clientY, e.target); if (drag) { window.addEventListener('mousemove', wm); window.addEventListener('mouseup', wu); } });
+};
+
 // === Active artist profile (restored) ===
 function renderArtistProfile(artistName) {
   // Defensive decode — if the caller passed a URL-encoded name like
@@ -10579,9 +10734,9 @@ function renderArtistProfile(artistName) {
           </div>
           ${'' /* counts box (앨범/프로젝트/싱글) hidden for now — will surface later when there are many songs */}
           <aside class="artist-postit-aside">
-            ${'' /* '소식' 제목만 제거 (사용자 요청) — 포스트잇 그리드는 유지 */}
+            ${'' /* 소식 — 핀에 박힌 스택 (고정 ~4 앞, 나머지 뒤 겹침, 스와이프로 넘김) */}
             ${(artistNotes.length > 0 || isSelf)
-              ? `<div class="artist-postit-grid artist-postit-grid-aside">${notesGridHtml}</div>`
+              ? _soshikStackHtml(artistNotes, isSelf, artistName)
               : `<div class="artist-postit-empty">${_i18n('아직 소식이 없어요', 'No updates yet')}</div>`}
           </aside>
         </div>
@@ -10682,6 +10837,9 @@ function renderArtistProfile(artistName) {
   // Mobile demo swipe: wire up scroll-snap carousels + dot indicators.
   // Safe at any viewport — observers do nothing if dots aren't visible (CSS).
   try { _initDemoSwipe(); } catch (e) { console.warn('[demoSwipe]', e); }
+
+  // 📌 소식 핀-스택 — 스와이프 넘기기 + 탭 상세 바인딩
+  try { window._initSoshikStack(document.getElementById('soshik-stack')); } catch (e) { console.warn('[soshikStack]', e); }
 
   // Async: fill the 응원 하트 wall (cheers received by this artist)
   if (isArtistRole && typeof window.mountCheerHeart === 'function') {

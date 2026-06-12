@@ -17604,3 +17604,126 @@ html[data-lang="en"] [data-i18n-ko] { display: none !important; }
   animation: none !important;
   box-shadow: 0 10px 26px rgba(0,0,0,0.30), 0 2px 8px rgba(0,0,0,0.18);
 }
+
+/* ============================================================
+   소식 핀-스택 — 포스트잇이 핀에 박힌 더미 (고정 ~4 앞 + 뒤 겹침)
+   스와이프로 한 장씩 넘김. 탭 → 상세.
+   ============================================================ */
+.soshik-stack {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  margin: 6px auto 0;
+  padding-top: 14px;            /* 핀 자리 */
+}
+.soshik-pin-deco {
+  position: absolute;
+  top: -2px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 22px;
+  color: #E53935;
+  z-index: 200;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.35));
+  pointer-events: none;
+}
+.soshik-cards {
+  position: relative;
+  height: 210px;               /* 스택 높이 (앞 카드 기준) */
+}
+.soshik-card {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  margin: 0 auto;
+  width: 100%;
+  height: 196px;
+  padding: 20px 18px 14px;
+  border-radius: 8px;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.30), 0 2px 6px rgba(0,0,0,0.18);
+  font-family: var(--font-hand, 'Gaegu', cursive);
+  font-size: 15px;
+  line-height: 1.45;
+  overflow: hidden;
+  cursor: grab;
+  will-change: transform, opacity;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-y;
+}
+.soshik-card.is-front { cursor: grab; }
+.soshik-card.is-front:active { cursor: grabbing; }
+.soshik-card-body {
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.soshik-card .note-track-chip { margin-top: 8px; }
+.soshik-pin-btn {
+  position: absolute;
+  top: 6px; right: 6px;
+  background: rgba(255,255,255,0.55);
+  border: none;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  color: rgba(0,0,0,0.55);
+  cursor: pointer;
+  z-index: 5;
+}
+.soshik-pin-btn.on { color: #E53935; background: rgba(255,255,255,0.85); }
+.soshik-empty {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%;
+  color: var(--text-secondary, #888);
+  font-size: 13px;
+}
+.soshik-dots {
+  display: flex; gap: 5px; justify-content: center;
+  margin-top: 12px;
+}
+.soshik-dots span {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(255,255,255,0.22);
+  transition: background 0.2s, width 0.2s;
+}
+.soshik-dots span.on { background: var(--brand-color, #1DB954); width: 16px; border-radius: 3px; }
+.soshik-foot {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+.soshik-stack-hint {
+  font-size: 11.5px;
+  color: var(--text-secondary, rgba(255,255,255,0.5));
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.soshik-add {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: var(--text-primary, #fff);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.soshik-add:active { background: rgba(255,255,255,0.16); }
+
+/* 소식 스택 — 뒤에 깔리는 빈 peek 레이어 (1~2장도 여러 장처럼) */
+.soshik-peek {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  margin: 0 auto;
+  width: 100%;
+  height: 196px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+  pointer-events: none;
+}
+.soshik-peek-1 { transform: translateY(9px) scale(0.955) rotate(2.2deg);  z-index: 2; opacity: 0.9; }
+.soshik-peek-2 { transform: translateY(18px) scale(0.91) rotate(-2.6deg); z-index: 1; opacity: 0.7; }
