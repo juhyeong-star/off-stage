@@ -179,10 +179,21 @@ window.audioElement = audioElement;
     el.addEventListener('touchmove', (e) => { const t = e.touches[0]; if (t) move(t.clientX, t.clientY, e); }, { passive: false });
     el.addEventListener('touchend', end);
     el.addEventListener('touchcancel', end);
-    // 마우스 (데스크탑 폭 줄였을 때 / 디버그)
-    el.addEventListener('mousedown', (e) => start(e.clientX, e.clientY, e.target));
-    window.addEventListener('mousemove', (e) => { if (active || pending) move(e.clientX, e.clientY, e); });
-    window.addEventListener('mouseup', () => { if (active || pending) end(); });
+    // 마우스 (데스크탑 폭 줄였을 때 / 디버그) — window 리스너는 드래그 중에만 붙였다 떼서
+    //   모달 새로 열 때마다 누수되지 않게 한다.
+    const onWinMove = (e) => move(e.clientX, e.clientY, e);
+    const onWinUp = (e) => {
+      window.removeEventListener('mousemove', onWinMove);
+      window.removeEventListener('mouseup', onWinUp);
+      end();
+    };
+    el.addEventListener('mousedown', (e) => {
+      start(e.clientX, e.clientY, e.target);
+      if (pending) {     // start() 가 게이트 통과했을 때만 window 리스너 부착
+        window.addEventListener('mousemove', onWinMove);
+        window.addEventListener('mouseup', onWinUp);
+      }
+    });
   };
 })();
 
