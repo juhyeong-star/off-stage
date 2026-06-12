@@ -583,6 +583,9 @@ window.goBack = function () {
   const player = document.getElementById('global-player');
   if (player && player.classList.contains('expanded')) {
     player.classList.remove('expanded');
+    // ⚠ body lock 도 같이 해제 — 안 하면 overflow:hidden + touch-action:none
+    //   이 남아 페이지 전체가 영구 스크롤 불가 + 탭바 사라짐 (stuck state).
+    document.body.classList.remove('player-fullscreen');
     return;
   }
   // 5) Pop the nav stack
@@ -1072,6 +1075,13 @@ function navigateTo(route) {
   _lastNavTs = _now;
 
   closeMenu();
+  // 페이지 이동 시 풀스크린 플레이어 + body lock 정리 — 어떤 경로로든
+  // expanded 채로 라우트가 바뀌면 lock 이 남아 stuck 되는 것 방지.
+  {
+    const _p = document.getElementById('global-player');
+    if (_p && _p.classList.contains('expanded')) _p.classList.remove('expanded');
+    document.body.classList.remove('player-fullscreen');
+  }
   // Maintain internal back-nav stack (skipped during goBack to avoid loops).
   _pushNavStep(route);
   // Sync the URL hash + browser history. Skip when this nav was itself triggered
@@ -2543,16 +2553,16 @@ function renderTagDetail(tag) {
       <div class="sub-page artist-page">
         <div class="reveal" style="margin-bottom:14px;">
           <a href="#" onclick="event.preventDefault(); navigateTo('tags')">
-            <i class="ri-arrow-left-line"></i> 모든 태그
+            <i class="ri-arrow-left-line"></i> ${_i18n('모든 태그', 'All tags')}
           </a>
         </div>
 
         <div class="tag-hero reveal">
           <h1 class="tag-hero-title">#${safeTag}</h1>
           <div class="tag-hero-stats">
-            <span>${matched.length} 마스터 곡</span>
+            <span>${matched.length} ${_i18n('곡', 'tracks')}</span>
             <span class="stat-dot">·</span>
-            <span>${uniqueArtists.length} 아티스트</span>
+            <span>${uniqueArtists.length} ${_i18n('아티스트', 'artists')}</span>
           </div>
         </div>
 
@@ -9527,7 +9537,9 @@ window.submitTrackComment = async function(trackId) {
         text,
         createdAt: new Date().toISOString()
       };
-      window.DB.addTrackComment(trackId, newComment);
+      // ⚠ DB.addTrackComment 호출 금지 — 그 함수는 자체 DB.get() (temp 포함된
+      //   localStorage) 에 real 을 또 push + save 해서 [temp, real] 중복을 만든다.
+      //   아래 _replaceTmp + DB.save 가 temp→real 교체를 한 번에 처리.
     }
     // 임시 → real 교체 (id 만 다름) — window.__tracks 와 db.tracks 양쪽 다
     const _replaceTmp = (arr) => {
@@ -9540,7 +9552,12 @@ window.submitTrackComment = async function(trackId) {
       const tMem = window.__tracks.find(t => t && t.id === trackId);
       if (tMem) _replaceTmp(tMem.trackComments);
     }
-    if (track) _replaceTmp(track.trackComments);
+    if (track) {
+      _replaceTmp(track.trackComments);
+      // localStorage 의 temp id 를 real id 로 영구화 — 안 하면 새로고침 후
+      // tmp_ id 댓글이 남아 삭제 버튼이 서버에 없는 id 로 삭제 시도함.
+      try { window.DB.save(db); } catch (_) {}
+    }
     // real id 로 갱신된 DOM (삭제 버튼 onclick 의 commentId 가 바뀜)
     _refreshTrackCommentUI(trackId);
   } catch (e) {
@@ -9551,7 +9568,10 @@ window.submitTrackComment = async function(trackId) {
       const tMem = window.__tracks.find(t => t && t.id === trackId);
       if (tMem) tMem.trackComments = _filterOut(tMem.trackComments);
     }
-    if (track) track.trackComments = _filterOut(track.trackComments);
+    if (track) {
+      track.trackComments = _filterOut(track.trackComments);
+      try { window.DB.save(db); } catch (_) {}   // localStorage 의 temp 도 제거
+    }
     _refreshTrackCommentUI(trackId);
     alert('댓글 저장 실패: ' + (e.message || e));
     if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '남기기'; }
@@ -9668,7 +9688,9 @@ window._refreshTrackCommentUI = function (trackId) {
 window.deleteTrackComment = async function(trackId, commentId, fromModal) {
   if (!trackId || !commentId) return;
   if (!confirm('이 댓글을 지울까요?')) return;
-  const isSupabaseComment = !String(commentId).startsWith('tc');  // local ids: 'tc<timestamp>'
+  // local ids: 'tc<timestamp>' / optimistic 임시: 'tmp_..' — 둘 다 서버 삭제 시도 금지
+  const _cid = String(commentId);
+  const isSupabaseComment = !_cid.startsWith('tc') && !_cid.startsWith('tmp_');
   try {
     // 1) Supabase 삭제 (네트워크)
     if (window.Tracks && window.Tracks.deleteComment && isSupabaseComment) {
@@ -11170,7 +11192,7 @@ window.openDmModal = async function(artistName, artistAvatar) {
         <img src="${safeAvatar}" class="dm-header-avatar" alt="${safeName}">
         <div class="dm-header-text">
           <div class="dm-header-name">${safeName}</div>
-          <div class="dm-header-status"><span class="dm-status-dot"></span> 답장 가능</div>
+          <div class="dm-header-status"><span class="dm-status-dot"></span> ${_t('답장 가능', 'Online')}</div>
         </div>
       </div>
       <div class="dm-messages">
@@ -12900,14 +12922,18 @@ function renderAuth() {
     e.preventDefault();
     const det = document.getElementById('terms-detail');
     det.style.display = det.style.display === 'none' ? 'block' : 'none';
-    e.target.textContent = det.style.display === 'none' ? '자세히 ▼' : '접기 ▲';
+    // _t() 를 클릭 시점에 평가 — 현재 언어로 라벨 교체
+    e.target.textContent = det.style.display === 'none'
+      ? _t('자세히 ▼', 'Details ▼') : _t('접기 ▲', 'Collapse ▲');
   };
 
   document.getElementById('show-legacy').onclick = (e) => {
     e.preventDefault();
     const f = document.getElementById('legacy-login');
     f.style.display = f.style.display === 'none' ? 'block' : 'none';
-    e.target.textContent = f.style.display === 'none' ? '기존 비밀번호로 로그인 ▼' : '기존 비밀번호로 로그인 ▲';
+    e.target.textContent = f.style.display === 'none'
+      ? _t('기존 비밀번호로 로그인 ▼', 'Sign in with password ▼')
+      : _t('기존 비밀번호로 로그인 ▲', 'Sign in with password ▲');
   };
 
   // ── Google ─────────────────────────────────────────────────
@@ -13527,7 +13553,8 @@ window.submitDemoWallComment = async function (trackId) {
       newComment = await window.Tracks.addComment(trackId, { text, authorName });
     } else {
       newComment = { id: 'tc' + Date.now(), author: authorName, authorId: myId, text, createdAt: new Date().toISOString() };
-      window.DB.addTrackComment(trackId, newComment);
+      // ⚠ DB.addTrackComment 호출 금지 — temp 포함된 localStorage 에 real 을
+      //   또 push 해서 [temp, real] 중복이 생긴다. 아래 교체 + save 로 충분.
     }
     // 임시 → real 교체 (양쪽 모두)
     const _replaceTmp = (arr) => {
@@ -13541,6 +13568,7 @@ window.submitDemoWallComment = async function (trackId) {
       if (tMem) _replaceTmp(tMem.trackComments);
     }
     _replaceTmp(track.trackComments);
+    try { window.DB.save(db); } catch (_) {}   // temp→real 영구화
   } catch (e) {
     // rollback — 양쪽에서 임시 제거
     const _filterOut = (arr) => Array.isArray(arr)
@@ -13550,6 +13578,7 @@ window.submitDemoWallComment = async function (trackId) {
       if (tMem) tMem.trackComments = _filterOut(tMem.trackComments);
     }
     track.trackComments = _filterOut(track.trackComments);
+    try { window.DB.save(db); } catch (_) {}   // localStorage 의 temp 도 제거
     try { _refreshTrackCommentUI(trackId); } catch (_) {}
     alert('댓글 저장 실패: ' + (e.message || e));
     if (input) input.value = text;
