@@ -10339,9 +10339,11 @@ window.submitTrackComment = async function(trackId) {
     // 임시 → real 교체 (id 만 다름) — window.__tracks 와 db.tracks 양쪽 다
     const _replaceTmp = (arr) => {
       if (!Array.isArray(arr)) return;
-      const i = arr.findIndex(c => c && c.id === tempId);
-      if (i >= 0) arr[i] = newComment;
-      else arr.push(newComment);
+      // temp 제거 후, real 이 아직 없을 때만 추가. (Tracks.addComment 가 window.__tracks 에
+      // real 을 이미 push 했을 수 있어서 — 안 그러면 같은 id 댓글이 2개가 됨 → 삭제 시 둘 다 삭제)
+      const ti = arr.findIndex(c => c && c.id === tempId);
+      if (ti >= 0) arr.splice(ti, 1);
+      if (newComment && !arr.some(c => c && c.id === newComment.id)) arr.push(newComment);
     };
     if (Array.isArray(window.__tracks)) {
       const tMem = window.__tracks.find(t => t && t.id === trackId);
@@ -14828,9 +14830,11 @@ window.submitDemoWallComment = async function (trackId) {
     // 임시 → real 교체 (양쪽 모두)
     const _replaceTmp = (arr) => {
       if (!Array.isArray(arr)) return;
-      const i = arr.findIndex(c => c && c.id === tempId);
-      if (i >= 0) arr[i] = newComment;
-      else arr.push(newComment);
+      // temp 제거 후, real 이 아직 없을 때만 추가. (Tracks.addComment 가 window.__tracks 에
+      // real 을 이미 push 했을 수 있어서 — 안 그러면 같은 id 댓글이 2개가 됨 → 삭제 시 둘 다 삭제)
+      const ti = arr.findIndex(c => c && c.id === tempId);
+      if (ti >= 0) arr.splice(ti, 1);
+      if (newComment && !arr.some(c => c && c.id === newComment.id)) arr.push(newComment);
     };
     if (Array.isArray(window.__tracks)) {
       const tMem = window.__tracks.find(t => t && t.id === trackId);
