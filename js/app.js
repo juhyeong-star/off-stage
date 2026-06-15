@@ -420,7 +420,7 @@ window.showOnboarding = function () {
         <div class="ob-demo-shape">♪<span class="ob-tap"><i class="ri-cursor-fill"></i></span></div>
       </div>
       <h2 class="ob-title">${_t2("떠다니는 '도형'이 노래예요",'Each floating shape is a song')}</h2>
-      <p class="ob-body">${_t2('마음에 드는 도형을 눌러 바로 들어보세요. 끌어서 자리도 옮길 수 있어요.','Tap a shape to listen instantly — drag to move it around.')}</p>
+      <p class="ob-body">${_t2('한 번 누르면 재생, 한 번 더 누르면 그 아티스트 페이지로! 끌어서 자리도 옮길 수 있어요.','Tap once to play, tap again to open the artist page! Drag to move it around.')}</p>
     </div>`;
   const menuRows = [
     ['ri-triangle-fill',   _t2('발견','Discover'),        _t2('노래를 도형으로 탐색','Browse songs as shapes')],
@@ -484,7 +484,7 @@ window.startTutorial = function () {
     : { route: 'shapes', sel: '.mobile-tab-bar [data-route="universe"], .sidebar-nav [data-route="universe"]', title: _t2('⑤ 즐겨찾기','⑤ Favorites'),
         body: _t2('좋아한 노래(도형)와 포스트잇을 모아 나만의 우주로 정리하는 곳이에요. 로그인하면 써볼 수 있어요.','Collect liked songs (shapes) and post-its into your own universe. Sign in to use it.') };
   const steps = [
-    { route: 'shapes', sel: '.floating-shape[data-track-id]', title: _t2('① 발견 — 노래','① Discover'), body: _t2('떠다니는 도형이 노래예요. 눌러서 바로 들어봐요.','Each floating shape is a song — tap to play.') },
+    { route: 'shapes', sel: '.floating-shape[data-track-id]', title: _t2('① 발견 — 노래','① Discover'), body: _t2('떠다니는 도형이 노래예요. 한 번 누르면 재생, 한 번 더 누르면 그 아티스트 페이지로 가요.','Each floating shape is a song. Tap once to play, tap again to open the artist page.') },
     { sel: '.upload-fab', title: _t2('② 노래 올리기','② Upload'), body: _t2('여기 ⊕ 를 눌러 내 곡을 올려요.','Tap ⊕ here to upload your own track.') },
     { route: 'wall', sel: '.wall-fab', title: _t2('③ 주절주절','③ Bla Bla'), body: _t2('감성 메모를 남기는 벽이에요. 여기로 글을 남겨요.','A wall of mood notes — post yours here.') },
     { route: 'tags', sel: '.tag-chip', title: _t2('④ Tags','④ Tags'), body: _t2('기분·태그로 노래를 찾아봐요.','Find songs by mood and tags.') },
