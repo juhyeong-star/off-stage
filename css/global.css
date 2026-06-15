@@ -17462,6 +17462,38 @@ body:has(#global-player.expanded) .global-back-btn {
 html[data-lang="ko"] [data-i18n-en] { display: none !important; }
 html[data-lang="en"] [data-i18n-ko] { display: none !important; }
 
+/* off-stage · BETA 워드마크 — 데스크탑 우측 상단(언어 토글 왼쪽), 모바일은 메뉴 안. */
+.beta-wordmark {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 13px; letter-spacing: -0.2px;
+  color: rgba(255,255,255,0.92);
+  user-select: none; pointer-events: none; white-space: nowrap;
+}
+.beta-wordmark .bw-tag {
+  font-size: 9px; font-weight: 900; letter-spacing: 0.6px;
+  color: #0c0c14; background: #FFE500;
+  padding: 1px 5px; border-radius: 5px;
+}
+.beta-wordmark-float {
+  position: fixed;
+  top: calc(17px + var(--safe-top, 0px));
+  right: calc(104px + var(--safe-right, 0px));   /* 언어 토글 왼쪽 */
+  z-index: 1102;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.55);
+}
+.beta-wordmark-menu { display: none; }            /* 데스크탑: 메뉴용 숨김 */
+@media (max-width: 768px) {
+  .beta-wordmark-float { display: none !important; }   /* 모바일: 플로팅 숨김 */
+  .beta-wordmark-menu {
+    display: flex !important;                            /* 메뉴(사이드바) 맨 위에만 */
+    padding: 2px 4px 14px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    font-size: 16px;
+  }
+}
+
 /* 토글 버튼 — 사이드바 상단 */
 .lang-toggle {
   /* 화면 오른쪽 위 고정 (사이드바 밖으로 이동, 모바일·PC 공통). 사용자 요청 */

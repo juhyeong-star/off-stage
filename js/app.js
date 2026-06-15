@@ -6169,12 +6169,12 @@ window.togglePlayerCollect = function (btn) {
   if (el) {
     el.classList.toggle('is-collected', willCollect);
     const icon = el.querySelector('i');
-    if (icon) icon.className = willCollect ? 'ri-bookmark-fill' : 'ri-bookmark-line';
+    if (icon) icon.className = willCollect ? 'ri-check-line' : 'ri-add-line';
     if (willCollect) { el.classList.add('pop'); setTimeout(() => el.classList.remove('pop'), 380); }
   }
   if (typeof window.toggleTrackHeart === 'function') window.toggleTrackHeart(id, null);
 };
-// 곡이 바뀔 때 담기 버튼의 채움/비움 상태 동기화 (북마크).
+// 곡이 바뀔 때 담기 버튼의 채움/비움 상태 동기화 (담기 = +, 담김 = ✓).
 function _updatePlayerCollectState() {
   const btn = document.getElementById('player-collect-btn');
   if (!btn) return;
@@ -6182,7 +6182,7 @@ function _updatePlayerCollectState() {
   const collected = !!(id && typeof isTrackLiked === 'function' && isTrackLiked(id));
   btn.classList.toggle('is-collected', collected);
   const icon = btn.querySelector('i');
-  if (icon) icon.className = collected ? 'ri-bookmark-fill' : 'ri-bookmark-line';
+  if (icon) icon.className = collected ? 'ri-check-line' : 'ri-add-line';
 }
 window._updatePlayerCollectState = _updatePlayerCollectState;
 
