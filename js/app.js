@@ -479,17 +479,29 @@ window.startTutorial = function () {
   // 즐겨찾기는 일반 "좋아한 음원만" 과 달라서 — 노래(도형)+포스트잇+폴더를 모으는 개념.
   //   로그인 시: 실제 즐겨찾기(우주)로 들어가 자세히 설명. 비로그인: 메뉴만 강조 + 개념 안내.
   const favStep = _loggedIn
-    ? { route: 'universe', sel: '#universe-head, .shapes-universe.my-universe', title: _t2('⑤ 즐겨찾기','⑤ Favorites'),
+    ? { route: 'universe', sel: '#universe-head, .shapes-universe.my-universe', title: _t2('즐겨찾기','Favorites'),
         body: _t2("여기는 '좋아한 노래'만 모으는 곳이 아니에요. 마음에 든 노래(도형)도, 수집한 포스트잇도 함께 모아 — 나만의 우주처럼 폴더로 정리해요.","Not just liked songs — collect songs (shapes) AND saved post-its here, and arrange them into folders, like your own universe.") }
-    : { route: 'shapes', sel: '.mobile-tab-bar [data-route="universe"], .sidebar-nav [data-route="universe"]', title: _t2('⑤ 즐겨찾기','⑤ Favorites'),
+    : { route: 'shapes', sel: '.mobile-tab-bar [data-route="universe"], .sidebar-nav [data-route="universe"]', title: _t2('즐겨찾기','Favorites'),
         body: _t2('좋아한 노래(도형)와 포스트잇을 모아 나만의 우주로 정리하는 곳이에요. 로그인하면 써볼 수 있어요.','Collect liked songs (shapes) and post-its into your own universe. Sign in to use it.') };
+  // 로그인 시: 내 아티스트 페이지로 들어가 소식(투명 + 카드)·프로필 수정을 자세히 안내.
+  const artistSteps = _loggedIn ? [
+    { route: 'my-artist', sel: '.soshik-add-postit, .soshik-add', title: _t2('아티스트 페이지 — 소식','Your page — Updates'),
+      body: _t2('여기가 팬들이 보는 당신의 페이지예요. 투명한 + 카드를 눌러 소식(근황)을 남기고, 올린 소식은 핀으로 고정할 수 있어요.','This is the page fans see. Tap the dashed + card to post updates — you can pin posts too.') },
+    { sel: '#artist-bio-line, .artist-bio-inline', title: _t2('자기소개','Your bio'),
+      body: _t2('"자신을 소개해보아요"를 눌러 한 줄 소개를 적어보세요. 팬들에게 보이는 첫인상이에요.','Tap “Introduce yourself” to write a short bio — the first thing fans see.') },
+    { sel: '.demo-card-add, .demo-postit-sq.is-empty', title: _t2('데모 올리기','Demos'),
+      body: _t2('"DEMO 추가" 카드를 눌러 작업 중인 데모를 올려요. 완성 전 곡도 팬들과 나눌 수 있어요.','Tap an “Add demo” card to share works-in-progress — fans can hear unfinished tracks too.') },
+    { sel: '.artist-settings-gear', title: _t2('프로필 수정','Edit profile'),
+      body: _t2('더 자세한 설정 — 프로필 사진·자기소개·SNS 링크는 오른쪽 위 톱니바퀴(⚙)에서.','For more — edit your photo, bio and social links from the gear (top-right).') }
+  ] : [];
   const steps = [
-    { route: 'shapes', sel: '.floating-shape[data-track-id]', title: _t2('① 발견 — 노래','① Discover'), body: _t2('떠다니는 도형이 노래예요. 한 번 누르면 재생, 한 번 더 누르면 그 아티스트 페이지로 가요.','Each floating shape is a song. Tap once to play, tap again to open the artist page.') },
-    { sel: '.upload-fab', title: _t2('② 노래 올리기','② Upload'), body: _t2('여기 ⊕ 를 눌러 내 곡을 올려요.','Tap ⊕ here to upload your own track.') },
-    { route: 'wall', sel: '.wall-fab', title: _t2('③ 주절주절','③ Bla Bla'), body: _t2('감성 메모를 남기는 벽이에요. 여기로 글을 남겨요.','A wall of mood notes — post yours here.') },
-    { route: 'tags', sel: '.tag-chip', title: _t2('④ Tags','④ Tags'), body: _t2('기분·태그로 노래를 찾아봐요.','Find songs by mood and tags.') },
+    { route: 'shapes', sel: '.floating-shape[data-track-id]', title: _t2('발견 — 노래','Discover'), body: _t2('떠다니는 도형이 노래예요. 한 번 누르면 재생, 한 번 더 누르면 그 아티스트 페이지로 가요.','Each floating shape is a song. Tap once to play, tap again to open the artist page.') },
+    { sel: '.upload-fab', title: _t2('노래 올리기','Upload'), body: _t2('여기 ⊕ 를 눌러 내 곡을 올려요.','Tap ⊕ here to upload your own track.') },
+    { route: 'wall', sel: '.wall-fab', title: _t2('주절주절','Bla Bla'), body: _t2('감성 메모를 남기는 벽이에요. 여기로 글을 남겨요.','A wall of mood notes — post yours here.') },
+    { route: 'tags', sel: '.tag-chip', title: _t2('Tags','Tags'), body: _t2('기분·태그로 노래를 찾아봐요.','Find songs by mood and tags.') },
     favStep,
-    { sel: '#global-player', title: _t2('⑥ 플레이어','⑥ Player'), body: _t2('재생·담기·셔플은 여기. 제목을 누르면 아티스트로 가요.','Play, save, shuffle here. Tap the title for the artist.') }
+    ...artistSteps,
+    { sel: '#global-player', title: _t2('플레이어','Player'), body: _t2('재생·담기·셔플은 여기. 제목을 누르면 아티스트로 가요.','Play, save, shuffle here. Tap the title for the artist.') }
   ];
   document.body.insertAdjacentHTML('beforeend', `
     <div id="tut-overlay"></div>
