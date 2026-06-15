@@ -6554,30 +6554,50 @@ window.diceBouncePlay = function(el) {
 };
 
 // Animated reshuffle of every floating shape on the current page.
-// Adds a brief CSS transition for left/top so shapes glide to their new spots.
+// 예전엔 완전 랜덤 배치라 모바일에서 글씨 안 보일 만큼 겹쳤음 → 기본 배치와 같은
+// 격자(모바일 2열 / PC 3열) + 약한 지터로 흩뿌려 항상 안 겹치게. 순서만 섞어서
+// "셔플" 느낌은 유지.
 function shuffleAllShapes() {
-  const shapes = document.querySelectorAll('.floating-shape[data-track-id], .floating-shape[data-note-id]');
+  const shapes = Array.from(document.querySelectorAll('.floating-shape[data-track-id], .floating-shape[data-note-id]'));
   if (!shapes.length) return;
   const universe = shapes[0].parentElement;
   if (!universe) return;
-  const universeHeight = universe.getBoundingClientRect().height || 1200;
 
-  shapes.forEach(el => {
+  const isNarrow = (typeof window !== 'undefined' ? window.innerWidth : 1024) < 600;
+  const cols       = isNarrow ? 2 : 3;
+  const colSpread  = isNarrow ? 46 : 30;   // 열 간 가로 간격(%)
+  const rowH       = isNarrow ? 320 : 280;  // 행 간 세로 간격(px)
+  const jitterX    = isNarrow ? 4 : 10;
+  const baseX      = 4;
+
+  // 순서를 섞는다 (Fisher–Yates) → 같은 격자라도 도형이 자리를 바꿔 '섞인' 느낌
+  const order = shapes.slice();
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = order[i]; order[i] = order[j]; order[j] = t;
+  }
+
+  // 캔버스 높이를 행 수에 맞춰 늘려 둠 (도형이 밑으로 잘리지 않게)
+  const neededH = Math.ceil(order.length / cols) * rowH + 140;
+  const curH = universe.getBoundingClientRect().height || 0;
+  if (neededH > curH) universe.style.height = neededH + 'px';
+
+  order.forEach((el, idx) => {
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    const x = baseX + col * colSpread + Math.random() * jitterX;
+    const y = 30 + row * rowH + Math.random() * 30;
     // Pause the floatDrift idle animation so the new left/top sticks
     el.style.animation = 'none';
     // Glide to the new spot
     el.style.transition = 'left 0.6s cubic-bezier(0.34, 1.2, 0.5, 1), top 0.6s cubic-bezier(0.34, 1.2, 0.5, 1)';
-    const x = 2 + Math.random() * 86;                              // 2%~88%
-    const y = 30 + Math.random() * Math.max(200, universeHeight - 260);
     el.style.left = x + '%';
     el.style.top  = y + 'px';
   });
   // Resume floatDrift after the glide settles
   setTimeout(() => {
-    shapes.forEach(el => {
+    order.forEach(el => {
       el.style.transition = '';
-      // restore the seeded animation values (left as-is — keep new spot)
-      const dur = parseFloat(el.dataset.driftDur || '15');
       el.style.animation = '';   // re-engage the inline `animation:` from the original style
     });
   }, 700);

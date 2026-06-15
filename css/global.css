@@ -7365,8 +7365,9 @@ html, body { overflow-x: hidden; max-width: 100%; }
   .hamburger-btn { width: 42px; height: 42px; font-size: 20px; }
 }
 
-/* Small phones — keep legibility, scale shape down but not text */
-@media (max-width: 420px) {
+/* 모바일(2열, <600px) — 도형 크기/텍스트 축소. _isNarrow(JS) 와 같은 600 경계로 맞춤.
+   (이전엔 420 경계라 421~599px 폰이 큰 ≤768 크기를 받아 2열에서 심하게 겹쳤음) */
+@media (max-width: 600px) {
   .floating-shape { padding: 10px; }
   .floating-shape .shape-text {
     font-size: 15px;   /* 도형 축소에 맞춰 텍스트도 줄임 */
