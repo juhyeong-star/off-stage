@@ -2111,7 +2111,7 @@ body:has(#shape-shorts-overlay) .deco-shape {
 /* 본인 페이지 우상단 ✨ 별자리 버튼 — 톱니바퀴 옆에 */
 .artist-constellation-btn {
   position: absolute;
-  top: 12px; right: 62px;   /* 톱니바퀴 옆 */
+  top: 54px; right: 62px;   /* 톱니바퀴 옆. 고정된 가이드/언어 토글(top 12~42) 아래로 내림 */
   width: 38px; height: 38px;
   border-radius: 50%;
   background: rgba(255,255,255,0.08);
@@ -2128,10 +2128,11 @@ body:has(#shape-shorts-overlay) .deco-shape {
   transform: scale(1.08);
 }
 
-/* 본인 아티스트 페이지 우상단 톱니바퀴 — 프로필 설정으로 들어감 */
+/* 본인 아티스트 페이지 우상단 톱니바퀴 — 프로필 설정으로 들어감.
+   고정된 가이드/언어 토글(top 12~42)에 가려져서 아래로 내림 (사용자 요청) */
 .artist-settings-gear {
   position: absolute;
-  top: 12px; right: 14px;
+  top: 54px; right: 14px;
   width: 38px; height: 38px;
   border-radius: 50%;
   background: rgba(255,255,255,0.08);
