@@ -18243,14 +18243,19 @@ body:has(#global-player.expanded) .lang-toggle { display: none !important; }
 .ob-next:active { transform: scale(0.98); }
 
 /* ── 스포트라이트 튜토리얼 (요소 강조 + 탭해서 진행) ── */
-#tut-overlay { position: fixed; inset: 0; background: rgba(8,6,16,0.74); z-index: 9400; }
+/* 주변을 좀 더 어둡게 → 강조 부분이 더 도드라지게 (사용자 요청: 밝게) */
+#tut-overlay { position: fixed; inset: 0; background: rgba(6,4,12,0.82); z-index: 9400; }
 .tut-spotlight {
   box-shadow: 0 0 0 4px rgba(255,224,102,0.95), 0 0 26px 6px rgba(255,224,102,0.45) !important;
+  /* 노란 테두리뿐 아니라 강조 부분 자체를 환하게 — 밝기 + 흰 글로우로 '불 켜진' 느낌 */
+  filter: brightness(1.25) saturate(1.12) contrast(1.03)
+          drop-shadow(0 0 18px rgba(255,255,255,0.6)) !important;
+  border-radius: inherit;
   animation: tutPulse 1.4s ease-in-out infinite;
 }
 @keyframes tutPulse {
-  0%,100% { box-shadow: 0 0 0 4px rgba(255,224,102,0.95), 0 0 22px 4px rgba(255,224,102,0.4); }
-  50%     { box-shadow: 0 0 0 6px rgba(255,224,102,1),    0 0 32px 10px rgba(255,224,102,0.6); }
+  0%,100% { box-shadow: 0 0 0 4px rgba(255,224,102,0.95), 0 0 22px 4px rgba(255,236,160,0.5); }
+  50%     { box-shadow: 0 0 0 6px rgba(255,236,160,1),    0 0 40px 14px rgba(255,240,180,0.78); }
 }
 #tut-tip {
   position: fixed; z-index: 9460; width: min(300px, calc(100vw - 24px));
