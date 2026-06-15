@@ -5516,13 +5516,15 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   #global-player.expanded .player-title { font-size: 22px; max-width: 90vw; white-space: normal; }
   .player-artist { font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 38vw; }
   #global-player.expanded .player-artist { font-size: 14px; max-width: 90vw; }
-  .player-controls { order: 2; width: auto; gap: 6px; flex-shrink: 0; }
+  /* 담기 버튼(이제 볼륨 옆 직속 자식) — 모바일 순서: 트랙정보(1) → 담기(2) → 컨트롤(3) → 진행바(4) */
+  .player-collect-btn { order: 2; }
+  .player-controls { order: 3; width: auto; gap: 6px; flex-shrink: 0; }
   #global-player.expanded .player-controls { gap: 28px; }
   .control-btn { font-size: 22px; padding: 4px; }
   .control-btn.play-btn { font-size: 36px; }
   #global-player.expanded .control-btn { font-size: 30px; }
   #global-player.expanded .control-btn.play-btn { font-size: 64px; }
-  .progress-container { order: 3; display: none; padding: 0; gap: 6px; }
+  .progress-container { order: 4; display: none; padding: 0; gap: 6px; }
   #global-player.expanded .progress-container { display: flex; width: 100%; padding: 0 12px; }
   /* Mobile expand handle */
   .player-expand-handle {

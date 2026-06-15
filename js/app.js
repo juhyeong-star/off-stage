@@ -354,7 +354,11 @@ window.audioElement = audioElement;
     if (typeof msg !== 'string' || window.getLang() !== 'en') return msg;
     if (MSG_EN[msg]) return MSG_EN[msg];
     for (const [k, en] of MSG_PREFIX) {
-      if (msg.startsWith(k)) return en + msg.slice(k.length);
+      if (msg.startsWith(k)) {
+        // 접두어("업로드 실패: ") 뒤 본문도 사전에 있으면 번역 (없으면 원문).
+        const body = msg.slice(k.length);
+        return en + (MSG_EN[body] || body);
+      }
     }
     return msg;
   };
