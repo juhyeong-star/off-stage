@@ -39,7 +39,7 @@
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=681">
+  <link rel="stylesheet" href="css/global.css?v=691">
 </head>
 <body>
 
@@ -122,6 +122,11 @@
 
   <!-- off-stage · BETA 워드마크 — 데스크탑 우측 상단(플로팅). 모바일은 메뉴 안에만. -->
   <div class="beta-wordmark beta-wordmark-float" aria-hidden="true"><span class="bw-name">off-stage</span><span class="bw-tag">BETA</span></div>
+
+  <!-- 가이드(둘러보기) 버튼 — 언어 토글 왼쪽. 첫 방문 안내를 언제든 다시 보기. -->
+  <button class="guide-btn" id="guide-btn" type="button" onclick="window.showOnboarding && window.showOnboarding()" aria-label="가이드">
+    <i class="ri-compass-3-line"></i><span class="guide-btn-label"><span data-i18n-ko>가이드</span><span data-i18n-en>Guide</span></span>
+  </button>
 
   <!-- 언어 토글 — KO / EN. 화면 오른쪽 위 고정 (모바일·PC 공통, 보이기 쉽게). -->
   <div class="lang-toggle" id="lang-toggle" role="group" aria-label="Language">
@@ -209,12 +214,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=681"></script>
-  <script defer src="js/data.js?v=681"></script>
-  <script defer src="js/supabase.js?v=681"></script>
-  <script defer src="js/analytics.js?v=681"></script>
-  <script defer src="js/distribute.js?v=681"></script>
-  <script defer src="js/app.js?v=681"></script>
-  <script defer src="js/polaroid.js?v=681"></script>
+  <script defer src="js/supabase-init.js?v=691"></script>
+  <script defer src="js/data.js?v=691"></script>
+  <script defer src="js/supabase.js?v=691"></script>
+  <script defer src="js/analytics.js?v=691"></script>
+  <script defer src="js/distribute.js?v=691"></script>
+  <script defer src="js/app.js?v=691"></script>
+  <script defer src="js/polaroid.js?v=691"></script>
 </body>
 </html>

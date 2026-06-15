@@ -386,6 +386,184 @@ window.audioElement = audioElement;
   });
 })();
 
+// ============================================================
+// 첫 방문 온보딩 가이드 — 스와이프 3슬라이드 (환영 → 도형=노래 → 메뉴)
+// localStorage 'offstage_onboarded' 로 한 번만. (사용자 요청)
+// ============================================================
+window.maybeShowOnboarding = function () {
+  try { if (localStorage.getItem('offstage_onboarded') === '1') return; } catch (_) {}
+  if (typeof currentView !== 'undefined' && currentView === 'auth') return;  // 로그인 화면이면 다음에
+  window.showOnboarding();
+};
+window.closeOnboarding = function () {
+  try { localStorage.setItem('offstage_onboarded', '1'); } catch (_) {}
+  const el = document.getElementById('onboarding-guide');
+  if (el) { el.classList.add('ob-closing'); setTimeout(() => el.remove(), 280); }
+};
+window.showOnboarding = function () {
+  if (document.getElementById('onboarding-guide')) return;
+  const _t2 = (ko, en) => (typeof _t === 'function' ? _t(ko, en) : ko);
+  const slide1 = `
+    <div class="ob-slide">
+      <div class="ob-visual ob-visual-shapes" aria-hidden="true">
+        <span class="ob-mini" style="background:#E07B4C;"></span>
+        <span class="ob-mini" style="background:#4A77E0;"></span>
+        <span class="ob-mini" style="background:#A4CC5B;"></span>
+        <span class="ob-mini" style="background:#F0C84A;"></span>
+      </div>
+      <h2 class="ob-title">${_t2('Off-Stage 에 오신 걸 환영해요','Welcome to Off-Stage')}</h2>
+      <p class="ob-body">${_t2('감성으로 노래를 발견하고, 좋아하는 아티스트와 가까워지는 곳이에요.','Discover music by mood, and get closer to the artists you love.')}</p>
+    </div>`;
+  const slide2 = `
+    <div class="ob-slide">
+      <div class="ob-visual" aria-hidden="true">
+        <div class="ob-demo-shape">♪<span class="ob-tap"><i class="ri-cursor-fill"></i></span></div>
+      </div>
+      <h2 class="ob-title">${_t2("떠다니는 '도형'이 노래예요",'Each floating shape is a song')}</h2>
+      <p class="ob-body">${_t2('마음에 드는 도형을 눌러 바로 들어보세요. 끌어서 자리도 옮길 수 있어요.','Tap a shape to listen instantly — drag to move it around.')}</p>
+    </div>`;
+  const menuRows = [
+    ['ri-triangle-fill',   _t2('발견','Discover'),        _t2('노래를 도형으로 탐색','Browse songs as shapes')],
+    ['ri-sticky-note-fill',_t2('주절주절','Bla Bla'),      _t2('감성 메모를 남기는 벽','A wall of mood notes')],
+    ['ri-bookmark-fill',   _t2('즐겨찾기','Favorites'),    _t2('모은 곡과 폴더','Saved songs & folders')],
+    ['ri-mic-fill',        _t2('아티스트 페이지','Artist'), _t2('데모와 소식 보기','Demos & updates')]
+  ].map(([ic,t,d]) => `<div class="ob-menu-row"><span class="ob-menu-ic"><i class="${ic}"></i></span><div class="ob-menu-tx"><b>${t}</b><span>${d}</span></div></div>`).join('');
+  const slide3 = `
+    <div class="ob-slide">
+      <h2 class="ob-title ob-title-sm">${_t2('이렇게 둘러보세요','Find your way around')}</h2>
+      <div class="ob-menu">${menuRows}</div>
+    </div>`;
+  const dots = [0,1,2].map(i => `<span class="${i===0?'on':''}"></span>`).join('');
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="onboarding-guide" class="ob-overlay" role="dialog" aria-modal="true" aria-label="${_t2('소개','Intro')}">
+      <div class="ob-card">
+        <button class="ob-skip" type="button" onclick="closeOnboarding()">${_t2('건너뛰기','Skip')}</button>
+        <div class="ob-viewport"><div class="ob-track" id="ob-track">${slide1}${slide2}${slide3}</div></div>
+        <div class="ob-dots" id="ob-dots">${dots}</div>
+        <div class="ob-foot"><button class="ob-next" id="ob-next" type="button">${_t2('다음','Next')}</button></div>
+      </div>
+    </div>`);
+  let idx = 0; const N = 3;
+  const track = document.getElementById('ob-track');
+  const dotsEl = document.getElementById('ob-dots');
+  const nextBtn = document.getElementById('ob-next');
+  const go = (i) => {
+    idx = Math.max(0, Math.min(N - 1, i));
+    track.style.transform = `translateX(${-idx * 100}%)`;
+    Array.from(dotsEl.children).forEach((d, k) => d.classList.toggle('on', k === idx));
+    nextBtn.textContent = (idx === N - 1) ? _t2('둘러보기','Take a tour') : _t2('다음','Next');
+  };
+  nextBtn.addEventListener('click', () => {
+    if (idx === N - 1) {
+      // 환영 슬라이드 끝 → 닫고 스포트라이트 투어 시작 (조합).
+      closeOnboarding();
+      setTimeout(() => { try { if (typeof window.startTutorial === 'function') window.startTutorial(); } catch (_) {} }, 320);
+    } else go(idx + 1);
+  });
+  dotsEl.addEventListener('click', (e) => { const i = Array.from(dotsEl.children).indexOf(e.target); if (i >= 0) go(i); });
+  // 좌우 스와이프로 슬라이드 넘기기
+  let sx = 0, sw = false;
+  const vp = track.parentElement;
+  vp.addEventListener('touchstart', (e) => { const t = e.touches[0]; if (t) { sx = t.clientX; sw = true; } }, { passive: true });
+  vp.addEventListener('touchend', (e) => { if (!sw) return; sw = false; const t = e.changedTouches[0]; if (!t) return; const dx = t.clientX - sx; if (Math.abs(dx) > 50) go(dx < 0 ? idx + 1 : idx - 1); }, { passive: true });
+  go(0);
+};
+
+// ============================================================
+// 스포트라이트 튜토리얼 — 요소를 하나씩 강조 + 직접 탭해서 진행 (게임 튜토리얼식)
+// ============================================================
+window.startTutorial = function () {
+  if (document.getElementById('tut-overlay')) return;
+  const _t2 = (ko, en) => (typeof _t === 'function' ? _t(ko, en) : ko);
+  const _loggedIn = !!((window.__currentUser) || (window.DB && window.DB.get && window.DB.get().currentUser));
+  // 즐겨찾기는 일반 "좋아한 음원만" 과 달라서 — 노래(도형)+포스트잇+폴더를 모으는 개념.
+  //   로그인 시: 실제 즐겨찾기(우주)로 들어가 자세히 설명. 비로그인: 메뉴만 강조 + 개념 안내.
+  const favStep = _loggedIn
+    ? { route: 'universe', sel: '#universe-head, .shapes-universe.my-universe', title: _t2('⑤ 즐겨찾기','⑤ Favorites'),
+        body: _t2("여기는 '좋아한 노래'만 모으는 곳이 아니에요. 마음에 든 노래(도형)도, 수집한 포스트잇도 함께 모아 — 나만의 우주처럼 폴더로 정리해요.","Not just liked songs — collect songs (shapes) AND saved post-its here, and arrange them into folders, like your own universe.") }
+    : { route: 'shapes', sel: '.mobile-tab-bar [data-route="universe"], .sidebar-nav [data-route="universe"]', title: _t2('⑤ 즐겨찾기','⑤ Favorites'),
+        body: _t2('좋아한 노래(도형)와 포스트잇을 모아 나만의 우주로 정리하는 곳이에요. 로그인하면 써볼 수 있어요.','Collect liked songs (shapes) and post-its into your own universe. Sign in to use it.') };
+  const steps = [
+    { route: 'shapes', sel: '.floating-shape[data-track-id]', title: _t2('① 발견 — 노래','① Discover'), body: _t2('떠다니는 도형이 노래예요. 눌러서 바로 들어봐요.','Each floating shape is a song — tap to play.') },
+    { sel: '.upload-fab', title: _t2('② 노래 올리기','② Upload'), body: _t2('여기 ⊕ 를 눌러 내 곡을 올려요.','Tap ⊕ here to upload your own track.') },
+    { route: 'wall', sel: '.wall-fab', title: _t2('③ 주절주절','③ Bla Bla'), body: _t2('감성 메모를 남기는 벽이에요. 여기로 글을 남겨요.','A wall of mood notes — post yours here.') },
+    { route: 'tags', sel: '.tag-chip', title: _t2('④ Tags','④ Tags'), body: _t2('기분·태그로 노래를 찾아봐요.','Find songs by mood and tags.') },
+    favStep,
+    { sel: '#global-player', title: _t2('⑥ 플레이어','⑥ Player'), body: _t2('재생·담기·셔플은 여기. 제목을 누르면 아티스트로 가요.','Play, save, shuffle here. Tap the title for the artist.') }
+  ];
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="tut-overlay"></div>
+    <div id="tut-tip" role="dialog" aria-live="polite">
+      <button id="tut-skip" type="button">${_t2('건너뛰기','Skip')}</button>
+      <div id="tut-title"></div>
+      <div id="tut-body"></div>
+      <div id="tut-foot"><span id="tut-step"></span><button id="tut-next" type="button">${_t2('다음','Next')}</button></div>
+    </div>`);
+  const overlay = document.getElementById('tut-overlay');
+  const tip = document.getElementById('tut-tip');
+  let i = 0, curTarget = null, curHandler = null;
+  const cleanupTarget = () => {
+    if (curTarget) {
+      curTarget.classList.remove('tut-spotlight');
+      curTarget.style.zIndex = curTarget.dataset._tutZ || '';
+      curTarget.style.position = curTarget.dataset._tutPos || '';
+      delete curTarget.dataset._tutZ; delete curTarget.dataset._tutPos;
+      if (curHandler) curTarget.removeEventListener('click', curHandler, true);
+    }
+    curTarget = null; curHandler = null;
+  };
+  const finish = () => { cleanupTarget(); try { localStorage.setItem('offstage_tutorial_done','1'); } catch (_) {} if (overlay) overlay.remove(); if (tip) tip.remove(); };
+  const place = (target) => {
+    const r = target.getBoundingClientRect();
+    tip.style.visibility = 'hidden';
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    const below = r.top < window.innerHeight / 2;
+    let top = below ? (r.bottom + 14) : (r.top - th - 14);
+    let left = r.left + r.width / 2 - tw / 2;
+    left = Math.max(12, Math.min(left, window.innerWidth - tw - 12));
+    top = Math.max(12, Math.min(top, window.innerHeight - th - 12));
+    tip.style.left = left + 'px'; tip.style.top = top + 'px'; tip.style.visibility = 'visible';
+  };
+  const run = () => {
+    cleanupTarget();
+    if (i >= steps.length) { finish(); return; }
+    const s = steps[i];
+    // 페이지 이동이 필요한 단계 — 한 번만 이동하고 렌더를 기다림(아래 재시도).
+    if (s.route && !s._navDone && typeof currentView !== 'undefined' && currentView !== s.route) {
+      s._navDone = true;
+      try { if (typeof navigateTo === 'function') { window._lastNavTs = 0; navigateTo(s.route); } } catch (_) {}
+    }
+    // 셀렉터 매치 중 '보이는' 첫 요소 (예: 모바일 탭바 vs 데스크탑 사이드바)
+    const _isVis = (e) => e && e.getBoundingClientRect().width > 0
+      && getComputedStyle(e).display !== 'none' && getComputedStyle(e).visibility !== 'hidden';
+    const target = Array.from(document.querySelectorAll(s.sel)).find(_isVis) || null;
+    if (!target) {
+      // 비동기 렌더(도형 등) 대기 — 넉넉히 재시도(약 5.6s) 후에도 없으면 건너뜀.
+      if ((s._retry || 0) < 16) { s._retry = (s._retry || 0) + 1; setTimeout(run, 350); return; }
+      i++; run(); return;
+    }
+    curTarget = target;
+    target.dataset._tutZ = target.style.zIndex || '';
+    target.dataset._tutPos = target.style.position || '';
+    if (getComputedStyle(target).position === 'static') target.style.position = 'relative';
+    target.style.zIndex = '9450';
+    target.classList.add('tut-spotlight');
+    document.getElementById('tut-title').textContent = s.title;
+    document.getElementById('tut-body').textContent = s.body;
+    document.getElementById('tut-step').textContent = (i + 1) + ' / ' + steps.length;
+    document.getElementById('tut-next').textContent = (i === steps.length - 1) ? _t2('끝!','Done') : _t2('다음','Next');
+    place(target);
+    // 강조된 요소를 직접 탭하면 다음으로 (튜토리얼 중엔 실제 동작은 막음).
+    //   합성(프로그램) 클릭은 무시 — 페이지 재렌더 등으로 저절로 넘어가던 것 방지.
+    curHandler = (e) => { if (e && e.isTrusted === false) return; e.preventDefault(); e.stopPropagation(); i++; run(); };
+    target.addEventListener('click', curHandler, true);
+  };
+  document.getElementById('tut-next').addEventListener('click', () => { i++; run(); });
+  document.getElementById('tut-skip').addEventListener('click', finish);
+  if (!window.__tutResizeWired) { window.__tutResizeWired = true; window.addEventListener('resize', () => { if (curTarget && document.getElementById('tut-overlay')) place(curTarget); }); }
+  run();
+};
+
 // ====================================================================
 // VOLUME CONTROL — 글로벌 플레이어 슬라이더 + 키보드 단축키 (↑/↓/M)
 //                + 가운데 토스트 + localStorage 영구 저장
@@ -1287,6 +1465,9 @@ async function init() {
   // Load Initial View — honor URL hash so refreshing /#/admin lands on admin
   const initialRoute = _hashToRoute(location.hash) || 'shapes';
   navigateTo(initialRoute);
+
+  // 첫 방문 온보딩 가이드 — 한 번만. (auth 화면이면 다음 방문에)
+  try { setTimeout(() => { if (typeof window.maybeShowOnboarding === 'function') window.maybeShowOnboarding(); }, 800); } catch (_) {}
 }
 
 // Logout — clears local state immediately, then best-effort Supabase signOut.
@@ -6423,19 +6604,20 @@ function _floatingFolderHtml(it, pos) {
       </div>`;
   }
 
-  // 실제 사용자 폴더 — 폴더 아이콘 + 미니 썸네일(커버) (사용자 요청).
+  // 실제 사용자 폴더 — 윈도우(OS) 폴더 모양: 뒤판+탭, 커버가 안에서 빼꼼, 앞 덮개. (사용자 요청)
   const p = it.folder;
   const title = (p.title || '무제').replace(/</g,'&lt;');
   const count = (p.trackIds || []).length;
   const cover = p.cover || '';
-  const thumb = cover
-    ? `<img class="folder-mini-thumb" src="${cover}" alt="${title.replace(/"/g,'&quot;')}" loading="lazy" draggable="false">`
+  const paper = cover
+    ? `<img class="wf-paper" src="${cover}" alt="${title.replace(/"/g,'&quot;')}" loading="lazy" draggable="false">`
     : '';
   return `
-    <div class="floating-shape floating-folder is-folder-icon" data-folder-id="${p.id}" style="${base}">
-      <div class="folder-orb folder-icon-orb">
-        <i class="ri-folder-3-fill folder-icon-bg" aria-hidden="true"></i>
-        ${thumb}
+    <div class="floating-shape floating-folder is-winfolder" data-folder-id="${p.id}" style="${base}">
+      <div class="winfolder">
+        <span class="wf-back" aria-hidden="true"></span>
+        ${paper}
+        <span class="wf-front" aria-hidden="true"></span>
         <span class="folder-orb-count">${count}</span>
       </div>
       <div class="folder-orb-title">${title}</div>
