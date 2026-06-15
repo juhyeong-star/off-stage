@@ -2181,6 +2181,33 @@ window.editStoForTrack = function(trackId) {
   window.openStoManager();
 };
 
+// 풀스크린 플레이어 좌우 스와이프 → 이전/다음 곡 (사용자 요청).
+// touchstart/end 만 사용(이동 중 transform·preventDefault 없음) → 세로 스와이프-디스미스와 충돌 X.
+window._attachPlayerTrackSwipe = function (player) {
+  if (!player || player._trackSwipeWired) return;
+  player._trackSwipeWired = true;
+  let sx = 0, sy = 0, st = 0, tracking = false;
+  const EXCLUDE = '.control-btn, .play-btn, .progress-bar, .progress-container, .vol-slider, input, button, a, .player-collect-btn';
+  const onStart = (x, y, target) => {
+    if (!player.classList.contains('expanded')) return;          // 풀스크린일 때만
+    if (target && target.closest && target.closest(EXCLUDE)) return;
+    sx = x; sy = y; st = Date.now(); tracking = true;
+  };
+  const onEnd = (x, y) => {
+    if (!tracking) return;
+    tracking = false;
+    const dx = x - sx, dy = y - sy, dt = Date.now() - st;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.4 && dt < 800) {
+      const nextBtn = player.querySelector('.control-btn[aria-label="다음 곡"]');
+      const prevBtn = player.querySelector('.control-btn[aria-label="이전 곡"]');
+      if (dx < 0) { if (nextBtn) nextBtn.click(); }   // 왼쪽 스와이프 → 다음 곡
+      else        { if (prevBtn) prevBtn.click(); }   // 오른쪽 스와이프 → 이전 곡
+    }
+  };
+  player.addEventListener('touchstart', (e) => { const t = e.touches[0]; if (t) onStart(t.clientX, t.clientY, e.target); }, { passive: true });
+  player.addEventListener('touchend', (e) => { const t = e.changedTouches[0]; if (t) onEnd(t.clientX, t.clientY); }, { passive: true });
+};
+
 // ===================== MOBILE PLAYER EXPAND TOGGLE =====================
 window.togglePlayerExpand = function(e) {
   // Only on mobile
@@ -2200,6 +2227,8 @@ window.togglePlayerExpand = function(e) {
   // 📱 풀스크린 펼친 상태에서 아래로 스와이프 → 미니로 접기.
   //    엔진은 멱등이라 매 expand 마다 불러도 1회만 wire. 컨트롤/슬라이더는 exclude.
   if (willExpand) {
+    // 좌우 스와이프 → 이전/다음 곡 (멱등).
+    try { window._attachPlayerTrackSwipe(player); } catch (_) {}
     window._attachSwipeDismiss(player, {
       // 플레이어는 영구 요소 — 펼친(expanded) 상태일 때만 드래그 발동.
       //   (미니 바 상태에서 드래그로 움직이는 것 방지)
