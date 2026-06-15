@@ -1276,6 +1276,8 @@ async function init() {
   };
   if (_prevBtn) _prevBtn.addEventListener('click', () => _navQueue(-1));
   if (_nextBtn) _nextBtn.addEventListener('click', () => _navQueue(+1));
+  // 셔플 버튼 초기 상태 (localStorage 에서 복원된 __shuffle 반영)
+  try { if (typeof _syncShuffleBtn === 'function') _syncShuffleBtn(); } catch (_) {}
   // 우리들의 벽 / 곳곳에 흩어진 .note-track-thumb 미니 커버의 ▶/⏸ 아이콘을
   // 실제 audio 상태와 동기화한다. (재생/일시정지/소스 변경/종료 어디서든)
   audioElement.addEventListener('play', syncNoteTrackThumbIcons);
@@ -12988,9 +12990,39 @@ function _buildPlayQueue(currentTrackId, source) {
   // 빈 큐 (또는 source 가 단일 곡) — 자기 자신만
   if (!ids.length) ids = [currentTrackId];
   if (!ids.includes(currentTrackId)) ids.unshift(currentTrackId);
+  // 셔플(랜덤) ON — 현재 곡은 맨 앞 고정, 나머지를 무작위로 섞음 (Fisher–Yates).
+  if (window.__shuffle && ids.length > 2) {
+    const rest = ids.filter(id => id !== currentTrackId);
+    for (let i = rest.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = rest[i]; rest[i] = rest[j]; rest[j] = tmp;
+    }
+    ids = [currentTrackId, ...rest];
+  }
   const idx = ids.indexOf(currentTrackId);
   return { tracks: ids, idx: Math.max(0, idx), source: source || 'other' };
 }
+
+// 셔플(랜덤 재생) 토글 — 버튼 + 큐 재구성. 사용자 요청 ("랜덤 표시").
+window.__shuffle = (() => { try { return localStorage.getItem('off-stage-shuffle') === '1'; } catch (_) { return false; } })();
+window.toggleShuffle = function () {
+  window.__shuffle = !window.__shuffle;
+  try { localStorage.setItem('off-stage-shuffle', window.__shuffle ? '1' : '0'); } catch (_) {}
+  _syncShuffleBtn();
+  if (typeof showToast === 'function') {
+    showToast(window.__shuffle ? _t('🔀 랜덤 재생 켜짐', '🔀 Shuffle on') : _t('➡️ 순서대로 재생', '➡️ Shuffle off'));
+  }
+  // 지금 재생 중이면 현재 곡 기준으로 큐를 다시 구성 (즉시 반영).
+  const cur = window.currentPlayingTrack;
+  if (cur && window.__playQueue) {
+    window.__playQueue = _buildPlayQueue(cur, window.__playQueue.source);
+  }
+};
+function _syncShuffleBtn() {
+  const btn = document.getElementById('shuffle-btn');
+  if (btn) btn.classList.toggle('on', !!window.__shuffle);
+}
+window._syncShuffleBtn = _syncShuffleBtn;
 
 window.playTrack = function (trackId, source) {
   // 대기 중인 자동다음곡 타이머 취소 — 수동 재생/스킵과 겹쳐 2곡 점프 방지

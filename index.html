@@ -39,7 +39,7 @@
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=672">
+  <link rel="stylesheet" href="css/global.css?v=673">
 </head>
 <body>
 
@@ -160,6 +160,7 @@
       <i class="ri-arrow-up-s-line"></i>
     </button>
     <div class="player-controls">
+      <button class="control-btn shuffle-btn" id="shuffle-btn" type="button" aria-label="랜덤 재생 (셔플)" title="랜덤 재생 (셔플)" onclick="event.stopPropagation(); window.toggleShuffle && window.toggleShuffle()"><i class="ri-shuffle-line"></i></button>
       <button class="control-btn" aria-label="이전 곡"><i class="ri-skip-back-fill"></i></button>
       <button class="control-btn play-btn" id="player-play-btn" aria-label="재생/일시정지"><i class="ri-play-circle-fill"></i></button>
       <button class="control-btn" aria-label="다음 곡"><i class="ri-skip-forward-fill"></i></button>
@@ -208,12 +209,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=672"></script>
-  <script defer src="js/data.js?v=672"></script>
-  <script defer src="js/supabase.js?v=672"></script>
-  <script defer src="js/analytics.js?v=672"></script>
-  <script defer src="js/distribute.js?v=672"></script>
-  <script defer src="js/app.js?v=672"></script>
-  <script defer src="js/polaroid.js?v=672"></script>
+  <script defer src="js/supabase-init.js?v=673"></script>
+  <script defer src="js/data.js?v=673"></script>
+  <script defer src="js/supabase.js?v=673"></script>
+  <script defer src="js/analytics.js?v=673"></script>
+  <script defer src="js/distribute.js?v=673"></script>
+  <script defer src="js/app.js?v=673"></script>
+  <script defer src="js/polaroid.js?v=673"></script>
 </body>
 </html>

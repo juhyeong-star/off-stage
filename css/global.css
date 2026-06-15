@@ -18048,6 +18048,20 @@ body:has(#global-player.expanded) .lang-toggle { display: none !important; }
   border-color: rgba(29,185,84,0.5);
   background: rgba(29,185,84,0.12);
 }
+/* 셔플(랜덤 재생) 버튼 — 끄면 흐릿, 켜면 브랜드색 + 아래 점 표시 */
+.shuffle-btn { position: relative; font-size: 18px; opacity: 0.6; }
+.shuffle-btn:hover { opacity: 0.9; }
+.shuffle-btn.on { color: var(--brand-color, #1DB954); opacity: 1; }
+.shuffle-btn.on::after {
+  content: ''; position: absolute; left: 50%; bottom: -1px;
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--brand-color, #1DB954); transform: translateX(-50%);
+}
+/* 모바일 미니바에선 공간이 좁아 숨기고, 풀스크린에서만 표시 */
+@media (max-width: 768px) {
+  #global-player:not(.expanded) .shuffle-btn { display: none; }
+  #global-player.expanded .shuffle-btn { font-size: 24px; }
+}
 .player-collect-btn.pop { animation: collectPop 0.36s ease; }
 @keyframes collectPop {
   0%   { transform: scale(1); }
