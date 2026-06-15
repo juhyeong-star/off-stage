@@ -6045,19 +6045,20 @@ function renderShapes() {
   // rendered twice to fill the universe; that doubled up on every upload.
   let shapesHtml = '';
   const totalShapes = tracks.length;
-  // 우주를 '사방으로' — 아래로만 길던 것을 좌우+위아래로 펼쳐진 2D 필드로 (사용자 요청).
-  // 뷰포트보다 큰 필드에 도형을 흩뿌리고, 시작 시 가운데로 스크롤 → 상하좌우로 탐험.
+  // 우주 필드 = '내용만큼만'. 미리 크게 잡지 않고 도형 면적에 맞춰 정함 → 적으면 화면에 딱,
+  // 많아질수록 자연히 넓어짐. 빈 스크롤/미리 정해둔 여백 없음. 시작은 왼쪽위 고정(가운데 스크롤 X).
   const _isNarrow = (typeof window !== 'undefined' ? window.innerWidth : 1024) < 600;
   const _vwNow = (typeof window !== 'undefined' ? window.innerWidth : 1024);
   const _vhNow = (typeof window !== 'undefined' ? window.innerHeight : 800);
   const _avgW = _isNarrow ? 134 : (_vwNow < 768 ? 230 : 275);
   const _avgH = _isNarrow ? 108 : (_vwNow < 768 ? 180 : 215);
-  // 필드 크기: 전체 도형 면적/퍼짐 으로 정하되, 최소 뷰포트의 1.4~1.5배(사방 탐험 공간 확보)
-  const _spread = 0.30;     // 낮을수록 더 우주처럼 띄엄띄엄 + 넓음
+  const _spread = 0.45;     // 채움 정도(높을수록 빽빽 + 필드 작음 = 빈공간 적음)
   const _fArea = (totalShapes * _avgW * _avgH) / _spread;
-  const _fAspect = _vwNow / Math.max(1, _vhNow);
-  const _fieldW = Math.max(Math.round(_vwNow * 1.45), Math.round(Math.sqrt(_fArea * _fAspect)));
-  const _fieldH = Math.max(Math.round(_vhNow * 1.5), Math.round(_fArea / _fieldW));
+  // 세로보다 가로로 넓게(>=1.4) → 아래 스크롤 최소화, 채워질수록 좌우로 늘어남 (사용자 요청).
+  const _fAspect = Math.max(1.4, _vwNow / Math.max(1, _vhNow));
+  // 뷰포트 배수 바닥 제거 → 도형 면적에만 맞춤(빈 캔버스 안 만듦). 최소 = 도형 1개 + 여백.
+  const _fieldW = Math.max(_avgW + 60, Math.round(Math.sqrt(_fArea * _fAspect)));
+  const _fieldH = Math.max(_avgH + 60, Math.round(_fArea / _fieldW));
   // 2D 지터-그리드: 필드를 칸으로 나눠 고르게(쏠림/빈 사분면 없이), 칸 안은 랜덤(유기적)
   let _gCols = Math.max(1, Math.round(Math.sqrt(Math.max(1, totalShapes) * (_fieldW / _fieldH))));
   _gCols = Math.min(_gCols, Math.max(1, totalShapes));
@@ -6199,16 +6200,8 @@ function renderShapes() {
     });
   } catch (e) { console.warn('[shapes] declump', e); }
 
-  // 시작 위치를 필드 한가운데로 → 위·아래·좌·우 모두에 도형이 보이게.
-  if (_scroll) {
-    const _center = () => {
-      const cw = _scroll.clientWidth || _vwNow, ch = _scroll.clientHeight || _vhNow;
-      _scroll.scrollLeft = Math.max(0, (_fieldW - cw) / 2);
-      _scroll.scrollTop  = Math.max(0, (_fieldH - ch) / 2);
-    };
-    _center();
-    requestAnimationFrame(_center);   // 레이아웃 확정 후 한 번 더(정확히 가운데)
-  }
+  // 시작 위치는 왼쪽 위 고정(스크롤 0,0) — 가운데로 자동 이동 안 함 → 새로고침해도 안 튐.
+  if (_scroll) { _scroll.scrollLeft = 0; _scroll.scrollTop = 0; }
 
   initShapeDrag();
   // initDiceDrag() removed — dice is now fixed-position above upload-fab.
@@ -6675,12 +6668,13 @@ function _declumpShapes(canvas, opts) {
     H = Math.max(opts.minH || 640, topPad + totalArea / (W * (opts.density || 0.5)));
     canvas.style.height = Math.round(H) + 'px';
   }
-  // 최신(hero)은 필드 한가운데로 고정 (옵션) — 시작 스크롤이 여기 가운데로 옴
+  // 최신(hero)은 시작 화면(왼쪽 위, 스크롤 0,0)에 보이게 — 첫 뷰포트 폭 안에서 위쪽 가운데.
   if (opts.heroCenter !== false) {
+    const vw = (typeof window !== 'undefined' ? window.innerWidth : W);
     items.forEach(it => {
       if (it.el.classList.contains('is-newest')) {
-        it.x = Math.max(margin, (W - it.w) / 2);
-        it.y = Math.max(topPad, (H - it.h) / 2);
+        it.x = Math.max(margin, Math.min(W - it.w - margin, (Math.min(vw, W) - it.w) / 2));
+        it.y = topPad;
         it.pinned = true; it._hero = true;
       }
     });

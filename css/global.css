@@ -812,9 +812,9 @@ body.is-universe-route #universe-head {
   z-index: 1;
 }
 
-/* ===== 도형(발견) 우주 = 사방으로 펼쳐진 2D 스크롤 공간 (사용자 요청) =====
-   .shapes-universe = 뷰포트 크기 스크롤 창, .universe-field = 그보다 큰 2D 필드.
-   시작 시 JS 가 필드 한가운데로 스크롤 → 위/아래/좌/우 모두에 도형이 있음. */
+/* ===== 도형(발견) 우주 = 내용만큼 펼쳐지는 2D 스크롤 공간 (사용자 요청) =====
+   .shapes-universe = 뷰포트 크기 스크롤 창, .universe-field = 도형 면적에 맞춘 2D 필드.
+   필드는 도형이 채워질수록(주로 좌우로) 넓어짐. 시작은 왼쪽위 고정(가운데 스크롤 X) → 새로고침해도 안 튐. */
 body.is-shapes-route .shapes-universe {
   position: fixed;
   top: 0;
