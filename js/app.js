@@ -6596,23 +6596,29 @@ function _floatingFolderHtml(it, pos) {
   const base = `left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;`;
 
   if (it.kind === 'folderNew') {
+    // '새 폴더' — 윈도우 폴더 모양 고스트(반투명) + 플러스 (사용자 요청: 폴더 모양 통일)
     return `
-      <div class="floating-shape floating-folder folder-orb-new" data-folder-new="1" data-uid="${it.id}" style="${base}">
-        <div class="folder-orb">
-          <i class="ri-add-line"></i>
+      <div class="floating-shape floating-folder is-winfolder is-wf-new" data-folder-new="1" data-uid="${it.id}" style="${base}">
+        <div class="winfolder">
+          <span class="wf-back" aria-hidden="true"></span>
+          <span class="wf-front" aria-hidden="true"></span>
+          <span class="wf-plus" aria-hidden="true"><i class="ri-add-line"></i></span>
         </div>
         <div class="folder-orb-title">${_t('새 폴더', 'New folder')}</div>
       </div>`;
   }
 
   if (it.kind === 'folderTpl') {
+    // 템플릿(만들기 유도) 폴더 — 윈도우 폴더 모양에 색 입히고 이모지를 앞면에
     const f = it.tpl;
     const title = (f.title || '폴더').replace(/</g,'&lt;');
     return `
-      <div class="floating-shape floating-folder folder-orb-tpl" data-folder-template="${title.replace(/"/g,'&quot;')}" data-uid="${it.id}"
+      <div class="floating-shape floating-folder is-winfolder is-wf-tpl" data-folder-template="${title.replace(/"/g,'&quot;')}" data-uid="${it.id}"
            style="${base} --folder-color:${f.color};">
-        <div class="folder-orb">
-          <span class="folder-orb-emoji">${f.emoji}</span>
+        <div class="winfolder">
+          <span class="wf-back" aria-hidden="true"></span>
+          <span class="wf-front" aria-hidden="true"></span>
+          <span class="wf-emoji" aria-hidden="true">${f.emoji}</span>
         </div>
         <div class="folder-orb-title">${title}</div>
       </div>`;
@@ -6781,8 +6787,12 @@ window.renderUniverse = async function () {
   // 매 렌더 가운데로 두게 한다 (사용자 요청). 드래그하면 그때 저장돼 우선됨.
   const realFolderCount = allItems.filter(it => it.kind === 'folder').length;
 
-  const cols = 3;
-  const universeHeight = Math.max(900, Math.ceil(allItems.length / cols) * 280);
+  // 모바일은 2열 + 간격 넓게 → 폴더(152px)·도형이 좁은 화면에서 안 겹치게 (발견 페이지와 동일 방식)
+  const _uniNarrow = (typeof window !== 'undefined' ? window.innerWidth : 1024) < 600;
+  const cols = _uniNarrow ? 2 : 3;
+  const _uniSpread = _uniNarrow ? 46 : 30;   // 열 간 가로 간격(%)
+  const _uniRowH   = _uniNarrow ? 250 : 280;  // 행 간 세로 간격(px)
+  const universeHeight = Math.max(900, Math.ceil(allItems.length / cols) * _uniRowH + 60);
 
   // 별 배경은 #app-content 밖의 영구 레이어로 → innerHTML 재설정에 안 영향받음.
   // _ensurePersistentStarfield() 가 body 에 한 번만 생성, 페이지 .is-universe 클래스로 보이기 토글.
@@ -6808,18 +6818,19 @@ window.renderUniverse = async function () {
       // 처음 배치는 인덱스 기반 격자 → 그대로 두면 항목이 추가/삭제될 때(폴더에
       // 담을 때) 인덱스가 밀려 위치가 초기화됨. 그래서 첫 렌더에 위치를 저장해
       // 고정시킨다(이후엔 stored 사용 → 안 밀림).
-      xBase = 4 + col * 30 + (seed % 14);
-      yPx   = 30 + row * 260 + ((seed >>> 4) % 50);
+      xBase = 4 + col * _uniSpread + (seed % (_uniNarrow ? 5 : 14));
+      yPx   = 30 + row * _uniRowH + ((seed >>> 4) % (_uniNarrow ? 30 : 50));
       rot   = (((seed >>> 8) % 140) - 70) / 10;
-      // 폴더 1개 케이스는 자동저장 스킵 → 중앙정렬 유지 (드래그 시에만 저장).
-      const _skipAutoSave = (it.kind === 'folder' && realFolderCount === 1);
+      // 폴더 1개 케이스는 폴더+새폴더버튼 자동저장 스킵 → 중앙 나란히 정렬 유지 (드래그 시에만 저장).
+      const _skipAutoSave = ((it.kind === 'folder' || it.kind === 'folderNew') && realFolderCount === 1);
       if (!_skipAutoSave) {
         try { localStorage.setItem('unipos:' + it.id, JSON.stringify({ xPct: xBase, yPx, rot })); } catch (_) {}
       }
     }
     const dur = 10 + ((seed >>> 16) % 18);
-    const dx  = (((seed >>> 12) % 50) - 25);
-    const dy  = (((seed >>> 20) % 50) - 25);
+    const _uniDrift = _uniNarrow ? 10 : 25;   // 모바일은 진폭 줄여 겹침 방지
+    const dx  = (((seed >>> 12) % (_uniDrift * 2)) - _uniDrift);
+    const dy  = (((seed >>> 20) % (_uniDrift * 2)) - _uniDrift);
 
     if (it.kind === 'folder' || it.kind === 'folderTpl' || it.kind === 'folderNew') {
       itemsHtml += _floatingFolderHtml(it, { xBase, yPx, rot, dur, dx, dy });
@@ -6876,7 +6887,7 @@ window.renderUniverse = async function () {
   try { _centerUniverseFolder(); } catch (_) {}
 };
 
-// 폴더 1개일 때 가로 중앙 + 상단쪽에 배치 (드래그하면 그 위치 저장돼 우선).
+// 폴더 1개일 때: 폴더 + '새 폴더' 버튼을 가로 중앙에 나란히 (겹침 방지). 드래그하면 그 위치 저장돼 우선.
 function _centerUniverseFolder() {
   const canvas = document.querySelector('.shapes-universe.my-universe');
   if (!canvas) return;
@@ -6884,14 +6895,33 @@ function _centerUniverseFolder() {
   if (folders.length !== 1) return;
   const f = folders[0];
   // 사용자가 직접 옮긴(저장된) 위치가 있으면 존중.
-  let stored = null;
-  try { stored = localStorage.getItem('unipos:' + f.getAttribute('data-folder-id')); } catch (_) {}
-  if (stored) return;
+  let fStored = null;
+  try { fStored = localStorage.getItem('unipos:' + f.getAttribute('data-folder-id')); } catch (_) {}
   const cw = canvas.clientWidth || canvas.offsetWidth || 0;
   const fw = f.offsetWidth || 150;
-  const leftPx = Math.max(0, Math.round((cw - fw) / 2));
-  f.style.setProperty('left', leftPx + 'px', 'important');
-  f.style.setProperty('top', '120px', 'important');
+  const newBtn = canvas.querySelector('.floating-folder[data-folder-new]');
+  let newStored = null;
+  try { newStored = newBtn && localStorage.getItem('unipos:folder-new'); } catch (_) {}
+
+  // 둘 다 안 옮겼으면 → 가운데 나란히 배치
+  if (newBtn && !fStored && !newStored) {
+    const nw = newBtn.offsetWidth || 150;
+    const gap = 14;
+    const total = fw + gap + nw;
+    let startX = Math.round((cw - total) / 2);
+    if (startX < 6) startX = 6;
+    f.style.setProperty('left', startX + 'px', 'important');
+    f.style.setProperty('top', '130px', 'important');
+    newBtn.style.setProperty('left', (startX + fw + gap) + 'px', 'important');
+    newBtn.style.setProperty('top', '130px', 'important');
+    return;
+  }
+  // 폴더만 안 옮겼으면 폴더만 가운데
+  if (!fStored) {
+    const leftPx = Math.max(0, Math.round((cw - fw) / 2));
+    f.style.setProperty('left', leftPx + 'px', 'important');
+    f.style.setProperty('top', '120px', 'important');
+  }
 }
 window._centerUniverseFolder = _centerUniverseFolder;
 

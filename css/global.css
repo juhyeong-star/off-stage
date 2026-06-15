@@ -18277,3 +18277,43 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
   box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.45);
 }
 .floating-folder.is-winfolder .folder-orb-count { z-index: 4; right: 7px; bottom: 6px; }
+
+/* 템플릿 폴더 — 윈도우 폴더에 색 입히고 이모지를 앞면에 얹기 */
+.floating-folder.is-wf-tpl .wf-back {
+  background: linear-gradient(160deg, var(--folder-color, #BA68C8), rgba(0,0,0,0.35));
+  filter: brightness(0.82);
+}
+.floating-folder.is-wf-tpl .wf-front {
+  background: linear-gradient(160deg, var(--folder-color, #BA68C8), rgba(0,0,0,0.08));
+}
+.wf-emoji {
+  position: absolute; left: 0; right: 0; bottom: 20%;
+  text-align: center; font-size: 32px; line-height: 1; z-index: 4;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.35));
+  pointer-events: none;
+}
+
+/* '새 폴더' — 윈도우 폴더 고스트(반투명) + 플러스 */
+.floating-folder.is-wf-new .winfolder { filter: drop-shadow(0 6px 13px rgba(0,0,0,0.32)); }
+.floating-folder.is-wf-new .wf-back {
+  background: rgba(255,255,255,0.13);
+}
+.floating-folder.is-wf-new .wf-front {
+  background: rgba(255,255,255,0.18);
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.28);
+}
+.wf-plus {
+  position: absolute; left: 0; right: 0; bottom: 16%;
+  text-align: center; z-index: 4; line-height: 1; pointer-events: none;
+  color: rgba(255,255,255,0.92); font-size: 38px;
+}
+.floating-folder.is-wf-new:hover .wf-back { background: rgba(255,255,255,0.2); }
+.floating-folder.is-wf-new:hover .wf-front { background: rgba(255,255,255,0.26); }
+
+/* 모바일 — 폴더도 살짝 줄여 2열에 여유 있게 (도형 크기와 균형) */
+@media (max-width: 480px) {
+  .floating-folder.is-winfolder .winfolder { width: 130px; height: 100px; }
+  .wf-paper { top: 9px; width: 66px; height: 46px; }
+  .wf-emoji { font-size: 28px; }
+  .wf-plus { font-size: 34px; }
+}
