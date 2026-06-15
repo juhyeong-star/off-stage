@@ -994,6 +994,37 @@ body.is-universe-route #universe-head {
 /* 떠다니는 오브제 안의 어떤 이미지든 기본 드래그 금지(안전망) */
 .floating-shape img { -webkit-user-drag: none; user-select: none; }
 
+/* ── 폴더 = 폴더 아이콘 + 미니 썸네일(커버) 모양 (사용자 요청) ── */
+.floating-folder.is-folder-icon .folder-icon-orb {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  width: 150px !important; height: 134px !important;
+  border-radius: 0 !important;
+}
+.floating-folder.is-folder-icon .folder-icon-orb i.folder-icon-bg {
+  font-size: 142px !important;                       /* 기존 .folder-orb i(56px) 이김 */
+  line-height: 1 !important;
+  color: #FFCA28 !important;                         /* 폴더 노란색 */
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,0.5));
+  width: auto !important; height: auto !important;
+}
+.floating-folder.is-folder-icon .folder-icon-orb img.folder-mini-thumb {
+  position: absolute !important;
+  width: 58px !important; height: 58px !important;
+  left: 50% !important; top: 60% !important;
+  transform: translate(-50%, -50%) !important;
+  border-radius: 9px !important;
+  object-fit: cover !important;
+  border: 2px solid rgba(255,255,255,0.92) !important;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.45) !important;
+  pointer-events: none;
+}
+.floating-folder.is-folder-icon .folder-orb-count {
+  right: 6px; bottom: 2px;
+}
+
 /* 폴더 안 항목의 '폴더에서 빼기' ✕ 버튼 (폴더 모드에서만 렌더됨) */
 .folder-remove-btn {
   position: absolute; top: 2px; right: 2px; z-index: 8;

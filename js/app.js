@@ -6407,15 +6407,19 @@ function _floatingFolderHtml(it, pos) {
       </div>`;
   }
 
-  // 실제 사용자 폴더
+  // 실제 사용자 폴더 — 폴더 아이콘 + 미니 썸네일(커버) (사용자 요청).
   const p = it.folder;
   const title = (p.title || '무제').replace(/</g,'&lt;');
   const count = (p.trackIds || []).length;
-  const cover = p.cover || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(p.id || p.title || 'pl'));
+  const cover = p.cover || '';
+  const thumb = cover
+    ? `<img class="folder-mini-thumb" src="${cover}" alt="${title.replace(/"/g,'&quot;')}" loading="lazy" draggable="false">`
+    : '';
   return `
-    <div class="floating-shape floating-folder" data-folder-id="${p.id}" style="${base}">
-      <div class="folder-orb">
-        <img src="${cover}" alt="${title.replace(/"/g,'&quot;')}" loading="lazy" draggable="false">
+    <div class="floating-shape floating-folder is-folder-icon" data-folder-id="${p.id}" style="${base}">
+      <div class="folder-orb folder-icon-orb">
+        <i class="ri-folder-3-fill folder-icon-bg" aria-hidden="true"></i>
+        ${thumb}
         <span class="folder-orb-count">${count}</span>
       </div>
       <div class="folder-orb-title">${title}</div>
@@ -6561,6 +6565,10 @@ window.renderUniverse = async function () {
   // Stable order: sort by item id so reloading doesn't rearrange the grid.
   allItems.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
+  // 실제 폴더가 정확히 1개면 자동 위치저장을 건너뛰어 _centerUniverseFolder 가
+  // 매 렌더 가운데로 두게 한다 (사용자 요청). 드래그하면 그때 저장돼 우선됨.
+  const realFolderCount = allItems.filter(it => it.kind === 'folder').length;
+
   const cols = 3;
   const universeHeight = Math.max(900, Math.ceil(allItems.length / cols) * 280);
 
@@ -6591,7 +6599,11 @@ window.renderUniverse = async function () {
       xBase = 4 + col * 30 + (seed % 14);
       yPx   = 30 + row * 260 + ((seed >>> 4) % 50);
       rot   = (((seed >>> 8) % 140) - 70) / 10;
-      try { localStorage.setItem('unipos:' + it.id, JSON.stringify({ xPct: xBase, yPx, rot })); } catch (_) {}
+      // 폴더 1개 케이스는 자동저장 스킵 → 중앙정렬 유지 (드래그 시에만 저장).
+      const _skipAutoSave = (it.kind === 'folder' && realFolderCount === 1);
+      if (!_skipAutoSave) {
+        try { localStorage.setItem('unipos:' + it.id, JSON.stringify({ xPct: xBase, yPx, rot })); } catch (_) {}
+      }
     }
     const dur = 10 + ((seed >>> 16) % 18);
     const dx  = (((seed >>> 12) % 50) - 25);
@@ -6647,7 +6659,29 @@ window.renderUniverse = async function () {
 
   // Reuse the same drag system as the main shapes page
   if (typeof initShapeDrag === 'function') initShapeDrag();
+
+  // 폴더가 하나면 화면 가로 중앙으로 (사용자 요청). 여러 개면 그대로 둠.
+  try { _centerUniverseFolder(); } catch (_) {}
 };
+
+// 폴더 1개일 때 가로 중앙 + 상단쪽에 배치 (드래그하면 그 위치 저장돼 우선).
+function _centerUniverseFolder() {
+  const canvas = document.querySelector('.shapes-universe.my-universe');
+  if (!canvas) return;
+  const folders = canvas.querySelectorAll('.floating-folder[data-folder-id]');
+  if (folders.length !== 1) return;
+  const f = folders[0];
+  // 사용자가 직접 옮긴(저장된) 위치가 있으면 존중.
+  let stored = null;
+  try { stored = localStorage.getItem('unipos:' + f.getAttribute('data-folder-id')); } catch (_) {}
+  if (stored) return;
+  const cw = canvas.clientWidth || canvas.offsetWidth || 0;
+  const fw = f.offsetWidth || 150;
+  const leftPx = Math.max(0, Math.round((cw - fw) / 2));
+  f.style.setProperty('left', leftPx + 'px', 'important');
+  f.style.setProperty('top', '120px', 'important');
+}
+window._centerUniverseFolder = _centerUniverseFolder;
 
 // body 에 영구 별 레이어 한 번만 생성. 페이지 이동 / innerHTML 재설정 영향 X.
 // .is-universe-route 클래스로 보임/숨김 토글.
