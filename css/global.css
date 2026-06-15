@@ -812,6 +812,46 @@ body.is-universe-route #universe-head {
   z-index: 1;
 }
 
+/* ===== 도형(발견) 우주 = 사방으로 펼쳐진 2D 스크롤 공간 (사용자 요청) =====
+   .shapes-universe = 뷰포트 크기 스크롤 창, .universe-field = 그보다 큰 2D 필드.
+   시작 시 JS 가 필드 한가운데로 스크롤 → 위/아래/좌/우 모두에 도형이 있음. */
+body.is-shapes-route .shapes-universe {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: var(--player-height, 0px);
+  width: auto;
+  height: auto;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  background: #000;
+  z-index: 0;
+}
+@media (max-width: 768px) {
+  /* 모바일은 상단 탭바 아래부터 */
+  body.is-shapes-route .shapes-universe {
+    top: calc(var(--mobile-tab-h, 56px) + env(safe-area-inset-top, 0px));
+  }
+}
+.universe-field {
+  position: relative;
+}
+/* page-intro 를 데스크톱 도형 페이지에서도 떠있게 (고정 스크롤 창 위에 라벨로) */
+body.is-shapes-route .page-intro {
+  position: fixed;
+  top: 14px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  z-index: 50;
+  pointer-events: none;
+  background: transparent;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.85), 0 0 12px rgba(0,0,0,0.6);
+}
+
 .floating-shape {
   position: absolute;
   cursor: grab;
