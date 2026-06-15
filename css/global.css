@@ -7367,28 +7367,29 @@ html, body { overflow-x: hidden; max-width: 100%; }
 
 /* Small phones — keep legibility, scale shape down but not text */
 @media (max-width: 420px) {
-  .floating-shape { padding: 14px; }
+  .floating-shape { padding: 10px; }
   .floating-shape .shape-text {
-    font-size: 21px;   /* 19 → 21 */
-    max-width: 170px;
+    font-size: 15px;   /* 도형 축소에 맞춰 텍스트도 줄임 */
+    max-width: 110px;
     line-height: 1.25;
     font-weight: 700;
   }
-  .shape-circle { width: 168px; height: 168px; }
-  .shape-oval { width: 195px; height: 132px; }
-  .shape-rect { width: 184px; height: 138px; }
-  .shape-wide { width: 210px; height: 124px; }
-  .shape-pill { width: 204px; height: 106px; }
+  /* 모바일 2열에서 안 겹치게 — 도형 크기 축소 (사용자 요청). 화면 절반 안쪽에 들어오게. */
+  .shape-circle { width: 124px; height: 124px; }
+  .shape-oval { width: 146px; height: 100px; }
+  .shape-rect { width: 138px; height: 104px; }
+  .shape-wide { width: 136px; height: 92px; }
+  .shape-pill { width: 134px; height: 82px; }
   .shape-triangle {
-    border-left-width: 92px; border-right-width: 92px; border-bottom-width: 165px;
+    border-left-width: 70px; border-right-width: 70px; border-bottom-width: 124px;
   }
-  .shape-triangle .shape-text { bottom: -155px; width: 160px; font-size: 18px; }
-  .shape-star { width: 178px; height: 178px; }
-  .shape-star .shape-text { font-size: 13px; max-width: 55%; -webkit-line-clamp: 3; }
-  .shape-diamond { width: 156px; height: 156px; }
-  .shape-diamond .shape-text { font-size: 14px; max-width: 55%; -webkit-line-clamp: 3; }
-  .shape-hexagon { width: 175px; height: 158px; }
-  .shape-parallelogram { width: 195px; height: 130px; }
+  .shape-triangle .shape-text { bottom: -116px; width: 122px; font-size: 15px; }
+  .shape-star { width: 134px; height: 134px; }
+  .shape-star .shape-text { font-size: 12px; max-width: 55%; -webkit-line-clamp: 3; }
+  .shape-diamond { width: 120px; height: 120px; }
+  .shape-diamond .shape-text { font-size: 12px; max-width: 55%; -webkit-line-clamp: 3; }
+  .shape-hexagon { width: 132px; height: 120px; }
+  .shape-parallelogram { width: 148px; height: 100px; }
   .shape-resize-handle { display: none !important; }
 }
 

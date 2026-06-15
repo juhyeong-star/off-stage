@@ -6096,17 +6096,19 @@ function renderShapes() {
     const _newest = _isNewestSlot && !stored;          // 최신 + 드래그 안 함 → 메인 자리
     const xBase = stored ? stored.xPct
                 : _newest ? (cols === 2 ? 30 : 40)     // 가운데 위
-                : (2 + col * _colSpread + (seed % (_isNarrow ? 10 : 16)));
+                : (4 + col * _colSpread + (seed % (_isNarrow ? 4 : 16)));
     const yPx   = stored ? stored.yPx
                 : _newest ? 28
                 : (330 + row * _rowH + ((seed >>> 5) % 44));   // 최신 아래로 밀림
     const rot = _newest ? 0 : ((((seed >>> 10) % 140) - 70) / 10);
     const dur = 10 + ((seed >>> 18) % 18);
-    const dx = ((((seed >>> 22) % 50)) - 25);
-    const dy = ((((seed >>> 26) % 50)) - 25);
-    // 크기 = 등록 크기 고정 + 인기도(♥*3+재생)에 따라 최대 +35% (#3, #4)
+    // 떠다니는 진폭: 모바일은 좁아서 ±10, PC는 ±25 (겹침 방지)
+    const _drift = _isNarrow ? 10 : 25;
+    const dx = ((((seed >>> 22) % (_drift * 2))) - _drift);
+    const dy = ((((seed >>> 26) % (_drift * 2))) - _drift);
+    // 크기 = 등록 크기 고정 + 인기도(♥*3+재생)에 따라 (모바일 +18%, PC +35%) (#3, #4)
     const _pop = ((track.likes || 0) * 3) + (track.plays || 0);
-    const _popScale = (1 + 0.35 * Math.min(1, _pop / _maxPop)).toFixed(3);
+    const _popScale = (1 + (_isNarrow ? 0.18 : 0.35) * Math.min(1, _pop / _maxPop)).toFixed(3);
     const _newestStyle = _newest ? ' z-index:30;' : '';     // 최신은 앞으로 (#6)
 
     const isTriangle = shape === 'triangle';
