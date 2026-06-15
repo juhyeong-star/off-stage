@@ -17798,6 +17798,28 @@ body:has(#global-player.expanded) .lang-toggle { display: none !important; }
   color: var(--text-secondary, #888);
   font-size: 13px;
 }
+/* 소식 없을 때 — 투명 점선 포스트잇 + 추가 (예전 디자인, 사용자 요청) */
+.soshik-stack-empty { padding-top: 4px; }
+.soshik-add-postit {
+  width: 100%;
+  aspect-ratio: 1 / 0.74;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 8px;
+  background: rgba(255, 224, 102, 0.08);
+  border: 2px dashed rgba(255, 224, 102, 0.5);
+  border-radius: 12px;
+  color: rgba(255, 224, 102, 0.88);
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, transform 0.12s;
+}
+.soshik-add-postit:hover {
+  background: rgba(255, 224, 102, 0.15);
+  border-color: rgba(255, 224, 102, 0.78);
+  transform: translateY(-1px);
+}
+.soshik-add-postit i { font-size: 42px; line-height: 1; }
+.soshik-add-postit-label { font-size: 14px; font-weight: 700; letter-spacing: 0.3px; }
 .soshik-dots {
   display: flex; gap: 5px; justify-content: center;
   margin-top: 12px;

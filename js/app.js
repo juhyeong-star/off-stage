@@ -10525,6 +10525,17 @@ function _soshikStackHtml(notes, isSelf, artistName) {
   const rest = sorted.filter(n => !pinnedSet.has(n.id));
   const ordered = [...pinnedNotes, ...rest];
 
+  // 소식이 없을 때 — 예전처럼 투명 포스트잇 + 카드 (본인만). 방문자는 빈 화면. (사용자 요청)
+  if (ordered.length === 0) {
+    if (!isSelf) return '';
+    return `<div class="soshik-stack soshik-stack-empty" id="soshik-stack" data-idx="0">
+      <div class="soshik-add-postit" onclick="goAddSoshik()" title="${_t('새 소식 쓰기','New post')}" role="button" tabindex="0">
+        <i class="ri-add-line"></i>
+        <span class="soshik-add-postit-label">${_i18n('소식','Post')}</span>
+      </div>
+    </div>`;
+  }
+
   const cardsHtml = ordered.map((n) => {
     const c = NOTE_COLORS[n.color] || NOTE_COLORS.yellow;
     const isPin = pinnedSet.has(n.id);
