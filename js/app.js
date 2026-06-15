@@ -6045,12 +6045,24 @@ function renderShapes() {
   // rendered twice to fill the universe; that doubled up on every upload.
   let shapesHtml = '';
   const totalShapes = tracks.length;
-  // 모바일은 2열 + 행 간격 넓게 → 도형이 너무 겹쳐 뒤가 안 보이던 것 완화 (#5)
+  // 격자(grid)가 "너무 이상하다"는 피드백 → 자연스럽게 막 흩뿌리되 많이 겹치진 않게.
+  // 시드 기반 랜덤 위치로 뿌리고, 렌더 직후 _declumpShapes() 가 많이 겹친 것만 떼어놓음.
   const _isNarrow = (typeof window !== 'undefined' ? window.innerWidth : 1024) < 600;
-  const cols = _isNarrow ? 2 : 3;
-  const _colSpread = _isNarrow ? 46 : 30;     // 열 간 가로 간격(%)
-  const _rowH = _isNarrow ? 360 : 300;        // 행 간 세로 간격(px)
-  const universeHeight = Math.max(900, Math.ceil(totalShapes / cols) * _rowH + 320);
+  const _vwNow = (typeof window !== 'undefined' ? window.innerWidth : 1024);
+  // 캔버스 높이: 전체 도형 면적 / 밀도 (밀도 낮을수록 더 넓게 퍼짐 → 덜 겹침)
+  const _avgW = _isNarrow ? 134 : (_vwNow < 768 ? 230 : 275);
+  const _avgH = _isNarrow ? 108 : (_vwNow < 768 ? 180 : 215);
+  const _scatterW = Math.min(_vwNow, 1100);
+  const _density = 0.45;   // 낮을수록 더 넓게 흩뿌려짐
+  const universeHeight = Math.max(700, Math.round(120 + (totalShapes * _avgW * _avgH) / (_scatterW * _density)));
+  // 균등하게 흩뿌리기 위한 지터-그리드: 화면 비율에 맞춰 칸 수를 정하고, 각 도형을
+  // 자기 칸 '안에서' 랜덤 위치에 둠 → 한쪽 쏠림 없이 고르되 격자 느낌은 안 남.
+  const _aspect = _scatterW / Math.max(1, universeHeight);
+  let _gCols = Math.max(1, Math.round(Math.sqrt(Math.max(1, totalShapes) * _aspect)));
+  _gCols = Math.min(_gCols, Math.max(1, totalShapes));
+  const _gRows = Math.max(1, Math.ceil(totalShapes / _gCols));
+  const _cellHpx = (universeHeight - 70) / _gRows;
+  const _swPctRough = _isNarrow ? 33 : (_vwNow < 768 ? 22 : 22);   // 도형 대략 가로%(칸 안 여백 계산용)
   // 인기도(♥*3 + 재생) 최대값 — 크기 스케일 정규화용 (#4)
   const _maxPop = Math.max(1, ...tracks.map(t => ((t.likes || 0) * 3) + (t.plays || 0)));
 
@@ -6084,22 +6096,25 @@ function renderShapes() {
     const lines = track.lines || [track.title, track.artist, '클릭해서 들어봐!'];
     const safeLines = lines.map(l => (l || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
 
-    // 최신(si 0)은 가운데 위 자리 차지, 나머지는 그 아래 grid 로 (#6)
+    // 최신(si 0)은 위쪽 가운데(앞으로), 나머지는 시드 랜덤으로 전체에 흩뿌림 (#6)
     const _isNewestSlot = (si === 0);
-    const col = _isNewestSlot ? 0 : ((si - 1) % cols);
-    const row = _isNewestSlot ? 0 : Math.floor((si - 1) / cols);
     // Seeded per-track-per-pass per-viewer — different users see different
     // default layouts so personal arrangements feel personal.
     const seed = _hashSeed(_viewerSeed + ':' + track.id + ':' + pass);
     // Stored user drag overrides the seeded default
     const stored = _loadShapePos(track.id, pass);
     const _newest = _isNewestSlot && !stored;          // 최신 + 드래그 안 함 → 메인 자리
+    const _pinned = !!stored || _newest;               // 고정(드래그/최신) — declump 가 안 흩뜨림
+    // 세로는 '행'으로 고르게 나눠 위아래 골고루(쏠림 방지), 가로는 전체폭 랜덤 → 열 느낌 없이 유기적.
+    const _rx = ((seed >>> 0) & 0xffff) / 0xffff;
+    const _ry = ((seed >>> 16) & 0xffff) / 0xffff;
+    const _ri = Math.floor((si - 1) / _gCols);
     const xBase = stored ? stored.xPct
-                : _newest ? (cols === 2 ? 30 : 40)     // 가운데 위
-                : (4 + col * _colSpread + (seed % (_isNarrow ? 4 : 16)));
+                : _newest ? 38                          // 위쪽 가운데(declump 가 정확히 가운데로)
+                : (3 + _rx * Math.max(12, 100 - _swPctRough - 6));   // 전체폭에 랜덤
     const yPx   = stored ? stored.yPx
-                : _newest ? 28
-                : (330 + row * _rowH + ((seed >>> 5) % 44));   // 최신 아래로 밀림
+                : _newest ? 24
+                : (60 + _ri * _cellHpx + _ry * Math.max(20, _cellHpx - 110));
     const rot = _newest ? 0 : ((((seed >>> 10) % 140) - 70) / 10);
     const dur = 10 + ((seed >>> 18) % 18);
     // 떠다니는 진폭: 모바일은 좁아서 ±10, PC는 ±25 (겹침 방지)
@@ -6117,7 +6132,7 @@ function renderShapes() {
       : `background: ${color}; --shape-bg: ${color};`;
 
     shapesHtml += `
-      <div class="floating-shape shape-${shape}${_newest ? ' is-newest' : ''}" data-track-id="${track.id}" data-pass="${pass}" data-artist="${encodeURIComponent(track.artist || '')}"
+      <div class="floating-shape shape-${shape}${_newest ? ' is-newest' : ''}" data-track-id="${track.id}" data-pass="${pass}"${_pinned ? ' data-pinned="1"' : ''} data-artist="${encodeURIComponent(track.artist || '')}"
            style="${bgStyle} left:${xBase}%; top:${yPx}px;${_newestStyle} animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg; --scale:${_popScale};">
         <div class="shape-text">${safeLines.join('\n')}</div>
       </div>
@@ -6166,6 +6181,18 @@ function renderShapes() {
       <i class="ri-add-line"></i>
     </div>
   `;
+
+  // 유기적으로 흩뿌린 뒤, 많이 겹친 것만 떼어놓기 (살짝 겹침은 허용). innerHTML 직후
+  // 동기 실행이라 화면엔 정리된 최종 위치만 그려짐(중간 위치 깜빡임 없음).
+  try {
+    const _uni = appContent.querySelector('.shapes-universe');
+    if (_uni) _declumpShapes(_uni, {
+      pinnedFn: el => el.dataset.pinned === '1',
+      slack: _isNarrow ? 0.14 : 0.18,
+      density: _density,
+      rand: _mulberry32((_hashSeed(_viewerSeed + ':scatter') >>> 0) || 1)
+    });
+  } catch (e) { console.warn('[shapes] declump', e); }
 
   initShapeDrag();
   // initDiceDrag() removed — dice is now fixed-position above upload-fab.
@@ -6553,53 +6580,134 @@ window.diceBouncePlay = function(el) {
   setTimeout(() => shuffleAllShapes(), 120);
 };
 
-// Animated reshuffle of every floating shape on the current page.
-// 예전엔 완전 랜덤 배치라 모바일에서 글씨 안 보일 만큼 겹쳤음 → 기본 배치와 같은
-// 격자(모바일 2열 / PC 3열) + 약한 지터로 흩뿌려 항상 안 겹치게. 순서만 섞어서
-// "셔플" 느낌은 유지.
-function shuffleAllShapes() {
-  const shapes = Array.from(document.querySelectorAll('.floating-shape[data-track-id], .floating-shape[data-note-id]'));
-  if (!shapes.length) return;
-  const universe = shapes[0].parentElement;
-  if (!universe) return;
+// ── 유기적 흩뿌리기 + 충돌 완화(relax) ─────────────────────────────────────
+// 격자(grid)가 딱딱하다는 피드백 → 막 뿌리되 '많이' 겹치는 것만 떼어놓음(살짝 겹침 허용).
 
-  const isNarrow = (typeof window !== 'undefined' ? window.innerWidth : 1024) < 600;
-  const cols       = isNarrow ? 2 : 3;
-  const colSpread  = isNarrow ? 46 : 30;   // 열 간 가로 간격(%)
-  const rowH       = isNarrow ? 320 : 280;  // 행 간 세로 간격(px)
-  const jitterX    = isNarrow ? 4 : 10;
-  const baseX      = 4;
+// 시드 기반 결정적 RNG — 리로드해도 같은 배치가 나오게.
+function _mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
-  // 순서를 섞는다 (Fisher–Yates) → 같은 격자라도 도형이 자리를 바꿔 '섞인' 느낌
-  const order = shapes.slice();
-  for (let i = order.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const t = order[i]; order[i] = order[j]; order[j] = t;
+// 원형 근사 반복 분리. (a.r+b.r)*(1-slack) 보다 가까운 쌍만 살짝 밀어냄 → slack 만큼 겹침 허용.
+function _relaxScatter(items, W, H, o) {
+  o = o || {};
+  const iters = o.iters || 90;
+  const slack = o.slack != null ? o.slack : 0.16;
+  const topPad = o.topPad != null ? o.topPad : 24;
+  const margin = o.margin != null ? o.margin : 6;
+  const rand = o.rand || Math.random;
+  for (let k = 0; k < iters; k++) {
+    let moved = false;
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const a = items[i], b = items[j];
+        let dx = (a.x + a.w / 2) - (b.x + b.w / 2);
+        let dy = (a.y + a.h / 2) - (b.y + b.h / 2);
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 0.5) { dx = rand() - 0.5; dy = rand() - 0.5; dist = Math.sqrt(dx * dx + dy * dy) || 0.5; }
+        const minD = (a.r + b.r) * (1 - slack);
+        if (dist < minD) {
+          const push = minD - dist, ux = dx / dist, uy = dy / dist;
+          const aFree = !a.pinned, bFree = !b.pinned;
+          const aMove = aFree ? (bFree ? push / 2 : push) : 0;
+          const bMove = bFree ? (aFree ? push / 2 : push) : 0;
+          a.x += ux * aMove; a.y += uy * aMove;
+          b.x -= ux * bMove; b.y -= uy * bMove;
+          moved = true;
+        }
+      }
+    }
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (it.pinned) continue;
+      it.x = Math.max(margin, Math.min(W - it.w - margin, it.x));
+      it.y = Math.max(topPad, Math.min(H - it.h - topPad, it.y));
+    }
+    if (!moved) break;
   }
+}
 
-  // 캔버스 높이를 행 수에 맞춰 늘려 둠 (도형이 밑으로 잘리지 않게)
-  const neededH = Math.ceil(order.length / cols) * rowH + 140;
-  const curH = universe.getBoundingClientRect().height || 0;
-  if (neededH > curH) universe.style.height = neededH + 'px';
+// DOM 도형 측정 → relax → 위치 적용. render/shuffle 공용.
+//   opts.pinnedFn(el)→고정, opts.heroCenter!==false 면 .is-newest 를 위쪽 가운데 고정,
+//   opts.slack/density/rand 조절.
+function _declumpShapes(canvas, opts) {
+  opts = opts || {};
+  const els = Array.from(canvas.querySelectorAll('.floating-shape[data-track-id], .floating-shape[data-note-id]'));
+  if (els.length < 2) return;
+  const W = canvas.clientWidth || canvas.getBoundingClientRect().width || 360;
+  const topPad = opts.topPad != null ? opts.topPad : 24;
+  const margin = opts.margin != null ? opts.margin : 6;
+  const items = els.map(el => {
+    const ps = parseFloat(getComputedStyle(el).getPropertyValue('--scale')) || 1;   // 인기 크기(transform이라 offset엔 안 잡힘)
+    const w = (el.offsetWidth || 80) * ps, h = (el.offsetHeight || 80) * ps;
+    const isPct = (el.style.left || '').indexOf('%') >= 0;
+    const lp = parseFloat(el.style.left) || 0;
+    const x = isPct ? (lp / 100) * W : lp;
+    const y = parseFloat(el.style.top) || 0;
+    const pinned = opts.pinnedFn ? !!opts.pinnedFn(el) : false;
+    return { el, w, h, x, y, pinned, r: (w + h) / 4 };
+  });
+  // 최신(hero)은 위쪽 가운데로 고정 (옵션)
+  if (opts.heroCenter !== false) {
+    items.forEach(it => {
+      if (it.el.classList.contains('is-newest')) {
+        it.x = Math.max(margin, (W - it.w) / 2); it.y = topPad; it.pinned = true; it._hero = true;
+      }
+    });
+  }
+  // 캔버스 높이 — 면적/밀도 기반(relax 가 떼어놓을 공간 확보)
+  const totalArea = items.reduce((s, it) => s + it.w * it.h, 0);
+  const H = Math.max(opts.minH || 640, topPad + totalArea / (W * (opts.density || 0.5)));
+  canvas.style.height = Math.round(H) + 'px';
+  _relaxScatter(items, W, H, { slack: opts.slack, iters: opts.iters || 90, topPad, margin, rand: opts.rand });
+  items.forEach(it => {
+    // 드래그 저장 위치는 그대로 두고(hero 와 자유 도형만 적용)
+    if (it.pinned && !it._hero) return;
+    it.el.style.left = (it.x / W * 100).toFixed(2) + '%';
+    it.el.style.top = Math.round(it.y) + 'px';
+  });
+}
 
+// 행성 버튼 — 도형을 고르게(지터-그리드 + 칸 셔플) 다시 흩뿌린 뒤 relax 로 정리.
+function shuffleAllShapes() {
+  const universe = document.querySelector('.shapes-universe');
+  if (!universe) return;
+  const els = Array.from(universe.querySelectorAll('.floating-shape[data-track-id], .floating-shape[data-note-id]'));
+  if (!els.length) return;
+  const isNarrow = (typeof window !== 'undefined' ? window.innerWidth : 1024) < 600;
+  const W = universe.clientWidth || 360;
+  const N = els.length;
+  // 러프 캔버스 높이 → 칸 격자
+  const avgW = isNarrow ? 134 : 235, avgH = isNarrow ? 108 : 180;
+  const H = Math.max(700, 120 + (N * avgW * avgH) / (W * 0.45));
+  const aspect = W / Math.max(1, H);
+  let gCols = Math.max(1, Math.round(Math.sqrt(N * aspect)));
+  gCols = Math.min(gCols, N);
+  const gRows = Math.max(1, Math.ceil(N / gCols));
+  const cellHpx = (H - 70) / gRows;
+  const swPct = isNarrow ? 33 : 22;
+  // 행 배정을 섞는다 → 매번 다른 자리(셔플 느낌). 세로는 행으로 고르게, 가로는 전체폭 랜덤.
+  const order = els.slice();
+  for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = order[i]; order[i] = order[j]; order[j] = t; }
   order.forEach((el, idx) => {
-    const col = idx % cols;
-    const row = Math.floor(idx / cols);
-    const x = baseX + col * colSpread + Math.random() * jitterX;
-    const y = 30 + row * rowH + Math.random() * 30;
-    // Pause the floatDrift idle animation so the new left/top sticks
+    const ri = Math.floor(idx / gCols);
+    const x = 3 + Math.random() * Math.max(12, 100 - swPct - 6);
+    const y = 60 + ri * cellHpx + Math.random() * Math.max(20, cellHpx - 110);
     el.style.animation = 'none';
-    // Glide to the new spot
     el.style.transition = 'left 0.6s cubic-bezier(0.34, 1.2, 0.5, 1), top 0.6s cubic-bezier(0.34, 1.2, 0.5, 1)';
     el.style.left = x + '%';
     el.style.top  = y + 'px';
   });
+  // 최신도 같이 흩뿌림(heroCenter:false), 고정 없음
+  _declumpShapes(universe, { slack: isNarrow ? 0.14 : 0.18, density: 0.45, heroCenter: false, rand: Math.random });
   // Resume floatDrift after the glide settles
   setTimeout(() => {
-    order.forEach(el => {
-      el.style.transition = '';
-      el.style.animation = '';   // re-engage the inline `animation:` from the original style
-    });
+    els.forEach(el => { el.style.transition = ''; el.style.animation = ''; });
   }, 700);
 }
 
