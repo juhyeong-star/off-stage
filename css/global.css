@@ -17511,10 +17511,12 @@ html[data-lang="en"] [data-i18n-ko] { display: none !important; }
 .beta-wordmark-float {
   position: fixed;
   top: calc(17px + var(--safe-top, 0px));
-  right: calc(104px + var(--safe-right, 0px));   /* 언어 토글 왼쪽 */
+  left: calc(16px + var(--safe-left, 0px));       /* 왼쪽 위 (사용자 요청) */
   z-index: 1102;
   text-shadow: 0 1px 4px rgba(0,0,0,0.55);
 }
+/* 뒤로가기 버튼(서브페이지)이 보일 땐 겹치니 숨김 */
+body:has(.global-back-btn:not([hidden])) .beta-wordmark-float { display: none; }
 .beta-wordmark-menu { display: none; }            /* 데스크탑: 메뉴용 숨김 */
 @media (max-width: 768px) {
   .beta-wordmark-float { display: none !important; }   /* 모바일: 플로팅 숨김 */

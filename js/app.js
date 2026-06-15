@@ -4438,7 +4438,8 @@ function initNoteDrag() {
 const SHAPE_TYPES = ['circle', 'oval', 'rect', 'wide', 'pill', 'hexagon'];
 // 제외된(애매한) 모양 → 깔끔한 모양으로 매핑 (기존 트랙의 star 등도 정리)
 const SHAPE_REMAP = { triangle: 'circle', star: 'circle', diamond: 'hexagon', parallelogram: 'rect' };
-const SHAPE_COLORS = ['#FF9800', '#FF4081', '#2979FF', '#76FF03', '#7C4DFF', '#FFD600', '#00E5FF', '#FF1744', '#69F0AE', '#EA80FC'];
+// 스크린샷 팔레트 — 주황/라임/블루/틸/라벤더/옐로 (사용자 요청, 테스트). 검정은 텍스트 가독성 위해 제외.
+const SHAPE_COLORS = ['#E07B4C', '#A4CC5B', '#4A77E0', '#3DBCB0', '#C4B5E8', '#F0C84A'];
 
 function renderHome() {
   const db = window.DB.get();
@@ -4456,7 +4457,8 @@ function renderHome() {
     title: t.title,
     artist: t.artist,
     shape: SHAPE_REMAP[t.shape] || t.shape || SHAPE_TYPES[0],
-    color: t.shapeColor || SHAPE_COLORS[0],
+    // 저장된 shapeColor 무시 → 스크린샷 팔레트에서만 (트랙 id 시드로 안정적). 사용자 요청.
+    color: SHAPE_COLORS[(_hashSeed('shape-col:' + t.id) >>> 0) % SHAPE_COLORS.length],
     lines: t.lines || [t.title, t.artist, '클릭해서 들어봐!']
   }));
 
@@ -5830,19 +5832,15 @@ function renderShapes() {
       // 나중에 트래픽 늘면 master + pinned 만 노출하도록 다시 조이면 됨.
       return true;
     })
-    // 정렬 — createdAt 오름차순 (오래된 곡 먼저).
-    // 사용자 요청: 신곡이 진짜 랜덤 자리에 떨어지면 발견성↓ + 기존 도형이 밀려서 산만함.
-    // ASC 정렬을 쓰면:
-    //   · 기존 트랙들의 si(인덱스)가 변하지 않음 → 자기 자리 그대로
-    //   · 신곡은 항상 배열 끝 → 마지막 si → grid 의 다음 빈 자리(위에서부터 차곡차곡)
-    //   · 사용자가 드래그한 도형은 _loadShapePos(stored) 가 우선이라 어디든 그대로 고정.
-    // tie-breaker: createdAt 같으면 id 로 (같은 시점 업로드 안정성).
+    // 정렬 — createdAt 내림차순 (최신 곡 먼저). 사용자 요청: 최신이 메인(앞/위)으로 오고
+    // 나머지는 뒤로 밀려나게. si 0 = 최신 → 가운데 위 + 앞(z-index).
+    // 드래그한 도형은 _loadShapePos(stored) 가 우선이라 어디든 그대로 고정.
     .slice()
     .sort((a, b) => {
       const ta = new Date(a.createdAt || 0).getTime() || 0;
       const tb = new Date(b.createdAt || 0).getTime() || 0;
-      if (ta !== tb) return ta - tb;
-      return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+      if (ta !== tb) return tb - ta;
+      return a.id < b.id ? 1 : a.id > b.id ? -1 : 0;
     });
 
   // Starfield background — replaces the old "조잡한" floating shapes with
@@ -5854,8 +5852,14 @@ function renderShapes() {
   // rendered twice to fill the universe; that doubled up on every upload.
   let shapesHtml = '';
   const totalShapes = tracks.length;
-  const cols = 3;
-  const universeHeight = Math.max(900, Math.ceil(totalShapes / cols) * 300);
+  // 모바일은 2열 + 행 간격 넓게 → 도형이 너무 겹쳐 뒤가 안 보이던 것 완화 (#5)
+  const _isNarrow = (typeof window !== 'undefined' ? window.innerWidth : 1024) < 600;
+  const cols = _isNarrow ? 2 : 3;
+  const _colSpread = _isNarrow ? 46 : 30;     // 열 간 가로 간격(%)
+  const _rowH = _isNarrow ? 360 : 300;        // 행 간 세로 간격(px)
+  const universeHeight = Math.max(900, Math.ceil(totalShapes / cols) * _rowH + 320);
+  // 인기도(♥*3 + 재생) 최대값 — 크기 스케일 정규화용 (#4)
+  const _maxPop = Math.max(1, ...tracks.map(t => ((t.likes || 0) * 3) + (t.plays || 0)));
 
   const shapeEntries = tracks.map((track, i) => ({ track, idx: i, pass: 0 }));
 
@@ -5882,23 +5886,35 @@ function renderShapes() {
     let shape = track.shape || SHAPE_TYPES[idx % SHAPE_TYPES.length];
     // 애매한 모양(별/삼각/다이아/평행) → 깔끔한 모양으로 정리
     if (SHAPE_REMAP[shape]) shape = SHAPE_REMAP[shape];
-    const color = track.shapeColor || SHAPE_COLORS[idx % SHAPE_COLORS.length];
+    // 저장된 shapeColor 무시 → 스크린샷 팔레트에서만 (트랙 id 시드로 안정적). 사용자 요청.
+    const color = SHAPE_COLORS[(_hashSeed('shape-col:' + track.id) >>> 0) % SHAPE_COLORS.length];
     const lines = track.lines || [track.title, track.artist, '클릭해서 들어봐!'];
     const safeLines = lines.map(l => (l || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
 
-    const col = si % cols;
-    const row = Math.floor(si / cols);
+    // 최신(si 0)은 가운데 위 자리 차지, 나머지는 그 아래 grid 로 (#6)
+    const _isNewestSlot = (si === 0);
+    const col = _isNewestSlot ? 0 : ((si - 1) % cols);
+    const row = _isNewestSlot ? 0 : Math.floor((si - 1) / cols);
     // Seeded per-track-per-pass per-viewer — different users see different
     // default layouts so personal arrangements feel personal.
     const seed = _hashSeed(_viewerSeed + ':' + track.id + ':' + pass);
     // Stored user drag overrides the seeded default
     const stored = _loadShapePos(track.id, pass);
-    const xBase = stored ? stored.xPct : (2 + col * 30 + (seed % 18));
-    const yPx   = stored ? stored.yPx  : (20 + row * 280 + ((seed >>> 5) % 60));
-    const rot = ((((seed >>> 10) % 140) - 70) / 10);
+    const _newest = _isNewestSlot && !stored;          // 최신 + 드래그 안 함 → 메인 자리
+    const xBase = stored ? stored.xPct
+                : _newest ? (cols === 2 ? 30 : 40)     // 가운데 위
+                : (2 + col * _colSpread + (seed % (_isNarrow ? 10 : 16)));
+    const yPx   = stored ? stored.yPx
+                : _newest ? 28
+                : (330 + row * _rowH + ((seed >>> 5) % 44));   // 최신 아래로 밀림
+    const rot = _newest ? 0 : ((((seed >>> 10) % 140) - 70) / 10);
     const dur = 10 + ((seed >>> 18) % 18);
     const dx = ((((seed >>> 22) % 50)) - 25);
     const dy = ((((seed >>> 26) % 50)) - 25);
+    // 크기 = 등록 크기 고정 + 인기도(♥*3+재생)에 따라 최대 +35% (#3, #4)
+    const _pop = ((track.likes || 0) * 3) + (track.plays || 0);
+    const _popScale = (1 + 0.35 * Math.min(1, _pop / _maxPop)).toFixed(3);
+    const _newestStyle = _newest ? ' z-index:30;' : '';     // 최신은 앞으로 (#6)
 
     const isTriangle = shape === 'triangle';
     const bgStyle = isTriangle
@@ -5906,8 +5922,8 @@ function renderShapes() {
       : `background: ${color}; --shape-bg: ${color};`;
 
     shapesHtml += `
-      <div class="floating-shape shape-${shape}" data-track-id="${track.id}" data-pass="${pass}" data-artist="${encodeURIComponent(track.artist || '')}"
-           style="${bgStyle} left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;">
+      <div class="floating-shape shape-${shape}${_newest ? ' is-newest' : ''}" data-track-id="${track.id}" data-pass="${pass}" data-artist="${encodeURIComponent(track.artist || '')}"
+           style="${bgStyle} left:${xBase}%; top:${yPx}px;${_newestStyle} animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg; --scale:${_popScale};">
         <div class="shape-text">${safeLines.join('\n')}</div>
       </div>
     `;
@@ -7063,8 +7079,8 @@ function initShapeDrag() {
   shapes.forEach(el => {
     el.addEventListener('mousedown', pointerDown);
     el.addEventListener('touchstart', pointerDown, { passive: false });
-    el.addEventListener('wheel', onWheel, { passive: false });
-    el.addEventListener('touchstart', touchStartPinch, { passive: false });
+    // 크기 조절(마우스 휠 / 핀치 / 리사이즈 핸들) 제거 — 사용자 요청.
+    //   크기는 등록 크기로 고정 + 인기도(_popScale)로만 결정. 드래그(이동)는 유지.
 
     // 데스크탑: 오른쪽 클릭(우클릭)으로 메뉴 — 우주에선 '모으기', 폴더 안에선 '폴더에서 빼기'.
     el.addEventListener('contextmenu', (e) => {
@@ -7074,12 +7090,6 @@ function initShapeDrag() {
       e.preventDefault();
       window.openShapeLongPressMenu(trackId || null, e.clientX, e.clientY, el);
     });
-
-    const handle = el.querySelector('.shape-resize-handle');
-    if (handle) {
-      handle.addEventListener('mousedown', resizeDown);
-      handle.addEventListener('touchstart', resizeDown, { passive: false });
-    }
   });
 
   // 이전 렌더에서 붙인 document 리스너 제거 → 페이지를 다시 그릴 때마다
