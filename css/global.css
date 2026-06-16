@@ -824,7 +824,8 @@ body.is-shapes-route .shapes-universe {
   width: auto;
   height: auto;
   min-height: 0;
-  overflow: auto;
+  overflow-x: hidden;          /* 가로 스크롤 없음 — 세로로만 (사용자 요청) */
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   background: #000;

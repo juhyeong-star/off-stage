@@ -6331,11 +6331,9 @@ function renderShapes() {
   const _avgH = _isNarrow ? 108 : (_vwNow < 768 ? 180 : 215);
   const _spread = 0.45;     // 채움 정도(높을수록 빽빽 + 필드 작음 = 빈공간 적음)
   const _fArea = (totalShapes * _avgW * _avgH) / _spread;
-  // 세로보다 가로로 넓게(>=1.4) → 아래 스크롤 최소화, 채워질수록 좌우로 늘어남 (사용자 요청).
-  const _fAspect = Math.max(1.4, _vwNow / Math.max(1, _vhNow));
-  // 뷰포트 배수 바닥 제거 → 도형 면적에만 맞춤(빈 캔버스 안 만듦). 최소 = 도형 1개 + 여백.
-  const _fieldW = Math.max(_avgW + 60, Math.round(Math.sqrt(_fArea * _fAspect)));
-  const _fieldH = Math.max(_avgH + 60, Math.round(_fArea / _fieldW));
+  // 가로 스크롤 없이 '세로로만' — 필드 폭 = 화면 폭, 높이만 내용에 따라 늘어남 (사용자 요청).
+  const _fieldW = _vwNow;
+  const _fieldH = Math.max(_vhNow - 120, Math.round(_fArea / _fieldW));
   // 2D 지터-그리드: 필드를 칸으로 나눠 고르게(쏠림/빈 사분면 없이), 칸 안은 랜덤(유기적)
   let _gCols = Math.max(1, Math.round(Math.sqrt(Math.max(1, totalShapes) * (_fieldW / _fieldH))));
   _gCols = Math.min(_gCols, Math.max(1, totalShapes));
@@ -6452,7 +6450,7 @@ function renderShapes() {
   appContent.innerHTML = `
     <div class="page-intro reveal">${_i18n('도형을 발견해보세요', 'Discover the shapes')}</div>
     <div class="shapes-universe" id="shapes-scroll">
-      <div class="universe-field" style="width:${_fieldW}px; height:${_fieldH}px;">
+      <div class="universe-field" style="width:100%; height:${_fieldH}px;">
         ${decoHtml}
         ${shapesHtml}
       </div>
@@ -6469,7 +6467,7 @@ function renderShapes() {
   const _field = _scroll && _scroll.querySelector('.universe-field');
   try {
     if (_field) _declumpShapes(_field, {
-      W: _fieldW, H: _fieldH,
+      H: _fieldH,                          // 폭은 declump 가 실제 필드(100%) 폭을 재서 사용 → 가로 넘침 0
       pinnedFn: el => el.dataset.pinned === '1',
       slack: _isNarrow ? 0.14 : 0.18,
       rand: _mulberry32((_hashSeed(_viewerSeed + ':scatter') >>> 0) || 1)
