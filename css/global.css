@@ -18249,19 +18249,20 @@ body:has(#global-player.expanded) .lang-toggle { display: none !important; }
    (도형이 position:fixed 인 .shapes-universe 안에 갇혀 오버레이 위로 못 올라가던 문제 해결) */
 #tut-overlay { position: fixed; inset: 0; background: transparent; z-index: 9400; }
 .tut-spotlight {
-  /* 노란 링 + 주변을 어둡게(9999px 스프레드) → 어느 쌓임맥락이든 요소가 '불 켜진 듯' 밝게 뜸 */
+  /* 노란 링 + 주변을 어둡게(100vmax = 화면 크기 — 9999px 는 filter 버퍼 초과로 일부 기기서
+     요소가 안 보일 수 있어 화면 크기로). 어느 쌓임맥락이든 요소가 '불 켜진 듯' 밝게 뜸. */
   box-shadow:
     0 0 0 4px rgba(255,236,160,0.95),
     0 0 26px 6px rgba(255,224,102,0.5),
-    0 0 0 9999px rgba(6,4,12,0.82) !important;
-  filter: brightness(1.25) saturate(1.12) contrast(1.03)
-          drop-shadow(0 0 18px rgba(255,255,255,0.6)) !important;
+    0 0 0 100vmax rgba(6,4,12,0.72) !important;
+  filter: brightness(1.22) saturate(1.1) contrast(1.03)
+          drop-shadow(0 0 16px rgba(255,255,255,0.55)) !important;
   border-radius: inherit;
   animation: tutPulse 1.4s ease-in-out infinite;
 }
 @keyframes tutPulse {
-  0%,100% { box-shadow: 0 0 0 4px rgba(255,224,102,0.95), 0 0 22px 4px rgba(255,236,160,0.5), 0 0 0 9999px rgba(6,4,12,0.82); }
-  50%     { box-shadow: 0 0 0 6px rgba(255,236,160,1),    0 0 40px 14px rgba(255,240,180,0.78), 0 0 0 9999px rgba(6,4,12,0.82); }
+  0%,100% { box-shadow: 0 0 0 4px rgba(255,224,102,0.95), 0 0 22px 4px rgba(255,236,160,0.5), 0 0 0 100vmax rgba(6,4,12,0.72); }
+  50%     { box-shadow: 0 0 0 6px rgba(255,236,160,1),    0 0 40px 14px rgba(255,240,180,0.78), 0 0 0 100vmax rgba(6,4,12,0.72); }
 }
 #tut-tip {
   position: fixed; z-index: 9460; width: min(300px, calc(100vw - 24px));
