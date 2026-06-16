@@ -2,7 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const ROOT = '/Users/lemon/Desktop/off-stage';
+const ROOT = 'C:\\Users\\SMHS_H2J\\Desktop\\off-stage\\off-stage';
 const PORT = parseInt(process.env.PORT || '8080', 10);
 
 const MIME = {

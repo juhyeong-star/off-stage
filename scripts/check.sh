@@ -7,7 +7,7 @@
 #   3. 배포 후 라이브 확인
 #
 # 항목:
-#   1. index.html 의 ?v=N 6곳이 모두 동일한가
+#   1. index.html 의 ?v=N 8곳이 모두 동일한가
 #   2. css/global.css 가 10K 줄 넘었는가 (경고)
 #   3. js/app.js 가 7K 줄 넘었는가 (경고)
 #   4. (옵션) --live: 라이브 사이트의 v=N 이 로컬과 같은가
@@ -20,6 +20,7 @@
 #   0 = 통과
 #   1 = ?v=N 미스매치 (치명)
 #   2 = 파일 크기 과대 (경고만, 통과는 함)
+#
 
 set -uo pipefail
 
@@ -35,14 +36,14 @@ echo "── Off-Stage check.sh ──"
 
 # 1. ?v=N sync check
 echo ""
-echo "[1] index.html ?v=N 동기화 (6곳 기대)"
+echo "[1] index.html ?v=N 동기화 (8곳 기대)"
 VERSIONS=$(grep -oE "\?v=[0-9]+" "$INDEX" | sort -u)
 COUNT_LINES=$(grep -cE "\?v=[0-9]+" "$INDEX")
 UNIQUE_COUNT=$(echo "$VERSIONS" | wc -l | tr -d ' ')
 
-if [ "$COUNT_LINES" -ne 6 ]; then
-  echo "  ❌ index.html 의 ?v=N 라인 개수가 6이 아님 (실제: $COUNT_LINES)"
-  echo "     css 1개 + js 5개 = 6 이어야 함"
+if [ "$COUNT_LINES" -ne 8 ]; then
+  echo "  ❌ index.html 의 ?v=N 라인 개수가 8이 아님 (실제: $COUNT_LINES)"
+  echo "     css 1개 + js 7개 = 8 이어야 함"
   FATAL=1
 fi
 

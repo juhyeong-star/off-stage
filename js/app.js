@@ -2413,6 +2413,22 @@ window.togglePlayerExpand = function(e) {
   const target = e && e.target;
   if (target && target.closest('.control-btn, .progress-bar, .progress-container')) return;
   const willExpand = !player.classList.contains('expanded');
+  if (!willExpand) {
+    // Swipe-Up from mini player: expand
+    player.classList.add('expanded');
+    document.body.classList.add('player-fullscreen');
+    // Minimal wiring on mini-to-expand path
+    if (!player._trackSwipeWired) window._attachPlayerTrackSwipe(player);
+    if (!player._swipeDismissWired) window._attachSwipeDismiss(player, {
+      enabled: () => player.classList.contains('expanded'),
+      onClose: () => {
+        player.classList.remove('expanded');
+        document.body.classList.remove('player-fullscreen');
+      },
+      exclude: '.control-btn, .play-btn, .progress-bar, .progress-container, .vol-slider, input[type="range"], .player-expand-btn, button'
+    });
+    return;
+  }
   player.classList.toggle('expanded', willExpand);
 
   // 🔒 body lock — iOS Safari < 16 은 body:has() 미지원이라
@@ -15297,3 +15313,4 @@ function _showCheerSuccess(artistName) {
   setTimeout(() => { overlay.classList.add('fade-out'); }, 1700);
   setTimeout(() => { overlay.remove(); }, 2300);
 }
+
