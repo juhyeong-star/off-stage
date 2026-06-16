@@ -3354,6 +3354,82 @@ window.submitThreadTest = function () {
   if (typeof showToast === 'function') showToast('올렸어요 (테스트)');
 };
 
+// ===================== 아티스트 페이지 — 단일 스크롤 테스트 레이아웃 =====================
+// 최신 데모(위, 크게) + 음원 더보기 + 앨범(데모) 나열 + 주절주절 피드. window.renderArtistTestLayout()
+window.renderArtistTestLayout = function () {
+  const appContent = document.getElementById('app-content');
+  if (!appContent) return;
+  const esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const db = window.DB.get();
+  const me = window.__currentUser || db.currentUser || {};
+  const artist = { name: me.name || '주형', avatar: me.avatar || 'https://i.pravatar.cc/150?u=artisttest', bio: '베드룸 프로듀서 · 새 데모 자주 올려요 🎧' };
+  const rawTracks = (db.tracks || []).slice(0, 6);
+  const titles = ['한밤의 드라이브', 'Plastic Days', '여름 끝', '새벽 4시', 'Painkiller', '그루브 따리'];
+  const albums = (rawTracks.length ? rawTracks : [0, 1, 2, 3, 4]).map((t, i) => ({
+    id: (t && t.id) || ('atl' + i),
+    title: (t && t.title) || titles[i % titles.length],
+    cover: (t && t.cover) || ('https://picsum.photos/seed/atlalb' + i + '/300'),
+    meta: 'Demo ' + ((i % 3) + 1)
+  }));
+  const latest = albums[0] || { id: 'x', title: titles[0], cover: 'https://picsum.photos/seed/atlalb0/300', meta: 'Demo 2' };
+  const sampleTrack = { id: latest.id, title: latest.title, artist: artist.name, cover: latest.cover };
+  const feedPosts = [
+    { id: 'f1', name: artist.name, avatar: artist.avatar, time: '2시간', text: '새 데모 「' + latest.title + '」 올렸어요 🎧 들어봐요', image: null, track: sampleTrack, likes: 88, comments: 12 },
+    { id: 'f2', name: artist.name, avatar: artist.avatar, time: '어제', text: '작업실에서 📸', image: 'https://picsum.photos/seed/atlstudio/600/420', track: null, likes: 42, comments: 5 },
+    { id: 'f3', name: artist.name, avatar: artist.avatar, time: '3일', text: '요즘 영감 받는 무드', image: 'https://picsum.photos/seed/atlmood/600/600', track: sampleTrack, likes: 130, comments: 24 },
+  ];
+  appContent.innerHTML = `
+    <div class="atl-page">
+      <div class="atl-header">
+        <img class="atl-avatar" src="${artist.avatar}" alt="">
+        <div class="atl-head-info">
+          <div class="atl-name">${esc(artist.name)}</div>
+          <div class="atl-bio">${esc(artist.bio)}</div>
+        </div>
+        <button class="atl-follow" type="button"><i class="ri-user-add-line"></i> 팔로우</button>
+      </div>
+
+      <div class="atl-section-head">
+        <div class="atl-section-title"><i class="ri-fire-fill" style="color:#ff6b6b;"></i> 최신 데모</div>
+      </div>
+      <div class="atl-hero" onclick="playTrack('${latest.id}','wall')">
+        <img class="atl-hero-cover" src="${latest.cover}" alt="">
+        <div class="atl-hero-info">
+          <span class="atl-hero-badge">${esc(latest.meta)}</span>
+          <div class="atl-hero-title">${esc(latest.title)}</div>
+          <div class="atl-hero-sub">${esc(artist.name)}</div>
+          <div class="atl-hero-actions">
+            <button class="atl-hero-play" type="button" onclick="event.stopPropagation(); playTrack('${latest.id}','wall')" aria-label="재생"><i class="ri-play-fill"></i></button>
+            <span class="atl-hero-stat"><i class="ri-heart-3-line"></i> 88</span>
+            <span class="atl-hero-stat"><i class="ri-chat-3-line"></i> 12</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="atl-section-head">
+        <div class="atl-section-title"><i class="ri-album-fill" style="color:var(--brand-color);"></i> 음악</div>
+        <button class="atl-more-btn" type="button" onclick="showToast && showToast('전체 음악 보기 (테스트)')">음원 더보기 <i class="ri-arrow-right-s-line"></i></button>
+      </div>
+      <div class="atl-albums">
+        ${albums.map(a => `
+          <div class="atl-album" onclick="playTrack('${a.id}','wall')">
+            <img class="atl-album-cover" src="${a.cover}" alt="" loading="lazy">
+            <div class="atl-album-title">${esc(a.title)}</div>
+            <div class="atl-album-meta">${esc(a.meta)}</div>
+          </div>`).join('')}
+      </div>
+
+      <div class="atl-divider"></div>
+      <div class="atl-feed-head"><i class="ri-chat-smile-2-line" style="color:var(--brand-color);"></i> 주절주절</div>
+      <div class="thread-composer" onclick="openThreadComposer()">
+        <img class="thread-avatar" src="${artist.avatar}" alt="">
+        <div class="thread-composer-hint">무슨 생각 중이에요? · 노래·사진 올리기</div>
+        <button class="thread-composer-go" type="button" aria-label="새 글"><i class="ri-add-line"></i></button>
+      </div>
+      ${feedPosts.map(_threadPostHtml).join('')}
+    </div>`;
+};
+
 async function renderWall() {
   const db = window.DB.get();
   // Refresh wall notes from Supabase. Strategy:
@@ -6271,12 +6347,11 @@ function renderShapes() {
 
   const shapeEntries = tracks.map((track, i) => ({ track, idx: i, pass: 0 }));
 
-  // 위치 시드에 현재 사용자 식별자를 끼워 넣어, 사람마다 기본 배치가 달라지게.
-  // 같은 계정에서 다른 컴퓨터로 들어와도 같은 사용자 ID 쓰니까 일관됨.
-  // (개인 드래그는 별도 localStorage에 저장되어 기기별로만 적용)
-  const _viewerSeed = (window.__currentUser && window.__currentUser.id)
-                   || (window.DB.get().currentUser && window.DB.get().currentUser.name)
-                   || 'anon';
+  // 배치 시드 = 로그인과 무관한 '고정값'. (사용자 요청: 켤 때마다 안 바뀌고 한 곳에 고정)
+  //   예전엔 사용자 id 를 시드로 써서, 로그인 전(anon)→후(id) 비동기 확인 시 배치가
+  //   통째로 바뀌었음(20개 중 19개 이동). 고정값으로 모두 같은 안정 배치.
+  //   (개인 드래그는 여전히 별도 localStorage 로 기기별 적용)
+  const _viewerSeed = 'offstage-shapes-v1';
 
   // Stored drag positions for the shapes page (keyed by trackId:pass)
   function _loadShapePos(id, pass) {
@@ -14390,10 +14465,68 @@ function renderAuth() {
       : _t('기존 비밀번호로 로그인 ▲', 'Sign in with password ▲');
   };
 
+  // ── 인앱 브라우저(카톡/인스타 등) 감지 — 구글 OAuth 는 인앱 웹뷰에서 차단됨(엑세스 거부) ──
+  window._inAppBrowser = function () {
+    const ua = (navigator.userAgent || '').toLowerCase();
+    if (/kakaotalk/.test(ua)) return 'kakaotalk';
+    if (/instagram/.test(ua)) return 'instagram';
+    if (/fban|fbav|fb_iab/.test(ua)) return 'facebook';
+    if (/line\//.test(ua)) return 'line';
+    if (/naver\(|naver\//.test(ua) || /whale/.test(ua)) return 'naver';
+    if (/daumapps/.test(ua)) return 'daum';
+    if (/band\//.test(ua)) return 'band';
+    if (/; wv\)/.test(ua)) return 'webview';  // Android 일반 웹뷰
+    return null;
+  };
+  window._openInExternalBrowser = function () {
+    const app = window._inAppBrowser();
+    const url = window.location.href;
+    if (app === 'kakaotalk') { window.location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url); return true; }
+    if (app === 'line') { window.location.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'openExternalBrowser=1'; return true; }
+    try { navigator.clipboard && navigator.clipboard.writeText(url); } catch (_) {}
+    return false;  // 자동 탈출 불가 — 안내문으로 처리
+  };
+  function _showInAppLoginHelp(app) {
+    const names = { kakaotalk: '카카오톡', instagram: '인스타그램', facebook: '페이스북', line: '라인', naver: '네이버 앱', daum: '다음 앱', band: '밴드', webview: '인앱 브라우저' };
+    const nm = names[app] || '인앱 브라우저';
+    const canEscape = (app === 'kakaotalk' || app === 'line');
+    const ex = document.getElementById('inapp-login-help'); if (ex) ex.remove();
+    const ov = document.createElement('div');
+    ov.id = 'inapp-login-help';
+    ov.style.cssText = 'position:fixed; inset:0; z-index:7000; background:rgba(0,0,0,0.6); display:flex; align-items:flex-end; justify-content:center;';
+    ov.innerHTML = `
+      <div style="width:100%; max-width:480px; background:var(--bg-color); border:1px solid var(--divider); border-bottom:none; border-radius:18px 18px 0 0; padding:20px 18px calc(20px + env(safe-area-inset-bottom,0px));">
+        <div style="font-size:17px; font-weight:800; color:var(--text-primary); margin-bottom:8px;">${nm}에서는 구글 로그인이 막혀요</div>
+        <p style="font-size:13.5px; color:var(--text-secondary); line-height:1.5; margin-bottom:16px;">구글 보안 정책상 ${nm} 안의 브라우저에서는 구글 로그인이 차단돼요(엑세스 거부). 아래 방법을 써주세요.</p>
+        ${canEscape
+          ? `<button id="inapp-open-ext" style="width:100%; padding:13px; background:var(--brand-color); color:#fff; border:none; border-radius:10px; font-weight:800; font-size:15px; cursor:pointer; margin-bottom:10px;"><i class="ri-external-link-line"></i> 크롬/사파리로 열기</button>`
+          : `<div style="background:var(--surface-color); border:1px solid var(--divider); border-radius:10px; padding:12px; font-size:13px; color:var(--text-primary); margin-bottom:10px;">오른쪽 위 <b>⋯ 메뉴 → '다른 브라우저로 열기'</b> 로 크롬/사파리에서 열어주세요.</div>`}
+        <button id="inapp-use-email" style="width:100%; padding:12px; background:var(--surface-color); color:var(--text-primary); border:1px solid var(--divider); border-radius:10px; font-weight:700; font-size:14px; cursor:pointer; margin-bottom:6px;"><i class="ri-mail-line"></i> 그냥 여기서 이메일로 로그인하기</button>
+        <button id="inapp-cancel" style="width:100%; padding:10px; background:none; color:var(--text-secondary); border:none; font-size:13px; cursor:pointer;">닫기</button>
+      </div>`;
+    document.body.appendChild(ov);
+    ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
+    const ext = ov.querySelector('#inapp-open-ext'); if (ext) ext.onclick = () => { window._openInExternalBrowser(); };
+    ov.querySelector('#inapp-use-email').onclick = () => { ov.remove(); const em = document.getElementById('magic-email'); if (em) { em.focus(); em.scrollIntoView({ behavior: 'smooth', block: 'center' }); } };
+    ov.querySelector('#inapp-cancel').onclick = () => ov.remove();
+  }
+  // 인앱이면 구글 버튼 위에 미리 경고 배너
+  const _inAppNow = window._inAppBrowser();
+  if (_inAppNow && googleBtn && googleBtn.parentNode && !document.getElementById('inapp-banner')) {
+    const banner = document.createElement('div');
+    banner.id = 'inapp-banner';
+    banner.style.cssText = 'background:rgba(255,170,0,0.12); border:1px solid rgba(255,170,0,0.4); color:#ffce7a; border-radius:10px; padding:10px 12px; font-size:12.5px; line-height:1.45; margin-bottom:10px;';
+    banner.innerHTML = `<b>⚠️ 인앱 브라우저예요.</b> 구글 로그인이 막혀 있어요 — 아래 <u>이메일 로그인</u>을 쓰거나 외부 브라우저로 열어주세요.`;
+    googleBtn.parentNode.insertBefore(banner, googleBtn);
+  }
+
   // ── Google ─────────────────────────────────────────────────
   googleBtn.onclick = async () => {
     if (!supabaseReady) { alert('Supabase 키가 설정되지 않았어요.'); return; }
     if (!consent.checked) { alert('약관 동의가 필요해요.'); return; }
+    // 인앱 브라우저면 구글 OAuth 가 막히므로(엑세스 거부) 미리 안내
+    const inApp = window._inAppBrowser();
+    if (inApp) { _showInAppLoginHelp(inApp); return; }
     const _origGoogleHtml = googleBtn.innerHTML;
     googleBtn.disabled = true;
     googleBtn.innerHTML = '<span>이동 중…</span>';
