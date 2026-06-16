@@ -474,6 +474,26 @@ window.showOnboarding = function () {
 // ============================================================
 window.startTutorial = function () {
   if (document.getElementById('tut-overlay')) return;
+  // 로그인 확인이 비동기라, 가이드를 켤 때 아직 __currentUser 가 안 채워졌으면 _loggedIn=false 로
+  // 잡혀 아티스트 4단계가 빠지고 6단계만 나옴. 세션이 있으면 채워질 때까지 잠깐 기다렸다 시작 → 10단계.
+  const _hasUser = !!(window.__currentUser || (window.DB.get && window.DB.get().currentUser));
+  if (!_hasUser && !window.__tutAuthChecked && window.supabase && window.supabase.auth) {
+    window.__tutAuthChecked = true;   // 이 실행 사이클에 1회만 비동기 체크 (무한 대기 방지)
+    window.supabase.auth.getSession().then(({ data }) => {
+      if (data && data.session) {
+        let _t = 0;
+        const _w = () => {
+          if (window.__currentUser || (window.DB.get && window.DB.get().currentUser) || _t >= 9) window.startTutorial();
+          else { _t++; setTimeout(_w, 200); }
+        };
+        _w();                          // 세션 있음 → 로그인 매핑될 때까지 최대 ~1.8s 대기
+      } else {
+        window.startTutorial();        // 진짜 비로그인 → 그대로(6단계)
+      }
+    }).catch(() => { window.startTutorial(); });
+    return;
+  }
+  window.__tutAuthChecked = false;     // 체크 끝 — 다음 가이드 실행 때 또 확인하게 리셋
   const _t2 = (ko, en) => (typeof _t === 'function' ? _t(ko, en) : ko);
   const _loggedIn = !!((window.__currentUser) || (window.DB && window.DB.get && window.DB.get().currentUser));
   // 즐겨찾기는 일반 "좋아한 음원만" 과 달라서 — 노래(도형)+포스트잇+폴더를 모으는 개념.
