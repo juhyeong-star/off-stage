@@ -18364,3 +18364,154 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
   .wf-emoji { font-size: 28px; }
   .wf-plus { font-size: 34px; }
 }
+
+/* ============================================================
+   주절주절 — 스레드/인스타 스타일 피드 (테스트 버전)
+   ============================================================ */
+.thread-feed {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 4px 0 120px;
+}
+/* 상단 작성 바 */
+.thread-composer {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--divider);
+  cursor: pointer;
+  position: sticky; top: 0; z-index: 5;
+  background: var(--bg-color);
+}
+.thread-composer .thread-avatar { width: 38px; height: 38px; flex-shrink: 0; }
+.thread-composer-hint {
+  flex: 1; color: var(--text-secondary); font-size: 15px;
+}
+.thread-composer-go {
+  border: none; background: var(--brand-color); color: #fff;
+  width: 34px; height: 34px; border-radius: 50%; font-size: 20px;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  flex-shrink: 0;
+}
+.thread-avatar {
+  width: 42px; height: 42px; border-radius: 50%; object-fit: cover;
+  background: var(--surface-color); flex-shrink: 0;
+}
+/* 포스트 카드 */
+.thread-post {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 10px;
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid var(--divider);
+}
+.thread-post-col { min-width: 0; }
+.thread-post-head {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 3px;
+}
+.thread-post-name { font-weight: 700; font-size: 15px; color: var(--text-primary); }
+.thread-post-time { color: var(--text-secondary); font-size: 13px; }
+.thread-post-more {
+  margin-left: auto; background: none; border: none; color: var(--text-secondary);
+  font-size: 18px; cursor: pointer; padding: 0 4px;
+}
+.thread-post-body {
+  font-size: 15px; line-height: 1.45; color: var(--text-primary);
+  white-space: pre-wrap; word-break: break-word; margin-bottom: 8px;
+}
+.thread-post-body:empty { margin-bottom: 0; }
+/* 첨부 이미지 */
+.thread-post-image {
+  display: block; width: 100%; max-height: 460px; object-fit: cover;
+  border-radius: 14px; border: 1px solid var(--divider); margin-bottom: 8px;
+  background: var(--surface-color);
+}
+/* 첨부 곡 카드 */
+.thread-song-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px; margin-bottom: 8px;
+  background: var(--surface-color); border: 1px solid var(--divider);
+  border-radius: 12px; cursor: pointer;
+}
+.thread-song-cover {
+  width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0;
+}
+.thread-song-info { flex: 1; min-width: 0; }
+.thread-song-title {
+  font-weight: 700; font-size: 14px; color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.thread-song-artist { font-size: 12px; color: var(--text-secondary); }
+.thread-song-play {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  background: var(--brand-color); color: #fff; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+/* 액션 줄 */
+.thread-post-actions {
+  display: flex; gap: 18px; margin-top: 2px;
+}
+.tp-act {
+  background: none; border: none; color: var(--text-secondary);
+  display: flex; align-items: center; gap: 5px;
+  font-size: 13px; cursor: pointer; padding: 4px 0;
+}
+.tp-act i { font-size: 19px; }
+.tp-act.is-liked { color: #ff2e63; }
+.tp-act:hover { color: var(--text-primary); }
+
+/* 작성 시트 (모달) */
+.thread-composer-modal {
+  position: fixed; inset: 0; z-index: 6000;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.thread-composer-sheet {
+  width: 100%; max-width: 600px;
+  background: var(--bg-color);
+  border-top-left-radius: 18px; border-top-right-radius: 18px;
+  border: 1px solid var(--divider); border-bottom: none;
+  padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  max-height: 88vh; overflow-y: auto;
+}
+.thread-sheet-head {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+}
+.thread-sheet-cancel { background: none; border: none; color: var(--text-secondary); font-size: 15px; cursor: pointer; }
+.thread-sheet-title { font-weight: 800; font-size: 16px; color: var(--text-primary); }
+.thread-sheet-post {
+  background: var(--brand-color); color: #fff; border: none; border-radius: 999px;
+  padding: 7px 18px; font-weight: 800; font-size: 14px; cursor: pointer;
+}
+.thread-sheet-post:disabled { opacity: 0.4; }
+.thread-sheet-row { display: flex; gap: 10px; }
+.thread-sheet-input {
+  flex: 1; background: none; border: none; outline: none; resize: none;
+  color: var(--text-primary); font-size: 16px; line-height: 1.5; min-height: 90px;
+  font-family: inherit;
+}
+.thread-sheet-preview { margin: 10px 0 4px 52px; }
+.thread-sheet-preview img {
+  width: 100%; border-radius: 14px; border: 1px solid var(--divider); display: block;
+}
+.thread-sheet-preview-remove {
+  margin-top: 6px; background: var(--surface-color); border: 1px solid var(--divider);
+  color: var(--text-secondary); border-radius: 999px; padding: 4px 12px; font-size: 12px; cursor: pointer;
+}
+.thread-sheet-attach {
+  display: flex; gap: 6px; margin: 10px 0 0 52px; flex-wrap: wrap;
+}
+.thread-attach-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface-color); border: 1px solid var(--divider);
+  color: var(--text-primary); border-radius: 999px; padding: 7px 12px;
+  font-size: 13px; cursor: pointer;
+}
+.thread-attach-btn i { font-size: 16px; color: var(--brand-color); }
+.thread-sheet-songchip {
+  display: flex; align-items: center; gap: 8px; margin: 10px 0 0 52px;
+  background: var(--surface-color); border: 1px solid var(--divider);
+  border-radius: 12px; padding: 6px 8px;
+}
+.thread-sheet-songchip img { width: 40px; height: 40px; border-radius: 7px; object-fit: cover; }
+.thread-sheet-songchip .t { flex: 1; min-width: 0; font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.thread-sheet-songchip button { background: none; border: none; color: var(--text-secondary); font-size: 17px; cursor: pointer; }

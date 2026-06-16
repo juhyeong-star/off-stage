@@ -2465,6 +2465,32 @@ window.togglePlayerExpand = function(e) {
   }
 };
 
+// 📱 미니 플레이어에서 위로 스와이프 → 펼치기 (사용자 요청). 컨트롤/진행바/커버는 제외.
+window._attachPlayerSwipeUp = function (player) {
+  if (!player || player._swipeUpWired) return;
+  player._swipeUpWired = true;
+  let sx = 0, sy = 0, st = 0, tracking = false;
+  const EXCLUDE = '.control-btn, .play-btn, .progress-bar, .progress-container, .progress-bar-wrap, .vol-slider, input, button, a, .player-collect-btn, .player-cover, .player-text';
+  player.addEventListener('touchstart', (e) => {
+    if (player.classList.contains('expanded')) return;     // 미니 상태에서만
+    if (window.innerWidth > 720) return;                   // 모바일만
+    const t = e.touches[0]; if (!t) return;
+    if (e.target && e.target.closest && e.target.closest(EXCLUDE)) return;
+    sx = t.clientX; sy = t.clientY; st = Date.now(); tracking = true;
+  }, { passive: true });
+  player.addEventListener('touchend', (e) => {
+    if (!tracking) return; tracking = false;
+    if (player.classList.contains('expanded')) return;
+    const t = e.changedTouches[0]; if (!t) return;
+    const dy = t.clientY - sy, dx = t.clientX - sx, dt = Date.now() - st;
+    // 위로 충분히(세로 우세) 스와이프 → 펼치기
+    if (dy < -36 && Math.abs(dy) > Math.abs(dx) * 1.2 && dt < 700) {
+      if (typeof window.togglePlayerExpand === 'function') window.togglePlayerExpand({ target: player });
+    }
+  }, { passive: true });
+};
+try { window._attachPlayerSwipeUp(document.getElementById('global-player')); } catch (_) {}
+
 // (event banner removed)
 
 // ===================== TAG HELPERS =====================
@@ -3168,6 +3194,165 @@ function _renderNoteTrackChip(note) {
   }
   return '';
 }
+
+// ===================== 주절주절 — 스레드/인스타 스타일 피드 (테스트 버전) =====================
+// window.renderWallThreadTest() 로 프리뷰에서 호출. 기존 renderWall 은 그대로 둠.
+function _threadTimeAgo(iso) {
+  try {
+    const t = new Date(iso).getTime(); if (!t) return '방금';
+    const s = Math.floor((Date.now() - t) / 1000);
+    if (s < 60) return '방금'; if (s < 3600) return Math.floor(s / 60) + '분';
+    if (s < 86400) return Math.floor(s / 3600) + '시간'; return Math.floor(s / 86400) + '일';
+  } catch (_) { return ''; }
+}
+function _threadTrackOf(trackId) {
+  const t = ((window.DB.get().tracks) || []).find(x => x && x.id === trackId);
+  if (!t) return null;
+  return { id: t.id, title: t.title || '제목 없음', artist: t.artist || '',
+           cover: t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=200' };
+}
+function _threadPostHtml(p) {
+  const esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const img = p.image ? `<img class="thread-post-image" src="${p.image}" alt="" loading="lazy">` : '';
+  const song = p.track ? `
+        <div class="thread-song-card" onclick="playTrack('${p.track.id}','wall')">
+          <img class="thread-song-cover" src="${p.track.cover}" alt="">
+          <div class="thread-song-info">
+            <div class="thread-song-title">${esc(p.track.title)}</div>
+            <div class="thread-song-artist">${esc(p.track.artist)}</div>
+          </div>
+          <button class="thread-song-play" onclick="event.stopPropagation(); playTrack('${p.track.id}','wall')" aria-label="재생"><i class="ri-play-fill"></i></button>
+        </div>` : '';
+  return `
+    <div class="thread-post">
+      <img class="thread-avatar" src="${p.avatar}" alt="" loading="lazy">
+      <div class="thread-post-col">
+        <div class="thread-post-head">
+          <span class="thread-post-name">${esc(p.name)}</span>
+          <span class="thread-post-time">· ${esc(p.time)}</span>
+          <button class="thread-post-more" aria-label="더보기"><i class="ri-more-fill"></i></button>
+        </div>
+        ${p.text ? `<div class="thread-post-body">${esc(p.text)}</div>` : ''}
+        ${img}
+        ${song}
+        <div class="thread-post-actions">
+          <button class="tp-act" onclick="this.classList.toggle('is-liked')"><i class="ri-heart-3-line"></i> ${p.likes || ''}</button>
+          <button class="tp-act"><i class="ri-chat-3-line"></i> ${p.comments || ''}</button>
+          <button class="tp-act" aria-label="리포스트"><i class="ri-repeat-line"></i></button>
+          <button class="tp-act" aria-label="공유"><i class="ri-send-plane-line"></i></button>
+        </div>
+      </div>
+    </div>`;
+}
+window.renderWallThreadTest = function () {
+  const appContent = document.getElementById('app-content');
+  if (!appContent) return;
+  const db = window.DB.get();
+  const me = window.__currentUser || db.currentUser || { id: 'me', name: '나' };
+  const myAvatar = me.avatar_url || me.avatar || ('https://i.pravatar.cc/150?u=' + (me.id || 'me'));
+  const firstTrack = (db.tracks || [])[0];
+  const sampleTrack = firstTrack ? _threadTrackOf(firstTrack.id)
+    : { id: 'x', title: '한밤의 드라이브', artist: 'DJ KARLIN', cover: 'https://picsum.photos/seed/song/200' };
+  // 데모용 샘플 — 이미지/곡 조합을 보여주려고 (테스트)
+  const samples = [
+    { id: 's1', name: '유진', avatar: 'https://i.pravatar.cc/150?u=yujin', time: '2시간',
+      text: '오늘 작업실에서 찍은 한 컷 📸 새 데모 곧 올라와요', image: 'https://picsum.photos/seed/studio/600/400', track: null, likes: 42, comments: 5 },
+    { id: 's2', name: 'KARLIN', avatar: 'https://i.pravatar.cc/150?u=karlin', time: '5시간',
+      text: '이 곡 요즘 무한반복 중 🎧', image: null, track: sampleTrack, likes: 88, comments: 12 },
+    { id: 's3', name: '민지', avatar: 'https://i.pravatar.cc/150?u=minji', time: '어제',
+      text: '사진이랑 노래 같이 올려봤어요!', image: 'https://picsum.photos/seed/vibe/600/600', track: sampleTrack, likes: 130, comments: 24 },
+  ];
+  const realPosts = (db.notes || []).slice(0, 8).map(n => ({
+    id: n.id, name: n.author || '익명', avatar: 'https://i.pravatar.cc/150?u=' + (n.authorId || n.author || n.id),
+    time: _threadTimeAgo(n.createdAt), text: n.text || '', image: null,
+    track: n.trackId ? _threadTrackOf(n.trackId) : null,
+    likes: (_hashSeed(n.id) >>> 0) % 50, comments: (n.comments || []).length
+  }));
+  const posts = [...samples, ...realPosts];
+  appContent.innerHTML = `
+    <div class="thread-feed">
+      <div class="thread-composer" onclick="openThreadComposer()">
+        <img class="thread-avatar" src="${myAvatar}" alt="">
+        <div class="thread-composer-hint">무슨 생각 중이에요? · 노래·사진 올리기</div>
+        <button class="thread-composer-go" aria-label="새 글"><i class="ri-add-line"></i></button>
+      </div>
+      ${posts.map(_threadPostHtml).join('')}
+    </div>`;
+};
+window.__threadDraft = { image: null, track: null };
+window.openThreadComposer = function () {
+  const me = window.__currentUser || (window.DB.get().currentUser) || { id: 'me', name: '나' };
+  const myAvatar = me.avatar_url || me.avatar || ('https://i.pravatar.cc/150?u=' + (me.id || 'me'));
+  window.__threadDraft = { image: null, track: null };
+  const ex = document.getElementById('thread-composer-modal'); if (ex) ex.remove();
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="thread-composer-modal" class="thread-composer-modal" onclick="if(event.target===this) closeThreadComposer()">
+      <div class="thread-composer-sheet">
+        <div class="thread-sheet-head">
+          <button class="thread-sheet-cancel" onclick="closeThreadComposer()">취소</button>
+          <span class="thread-sheet-title">새 주절주절</span>
+          <button class="thread-sheet-post" id="thread-sheet-post" disabled onclick="submitThreadTest()">게시</button>
+        </div>
+        <div class="thread-sheet-row">
+          <img class="thread-avatar" src="${myAvatar}" alt="">
+          <textarea class="thread-sheet-input" id="thread-sheet-text" placeholder="무슨 생각을 하고 있나요?" oninput="_threadComposerSync()"></textarea>
+        </div>
+        <div class="thread-sheet-preview" id="thread-sheet-preview" style="display:none;"></div>
+        <div class="thread-sheet-songchip" id="thread-sheet-songchip" style="display:none;"></div>
+        <div class="thread-sheet-attach">
+          <button class="thread-attach-btn" type="button" onclick="document.getElementById('thread-img-input').click()"><i class="ri-image-add-line"></i> 사진</button>
+          <button class="thread-attach-btn" type="button" onclick="_threadAttachSongMock()"><i class="ri-music-2-line"></i> 노래</button>
+          <input type="file" id="thread-img-input" accept="image/*" style="display:none" onchange="_threadPickImage(this)">
+        </div>
+      </div>
+    </div>`);
+  setTimeout(() => { const ta = document.getElementById('thread-sheet-text'); if (ta && window.innerWidth > 768) ta.focus(); }, 50);
+};
+window.closeThreadComposer = function () { const m = document.getElementById('thread-composer-modal'); if (m) m.remove(); };
+window._threadComposerSync = function () {
+  const ta = document.getElementById('thread-sheet-text');
+  const btn = document.getElementById('thread-sheet-post');
+  const has = (ta && ta.value.trim()) || window.__threadDraft.image || window.__threadDraft.track;
+  if (btn) btn.disabled = !has;
+};
+window._threadPickImage = function (input) {
+  const f = input.files && input.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    window.__threadDraft.image = r.result;
+    const p = document.getElementById('thread-sheet-preview');
+    if (p) { p.style.display = 'block'; p.innerHTML = `<img src="${r.result}" alt=""><button class="thread-sheet-preview-remove" type="button" onclick="_threadRemoveImage()">사진 제거</button>`; }
+    _threadComposerSync();
+  };
+  r.readAsDataURL(f);
+};
+window._threadRemoveImage = function () { window.__threadDraft.image = null; const p = document.getElementById('thread-sheet-preview'); if (p) { p.style.display = 'none'; p.innerHTML = ''; } _threadComposerSync(); };
+window._threadAttachSongMock = function () {
+  const db = window.DB.get(); const t = (db.tracks || [])[0];
+  const track = t ? _threadTrackOf(t.id) : { id: 'x', title: '한밤의 드라이브', artist: 'DJ KARLIN', cover: 'https://picsum.photos/seed/song/200' };
+  window.__threadDraft.track = track;
+  const c = document.getElementById('thread-sheet-songchip');
+  const esc = (s) => (s || '').replace(/</g, '&lt;');
+  if (c) { c.style.display = 'flex'; c.innerHTML = `<img src="${track.cover}" alt=""><span class="t">${esc(track.title)} — ${esc(track.artist)}</span><button type="button" onclick="_threadRemoveSong()"><i class="ri-close-line"></i></button>`; }
+  _threadComposerSync();
+};
+window._threadRemoveSong = function () { window.__threadDraft.track = null; const c = document.getElementById('thread-sheet-songchip'); if (c) { c.style.display = 'none'; c.innerHTML = ''; } _threadComposerSync(); };
+window.submitThreadTest = function () {
+  const ta = document.getElementById('thread-sheet-text');
+  const text = (ta && ta.value.trim()) || '';
+  const me = window.__currentUser || (window.DB.get().currentUser) || { name: '나' };
+  const post = { id: 'new' + Date.now(), name: me.name || '나',
+    avatar: (me.avatar_url || me.avatar || 'https://i.pravatar.cc/150?u=me'), time: '방금',
+    text, image: window.__threadDraft.image, track: window.__threadDraft.track, likes: 0, comments: 0 };
+  const feed = document.querySelector('.thread-feed');
+  if (feed) {
+    const composer = feed.querySelector('.thread-composer');
+    if (composer) composer.insertAdjacentHTML('afterend', _threadPostHtml(post));
+  }
+  window.__threadDraft = { image: null, track: null };
+  closeThreadComposer();
+  if (typeof showToast === 'function') showToast('올렸어요 (테스트)');
+};
 
 async function renderWall() {
   const db = window.DB.get();
