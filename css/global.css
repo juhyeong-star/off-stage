@@ -18248,6 +18248,8 @@ body:has(#global-player.expanded) .lang-toggle { display: none !important; }
 /* 오버레이는 '클릭 차단'만 — 어둡게 하는 건 강조요소의 box-shadow(스포트라이트 홀)가 담당.
    (도형이 position:fixed 인 .shapes-universe 안에 갇혀 오버레이 위로 못 올라가던 문제 해결) */
 #tut-overlay { position: fixed; inset: 0; background: transparent; z-index: 9400; }
+/* 다음 버튼 등을 빠르게 두 번 탭할 때 브라우저 더블탭 줌이 걸리던 것 방지 (핀치줌은 유지) */
+#tut-overlay, #tut-tip, #tut-tip button, .tut-spotlight { touch-action: manipulation; }
 .tut-spotlight {
   /* 노란 링 + 주변을 어둡게(100vmax = 화면 크기 — 9999px 는 filter 버퍼 초과로 일부 기기서
      요소가 안 보일 수 있어 화면 크기로). 어느 쌓임맥락이든 요소가 '불 켜진 듯' 밝게 뜸. */
