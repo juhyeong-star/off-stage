@@ -501,8 +501,10 @@ window.startTutorial = function () {
   const favStep = _loggedIn
     ? { route: 'universe', sel: '#universe-head, .shapes-universe.my-universe', title: _t2('즐겨찾기','Favorites'),
         body: _t2("여기는 '좋아한 노래'만 모으는 곳이 아니에요. 마음에 든 노래(도형)도, 수집한 포스트잇도 함께 모아 — 나만의 우주처럼 폴더로 정리해요.","Not just liked songs — collect songs (shapes) AND saved post-its here, and arrange them into folders, like your own universe.") }
-    : { route: 'shapes', sel: '.mobile-tab-bar [data-route="universe"], .sidebar-nav [data-route="universe"]', title: _t2('즐겨찾기','Favorites'),
-        body: _t2('좋아한 노래(도형)와 포스트잇을 모아 나만의 우주로 정리하는 곳이에요. 로그인하면 써볼 수 있어요.','Collect liked songs (shapes) and post-its into your own universe. Sign in to use it.') };
+    : { route: 'shapes', sel: '.mobile-tab-bar [data-route="universe"], .sidebar-nav [data-route="universe"], .hamburger-btn', title: _t2('즐겨찾기','Favorites'),
+        // 데스크톱은 탭바/사이드바가 숨겨져 즐겨찾기 메뉴가 안 보임 → 햄버거(메뉴)를 fallback 으로
+        // (햄버거는 데스크톱 전용·모바일 숨김이라 모바일에선 즐겨찾기 탭이 잡힘). 안 그러면 이 단계 건너뜀.
+        body: _t2('좋아한 노래(도형)와 포스트잇을 모아 나만의 우주로 정리하는 곳이에요. 로그인하면 메뉴에서 들어가 써볼 수 있어요.','Collect liked songs (shapes) and post-its into your own universe. Sign in, then open it from the menu.') };
   // 로그인 시: 내 아티스트 페이지로 들어가 소식(투명 + 카드)·프로필 수정을 자세히 안내.
   const artistSteps = _loggedIn ? [
     { route: 'my-artist', sel: '.soshik-add-postit, .soshik-add', title: _t2('아티스트 페이지 — 소식','Your page — Updates'),
