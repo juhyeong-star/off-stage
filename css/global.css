@@ -17706,6 +17706,24 @@ body:has(#global-player.expanded) .lang-toggle { display: none !important; }
        (화면 밖 숨김) 을 reset. 이게 빠져있어서 expanded 가 화면 밖에 위치했음. */
     transform: none !important;
   }
+  /* 2.5) 펼침 세로 레이아웃 — 원래 @media(max-width:420px) 에만 있어서 421~768px 폰
+         (예: 아이폰 Pro Max 430px)에선 레이아웃이 안 먹어 가로로 깨졌음. 풀스크린 위치잡기와
+         같은 768px 구간에 핵심 레이아웃을 다시 적용해 일관되게. */
+  #global-player.expanded {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 18px !important;
+  }
+  #global-player.expanded .player-track-info { order: 1 !important; flex-direction: column !important; width: 100% !important; align-items: center !important; flex: 0 0 auto !important; gap: 14px !important; }
+  #global-player.expanded .player-cover { width: 240px !important; height: 240px !important; border-radius: 12px !important; }
+  #global-player.expanded .player-text { align-items: center !important; flex: 0 0 auto !important; }
+  #global-player.expanded .player-title { font-size: 22px !important; max-width: 90vw !important; white-space: normal !important; }
+  #global-player.expanded .player-collect-btn { order: 2 !important; }
+  #global-player.expanded .player-controls { order: 3 !important; gap: 28px !important; }
+  #global-player.expanded .control-btn.play-btn { font-size: 64px !important; }
+  #global-player.expanded .progress-container { order: 4 !important; display: flex !important; width: 100% !important; padding: 0 12px !important; }
+  #global-player.expanded .player-volume { order: 5 !important; }
   /* 3) backdrop — 뒤 도형/UI 안 보이게 */
   #global-player.expanded::before {
     content: '';
@@ -18196,6 +18214,35 @@ body:has(#global-player.expanded) .lang-toggle { display: none !important; }
   #global-player:not(.expanded) .player-collect-label { display: none; }
   #global-player:not(.expanded) .player-collect-btn i { font-size: 22px; }
   #global-player.expanded .player-collect-btn { margin-top: 6px; }
+}
+
+/* 공유 버튼 — 담기와 같은 알약. 미니바: 아이콘만(담기 옆) / 풀스크린: 오른쪽 중간 동그란 버튼. */
+.player-share-btn {
+  display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 999px; color: var(--text-secondary, rgba(255,255,255,0.7));
+  padding: 5px 11px; font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: color 0.15s, background 0.15s, transform 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.player-share-btn i { font-size: 15px; line-height: 1; }
+.player-share-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
+.player-share-btn:active { transform: scale(0.92); }
+@media (max-width: 768px) {
+  .player-share-btn { order: 2; }
+  #global-player:not(.expanded) .player-share-btn { background: none; border: none; padding: 6px; gap: 0; }
+  #global-player:not(.expanded) .player-share-label { display: none; }
+  #global-player:not(.expanded) .player-share-btn i { font-size: 22px; }
+  /* 풀스크린 — 오른쪽 중간에 동그란 공유 버튼 */
+  #global-player.expanded .player-share-btn {
+    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    width: 52px; height: 52px; padding: 0; gap: 2px; flex-direction: column;
+    border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18);
+    color: var(--text-primary, #fff);
+  }
+  #global-player.expanded .player-share-btn:active { transform: translateY(-50%) scale(0.92); }
+  #global-player.expanded .player-share-btn i { font-size: 22px; }
+  #global-player.expanded .player-share-label { font-size: 9px; font-weight: 700; }
 }
 
 /* ============================================================

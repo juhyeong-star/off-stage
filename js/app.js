@@ -2565,6 +2565,28 @@ window._attachPlayerSwipeUp = function (player) {
 };
 try { window._attachPlayerSwipeUp(document.getElementById('global-player')); } catch (_) {}
 
+// 🔗 현재 재생 곡 공유 — 미니바/풀스크린 플레이어의 공유 버튼.
+//    카드 페이지(#card:<id>) 링크를 시스템 공유(navigator.share) 또는 클립보드 복사.
+window.sharePlayerTrack = async function (e) {
+  if (e && e.stopPropagation) e.stopPropagation();
+  const tid = window.currentPlayingTrack;
+  if (!tid) { if (typeof showToast === 'function') showToast(_t('재생 중인 곡이 없어요', 'No song playing')); return; }
+  const db = window.DB.get();
+  const t = (db.tracks || []).find(x => x && x.id === tid) || {};
+  const url = location.origin + location.pathname + '#card:' + encodeURIComponent(tid);
+  const text = (t.title || 'Off-Stage') + (t.artist ? ' — ' + t.artist : '');
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: t.title || 'Off-Stage', text, url });
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(url);
+      if (typeof showToast === 'function') showToast(_t('링크 복사됐어요', 'Link copied'));
+    } else {
+      if (typeof showToast === 'function') showToast(url);
+    }
+  } catch (_) { /* 사용자가 공유 시트 취소 — 무시 */ }
+};
+
 // (event banner removed)
 
 // ===================== TAG HELPERS =====================

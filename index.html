@@ -39,7 +39,7 @@
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=741">
+  <link rel="stylesheet" href="css/global.css?v=744">
 </head>
 <body>
 
@@ -190,6 +190,13 @@
       <i class="ri-add-line"></i>
       <span class="player-collect-label"><span data-i18n-ko>담기</span><span data-i18n-en>Collect</span></span>
     </button>
+    <!-- 공유 — 현재 곡 링크 공유. 미니바: 담기 옆 / 풀스크린: 오른쪽 중간 (사용자 요청). -->
+    <button class="player-share-btn" id="player-share-btn" type="button" aria-label="노래 공유"
+            title="노래 공유"
+            onclick="event.stopPropagation(); window.sharePlayerTrack && window.sharePlayerTrack(event)">
+      <i class="ri-send-plane-line"></i>
+      <span class="player-share-label"><span data-i18n-ko>공유</span><span data-i18n-en>Share</span></span>
+    </button>
     <!-- 볼륨 컨트롤 — PC 에서만 표시 (모바일은 OS 볼륨 키 사용).
          🔊 음소거 토글 + 슬라이더 + 퍼센트 -->
     <div class="player-volume" id="player-volume">
@@ -215,12 +222,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=741"></script>
-  <script defer src="js/data.js?v=741"></script>
-  <script defer src="js/supabase.js?v=741"></script>
-  <script defer src="js/analytics.js?v=741"></script>
-  <script defer src="js/distribute.js?v=741"></script>
-  <script defer src="js/app.js?v=741"></script>
-  <script defer src="js/polaroid.js?v=741"></script>
+  <script defer src="js/supabase-init.js?v=744"></script>
+  <script defer src="js/data.js?v=744"></script>
+  <script defer src="js/supabase.js?v=744"></script>
+  <script defer src="js/analytics.js?v=744"></script>
+  <script defer src="js/distribute.js?v=744"></script>
+  <script defer src="js/app.js?v=744"></script>
+  <script defer src="js/polaroid.js?v=744"></script>
 </body>
 </html>
