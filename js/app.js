@@ -3349,7 +3349,7 @@ async function renderWall() {
     <div class="thread-feed">
       <div class="thread-composer" onclick="openThreadComposer()">
         <img class="thread-avatar" src="${composerAvatar}" alt="">
-        <div class="thread-composer-hint">노래·사진과 함께 올려요</div>
+        <div class="thread-composer-hint">무슨 생각 중이에요? · 노래·사진 올리기</div>
         <button class="thread-composer-go" aria-label="새 글"><i class="ri-add-line"></i></button>
       </div>
       ${posts.map(_threadPostHtml).join('')}
@@ -3556,7 +3556,7 @@ window.renderArtistTestLayout = function () {
       <div class="atl-feed-head"><i class="ri-chat-smile-2-line" style="color:var(--brand-color);"></i> 주절주절</div>
       <div class="thread-composer" onclick="openThreadComposer()">
         <img class="thread-avatar" src="${artist.avatar}" alt="">
-        <div class="thread-composer-hint">노래·사진과 함께 올려요</div>
+        <div class="thread-composer-hint">무슨 생각 중이에요? · 노래·사진 올리기</div>
         <button class="thread-composer-go" type="button" aria-label="새 글"><i class="ri-add-line"></i></button>
       </div>
       ${feedPosts.map(_threadPostHtml).join('')}
@@ -12155,7 +12155,7 @@ function renderArtistProfile(artistName) {
             ${isSelf ? `
               <div class="thread-composer" onclick="openThreadComposer()">
                 <img class="thread-avatar" src="${avatar}" alt="">
-                <div class="thread-composer-hint">${_t('노래·사진과 함께 올려요', "What's on your mind?")}</div>
+                <div class="thread-composer-hint">${_t('무슨 생각 중이에요? · 노래·사진 올리기', "What's on your mind?")}</div>
                 <button class="thread-composer-go" type="button" aria-label="${_t('새 글', 'New')}"><i class="ri-add-line"></i></button>
               </div>
             ` : ''}

@@ -18380,21 +18380,20 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
 .thread-feed {
   max-width: 600px;
   margin: 0 auto;
+  /* 상단 고정 컨트롤(뒤로가기 + 가이드/언어 토글, ~y108까지)을 피해 작성 바가 그 아래에서 시작.
+     모바일만 — 데스크탑은 피드가 가운데 정렬돼 컨트롤과 안 겹침. */
   padding: 4px 0 120px;
 }
-/* 상단 작성 바 */
+@media (max-width: 900px) {
+  .thread-feed { padding-top: 52px; }
+}
+/* 상단 작성 바 — sticky 제거: 고정 컨트롤(뒤로가기/토글)과 겹치지 않게 피드 흐름 맨 위에 둠. */
 .thread-composer {
   display: flex; align-items: center; gap: 10px;
   padding: 12px 14px;
   border-bottom: 1px solid var(--divider);
   cursor: pointer;
-  position: sticky; top: 0; z-index: 5;
   background: var(--bg-color);
-}
-/* 좁은 화면에선 우상단 고정 토글(가이드 / KO·EN)이 작성 바 오른쪽을 덮음
-   → 그만큼 오른쪽 여백을 확보해 힌트·＋ 버튼이 토글 아래로 들어가지 않게. */
-@media (max-width: 900px) {
-  .thread-composer { padding-right: 158px; }
 }
 .thread-composer .thread-avatar { width: 38px; height: 38px; flex-shrink: 0; }
 .thread-composer-hint {
