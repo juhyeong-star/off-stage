@@ -3326,7 +3326,7 @@ function _threadPostHtml(p) {
         ${song}
         <div class="thread-post-actions">
           <button class="tp-act" onclick="this.classList.toggle('is-liked')"><i class="ri-heart-3-line"></i></button>
-          <button class="tp-act" onclick="openNoteDetail('${p.id}')"><i class="ri-chat-3-line"></i>${cmCount}</button>
+          <button class="tp-act" onclick="openCommentSheet('${p.id}')"><i class="ri-chat-3-line"></i>${cmCount}</button>
           <button class="tp-act" aria-label="공유" onclick="_threadShare('${p.id}')"><i class="ri-send-plane-line"></i></button>
         </div>
       </div>
@@ -3540,6 +3540,141 @@ window.submitThreadPost = async function () {
 };
 // 구버전 호환 별칭.
 window.submitThreadTest = function () { return window.submitThreadPost(); };
+
+// ===================== 인스타식 댓글 바텀시트 (주절주절 피드) =====================
+// 피드 포스트 댓글 버튼 → 아래에서 올라오는 시트에 댓글 목록 + 입력. (기존 노트 상세 모달 대신)
+const _UUID_CM = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function _commentSheetListHtml(note, myId, myAvatar) {
+  const esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const cms = (note.comments || []).slice().sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+  if (!cms.length) return `<div class="comment-sheet-empty">${_t('아직 댓글이 없어요 · 첫 댓글을 남겨보세요', 'No comments yet · Be the first')}</div>`;
+  return cms.map(cm => {
+    const isMine = !!(myId && cm.authorId === myId);
+    const av = isMine ? myAvatar : ('https://i.pravatar.cc/150?u=' + (cm.authorId || cm.author || cm.id));
+    const name = cm.author || _t('익명', 'Anonymous');
+    return `<div class="comment-sheet-item" data-cm-id="${cm.id}">
+      <img class="comment-sheet-av" src="${av}" alt="" loading="lazy">
+      <div class="comment-sheet-body">
+        <div class="comment-sheet-meta"><span class="comment-sheet-name">${esc(name)}</span> <span class="comment-sheet-time">${_threadTimeAgo(cm.createdAt)}</span></div>
+        <div class="comment-sheet-text">${esc(cm.text || '')}</div>
+      </div>
+      ${isMine ? `<button class="comment-sheet-del" type="button" onclick="_commentSheetDelete('${note.id}','${cm.id}')" aria-label="${_t('삭제', 'Delete')}"><i class="ri-close-line"></i></button>` : ''}
+    </div>`;
+  }).join('');
+}
+window.openCommentSheet = function (noteId) {
+  if (!noteId) return;
+  const db = window.DB.get();
+  const note = (db.notes || []).find(n => n && n.id === noteId);
+  if (!note) { if (typeof showToast === 'function') showToast(_t('글을 찾을 수 없어요', 'Post not found')); return; }
+  const me = window.__currentUser || db.currentUser || null;
+  const myId = me && me.id;
+  const myAvatar = (me && (me.avatar_url || me.avatar)) || ('https://i.pravatar.cc/150?u=' + (myId || 'guest'));
+  closeCommentSheet(true);
+  const backdrop = document.createElement('div');
+  backdrop.id = 'comment-sheet-backdrop'; backdrop.className = 'comment-sheet-backdrop';
+  backdrop.onclick = () => closeCommentSheet();
+  const sheet = document.createElement('div');
+  sheet.id = 'comment-sheet'; sheet.className = 'comment-sheet';
+  sheet.dataset.noteId = noteId;
+  sheet.innerHTML = `
+    <div class="comment-sheet-grab"></div>
+    <div class="comment-sheet-head">${_i18n('댓글', 'Comments')} <span class="comment-sheet-count" id="comment-sheet-count">${(note.comments || []).length}</span>
+      <button class="comment-sheet-close" type="button" onclick="closeCommentSheet()" aria-label="${_t('닫기', 'Close')}"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="comment-sheet-list" id="comment-sheet-list">${_commentSheetListHtml(note, myId, myAvatar)}</div>
+    ${me ? `
+    <div class="comment-sheet-inputbar">
+      <img class="comment-sheet-myav" src="${myAvatar}" alt="">
+      <input class="comment-sheet-input" id="comment-sheet-input" type="text" maxlength="500" placeholder="${_t('댓글 달기…', 'Add a comment…')}"
+             onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault(); submitCommentSheet('${noteId}');}">
+      <button class="comment-sheet-send" type="button" onclick="submitCommentSheet('${noteId}')">${_i18n('게시', 'Post')}</button>
+    </div>` : `<div class="comment-sheet-loginhint">${_t('로그인하면 댓글을 남길 수 있어요', 'Sign in to comment')}</div>`}`;
+  document.body.appendChild(backdrop);
+  document.body.appendChild(sheet);
+  // 아래→위 슬라이드 인
+  requestAnimationFrame(() => { backdrop.classList.add('show'); sheet.classList.add('show'); });
+  // 아래로 스와이프 닫기 (리스트가 맨 위일 때만 — 스크롤 우선)
+  try {
+    if (window._attachSwipeDismiss) window._attachSwipeDismiss(sheet, {
+      direction: 'down', scrollGuard: '#comment-sheet-list', backdrop,
+      onClose: () => closeCommentSheet(true)
+    });
+  } catch (_) {}
+  // 백그라운드로 서버 댓글 최신화 후 리스트만 교체
+  if (window.Walls && window.Walls.fetchComments) {
+    window.Walls.fetchComments(noteId).then(fresh => {
+      if (!Array.isArray(fresh) || !document.getElementById('comment-sheet')) return;
+      const _db = window.DB.get(); const n = (_db.notes || []).find(x => x.id === noteId);
+      if (n) { n.comments = fresh; try { window.DB.save(_db); } catch (_) {} }
+      const listEl = document.getElementById('comment-sheet-list');
+      const cntEl = document.getElementById('comment-sheet-count');
+      if (listEl) listEl.innerHTML = _commentSheetListHtml({ id: noteId, comments: fresh }, myId, myAvatar);
+      if (cntEl) cntEl.textContent = fresh.length;
+      _updateFeedCommentCount(noteId, fresh.length);
+    }).catch(e => console.warn('[commentSheet] fetch', e));
+  }
+};
+window.closeCommentSheet = function (immediate) {
+  const sheet = document.getElementById('comment-sheet');
+  const bd = document.getElementById('comment-sheet-backdrop');
+  if (!sheet && !bd) return;
+  if (immediate) { if (sheet) sheet.remove(); if (bd) bd.remove(); return; }
+  if (sheet) sheet.classList.remove('show');
+  if (bd) bd.classList.remove('show');
+  setTimeout(() => { if (sheet) sheet.remove(); if (bd) bd.remove(); }, 300);
+};
+window._updateFeedCommentCount = function (noteId, count) {
+  if (count == null) return;
+  document.querySelectorAll('.thread-post[data-note-id="' + noteId + '"] .tp-act').forEach(b => {
+    const icon = b.querySelector('.ri-chat-3-line');
+    if (icon) b.innerHTML = icon.outerHTML + (count ? ' ' + count : '');
+  });
+};
+window.submitCommentSheet = async function (noteId) {
+  const me = window.__currentUser || (window.DB.get().currentUser);
+  if (!me) { alert('로그인이 필요해요'); return; }
+  const input = document.getElementById('comment-sheet-input');
+  const text = (input && input.value || '').trim();
+  if (!text) return;
+  const btn = document.querySelector('#comment-sheet .comment-sheet-send');
+  if (btn) btn.disabled = true;
+  try {
+    let newCm = null;
+    if (window.Walls && window.Walls.addComment) newCm = await window.Walls.addComment(noteId, { text });
+    else newCm = { id: 'c' + Date.now(), author: me.name, authorId: me.id, text, createdAt: new Date().toISOString() };
+    // db.notes + __wallNotes 미러 (submitInlineComment 패턴 — 즉시 보이게).
+    const db = window.DB.get(); const n = (db.notes || []).find(x => x.id === noteId);
+    if (n) { if (!Array.isArray(n.comments)) n.comments = []; if (newCm && !n.comments.find(c => c.id === newCm.id)) n.comments.push(newCm); try { window.DB.save(db); } catch (_) {} }
+    if (Array.isArray(window.__wallNotes)) { const mem = window.__wallNotes.find(x => x.id === noteId); if (mem) { if (!Array.isArray(mem.comments)) mem.comments = []; if (newCm && !mem.comments.find(c => c.id === newCm.id)) mem.comments.push(newCm); } }
+    if (input) input.value = '';
+    const note = (window.DB.get().notes || []).find(x => x.id === noteId);
+    const myId = me.id, myAvatar = me.avatar_url || me.avatar || ('https://i.pravatar.cc/150?u=' + myId);
+    const listEl = document.getElementById('comment-sheet-list');
+    if (listEl && note) listEl.innerHTML = _commentSheetListHtml(note, myId, myAvatar);
+    const cntEl = document.getElementById('comment-sheet-count'); if (cntEl && note) cntEl.textContent = (note.comments || []).length;
+    _updateFeedCommentCount(noteId, note ? (note.comments || []).length : null);
+    if (listEl) listEl.scrollTop = listEl.scrollHeight;   // 최신 댓글로
+  } catch (e) {
+    alert('댓글 저장 실패: ' + (e.message || e));
+  } finally { if (btn) btn.disabled = false; }
+};
+window._commentSheetDelete = async function (noteId, cmId) {
+  if (!confirm('이 댓글을 지울까요?')) return;
+  try {
+    if (window.Walls && window.Walls.deleteComment && _UUID_CM.test(cmId)) {
+      try { await window.Walls.deleteComment(cmId, noteId); } catch (e) { console.warn('[commentSheet] del', e); }
+    }
+    const db = window.DB.get(); const n = (db.notes || []).find(x => x.id === noteId);
+    if (n && Array.isArray(n.comments)) { n.comments = n.comments.filter(c => c.id !== cmId); try { window.DB.save(db); } catch (_) {} }
+    if (Array.isArray(window.__wallNotes)) { const mem = window.__wallNotes.find(x => x.id === noteId); if (mem && Array.isArray(mem.comments)) mem.comments = mem.comments.filter(c => c.id !== cmId); }
+    const note = (window.DB.get().notes || []).find(x => x.id === noteId);
+    const me = window.__currentUser || {}; const myId = me.id, myAvatar = me.avatar_url || me.avatar || ('https://i.pravatar.cc/150?u=' + myId);
+    const listEl = document.getElementById('comment-sheet-list'); if (listEl) listEl.innerHTML = _commentSheetListHtml(note || { comments: [] }, myId, myAvatar);
+    const cntEl = document.getElementById('comment-sheet-count'); if (cntEl) cntEl.textContent = note ? (note.comments || []).length : 0;
+    _updateFeedCommentCount(noteId, note ? (note.comments || []).length : 0);
+  } catch (e) { alert('삭제 실패: ' + (e.message || e)); }
+};
 
 // ===================== 아티스트 페이지 — 단일 스크롤 테스트 레이아웃 =====================
 // 최신 데모(위, 크게) + 음원 더보기 + 앨범(데모) 나열 + 주절주절 피드. window.renderArtistTestLayout()
