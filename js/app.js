@@ -2496,12 +2496,32 @@ window.togglePlayerExpand = function(e) {
   }
 };
 
-// 📱 미니 플레이어에서 위로 스와이프 → 펼치기 (사용자 요청). 컨트롤/진행바/커버는 제외.
+// 📱 미니 → 펼치기를 '접기(아래로 슬라이드 닫힘)'의 반대로 — 아래에서 위로 부드럽게
+//    슬라이드 인. 클래스만 토글하면 height 가 즉시 점프해 부자연스러우므로 transform 으로 애니메이션.
+window._smoothExpandPlayer = function (player) {
+  if (!player || player.classList.contains('expanded')) return;
+  // 상태 전환 + 닫기/트랙 스와이프 와이어링은 기존 togglePlayerExpand 재사용.
+  if (typeof window.togglePlayerExpand === 'function') window.togglePlayerExpand({ target: player });
+  else { player.classList.add('expanded'); document.body.classList.add('player-fullscreen'); }
+  // translateY 100%(화면 아래) → 0 으로 슬라이드 인. dismiss 가 110% 로 내려가 닫는 것의 반대.
+  //   expanded 가 transform:none !important 라서 important 로 덮어쓴다.
+  player.style.transition = 'none';
+  player.style.setProperty('transform', 'translateY(100%)', 'important');
+  void player.offsetHeight;   // reflow — 시작점(아래) 커밋
+  player.style.transition = 'transform 0.34s cubic-bezier(0.22,1,0.36,1)';
+  player.style.setProperty('transform', 'translateY(0)', 'important');
+  setTimeout(() => {
+    // 슬라이드 인이 끝났고 그 사이 다른 제스처(아래로 접기)가 transform 을 안 바꿨을 때만 정리.
+    if (player.style.getPropertyValue('transform') === 'translateY(0px)') {
+      player.style.transition = ''; player.style.removeProperty('transform');
+    }
+  }, 360);
+};
+// 📱 미니 플레이어에서 위로 스와이프 → 펼치기. 컨트롤/슬라이더/버튼만 제외.
 window._attachPlayerSwipeUp = function (player) {
   if (!player || player._swipeUpWired) return;
   player._swipeUpWired = true;
   let sx = 0, sy = 0, tracking = false, dragging = false;
-  // 컨트롤·슬라이더·버튼만 제외 — 커버/텍스트 등 본문은 스와이프 허용(타깃 넓힘).
   const EXCLUDE = '.control-btn, .play-btn, .progress-bar, .progress-container, .progress-bar-wrap, .vol-slider, input[type="range"], button';
   player.addEventListener('touchstart', (e) => {
     if (player.classList.contains('expanded')) return;     // 미니 상태에서만
@@ -2514,26 +2534,20 @@ window._attachPlayerSwipeUp = function (player) {
     if (!tracking || player.classList.contains('expanded')) return;
     const t = e.touches[0]; if (!t) return;
     const dy = t.clientY - sy, dx = t.clientX - sx;
-    // 위로 + 세로 우세 제스처로 판정되면 페이지 스크롤을 막고 플레이어를 살짝 끌어올림(시각 피드백).
+    // 위로 + 세로 우세면 페이지 스크롤만 막음(미니 바를 끌지 않음 — 펼침은 손 뗄 때 부드럽게 슬라이드).
     if (!dragging && dy < -5 && Math.abs(dy) > Math.abs(dx)) dragging = true;
-    if (dragging) {
-      e.preventDefault();
-      player.style.transition = 'none';
-      player.style.transform = 'translateY(' + (-Math.min(-dy, 90) * 0.55) + 'px)';
-    }
+    if (dragging && e.cancelable) e.preventDefault();
   }, { passive: false });
   const end = (e) => {
     if (!tracking) return;
     tracking = false;
     const wasDrag = dragging; dragging = false;
-    player.style.transition = 'transform .18s ease';
-    player.style.transform = '';
     if (player.classList.contains('expanded')) return;
     const t = (e.changedTouches && e.changedTouches[0]); if (!t) return;
     const dy = t.clientY - sy, dx = t.clientX - sx;
-    // 위로 30px 이상 + 세로 우세 → 펼치기 (시간 제한 없음 — 천천히 올려도 동작).
-    if (wasDrag && dy < -30 && Math.abs(dy) > Math.abs(dx)) {
-      if (typeof window.togglePlayerExpand === 'function') window.togglePlayerExpand({ target: player });
+    // 위로 28px 이상 + 세로 우세 → 부드럽게 펼치기 (시간 제한 없음).
+    if (wasDrag && dy < -28 && Math.abs(dy) > Math.abs(dx)) {
+      window._smoothExpandPlayer(player);
     }
   };
   player.addEventListener('touchend', end, { passive: true });
