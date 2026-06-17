@@ -328,7 +328,7 @@ window.audioElement = audioElement;
     '곡 소개 및 코멘트를 적어주세요. (필수)': 'Please write a description. (required)',
     '태그를 한 개 이상 적어주세요. (필수)': 'Please add at least one tag. (required)',
     '도형 낙서 3줄을 모두 적어주세요. (필수)': 'Please fill in all 3 graffiti lines. (required)',
-    '발매(마스터)는 가사가 필요해요. 데모는 비워둬도 됩니다. (가사를 적으면 곡과 함께 벽에 게시돼요)': 'Releases (masters) require lyrics. Demos may leave it empty. (Lyrics auto-post to the wall.)',
+    '발매(마스터)는 가사가 필요해요. 데모는 비워둬도 됩니다. (가사는 곡 페이지에 표시돼요)': 'Releases (masters) require lyrics. Demos may leave it empty. (Lyrics show on the song page.)',
     '기존 Demo 를 선택해주세요.': 'Please select an existing Demo.',
     '선택한 Demo 를 찾을 수 없어요.': 'Selected Demo not found.',
     '활동명은 비워둘 수 없어요': 'Artist name cannot be empty',
@@ -3242,6 +3242,16 @@ function _threadTrackOf(trackId) {
   return { id: t.id, title: t.title || '제목 없음', artist: t.artist || '',
            cover: t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=200' };
 }
+// 긴 글 → 6줄로 접고 더보기/접기 토글. raw=원문(미이스케이프), cls=래퍼 클래스.
+function _collapsible(raw, cls) {
+  const esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const t = (raw || '').trim();
+  const long = t.length > 220 || t.split(/\r?\n/).length > 6;
+  const safe = esc(t);
+  if (!long) return `<div class="${cls}">${safe}</div>`;
+  return `<div class="${cls} is-clamped">${safe}</div>`
+    + `<button class="more-toggle" type="button" onclick="event.stopPropagation(); var b=this.previousElementSibling; var c=b.classList.toggle('is-clamped'); this.textContent=c?'더보기':'접기';">더보기</button>`;
+}
 function _threadPostHtml(p) {
   const esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const escAttr = (s) => esc(s).replace(/"/g, '&quot;');
@@ -3267,7 +3277,7 @@ function _threadPostHtml(p) {
           <span class="thread-post-time">· ${esc(p.time)}</span>
           <button class="thread-post-more" aria-label="더보기" onclick="_threadPostMenu('${p.id}', ${p.isMine ? 'true' : 'false'})"><i class="ri-more-fill"></i></button>
         </div>
-        ${p.text ? `<div class="thread-post-body">${esc(p.text)}</div>` : ''}
+        ${p.text ? _collapsible(p.text, 'thread-post-body') : ''}
         ${img}
         ${song}
         <div class="thread-post-actions">
@@ -3578,7 +3588,7 @@ function _renderAlbumView(appContent, d) {
     projectBoxHtml = renderProjectBox(pid, versions).replace('project-box reveal', 'project-box');
   } catch (e) { console.warn('[album] renderProjectBox', e); projectBoxHtml = '<div class="alb2-card">데모를 불러오지 못했어요</div>'; }
   appContent.innerHTML = `
-    <div class="artist-canvas">
+    <div class="artist-canvas cosmic">
       <div class="artist-bg-deco"></div>
       <div class="sub-page">
         <div class="alb2-wrap">
@@ -3606,8 +3616,10 @@ function _renderAlbumView(appContent, d) {
           <!-- 마스터 + 데모 (projects-grid → 흰 박스 없음 + PC 가로 필름스트립 / 모바일 스네이크) -->
           <div class="alb2-projectbox projects-grid">${projectBoxHtml}</div>
 
-          ${note ? `<h2 class="section-title"><i class="ri-quill-pen-line"></i> 소개</h2><div class="alb2-card">${esc(note)}</div>` : ''}
-          ${lyrics ? `<h2 class="section-title"><i class="ri-double-quotes-l"></i> 가사</h2><div class="alb2-card lyrics">${esc(lyrics)}</div>` : ''}
+          <h2 class="section-title"><i class="ri-quill-pen-line"></i> 소개</h2>
+          ${note ? _collapsible(note, 'alb2-card') : `<div class="alb2-card alb2-card-empty">아직 소개가 없어요</div>`}
+          <h2 class="section-title"><i class="ri-double-quotes-l"></i> 가사</h2>
+          ${lyrics ? _collapsible(lyrics, 'alb2-card lyrics') : `<div class="alb2-card lyrics alb2-card-empty">아직 가사가 없어요</div>`}
         </div>
       </div>
     </div>`;
@@ -3622,7 +3634,7 @@ window.renderAlbum = function (pid) {
   let versions = (db.tracks || []).filter(t => t && (t.projectId || ('proj_' + t.id)) === pid);
   if (!versions.length) { const single = (db.tracks || []).find(t => t && t.id === pid); if (single) versions = [single]; }
   if (!versions.length) {
-    appContent.innerHTML = `<div class="artist-canvas"><div class="artist-bg-deco"></div><div class="sub-page"><div class="alb2-wrap"><button class="alb2-back" type="button" onclick="history.back()"><i class="ri-arrow-left-line"></i></button><div class="alb2-card" style="margin-top:14px;">앨범을 찾을 수 없어요.</div></div></div></div>`;
+    appContent.innerHTML = `<div class="artist-canvas cosmic"><div class="artist-bg-deco"></div><div class="sub-page"><div class="alb2-wrap"><button class="alb2-back" type="button" onclick="history.back()"><i class="ri-arrow-left-line"></i></button><div class="alb2-card" style="margin-top:14px;">앨범을 찾을 수 없어요.</div></div></div></div>`;
     return;
   }
   const master = versions.find(v => !v.isDemo);
@@ -8249,7 +8261,7 @@ function renderUpload() {
         </div>
         <div class="form-group">
           <label><i class="ri-double-quotes-l" style="color:var(--brand-color);"></i> ${_i18n('가사', 'Lyrics')} <span style="color:var(--text-secondary); font-weight:normal; font-size:12px;">${_i18n('(발매 시 필수 · 데모는 선택)', '(required for release · optional for demo)')}</span></label>
-          <textarea class="form-control" id="up-lyrics" rows="6" placeholder="${_t(`가사를 적어주세요. 곡과 함께 자동으로 '우리들의 벽'에 게시돼요. (데모는 비워둬도 돼요)`, `Write the lyrics. They'll auto-post to Our Wall with the track. (Optional for demos.)`)}"></textarea>
+          <textarea class="form-control" id="up-lyrics" rows="6" placeholder="${_t(`가사를 적어주세요. 곡(앨범) 페이지의 '가사'에 표시돼요. (데모는 비워둬도 돼요)`, `Write the lyrics — shown on the song's album page. (Optional for demos.)`)}"></textarea>
           <div class="form-note">${_i18n('가사를 적으면 노래와 함께 우리들의 벽에 자동 게시됩니다. 발매(마스터)는 가사가 필수예요.', 'Lyrics auto-post to the wall with your track; required for releases (masters).')}</div>
         </div>
         <div class="form-group">
@@ -8578,7 +8590,7 @@ function renderUpload() {
           || !((document.getElementById('up-line3')?.value || '').trim()))
         throw new Error('도형 낙서 3줄을 모두 적어주세요. (필수)');
       if (getUploadState().isFinal && !((document.getElementById('up-lyrics')?.value || '').trim()))
-        throw new Error('발매(마스터)는 가사가 필요해요. 데모는 비워둬도 됩니다. (가사를 적으면 곡과 함께 벽에 게시돼요)');
+        throw new Error('발매(마스터)는 가사가 필요해요. 데모는 비워둬도 됩니다. (가사는 곡 페이지에 표시돼요)');
 
       // Determine upload type from new two-tier state
       const state = getUploadState();
@@ -8705,6 +8717,7 @@ function renderUpload() {
           // 업로드 폼의 "곡 소개 및 코멘트" 가 사실상 일지(artistNote). 데모 카드에
           // 노출되는 필드가 artistNote이라서 동일 값으로 같이 저장.
           artistNote: description,
+          lyrics,   // 가사 → 앨범(곡) 페이지 가사 섹션에 표시
           audioUrl,
           cover: coverUrl,
           projectId,
@@ -8726,22 +8739,8 @@ function renderUpload() {
       showToast(isFinal ? '발매 완료! (Released)' : '데모 업로드 완료 (Demo uploaded)');
       // refreshInto는 백그라운드 — 여기서 await하면 느릴 때 또 멈춤
       Promise.resolve(window.Tracks.refreshInto(db)).catch(e => console.warn('[upload] refreshInto bg', e));
-      // 가사 → 곡과 함께 우리들의 벽에 자동 게시 (첫 줄 = 곡 제목, 본문 = 가사, 곡 첨부)
-      try {
-        if (lyrics && window.Walls && inserted && inserted.id) {
-          const wallText = (title ? title + '\n' : '') + lyrics;
-          const wallNote = await Promise.race([
-            window.Walls.insert({ text: wallText, color: 'yellow', rotation: Math.random() * 5 - 2.5, trackId: inserted.id, externalUrl: null }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('벽 게시 타임아웃')), 10000))
-          ]);
-          // 로컬 미러 — 벽에 가면 바로 보이게 (submitWallNote 와 동일 패턴)
-          if (wallNote) {
-            const _d = window.DB.get();
-            if (!Array.isArray(_d.notes)) _d.notes = [];
-            if (!_d.notes.some(n => n && n.id === wallNote.id)) { _d.notes.unshift(wallNote); try { window.DB.save(_d); } catch (_) {} }
-          }
-        }
-      } catch (wallErr) { console.warn('[upload] 가사 벽 자동게시 실패', wallErr); }
+      // 가사 → 우리들의 벽(주절주절) 자동 게시는 사용자 요청으로 비활성화.
+      //   이제 가사는 곡(앨범) 페이지의 '가사' 섹션에만 표시되고, 주절주절에는 자동으로 안 올라감.
       // 업로드 완료 → 가사가 벽에 게시됐음을 알리는 모달.
       _afterUploadPrompt(inserted, user.name);
     } catch (err) {
@@ -8759,6 +8758,7 @@ function _afterUploadPrompt(track, artistName) {
   const cover = track.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=300';
   const title = (track.title || '내 곡').replace(/</g, '&lt;');
   const goArtist = () => navigateTo('artist:' + encodeURIComponent(artistName || ''));
+  const goAlbum = () => navigateTo('album:' + encodeURIComponent(track.projectId || ('proj_' + track.id)));
 
   const ov = document.createElement('div');
   ov.className = 'upload-done-modal';
@@ -8766,10 +8766,10 @@ function _afterUploadPrompt(track, artistName) {
     <div class="upload-done-card">
       <img class="upload-done-cover" src="${cover}" alt="" draggable="false">
       <h2 class="upload-done-title">업로드 완료! (Done)</h2>
-      <p class="upload-done-sub">「${title}」 가 무대 뒤에 올라왔어요.<br>가사도 <b>우리들의 벽</b>에 자동으로 게시됐어요 📌</p>
+      <p class="upload-done-sub">「${title}」 가 무대 뒤에 올라왔어요.<br>적은 가사는 <b>곡 페이지</b>에서 볼 수 있어요 🎵</p>
       <div class="upload-done-actions">
-        <button class="btn-primary upload-done-write"><i class="ri-sticky-note-line"></i> 벽에서 보기 (See on wall)</button>
-        <button class="upload-done-later">나중에 (Later)</button>
+        <button class="btn-primary upload-done-write"><i class="ri-disc-line"></i> 곡 페이지 보기 (See song)</button>
+        <button class="upload-done-later">내 페이지 (My page)</button>
       </div>
     </div>`;
   document.body.appendChild(ov);
@@ -8777,10 +8777,7 @@ function _afterUploadPrompt(track, artistName) {
 
   const close = () => { ov.classList.remove('show'); setTimeout(() => ov.remove(), 200); };
 
-  ov.querySelector('.upload-done-write').onclick = () => {
-    close();
-    navigateTo('wall');
-  };
+  ov.querySelector('.upload-done-write').onclick = () => { close(); goAlbum(); };
   ov.querySelector('.upload-done-later').onclick = () => { close(); goArtist(); };
   ov.onclick = (e) => { if (e.target === ov) { close(); goArtist(); } };
 }
@@ -11987,7 +11984,7 @@ function renderArtistProfile(artistName) {
   const notesGridHtml = notesGridCards + addCard;
 
   appContent.innerHTML = `
-    <div class="artist-canvas">
+    <div class="artist-canvas cosmic">
       <div class="artist-bg-deco"></div>
 
       <div class="sub-page artist-page">

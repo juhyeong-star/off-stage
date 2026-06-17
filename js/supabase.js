@@ -882,6 +882,7 @@
       versionLabel: row.version_label || 'Final',
       isDemo: !!row.is_demo,
       artistNote: row.artist_note || '',
+      lyrics: row.lyrics || '',   // 가사 — 앨범(곡) 페이지에 표시. lyrics 컬럼 없는 옛 스키마면 ''.
       tags: Array.isArray(row.tags) ? row.tags : [],
       shape: row.shape || 'circle',
       shapeColor: row.shape_color || '#FF9800',
@@ -1005,11 +1006,23 @@
         // 콜라보 아티스트 [{name, userId?}, ...]
         collaborators: Array.isArray(track.collaborators) ? track.collaborators : []
       };
-      const { data, error } = await window.supabase
+      // 가사 — 앨범(곡) 페이지에 표시. 값 있을 때만 포함(컬럼 없는 옛 스키마에도 안전).
+      if (track.lyrics) payload.lyrics = track.lyrics;
+      let { data, error } = await window.supabase
         .from('tracks')
         .insert(payload)
         .select('*, profiles(id, name, avatar_url)')
         .single();
+      // lyrics 컬럼이 없는 스키마(마이그레이션 SQL 미실행)면 가사만 빼고 다시 시도 → 업로드 자체는 살림.
+      if (error && payload.lyrics && /lyrics|column|schema|PGRST/i.test(error.message || '')) {
+        console.warn('[Tracks.insert] lyrics 컬럼 없음 — 가사 제외하고 재시도');
+        delete payload.lyrics;
+        ({ data, error } = await window.supabase
+          .from('tracks')
+          .insert(payload)
+          .select('*, profiles(id, name, avatar_url)')
+          .single());
+      }
       if (error) {
         const m = error.message || '';
         if (/foreign key|violates foreign key|not present in table "profiles"/i.test(m)) {

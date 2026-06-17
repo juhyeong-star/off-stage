@@ -6422,6 +6422,24 @@ html, body { overflow-x: hidden; max-width: 100%; }
     radial-gradient(ellipse 500px 200px at 10% 85%, rgba(255,255,255,0.18), transparent 60%);
   z-index: 0;
 }
+/* ===== 우주 변형 (.cosmic) — 아티스트·앨범 페이지에만. 도형·주절주절과 같은 컨셉.
+   은은한 딥퍼플 코스믹 + 저밀도 별 (과하지 않게). 태그 등 다른 .artist-canvas 페이지는 영향 없음. ===== */
+.artist-canvas.cosmic {
+  background: #0b0916;
+  background-image:
+    radial-gradient(ellipse 130% 70% at 50% -15%, rgba(108,80,190,0.22), transparent 62%),
+    radial-gradient(ellipse 100% 60% at 85% 115%, rgba(60,70,180,0.14), transparent 58%);
+  color: #e9e6f5;
+}
+.artist-canvas.cosmic .artist-bg-deco {
+  background:
+    radial-gradient(1px 1px at 30px 40px, rgba(255,255,255,0.55), transparent 2px),
+    radial-gradient(1px 1px at 160px 120px, rgba(255,255,255,0.38), transparent 2px),
+    radial-gradient(1.4px 1.4px at 220px 70px, rgba(205,215,255,0.5), transparent 2px),
+    radial-gradient(1px 1px at 90px 190px, rgba(255,255,255,0.32), transparent 2px);
+  background-size: 250px 250px, 200px 280px, 330px 230px, 180px 300px;
+  opacity: 0.65;
+}
 .artist-canvas .sub-page { position: relative; z-index: 1; padding: 32px 36px; }
 .artist-canvas a[href="#"] { color: #2a2240 !important; font-weight: 700; }
 .artist-canvas a[href="#"]:hover { color: #6B46C1 !important; }
@@ -18440,6 +18458,22 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
   font-size: 15px; line-height: 1.45; color: var(--text-primary);
   white-space: pre-wrap; word-break: break-word; margin-bottom: 8px;
 }
+/* 긴 글 접기 (피드 포스트 / 앨범 소개·가사 공용).
+   display 가 다른 규칙(flow-root)으로 덮여 -webkit-line-clamp 가 안 먹는 맥락이 있어
+   max-height 기반으로 클램프 — display 와 무관하게 항상 동작. */
+.is-clamped {
+  max-height: 8.6em;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, #000 78%, transparent);
+          mask-image: linear-gradient(180deg, #000 78%, transparent);
+}
+.more-toggle {
+  background: none; border: none; color: var(--brand-color);
+  font-size: 13px; font-weight: 800; cursor: pointer; padding: 4px 2px 2px;
+}
+.alb2-card.is-clamped { margin-bottom: 6px; }
+.alb2-wrap .more-toggle { color: #FFE500; }
+.alb2-card-empty { color: #8a8699; font-style: italic; }
 .thread-post-body:empty { margin-bottom: 0; }
 /* 첨부 이미지 */
 .thread-post-image {
