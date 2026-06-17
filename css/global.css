@@ -18568,6 +18568,9 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
 .atl-album-cover { width: 132px; height: 132px; border-radius: 12px; object-fit: cover; background: var(--surface-color); border: 1px solid var(--divider); display: block; }
 .atl-album-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-top: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .atl-album-meta { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+.atl-albums.show-all { flex-wrap: wrap; overflow-x: visible; }
+.atl-album-add-cover { display: flex; align-items: center; justify-content: center; font-size: 34px; color: var(--text-secondary); border-style: dashed !important; }
+.atl-feed-empty { text-align: center; color: var(--text-secondary); font-size: 13px; padding: 28px 16px 44px; }
 
 .atl-divider { height: 8px; background: var(--surface-color); border-top: 1px solid var(--divider); border-bottom: 1px solid var(--divider); margin-top: 10px; }
 .atl-feed-head { padding: 14px 16px 2px; font-size: 15px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 6px; }

@@ -1623,6 +1623,15 @@ function navigateTo(route) {
     return;
   }
 
+  // Album (project) page route: "album:<projectId>" — 데모 하나의 프로젝트(마스터+데모) 페이지
+  if (route && route.startsWith('album:')) {
+    currentView = 'album';
+    const pid = decodeURIComponent(route.slice(6));
+    try { window.renderAlbum(pid); } catch (err) { _renderError(err, '앨범 페이지'); }
+    setTimeout(observeReveals, 20);
+    return;
+  }
+
   // Playlist universe route: "playlist:<id>"
   if (route && route.startsWith('playlist:')) {
     currentView = 'playlist';
@@ -3544,10 +3553,85 @@ window.renderArtistTestLayout = function () {
 
 // ===================== 앨범(데모) 페이지 — 데모 하나당 한 페이지 (테스트) =====================
 // window.renderAlbumTest(trackId) — 아티스트 페이지의 앨범 카드 → 이 페이지로 들어옴.
+// 앨범 페이지 공유 렌더러 — 히어로 + 데모폼(renderProjectBox) + 소개 + 가사.
+//   t = 대표 트랙(히어로/소개/가사), versions = 프로젝트의 모든 버전(데모폼), pid = projectId.
+function _renderAlbumView(appContent, d) {
+  const esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const t = d.t, artistName = d.artistName, tags = d.tags || [], songTitle = d.songTitle,
+        note = d.note || '', lyrics = d.lyrics || '', versions = d.versions || [], pid = d.pid;
+  const cover = t.cover || 'https://picsum.photos/seed/albcover/500';
+  let projectBoxHtml = '';
+  try {
+    // 'reveal'(스크롤 진입 애니메이션)이 IntersectionObserver 미발화 시 opacity:0 으로 숨으므로 제거.
+    projectBoxHtml = renderProjectBox(pid, versions).replace('project-box reveal', 'project-box');
+  } catch (e) { console.warn('[album] renderProjectBox', e); projectBoxHtml = '<div class="alb2-card">데모를 불러오지 못했어요</div>'; }
+  appContent.innerHTML = `
+    <div class="artist-canvas">
+      <div class="artist-bg-deco"></div>
+      <div class="sub-page">
+        <div class="alb2-wrap">
+          <button class="alb2-back" type="button" onclick="(window.history.length>1)?history.back():navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))" aria-label="뒤로"><i class="ri-arrow-left-line"></i></button>
+
+          <!-- 위: 히어로 (커버 + 제목 + 아티스트 + 스탯) -->
+          <div class="alb2-hero">
+            <img class="alb2-cover" src="${cover}" alt="" draggable="false">
+            <div class="alb2-head">
+              <span class="alb2-badge">${esc(t.versionLabel || (t.isDemo === false ? 'MASTER' : 'DEMO'))}</span>
+              <h1 class="alb2-title">${esc(songTitle)}</h1>
+              <div class="alb2-artist" onclick="navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))">— ${esc(artistName)}</div>
+              <div class="alb2-stats">❤ ${t.likes || 0} · ▶ ${(t.plays || 0).toLocaleString()} 재생</div>
+            </div>
+          </div>
+
+          <div class="alb2-actions">
+            <button class="alb2-play" type="button" onclick="playTrack('${t.id}','wall')"><i class="ri-play-fill"></i> 재생</button>
+            <button class="alb2-chip" type="button" onclick="this.classList.toggle('is-on')" aria-label="좋아요"><i class="ri-heart-3-line"></i></button>
+            <button class="alb2-chip" type="button" onclick="this.classList.toggle('is-on')" aria-label="담기"><i class="ri-add-line"></i></button>
+            <button class="alb2-chip" type="button" aria-label="공유" onclick="_threadShare('${t.id}')"><i class="ri-send-plane-line"></i></button>
+          </div>
+          ${tags.length ? `<div class="alb2-tags">${tags.map(tg => `<span class="alb2-tag">#${esc(tg)}</span>`).join('')}</div>` : ''}
+
+          <!-- 마스터 + 데모 (projects-grid → 흰 박스 없음 + PC 가로 필름스트립 / 모바일 스네이크) -->
+          <div class="alb2-projectbox projects-grid">${projectBoxHtml}</div>
+
+          ${note ? `<h2 class="section-title"><i class="ri-quill-pen-line"></i> 소개</h2><div class="alb2-card">${esc(note)}</div>` : ''}
+          ${lyrics ? `<h2 class="section-title"><i class="ri-double-quotes-l"></i> 가사</h2><div class="alb2-card lyrics">${esc(lyrics)}</div>` : ''}
+        </div>
+      </div>
+    </div>`;
+}
+
+// 실데이터 앨범 페이지 — pid = projectId 또는 'proj_'+trackId(싱글). 라우트 'album:<pid>' 가 호출.
+window.renderAlbum = function (pid) {
+  const appContent = document.getElementById('app-content');
+  if (!appContent) return;
+  if (typeof pid === 'string' && pid.indexOf('%') >= 0) { try { pid = decodeURIComponent(pid); } catch (_) {} }
+  const db = window.DB.get();
+  let versions = (db.tracks || []).filter(t => t && (t.projectId || ('proj_' + t.id)) === pid);
+  if (!versions.length) { const single = (db.tracks || []).find(t => t && t.id === pid); if (single) versions = [single]; }
+  if (!versions.length) {
+    appContent.innerHTML = `<div class="artist-canvas"><div class="artist-bg-deco"></div><div class="sub-page"><div class="alb2-wrap"><button class="alb2-back" type="button" onclick="history.back()"><i class="ri-arrow-left-line"></i></button><div class="alb2-card" style="margin-top:14px;">앨범을 찾을 수 없어요.</div></div></div></div>`;
+    return;
+  }
+  const master = versions.find(v => !v.isDemo);
+  const sorted = versions.slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  const rep = master || sorted[0];
+  _renderAlbumView(appContent, {
+    t: rep,
+    artistName: rep.artist || '',
+    tags: (Array.isArray(rep.tags) && rep.tags.length) ? rep.tags : [],
+    songTitle: (rep.title || '제목 없음').replace(/\s*\(Demo.*\)$/i, ''),
+    note: (rep.artistNote || rep.description || '').trim(),
+    lyrics: (rep.lyrics || '').trim(),
+    versions,
+    pid
+  });
+};
+
+// 목업 앨범 페이지(프리뷰 테스트용) — 실데이터 없이 레이아웃 확인.
 window.renderAlbumTest = function (trackId) {
   const appContent = document.getElementById('app-content');
   if (!appContent) return;
-  const esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const db = window.DB.get();
   let t = (db.tracks || []).find(x => x && x.id === trackId);
   if (!t) t = {
@@ -3555,16 +3639,9 @@ window.renderAlbumTest = function (trackId) {
     versionLabel: 'Demo 2', artistNote: '새벽 4시에 작업한 곡이에요. 드라이브하면서 들으면 딱 좋아요 🚗💨\n아직 미완성이라 피드백 환영!',
     tags: ['시티팝', '새벽', '드라이브'], likes: 88, plays: 1234
   };
-  const cover = t.cover || 'https://picsum.photos/seed/albcover/500';
   const artistName = t.artist || '주형';
-  const tags = Array.isArray(t.tags) && t.tags.length ? t.tags : ['시티팝', '새벽', '드라이브'];
   const songTitle = (t.title || '제목 없음').replace(/\s*\(Demo.*\)$/i, '');
-  const note = (t.artistNote || t.description || '새벽에 작업한 데모예요. 들어보고 의견 남겨주세요!').trim();
-  // 가사 — 있으면 표시(테스트라 없으면 샘플)
-  const lyrics = (t.lyrics || '').trim() || '네온사인 흐르는 거리\n창문을 내리고 달려\n오늘 밤은 끝나지 않아\n우리 둘만의 드라이브';
-
-  // ── 현재 폼(마스터 / 데모 스네이크) — 기존 renderProjectBox 를 그대로 재사용. ──
-  //    테스트라 mock 버전(마스터 + 데모1~4)을 만들어 스네이크가 채워지게 함.
+  const cover = t.cover || 'https://picsum.photos/seed/albcover/500';
   const _pid = 'albtestpid';
   const _now = Date.now();
   const mkV = (ver, label, daysAgo, vnote) => ({
@@ -3580,52 +3657,13 @@ window.renderAlbumTest = function (trackId) {
     mkV('demo3', 'Demo 3', 9, '드럼·베이스 입히고 훅 다듬음.'),
     mkV('demo4', 'Demo 4', 3, '믹스 1차 + 보컬 가이드 녹음. 곧 마스터!')
   ];
-  let projectBoxHtml = '';
-  try {
-    // 'reveal'(스크롤 진입 애니메이션)은 IntersectionObserver 가 안 붙으면 opacity:0 으로 숨어버림.
-    // 앨범 페이지에선 항상 보여야 하므로 제거.
-    projectBoxHtml = renderProjectBox(_pid, versions).replace('project-box reveal', 'project-box');
-  } catch (e) { console.warn('[albumtest] renderProjectBox', e); projectBoxHtml = '<div class="alb2-card">데모 미리보기를 불러오지 못했어요</div>'; }
-  appContent.innerHTML = `
-    <div class="artist-canvas">
-      <div class="artist-bg-deco"></div>
-      <div class="sub-page">
-        <div class="alb2-wrap">
-          <button class="alb2-back" type="button" onclick="(window.history.length>1)?history.back():navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))" aria-label="뒤로"><i class="ri-arrow-left-line"></i></button>
-
-          <!-- 위: 히어로 (커버 + 제목 + 아티스트 + 스탯) -->
-          <div class="alb2-hero">
-            <img class="alb2-cover" src="${cover}" alt="" draggable="false">
-            <div class="alb2-head">
-              <span class="alb2-badge">${esc(t.versionLabel || 'DEMO')}</span>
-              <h1 class="alb2-title">${esc(songTitle)}</h1>
-              <div class="alb2-artist" onclick="navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))">— ${esc(artistName)}</div>
-              <div class="alb2-stats">❤ ${t.likes || 0} · ▶ ${(t.plays || 0).toLocaleString()} 재생</div>
-            </div>
-          </div>
-
-          <div class="alb2-actions">
-            <button class="alb2-play" type="button" onclick="playTrack('${t.id}','wall')"><i class="ri-play-fill"></i> 재생</button>
-            <button class="alb2-chip" type="button" onclick="this.classList.toggle('is-on')" aria-label="좋아요"><i class="ri-heart-3-line"></i></button>
-            <button class="alb2-chip" type="button" onclick="this.classList.toggle('is-on'); showToast&&showToast('담았어요 (테스트)')" aria-label="담기"><i class="ri-add-line"></i></button>
-            <button class="alb2-chip" type="button" aria-label="공유"><i class="ri-send-plane-line"></i></button>
-          </div>
-          <div class="alb2-tags">${tags.map(tg => `<span class="alb2-tag">#${esc(tg)}</span>`).join('')}</div>
-
-          <!-- 현재 폼: 마스터 + 데모 (라이브 아티스트 페이지와 동일하게 projects-grid 로 감쌈
-               → 흰 박스 없음 + PC 가로 필름스트립 / 모바일 스네이크) -->
-          <div class="alb2-projectbox projects-grid">${projectBoxHtml}</div>
-
-          <!-- 소개 -->
-          <h2 class="section-title"><i class="ri-quill-pen-line"></i> 소개</h2>
-          <div class="alb2-card">${esc(note)}</div>
-
-          <!-- 가사 -->
-          <h2 class="section-title"><i class="ri-double-quotes-l"></i> 가사</h2>
-          <div class="alb2-card lyrics">${esc(lyrics)}</div>
-        </div>
-      </div>
-    </div>`;
+  _renderAlbumView(appContent, {
+    t, artistName, songTitle,
+    tags: (Array.isArray(t.tags) && t.tags.length) ? t.tags : ['시티팝', '새벽', '드라이브'],
+    note: (t.artistNote || t.description || '새벽에 작업한 데모예요.').trim(),
+    lyrics: (t.lyrics || '').trim() || '네온사인 흐르는 거리\n창문을 내리고 달려\n오늘 밤은 끝나지 않아\n우리 둘만의 드라이브',
+    versions, pid: _pid
+  });
 };
 
 // 레거시 포스트잇 벽 — 주절주절을 스레드 피드로 교체하면서 보존(되돌리기용). 라우트에서 호출 안 함.
@@ -11838,6 +11876,37 @@ function renderArtistProfile(artistName) {
   const releasedCount = Object.keys(releasedProjects).length;
   const demoCount = Object.keys(demoOnlyProjects).length;
 
+  // === 새 단일스크롤 레이아웃 데이터: 최신 데모 hero + 앨범 카드 + 주절주절 피드 ===
+  const _esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const _sortedTracks = artistTracks.slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  const latestTrack = _sortedTracks[0] || null;
+  // 앨범(프로젝트) 카드 — 프로젝트별 대표(마스터 우선, 없으면 최신 데모) + 데모 수.
+  const albumCards = Object.entries(projects).map(([pid, versions]) => {
+    const vs = versions.slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    const master = versions.find(v => !v.isDemo);
+    const rep = master || vs[0];
+    const demoN = versions.filter(v => v.isDemo).length;
+    return {
+      pid,
+      id: rep.id,
+      title: (rep.title || '').replace(/\s*\(Demo.*\)$/i, ''),
+      cover: rep.cover || '',
+      meta: master ? (demoN ? ('정규 · 데모 ' + demoN) : '정규') : ('데모 ' + demoN + '개'),
+      latestTime: new Date(vs[0].createdAt || 0).getTime()
+    };
+  }).sort((a, b) => b.latestTime - a.latestTime);
+  // 주절주절 피드 — 이 아티스트의 노트(소식)를 스레드 포스트로.
+  const _meU = window.__currentUser || db.currentUser || null;
+  const _myId2 = _meU && _meU.id;
+  const artistFeedPosts = artistNotes
+    .slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+    .map(n => ({
+      id: n.id, name: n.author || artistName, avatar: avatar,
+      time: _threadTimeAgo(n.createdAt), text: n.text || '', image: n.imageUrl || null,
+      track: n.trackId ? _threadTrackOf(n.trackId) : null,
+      comments: (n.comments || []).length, isMine: !!(_myId2 && n.authorId === _myId2)
+    }));
+
   // Legacy combined html (still used as fallback when split has nothing)
   let projectsHtml = releasedHtml + demoHtml;
 
@@ -12003,12 +12072,7 @@ function renderArtistProfile(artistName) {
             </div>
           </div>
           ${'' /* counts box (앨범/프로젝트/싱글) hidden for now — will surface later when there are many songs */}
-          <aside class="artist-postit-aside">
-            ${'' /* 소식 — 핀에 박힌 스택 (고정 ~4 앞, 나머지 뒤 겹침, 스와이프로 넘김) */}
-            ${(artistNotes.length > 0 || isSelf)
-              ? _soshikStackHtml(artistNotes, isSelf, artistName)
-              : '' /* 방문자 + 소식 없음 → 빈 메시지 없이 그냥 비움 (사용자 요청) */}
-          </aside>
+          ${'' /* 소식 핀-스택 제거 — 노트(소식)는 아래 '주절주절' 피드로 통합됨 (단일스크롤 레이아웃) */}
         </div>
 
         ${'' /* 기존 별도 postit-section은 프로필 옆으로 이동됨 */ ? `<div class="reveal artist-postit-section">
@@ -12033,46 +12097,67 @@ function renderArtistProfile(artistName) {
           </div>
 
           <div class="artist-content-pane" data-content-tab="music">
-            <!-- 청취곡: 마스터(싱글 포함). Wrapped in projects-grid so albums
-                 lay out as 4-per-row on desktop, 2-3 on tablet, 1 on mobile. -->
-            ${releasedCount > 0 ? `
-              <div id="artist-section-singles" class="reveal projects-grid" style="margin-top:20px; scroll-margin-top:80px;">
-                ${releasedHtml}
+            <div class="atl-page">
+            <!-- 최신 데모 (위, 크게) — 탭하면 앨범 페이지 -->
+            ${latestTrack ? `
+              <div class="atl-section-head" style="margin-top:18px;">
+                <div class="atl-section-title"><i class="ri-fire-fill" style="color:#ff6b6b;"></i> ${_i18n('최신 데모', 'Latest demo')}</div>
+              </div>
+              <div class="atl-hero reveal" onclick="navigateTo('album:'+encodeURIComponent('${(latestTrack.projectId || ('proj_' + latestTrack.id)).replace(/'/g, "\\'")}'))">
+                <img class="atl-hero-cover" src="${latestTrack.cover || ''}" alt="">
+                <div class="atl-hero-info">
+                  <span class="atl-hero-badge">${_esc(latestTrack.versionLabel || (latestTrack.isDemo ? 'DEMO' : 'MASTER'))}</span>
+                  <div class="atl-hero-title">${_esc((latestTrack.title || '').replace(/\s*\(Demo.*\)$/i, ''))}</div>
+                  <div class="atl-hero-sub">${safeName}</div>
+                  <div class="atl-hero-actions">
+                    <button class="atl-hero-play" type="button" onclick="event.stopPropagation(); playTrack('${latestTrack.id}','wall')" aria-label="${_t('재생', 'Play')}"><i class="ri-play-fill"></i></button>
+                  </div>
+                </div>
               </div>
             ` : ''}
-            <!-- 데모곡: 프로젝트 진행중 -->
-            ${demoCount > 0 ? `
-              <div id="artist-section-projects" class="reveal projects-grid" style="margin-top:24px; scroll-margin-top:80px;">
-                ${demoHtml}
+
+            <!-- 음악(앨범) — 데모 단위 카드, 탭하면 앨범 페이지 -->
+            ${albumCards.length ? `
+              <div class="atl-section-head">
+                <div class="atl-section-title"><i class="ri-album-fill" style="color:var(--brand-color);"></i> ${_i18n('음악', 'Music')}</div>
+                ${albumCards.length > 6 ? `<button class="atl-more-btn" type="button" onclick="var g=this.closest('.artist-content-pane').querySelector('.atl-albums'); if(g) g.classList.add('show-all'); this.remove();">${_i18n('음원 더보기', 'More')} <i class="ri-arrow-right-s-line"></i></button>` : ''}
               </div>
-            ` : ''}
+              <div class="atl-albums reveal">
+                ${albumCards.map(a => `
+                  <div class="atl-album" onclick="navigateTo('album:'+encodeURIComponent('${a.pid.replace(/'/g, "\\'")}'))">
+                    <img class="atl-album-cover" src="${a.cover}" alt="" loading="lazy">
+                    <div class="atl-album-title">${_esc(a.title)}</div>
+                    <div class="atl-album-meta">${_esc(a.meta)}</div>
+                  </div>`).join('')}
+              </div>
+            ` : (isSelf ? `
+              <div class="atl-section-head" style="margin-top:18px;">
+                <div class="atl-section-title"><i class="ri-album-fill" style="color:var(--brand-color);"></i> ${_i18n('음악', 'Music')}</div>
+              </div>
+              <div class="atl-albums">
+                <div class="atl-album atl-album-add" onclick="navigateTo('upload')" title="${_t('첫 곡 업로드하기', 'Upload your first track')}">
+                  <div class="atl-album-cover atl-album-add-cover"><i class="ri-add-line"></i></div>
+                  <div class="atl-album-title">${_i18n('첫 곡 올리기', 'Upload')}</div>
+                  <div class="atl-album-meta">${_i18n('데모부터 시작', 'Start with a demo')}</div>
+                </div>
+              </div>
+            ` : '')}
             <div id="artist-section-albums" style="scroll-margin-top:80px;"></div>
-            ${(releasedCount + demoCount) === 0 ? (
-              isSelf
-                ? `
-                  <!-- 본인 페이지 + 곡 0개 — 가짜 "DEMO 1" 카드 (+) 로 업로드 유도.
-                       기존 demo-card-add 스타일 재사용. 클릭하면 업로드 페이지.
-                       projects-grid 안에 single demo-card 만 들어가도록 wrap. -->
-                  <div class="reveal projects-grid" style="margin-top:24px;">
-                    <div class="project-box">
-                      <div class="demo-path empty-demo-path" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;">
-                        <div class="demo-card demo-card-add is-empty-placeholder"
-                             onclick="navigateTo('upload')"
-                             title="${_t('첫 곡 업로드하기', 'Upload your first track')}"
-                             style="grid-column:1; grid-row:1;">
-                          <i class="ri-add-line"></i>
-                          <span class="demo-card-add-label">${_i18n('DEMO 1 추가', 'Add DEMO 1')}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                `
-                : `
-                  <div class="reveal" style="margin-top:36px;">
-                    <p style="color:var(--text-secondary);">${_i18n('아직 업로드한 곡이 없어요.', 'No tracks uploaded yet.')}</p>
-                  </div>
-                `
-            ) : ''}
+
+            <!-- 주절주절 피드 — 이 아티스트의 소식 -->
+            <div class="atl-divider"></div>
+            <div class="atl-feed-head"><i class="ri-chat-smile-2-line" style="color:var(--brand-color);"></i> ${_i18n('주절주절', 'blah blah')}</div>
+            ${isSelf ? `
+              <div class="thread-composer" onclick="openThreadComposer()">
+                <img class="thread-avatar" src="${avatar}" alt="">
+                <div class="thread-composer-hint">${_t('무슨 생각 중이에요? · 노래·사진 올리기', "What's on your mind?")}</div>
+                <button class="thread-composer-go" type="button" aria-label="${_t('새 글', 'New')}"><i class="ri-add-line"></i></button>
+              </div>
+            ` : ''}
+            ${artistFeedPosts.length
+              ? artistFeedPosts.map(_threadPostHtml).join('')
+              : `<div class="atl-feed-empty">${isSelf ? _t('첫 주절주절을 남겨보세요!', 'Post your first one!') : _t('아직 주절주절이 없어요.', 'Nothing here yet.')}</div>`}
+            </div><!-- /.atl-page -->
           </div>
 
           <!-- '받은 응원' 섹션 제거 (사용자 요청). mountCheerHeart 가 안전하게
