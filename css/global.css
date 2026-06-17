@@ -18572,46 +18572,58 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
 }
 
 /* ============================================================
-   앨범(데모) 페이지 — 데모 하나당 한 페이지 (테스트)
+   앨범(데모) 페이지 — 기존 아티스트 페이지 스타일 (연보라 캔버스 + 흰박스/검정테두리/노랑포인트)
+   .artist-canvas 안에서 .alb2-* 사용. (사용자 요청: 기존 아티스트 페이지처럼)
    ============================================================ */
-.alb-page { max-width: 600px; margin: 0 auto; padding: 0 0 130px; position: relative; }
-/* 커버 색을 위로 은은하게 깔아 분위기 */
-.alb-glow { position: absolute; top: 0; left: 0; right: 0; height: 320px; z-index: 0;
-  background: radial-gradient(120% 80% at 50% 0%, rgba(58,43,209,0.35), transparent 70%); pointer-events: none; }
-.alb-top { position: relative; z-index: 1; display: flex; align-items: center; padding: 12px 12px 4px; }
-.alb-back { background: rgba(0,0,0,0.35); border: none; color: var(--text-primary); width: 38px; height: 38px; border-radius: 50%; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.alb-hero { position: relative; z-index: 1; text-align: center; padding: 4px 20px 18px; }
-.alb-cover { width: 220px; height: 220px; border-radius: 16px; object-fit: cover; margin: 0 auto 18px; display: block; box-shadow: 0 18px 44px rgba(0,0,0,0.55); background: var(--surface-color); }
-.alb-badge { display: inline-block; background: #3a2bd1; color: #fff; font-size: 11px; font-weight: 800; padding: 3px 11px; border-radius: 999px; margin-bottom: 9px; letter-spacing: 0.3px; }
-.alb-title { font-size: 24px; font-weight: 800; color: var(--text-primary); line-height: 1.2; word-break: keep-all; }
-.alb-artist { font-size: 15px; color: var(--text-secondary); margin-top: 5px; cursor: pointer; display: inline-block; }
-.alb-artist:hover { color: var(--brand-color); }
-.alb-stats { font-size: 13px; color: var(--text-secondary); margin-top: 8px; }
-.alb-actions { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 18px; }
-.alb-play { background: var(--brand-color); color: #fff; border: none; border-radius: 999px; padding: 13px 32px; font-size: 16px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
-.alb-play i { font-size: 20px; }
-.alb-iconbtn { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--divider); background: var(--surface-color); color: var(--text-primary); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.alb-iconbtn.is-on { color: #ff2e63; border-color: rgba(255,46,99,0.5); }
-.alb-tags { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding: 2px 16px 0; }
-.alb-tag { font-size: 12.5px; color: var(--brand-color); font-weight: 600; }
-.alb-section { padding: 18px 18px 2px; }
-.alb-section-t { font-size: 15px; font-weight: 800; color: var(--text-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-.alb-desc { font-size: 14px; line-height: 1.65; color: rgba(255,255,255,0.82); white-space: pre-wrap; word-break: break-word; }
-.alb-lyrics { font-size: 14px; line-height: 1.85; color: rgba(255,255,255,0.72); white-space: pre-wrap; }
-.alb-divider { height: 1px; background: var(--divider); margin: 18px 18px 4px; }
-/* 같은 프로젝트의 다른 데모 버전 */
-.alb-versions { display: flex; flex-direction: column; gap: 8px; padding: 4px 16px 0; }
-.alb-version { display: flex; align-items: center; gap: 12px; padding: 8px 10px; background: var(--surface-color); border: 1px solid var(--divider); border-radius: 12px; cursor: pointer; }
-.alb-version img { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
-.alb-version-t { flex: 1; min-width: 0; }
-.alb-version-name { font-size: 14px; font-weight: 700; color: var(--text-primary); }
-.alb-version-sub { font-size: 12px; color: var(--text-secondary); }
-.alb-version.is-current { border-color: var(--brand-color); }
-.alb-version-play { color: var(--brand-color); font-size: 22px; }
+.artist-canvas .alb2-wrap { max-width: 640px; margin: 0 auto; }
+.alb2-back { background: rgba(0,0,0,0.78); border: none; color: #fff; width: 38px; height: 38px; border-radius: 50%; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+.alb2-hero { display: flex; gap: 18px; align-items: center; margin-bottom: 18px; }
+.alb2-cover { width: 132px; height: 132px; border-radius: 14px; object-fit: cover; border: 3px solid #111; box-shadow: 5px 5px 0 #111; flex-shrink: 0; background: #fff; }
+.alb2-head { flex: 1; min-width: 0; }
+.alb2-badge { display: inline-block; background: #111; color: #FFE500; font-size: 10px; font-weight: 900; padding: 3px 10px; border-radius: 2px; letter-spacing: 0.8px; }
+.alb2-title { font-size: 30px; font-weight: 900; color: #FFE500; text-shadow: 2px 2px 0 rgba(0,0,0,0.22); margin: 8px 0 2px; line-height: 1.05; word-break: keep-all; }
+.alb2-artist { font-size: 14px; font-weight: 800; color: #2a2240; cursor: pointer; display: inline-block; }
+.alb2-artist:hover { color: #6B46C1; }
+.alb2-stats { font-size: 13px; color: #2a2240; margin-top: 7px; font-weight: 700; }
+.alb2-actions { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+.alb2-play { background: #FFE500; color: #111; border: 2px solid #111; border-radius: 4px; box-shadow: 3px 3px 0 #111; padding: 11px 24px; font-size: 15px; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+.alb2-play:hover { background: #111; color: #FFE500; box-shadow: 3px 3px 0 #FFE500; }
+.alb2-chip { width: 44px; height: 44px; border-radius: 50%; border: 2px solid #111; background: #fff; color: #111; font-size: 19px; cursor: pointer; box-shadow: 2px 2px 0 #111; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.alb2-chip.is-on { background: #ff2e63; color: #fff; box-shadow: 2px 2px 0 #111; }
+.alb2-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.alb2-tag { background: #fff; border: 1.5px solid #111; color: #111; font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 2px; }
+.alb2-card { background: #fff; border: 1.5px solid #111; border-radius: 6px; padding: 14px 16px; box-shadow: 4px 4px 0 rgba(0,0,0,0.16); font-size: 14px; line-height: 1.65; color: #111; white-space: pre-wrap; word-break: break-word; margin-bottom: 22px; }
+.alb2-card.lyrics { line-height: 1.85; color: #2a2240; }
+.alb2-versions { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+.alb2-version { display: flex; align-items: center; gap: 12px; background: #fff; border: 1.5px solid #111; border-radius: 6px; padding: 8px 12px; box-shadow: 3px 3px 0 rgba(0,0,0,0.14); cursor: pointer; }
+.alb2-version img { width: 46px; height: 46px; border-radius: 6px; object-fit: cover; border: 1.5px solid #111; flex-shrink: 0; }
+.alb2-version-t { flex: 1; min-width: 0; }
+.alb2-version-name { font-size: 14px; font-weight: 800; color: #111; }
+.alb2-version-sub { font-size: 12px; color: #2a2240; font-weight: 600; }
+.alb2-version.is-current { box-shadow: 3px 3px 0 #FFE500; }
+.alb2-version-play { color: #6B46C1; font-size: 24px; }
+/* 댓글 — 캔버스(밝은 배경) 위라 어두운 글씨 카드 */
+.alb2-composer { display: flex; align-items: center; gap: 10px; background: #fff; border: 1.5px solid #111; border-radius: 999px; padding: 8px 10px 8px 8px; box-shadow: 3px 3px 0 rgba(0,0,0,0.14); margin-bottom: 14px; cursor: pointer; }
+.alb2-composer img { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid #111; }
+.alb2-composer span { flex: 1; color: #555; font-size: 14px; }
+.alb2-composer button { width: 30px; height: 30px; border-radius: 50%; background: #FFE500; border: 1.5px solid #111; color: #111; font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.alb2-cm { display: flex; gap: 10px; background: #fff; border: 1.5px solid #111; border-radius: 8px; padding: 10px 12px; box-shadow: 2px 2px 0 rgba(0,0,0,0.12); margin-bottom: 10px; }
+.alb2-cm-avatar { width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid #111; object-fit: cover; flex-shrink: 0; }
+.alb2-cm-b { flex: 1; min-width: 0; }
+.alb2-cm-head { display: flex; align-items: baseline; gap: 6px; }
+.alb2-cm-name { font-weight: 800; color: #111; font-size: 13px; }
+.alb2-cm-time { font-size: 11px; color: #6b6680; }
+.alb2-cm-text { color: #222; font-size: 13.5px; line-height: 1.5; margin-top: 1px; }
+.alb2-cm-acts { display: flex; gap: 14px; margin-top: 6px; color: #6b6680; font-size: 12px; }
+.alb2-cm-acts i { font-size: 15px; }
 
 @media (min-width: 800px) {
-  .alb-page { max-width: 720px; }
-  .alb-cover { width: 300px; height: 300px; }
-  .alb-title { font-size: 30px; }
-  .alb-glow { height: 420px; }
+  .artist-canvas .alb2-wrap { max-width: 720px; }
+  .alb2-cover { width: 200px; height: 200px; }
+  .alb2-title { font-size: 38px; }
+}
+@media (max-width: 420px) {
+  .alb2-hero { gap: 14px; }
+  .alb2-cover { width: 108px; height: 108px; box-shadow: 4px 4px 0 #111; }
+  .alb2-title { font-size: 24px; }
 }

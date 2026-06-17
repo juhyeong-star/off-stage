@@ -3481,48 +3481,65 @@ window.renderAlbumTest = function (trackId) {
     { id: 'ac1', name: '유진', avatar: 'https://i.pravatar.cc/150?u=yujin', time: '2시간', text: '이거 진짜 좋다 🔥 빨리 완성본 듣고 싶어요', image: null, track: null, likes: 12, comments: 0 },
     { id: 'ac2', name: '민지', avatar: 'https://i.pravatar.cc/150?u=minji', time: '어제', text: '드라이브할 때 무한반복 중이에요 🚗', image: null, track: null, likes: 5, comments: 0 },
   ];
+  const myAv = (window.__currentUser && window.__currentUser.avatar) || 'https://i.pravatar.cc/150?u=me';
   appContent.innerHTML = `
-    <div class="alb-page">
-      <div class="alb-glow"></div>
-      <div class="alb-top">
-        <button class="alb-back" type="button" onclick="(window.history.length>1)?history.back():navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))" aria-label="뒤로"><i class="ri-arrow-left-line"></i></button>
-      </div>
-      <div class="alb-hero">
-        <img class="alb-cover" src="${cover}" alt="" draggable="false">
-        <div class="alb-badge">${esc(t.versionLabel || 'Demo')}</div>
-        <div class="alb-title">${esc(t.title || '제목 없음')}</div>
-        <div class="alb-artist" onclick="navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))">— ${esc(artistName)}</div>
-        <div class="alb-stats">❤ ${t.likes || 0} · ▶ ${(t.plays || 0).toLocaleString()} 재생</div>
-        <div class="alb-actions">
-          <button class="alb-play" type="button" onclick="playTrack('${t.id}','wall')"><i class="ri-play-fill"></i> 재생</button>
-          <button class="alb-iconbtn" type="button" onclick="this.classList.toggle('is-on')" aria-label="좋아요"><i class="ri-heart-3-line"></i></button>
-          <button class="alb-iconbtn" type="button" onclick="this.classList.toggle('is-on'); showToast&&showToast('담았어요 (테스트)')" aria-label="담기"><i class="ri-add-line"></i></button>
-          <button class="alb-iconbtn" type="button" aria-label="공유"><i class="ri-send-plane-line"></i></button>
+    <div class="artist-canvas">
+      <div class="artist-bg-deco"></div>
+      <div class="sub-page">
+        <div class="alb2-wrap">
+          <button class="alb2-back" type="button" onclick="(window.history.length>1)?history.back():navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))" aria-label="뒤로"><i class="ri-arrow-left-line"></i></button>
+
+          <div class="alb2-hero">
+            <img class="alb2-cover" src="${cover}" alt="" draggable="false">
+            <div class="alb2-head">
+              <span class="alb2-badge">${esc(t.versionLabel || 'DEMO')}</span>
+              <h1 class="alb2-title">${esc(t.title || '제목 없음')}</h1>
+              <div class="alb2-artist" onclick="navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))">— ${esc(artistName)}</div>
+              <div class="alb2-stats">❤ ${t.likes || 0} · ▶ ${(t.plays || 0).toLocaleString()} 재생</div>
+            </div>
+          </div>
+
+          <div class="alb2-actions">
+            <button class="alb2-play" type="button" onclick="playTrack('${t.id}','wall')"><i class="ri-play-fill"></i> 재생</button>
+            <button class="alb2-chip" type="button" onclick="this.classList.toggle('is-on')" aria-label="좋아요"><i class="ri-heart-3-line"></i></button>
+            <button class="alb2-chip" type="button" onclick="this.classList.toggle('is-on'); showToast&&showToast('담았어요 (테스트)')" aria-label="담기"><i class="ri-add-line"></i></button>
+            <button class="alb2-chip" type="button" aria-label="공유"><i class="ri-send-plane-line"></i></button>
+          </div>
+          <div class="alb2-tags">${tags.map(tg => `<span class="alb2-tag">#${esc(tg)}</span>`).join('')}</div>
+
+          <h2 class="section-title"><i class="ri-quill-pen-line"></i> 소개</h2>
+          <div class="alb2-card">${esc(note)}</div>
+
+          <h2 class="section-title"><i class="ri-double-quotes-l"></i> 가사</h2>
+          <div class="alb2-card lyrics">${esc(lyrics)}</div>
+
+          <h2 class="section-title"><i class="ri-stack-line"></i> 이 프로젝트의 데모</h2>
+          <div class="alb2-versions">
+            ${versions.map(v => `
+              <div class="alb2-version ${v.current ? 'is-current' : ''}" onclick="renderAlbumTest('${v.id}')">
+                <img src="${v.cover}" alt="">
+                <div class="alb2-version-t"><div class="alb2-version-name">${esc(v.name)}</div><div class="alb2-version-sub">${esc(v.sub)}</div></div>
+                <i class="ri-play-circle-fill alb2-version-play"></i>
+              </div>`).join('')}
+          </div>
+
+          <h2 class="section-title"><i class="ri-chat-3-line"></i> 댓글 ${comments.length}</h2>
+          <div class="alb2-composer" onclick="openThreadComposer()">
+            <img src="${myAv}" alt="">
+            <span>이 데모에 댓글 남기기…</span>
+            <button type="button" aria-label="댓글"><i class="ri-add-line"></i></button>
+          </div>
+          ${comments.map(c => `
+            <div class="alb2-cm">
+              <img class="alb2-cm-avatar" src="${c.avatar}" alt="">
+              <div class="alb2-cm-b">
+                <div class="alb2-cm-head"><span class="alb2-cm-name">${esc(c.name)}</span><span class="alb2-cm-time">· ${esc(c.time)}</span></div>
+                <div class="alb2-cm-text">${esc(c.text)}</div>
+                <div class="alb2-cm-acts"><span><i class="ri-heart-3-line"></i> ${c.likes || ''}</span><span><i class="ri-chat-3-line"></i></span></div>
+              </div>
+            </div>`).join('')}
         </div>
       </div>
-      <div class="alb-tags">${tags.map(tg => `<span class="alb-tag">#${esc(tg)}</span>`).join('')}</div>
-
-      <div class="alb-section"><div class="alb-section-t"><i class="ri-quill-pen-line" style="color:var(--brand-color);"></i> 소개</div><div class="alb-desc">${esc(note)}</div></div>
-      <div class="alb-section"><div class="alb-section-t"><i class="ri-double-quotes-l" style="color:var(--brand-color);"></i> 가사</div><div class="alb-lyrics">${esc(lyrics)}</div></div>
-
-      <div class="alb-section"><div class="alb-section-t"><i class="ri-stack-line" style="color:var(--brand-color);"></i> 이 프로젝트의 데모</div></div>
-      <div class="alb-versions">
-        ${versions.map(v => `
-          <div class="alb-version ${v.current ? 'is-current' : ''}" onclick="renderAlbumTest('${v.id}')">
-            <img src="${v.cover}" alt="">
-            <div class="alb-version-t"><div class="alb-version-name">${esc(v.name)}</div><div class="alb-version-sub">${esc(v.sub)}</div></div>
-            <i class="ri-play-circle-fill alb-version-play"></i>
-          </div>`).join('')}
-      </div>
-
-      <div class="alb-divider"></div>
-      <div class="alb-section"><div class="alb-section-t"><i class="ri-chat-3-line" style="color:var(--brand-color);"></i> 댓글 ${comments.length}</div></div>
-      <div class="thread-composer" onclick="openThreadComposer()">
-        <img class="thread-avatar" src="${(window.__currentUser && window.__currentUser.avatar) || 'https://i.pravatar.cc/150?u=me'}" alt="">
-        <div class="thread-composer-hint">이 데모에 댓글 남기기…</div>
-        <button class="thread-composer-go" type="button" aria-label="댓글"><i class="ri-add-line"></i></button>
-      </div>
-      ${comments.map(_threadPostHtml).join('')}
     </div>`;
 };
 
