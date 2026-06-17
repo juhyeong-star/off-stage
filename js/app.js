@@ -2500,25 +2500,44 @@ window.togglePlayerExpand = function(e) {
 window._attachPlayerSwipeUp = function (player) {
   if (!player || player._swipeUpWired) return;
   player._swipeUpWired = true;
-  let sx = 0, sy = 0, st = 0, tracking = false;
-  const EXCLUDE = '.control-btn, .play-btn, .progress-bar, .progress-container, .progress-bar-wrap, .vol-slider, input, button, a, .player-collect-btn, .player-cover, .player-text';
+  let sx = 0, sy = 0, tracking = false, dragging = false;
+  // 컨트롤·슬라이더·버튼만 제외 — 커버/텍스트 등 본문은 스와이프 허용(타깃 넓힘).
+  const EXCLUDE = '.control-btn, .play-btn, .progress-bar, .progress-container, .progress-bar-wrap, .vol-slider, input[type="range"], button';
   player.addEventListener('touchstart', (e) => {
     if (player.classList.contains('expanded')) return;     // 미니 상태에서만
     if (window.innerWidth > 720) return;                   // 모바일만
     const t = e.touches[0]; if (!t) return;
     if (e.target && e.target.closest && e.target.closest(EXCLUDE)) return;
-    sx = t.clientX; sy = t.clientY; st = Date.now(); tracking = true;
+    sx = t.clientX; sy = t.clientY; tracking = true; dragging = false;
   }, { passive: true });
-  player.addEventListener('touchend', (e) => {
-    if (!tracking) return; tracking = false;
+  player.addEventListener('touchmove', (e) => {
+    if (!tracking || player.classList.contains('expanded')) return;
+    const t = e.touches[0]; if (!t) return;
+    const dy = t.clientY - sy, dx = t.clientX - sx;
+    // 위로 + 세로 우세 제스처로 판정되면 페이지 스크롤을 막고 플레이어를 살짝 끌어올림(시각 피드백).
+    if (!dragging && dy < -5 && Math.abs(dy) > Math.abs(dx)) dragging = true;
+    if (dragging) {
+      e.preventDefault();
+      player.style.transition = 'none';
+      player.style.transform = 'translateY(' + (-Math.min(-dy, 90) * 0.55) + 'px)';
+    }
+  }, { passive: false });
+  const end = (e) => {
+    if (!tracking) return;
+    tracking = false;
+    const wasDrag = dragging; dragging = false;
+    player.style.transition = 'transform .18s ease';
+    player.style.transform = '';
     if (player.classList.contains('expanded')) return;
-    const t = e.changedTouches[0]; if (!t) return;
-    const dy = t.clientY - sy, dx = t.clientX - sx, dt = Date.now() - st;
-    // 위로 충분히(세로 우세) 스와이프 → 펼치기
-    if (dy < -36 && Math.abs(dy) > Math.abs(dx) * 1.2 && dt < 700) {
+    const t = (e.changedTouches && e.changedTouches[0]); if (!t) return;
+    const dy = t.clientY - sy, dx = t.clientX - sx;
+    // 위로 30px 이상 + 세로 우세 → 펼치기 (시간 제한 없음 — 천천히 올려도 동작).
+    if (wasDrag && dy < -30 && Math.abs(dy) > Math.abs(dx)) {
       if (typeof window.togglePlayerExpand === 'function') window.togglePlayerExpand({ target: player });
     }
-  }, { passive: true });
+  };
+  player.addEventListener('touchend', end, { passive: true });
+  player.addEventListener('touchcancel', end, { passive: true });
 };
 try { window._attachPlayerSwipeUp(document.getElementById('global-player')); } catch (_) {}
 

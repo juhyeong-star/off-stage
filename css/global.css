@@ -14452,18 +14452,20 @@ body.polaroid-sheet-open { overflow: hidden; }
   background: rgba(17,17,17,0.3);
   border-radius: 2px;
 }
+/* flex + auth(flex-shrink:0) 조합이 긴 작성자 이름일 때 댓글 텍스트를 한 단어씩으로
+   짜부라뜨려서 → inline 흐름(블록)으로. 긴 이름은 문단 안에서 자연스럽게 줄바꿈. */
 .dwm-cm-line {
-  display: flex;
-  gap: 6px;
-  align-items: baseline;
+  display: block;
   font-size: 14.5px;
   line-height: 1.5;
   color: #1a1a1a;
   padding: 2px 0;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
-.dwm-cm-arrow { color: #c2185b; font-weight: 800; flex-shrink: 0; }
-.dwm-cm-text { flex: 1; word-break: keep-all; word-wrap: break-word; }
-.dwm-cm-auth { color: #777; font-size: 12.5px; flex-shrink: 0; }
+.dwm-cm-arrow { color: #c2185b; font-weight: 800; margin-right: 5px; }
+.dwm-cm-text { }
+.dwm-cm-auth { color: #777; font-size: 12.5px; margin-left: 6px; }
 .dwm-empty {
   padding: 18px 0;
   text-align: center;
