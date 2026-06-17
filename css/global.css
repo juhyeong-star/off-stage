@@ -18391,9 +18391,15 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
   position: sticky; top: 0; z-index: 5;
   background: var(--bg-color);
 }
+/* 좁은 화면에선 우상단 고정 토글(가이드 / KO·EN)이 작성 바 오른쪽을 덮음
+   → 그만큼 오른쪽 여백을 확보해 힌트·＋ 버튼이 토글 아래로 들어가지 않게. */
+@media (max-width: 900px) {
+  .thread-composer { padding-right: 158px; }
+}
 .thread-composer .thread-avatar { width: 38px; height: 38px; flex-shrink: 0; }
 .thread-composer-hint {
-  flex: 1; color: var(--text-secondary); font-size: 15px;
+  flex: 1; min-width: 0; color: var(--text-secondary); font-size: 15px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .thread-composer-go {
   border: none; background: var(--brand-color); color: #fff;
