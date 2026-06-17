@@ -846,10 +846,11 @@ body.is-shapes-route .page-intro {
   top: 14px;
   left: 0;
   right: 0;
-  margin: 0;
+  margin: 0 auto;   /* base 의 max-width:720px 박스를 뷰포트 가운데로 (margin:0 이라 좌측에 붙던 것 수정) */
   z-index: 50;
   pointer-events: none;
   background: transparent;
+  text-align: center;
   text-shadow: 0 1px 6px rgba(0,0,0,0.85), 0 0 12px rgba(0,0,0,0.6);
 }
 
