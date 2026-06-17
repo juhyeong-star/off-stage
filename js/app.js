@@ -3467,21 +3467,35 @@ window.renderAlbumTest = function (trackId) {
   };
   const cover = t.cover || 'https://picsum.photos/seed/albcover/500';
   const artistName = t.artist || '주형';
-  const tags = Array.isArray(t.tags) && t.tags.length ? t.tags : ['시티팝', '새벽', '드라이브'];
+  const avatar = t.artistAvatar || t.avatar || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(artistName));
+  const songTitle = (t.title || '제목 없음').replace(/\s*\(Demo.*\)$/i, '');
   const note = (t.artistNote || t.description || '새벽에 작업한 데모예요. 들어보고 의견 남겨주세요!').trim();
   // 가사 — 있으면 표시(테스트라 없으면 샘플)
   const lyrics = (t.lyrics || '').trim() || '네온사인 흐르는 거리\n창문을 내리고 달려\n오늘 밤은 끝나지 않아\n우리 둘만의 드라이브';
-  // 같은 프로젝트의 다른 데모 버전 (테스트 — 샘플)
+
+  // ── 현재 폼(마스터 / 데모 스네이크) — 기존 renderProjectBox 를 그대로 재사용. ──
+  //    테스트라 mock 버전(마스터 + 데모1~4)을 만들어 스네이크가 채워지게 함.
+  const _pid = 'albtestpid';
+  const _now = Date.now();
+  const mkV = (ver, label, daysAgo, vnote) => ({
+    id: _pid + '_' + ver, projectId: _pid, title: songTitle, artist: artistName, cover,
+    version: ver, versionLabel: label, isDemo: ver !== 'final',
+    createdAt: new Date(_now - daysAgo * 86400000).toISOString(),
+    artistNote: vnote || '', trackComments: [], likes: 0, plays: 0, lines: []
+  });
   const versions = [
-    { id: t.id, name: t.versionLabel || 'Demo 2', sub: '지금 보는 버전 · 2:58', cover, current: true },
-    { id: 'v1', name: 'Demo 1', sub: '첫 스케치 · 2:41', cover: 'https://picsum.photos/seed/albv1/200', current: false },
+    mkV('final', 'Master', 0, ''),
+    mkV('demo1', 'Demo 1', 24, '첫 스케치 — 멜로디만 흥얼거림.'),
+    mkV('demo2', 'Demo 2', 17, '코드 진행 추가, 벌스 구성.'),
+    mkV('demo3', 'Demo 3', 9, '드럼·베이스 입히고 훅 다듬음.'),
+    mkV('demo4', 'Demo 4', 3, '믹스 1차 + 보컬 가이드 녹음. 곧 마스터!')
   ];
-  // 댓글 (스레드식 재사용)
-  const comments = [
-    { id: 'ac1', name: '유진', avatar: 'https://i.pravatar.cc/150?u=yujin', time: '2시간', text: '이거 진짜 좋다 🔥 빨리 완성본 듣고 싶어요', image: null, track: null, likes: 12, comments: 0 },
-    { id: 'ac2', name: '민지', avatar: 'https://i.pravatar.cc/150?u=minji', time: '어제', text: '드라이브할 때 무한반복 중이에요 🚗', image: null, track: null, likes: 5, comments: 0 },
-  ];
-  const myAv = (window.__currentUser && window.__currentUser.avatar) || 'https://i.pravatar.cc/150?u=me';
+  let projectBoxHtml = '';
+  try {
+    // 'reveal'(스크롤 진입 애니메이션)은 IntersectionObserver 가 안 붙으면 opacity:0 으로 숨어버림.
+    // 앨범 페이지에선 항상 보여야 하므로 제거.
+    projectBoxHtml = renderProjectBox(_pid, versions).replace('project-box reveal', 'project-box');
+  } catch (e) { console.warn('[albumtest] renderProjectBox', e); projectBoxHtml = '<div class="alb2-card">데모 미리보기를 불러오지 못했어요</div>'; }
   appContent.innerHTML = `
     <div class="artist-canvas">
       <div class="artist-bg-deco"></div>
@@ -3489,55 +3503,30 @@ window.renderAlbumTest = function (trackId) {
         <div class="alb2-wrap">
           <button class="alb2-back" type="button" onclick="(window.history.length>1)?history.back():navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))" aria-label="뒤로"><i class="ri-arrow-left-line"></i></button>
 
-          <div class="alb2-hero">
-            <img class="alb2-cover" src="${cover}" alt="" draggable="false">
-            <div class="alb2-head">
-              <span class="alb2-badge">${esc(t.versionLabel || 'DEMO')}</span>
-              <h1 class="alb2-title">${esc(t.title || '제목 없음')}</h1>
-              <div class="alb2-artist" onclick="navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))">— ${esc(artistName)}</div>
-              <div class="alb2-stats">❤ ${t.likes || 0} · ▶ ${(t.plays || 0).toLocaleString()} 재생</div>
+          <!-- 위: 아티스트 이름 (탭 → 아티스트 페이지) -->
+          <div class="alb2-artisthead" onclick="navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))">
+            <img class="alb2-artistav" src="${avatar}" alt="" draggable="false">
+            <div class="alb2-artisthead-t">
+              <div class="alb2-artistname">${esc(artistName)}</div>
+              <div class="alb2-artistsub">아티스트 · 데모 4개</div>
             </div>
+            <i class="ri-arrow-right-s-line alb2-artisthead-go"></i>
           </div>
 
-          <div class="alb2-actions">
-            <button class="alb2-play" type="button" onclick="playTrack('${t.id}','wall')"><i class="ri-play-fill"></i> 재생</button>
-            <button class="alb2-chip" type="button" onclick="this.classList.toggle('is-on')" aria-label="좋아요"><i class="ri-heart-3-line"></i></button>
-            <button class="alb2-chip" type="button" onclick="this.classList.toggle('is-on'); showToast&&showToast('담았어요 (테스트)')" aria-label="담기"><i class="ri-add-line"></i></button>
-            <button class="alb2-chip" type="button" aria-label="공유"><i class="ri-send-plane-line"></i></button>
-          </div>
-          <div class="alb2-tags">${tags.map(tg => `<span class="alb2-tag">#${esc(tg)}</span>`).join('')}</div>
+          <!-- 현재 폼: 마스터 / 데모 스네이크 (기존 그대로) -->
+          <div class="alb2-projectbox">${projectBoxHtml}</div>
 
+          <!-- 제목 -->
+          <h1 class="alb2-songtitle">${esc(songTitle)}</h1>
+          <div class="alb2-songsub">데모 4개 · 마스터 준비중</div>
+
+          <!-- 소개 -->
           <h2 class="section-title"><i class="ri-quill-pen-line"></i> 소개</h2>
           <div class="alb2-card">${esc(note)}</div>
 
+          <!-- 가사 -->
           <h2 class="section-title"><i class="ri-double-quotes-l"></i> 가사</h2>
           <div class="alb2-card lyrics">${esc(lyrics)}</div>
-
-          <h2 class="section-title"><i class="ri-stack-line"></i> 이 프로젝트의 데모</h2>
-          <div class="alb2-versions">
-            ${versions.map(v => `
-              <div class="alb2-version ${v.current ? 'is-current' : ''}" onclick="renderAlbumTest('${v.id}')">
-                <img src="${v.cover}" alt="">
-                <div class="alb2-version-t"><div class="alb2-version-name">${esc(v.name)}</div><div class="alb2-version-sub">${esc(v.sub)}</div></div>
-                <i class="ri-play-circle-fill alb2-version-play"></i>
-              </div>`).join('')}
-          </div>
-
-          <h2 class="section-title"><i class="ri-chat-3-line"></i> 댓글 ${comments.length}</h2>
-          <div class="alb2-composer" onclick="openThreadComposer()">
-            <img src="${myAv}" alt="">
-            <span>이 데모에 댓글 남기기…</span>
-            <button type="button" aria-label="댓글"><i class="ri-add-line"></i></button>
-          </div>
-          ${comments.map(c => `
-            <div class="alb2-cm">
-              <img class="alb2-cm-avatar" src="${c.avatar}" alt="">
-              <div class="alb2-cm-b">
-                <div class="alb2-cm-head"><span class="alb2-cm-name">${esc(c.name)}</span><span class="alb2-cm-time">· ${esc(c.time)}</span></div>
-                <div class="alb2-cm-text">${esc(c.text)}</div>
-                <div class="alb2-cm-acts"><span><i class="ri-heart-3-line"></i> ${c.likes || ''}</span><span><i class="ri-chat-3-line"></i></span></div>
-              </div>
-            </div>`).join('')}
         </div>
       </div>
     </div>`;
