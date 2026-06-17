@@ -333,9 +333,19 @@ window.audioElement = audioElement;
     '선택한 Demo 를 찾을 수 없어요.': 'Selected Demo not found.',
     '활동명은 비워둘 수 없어요': 'Artist name cannot be empty',
     '자기소개가 저장되지 않았어요. 로그아웃 후 다시 로그인 해보세요.': 'Bio was not saved. Try signing out and back in.',
-    '로그인 세션이 없어요. 다시 로그인해주세요.': 'No session — please sign in again.'
+    '로그인 세션이 없어요. 다시 로그인해주세요.': 'No session — please sign in again.',
+    // 주절주절 스레드 피드 / 앨범 (이번 추가분)
+    '링크 복사됐어요': 'Link copied',
+    '이 글을 삭제할까요?': 'Delete this post?',
+    '주절주절을 남기려면 로그인이 필요해요.': 'Sign in to post.',
+    '사진이 너무 커요 (8MB 이하로 올려주세요).': 'Image too large (max 8MB).',
+    '올렸어요 📌': 'Posted 📌',
+    '글은 올렸어요 — 사진은 DB 설정(SQL) 후 올라가요': 'Posted — photos need the DB setup (SQL).',
+    '앨범을 찾을 수 없어요': 'Album not found',
+    '앨범을 찾을 수 없어요.': 'Album not found.'
   };
   const MSG_PREFIX = [
+    ['올리기 실패: ', 'Post failed: '],
     ['저장 실패: ', 'Save failed: '],
     ['삭제 실패: ', 'Delete failed: '],
     ['댓글 저장 실패: ', 'Comment save failed: '],
@@ -3282,8 +3292,9 @@ function _collapsible(raw, cls) {
   const long = t.length > 220 || t.split(/\r?\n/).length > 6;
   const safe = esc(t);
   if (!long) return `<div class="${cls}">${safe}</div>`;
+  const more = _t('더보기', 'More'), less = _t('접기', 'Less');
   return `<div class="${cls} is-clamped">${safe}</div>`
-    + `<button class="more-toggle" type="button" onclick="event.stopPropagation(); var b=this.previousElementSibling; var c=b.classList.toggle('is-clamped'); this.textContent=c?'더보기':'접기';">더보기</button>`;
+    + `<button class="more-toggle" type="button" onclick="event.stopPropagation(); var b=this.previousElementSibling; var c=b.classList.toggle('is-clamped'); this.textContent=c?'${more}':'${less}';">${more}</button>`;
 }
 function _threadPostHtml(p) {
   const esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -3386,14 +3397,14 @@ async function renderWall() {
   const empty = posts.length === 0 ? `
       <div class="thread-empty">
         <i class="ri-quill-pen-line"></i>
-        <p>아직 주절주절이 없어요.<br>첫 글을 남겨보세요!</p>
+        <p>${_i18n('아직 주절주절이 없어요.<br>첫 글을 남겨보세요!', 'Nothing here yet.<br>Be the first to post!')}</p>
       </div>` : '';
   appContent.innerHTML = `
     <div class="thread-feed">
       <div class="thread-composer" onclick="openThreadComposer()">
         <img class="thread-avatar" src="${composerAvatar}" alt="">
-        <div class="thread-composer-hint">무슨 생각 중이에요? · 노래·사진 올리기</div>
-        <button class="thread-composer-go" aria-label="새 글"><i class="ri-add-line"></i></button>
+        <div class="thread-composer-hint">${_i18n('무슨 생각 중이에요? · 노래·사진 올리기', "What's on your mind? · Add a song or photo")}</div>
+        <button class="thread-composer-go" aria-label="${_t('새 글', 'New post')}"><i class="ri-add-line"></i></button>
       </div>
       ${posts.map(_threadPostHtml).join('')}
       ${empty}
@@ -3413,19 +3424,19 @@ window.openThreadComposer = function () {
     <div id="thread-composer-modal" class="thread-composer-modal" onclick="if(event.target===this) closeThreadComposer()">
       <div class="thread-composer-sheet">
         <div class="thread-sheet-head">
-          <button class="thread-sheet-cancel" onclick="closeThreadComposer()">취소</button>
-          <span class="thread-sheet-title">새 주절주절</span>
-          <button class="thread-sheet-post" id="thread-sheet-post" disabled onclick="submitThreadPost()">게시</button>
+          <button class="thread-sheet-cancel" onclick="closeThreadComposer()">${_i18n('취소', 'Cancel')}</button>
+          <span class="thread-sheet-title">${_i18n('새 주절주절', 'New post')}</span>
+          <button class="thread-sheet-post" id="thread-sheet-post" disabled onclick="submitThreadPost()">${_i18n('게시', 'Post')}</button>
         </div>
         <div class="thread-sheet-row">
           <img class="thread-avatar" src="${myAvatar}" alt="">
-          <textarea class="thread-sheet-input" id="thread-sheet-text" placeholder="무슨 생각을 하고 있나요?" oninput="_threadComposerSync()"></textarea>
+          <textarea class="thread-sheet-input" id="thread-sheet-text" placeholder="${_t('무슨 생각을 하고 있나요?', "What's on your mind?")}" oninput="_threadComposerSync()"></textarea>
         </div>
         <div class="thread-sheet-preview" id="thread-sheet-preview" style="display:none;"></div>
         <div class="thread-sheet-songchip" id="thread-sheet-songchip" style="display:none;"></div>
         <div class="thread-sheet-attach">
-          <button class="thread-attach-btn" type="button" onclick="document.getElementById('thread-img-input').click()"><i class="ri-image-add-line"></i> 사진</button>
-          <button class="thread-attach-btn" type="button" onclick="_threadAttachSong()"><i class="ri-music-2-line"></i> 노래</button>
+          <button class="thread-attach-btn" type="button" onclick="document.getElementById('thread-img-input').click()"><i class="ri-image-add-line"></i> ${_i18n('사진', 'Photo')}</button>
+          <button class="thread-attach-btn" type="button" onclick="_threadAttachSong()"><i class="ri-music-2-line"></i> ${_i18n('노래', 'Song')}</button>
           <input type="file" id="thread-img-input" accept="image/*" style="display:none" onchange="_threadPickImage(this)">
         </div>
       </div>
@@ -3447,7 +3458,7 @@ window._threadPickImage = function (input) {
     window.__threadDraft.imageFile = f;
     window.__threadDraft.imageData = r.result;
     const p = document.getElementById('thread-sheet-preview');
-    if (p) { p.style.display = 'block'; p.innerHTML = `<img src="${r.result}" alt=""><button class="thread-sheet-preview-remove" type="button" onclick="_threadRemoveImage()">사진 제거</button>`; }
+    if (p) { p.style.display = 'block'; p.innerHTML = `<img src="${r.result}" alt=""><button class="thread-sheet-preview-remove" type="button" onclick="_threadRemoveImage()">${_i18n('사진 제거', 'Remove photo')}</button>`; }
     _threadComposerSync();
   };
   r.readAsDataURL(f);
@@ -3487,7 +3498,7 @@ window.submitThreadPost = async function () {
   const externalUrl = attached && attached.kind === 'url'   ? attached.url : null;
   if (!text && !draft.imageFile && !trackId && !externalUrl) return;
   const btn = document.getElementById('thread-sheet-post');
-  if (btn) { btn.disabled = true; btn.textContent = '올리는 중…'; }
+  if (btn) { btn.disabled = true; btn.textContent = _t('올리는 중…', 'Posting…'); }
   try {
     let imageUrl = null;
     if (draft.imageFile && window.Tracks && window.Tracks.uploadFile) {
@@ -3524,7 +3535,7 @@ window.submitThreadPost = async function () {
     Promise.resolve(renderWall()).catch(e => console.warn('[thread] renderWall', e));
   } catch (e) {
     alert('올리기 실패: ' + (e.message || e));
-    if (btn) { btn.disabled = false; btn.textContent = '게시'; }
+    if (btn) { btn.disabled = false; btn.textContent = _t('게시', 'Post'); }
   }
 };
 // 구버전 호환 별칭.
@@ -3619,13 +3630,13 @@ function _renderAlbumView(appContent, d) {
   try {
     // 'reveal'(스크롤 진입 애니메이션)이 IntersectionObserver 미발화 시 opacity:0 으로 숨으므로 제거.
     projectBoxHtml = renderProjectBox(pid, versions).replace('project-box reveal', 'project-box');
-  } catch (e) { console.warn('[album] renderProjectBox', e); projectBoxHtml = '<div class="alb2-card">데모를 불러오지 못했어요</div>'; }
+  } catch (e) { console.warn('[album] renderProjectBox', e); projectBoxHtml = `<div class="alb2-card">${_i18n('데모를 불러오지 못했어요', 'Failed to load demos')}</div>`; }
   appContent.innerHTML = `
     <div class="artist-canvas cosmic">
       <div class="artist-bg-deco"></div>
       <div class="sub-page">
         <div class="alb2-wrap">
-          <button class="alb2-back" type="button" onclick="(window.history.length>1)?history.back():navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))" aria-label="뒤로"><i class="ri-arrow-left-line"></i></button>
+          <button class="alb2-back" type="button" onclick="(window.history.length>1)?history.back():navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))" aria-label="${_t('뒤로', 'Back')}"><i class="ri-arrow-left-line"></i></button>
 
           <!-- 위: 히어로 (커버 + 제목 + 아티스트 + 스탯) -->
           <div class="alb2-hero">
@@ -3634,25 +3645,25 @@ function _renderAlbumView(appContent, d) {
               <span class="alb2-badge">${esc(t.versionLabel || (t.isDemo === false ? 'MASTER' : 'DEMO'))}</span>
               <h1 class="alb2-title">${esc(songTitle)}</h1>
               <div class="alb2-artist" onclick="navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))">— ${esc(artistName)}</div>
-              <div class="alb2-stats">❤ ${t.likes || 0} · ▶ ${(t.plays || 0).toLocaleString()} 재생</div>
+              <div class="alb2-stats">❤ ${t.likes || 0} · ▶ ${(t.plays || 0).toLocaleString()} ${_i18n('재생', 'plays')}</div>
             </div>
           </div>
 
           <div class="alb2-actions">
-            <button class="alb2-play" type="button" onclick="playTrack('${t.id}','wall')"><i class="ri-play-fill"></i> 재생</button>
-            <button class="alb2-chip" type="button" onclick="this.classList.toggle('is-on')" aria-label="좋아요"><i class="ri-heart-3-line"></i></button>
-            <button class="alb2-chip" type="button" onclick="this.classList.toggle('is-on')" aria-label="담기"><i class="ri-add-line"></i></button>
-            <button class="alb2-chip" type="button" aria-label="공유" onclick="_threadShare('${t.id}')"><i class="ri-send-plane-line"></i></button>
+            <button class="alb2-play" type="button" onclick="playTrack('${t.id}','wall')"><i class="ri-play-fill"></i> ${_i18n('재생', 'Play')}</button>
+            <button class="alb2-chip" type="button" onclick="this.classList.toggle('is-on')" aria-label="${_t('좋아요', 'Like')}"><i class="ri-heart-3-line"></i></button>
+            <button class="alb2-chip" type="button" onclick="this.classList.toggle('is-on')" aria-label="${_t('담기', 'Save')}"><i class="ri-add-line"></i></button>
+            <button class="alb2-chip" type="button" aria-label="${_t('공유', 'Share')}" onclick="_threadShare('${t.id}')"><i class="ri-send-plane-line"></i></button>
           </div>
           ${tags.length ? `<div class="alb2-tags">${tags.map(tg => `<span class="alb2-tag">#${esc(tg)}</span>`).join('')}</div>` : ''}
 
           <!-- 마스터 + 데모 (projects-grid → 흰 박스 없음 + PC 가로 필름스트립 / 모바일 스네이크) -->
           <div class="alb2-projectbox projects-grid">${projectBoxHtml}</div>
 
-          <h2 class="section-title"><i class="ri-quill-pen-line"></i> 소개</h2>
-          ${note ? _collapsible(note, 'alb2-card') : `<div class="alb2-card alb2-card-empty">아직 소개가 없어요</div>`}
-          <h2 class="section-title"><i class="ri-double-quotes-l"></i> 가사</h2>
-          ${lyrics ? _collapsible(lyrics, 'alb2-card lyrics') : `<div class="alb2-card lyrics alb2-card-empty">아직 가사가 없어요</div>`}
+          <h2 class="section-title"><i class="ri-quill-pen-line"></i> ${_i18n('소개', 'About')}</h2>
+          ${note ? _collapsible(note, 'alb2-card') : `<div class="alb2-card alb2-card-empty">${_i18n('아직 소개가 없어요', 'No description yet')}</div>`}
+          <h2 class="section-title"><i class="ri-double-quotes-l"></i> ${_i18n('가사', 'Lyrics')}</h2>
+          ${lyrics ? _collapsible(lyrics, 'alb2-card lyrics') : `<div class="alb2-card lyrics alb2-card-empty">${_i18n('아직 가사가 없어요', 'No lyrics yet')}</div>`}
         </div>
       </div>
     </div>`;
@@ -3667,7 +3678,7 @@ window.renderAlbum = function (pid) {
   let versions = (db.tracks || []).filter(t => t && (t.projectId || ('proj_' + t.id)) === pid);
   if (!versions.length) { const single = (db.tracks || []).find(t => t && t.id === pid); if (single) versions = [single]; }
   if (!versions.length) {
-    appContent.innerHTML = `<div class="artist-canvas cosmic"><div class="artist-bg-deco"></div><div class="sub-page"><div class="alb2-wrap"><button class="alb2-back" type="button" onclick="history.back()"><i class="ri-arrow-left-line"></i></button><div class="alb2-card" style="margin-top:14px;">앨범을 찾을 수 없어요.</div></div></div></div>`;
+    appContent.innerHTML = `<div class="artist-canvas cosmic"><div class="artist-bg-deco"></div><div class="sub-page"><div class="alb2-wrap"><button class="alb2-back" type="button" onclick="history.back()"><i class="ri-arrow-left-line"></i></button><div class="alb2-card" style="margin-top:14px;">${_i18n('앨범을 찾을 수 없어요.', 'Album not found.')}</div></div></div></div>`;
     return;
   }
   const master = versions.find(v => !v.isDemo);
@@ -11926,7 +11937,9 @@ function renderArtistProfile(artistName) {
       id: rep.id,
       title: (rep.title || '').replace(/\s*\(Demo.*\)$/i, ''),
       cover: rep.cover || '',
-      meta: master ? (demoN ? ('정규 · 데모 ' + demoN) : '정규') : ('데모 ' + demoN + '개'),
+      meta: master
+        ? (demoN ? _t('정규 · 데모 ' + demoN, 'Release · ' + demoN + ' demos') : _t('정규', 'Release'))
+        : _t('데모 ' + demoN + '개', demoN + (demoN === 1 ? ' demo' : ' demos')),
       latestTime: new Date(vs[0].createdAt || 0).getTime()
     };
   }).sort((a, b) => b.latestTime - a.latestTime);
