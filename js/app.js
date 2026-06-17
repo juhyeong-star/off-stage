@@ -3452,6 +3452,80 @@ window.renderArtistTestLayout = function () {
     </div>`;
 };
 
+// ===================== 앨범(데모) 페이지 — 데모 하나당 한 페이지 (테스트) =====================
+// window.renderAlbumTest(trackId) — 아티스트 페이지의 앨범 카드 → 이 페이지로 들어옴.
+window.renderAlbumTest = function (trackId) {
+  const appContent = document.getElementById('app-content');
+  if (!appContent) return;
+  const esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const db = window.DB.get();
+  let t = (db.tracks || []).find(x => x && x.id === trackId);
+  if (!t) t = {
+    id: 'albdemo', title: '한밤의 드라이브', artist: '주형', cover: 'https://picsum.photos/seed/albcover/500',
+    versionLabel: 'Demo 2', artistNote: '새벽 4시에 작업한 곡이에요. 드라이브하면서 들으면 딱 좋아요 🚗💨\n아직 미완성이라 피드백 환영!',
+    tags: ['시티팝', '새벽', '드라이브'], likes: 88, plays: 1234
+  };
+  const cover = t.cover || 'https://picsum.photos/seed/albcover/500';
+  const artistName = t.artist || '주형';
+  const tags = Array.isArray(t.tags) && t.tags.length ? t.tags : ['시티팝', '새벽', '드라이브'];
+  const note = (t.artistNote || t.description || '새벽에 작업한 데모예요. 들어보고 의견 남겨주세요!').trim();
+  // 가사 — 있으면 표시(테스트라 없으면 샘플)
+  const lyrics = (t.lyrics || '').trim() || '네온사인 흐르는 거리\n창문을 내리고 달려\n오늘 밤은 끝나지 않아\n우리 둘만의 드라이브';
+  // 같은 프로젝트의 다른 데모 버전 (테스트 — 샘플)
+  const versions = [
+    { id: t.id, name: t.versionLabel || 'Demo 2', sub: '지금 보는 버전 · 2:58', cover, current: true },
+    { id: 'v1', name: 'Demo 1', sub: '첫 스케치 · 2:41', cover: 'https://picsum.photos/seed/albv1/200', current: false },
+  ];
+  // 댓글 (스레드식 재사용)
+  const comments = [
+    { id: 'ac1', name: '유진', avatar: 'https://i.pravatar.cc/150?u=yujin', time: '2시간', text: '이거 진짜 좋다 🔥 빨리 완성본 듣고 싶어요', image: null, track: null, likes: 12, comments: 0 },
+    { id: 'ac2', name: '민지', avatar: 'https://i.pravatar.cc/150?u=minji', time: '어제', text: '드라이브할 때 무한반복 중이에요 🚗', image: null, track: null, likes: 5, comments: 0 },
+  ];
+  appContent.innerHTML = `
+    <div class="alb-page">
+      <div class="alb-glow"></div>
+      <div class="alb-top">
+        <button class="alb-back" type="button" onclick="(window.history.length>1)?history.back():navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))" aria-label="뒤로"><i class="ri-arrow-left-line"></i></button>
+      </div>
+      <div class="alb-hero">
+        <img class="alb-cover" src="${cover}" alt="" draggable="false">
+        <div class="alb-badge">${esc(t.versionLabel || 'Demo')}</div>
+        <div class="alb-title">${esc(t.title || '제목 없음')}</div>
+        <div class="alb-artist" onclick="navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))">— ${esc(artistName)}</div>
+        <div class="alb-stats">❤ ${t.likes || 0} · ▶ ${(t.plays || 0).toLocaleString()} 재생</div>
+        <div class="alb-actions">
+          <button class="alb-play" type="button" onclick="playTrack('${t.id}','wall')"><i class="ri-play-fill"></i> 재생</button>
+          <button class="alb-iconbtn" type="button" onclick="this.classList.toggle('is-on')" aria-label="좋아요"><i class="ri-heart-3-line"></i></button>
+          <button class="alb-iconbtn" type="button" onclick="this.classList.toggle('is-on'); showToast&&showToast('담았어요 (테스트)')" aria-label="담기"><i class="ri-add-line"></i></button>
+          <button class="alb-iconbtn" type="button" aria-label="공유"><i class="ri-send-plane-line"></i></button>
+        </div>
+      </div>
+      <div class="alb-tags">${tags.map(tg => `<span class="alb-tag">#${esc(tg)}</span>`).join('')}</div>
+
+      <div class="alb-section"><div class="alb-section-t"><i class="ri-quill-pen-line" style="color:var(--brand-color);"></i> 소개</div><div class="alb-desc">${esc(note)}</div></div>
+      <div class="alb-section"><div class="alb-section-t"><i class="ri-double-quotes-l" style="color:var(--brand-color);"></i> 가사</div><div class="alb-lyrics">${esc(lyrics)}</div></div>
+
+      <div class="alb-section"><div class="alb-section-t"><i class="ri-stack-line" style="color:var(--brand-color);"></i> 이 프로젝트의 데모</div></div>
+      <div class="alb-versions">
+        ${versions.map(v => `
+          <div class="alb-version ${v.current ? 'is-current' : ''}" onclick="renderAlbumTest('${v.id}')">
+            <img src="${v.cover}" alt="">
+            <div class="alb-version-t"><div class="alb-version-name">${esc(v.name)}</div><div class="alb-version-sub">${esc(v.sub)}</div></div>
+            <i class="ri-play-circle-fill alb-version-play"></i>
+          </div>`).join('')}
+      </div>
+
+      <div class="alb-divider"></div>
+      <div class="alb-section"><div class="alb-section-t"><i class="ri-chat-3-line" style="color:var(--brand-color);"></i> 댓글 ${comments.length}</div></div>
+      <div class="thread-composer" onclick="openThreadComposer()">
+        <img class="thread-avatar" src="${(window.__currentUser && window.__currentUser.avatar) || 'https://i.pravatar.cc/150?u=me'}" alt="">
+        <div class="thread-composer-hint">이 데모에 댓글 남기기…</div>
+        <button class="thread-composer-go" type="button" aria-label="댓글"><i class="ri-add-line"></i></button>
+      </div>
+      ${comments.map(_threadPostHtml).join('')}
+    </div>`;
+};
+
 async function renderWall() {
   const db = window.DB.get();
   // Refresh wall notes from Supabase. Strategy:
