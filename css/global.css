@@ -18418,7 +18418,15 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
   display: flex; align-items: center; gap: 6px; margin-bottom: 3px;
 }
 .thread-post-name { font-weight: 700; font-size: 15px; color: var(--text-primary); }
+.thread-post-name.is-link, .thread-avatar.is-link { cursor: pointer; }
+.thread-post-name.is-link:hover { text-decoration: underline; }
 .thread-post-time { color: var(--text-secondary); font-size: 13px; }
+/* 빈 상태 */
+.thread-empty { text-align: center; padding: 64px 20px 40px; color: var(--text-secondary); }
+.thread-empty i { font-size: 40px; opacity: 0.5; display: block; margin-bottom: 12px; }
+.thread-empty p { font-size: 14px; line-height: 1.6; margin: 0; }
+/* 작성 시트 — 노래칩에 커버 없을 때(외부 URL) 아이콘 박스 */
+.thread-songchip-ext { width: 40px; height: 40px; border-radius: 7px; display: flex; align-items: center; justify-content: center; background: var(--surface-color); color: var(--text-secondary); font-size: 18px; flex-shrink: 0; }
 .thread-post-more {
   margin-left: auto; background: none; border: none; color: var(--text-secondary);
   font-size: 18px; cursor: pointer; padding: 0 4px;

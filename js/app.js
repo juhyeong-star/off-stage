@@ -3235,6 +3235,9 @@ function _threadTrackOf(trackId) {
 }
 function _threadPostHtml(p) {
   const esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const escAttr = (s) => esc(s).replace(/"/g, '&quot;');
+  const nameAttr = p.name ? `data-artist="${escAttr(p.name)}"` : '';
+  const linkCls = p.name ? ' is-link' : '';
   const img = p.image ? `<img class="thread-post-image" src="${p.image}" alt="" loading="lazy">` : '';
   const song = p.track ? `
         <div class="thread-song-card" onclick="playTrack('${p.track.id}','wall')">
@@ -3245,67 +3248,114 @@ function _threadPostHtml(p) {
           </div>
           <button class="thread-song-play" onclick="event.stopPropagation(); playTrack('${p.track.id}','wall')" aria-label="재생"><i class="ri-play-fill"></i></button>
         </div>` : '';
+  const cmCount = p.comments ? ` ${p.comments}` : '';
   return `
-    <div class="thread-post">
-      <img class="thread-avatar" src="${p.avatar}" alt="" loading="lazy">
+    <div class="thread-post" data-note-id="${p.id}">
+      <img class="thread-avatar${linkCls}" src="${p.avatar}" alt="" loading="lazy" ${nameAttr} onclick="_threadGoArtist(this)">
       <div class="thread-post-col">
         <div class="thread-post-head">
-          <span class="thread-post-name">${esc(p.name)}</span>
+          <span class="thread-post-name${linkCls}" ${nameAttr} onclick="_threadGoArtist(this)">${esc(p.name)}</span>
           <span class="thread-post-time">· ${esc(p.time)}</span>
-          <button class="thread-post-more" aria-label="더보기"><i class="ri-more-fill"></i></button>
+          <button class="thread-post-more" aria-label="더보기" onclick="_threadPostMenu('${p.id}', ${p.isMine ? 'true' : 'false'})"><i class="ri-more-fill"></i></button>
         </div>
         ${p.text ? `<div class="thread-post-body">${esc(p.text)}</div>` : ''}
         ${img}
         ${song}
         <div class="thread-post-actions">
-          <button class="tp-act" onclick="this.classList.toggle('is-liked')"><i class="ri-heart-3-line"></i> ${p.likes || ''}</button>
-          <button class="tp-act"><i class="ri-chat-3-line"></i> ${p.comments || ''}</button>
-          <button class="tp-act" aria-label="리포스트"><i class="ri-repeat-line"></i></button>
-          <button class="tp-act" aria-label="공유"><i class="ri-send-plane-line"></i></button>
+          <button class="tp-act" onclick="this.classList.toggle('is-liked')"><i class="ri-heart-3-line"></i></button>
+          <button class="tp-act" onclick="openNoteDetail('${p.id}')"><i class="ri-chat-3-line"></i>${cmCount}</button>
+          <button class="tp-act" aria-label="공유" onclick="_threadShare('${p.id}')"><i class="ri-send-plane-line"></i></button>
         </div>
       </div>
     </div>`;
 }
-window.renderWallThreadTest = function () {
+// 작성자 이름/아바타 탭 → 아티스트 페이지
+window._threadGoArtist = function (el) {
+  const a = el && el.getAttribute('data-artist');
+  if (a) navigateTo('artist:' + encodeURIComponent(a));
+};
+// 공유 — 링크 복사(없으면 시스템 공유)
+window._threadShare = function (id) {
+  try {
+    const url = location.origin + location.pathname + '#wall';
+    if (navigator.share) { navigator.share({ url }).catch(() => {}); }
+    else if (navigator.clipboard) { navigator.clipboard.writeText(url); showToast && showToast('링크 복사됐어요'); }
+  } catch (_) {}
+};
+// 더보기 메뉴 — 내 글이면 삭제, 아니면 공유
+window._threadPostMenu = function (id, isMine) {
+  if (isMine) {
+    if (confirm('이 글을 삭제할까요?') && typeof deleteWallNote === 'function') deleteWallNote(id);
+  } else {
+    _threadShare(id);
+  }
+};
+// 주절주절 = 스레드 피드 (라이브). 라우트 'wall' 이 이 함수를 호출.
+async function renderWall() {
   const appContent = document.getElementById('app-content');
   if (!appContent) return;
   const db = window.DB.get();
-  const me = window.__currentUser || db.currentUser || { id: 'me', name: '나' };
-  const myAvatar = me.avatar_url || me.avatar || ('https://i.pravatar.cc/150?u=' + (me.id || 'me'));
-  const firstTrack = (db.tracks || [])[0];
-  const sampleTrack = firstTrack ? _threadTrackOf(firstTrack.id)
-    : { id: 'x', title: '한밤의 드라이브', artist: 'DJ KARLIN', cover: 'https://picsum.photos/seed/song/200' };
-  // 데모용 샘플 — 이미지/곡 조합을 보여주려고 (테스트)
-  const samples = [
-    { id: 's1', name: '유진', avatar: 'https://i.pravatar.cc/150?u=yujin', time: '2시간',
-      text: '오늘 작업실에서 찍은 한 컷 📸 새 데모 곧 올라와요', image: 'https://picsum.photos/seed/studio/600/400', track: null, likes: 42, comments: 5 },
-    { id: 's2', name: 'KARLIN', avatar: 'https://i.pravatar.cc/150?u=karlin', time: '5시간',
-      text: '이 곡 요즘 무한반복 중 🎧', image: null, track: sampleTrack, likes: 88, comments: 12 },
-    { id: 's3', name: '민지', avatar: 'https://i.pravatar.cc/150?u=minji', time: '어제',
-      text: '사진이랑 노래 같이 올려봤어요!', image: 'https://picsum.photos/seed/vibe/600/600', track: sampleTrack, likes: 130, comments: 24 },
-  ];
-  const realPosts = (db.notes || []).slice(0, 8).map(n => ({
-    id: n.id, name: n.author || '익명', avatar: 'https://i.pravatar.cc/150?u=' + (n.authorId || n.author || n.id),
-    time: _threadTimeAgo(n.createdAt), text: n.text || '', image: null,
+  // 새로고침 — 레거시 renderWallLegacy 와 동일 전략: 캐시 즉시 렌더 + 백그라운드 갱신.
+  if (window.Walls && window.Walls.refreshInto) {
+    const hasCache = Array.isArray(db.notes) && db.notes.length > 0;
+    if (hasCache) {
+      const beforeIds = (db.notes || []).map(n => n.id).join('|');
+      window.Walls.refreshInto(db).then(() => {
+        if (currentView !== 'wall') return;
+        const afterIds = (window.DB.get().notes || []).map(n => n.id).join('|');
+        if (afterIds !== beforeIds) renderWall();
+      }).catch(e => console.warn('[wall] bg refresh', e));
+    } else {
+      try {
+        await Promise.race([
+          window.Walls.refreshInto(db).catch(e => console.warn('[wall] refresh', e)),
+          new Promise(r => setTimeout(r, 1500))
+        ]);
+      } catch (_) {}
+      if (currentView !== 'wall') return;
+    }
+  }
+  const me = window.__currentUser || db.currentUser || null;
+  const myId = me && me.id;
+  const myAvatar = (me && (me.avatar_url || me.avatar)) || ('https://i.pravatar.cc/150?u=' + (myId || 'me'));
+  const notes = (db.notes || []).slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  const posts = notes.map(n => ({
+    id: n.id,
+    name: n.author || '익명',
+    avatar: (myId && n.authorId === myId) ? myAvatar : ('https://i.pravatar.cc/150?u=' + (n.authorId || n.author || n.id)),
+    time: _threadTimeAgo(n.createdAt),
+    text: n.text || '',
+    image: n.imageUrl || null,
     track: n.trackId ? _threadTrackOf(n.trackId) : null,
-    likes: (_hashSeed(n.id) >>> 0) % 50, comments: (n.comments || []).length
+    comments: (n.comments || []).length,
+    isMine: !!(myId && n.authorId === myId)
   }));
-  const posts = [...samples, ...realPosts];
+  const composerAvatar = me ? myAvatar : ('https://i.pravatar.cc/150?u=guest');
+  const empty = posts.length === 0 ? `
+      <div class="thread-empty">
+        <i class="ri-quill-pen-line"></i>
+        <p>아직 주절주절이 없어요.<br>첫 글을 남겨보세요!</p>
+      </div>` : '';
   appContent.innerHTML = `
     <div class="thread-feed">
       <div class="thread-composer" onclick="openThreadComposer()">
-        <img class="thread-avatar" src="${myAvatar}" alt="">
+        <img class="thread-avatar" src="${composerAvatar}" alt="">
         <div class="thread-composer-hint">무슨 생각 중이에요? · 노래·사진 올리기</div>
         <button class="thread-composer-go" aria-label="새 글"><i class="ri-add-line"></i></button>
       </div>
       ${posts.map(_threadPostHtml).join('')}
+      ${empty}
     </div>`;
-};
-window.__threadDraft = { image: null, track: null };
+}
+// 프리뷰/구버전 호환 — 같은 함수를 가리킴.
+window.renderWallThreadTest = renderWall;
+window.__threadDraft = { imageFile: null, imageData: null };
 window.openThreadComposer = function () {
-  const me = window.__currentUser || (window.DB.get().currentUser) || { id: 'me', name: '나' };
+  const me = window.__currentUser || (window.DB.get().currentUser);
+  if (!me) { alert('주절주절을 남기려면 로그인이 필요해요.'); navigateTo('auth'); return; }
   const myAvatar = me.avatar_url || me.avatar || ('https://i.pravatar.cc/150?u=' + (me.id || 'me'));
-  window.__threadDraft = { image: null, track: null };
+  window.__threadDraft = { imageFile: null, imageData: null };
+  window.__threadAttachedSong = null;
   const ex = document.getElementById('thread-composer-modal'); if (ex) ex.remove();
   document.body.insertAdjacentHTML('beforeend', `
     <div id="thread-composer-modal" class="thread-composer-modal" onclick="if(event.target===this) closeThreadComposer()">
@@ -3313,7 +3363,7 @@ window.openThreadComposer = function () {
         <div class="thread-sheet-head">
           <button class="thread-sheet-cancel" onclick="closeThreadComposer()">취소</button>
           <span class="thread-sheet-title">새 주절주절</span>
-          <button class="thread-sheet-post" id="thread-sheet-post" disabled onclick="submitThreadTest()">게시</button>
+          <button class="thread-sheet-post" id="thread-sheet-post" disabled onclick="submitThreadPost()">게시</button>
         </div>
         <div class="thread-sheet-row">
           <img class="thread-avatar" src="${myAvatar}" alt="">
@@ -3323,7 +3373,7 @@ window.openThreadComposer = function () {
         <div class="thread-sheet-songchip" id="thread-sheet-songchip" style="display:none;"></div>
         <div class="thread-sheet-attach">
           <button class="thread-attach-btn" type="button" onclick="document.getElementById('thread-img-input').click()"><i class="ri-image-add-line"></i> 사진</button>
-          <button class="thread-attach-btn" type="button" onclick="_threadAttachSongMock()"><i class="ri-music-2-line"></i> 노래</button>
+          <button class="thread-attach-btn" type="button" onclick="_threadAttachSong()"><i class="ri-music-2-line"></i> 노래</button>
           <input type="file" id="thread-img-input" accept="image/*" style="display:none" onchange="_threadPickImage(this)">
         </div>
       </div>
@@ -3334,47 +3384,87 @@ window.closeThreadComposer = function () { const m = document.getElementById('th
 window._threadComposerSync = function () {
   const ta = document.getElementById('thread-sheet-text');
   const btn = document.getElementById('thread-sheet-post');
-  const has = (ta && ta.value.trim()) || window.__threadDraft.image || window.__threadDraft.track;
+  const has = (ta && ta.value.trim()) || (window.__threadDraft && window.__threadDraft.imageFile) || window.__threadAttachedSong;
   if (btn) btn.disabled = !has;
 };
 window._threadPickImage = function (input) {
   const f = input.files && input.files[0]; if (!f) return;
+  if (f.size > 8 * 1024 * 1024) { alert('사진이 너무 커요 (8MB 이하로 올려주세요).'); input.value = ''; return; }
   const r = new FileReader();
   r.onload = () => {
-    window.__threadDraft.image = r.result;
+    window.__threadDraft.imageFile = f;
+    window.__threadDraft.imageData = r.result;
     const p = document.getElementById('thread-sheet-preview');
     if (p) { p.style.display = 'block'; p.innerHTML = `<img src="${r.result}" alt=""><button class="thread-sheet-preview-remove" type="button" onclick="_threadRemoveImage()">사진 제거</button>`; }
     _threadComposerSync();
   };
   r.readAsDataURL(f);
 };
-window._threadRemoveImage = function () { window.__threadDraft.image = null; const p = document.getElementById('thread-sheet-preview'); if (p) { p.style.display = 'none'; p.innerHTML = ''; } _threadComposerSync(); };
-window._threadAttachSongMock = function () {
-  const db = window.DB.get(); const t = (db.tracks || [])[0];
-  const track = t ? _threadTrackOf(t.id) : { id: 'x', title: '한밤의 드라이브', artist: 'DJ KARLIN', cover: 'https://picsum.photos/seed/song/200' };
-  window.__threadDraft.track = track;
-  const c = document.getElementById('thread-sheet-songchip');
-  const esc = (s) => (s || '').replace(/</g, '&lt;');
-  if (c) { c.style.display = 'flex'; c.innerHTML = `<img src="${track.cover}" alt=""><span class="t">${esc(track.title)} — ${esc(track.artist)}</span><button type="button" onclick="_threadRemoveSong()"><i class="ri-close-line"></i></button>`; }
+window._threadRemoveImage = function () {
+  window.__threadDraft.imageFile = null; window.__threadDraft.imageData = null;
+  const p = document.getElementById('thread-sheet-preview'); if (p) { p.style.display = 'none'; p.innerHTML = ''; }
+  const inp = document.getElementById('thread-img-input'); if (inp) inp.value = '';
   _threadComposerSync();
 };
-window._threadRemoveSong = function () { window.__threadDraft.track = null; const c = document.getElementById('thread-sheet-songchip'); if (c) { c.style.display = 'none'; c.innerHTML = ''; } _threadComposerSync(); };
-window.submitThreadTest = function () {
+// 노래 첨부 — 기존 벽의 곡 첨부기(Off-Stage 곡 / 외부 URL) 재사용.
+window._threadAttachSong = function () { if (typeof openSongAttacher === 'function') openSongAttacher('thread'); };
+// openSongAttacher('thread') 픽 결과를 시트의 칩으로 렌더 (_renderAttachPreview 가 위임).
+window._threadRenderSongChip = function () {
+  const c = document.getElementById('thread-sheet-songchip');
+  if (!c) return;
+  const a = window.__threadAttachedSong;
+  const esc = (s) => (s || '').replace(/</g, '&lt;');
+  if (!a) { c.style.display = 'none'; c.innerHTML = ''; _threadComposerSync(); return; }
+  let cover = '', label = '';
+  if (a.kind === 'track') {
+    const t = (window.DB.get().tracks || []).find(x => x.id === a.id) || {};
+    cover = t.cover || ''; label = (t.title || '곡') + (t.artist ? ' — ' + t.artist : '');
+  } else { label = a.url || '링크'; }
+  c.style.display = 'flex';
+  c.innerHTML = `${cover ? `<img src="${cover}" alt="">` : '<div class="thread-songchip-ext"><i class="ri-link"></i></div>'}<span class="t">${esc(label)}</span><button type="button" onclick="clearAttachedSong()" aria-label="첨부 취소"><i class="ri-close-line"></i></button>`;
+  _threadComposerSync();
+};
+window.submitThreadPost = async function () {
+  const me = window.__currentUser || (window.DB.get().currentUser);
+  if (!me) { alert('로그인이 필요해요.'); navigateTo('auth'); return; }
   const ta = document.getElementById('thread-sheet-text');
   const text = (ta && ta.value.trim()) || '';
-  const me = window.__currentUser || (window.DB.get().currentUser) || { name: '나' };
-  const post = { id: 'new' + Date.now(), name: me.name || '나',
-    avatar: (me.avatar_url || me.avatar || 'https://i.pravatar.cc/150?u=me'), time: '방금',
-    text, image: window.__threadDraft.image, track: window.__threadDraft.track, likes: 0, comments: 0 };
-  const feed = document.querySelector('.thread-feed');
-  if (feed) {
-    const composer = feed.querySelector('.thread-composer');
-    if (composer) composer.insertAdjacentHTML('afterend', _threadPostHtml(post));
+  const draft = window.__threadDraft || {};
+  const attached = window.__threadAttachedSong || null;
+  const trackId     = attached && attached.kind === 'track' ? attached.id  : null;
+  const externalUrl = attached && attached.kind === 'url'   ? attached.url : null;
+  if (!text && !draft.imageFile && !trackId && !externalUrl) return;
+  const btn = document.getElementById('thread-sheet-post');
+  if (btn) { btn.disabled = true; btn.textContent = '올리는 중…'; }
+  try {
+    let imageUrl = null;
+    if (draft.imageFile && window.Tracks && window.Tracks.uploadFile) {
+      imageUrl = await window.Tracks.uploadFile(draft.imageFile, 'covers');
+    }
+    if (window.Walls && window.Walls.insert) {
+      const inserted = await Promise.race([
+        window.Walls.insert({ text, color: 'yellow', rotation: 0, trackId, externalUrl, imageUrl }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('네트워크 타임아웃 (15초)')), 15000))
+      ]);
+      // Walls.insert 는 __wallNotes 만 갱신 → renderWall 이 읽는 db.notes 에도 즉시 반영.
+      if (inserted) {
+        const _db = window.DB.get();
+        if (!Array.isArray(_db.notes)) _db.notes = [];
+        if (!_db.notes.some(n => n && n.id === inserted.id)) { _db.notes.unshift(inserted); try { window.DB.save(_db); } catch (_) {} }
+      }
+    }
+    window.__threadDraft = { imageFile: null, imageData: null };
+    window.__threadAttachedSong = null;
+    closeThreadComposer();
+    if (typeof showToast === 'function') showToast('올렸어요 📌');
+    Promise.resolve(renderWall()).catch(e => console.warn('[thread] renderWall', e));
+  } catch (e) {
+    alert('올리기 실패: ' + (e.message || e));
+    if (btn) { btn.disabled = false; btn.textContent = '게시'; }
   }
-  window.__threadDraft = { image: null, track: null };
-  closeThreadComposer();
-  if (typeof showToast === 'function') showToast('올렸어요 (테스트)');
 };
+// 구버전 호환 별칭.
+window.submitThreadTest = function () { return window.submitThreadPost(); };
 
 // ===================== 아티스트 페이지 — 단일 스크롤 테스트 레이아웃 =====================
 // 최신 데모(위, 크게) + 음원 더보기 + 앨범(데모) 나열 + 주절주절 피드. window.renderArtistTestLayout()
@@ -3538,7 +3628,8 @@ window.renderAlbumTest = function (trackId) {
     </div>`;
 };
 
-async function renderWall() {
+// 레거시 포스트잇 벽 — 주절주절을 스레드 피드로 교체하면서 보존(되돌리기용). 라우트에서 호출 안 함.
+async function renderWallLegacy() {
   const db = window.DB.get();
   // Refresh wall notes from Supabase. Strategy:
   //   - First visit (empty cache): wait up to 1.5s for data, then render whatever we have
@@ -4258,6 +4349,7 @@ window.toggleWallCompose = function() {
 //   - 'comment' → window.__commentAttachedSong, preview in #comment-attach-preview
 window.__wallAttachedSong = null;
 window.__commentAttachedSong = null;
+window.__threadAttachedSong = null;   // 주절주절 스레드 작성기용
 window.__songAttachTarget = 'wall';
 
 function _detectProvider(url) {
@@ -4272,6 +4364,8 @@ function _detectProvider(url) {
 function _renderAttachPreview() {
   // Target depends on which composer the user opened the attacher from
   const tgt = window.__songAttachTarget;
+  // 주절주절 스레드 작성기는 자체 칩 렌더러로 위임 (시트의 #thread-sheet-songchip).
+  if (tgt === 'thread') { if (typeof window._threadRenderSongChip === 'function') window._threadRenderSongChip(); return; }
   const previewId = tgt === 'comment' ? 'comment-attach-preview'
                   : tgt === 'story'   ? 'story-attach-preview'
                   : 'wall-attach-preview';
@@ -4312,12 +4406,16 @@ function _renderAttachPreview() {
 window.clearAttachedSong = function() {
   if (window.__songAttachTarget === 'comment') window.__commentAttachedSong = null;
   else if (window.__songAttachTarget === 'story') window.__storyAttachedSong = null;
+  else if (window.__songAttachTarget === 'thread') window.__threadAttachedSong = null;
   else window.__wallAttachedSong = null;
   _renderAttachPreview();
 };
 
 window.openSongAttacher = function(target) {
-  window.__songAttachTarget = (target === 'comment') ? 'comment' : 'wall';
+  window.__songAttachTarget = (target === 'comment') ? 'comment'
+                            : (target === 'thread')  ? 'thread'
+                            : (target === 'story')   ? 'story'
+                            : 'wall';
   const existing = document.getElementById('wall-song-modal');
   if (existing) existing.remove();
   // Only show Supabase-stored tracks — their ids are real UUIDs that the
@@ -4387,6 +4485,7 @@ window._filterAttachTracks = function(q) {
 function _storeAttachedSong(value) {
   if (window.__songAttachTarget === 'comment') window.__commentAttachedSong = value;
   else if (window.__songAttachTarget === 'story') window.__storyAttachedSong = value;
+  else if (window.__songAttachTarget === 'thread') window.__threadAttachedSong = value;
   else window.__wallAttachedSong = value;
 }
 

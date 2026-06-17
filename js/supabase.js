@@ -505,6 +505,8 @@
       // Optional attached song link — Off-Stage track id OR external URL (YT/Spotify/Apple).
       trackId:     row.track_id     || null,
       externalUrl: row.external_url || '',
+      // Optional attached photo (스레드 피드). image_url 컬럼이 없는 옛 스키마에선 undefined → ''.
+      imageUrl:    row.image_url    || '',
       comments: Array.isArray(comments) ? comments.map(mapCommentRow) : []
     };
   }
@@ -562,7 +564,7 @@
       return (data || []).map(mapCommentRow);
     },
 
-    async insert({ text, color, rotation, trackId, externalUrl }) {
+    async insert({ text, color, rotation, trackId, externalUrl, imageUrl }) {
       if (!window.supabase) throw new Error('Supabase SDK not ready');
       const { data: { user } } = await window.supabase.auth.getUser();
       if (!user) throw new Error('로그인이 필요해요');
@@ -583,6 +585,7 @@
       // so this still works on schemas that haven't run the migration yet.
       if (trackId)     payload.track_id     = trackId;
       if (externalUrl) payload.external_url = externalUrl;
+      if (imageUrl)    payload.image_url    = imageUrl;
       const { data, error } = await window.supabase
         .from('wall_notes')
         .insert(payload)
