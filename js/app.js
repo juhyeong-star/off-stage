@@ -507,19 +507,19 @@ window.startTutorial = function () {
         body: _t2('좋아한 노래(도형)와 포스트잇을 모아 나만의 우주로 정리하는 곳이에요. 로그인하면 메뉴에서 들어가 써볼 수 있어요.','Collect liked songs (shapes) and post-its into your own universe. Sign in, then open it from the menu.') };
   // 로그인 시: 내 아티스트 페이지로 들어가 소식(투명 + 카드)·프로필 수정을 자세히 안내.
   const artistSteps = _loggedIn ? [
-    { route: 'my-artist', sel: '.soshik-add-postit, .soshik-add', title: _t2('아티스트 페이지 — 소식','Your page — Updates'),
-      body: _t2('여기가 팬들이 보는 당신의 페이지예요. 투명한 + 카드를 눌러 소식(근황)을 남기고, 올린 소식은 핀으로 고정할 수 있어요.','This is the page fans see. Tap the dashed + card to post updates — you can pin posts too.') },
+    { route: 'my-artist', sel: '.thread-composer, .atl-feed-head', title: _t2('아티스트 페이지 — 주절주절','Your page — blah blah'),
+      body: _t2('여기가 팬들이 보는 당신의 페이지예요. 아래 주절주절에 노래·사진과 함께 근황을 남길 수 있어요.','This is the page fans see. Post updates — with songs and photos — in the blah blah feed below.') },
     { sel: '#artist-bio-line, .artist-bio-inline', title: _t2('자기소개','Your bio'),
       body: _t2('"자신을 소개해보아요"를 눌러 한 줄 소개를 적어보세요. 팬들에게 보이는 첫인상이에요.','Tap “Introduce yourself” to write a short bio — the first thing fans see.') },
-    { sel: '.demo-card-add, .demo-postit-sq.is-empty', title: _t2('데모 올리기','Demos'),
-      body: _t2('"DEMO 추가" 카드를 눌러 작업 중인 데모를 올려요. 완성 전 곡도 팬들과 나눌 수 있어요.','Tap an “Add demo” card to share works-in-progress — fans can hear unfinished tracks too.') },
+    { sel: '.atl-album-add, .atl-album, .atl-hero', title: _t2('음악 · 데모','Music & demos'),
+      body: _t2('올린 곡은 여기 앨범으로 쌓여요. 카드를 누르면 그 곡의 데모 모음(앨범) 페이지로 가요.','Your tracks stack up here as albums. Tap a card to open that song’s demo collection.') },
     { sel: '.artist-settings-gear', title: _t2('프로필 수정','Edit profile'),
       body: _t2('더 자세한 설정 — 프로필 사진·자기소개·SNS 링크는 오른쪽 위 톱니바퀴(⚙)에서.','For more — edit your photo, bio and social links from the gear (top-right).') }
   ] : [];
   const steps = [
     { route: 'shapes', sel: '.floating-shape[data-track-id]', title: _t2('발견 — 노래','Discover'), body: _t2('떠다니는 도형이 노래예요. 한 번 누르면 재생, 한 번 더 누르면 그 아티스트 페이지로 가요.','Each floating shape is a song. Tap once to play, tap again to open the artist page.') },
     { sel: '.upload-fab', title: _t2('노래 올리기','Upload'), body: _t2('여기 ⊕ 를 눌러 내 곡을 올려요.','Tap ⊕ here to upload your own track.') },
-    { route: 'wall', sel: '.wall-fab', title: _t2('주절주절','Bla Bla'), body: _t2('감성 메모를 남기는 벽이에요. 여기로 글을 남겨요.','A wall of mood notes — post yours here.') },
+    { route: 'wall', sel: '.thread-composer', title: _t2('주절주절','Bla Bla'), body: _t2('노래·사진과 함께 글을 남기는 피드예요. 여기를 눌러 새 글을 써요.','A feed where you post with songs and photos — tap here to write.') },
     { route: 'tags', sel: '.tag-chip', title: _t2('Tags','Tags'), body: _t2('기분·태그로 노래를 찾아봐요.','Find songs by mood and tags.') },
     favStep,
     ...artistSteps,
@@ -3450,11 +3450,23 @@ window.submitThreadPost = async function () {
     if (draft.imageFile && window.Tracks && window.Tracks.uploadFile) {
       imageUrl = await window.Tracks.uploadFile(draft.imageFile, 'covers');
     }
+    let inserted = null, photoSkipped = false;
     if (window.Walls && window.Walls.insert) {
-      const inserted = await Promise.race([
-        window.Walls.insert({ text, color: 'yellow', rotation: 0, trackId, externalUrl, imageUrl }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('네트워크 타임아웃 (15초)')), 15000))
-      ]);
+      const payload = { text, color: 'yellow', rotation: 0, trackId, externalUrl, imageUrl };
+      try {
+        inserted = await Promise.race([
+          window.Walls.insert(payload),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('네트워크 타임아웃 (15초)')), 15000))
+        ]);
+      } catch (insErr) {
+        // image_url 컬럼이 없는 스키마(마이그레이션 SQL 미실행)면 사진만 빼고 글·노래는 살림.
+        const m = String(insErr && insErr.message || insErr);
+        if (imageUrl && /image_url|column|schema|PGRST/i.test(m)) {
+          delete payload.imageUrl;
+          inserted = await window.Walls.insert(payload);
+          photoSkipped = true;
+        } else { throw insErr; }
+      }
       // Walls.insert 는 __wallNotes 만 갱신 → renderWall 이 읽는 db.notes 에도 즉시 반영.
       if (inserted) {
         const _db = window.DB.get();
@@ -3465,7 +3477,7 @@ window.submitThreadPost = async function () {
     window.__threadDraft = { imageFile: null, imageData: null };
     window.__threadAttachedSong = null;
     closeThreadComposer();
-    if (typeof showToast === 'function') showToast('올렸어요 📌');
+    if (typeof showToast === 'function') showToast(photoSkipped ? '글은 올렸어요 — 사진은 DB 설정(SQL) 후 올라가요' : '올렸어요 📌');
     Promise.resolve(renderWall()).catch(e => console.warn('[thread] renderWall', e));
   } catch (e) {
     alert('올리기 실패: ' + (e.message || e));
@@ -4351,16 +4363,9 @@ window.saveProfileBio = async function () {
 
 // "글 추가" 버튼 (아티스트 페이지 소식 헤더) → 벽으로 이동 + 컴포저 자동 열기
 window.goAddSoshik = function() {
+  // 주절주절이 스레드 피드로 바뀜 → 레거시 작성 패널 대신 피드 작성기를 연다.
   navigateTo('wall');
-  // Wait for renderWall to populate the panel, then open it
-  setTimeout(() => {
-    const panel = document.getElementById('wall-compose-panel');
-    if (panel) {
-      panel.hidden = false;
-      const ta = document.getElementById('wall-text');
-      if (ta) ta.focus();
-    }
-  }, 200);
+  setTimeout(() => { if (typeof openThreadComposer === 'function') openThreadComposer(); }, 200);
 };
 
 window.toggleWallCompose = function() {
