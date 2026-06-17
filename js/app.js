@@ -6018,7 +6018,7 @@ function _shortsRenderComments() {
   const cnt = document.getElementById('shorts-cm-count');
   if (cnt) cnt.textContent = cms.length ? cms.length : '';
   list.innerHTML = cms.length === 0
-    ? `<div class="shorts-cm-empty">아직 댓글이 없어요.<br>첫 댓글을 남겨보세요 ✏️</div>`
+    ? `<div class="shorts-cm-empty">${_i18n('아직 댓글이 없어요.<br>첫 댓글을 남겨보세요 ✏️', 'No comments yet.<br>Be the first ✏️')}</div>`
     : cms.map(cm => `
         <div class="shorts-cm">
           <span class="shorts-cm-auth">${_shEsc(cm.author || '익명')}</span>
@@ -8809,11 +8809,11 @@ function _afterUploadPrompt(track, artistName) {
   ov.innerHTML = `
     <div class="upload-done-card">
       <img class="upload-done-cover" src="${cover}" alt="" draggable="false">
-      <h2 class="upload-done-title">업로드 완료! (Done)</h2>
-      <p class="upload-done-sub">「${title}」 가 무대 뒤에 올라왔어요.<br>적은 가사는 <b>곡 페이지</b>에서 볼 수 있어요 🎵</p>
+      <h2 class="upload-done-title">${_i18n('업로드 완료!', 'Upload complete!')}</h2>
+      <p class="upload-done-sub">${_i18n(`「${title}」 가 무대 뒤에 올라왔어요.<br>적은 가사는 <b>곡 페이지</b>에서 볼 수 있어요 🎵`, `「${title}」 is up backstage.<br>Your lyrics show on the <b>song page</b> 🎵`)}</p>
       <div class="upload-done-actions">
-        <button class="btn-primary upload-done-write"><i class="ri-disc-line"></i> 곡 페이지 보기 (See song)</button>
-        <button class="upload-done-later">내 페이지 (My page)</button>
+        <button class="btn-primary upload-done-write"><i class="ri-disc-line"></i> ${_i18n('곡 페이지 보기', 'See song')}</button>
+        <button class="upload-done-later">${_i18n('내 페이지', 'My page')}</button>
       </div>
     </div>`;
   document.body.appendChild(ov);
@@ -12010,7 +12010,7 @@ function renderArtistProfile(artistName) {
     // 인라인 댓글 입력 — 로그인 시에만, 클릭 없이도 바로 보임
     const inlineCm = _meForCm ? `
       <form class="note-inline-form" onclick="event.stopPropagation();" onsubmit="event.preventDefault(); event.stopPropagation(); submitInlineComment('${n.id}', this);">
-        <input type="text" class="note-inline-input" maxlength="200" placeholder="ㄴ 댓글 남기기" onclick="event.stopPropagation();">
+        <input type="text" class="note-inline-input" maxlength="200" placeholder="${_t('ㄴ 댓글 남기기', 'ㄴ Leave a comment')}" onclick="event.stopPropagation();">
       </form>
     ` : '';
     return `
@@ -15296,10 +15296,11 @@ window.openSongInfoModal = function (trackId) {
   const safeDesc   = esc(desc).replace(/\n/g, '<br>');
 
   // 발매일 칩 — track.releaseDate (YYYY-MM-DD) → "발매 · YYYY.MM.DD" 포맷
+  const _rel = _t('발매', 'Released');
   const rd = (track.releaseDate || '').trim();
-  let badgeText = '발매';
+  let badgeText = _rel;
   if (rd && /^\d{4}-\d{2}-\d{2}/.test(rd)) {
-    badgeText = '발매 · ' + rd.slice(0, 10).replace(/-/g, '.');
+    badgeText = _rel + ' · ' + rd.slice(0, 10).replace(/-/g, '.');
   } else if (track.createdAt) {
     try {
       const d = new Date(track.createdAt);
@@ -15307,7 +15308,7 @@ window.openSongInfoModal = function (trackId) {
         const y = d.getFullYear();
         const m = String(d.getMonth() + 1).padStart(2, '0');
         const dy = String(d.getDate()).padStart(2, '0');
-        badgeText = `발매 · ${y}.${m}.${dy}`;
+        badgeText = `${_rel} · ${y}.${m}.${dy}`;
       }
     } catch (_) {}
   }
@@ -15417,7 +15418,7 @@ window.openDemoWallModal = function (trackId) {
           ${safeNote ? `<div class="dwm-divider"></div><div class="dwm-note">${safeNote}</div>` : ''}
         </div>
         <div class="dwm-comments">
-          <div class="dwm-comments-title">댓글 <span class="dwm-cm-count">${cms.length}</span></div>
+          <div class="dwm-comments-title">${_i18n('댓글', 'Comments')} <span class="dwm-cm-count">${cms.length}</span></div>
           <div class="dwm-cm-list" id="dwm-cm-list">${cmsHtml}</div>
           ${inputHtml}
         </div>
@@ -15614,18 +15615,18 @@ window.openTrackCommentsModal = function (trackId) {
   const canComment = !!user;
 
   const cmsHtml = cms.length === 0
-    ? `<div class="tcm-empty">아직 댓글이 없어요 · 첫 댓글을 남겨보세요 ✨</div>`
+    ? `<div class="tcm-empty">${_t('아직 댓글이 없어요 · 첫 댓글을 남겨보세요 ✨', 'No comments yet · Be the first ✨')}</div>`
     : cms.map(cm => `
         <div class="tcm-line">
           <span class="tcm-arrow">ㄴ</span>
           <span class="tcm-text">${esc(cm.text || '')}</span>
-          <span class="tcm-auth">— ${esc(cm.author || '익명')}</span>
+          <span class="tcm-auth">— ${esc(cm.author || _t('익명', 'Anonymous'))}</span>
         </div>
       `).join('');
 
   const inputHtml = canComment ? `
     <div class="tcm-input-row">
-      <input type="text" class="tcm-input" maxlength="200" placeholder="댓글 남기기…"
+      <input type="text" class="tcm-input" maxlength="200" placeholder="${_t('댓글 남기기…', 'Leave a comment…')}"
              onkeypress="if(event.key==='Enter'){event.preventDefault(); submitTrackCommentFromModal('${trackId}');}">
       <button class="tcm-send" onclick="submitTrackCommentFromModal('${trackId}')"><i class="ri-send-plane-fill"></i></button>
     </div>
