@@ -3467,7 +3467,7 @@ window.renderAlbumTest = function (trackId) {
   };
   const cover = t.cover || 'https://picsum.photos/seed/albcover/500';
   const artistName = t.artist || '주형';
-  const avatar = t.artistAvatar || t.avatar || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(artistName));
+  const tags = Array.isArray(t.tags) && t.tags.length ? t.tags : ['시티팝', '새벽', '드라이브'];
   const songTitle = (t.title || '제목 없음').replace(/\s*\(Demo.*\)$/i, '');
   const note = (t.artistNote || t.description || '새벽에 작업한 데모예요. 들어보고 의견 남겨주세요!').trim();
   // 가사 — 있으면 표시(테스트라 없으면 샘플)
@@ -3503,22 +3503,28 @@ window.renderAlbumTest = function (trackId) {
         <div class="alb2-wrap">
           <button class="alb2-back" type="button" onclick="(window.history.length>1)?history.back():navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))" aria-label="뒤로"><i class="ri-arrow-left-line"></i></button>
 
-          <!-- 위: 아티스트 이름 (탭 → 아티스트 페이지) -->
-          <div class="alb2-artisthead" onclick="navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))">
-            <img class="alb2-artistav" src="${avatar}" alt="" draggable="false">
-            <div class="alb2-artisthead-t">
-              <div class="alb2-artistname">${esc(artistName)}</div>
-              <div class="alb2-artistsub">아티스트 · 데모 4개</div>
+          <!-- 위: 히어로 (커버 + 제목 + 아티스트 + 스탯) -->
+          <div class="alb2-hero">
+            <img class="alb2-cover" src="${cover}" alt="" draggable="false">
+            <div class="alb2-head">
+              <span class="alb2-badge">${esc(t.versionLabel || 'DEMO')}</span>
+              <h1 class="alb2-title">${esc(songTitle)}</h1>
+              <div class="alb2-artist" onclick="navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))">— ${esc(artistName)}</div>
+              <div class="alb2-stats">❤ ${t.likes || 0} · ▶ ${(t.plays || 0).toLocaleString()} 재생</div>
             </div>
-            <i class="ri-arrow-right-s-line alb2-artisthead-go"></i>
           </div>
 
-          <!-- 현재 폼: 마스터 / 데모 스네이크 (기존 그대로) -->
-          <div class="alb2-projectbox">${projectBoxHtml}</div>
+          <div class="alb2-actions">
+            <button class="alb2-play" type="button" onclick="playTrack('${t.id}','wall')"><i class="ri-play-fill"></i> 재생</button>
+            <button class="alb2-chip" type="button" onclick="this.classList.toggle('is-on')" aria-label="좋아요"><i class="ri-heart-3-line"></i></button>
+            <button class="alb2-chip" type="button" onclick="this.classList.toggle('is-on'); showToast&&showToast('담았어요 (테스트)')" aria-label="담기"><i class="ri-add-line"></i></button>
+            <button class="alb2-chip" type="button" aria-label="공유"><i class="ri-send-plane-line"></i></button>
+          </div>
+          <div class="alb2-tags">${tags.map(tg => `<span class="alb2-tag">#${esc(tg)}</span>`).join('')}</div>
 
-          <!-- 제목 -->
-          <h1 class="alb2-songtitle">${esc(songTitle)}</h1>
-          <div class="alb2-songsub">데모 4개 · 마스터 준비중</div>
+          <!-- 현재 폼: 마스터 + 데모 (라이브 아티스트 페이지와 동일하게 projects-grid 로 감쌈
+               → 흰 박스 없음 + PC 가로 필름스트립 / 모바일 스네이크) -->
+          <div class="alb2-projectbox projects-grid">${projectBoxHtml}</div>
 
           <!-- 소개 -->
           <h2 class="section-title"><i class="ri-quill-pen-line"></i> 소개</h2>

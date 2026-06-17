@@ -18585,32 +18585,15 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
 .alb2-artistsub { font-size: 12.5px; font-weight: 700; color: #2a2240; margin-top: 2px; }
 .alb2-artisthead-go { font-size: 26px; color: #111; flex-shrink: 0; }
 .alb2-artisthead:hover .alb2-artistname { color: #fff; }
-/* 현재 폼(마스터/데모 스네이크) 래퍼 — 내부는 기존 .project-box 스타일 그대로 */
+/* 현재 폼(마스터 + 데모) 래퍼 — 라이브 아티스트 페이지처럼 .projects-grid 로 감싸므로
+   데스크탑은 [마스터 좌측 레일 + 데모 가로 필름스트립], 모바일은 스네이크가 그대로 적용됨.
+   사용자 요청: 뒤 흰 박스/테두리 제거 → .project-box 배경을 명시적으로 투명 처리(안전장치). */
 .alb2-projectbox { margin: 0 0 24px; }
-/* 데스크탑: 아티스트 페이지의 .projects-grid 필름스트립 맥락이 없어 마스터가 좁은
-   좌측 레일이 되는 문제 → 앨범 페이지에선 [마스터 상단] + [데모 2열] 세로 스택으로 강제.
-   (.alb2-projectbox = 3-class 로 .artist-canvas .demo-path 2-class flex 규칙을 이김) */
-@media (min-width: 769px) {
-  .artist-canvas .alb2-projectbox .project-box { display: block !important; }
-  .artist-canvas .alb2-projectbox .project-header { width: 100% !important; max-width: none !important; margin: 0 0 18px !important; padding: 0 0 14px !important; }
-  .artist-canvas .alb2-projectbox .demo-path {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 18px !important;
-    width: 100% !important;
-    padding: 0 !important;
-    overflow: visible !important;
-  }
-  .artist-canvas .alb2-projectbox .demo-path > .demo-card {
-    flex: initial !important;
-    width: auto !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    height: auto !important;
-    margin: 0 !important;
-  }
-  /* 스네이크 화살표는 그리드라 위치가 안 맞으니 숨김 */
-  .artist-canvas .alb2-projectbox .demo-card::after { content: none !important; display: none !important; }
+.artist-canvas .alb2-projectbox .project-box,
+.artist-canvas .alb2-projectbox .project-box-mobile {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 /* 제목 (스네이크 아래) + 소개/가사 */
 .alb2-songtitle { font-size: 30px; font-weight: 900; color: #FFE500; text-shadow: 2px 2px 0 rgba(0,0,0,0.22); margin: 4px 0 2px; line-height: 1.08; word-break: keep-all; }
@@ -18656,10 +18639,9 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
 .alb2-cm-acts i { font-size: 15px; }
 
 @media (min-width: 800px) {
-  .artist-canvas .alb2-wrap { max-width: 720px; }
+  .artist-canvas .alb2-wrap { max-width: 860px; }
   .alb2-cover { width: 200px; height: 200px; }
   .alb2-title { font-size: 38px; }
-  .alb2-artistname { font-size: 26px; }
   .alb2-songtitle { font-size: 38px; }
 }
 @media (max-width: 420px) {
