@@ -3834,7 +3834,7 @@ function _renderAlbumView(appContent, d) {
               <span class="alb2-badge">${esc(t.versionLabel || (t.isDemo === false ? 'MASTER' : 'DEMO'))}</span>
               <h1 class="alb2-title">${esc(songTitle)}</h1>
               <div class="alb2-artist" onclick="navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))">— ${esc(artistName)}</div>
-              <div class="alb2-stats">❤ ${t.likes || 0} · ▶ ${(t.plays || 0).toLocaleString()} ${_i18n('재생', 'plays')}${t.createdAt ? ` · <i class="ri-calendar-line" style="font-size:0.92em;"></i> ${formatFullDate(t.createdAt)} ${_i18n('업로드', 'uploaded')}` : ''}</div>
+              <div class="alb2-stats">❤ <span class="alb2-likecount" data-track-id="${t.id}">${(typeof isTrackLiked === 'function' && isTrackLiked(t.id)) ? 1 : 0}</span> · ▶ ${(t.plays || 0).toLocaleString()} ${_i18n('재생', 'plays')}${t.createdAt ? ` · <i class="ri-calendar-line" style="font-size:0.92em;"></i> ${formatFullDate(t.createdAt)} ${_i18n('업로드', 'uploaded')}` : ''}</div>
             </div>
           </div>
 
@@ -3868,6 +3868,11 @@ window._albumToggleHeart = function (trackId, btnEl) {
     btnEl.classList.toggle('is-on', willLike);
     const ic = btnEl.querySelector('i'); if (ic) ic.className = willLike ? 'ri-heart-3-fill' : 'ri-heart-3-line';
   }
+  // 히어로 ♥ 카운트도 담김 상태 기반(0/1)으로 동기화 — track.likes 로컬증가의 새로고침 깜빡임 방지.
+  try {
+    const sel = '.alb2-likecount[data-track-id="' + ((window.CSS && CSS.escape) ? CSS.escape(trackId) : trackId) + '"]';
+    document.querySelectorAll(sel).forEach(el => { el.textContent = willLike ? 1 : 0; });
+  } catch (_) {}
   if (typeof toggleTrackHeart === 'function') toggleTrackHeart(trackId, null);
 };
 // 앨범 페이지 공유 — 현재 앨범 페이지 URL 그대로 공유(시스템 공유 없으면 클립보드 복사).

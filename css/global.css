@@ -14689,7 +14689,7 @@ body.polaroid-sheet-open { overflow: hidden; }
    기존 release-card-block {flex-direction:column; width:214px !important} 보다 강하게(cosmic+체인). */
 .artist-canvas.cosmic .projects-grid .project-header .release-card-block {
   flex-direction: row !important;
-  align-items: center !important;
+  align-items: flex-start !important;   /* 텍스트를 사진 위쪽에 맞춤 (사용자 요청) */
   width: max-content !important;   /* 사진+텍스트 합만큼 폭 차지 → meta 안 넘치고 안 잘림 */
   max-width: none !important;
   min-width: 0 !important;
