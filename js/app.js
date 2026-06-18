@@ -3834,7 +3834,7 @@ function _renderAlbumView(appContent, d) {
               <span class="alb2-badge">${esc(t.versionLabel || (t.isDemo === false ? 'MASTER' : 'DEMO'))}</span>
               <h1 class="alb2-title">${esc(songTitle)}</h1>
               <div class="alb2-artist" onclick="navigateTo('artist:'+encodeURIComponent('${esc(artistName)}'))">— ${esc(artistName)}</div>
-              <div class="alb2-stats">❤ ${t.likes || 0} · ▶ ${(t.plays || 0).toLocaleString()} ${_i18n('재생', 'plays')}</div>
+              <div class="alb2-stats">❤ ${t.likes || 0} · ▶ ${(t.plays || 0).toLocaleString()} ${_i18n('재생', 'plays')}${t.createdAt ? ` · <i class="ri-calendar-line" style="font-size:0.92em;"></i> ${formatFullDate(t.createdAt)} ${_i18n('업로드', 'uploaded')}` : ''}</div>
             </div>
           </div>
 
