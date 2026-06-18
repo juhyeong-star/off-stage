@@ -18457,11 +18457,11 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
   cursor: pointer; animation: none !important; transform: none !important;
   margin: 0 !important; left: auto !important; top: auto !important;
 }
-.uni-folder-row-item .winfolder { width: 188px !important; height: 144px !important; }   /* 폴더 키움 152 → 188 */
+.uni-folder-row-item .winfolder { width: 212px !important; height: 162px !important; }   /* 폴더 키움 188 → 212 */
 .uni-folder-row-item:hover .winfolder { transform: translateY(-3px); transition: transform .15s; }
 @media (max-width: 600px) {
   .universe-folder-row { gap: 14px; padding: 2px 12px 12px; }
-  .uni-folder-row-item .winfolder { width: 152px !important; height: 116px !important; }   /* 모바일 키움 130 → 152 */
+  .uni-folder-row-item .winfolder { width: 172px !important; height: 132px !important; }   /* 모바일 키움 152 → 172 */
 }
 .wf-back, .wf-front, .wf-paper { position: absolute; }
 .wf-back {
