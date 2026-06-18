@@ -14685,6 +14685,29 @@ body.polaroid-sheet-open { overflow: hidden; }
   max-width: none;
   margin-left: 0 !important;
 }
+/* 앨범(우주) 마스터 카드 — 「Coming Soon」(제목/아티스트)을 사진 아래가 아니라 옆(오른쪽)에 (사용자 요청).
+   기존 release-card-block {flex-direction:column; width:214px !important} 보다 강하게(cosmic+체인). */
+.artist-canvas.cosmic .projects-grid .project-header .release-card-block {
+  flex-direction: row !important;
+  align-items: center !important;
+  width: max-content !important;   /* 사진+텍스트 합만큼 폭 차지 → meta 안 넘치고 안 잘림 */
+  max-width: none !important;
+  min-width: 0 !important;
+  gap: 16px !important;
+}
+/* 마스터 카드(album-card)도 내용 폭만큼 — 안에서 사진+Coming Soon 가로 배치 보장 */
+.artist-canvas.cosmic .projects-grid .project-header .project-album-card {
+  width: max-content !important;
+  max-width: none !important;
+}
+.artist-canvas.cosmic .projects-grid .project-header .release-card-block .project-cover-wrap {
+  flex: 0 0 214px !important;
+}
+.artist-canvas.cosmic .projects-grid .project-header .release-card-block .project-album-meta {
+  flex: 0 0 auto;          /* 내용 크기로 — 0 으로 수축 방지 */
+  max-width: 280px;
+  text-align: left;
+}
 /* 모바일 (≤768px) 에서는 다시 세로 스택 — 좁아서 옆에 못 둠 */
 @media (max-width: 768px) {
   .artist-canvas .project-album-card {
