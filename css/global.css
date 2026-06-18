@@ -18781,6 +18781,10 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
 .alb2-artist { font-size: 14px; font-weight: 800; color: #2a2240; cursor: pointer; display: inline-block; }
 .alb2-artist:hover { color: #6B46C1; }
 .alb2-stats { font-size: 13px; color: #2a2240; margin-top: 7px; font-weight: 700; }
+/* 우주(cosmic) 배경 — 어두운 히어로 글씨(아티스트·재생/업로드 줄)를 밝게 (안 보임 해소, 사용자 요청) */
+.artist-canvas.cosmic .alb2-artist { color: #e7e2f6; }
+.artist-canvas.cosmic .alb2-artist:hover { color: #fff; }
+.artist-canvas.cosmic .alb2-stats { color: #cdc7e4; }
 .alb2-actions { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
 .alb2-play { background: #FFE500; color: #111; border: 2px solid #111; border-radius: 4px; box-shadow: 3px 3px 0 #111; padding: 11px 24px; font-size: 15px; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
 .alb2-play:hover { background: #111; color: #FFE500; box-shadow: 3px 3px 0 #FFE500; }
