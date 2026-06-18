@@ -18614,6 +18614,10 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
 .tp-act.tp-collect { margin-left: auto; }            /* 담기(저장)는 오른쪽 끝으로 — 인스타처럼 */
 .tp-act.tp-collect.is-bookmarked { color: var(--brand-color, #1DB954); }
 .tp-act:hover { color: var(--text-primary); }
+/* 좋아요 — 누를 때 살짝 튀는 피드백. 색(빨강)은 위 .tp-act.is-liked 재사용. */
+.tp-act.tp-like.pop { animation: tpLikePop 0.36s ease; }
+@keyframes tpLikePop { 0%, 100% { transform: scale(1); } 40% { transform: scale(1.28); } }
+.tp-like-count { font-size: 13px; font-variant-numeric: tabular-nums; }
 
 /* 작성 시트 (모달) */
 .thread-composer-modal {

@@ -436,7 +436,7 @@ window.showOnboarding = function () {
     ['ri-triangle-fill',   _t2('발견','Discover'),        _t2('노래를 도형으로 탐색','Browse songs as shapes')],
     ['ri-sticky-note-fill',_t2('주절주절','Bla Bla'),      _t2('감성 메모를 남기는 벽','A wall of mood notes')],
     ['ri-bookmark-fill',   _t2('즐겨찾기','Favorites'),    _t2('모은 곡과 폴더','Saved songs & folders')],
-    ['ri-mic-fill',        _t2('아티스트 페이지','Artist'), _t2('데모와 소식 보기','Demos & updates')]
+    ['ri-mic-fill',        _t2('MY Page','MY Page'), _t2('데모와 소식 보기','Demos & updates')]
   ].map(([ic,t,d]) => `<div class="ob-menu-row"><span class="ob-menu-ic"><i class="${ic}"></i></span><div class="ob-menu-tx"><b>${t}</b><span>${d}</span></div></div>`).join('');
   const slide3 = `
     <div class="ob-slide">
@@ -517,7 +517,7 @@ window.startTutorial = function () {
         body: _t2('좋아한 노래(도형)와 포스트잇을 모아 나만의 우주로 정리하는 곳이에요. 로그인하면 메뉴에서 들어가 써볼 수 있어요.','Collect liked songs (shapes) and post-its into your own universe. Sign in, then open it from the menu.') };
   // 로그인 시: 내 아티스트 페이지로 들어가 소식(투명 + 카드)·프로필 수정을 자세히 안내.
   const artistSteps = _loggedIn ? [
-    { route: 'my-artist', sel: '.thread-composer, .atl-feed-head', title: _t2('아티스트 페이지 — 주절주절','Your page — blah blah'),
+    { route: 'my-artist', sel: '.thread-composer, .atl-feed-head', title: _t2('MY Page — 주절주절','MY Page — blah blah'),
       body: _t2('여기가 팬들이 보는 당신의 페이지예요. 아래 주절주절에 노래·사진과 함께 근황을 남길 수 있어요.','This is the page fans see. Post updates — with songs and photos — in the blah blah feed below.') },
     { sel: '#artist-bio-line, .artist-bio-inline', title: _t2('자기소개','Your bio'),
       body: _t2('"자신을 소개해보아요"를 눌러 한 줄 소개를 적어보세요. 팬들에게 보이는 첫인상이에요.','Tap “Introduce yourself” to write a short bio — the first thing fans see.') },
@@ -1151,6 +1151,8 @@ async function init() {
   if (window.Playlists) fetches.push(window.Playlists.refreshInto(db).catch(e => console.warn('[init] playlists', e)));
   if (window.Walls && window.Walls.refreshMyBookmarks) fetches.push(window.Walls.refreshMyBookmarks().catch(e => console.warn('[init] bookmarks', e)));
   if (window.Favorites && window.Favorites.refreshMine) fetches.push(window.Favorites.refreshMine().catch(e => console.warn('[init] favorites', e)));
+  if (window.Walls && window.Walls.refreshMyFavorites) fetches.push(window.Walls.refreshMyFavorites().catch(e => console.warn('[init] note-favs', e)));
+  if (window.Walls && window.Walls.refreshFavoriteCounts) fetches.push(window.Walls.refreshFavoriteCounts().catch(e => console.warn('[init] note-fav-counts', e)));
 
   // Don't block main render — fire and forget; re-render header/sidebar when done
   Promise.all(fetches).then(() => {
@@ -3347,7 +3349,7 @@ function _threadPostHtml(p) {
         ${img}
         ${song}
         <div class="thread-post-actions">
-          <button class="tp-act" onclick="this.classList.toggle('is-liked')"><i class="ri-heart-3-line"></i></button>
+          <button class="tp-act tp-like ${p.liked ? 'is-liked' : ''}" data-note-id="${p.id}" aria-label="${_t('좋아요', 'Like')}" onclick="toggleNoteLike('${p.id}', this)"><i class="${p.liked ? 'ri-heart-3-fill' : 'ri-heart-3-line'}"></i><span class="tp-like-count">${p.likeCount > 0 ? p.likeCount : ''}</span></button>
           <button class="tp-act" onclick="openCommentSheet('${p.id}')"><i class="ri-chat-3-line"></i>${cmCount}</button>
           <button class="tp-act" aria-label="${_t('공유', 'Share')}" onclick="_threadShare('${p.id}')"><i class="ri-send-plane-line"></i></button>
           <button class="tp-act tp-collect ${p.collected ? 'is-bookmarked' : ''}" aria-label="${_t('내 우주에 담기', 'Save to my universe')}" onclick="toggleBookmark('${p.id}')"><i class="${p.collected ? 'ri-bookmark-fill' : 'ri-bookmark-line'}"></i></button>
@@ -3401,6 +3403,19 @@ async function renderWall() {
       if (currentView !== 'wall') return;
     }
   }
+  // 좋아요(note_favorites) — 내 좋아요 + 노트별 카운트를 백그라운드로 갱신, 바뀌면 한 번만 다시 그림.
+  // (캐시는 즉시 렌더에 쓰고, 서버 최신값은 비동기로 반영. __wallFavRefreshing 으로 루프 방지.)
+  if (window.Walls && window.Walls.refreshFavoriteCounts && !window.__wallFavRefreshing) {
+    window.__wallFavRefreshing = true;
+    const _favSig = () => (window.__favoritedNotes ? [...window.__favoritedNotes].sort().join(',') : '') + '|' + JSON.stringify(window.__noteFavCounts || {});
+    const _favBefore = _favSig();
+    Promise.all([
+      window.Walls.refreshMyFavorites ? window.Walls.refreshMyFavorites().catch(() => {}) : null,
+      window.Walls.refreshFavoriteCounts().catch(() => {})
+    ]).then(() => {
+      if (currentView === 'wall' && _favSig() !== _favBefore) renderWall();
+    }).finally(() => { window.__wallFavRefreshing = false; });
+  }
   const me = window.__currentUser || db.currentUser || null;
   const myId = me && me.id;
   const myAvatar = (me && (me.avatar_url || me.avatar)) || ('https://i.pravatar.cc/150?u=' + (myId || 'me'));
@@ -3424,7 +3439,9 @@ async function renderWall() {
     track: n.trackId ? _threadTrackOf(n.trackId) : null,
     comments: (n.comments || []).length,
     isMine: !!(myId && n.authorId === myId),
-    collected: !!(window.Walls && window.Walls.isBookmarked && window.Walls.isBookmarked(n.id))
+    collected: !!(window.Walls && window.Walls.isBookmarked && window.Walls.isBookmarked(n.id)),
+    liked: !!(window.Walls && window.Walls.isFavorited && window.Walls.isFavorited(n.id)),
+    likeCount: (window.Walls && window.Walls.favoriteCount) ? window.Walls.favoriteCount(n.id) : 0
   }));
   const composerAvatar = me ? myAvatar : ('https://i.pravatar.cc/150?u=guest');
   const empty = posts.length === 0 ? `
@@ -4840,6 +4857,47 @@ window.submitWallNote = async function() {
     alert('저장 실패: ' + (e.message || e));
   }
   if (btn) { btn.disabled = false; btn.innerHTML = '붙이기 📌'; }
+};
+
+// ── 주절주절 글 좋아요 (note_favorites — 공개 + 카운트) ──
+// 예전엔 하트가 시각 토글뿐이었으나, 이제 실제 좋아요로 저장. 누가 좋아요했는지
+// note_favorites 에 남아 나중에 "내가 좋아요한 글"로 따로 모아볼 수 있음(백엔드 준비됨).
+function _updateNoteLikeDom(noteId) {
+  const liked = !!(window.Walls && window.Walls.isFavorited && window.Walls.isFavorited(noteId));
+  const count = (window.__noteFavCounts && window.__noteFavCounts[noteId]) || 0;
+  let sel;
+  try { sel = '.tp-like[data-note-id="' + ((window.CSS && CSS.escape) ? CSS.escape(noteId) : noteId) + '"]'; }
+  catch (_) { sel = '.tp-like[data-note-id="' + noteId + '"]'; }
+  document.querySelectorAll(sel).forEach(btn => {
+    btn.classList.toggle('is-liked', liked);
+    const ic = btn.querySelector('i'); if (ic) ic.className = liked ? 'ri-heart-3-fill' : 'ri-heart-3-line';
+    const c = btn.querySelector('.tp-like-count'); if (c) c.textContent = count > 0 ? count : '';
+  });
+}
+window._updateNoteLikeDom = _updateNoteLikeDom;
+
+window.toggleNoteLike = async function (noteId, btnEl) {
+  const db = window.DB.get();
+  if (!db.currentUser) { alert(_t('로그인 후 이용 가능합니다', 'Sign in to like posts')); navigateTo('auth'); return; }
+  if (!window.Walls || !window.Walls.toggleFavorite) return;
+  const willLike = !(window.Walls.isFavorited && window.Walls.isFavorited(noteId));
+  // 낙관적 반영 — 캐시(좋아요 set + 카운트) + 같은 노트의 모든 하트 버튼 DOM
+  if (!window.__favoritedNotes) window.__favoritedNotes = new Set();
+  if (!window.__noteFavCounts) window.__noteFavCounts = {};
+  if (willLike) window.__favoritedNotes.add(noteId); else window.__favoritedNotes.delete(noteId);
+  window.__noteFavCounts[noteId] = Math.max(0, (window.__noteFavCounts[noteId] || 0) + (willLike ? 1 : -1));
+  _updateNoteLikeDom(noteId);
+  if (willLike && btnEl) { btnEl.classList.add('pop'); setTimeout(() => btnEl.classList.remove('pop'), 360); }
+  try {
+    await window.Walls.toggleFavorite(noteId);
+  } catch (e) {
+    // 실패 — 되돌리기
+    if (willLike) window.__favoritedNotes.delete(noteId); else window.__favoritedNotes.add(noteId);
+    window.__noteFavCounts[noteId] = Math.max(0, (window.__noteFavCounts[noteId] || 0) + (willLike ? -1 : 1));
+    _updateNoteLikeDom(noteId);
+    if (typeof showToast === 'function') showToast(_t('좋아요 실패 — 다시 시도해줘', 'Like failed — try again'));
+    console.warn('[toggleNoteLike]', e);
+  }
 };
 
 window.toggleBookmark = async function(noteId) {
@@ -12139,7 +12197,10 @@ function renderArtistProfile(artistName) {
       id: n.id, name: n.author || artistName, avatar: avatar,
       time: _threadTimeAgo(n.createdAt), text: n.text || '', image: n.imageUrl || null,
       track: n.trackId ? _threadTrackOf(n.trackId) : null,
-      comments: (n.comments || []).length, isMine: !!(_myId2 && n.authorId === _myId2)
+      comments: (n.comments || []).length, isMine: !!(_myId2 && n.authorId === _myId2),
+      collected: !!(window.Walls && window.Walls.isBookmarked && window.Walls.isBookmarked(n.id)),
+      liked: !!(window.Walls && window.Walls.isFavorited && window.Walls.isFavorited(n.id)),
+      likeCount: (window.Walls && window.Walls.favoriteCount) ? window.Walls.favoriteCount(n.id) : 0
     }));
 
   // Legacy combined html (still used as fallback when split has nothing)

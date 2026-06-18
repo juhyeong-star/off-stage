@@ -834,6 +834,30 @@
       }
     },
 
+    // 노트별 좋아요 수(공개) — 전체 note_favorites 를 한 번 읽어 noteId→count 맵 구성.
+    // note_favorites 는 public read 라 익명도 카운트 가능. 초기 규모엔 충분(많아지면 카운트 컬럼/뷰로 최적화).
+    async refreshFavoriteCounts() {
+      window.__noteFavCounts = window.__noteFavCounts || {};
+      if (!window.supabase) return window.__noteFavCounts;
+      const { data, error } = await window.supabase
+        .from('note_favorites')
+        .select('note_id');
+      if (error) {
+        if (!/relation .* does not exist/.test(error.message || '')) {
+          console.warn('[Walls] refreshFavoriteCounts', error.message);
+        }
+        return window.__noteFavCounts;
+      }
+      const counts = {};
+      (data || []).forEach(r => { counts[r.note_id] = (counts[r.note_id] || 0) + 1; });
+      window.__noteFavCounts = counts;
+      return counts;
+    },
+
+    favoriteCount(noteId) {
+      return (window.__noteFavCounts && window.__noteFavCounts[noteId]) || 0;
+    },
+
     // 내가 좋아한 노트들 — 라이브러리에서 사용
     async fetchMyFavorites() {
       if (!window.supabase) return [];
