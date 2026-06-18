@@ -3840,9 +3840,9 @@ function _renderAlbumView(appContent, d) {
 
           <div class="alb2-actions">
             <button class="alb2-play" type="button" onclick="playTrack('${t.id}','wall')"><i class="ri-play-fill"></i> ${_i18n('재생', 'Play')}</button>
-            <button class="alb2-chip" type="button" onclick="this.classList.toggle('is-on')" aria-label="${_t('좋아요', 'Like')}"><i class="ri-heart-3-line"></i></button>
-            <button class="alb2-chip" type="button" onclick="this.classList.toggle('is-on')" aria-label="${_t('담기', 'Save')}"><i class="ri-add-line"></i></button>
-            <button class="alb2-chip" type="button" aria-label="${_t('공유', 'Share')}" onclick="_threadShare('${t.id}')"><i class="ri-send-plane-line"></i></button>
+            <button class="alb2-chip${(typeof isTrackLiked === 'function' && isTrackLiked(t.id)) ? ' is-on' : ''}" type="button" onclick="_albumToggleHeart('${t.id}', this)" aria-label="${_t('좋아요', 'Like')}"><i class="${(typeof isTrackLiked === 'function' && isTrackLiked(t.id)) ? 'ri-heart-3-fill' : 'ri-heart-3-line'}"></i></button>
+            <button class="alb2-chip" type="button" onclick="openPlaylistModal('${t.id}')" aria-label="${_t('담기', 'Save')}"><i class="ri-add-line"></i></button>
+            <button class="alb2-chip" type="button" aria-label="${_t('공유', 'Share')}" onclick="_albumShare()"><i class="ri-send-plane-line"></i></button>
           </div>
           ${tags.length ? `<div class="alb2-tags">${tags.map(tg => `<span class="alb2-tag">#${esc(tg)}</span>`).join('')}</div>` : ''}
 
@@ -3857,6 +3857,27 @@ function _renderAlbumView(appContent, d) {
       </div>
     </div>`;
 }
+
+// 앨범 페이지 ♥ — 곡을 내 우주에 담기(track_favorites/CollectedTracks). 칩 스타일(is-on/ri-heart-3)을
+// 유지하려고 toggleTrackHeart 에 btn=null 을 넘겨 저장만 시키고, 칩 표시는 여기서 직접 갱신.
+window._albumToggleHeart = function (trackId, btnEl) {
+  const db = window.DB.get();
+  if (!db.currentUser) { alert(_t('로그인 후 이용 가능합니다', 'Sign in first')); navigateTo('auth'); return; }
+  const willLike = (typeof isTrackLiked === 'function') ? !isTrackLiked(trackId) : true;
+  if (btnEl) {
+    btnEl.classList.toggle('is-on', willLike);
+    const ic = btnEl.querySelector('i'); if (ic) ic.className = willLike ? 'ri-heart-3-fill' : 'ri-heart-3-line';
+  }
+  if (typeof toggleTrackHeart === 'function') toggleTrackHeart(trackId, null);
+};
+// 앨범 페이지 공유 — 현재 앨범 페이지 URL 그대로 공유(시스템 공유 없으면 클립보드 복사).
+window._albumShare = function () {
+  try {
+    const url = location.href;
+    if (navigator.share) { navigator.share({ url }).catch(() => {}); }
+    else if (navigator.clipboard) { navigator.clipboard.writeText(url); if (typeof showToast === 'function') showToast(_t('링크 복사됐어요', 'Link copied')); }
+  } catch (_) {}
+};
 
 // 실데이터 앨범 페이지 — pid = projectId 또는 'proj_'+trackId(싱글). 라우트 'album:<pid>' 가 호출.
 window.renderAlbum = function (pid) {
