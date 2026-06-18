@@ -18774,7 +18774,8 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
    .artist-canvas 안에서 .alb2-* 사용. (사용자 요청: 기존 아티스트 페이지처럼)
    ============================================================ */
 .artist-canvas .alb2-wrap { max-width: 640px; margin: 0 0 0 40px; }   /* 좌측 정렬 + 벽에서 띄움 (좌하단 ☰ 메뉴 버튼과 안 겹치게, 사용자 요청) */
-.alb2-back { background: rgba(0,0,0,0.78); border: none; color: #fff; width: 38px; height: 38px; border-radius: 50%; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; margin-left: -40px; }   /* margin-left:-40 = alb2-wrap 의 좌측 여백 40 상쇄 → 뒤로가기는 모서리 유지(전역 버튼과 겹쳐 한 개로 보임), 본문만 들여씀 */
+/* 앨범 자체 뒤로가기 제거 — 앱 공통 뒤로가기(#global-back, 좌상단 고정)만 사용(중복 2개 → 1개, 사용자 요청) */
+.alb2-back { display: none !important; }
 /* 위 — 아티스트 이름 헤더 (탭 → 아티스트 페이지) */
 .alb2-artisthead { display: flex; align-items: center; gap: 12px; cursor: pointer; margin-bottom: 18px; }
 .alb2-artistav { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2.5px solid #111; box-shadow: 3px 3px 0 #111; background: #fff; flex-shrink: 0; }
