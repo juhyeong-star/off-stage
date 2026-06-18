@@ -816,12 +816,19 @@
       // 삭제)하던 버그가 있었음 → want 로 정확히 insert/delete. 미지정 시에만 기존 토글.
       const like = (typeof want === 'boolean') ? want : !window.__favoritedNotes.has(noteId);
       if (!like) {
-        const { error } = await window.supabase
+        const { data, error } = await window.supabase
           .from('note_favorites')
           .delete()
           .eq('user_id', user.id)
-          .eq('note_id', noteId);
+          .eq('note_id', noteId)
+          .select();   // 실제 삭제된 행을 돌려받아 '조용한 0행 삭제'(RLS DELETE 정책 누락)를 감지
         if (error) throw error;
+        if (!data || data.length === 0) {
+          // 에러는 없지만 한 행도 안 지워짐 = note_favorites 에 본인 DELETE 를 허용하는 RLS
+          // 정책이 없음(기본 거부). 예전엔 조용히 넘어가 화면만 흰색→새로고침 때 빨강으로
+          // 되살아나 혼란스러웠음. 이제 명확히 실패로 던져 낙관적 표시를 되돌리고 토스트.
+          throw new Error('NO_DELETE_POLICY');
+        }
         window.__favoritedNotes.delete(noteId);
         return { favorited: false };
       } else {

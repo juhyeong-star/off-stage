@@ -4978,7 +4978,13 @@ window.toggleNoteLike = async function (noteId, btnEl) {
     if (willLike) window.__favoritedNotes.delete(noteId); else window.__favoritedNotes.add(noteId);
     window.__noteFavCounts[noteId] = Math.max(0, (window.__noteFavCounts[noteId] || 0) + (willLike ? -1 : 1));
     _updateNoteLikeDom(noteId);
-    if (typeof showToast === 'function') showToast(_t('좋아요 실패 — 다시 시도해줘', 'Like failed — try again'));
+    if (typeof showToast === 'function') {
+      const _msg = (e && e.message === 'NO_DELETE_POLICY')
+        ? _t('좋아요 취소가 적용되지 않았어요 (서버 권한 설정 필요)', "Couldn't remove like (server permission needed)")
+        : (willLike ? _t('좋아요 실패 — 다시 시도해줘', 'Like failed — try again')
+                    : _t('좋아요 취소 실패 — 다시 시도해줘', 'Unlike failed — try again'));
+      showToast(_msg);
+    }
     console.warn('[toggleNoteLike]', e);
   }
 };
