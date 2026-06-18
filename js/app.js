@@ -7670,13 +7670,16 @@ window.rollRandomTrack = function(el) { window.diceBouncePlay(el); };
 // 나중에 모은 곡을 폴더 위로 끌어다 정리하는 그림.
 // ============================================================
 function _floatingFolderHtml(it, pos) {
-  const { xBase, yPx, rot, dur, dx, dy } = pos;
-  const base = `left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;`;
+  // pos 가 없으면(null) = 상단 '폴더 줄' 모드 — 절대위치/드리프트 없이 인라인 배치 +
+  // 클릭은 드래그 캔버스 밖이라 명시 onclick 으로 연결(열기/생성/템플릿).
+  const row = !pos;
+  const posStyle = row ? '' : `left:${pos.xBase}%; top:${pos.yPx}px; animation: floatDrift ${pos.dur}s ease-in-out infinite; --dx:${pos.dx}px; --dy:${pos.dy}px; --rot:${pos.rot}deg;`;
+  const cls = row ? 'floating-folder is-winfolder uni-folder-row-item' : 'floating-shape floating-folder is-winfolder';
 
   if (it.kind === 'folderNew') {
     // '새 폴더' — 윈도우 폴더 모양 고스트(반투명) + 플러스 (사용자 요청: 폴더 모양 통일)
     return `
-      <div class="floating-shape floating-folder is-winfolder is-wf-new" data-folder-new="1" data-uid="${it.id}" style="${base}">
+      <div class="${cls} is-wf-new" data-folder-new="1" data-uid="${it.id}" style="${posStyle}" ${row ? 'onclick="window.promptNewPlaylist && promptNewPlaylist()"' : ''}>
         <div class="winfolder">
           <span class="wf-back" aria-hidden="true"></span>
           <span class="wf-front" aria-hidden="true"></span>
@@ -7691,8 +7694,8 @@ function _floatingFolderHtml(it, pos) {
     const f = it.tpl;
     const title = (f.title || '폴더').replace(/</g,'&lt;');
     return `
-      <div class="floating-shape floating-folder is-winfolder is-wf-tpl" data-folder-template="${title.replace(/"/g,'&quot;')}" data-uid="${it.id}"
-           style="${base} --folder-color:${f.color};">
+      <div class="${cls} is-wf-tpl" data-folder-template="${title.replace(/"/g,'&quot;')}" data-uid="${it.id}"
+           style="${posStyle} --folder-color:${f.color};" ${row ? `onclick="window.createDefaultPlaylist && createDefaultPlaylist('${title.replace(/'/g,"\\'")}')"` : ''}>
         <div class="winfolder">
           <span class="wf-back" aria-hidden="true"></span>
           <span class="wf-front" aria-hidden="true"></span>
@@ -7711,7 +7714,7 @@ function _floatingFolderHtml(it, pos) {
     ? `<img class="wf-paper" src="${cover}" alt="${title.replace(/"/g,'&quot;')}" loading="lazy" draggable="false">`
     : '';
   return `
-    <div class="floating-shape floating-folder is-winfolder" data-folder-id="${p.id}" style="${base}">
+    <div class="${cls}" data-folder-id="${p.id}" style="${posStyle}" ${row ? `onclick="window.enterFolderWithAnim && enterFolderWithAnim('${p.id}', this)"` : ''}>
       <div class="winfolder">
         <span class="wf-back" aria-hidden="true"></span>
         ${paper}
@@ -7838,8 +7841,8 @@ window.renderUniverse = async function () {
       { title: '애는 된다',  emoji: '🔥', color: '#FF8A65' }
     ].forEach(f => folderItems.push({ kind: 'folderTpl', id: 'tpl:' + f.title, tpl: f }));
   }
-  // 항상 '새 폴더' 오브제 하나
-  folderItems.push({ kind: 'folderNew', id: 'folder-new' });
+  // '폴더 줄'(상단 고정) 아이템 — 생성(+)이 맨 앞(왼쪽), 그 다음 폴더들. 새로 만들면 오른쪽으로 추가됨.
+  const folderRowItems = [{ kind: 'folderNew', id: 'folder-new' }, ...folderItems];
 
   // ── Layout: distribute items in a 3-col grid pattern with a deterministic jitter ──
   // Order + jitter must be STABLE across reloads so user-curated positions feel persistent.
@@ -7853,8 +7856,8 @@ window.renderUniverse = async function () {
     } catch (_) { return null; }
   }
 
+  // 폴더는 상단 줄로 분리됨 — 캔버스엔 곡(도형)·포스트잇만 떠다님.
   const allItems = [
-    ...folderItems,
     ...likedTracks.map(t => ({ kind: 'track', t, id: t.id })),
     ...bookmarkedNotes.map(n => ({ kind: 'note', n, id: n.id }))
   ];
@@ -7955,6 +7958,7 @@ window.renderUniverse = async function () {
       <p style="font-size:13px; color:var(--text-secondary);">${_i18n(`폴더 ${myPlaylists.length} · 곡 ${likedTracks.length} · 포스트잇 ${bookmarkedNotes.length} — 끌어서 자리 옮길 수 있어요`, `${myPlaylists.length} folders · ${likedTracks.length} tracks · ${bookmarkedNotes.length} notes — drag to rearrange`)}</p>
       ${bookmarkedNotes.length > 0 ? `<button class="universe-clear-notes" type="button" onclick="clearAllUniverseNotes()"><i class="ri-eraser-line"></i> ${_i18n('포스트잇 전부 빼기', 'Clear all notes')}</button>` : ''}
     </div>
+    <div class="universe-folder-row">${folderRowItems.map(it => _floatingFolderHtml(it, null)).join('')}</div>
     <div class="shapes-universe my-universe" style="height: ${universeHeight}px;">
       ${itemsHtml}
     </div>

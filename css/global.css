@@ -941,12 +941,12 @@ body.is-shapes-route .page-intro {
 /* 내 우주 포스트잇 — 우리들의 벽 포스트잇과 '똑같은' 글꼴/스타일, 크기만 작게 */
 .universe-note {
   position: absolute;
-  width: 230px;
-  min-height: 150px;
-  padding: 20px 20px 16px;
+  width: 198px;                       /* 살짝 작게 230 → 198 (폴더 줄 분리, 사용자 요청) */
+  min-height: 128px;                  /* 150 → 128 */
+  padding: 16px 16px 13px;
   border-radius: 2px;                 /* 벽과 동일 */
   font-family: var(--font-hand);      /* 벽과 동일 */
-  font-size: 16px;                    /* 벽 18px → 살짝 작게 */
+  font-size: 14.5px;                  /* 살짝 작게 16 → 14.5 */
   line-height: 1.4;                   /* 벽과 동일 */
   font-weight: 700;                   /* 벽과 동일(굵은 손글씨) */
   /* 벽과 동일한 종이 듀얼톤 그림자 (약간 축소) */
@@ -1005,7 +1005,7 @@ body.is-shapes-route .page-intro {
     radial-gradient(circle at 80% 70%, rgba(233,30,99,0.10), transparent 40%);
 }
 /* 내 우주에 모인 곡 도형 — 도형 크기 30% 키움 (0.8 → 1.04, folatDrift scale) */
-.my-universe .floating-shape:not(.universe-note):not(.floating-folder) { --scale: 1.35; }   /* PC/모바일 공통 +30% 추가 (요청) */
+.my-universe .floating-shape:not(.universe-note):not(.floating-folder) { --scale: 1.1; }   /* 폴더 줄 분리 후 도형 살짝만 크게(1.35 → 1.1, 사용자 요청) */
 /* 내 우주 포스트잇에 붙은 노래 칩 (벽 포스트잇처럼 오른쪽 아래 작게) */
 .universe-note .note-track-chip {
   margin: 8px 0 0 auto;
@@ -18439,6 +18439,29 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
 .floating-folder.is-winfolder .winfolder {
   position: relative; width: 152px; height: 116px;
   filter: drop-shadow(0 8px 16px rgba(0,0,0,0.45));
+}
+/* ============================================================
+   내 우주 — 폴더 줄(상단 고정). 생성(+) + 폴더들 가로 나열, 새 폴더는 오른쪽으로.
+   폴더는 떠다니지 않고 여기 고정 + 더 크게. (사용자 요청, 테스트)
+   ============================================================ */
+.universe-folder-row {
+  display: flex; align-items: flex-start; justify-content: center; gap: 20px;
+  flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
+  padding: 4px 16px 14px; margin: 0 auto 2px; position: relative; z-index: 5;
+}
+.universe-folder-row::-webkit-scrollbar { height: 6px; }
+.universe-folder-row::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 3px; }
+.uni-folder-row-item {
+  position: static !important; flex: 0 0 auto;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  cursor: pointer; animation: none !important; transform: none !important;
+  margin: 0 !important; left: auto !important; top: auto !important;
+}
+.uni-folder-row-item .winfolder { width: 188px !important; height: 144px !important; }   /* 폴더 키움 152 → 188 */
+.uni-folder-row-item:hover .winfolder { transform: translateY(-3px); transition: transform .15s; }
+@media (max-width: 600px) {
+  .universe-folder-row { gap: 14px; padding: 2px 12px 12px; }
+  .uni-folder-row-item .winfolder { width: 152px !important; height: 116px !important; }   /* 모바일 키움 130 → 152 */
 }
 .wf-back, .wf-front, .wf-paper { position: absolute; }
 .wf-back {
