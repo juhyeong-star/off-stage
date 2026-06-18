@@ -18290,16 +18290,18 @@ body:has(#global-player.expanded) .lang-toggle { display: none !important; }
   #global-player:not(.expanded) .player-share-btn { background: none; border: none; padding: 6px; gap: 0; }
   #global-player:not(.expanded) .player-share-label { display: none; }
   #global-player:not(.expanded) .player-share-btn i { font-size: 22px; }
-  /* 풀스크린 — 오른쪽 중간에 동그란 공유 버튼 */
+  /* 풀스크린 — 공유를 '담기' 바로 아래 인라인 알약으로(예전 절대위치 동그라미가 다음곡 컨트롤
+     버튼 위에 겹쳐 '이상한 동그라미'로 보이던 문제 해결, 사용자 요청). 담기·공유 한 쌍. */
   #global-player.expanded .player-share-btn {
-    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
-    width: 52px; height: 52px; padding: 0; gap: 2px; flex-direction: column;
-    border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18);
+    order: 2; margin-top: 4px;
+    position: static; top: auto; right: auto; transform: none;
+    width: auto; height: auto; padding: 6px 14px; gap: 5px; flex-direction: row;
+    border-radius: 999px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16);
     color: var(--text-primary, #fff);
   }
-  #global-player.expanded .player-share-btn:active { transform: translateY(-50%) scale(0.92); }
-  #global-player.expanded .player-share-btn i { font-size: 22px; }
-  #global-player.expanded .player-share-label { font-size: 9px; font-weight: 700; }
+  #global-player.expanded .player-share-btn:active { transform: scale(0.92); }
+  #global-player.expanded .player-share-btn i { font-size: 16px; }
+  #global-player.expanded .player-share-label { font-size: 12px; font-weight: 700; }
 }
 
 /* ============================================================
