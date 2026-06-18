@@ -7441,7 +7441,7 @@ html, body { overflow-x: hidden; max-width: 100%; }
 @media (max-width: 600px) {
   .floating-shape { padding: 10px; }
   .floating-shape .shape-text {
-    font-size: 18px;   /* 모바일 도형 글자 키움 (15 → 18, 사용자 요청) */
+    font-size: 17px;   /* 모바일 도형 글자 키움 (15 → 17, 사용자 요청) */
     max-width: 118px;
     line-height: 1.25;
     font-weight: 700;
