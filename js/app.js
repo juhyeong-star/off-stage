@@ -3346,6 +3346,7 @@ function _threadPostHtml(p) {
           <button class="thread-post-more" aria-label="더보기" onclick="_threadPostMenu('${p.id}', ${p.isMine ? 'true' : 'false'})"><i class="ri-more-fill"></i></button>
         </div>
         ${p.text ? _collapsible(p.text, 'thread-post-body') : ''}
+        ${p.text ? `<button class="tp-translate" type="button" onclick="translatePost('${p.id}', this)"><i class="ri-translate-2"></i> ${_t('번역', 'Translate')}</button>` : ''}
         ${img}
         ${song}
         <div class="thread-post-actions">
@@ -3369,6 +3370,38 @@ window._threadShare = function (id) {
     if (navigator.share) { navigator.share({ url }).catch(() => {}); }
     else if (navigator.clipboard) { navigator.clipboard.writeText(url); showToast && showToast('링크 복사됐어요'); }
   } catch (_) {}
+};
+// 번역 (테스트) — 글을 반대 언어(한↔영)로 번역해 아래에 표시. 다시 누르면 원문으로.
+// MyMemory 무료 API(키 불필요, 약 500자 제한). 한글 포함이면 ko→en, 아니면 en→ko.
+window.translatePost = async function (id, btn) {
+  const post = btn && btn.closest('.thread-post');
+  if (!post) return;
+  const existing = post.querySelector('.thread-post-translation');
+  if (existing) { existing.remove(); btn.innerHTML = '<i class="ri-translate-2"></i> ' + _t('번역', 'Translate'); return; }
+  const bodyEl = post.querySelector('.thread-post-body');
+  const text = bodyEl ? (bodyEl.textContent || '').trim() : '';
+  if (!text) return;
+  const orig = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<i class="ri-loader-4-line"></i> ' + _t('번역 중…', 'Translating…');
+  try {
+    const hasKo = /[가-힣]/.test(text);
+    const src = hasKo ? 'ko' : 'en', tgt = hasKo ? 'en' : 'ko';
+    const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text.slice(0, 480)) + '&langpair=' + src + '|' + tgt;
+    const res = await fetch(url);
+    const data = await res.json();
+    const translated = (data && data.responseData && data.responseData.translatedText) || '';
+    if (!translated) throw new Error('empty');
+    const div = document.createElement('div');
+    div.className = 'thread-post-translation';
+    div.innerHTML = '<span class="tpt-label">' + src.toUpperCase() + ' → ' + tgt.toUpperCase() + '</span>' +
+      translated.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    bodyEl.insertAdjacentElement('afterend', div);
+    btn.innerHTML = '<i class="ri-arrow-go-back-line"></i> ' + _t('원문', 'Original');
+  } catch (e) {
+    if (typeof showToast === 'function') showToast(_t('번역 실패 — 잠시 후 다시', 'Translation failed — try again'));
+    btn.innerHTML = orig;
+    console.warn('[translatePost]', e);
+  } finally { btn.disabled = false; }
 };
 // 더보기 메뉴 — 내 글이면 삭제, 아니면 공유
 window._threadPostMenu = function (id, isMine) {

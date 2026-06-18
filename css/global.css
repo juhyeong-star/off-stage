@@ -18603,6 +18603,23 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
   font-size: 15px; line-height: 1.45; color: var(--text-primary);
   white-space: pre-wrap; word-break: break-word; margin-bottom: 8px;
 }
+/* 번역(테스트) — 글 아래 작은 '번역' 버튼 + 번역 결과 박스 */
+.tp-translate {
+  background: none; border: none; color: var(--text-secondary);
+  font-size: 12px; font-weight: 600; cursor: pointer; padding: 0 0 6px;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.tp-translate:hover { color: var(--brand-color, #1DB954); }
+.tp-translate i { font-size: 14px; }
+.thread-post-translation {
+  margin: 0 0 8px; padding: 9px 11px; border-radius: 8px;
+  background: rgba(29,185,84,0.09); border-left: 3px solid var(--brand-color, #1DB954);
+  font-size: 14.5px; line-height: 1.45; color: var(--text-primary); white-space: pre-wrap; word-break: break-word;
+}
+.tpt-label {
+  display: block; font-size: 10px; font-weight: 800; letter-spacing: 0.5px;
+  color: var(--brand-color, #1DB954); margin-bottom: 3px;
+}
 /* 긴 글 접기 (피드 포스트 / 앨범 소개·가사 공용).
    display 가 다른 규칙(flow-root)으로 덮여 -webkit-line-clamp 가 안 먹는 맥락이 있어
    max-height 기반으로 클램프 — display 와 무관하게 항상 동작. */
