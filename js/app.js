@@ -6114,7 +6114,7 @@ function _surgicalDropCleanup({ itemSelector, folderId }) {
     if (folderId) {
       const folderEl = document.querySelector(`[data-folder-id="${folderId}"]`);
       if (folderEl) {
-        const badge = folderEl.querySelector('.folder-count, .playlist-count, [data-folder-count]');
+        const badge = folderEl.querySelector('.folder-orb-count, .folder-count, .playlist-count, [data-folder-count]');
         if (badge) {
           const cur = parseInt(badge.textContent, 10) || 0;
           badge.textContent = String(cur + 1);
@@ -7707,7 +7707,7 @@ function _floatingFolderHtml(it, pos) {
   // 실제 사용자 폴더 — 윈도우(OS) 폴더 모양: 뒤판+탭, 커버가 안에서 빼꼼, 앞 덮개. (사용자 요청)
   const p = it.folder;
   const title = (p.title || '무제').replace(/</g,'&lt;');
-  const count = (p.trackIds || []).length;
+  const count = (p.trackIds || []).length + (typeof _getFolderNoteIds === 'function' ? _getFolderNoteIds(p.id).size : 0);   // 트랙 + 폴더에 담은 포스트잇
   const cover = p.cover || '';
   const paper = cover
     ? `<img class="wf-paper" src="${cover}" alt="${title.replace(/"/g,'&quot;')}" loading="lazy" draggable="false">`
@@ -7955,7 +7955,6 @@ window.renderUniverse = async function () {
     <div id="universe-head" style="padding:20px 24px 8px; text-align:center;">
       <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-galaxy-fill" style="color:#9C27B0;"></i> ${_i18n('즐겨찾기', 'Favorites')}</h1>
       <p style="font-size:13px; color:var(--text-secondary);">${_i18n(`폴더 ${myPlaylists.length} · 곡 ${likedTracks.length} · 포스트잇 ${bookmarkedNotes.length} — 끌어서 자리 옮길 수 있어요`, `${myPlaylists.length} folders · ${likedTracks.length} tracks · ${bookmarkedNotes.length} notes — drag to rearrange`)}</p>
-      ${bookmarkedNotes.length > 0 ? `<button class="universe-clear-notes" type="button" onclick="clearAllUniverseNotes()"><i class="ri-eraser-line"></i> ${_i18n('포스트잇 전부 빼기', 'Clear all notes')}</button>` : ''}
     </div>
     <div class="universe-folder-row">${folderRowItems.map(it => _floatingFolderHtml(it, null)).join('')}</div>
     <div class="shapes-universe my-universe" style="height: ${universeHeight}px;">
@@ -14202,6 +14201,10 @@ window.enterFolderWithAnim = function(folderId, anchorEl) {
   // 한창 움직이던 도형들이 wipe 되어 '왼쪽 위에서 내려오는' 모션이 안 보임.
   // 진입 시작 순간부터 가드 켜고, 완료 후 끄기.
   window.__universeFolderEntering = true;
+  // 폴더 줄(상단 고정)은 .shapes-universe 캔버스 바깥 형제라 진입 애니에 안 딸려감 →
+  // 폴더에 들어가면 폴더들도 같이 사라지도록 페이드아웃 후 제거(나갈 때 renderUniverse 가 새로 그림).
+  const _frow = document.querySelector('.universe-folder-row');
+  if (_frow) { _frow.style.transition = 'opacity 0.3s ease'; _frow.style.opacity = '0'; setTimeout(() => { try { _frow.remove(); } catch (_) {} }, 320); }
   const uni = document.querySelector('.shapes-universe.my-universe');
   const built = (typeof _folderItemsHtml === 'function') ? _folderItemsHtml(folderId) : null;
   // 클릭한 폴더 요소 — 인자가 없으면 DOM 에서 찾기
