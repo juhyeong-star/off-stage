@@ -3840,8 +3840,7 @@ function _renderAlbumView(appContent, d) {
 
           <div class="alb2-actions">
             <button class="alb2-play" type="button" onclick="playTrack('${t.id}','wall')"><i class="ri-play-fill"></i> ${_i18n('재생', 'Play')}</button>
-            <button class="alb2-chip${(typeof isTrackLiked === 'function' && isTrackLiked(t.id)) ? ' is-on' : ''}" type="button" onclick="_albumToggleHeart('${t.id}', this)" aria-label="${_t('좋아요', 'Like')}"><i class="${(typeof isTrackLiked === 'function' && isTrackLiked(t.id)) ? 'ri-heart-3-fill' : 'ri-heart-3-line'}"></i></button>
-            <button class="alb2-chip" type="button" onclick="openPlaylistModal('${t.id}')" aria-label="${_t('담기', 'Save')}"><i class="ri-add-line"></i></button>
+            <button class="alb2-chip${(typeof isTrackLiked === 'function' && isTrackLiked(t.id)) ? ' is-on' : ''}" type="button" onclick="_albumToggleHeart('${t.id}', this)" aria-label="${_t('좋아요·담기', 'Like & Save')}" title="${_t('좋아요 · 즐겨찾기에 담기', 'Like & save to favorites')}"><i class="${(typeof isTrackLiked === 'function' && isTrackLiked(t.id)) ? 'ri-heart-3-fill' : 'ri-heart-3-line'}"></i></button>
             <button class="alb2-chip" type="button" aria-label="${_t('공유', 'Share')}" onclick="_albumShare()"><i class="ri-send-plane-line"></i></button>
           </div>
           ${tags.length ? `<div class="alb2-tags">${tags.map(tg => `<span class="alb2-tag">#${esc(tg)}</span>`).join('')}</div>` : ''}
@@ -3873,6 +3872,7 @@ window._albumToggleHeart = function (trackId, btnEl) {
     const sel = '.alb2-likecount[data-track-id="' + ((window.CSS && CSS.escape) ? CSS.escape(trackId) : trackId) + '"]';
     document.querySelectorAll(sel).forEach(el => { el.textContent = willLike ? 1 : 0; });
   } catch (_) {}
+  if (typeof showToast === 'function') showToast(willLike ? _t('💚 좋아요 · 즐겨찾기에 담았어요', 'Liked & saved to favorites') : _t('즐겨찾기에서 뺐어요', 'Removed from favorites'));
   if (typeof toggleTrackHeart === 'function') toggleTrackHeart(trackId, null);
 };
 // 앨범 페이지 공유 — 현재 앨범 페이지 URL 그대로 공유(시스템 공유 없으면 클립보드 복사).
