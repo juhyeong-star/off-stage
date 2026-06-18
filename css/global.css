@@ -18460,8 +18460,10 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
 .uni-folder-row-item .winfolder { width: 212px !important; height: 162px !important; }   /* 폴더 키움 188 → 212 */
 .uni-folder-row-item:hover .winfolder { transform: translateY(-3px); transition: transform .15s; }
 @media (max-width: 600px) {
-  .universe-folder-row { gap: 14px; padding: 2px 12px 12px; }
-  .uni-folder-row-item .winfolder { width: 172px !important; height: 132px !important; }   /* 모바일 키움 152 → 172 */
+  /* 모바일: 폴더를 가로 스크롤 대신 2열 그리드(2×2)로 — 도형/포스트잇 영역과 분리 */
+  .universe-folder-row { flex-wrap: wrap; overflow-x: hidden; justify-content: center; gap: 12px 10px; max-width: 380px; padding: 2px 10px 14px; }
+  .uni-folder-row-item { flex: 0 0 calc(50% - 5px); }
+  .uni-folder-row-item .winfolder { width: 100% !important; height: 132px !important; }   /* 칸 폭에 맞춤(2×2) */
 }
 .wf-back, .wf-front, .wf-paper { position: absolute; }
 .wf-back {
