@@ -18737,6 +18737,9 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
 
 @media (min-width: 800px) {
   .atl-page { max-width: 700px; }
+  /* 아티스트 페이지 — 헤더+본문을 담는 공통 컨테이너에 좌측 패딩 → 둘이 함께 벽에서 띄워짐
+     (정렬 유지 + 좌하단 ☰ 버튼과 안 겹침). 데스크탑만(모바일은 폭 꽉 채워야 함). (사용자 요청) */
+  .artist-canvas .sub-page.artist-page { padding-left: 72px; }
   .atl-hero-cover { width: 120px; height: 120px; }
   .atl-album, .atl-album-cover { width: 150px; }
   .atl-album-cover { height: 150px; }
