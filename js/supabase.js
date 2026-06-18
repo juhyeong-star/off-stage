@@ -1713,6 +1713,21 @@
         if (!byPl[r.playlist_id]) byPl[r.playlist_id] = [];
         byPl[r.playlist_id].push(r.track_id);
       });
+      // 폴더 포스트잇(playlist_notes) — 기기 간 동기화 (예전엔 localStorage 라 안 됐음).
+      // 캐시 window.__folderNotes[playlistId] = Set(noteId) 로 app.js _getFolderNoteIds 가 읽음.
+      const { data: pns, error: e3 } = await window.supabase
+        .from('playlist_notes')
+        .select('playlist_id, note_id')
+        .in('playlist_id', ids);
+      if (e3 && !/relation .* does not exist/.test(e3.message || '')) {
+        console.warn('[Playlists] fetchMine notes', e3.message);
+      }
+      const notesByPl = {};
+      (pns || []).forEach(r => { (notesByPl[r.playlist_id] = notesByPl[r.playlist_id] || []).push(r.note_id); });
+      window.__folderNotes = {};
+      playlists.forEach(p => { window.__folderNotes[p.id] = new Set(notesByPl[p.id] || []); });
+      // 옛 localStorage 전용 폴더 노트 → 서버로 1회 올림(기기 마이그레이션, best-effort)
+      this._reconcileFolderNotes(ids).catch(() => {});
       return playlists.map(p => mapPlaylistRow(p, byPl[p.id] || []));
     },
 
@@ -1759,6 +1774,57 @@
         const pl = window.__playlists.find(p => p.id === playlistId);
         if (pl) pl.trackIds = pl.trackIds.filter(id => id !== trackId);
       }
+    },
+
+    // 폴더에 포스트잇 담기/빼기 — 서버 playlist_notes (기기 간 동기화). 캐시 __folderNotes 갱신.
+    async addNote(playlistId, noteId) {
+      if (!window.supabase) throw new Error('Supabase SDK not ready');
+      if (typeof noteId !== 'string' || !/^[0-9a-f-]{36}$/i.test(noteId)) return; // 서버 노트(UUID)만
+      const { error } = await window.supabase
+        .from('playlist_notes')
+        .insert({ playlist_id: playlistId, note_id: noteId });
+      if (error && !/duplicate/i.test(error.message || '')) throw error;
+      if (!window.__folderNotes) window.__folderNotes = {};
+      (window.__folderNotes[playlistId] = window.__folderNotes[playlistId] || new Set()).add(noteId);
+    },
+
+    async removeNote(playlistId, noteId) {
+      if (!window.supabase) return;
+      const { error } = await window.supabase
+        .from('playlist_notes')
+        .delete()
+        .eq('playlist_id', playlistId)
+        .eq('note_id', noteId);
+      if (error) throw error;
+      if (window.__folderNotes && window.__folderNotes[playlistId]) {
+        window.__folderNotes[playlistId].delete(noteId);
+      }
+    },
+
+    // 옛 localStorage('folder_notes:<id>') 전용 폴더 노트를 서버로 한 번 올린다(기기 마이그레이션).
+    // 세션당 1회. best-effort — 일부 실패(이미 삭제된 노트 FK 등)는 무시.
+    async _reconcileFolderNotes(ids) {
+      if (window.__folderNotesReconciled || !window.supabase) return;
+      window.__folderNotesReconciled = true;
+      try {
+        const rows = [];
+        (ids || []).forEach(pid => {
+          let local = new Set();
+          try { const raw = localStorage.getItem('folder_notes:' + pid); local = new Set(raw ? JSON.parse(raw) : []); } catch (_) {}
+          const server = (window.__folderNotes && window.__folderNotes[pid]) || new Set();
+          local.forEach(nid => {
+            if (typeof nid === 'string' && /^[0-9a-f-]{36}$/i.test(nid) && !server.has(nid)) {
+              rows.push({ playlist_id: pid, note_id: nid });
+              server.add(nid);
+            }
+          });
+          if (window.__folderNotes) window.__folderNotes[pid] = server;
+        });
+        if (rows.length) {
+          await window.supabase.from('playlist_notes')
+            .upsert(rows, { onConflict: 'playlist_id,note_id', ignoreDuplicates: true });
+        }
+      } catch (e) { console.warn('[Playlists] reconcileFolderNotes', e && e.message); }
     },
 
     async deletePlaylist(playlistId) {

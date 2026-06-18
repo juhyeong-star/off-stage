@@ -6078,6 +6078,8 @@ async function renderPlaylistUniverse(playlistId) {
 // 폴더에 담은 포스트잇(note) id 저장 — 곡은 플레이리스트(서버), 포스트잇은 로컬.
 function _folderNotesKey(folderId) { return 'folder_notes:' + folderId; }
 function _getFolderNoteIds(folderId) {
+  // 서버 캐시(__folderNotes — 다른 기기와 동기화) 우선. 로딩 전/오프라인이면 localStorage 폴백.
+  if (window.__folderNotes && window.__folderNotes[folderId]) return window.__folderNotes[folderId];
   try {
     const raw = localStorage.getItem(_folderNotesKey(folderId));
     return new Set(raw ? JSON.parse(raw) : []);
@@ -6086,7 +6088,13 @@ function _getFolderNoteIds(folderId) {
 function _addNoteToFolder(folderId, noteId) {
   const s = _getFolderNoteIds(folderId);
   s.add(noteId);
-  try { localStorage.setItem(_folderNotesKey(folderId), JSON.stringify([...s])); } catch (_) {}
+  if (!window.__folderNotes) window.__folderNotes = {};
+  window.__folderNotes[folderId] = s;                                                            // 캐시(동기화 소스)
+  try { localStorage.setItem(_folderNotesKey(folderId), JSON.stringify([...s])); } catch (_) {}  // 오프라인 미러
+  // 서버 저장 → 다른 기기 동기화
+  if (window.Playlists && window.Playlists.addNote) {
+    window.Playlists.addNote(folderId, noteId).catch(e => console.warn('[addNoteToFolder] server', e && e.message));
+  }
 }
 
 // 내 우주에서 포스트잇 오브제를 폴더 위로 드롭했을 때 호출.
@@ -6134,7 +6142,12 @@ window._removeFromFolder = async function (folderId, id, kind) {
   if (kind === 'note') {
     const s = _getFolderNoteIds(folderId);
     s.delete(id);
+    if (!window.__folderNotes) window.__folderNotes = {};
+    window.__folderNotes[folderId] = s;
     try { localStorage.setItem(_folderNotesKey(folderId), JSON.stringify([...s])); } catch (_) {}
+    if (window.Playlists && window.Playlists.removeNote) {
+      try { await window.Playlists.removeNote(folderId, id); } catch (e) { console.warn('[removeFromFolder] note server', e && e.message); }
+    }
   } else {
     try {
       if (window.Playlists && window.Playlists.removeTrack) {
@@ -7749,12 +7762,17 @@ window.renderUniverse = async function () {
   if (window.Positions && window.Positions.hydrateFromCloud) refreshTasks.push(window.Positions.hydrateFromCloud().catch(()=>{}));
   if (refreshTasks.length) {
     if (hasFavCache || hasBmkCache || window.__universeLoadedOnce) {
-      // sig 비교 확장 — 폴더 / 폴더 안 곡 변화도 감지 (다른 PC 에서 폴더에 곡 담은 케이스)
+      // sig 비교 확장 — 폴더 / 폴더 안 곡·포스트잇 변화도 감지 (다른 기기에서 폴더에 담은 케이스)
       const buildSig = () => {
         const fav = Array.from(window.__favoritedTracks || []).sort().join('|');
         const bmk = Array.from(window.__bookmarkedNotes || []).sort().join('|');
         const pls = (window.__playlists || (db.playlists || []))
-          .map(p => p && (p.id + ':' + ((p.trackIds || []).slice().sort().join(','))))
+          .map(p => {
+            if (!p) return '';
+            const tids = (p.trackIds || []).slice().sort().join(',');
+            const nids = Array.from((window.__folderNotes && window.__folderNotes[p.id]) || []).sort().join(',');
+            return p.id + ':' + tids + '/' + nids;
+          })
           .sort().join(';');
         return fav + '#' + bmk + '@' + pls;
       };
