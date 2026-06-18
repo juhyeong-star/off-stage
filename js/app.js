@@ -4936,18 +4936,11 @@ window.submitWallNote = async function() {
 // ── 주절주절 글 좋아요 (note_favorites — 공개 + 카운트) ──
 // 예전엔 하트가 시각 토글뿐이었으나, 이제 실제 좋아요로 저장. 누가 좋아요했는지
 // note_favorites 에 남아 나중에 "내가 좋아요한 글"로 따로 모아볼 수 있음(백엔드 준비됨).
-// 기기 미러(localStorage) — 서버 읽기(RLS)가 막혀 __favoritedNotes 가 비워져도 내 좋아요는
-// 기기에 남아 나갔다 와도 유지됨(초기화 방지).
-window.CollectedNotes = {
-  _key: 'offstage_collected_notes', _ids: null,
-  _load() { if (this._ids) return this._ids; try { const raw = localStorage.getItem(this._key); this._ids = new Set(raw ? JSON.parse(raw) : []); } catch (_) { this._ids = new Set(); } return this._ids; },
-  _save() { try { localStorage.setItem(this._key, JSON.stringify([...this._load()])); } catch (_) {} },
-  has(id) { return !!id && this._load().has(id); },
-  add(id) { if (id) { this._load().add(id); this._save(); } },
-  remove(id) { if (id) { this._load().delete(id); this._save(); } }
-};
+// 좋아요 여부의 단일 진실원천은 서버(note_favorites → window.__favoritedNotes, refreshMyFavorites
+// 가 채움). 예전엔 기기 미러(localStorage)를 뒀으나, 미러는 기기-로컬이라 PC↔모바일 동기화를
+// 막았다 → 제거. 서버 저장만 정상이면(아래 toggleFavorite 버그 수정) 기기 간 자동 동기화됨.
 function _isNoteLiked(id) {
-  return !!((window.Walls && window.Walls.isFavorited && window.Walls.isFavorited(id)) || (window.CollectedNotes && window.CollectedNotes.has(id)));
+  return !!(window.Walls && window.Walls.isFavorited && window.Walls.isFavorited(id));
 }
 window._isNoteLiked = _isNoteLiked;
 function _updateNoteLikeDom(noteId) {
@@ -4968,21 +4961,21 @@ window.toggleNoteLike = async function (noteId, btnEl) {
   const db = window.DB.get();
   if (!db.currentUser) { alert(_t('로그인 후 이용 가능합니다', 'Sign in to like posts')); navigateTo('auth'); return; }
   if (!window.Walls || !window.Walls.toggleFavorite) return;
-  const willLike = !_isNoteLiked(noteId);
-  // 낙관적 반영 — 캐시(좋아요 set + 카운트) + 기기 미러(localStorage) + 같은 노트의 모든 하트 버튼 DOM
   if (!window.__favoritedNotes) window.__favoritedNotes = new Set();
   if (!window.__noteFavCounts) window.__noteFavCounts = {};
-  if (willLike) { window.__favoritedNotes.add(noteId); window.CollectedNotes.add(noteId); }
-  else { window.__favoritedNotes.delete(noteId); window.CollectedNotes.remove(noteId); }
+  const willLike = !window.__favoritedNotes.has(noteId);
+  // 낙관적 반영 — 좋아요 set + 카운트 + 같은 노트의 모든 하트 버튼 DOM (즉시 채워짐, 모바일도 바로 반응)
+  if (willLike) window.__favoritedNotes.add(noteId); else window.__favoritedNotes.delete(noteId);
   window.__noteFavCounts[noteId] = Math.max(0, (window.__noteFavCounts[noteId] || 0) + (willLike ? 1 : -1));
   _updateNoteLikeDom(noteId);
   if (willLike && btnEl) { btnEl.classList.add('pop'); setTimeout(() => btnEl.classList.remove('pop'), 360); }
   try {
-    await window.Walls.toggleFavorite(noteId);
+    // willLike 명시 전달 — 낙관적으로 바꾼 __favoritedNotes 와 무관하게 서버에 정확히 insert/delete.
+    // (예전엔 인자 없이 호출 → toggleFavorite 이 __favoritedNotes 보고 거꾸로 삭제 → 서버 미저장 → 동기화 실패)
+    await window.Walls.toggleFavorite(noteId, willLike);
   } catch (e) {
-    // 실패 — 되돌리기 (기기 미러도 함께 복구)
-    if (willLike) { window.__favoritedNotes.delete(noteId); window.CollectedNotes.remove(noteId); }
-    else { window.__favoritedNotes.add(noteId); window.CollectedNotes.add(noteId); }
+    // 실패 — 되돌리기
+    if (willLike) window.__favoritedNotes.delete(noteId); else window.__favoritedNotes.add(noteId);
     window.__noteFavCounts[noteId] = Math.max(0, (window.__noteFavCounts[noteId] || 0) + (willLike ? -1 : 1));
     _updateNoteLikeDom(noteId);
     if (typeof showToast === 'function') showToast(_t('좋아요 실패 — 다시 시도해줘', 'Like failed — try again'));

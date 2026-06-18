@@ -806,13 +806,16 @@
       return !!(window.__favoritedNotes && window.__favoritedNotes.has(noteId));
     },
 
-    async toggleFavorite(noteId) {
+    async toggleFavorite(noteId, want) {
       if (!window.supabase) throw new Error('Supabase not ready');
       const { data: { user } } = await window.supabase.auth.getUser();
       if (!user) throw new Error('로그인이 필요해요');
       if (!window.__favoritedNotes) window.__favoritedNotes = new Set();
-      const isOn = window.__favoritedNotes.has(noteId);
-      if (isOn) {
+      // want(boolean) 명시되면 그 동작을 강제한다. 호출부(toggleNoteLike)가 낙관적으로
+      // __favoritedNotes 를 미리 바꿔놓으므로, 여기서 그걸 보고 판단하면 거꾸로 동작(좋아요인데
+      // 삭제)하던 버그가 있었음 → want 로 정확히 insert/delete. 미지정 시에만 기존 토글.
+      const like = (typeof want === 'boolean') ? want : !window.__favoritedNotes.has(noteId);
+      if (!like) {
         const { error } = await window.supabase
           .from('note_favorites')
           .delete()
