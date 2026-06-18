@@ -18601,6 +18601,8 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
 }
 .tp-act i { font-size: 19px; }
 .tp-act.is-liked { color: #ff2e63; }
+.tp-act.tp-collect { margin-left: auto; }            /* 담기(저장)는 오른쪽 끝으로 — 인스타처럼 */
+.tp-act.tp-collect.is-bookmarked { color: var(--brand-color, #1DB954); }
 .tp-act:hover { color: var(--text-primary); }
 
 /* 작성 시트 (모달) */

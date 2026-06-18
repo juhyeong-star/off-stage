@@ -3349,7 +3349,8 @@ function _threadPostHtml(p) {
         <div class="thread-post-actions">
           <button class="tp-act" onclick="this.classList.toggle('is-liked')"><i class="ri-heart-3-line"></i></button>
           <button class="tp-act" onclick="openCommentSheet('${p.id}')"><i class="ri-chat-3-line"></i>${cmCount}</button>
-          <button class="tp-act" aria-label="공유" onclick="_threadShare('${p.id}')"><i class="ri-send-plane-line"></i></button>
+          <button class="tp-act" aria-label="${_t('공유', 'Share')}" onclick="_threadShare('${p.id}')"><i class="ri-send-plane-line"></i></button>
+          <button class="tp-act tp-collect ${p.collected ? 'is-bookmarked' : ''}" aria-label="${_t('내 우주에 담기', 'Save to my universe')}" onclick="toggleBookmark('${p.id}')"><i class="${p.collected ? 'ri-bookmark-fill' : 'ri-bookmark-line'}"></i></button>
         </div>
       </div>
     </div>`;
@@ -3413,7 +3414,8 @@ async function renderWall() {
     image: n.imageUrl || null,
     track: n.trackId ? _threadTrackOf(n.trackId) : null,
     comments: (n.comments || []).length,
-    isMine: !!(myId && n.authorId === myId)
+    isMine: !!(myId && n.authorId === myId),
+    collected: !!(window.Walls && window.Walls.isBookmarked && window.Walls.isBookmarked(n.id))
   }));
   const composerAvatar = me ? myAvatar : ('https://i.pravatar.cc/150?u=guest');
   const empty = posts.length === 0 ? `
@@ -4841,7 +4843,7 @@ window.toggleBookmark = async function(noteId) {
   try {
     const { bookmarked } = await window.Walls.toggleBookmark(noteId);
     // Update icon in DOM in-place
-    document.querySelectorAll(`.wall-note[data-note-id="${noteId}"] .note-bookmark, #note-detail-modal .note-bookmark[data-note-id="${noteId}"]`).forEach(btn => {
+    document.querySelectorAll(`.wall-note[data-note-id="${noteId}"] .note-bookmark, #note-detail-modal .note-bookmark[data-note-id="${noteId}"], .thread-post[data-note-id="${noteId}"] .tp-collect`).forEach(btn => {
       btn.classList.toggle('is-bookmarked', bookmarked);
       const i = btn.querySelector('i');
       if (i) i.className = bookmarked ? 'ri-bookmark-fill' : 'ri-bookmark-line';
@@ -7750,7 +7752,7 @@ window.renderUniverse = async function () {
 
   appContent.innerHTML = `
     <div id="universe-head" style="padding:20px 24px 8px; text-align:center;">
-      <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-galaxy-fill" style="color:#9C27B0;"></i> ${_i18n('즐겨찾기', 'Favorites')}</h1>
+      <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-galaxy-fill" style="color:#9C27B0;"></i> ${_i18n('내 우주', 'My Universe')}</h1>
       <p style="font-size:13px; color:var(--text-secondary);">${_i18n(`폴더 ${myPlaylists.length} · 곡 ${likedTracks.length} · 포스트잇 ${bookmarkedNotes.length} — 끌어서 자리 옮길 수 있어요`, `${myPlaylists.length} folders · ${likedTracks.length} tracks · ${bookmarkedNotes.length} notes — drag to rearrange`)}</p>
     </div>
     <div class="shapes-universe my-universe" style="height: ${universeHeight}px;">
@@ -13881,7 +13883,7 @@ window.openMyPlaylist = function(playlistId) {
 // 뒤로가기는 좌상단 글로벌 백버튼이 담당, 쇼츠는 아이템 클릭으로 진입.
 function _folderHeadHtml(folderId, built, title) {
   return `
-    <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-star-smile-fill" style="color:#FFC107;"></i> ${_t('즐겨찾기', 'Favorites')}</h1>
+    <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-star-smile-fill" style="color:#FFC107;"></i> ${_t('내 우주', 'My Universe')}</h1>
     <p style="font-size:13px; color:var(--text-secondary);">📁 ${title} · ${_t('곡', 'tracks')} ${built.trackCount} · ${_t('포스트잇', 'notes')} ${built.noteCount}</p>`;
 }
 
