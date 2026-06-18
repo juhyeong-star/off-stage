@@ -970,6 +970,17 @@ body.is-shapes-route .page-intro {
   transition: opacity .15s, background .15s, color .15s;
 }
 .universe-note-x:hover { opacity: 1; background: rgba(220,40,40,0.9); color: #fff; }
+/* 내 우주 헤더 — 포스트잇 한 번에 빼기 버튼 */
+.universe-clear-notes {
+  margin-top: 8px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.16);
+  color: var(--text-secondary); font-size: 12px; font-weight: 600;
+  padding: 5px 12px; border-radius: 999px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.universe-clear-notes:hover { background: rgba(220,40,40,0.16); border-color: rgba(220,40,40,0.5); color: #fff; }
+.universe-clear-notes i { font-size: 14px; }
 .universe-note-body {
   font-size: inherit;
   line-height: 1.4;

@@ -4939,6 +4939,29 @@ window._removeNoteFromUniverse = async function (noteId, ev) {
   } catch (e) { console.warn('[universe] remove note', e); if (typeof showToast === 'function') showToast(_t('빼기 실패', 'Remove failed')); }
 };
 
+// 내 우주 포스트잇 전부 빼기 — 수집(북마크)한 노트를 한 번에 모두 해제.
+// (예전 주절주절에서 담아둔 옛 포스트잇을 일일이 ✕ 안 누르고 한 번에 정리.)
+window.clearAllUniverseNotes = async function () {
+  const ids = (window.__bookmarkedNotes && window.__bookmarkedNotes.size) ? [...window.__bookmarkedNotes] : [];
+  if (!ids.length) { if (typeof showToast === 'function') showToast(_t('뺄 포스트잇이 없어요', 'No notes to remove')); return; }
+  if (!confirm(_t(`포스트잇 ${ids.length}개를 내 우주에서 전부 뺄까요?`, `Remove all ${ids.length} notes from your universe?`))) return;
+  let failed = 0;
+  for (const id of ids) {
+    try {
+      if (window.Walls && window.Walls.toggleBookmark && window.Walls.isBookmarked && window.Walls.isBookmarked(id)) {
+        await window.Walls.toggleBookmark(id);   // 서버 note_bookmarks 행 삭제
+      }
+      if (window.__bookmarkedNotes && window.__bookmarkedNotes.delete) window.__bookmarkedNotes.delete(id);
+    } catch (e) { failed++; console.warn('[universe] clearAll', id, e); }
+  }
+  if (typeof showToast === 'function') {
+    showToast(failed
+      ? _t(`${ids.length - failed}개 뺐어요 (${failed}개 실패)`, `Removed ${ids.length - failed} (${failed} failed)`)
+      : _t('포스트잇 전부 뺐어요', 'Removed all notes'));
+  }
+  if (typeof renderUniverse === 'function') renderUniverse();
+};
+
 window.deleteWallNote = async function(noteId) {
   if (!confirm('이 포스트잇을 지울까요?')) return;
   try {
@@ -7840,6 +7863,7 @@ window.renderUniverse = async function () {
     <div id="universe-head" style="padding:20px 24px 8px; text-align:center;">
       <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-galaxy-fill" style="color:#9C27B0;"></i> ${_i18n('내 우주', 'My Universe')}</h1>
       <p style="font-size:13px; color:var(--text-secondary);">${_i18n(`폴더 ${myPlaylists.length} · 곡 ${likedTracks.length} · 포스트잇 ${bookmarkedNotes.length} — 끌어서 자리 옮길 수 있어요`, `${myPlaylists.length} folders · ${likedTracks.length} tracks · ${bookmarkedNotes.length} notes — drag to rearrange`)}</p>
+      ${bookmarkedNotes.length > 0 ? `<button class="universe-clear-notes" type="button" onclick="clearAllUniverseNotes()"><i class="ri-eraser-line"></i> ${_i18n('포스트잇 전부 빼기', 'Clear all notes')}</button>` : ''}
     </div>
     <div class="shapes-universe my-universe" style="height: ${universeHeight}px;">
       ${itemsHtml}
