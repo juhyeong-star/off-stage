@@ -3372,7 +3372,7 @@ window._threadShare = function (id) {
   } catch (_) {}
 };
 // 번역 (테스트) — 글을 반대 언어(한↔영)로 번역해 아래에 표시. 다시 누르면 원문으로.
-// MyMemory 무료 API(키 불필요, 약 500자 제한). 한글 포함이면 ko→en, 아니면 en→ko.
+// Google 번역(비공식 translate_a 엔드포인트, 키 불필요, 자동 언어감지). 한글 포함이면 →en, 아니면 →ko.
 window.translatePost = async function (id, btn) {
   const post = btn && btn.closest('.thread-post');
   if (!post) return;
@@ -3385,11 +3385,12 @@ window.translatePost = async function (id, btn) {
   btn.disabled = true; btn.innerHTML = '<i class="ri-loader-4-line"></i> ' + _t('번역 중…', 'Translating…');
   try {
     const hasKo = /[가-힣]/.test(text);
-    const src = hasKo ? 'ko' : 'en', tgt = hasKo ? 'en' : 'ko';
-    const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text.slice(0, 480)) + '&langpair=' + src + '|' + tgt;
+    const tgt = hasKo ? 'en' : 'ko';
+    const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=' + tgt + '&dt=t&q=' + encodeURIComponent(text.slice(0, 1500));
     const res = await fetch(url);
     const data = await res.json();
-    const translated = (data && data.responseData && data.responseData.translatedText) || '';
+    const translated = (data && data[0]) ? data[0].map(s => (s && s[0]) || '').join('') : '';
+    const src = (data && data[2]) || (hasKo ? 'ko' : 'en');
     if (!translated) throw new Error('empty');
     const div = document.createElement('div');
     div.className = 'thread-post-translation';
