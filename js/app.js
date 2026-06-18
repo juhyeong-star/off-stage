@@ -3404,11 +3404,20 @@ async function renderWall() {
   const me = window.__currentUser || db.currentUser || null;
   const myId = me && me.id;
   const myAvatar = (me && (me.avatar_url || me.avatar)) || ('https://i.pravatar.cc/150?u=' + (myId || 'me'));
+  // 작성자 실제 프로필 사진 — 노트 조인(authorAvatar) 우선, 없으면 트랙(아티스트) 아바타,
+  // 그래도 없으면 기본(아이디 시드). 랜덤 얼굴 대신 각자 실제 사진을 보여주려는 것.
+  const _avById = {}, _avByName = {};
+  (db.tracks || []).forEach(t => { if (t) { if (t.artistId && t.artistAvatar) _avById[t.artistId] = t.artistAvatar; if (t.artist && t.artistAvatar) _avByName[t.artist] = t.artistAvatar; } });
+  if (me && me.id && (me.avatar_url || me.avatar)) _avById[me.id] = me.avatar_url || me.avatar;
+  const _resolveAuthorAvatar = (n) =>
+    (myId && n.authorId === myId) ? myAvatar
+    : (n.authorAvatar || (n.authorId && _avById[n.authorId]) || _avByName[n.author] || ('https://i.pravatar.cc/150?u=' + (n.authorId || n.author || n.id)));
+  window.__resolveNoteAvatar = _resolveAuthorAvatar;   // 댓글 시트 등에서 재사용
   const notes = (db.notes || []).slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   const posts = notes.map(n => ({
     id: n.id,
     name: n.author || '익명',
-    avatar: (myId && n.authorId === myId) ? myAvatar : ('https://i.pravatar.cc/150?u=' + (n.authorId || n.author || n.id)),
+    avatar: _resolveAuthorAvatar(n),
     time: _threadTimeAgo(n.createdAt),
     text: n.text || '',
     image: n.imageUrl || null,
@@ -3572,9 +3581,13 @@ function _commentSheetListHtml(note, myId, myAvatar) {
   const esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const cms = (note.comments || []).slice().sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
   if (!cms.length) return `<div class="comment-sheet-empty">${_t('아직 댓글이 없어요 · 첫 댓글을 남겨보세요', 'No comments yet · Be the first')}</div>`;
+  // 작성자 실제 아바타 — 조인(authorAvatar) 우선, 없으면 트랙(아티스트) 아바타, 최후에 기본.
+  const _db = window.DB.get(); const _avById = {}, _avByName = {};
+  (_db.tracks || []).forEach(t => { if (t) { if (t.artistId && t.artistAvatar) _avById[t.artistId] = t.artistAvatar; if (t.artist && t.artistAvatar) _avByName[t.artist] = t.artistAvatar; } });
   return cms.map(cm => {
     const isMine = !!(myId && cm.authorId === myId);
-    const av = isMine ? myAvatar : ('https://i.pravatar.cc/150?u=' + (cm.authorId || cm.author || cm.id));
+    const av = isMine ? myAvatar
+      : (cm.authorAvatar || (cm.authorId && _avById[cm.authorId]) || _avByName[cm.author] || ('https://i.pravatar.cc/150?u=' + (cm.authorId || cm.author || cm.id)));
     const name = cm.author || _t('익명', 'Anonymous');
     return `<div class="comment-sheet-item" data-cm-id="${cm.id}">
       <img class="comment-sheet-av" src="${av}" alt="" loading="lazy">

@@ -498,6 +498,7 @@
       id: row.id,
       author: row.author_name || '익명',
       authorId: row.author_id || null,
+      authorAvatar: (row.profiles && row.profiles.avatar_url) || '',  // 작성자 실제 프로필 사진(있으면)
       text: row.text || '',
       color: row.color || 'yellow',
       rotation: (typeof row.rotation === 'number') ? row.rotation : 0,
@@ -515,6 +516,7 @@
       id: row.id,
       author: row.author_name || '익명',
       authorId: row.author_id || null,
+      authorAvatar: (row.profiles && row.profiles.avatar_url) || '',  // 댓글 작성자 실제 프로필 사진(있으면)
       text: row.text || '',
       createdAt: row.created_at,
       // Optional attached song — Off-Stage track id OR external URL
@@ -528,21 +530,36 @@
   window.Walls = {
     async fetchAll(limit) {
       if (!window.supabase) return [];
-      const { data: notes, error: e1 } = await window.supabase
+      // 작성자 프로필 아바타까지 조인 (피드에 각자 실제 프로필 사진을 보여주려고).
+      // 관계 추론이 안 되는 스키마면(에러) 조인 없이 재시도 → 피드는 안 깨짐.
+      let notes, e1;
+      ({ data: notes, error: e1 } = await window.supabase
         .from('wall_notes')
-        .select('*')
+        .select('*, profiles(avatar_url)')
         .order('created_at', { ascending: false })
-        .limit(limit || 200);
+        .limit(limit || 200));
+      if (e1) {
+        ({ data: notes, error: e1 } = await window.supabase
+          .from('wall_notes')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(limit || 200));
+      }
       if (e1) { console.warn('[Walls] fetchAll', e1.message); return []; }
       if (!notes || notes.length === 0) return [];
 
-      // Fetch all comments for these notes in one query
+      // Fetch all comments for these notes in one query (작성자 아바타 조인, 실패 시 무조인)
       const ids = notes.map(n => n.id);
-      const { data: comments, error: e2 } = await window.supabase
+      let comments, e2;
+      ({ data: comments, error: e2 } = await window.supabase
         .from('wall_note_comments')
-        .select('*')
+        .select('*, profiles(avatar_url)')
         .in('note_id', ids)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true }));
+      if (e2) {
+        ({ data: comments, error: e2 } = await window.supabase
+          .from('wall_note_comments').select('*').in('note_id', ids).order('created_at', { ascending: true }));
+      }
       if (e2) { console.warn('[Walls] fetchComments bulk', e2.message); }
 
       const byNote = {};
@@ -555,11 +572,16 @@
 
     async fetchComments(noteId) {
       if (!window.supabase || !noteId) return [];
-      const { data, error } = await window.supabase
+      let data, error;
+      ({ data, error } = await window.supabase
         .from('wall_note_comments')
-        .select('*')
+        .select('*, profiles(avatar_url)')
         .eq('note_id', noteId)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true }));
+      if (error) {
+        ({ data, error } = await window.supabase
+          .from('wall_note_comments').select('*').eq('note_id', noteId).order('created_at', { ascending: true }));
+      }
       if (error) { console.warn('[Walls] fetchComments', error.message); return []; }
       return (data || []).map(mapCommentRow);
     },
