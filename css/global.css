@@ -7441,8 +7441,8 @@ html, body { overflow-x: hidden; max-width: 100%; }
 @media (max-width: 600px) {
   .floating-shape { padding: 10px; }
   .floating-shape .shape-text {
-    font-size: 15px;   /* 도형 축소에 맞춰 텍스트도 줄임 */
-    max-width: 110px;
+    font-size: 18px;   /* 모바일 도형 글자 키움 (15 → 18, 사용자 요청) */
+    max-width: 118px;
     line-height: 1.25;
     font-weight: 700;
   }
@@ -7455,11 +7455,11 @@ html, body { overflow-x: hidden; max-width: 100%; }
   .shape-triangle {
     border-left-width: 70px; border-right-width: 70px; border-bottom-width: 124px;
   }
-  .shape-triangle .shape-text { bottom: -116px; width: 122px; font-size: 15px; }
+  .shape-triangle .shape-text { bottom: -116px; width: 122px; font-size: 17px; }
   .shape-star { width: 134px; height: 134px; }
-  .shape-star .shape-text { font-size: 12px; max-width: 55%; -webkit-line-clamp: 3; }
+  .shape-star .shape-text { font-size: 14px; max-width: 55%; -webkit-line-clamp: 3; }
   .shape-diamond { width: 120px; height: 120px; }
-  .shape-diamond .shape-text { font-size: 12px; max-width: 55%; -webkit-line-clamp: 3; }
+  .shape-diamond .shape-text { font-size: 14px; max-width: 55%; -webkit-line-clamp: 3; }
   .shape-hexagon { width: 132px; height: 120px; }
   .shape-parallelogram { width: 148px; height: 100px; }
   .shape-resize-handle { display: none !important; }
