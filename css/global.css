@@ -18809,6 +18809,50 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
   .alb2-title { font-size: 38px; }
   .alb2-songtitle { font-size: 38px; }
 }
+/* ============================================================
+   앨범 데모 줄 — 자연 크기 그대로 '한 줄로 쭉'(스크롤바 없이). 본문 영역을 화면 폭만큼
+   넓혀(배경도 함께 늘어남) 넓은 모니터면 데모가 한 줄에 다 들어가게. (사용자 요청)
+   :has(.alb2-wrap) 로 앨범 페이지에만 적용 — 아티스트 단일스크롤 페이지엔 영향 없음.
+   소개·가사·히어로는 가독 폭(720px) 유지 → 텍스트만 과하게 넓어지지 않음.
+   ============================================================ */
+@media (min-width: 800px) {
+  /* 본문(히어로·소개·가사)은 가독 폭 유지하되, 데모 영역만 넓게 쓰도록 래퍼 폭 제한 해제 */
+  .artist-canvas .sub-page:has(.alb2-wrap) { max-width: none; }
+  .artist-canvas .sub-page:has(.alb2-wrap) .alb2-wrap { max-width: none; }
+  .artist-canvas .sub-page:has(.alb2-wrap) .alb2-hero,
+  .artist-canvas .sub-page:has(.alb2-wrap) .alb2-actions,
+  .artist-canvas .sub-page:has(.alb2-wrap) .alb2-tags,
+  .artist-canvas .sub-page:has(.alb2-wrap) .section-title,
+  .artist-canvas .sub-page:has(.alb2-wrap) .alb2-card { max-width: 720px; }
+  /* 마스터(커버+소개)를 위로, 데모는 그 아래 한 줄로 쭉 — 마스터가 가로폭을 안 먹어
+     자연 크기 데모 4개가 한 줄에 들어가고 잘림/스크롤바 없음. */
+  .artist-canvas .alb2-projectbox.projects-grid > .project-box {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: visible !important;
+  }
+  .artist-canvas .alb2-projectbox.projects-grid > .project-box > .project-header {
+    flex-direction: row !important;
+    max-width: 720px;
+  }
+  .artist-canvas .alb2-projectbox.projects-grid > .project-box { min-width: 0 !important; }
+  .artist-canvas .alb2-projectbox.projects-grid .demo-path {
+    flex-wrap: nowrap !important;
+    flex: 0 0 auto !important;   /* 세로 높이를 내용(카드)만큼 잡아 납작해짐/세로 클립 방지 */
+    /* 넓은 모니터: 한 줄에 다 들어가 스크롤 안 생김. 좁으면(<데모 합폭) 그때만 가로 스크롤. */
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    align-items: flex-start !important;
+    min-width: 0 !important;   /* flex min-width:auto 가 컨테이너보다 넓게 잡혀 잘리는 것 방지 → 좁으면 스크롤 */
+    /* 뷰포트 기준 상한 — 데모 합폭이 화면보다 넓으면 여기서 막혀 가로 스크롤(잘림 방지),
+       넓은 모니터면 합폭이 더 작아 스크롤 안 생김. */
+    max-width: calc(100vw - 80px) !important;
+  }
+  /* 마스터가 위로 가며 가로줄에서 늘던 높이가 빠져 납작해지므로 카드 최소 높이 부여 */
+  .artist-canvas .alb2-projectbox.projects-grid .demo-path > .demo-card {
+    min-height: 150px !important;
+  }
+}
 @media (max-width: 420px) {
   .alb2-hero { gap: 14px; }
   .alb2-cover { width: 108px; height: 108px; box-shadow: 4px 4px 0 #111; }
