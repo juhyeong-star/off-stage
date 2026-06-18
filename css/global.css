@@ -18729,7 +18729,7 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
    앨범(데모) 페이지 — 기존 아티스트 페이지 스타일 (연보라 캔버스 + 흰박스/검정테두리/노랑포인트)
    .artist-canvas 안에서 .alb2-* 사용. (사용자 요청: 기존 아티스트 페이지처럼)
    ============================================================ */
-.artist-canvas .alb2-wrap { max-width: 640px; margin: 0 auto; }
+.artist-canvas .alb2-wrap { max-width: 640px; margin: 0; }   /* 좌측 정렬 (사용자 요청) — 중앙(0 auto) 대신 sub-page 왼쪽에 붙임 */
 .alb2-back { background: rgba(0,0,0,0.78); border: none; color: #fff; width: 38px; height: 38px; border-radius: 50%; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
 /* 위 — 아티스트 이름 헤더 (탭 → 아티스트 페이지) */
 .alb2-artisthead { display: flex; align-items: center; gap: 12px; cursor: pointer; margin-bottom: 18px; }
