@@ -7947,7 +7947,7 @@ window.renderUniverse = async function () {
 
   appContent.innerHTML = `
     <div id="universe-head" style="padding:20px 24px 8px; text-align:center;">
-      <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-galaxy-fill" style="color:#9C27B0;"></i> ${_i18n('내 우주', 'My Universe')}</h1>
+      <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-galaxy-fill" style="color:#9C27B0;"></i> ${_i18n('즐겨찾기', 'Favorites')}</h1>
       <p style="font-size:13px; color:var(--text-secondary);">${_i18n(`폴더 ${myPlaylists.length} · 곡 ${likedTracks.length} · 포스트잇 ${bookmarkedNotes.length} — 끌어서 자리 옮길 수 있어요`, `${myPlaylists.length} folders · ${likedTracks.length} tracks · ${bookmarkedNotes.length} notes — drag to rearrange`)}</p>
       ${bookmarkedNotes.length > 0 ? `<button class="universe-clear-notes" type="button" onclick="clearAllUniverseNotes()"><i class="ri-eraser-line"></i> ${_i18n('포스트잇 전부 빼기', 'Clear all notes')}</button>` : ''}
     </div>
@@ -8120,9 +8120,15 @@ function initShapeDrag() {
         if (_sc && _sc !== '1' && _sc !== '') dragEl.style.transform = 'scale(' + _sc + ')';
         dragEl.style.left = origLeft + 'px';
         dragEl.style.top = origTop + 'px';
-        dragEl.style.zIndex = '50';
+        dragEl.style.zIndex = '1000';   // 폴더 줄(z:5)·다른 도형보다 확실히 위로 — 끌 때 안 가려지게
         dragEl.style.transition = 'none';
         dragEl.classList.add('dragging');
+        // 폴더 줄은 캔버스 '위쪽'에 따로 있어, 도형을 폴더 쪽(위)으로 끌면 캔버스 overflow:hidden 에
+        // 잘려 사라졌음 → 드래그 동안만 그 캔버스 클립을 풀어 도형이 폴더 줄 위까지 보이게(놓으면 복원).
+        if (currentView === 'universe') {
+          const _cv = dragEl.closest('.shapes-universe');
+          if (_cv) { _cv.dataset._dragOvf = _cv.style.overflow || ''; _cv.style.overflow = 'visible'; }
+        }
       }
     }
 
@@ -8154,6 +8160,8 @@ function initShapeDrag() {
     el.style.transform = '';
     el.style.zIndex = '';
     el.style.transition = '';
+    // 드래그 동안 풀어둔 캔버스 클립(overflow) 복원
+    try { const _cv = el.closest('.shapes-universe'); if (_cv && _cv.dataset._dragOvf !== undefined) { _cv.style.overflow = _cv.dataset._dragOvf; delete _cv.dataset._dragOvf; } } catch (_) {}
 
     // 드래그가 일어났다면 — touchend 뒤에 따라오는 click 한 번을 swallow.
     // (안 막으면 폴더 안에서 도형 끌어 놓을 때 inline onclick="openFolderShorts(...)"
@@ -8215,7 +8223,7 @@ function initShapeDrag() {
         const parentRect = el.parentElement.getBoundingClientRect();
         const elRect = el.getBoundingClientRect();
         const leftPx = elRect.left - parentRect.left;
-        const topPx  = elRect.top  - parentRect.top;
+        const topPx  = Math.max(0, elRect.top - parentRect.top);   // 음수(캔버스 위로) 방지 — 놓을 때 폴더 줄 영역에 잘려 사라지지 않게
         const xPct   = parentRect.width > 0 ? (leftPx / parentRect.width) * 100 : 0;
         const pass   = el.dataset.pass;
         // scope/scope_id 정리 — 클라우드(user_object_positions) 와 동일한 키 체계
@@ -14083,7 +14091,7 @@ window.openMyPlaylist = function(playlistId) {
 // 뒤로가기는 좌상단 글로벌 백버튼이 담당, 쇼츠는 아이템 클릭으로 진입.
 function _folderHeadHtml(folderId, built, title) {
   return `
-    <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-star-smile-fill" style="color:#FFC107;"></i> ${_t('내 우주', 'My Universe')}</h1>
+    <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-star-smile-fill" style="color:#FFC107;"></i> ${_t('즐겨찾기', 'Favorites')}</h1>
     <p style="font-size:13px; color:var(--text-secondary);">📁 ${title} · ${_t('곡', 'tracks')} ${built.trackCount} · ${_t('포스트잇', 'notes')} ${built.noteCount}</p>`;
 }
 

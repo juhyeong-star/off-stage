@@ -1005,7 +1005,7 @@ body.is-shapes-route .page-intro {
     radial-gradient(circle at 80% 70%, rgba(233,30,99,0.10), transparent 40%);
 }
 /* 내 우주에 모인 곡 도형 — 도형 크기 30% 키움 (0.8 → 1.04, folatDrift scale) */
-.my-universe .floating-shape:not(.universe-note):not(.floating-folder) { --scale: 1.1; }   /* 폴더 줄 분리 후 도형 살짝만 크게(1.35 → 1.1, 사용자 요청) */
+.my-universe .floating-shape:not(.universe-note):not(.floating-folder) { --scale: 0.95; }   /* 도형 살짝 더 축소(1.1 → 0.95, 사용자 요청) */
 /* 내 우주 포스트잇에 붙은 노래 칩 (벽 포스트잇처럼 오른쪽 아래 작게) */
 .universe-note .note-track-chip {
   margin: 8px 0 0 auto;
