@@ -40,14 +40,14 @@
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=767">
+  <link rel="stylesheet" href="css/global.css?v=768">
 </head>
 <body>
 
   <!-- Sidebar -->
   <aside class="sidebar-nav" id="sidebar-nav">
     <!-- off-stage · BETA — 모바일에서 메뉴 열면 맨 위에 (데스크탑은 우측 상단 플로팅). -->
-    <div class="beta-wordmark beta-wordmark-menu" aria-hidden="true"><span class="bw-name">off-stage</span><span class="bw-tag">BETA</span></div>
+    <div class="beta-wordmark beta-wordmark-menu" role="button" tabindex="0" aria-label="off-stage — 발견으로" onclick="window.navigateTo && window.navigateTo('shapes')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); window.navigateTo && window.navigateTo('shapes');}"><span class="bw-name">off-stage</span><span class="bw-tag">BETA</span></div>
     <nav class="sidebar-links">
       <a href="#" data-route="shapes" class="active" aria-label="발견"><i class="ri-triangle-fill"></i> <span class="nav-label"><span data-i18n-ko>발견</span><span data-i18n-en>Discover</span></span></a>
       <a href="#" data-route="wall" aria-label="주절주절"><i class="ri-sticky-note-fill"></i> <span class="nav-label"><span data-i18n-ko>주절주절</span><span data-i18n-en>blah blah</span></span></a>
@@ -122,7 +122,7 @@
   </button>
 
   <!-- off-stage · BETA 워드마크 — 데스크탑 우측 상단(플로팅). 모바일은 메뉴 안에만. -->
-  <div class="beta-wordmark beta-wordmark-float" aria-hidden="true"><span class="bw-name">off-stage</span><span class="bw-tag">BETA</span></div>
+  <div class="beta-wordmark beta-wordmark-float" role="button" tabindex="0" aria-label="off-stage — 발견으로" onclick="window.navigateTo && window.navigateTo('shapes')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); window.navigateTo && window.navigateTo('shapes');}"><span class="bw-name">off-stage</span><span class="bw-tag">BETA</span></div>
 
   <!-- 가이드(둘러보기) 버튼 — 언어 토글 왼쪽. 첫 방문 안내를 언제든 다시 보기. -->
   <button class="guide-btn" id="guide-btn" type="button" onclick="window.showOnboarding && window.showOnboarding()" aria-label="가이드">
@@ -223,12 +223,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=767"></script>
-  <script defer src="js/data.js?v=767"></script>
-  <script defer src="js/supabase.js?v=767"></script>
-  <script defer src="js/analytics.js?v=767"></script>
-  <script defer src="js/distribute.js?v=767"></script>
-  <script defer src="js/app.js?v=767"></script>
-  <script defer src="js/polaroid.js?v=767"></script>
+  <script defer src="js/supabase-init.js?v=768"></script>
+  <script defer src="js/data.js?v=768"></script>
+  <script defer src="js/supabase.js?v=768"></script>
+  <script defer src="js/analytics.js?v=768"></script>
+  <script defer src="js/distribute.js?v=768"></script>
+  <script defer src="js/app.js?v=768"></script>
+  <script defer src="js/polaroid.js?v=768"></script>
 </body>
 </html>

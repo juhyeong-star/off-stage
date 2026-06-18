@@ -17591,10 +17591,11 @@ html[data-lang="en"] [data-i18n-ko] { display: none !important; }
 .beta-wordmark {
   display: inline-flex; align-items: center; gap: 6px;
   font-family: 'Inter', sans-serif; font-weight: 800;
-  font-size: 13px; letter-spacing: -0.2px;
+  font-size: 15px; letter-spacing: -0.2px;   /* 13 → 15 (+2px, 사용자 요청) */
   color: rgba(255,255,255,0.92);
-  user-select: none; pointer-events: none; white-space: nowrap;
+  user-select: none; cursor: pointer; white-space: nowrap;   /* pointer-events:none 제거 → 눌러서 발견으로 이동 */
 }
+.beta-wordmark:hover .bw-name { color: #fff; }
 .beta-wordmark .bw-tag {
   font-size: 9px; font-weight: 900; letter-spacing: 0.6px;
   color: #0c0c14; background: #FFE500;

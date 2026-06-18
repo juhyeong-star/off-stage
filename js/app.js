@@ -996,7 +996,7 @@ window.openMoreSheet = function () {
 // SPA doesn't push to window.history (uses internal `currentView` only), so we
 // keep our own stack here. navigateTo() calls _pushNavStep(route); goBack pops.
 window.__navStack = window.__navStack || [];
-const _ROOT_ROUTES = new Set(['shapes', 'home']);
+const _ROOT_ROUTES = new Set(['shapes', 'home', 'wall', 'universe']);   // wall·universe도 루트(뒤로가기 숨김) → off-stage 워드마크가 뜨고 뒤로가기와 안 겹침. 워드마크 누르면 발견으로.
 let _backInProgress = false;
 
 function _pushNavStep(route) {
