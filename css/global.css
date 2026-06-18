@@ -4933,6 +4933,12 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
 .artist-canvas.cosmic .projects-grid .project-header .project-album-card .project-title { color: #f3f0fb !important; }
 .artist-canvas.cosmic .projects-grid .project-header .project-album-card .project-artist-line,
 .artist-canvas.cosmic .projects-grid .project-album-card .project-artist-line { color: rgba(243,240,251,0.78) !important; }
+/* 마스터 카드 부제에 '곡 소개'가 들어간 경우(.alb2-master-sub) — 한 줄 말줄임 대신 여러 줄 표시(최대 4줄). */
+.artist-canvas.cosmic .project-artist-line.alb2-master-sub {
+  white-space: normal !important;
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+  overflow: hidden; text-overflow: clip; line-height: 1.45; max-width: 280px; font-weight: 600;
+}
 /* Project header layout: cover on left, info on right */
 .artist-canvas .project-header {
   display: flex;

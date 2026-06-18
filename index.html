@@ -31,16 +31,17 @@
       font-family: 'Nanum JungShik';
       font-style: normal;
       font-weight: 400;
-      /* swap = 5MB 손글씨 폰트 다운 전엔 폴백으로 즉시 표시(글씨 안 숨김) → 체감 속도 개선.
-         (block 은 폰트 로드까지 최대 3초 텍스트를 숨겨 느리게 느껴짐.) */
-      font-display: swap;
+      /* optional = 폰트가 캐시에 있으면 바로 쓰고, 없으면 폴백을 쓰되 '도중에 바꾸지 않음'.
+         → 발견으로 돌아올 때 폴백(큰 글꼴)→손글씨로 1~2초 뒤 바뀌는 깜빡임 제거(사용자 요청).
+         (swap 은 폴백을 보였다가 스왑해 깜빡임 발생. block 은 최대 3초 텍스트 숨김.) */
+      font-display: optional;
       src: url('/fonts/NanumJungShik.ttf') format('truetype');
     }
   </style>
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=776">
+  <link rel="stylesheet" href="css/global.css?v=777">
 </head>
 <body>
 
@@ -223,12 +224,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=776"></script>
-  <script defer src="js/data.js?v=776"></script>
-  <script defer src="js/supabase.js?v=776"></script>
-  <script defer src="js/analytics.js?v=776"></script>
-  <script defer src="js/distribute.js?v=776"></script>
-  <script defer src="js/app.js?v=776"></script>
-  <script defer src="js/polaroid.js?v=776"></script>
+  <script defer src="js/supabase-init.js?v=777"></script>
+  <script defer src="js/data.js?v=777"></script>
+  <script defer src="js/supabase.js?v=777"></script>
+  <script defer src="js/analytics.js?v=777"></script>
+  <script defer src="js/distribute.js?v=777"></script>
+  <script defer src="js/app.js?v=777"></script>
+  <script defer src="js/polaroid.js?v=777"></script>
 </body>
 </html>

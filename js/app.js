@@ -3440,7 +3440,7 @@ async function renderWall() {
     comments: (n.comments || []).length,
     isMine: !!(myId && n.authorId === myId),
     collected: !!(window.Walls && window.Walls.isBookmarked && window.Walls.isBookmarked(n.id)),
-    liked: !!(window.Walls && window.Walls.isFavorited && window.Walls.isFavorited(n.id)),
+    liked: _isNoteLiked(n.id),
     likeCount: (window.Walls && window.Walls.favoriteCount) ? window.Walls.favoriteCount(n.id) : 0
   }));
   const composerAvatar = me ? myAvatar : ('https://i.pravatar.cc/150?u=guest');
@@ -3848,13 +3848,27 @@ function _renderAlbumView(appContent, d) {
           <!-- 마스터 + 데모 (projects-grid → 흰 박스 없음 + PC 가로 필름스트립 / 모바일 스네이크) -->
           <div class="alb2-projectbox projects-grid">${projectBoxHtml}</div>
 
-          <h2 class="section-title"><i class="ri-quill-pen-line"></i> ${_i18n('소개', 'About')}</h2>
-          ${note ? _collapsible(note, 'alb2-card') : `<div class="alb2-card alb2-card-empty">${_i18n('아직 소개가 없어요', 'No description yet')}</div>`}
+          <div id="alb2-about-section">
+            <h2 class="section-title"><i class="ri-quill-pen-line"></i> ${_i18n('소개', 'About')}</h2>
+            ${note ? _collapsible(note, 'alb2-card') : `<div class="alb2-card alb2-card-empty">${_i18n('아직 소개가 없어요', 'No description yet')}</div>`}
+          </div>
           <h2 class="section-title"><i class="ri-double-quotes-l"></i> ${_i18n('가사', 'Lyrics')}</h2>
           ${lyrics ? _collapsible(lyrics, 'alb2-card lyrics') : `<div class="alb2-card lyrics alb2-card-empty">${_i18n('아직 가사가 없어요', 'No lyrics yet')}</div>`}
         </div>
       </div>
     </div>`;
+
+  // 마스터 미발매(「Coming Soon」) 카드 — 작은 'Coming Soon' 부제를 '곡 소개'로 교체(중복 'Coming Soon' 줄임, 사용자 요청).
+  // 소개가 마스터 카드로 올라가므로 아래 '소개' 섹션은 숨김(중복 방지). 발매(master)면 부제=아티스트라 그대로 둠.
+  try {
+    const subEl = appContent.querySelector('.alb2-projectbox .project-header .project-artist-line');
+    if (subEl && /coming\s*soon/i.test(subEl.textContent || '')) {
+      subEl.textContent = note || _t('곧 공개돼요', 'Coming soon');
+      subEl.classList.add('alb2-master-sub');
+      const aboutEl = appContent.querySelector('#alb2-about-section');
+      if (aboutEl && note) aboutEl.style.display = 'none';
+    }
+  } catch (_) {}
 }
 
 // 앨범 페이지 ♥ — 곡을 내 우주에 담기(track_favorites/CollectedTracks). 칩 스타일(is-on/ri-heart-3)을
@@ -4888,8 +4902,22 @@ window.submitWallNote = async function() {
 // ── 주절주절 글 좋아요 (note_favorites — 공개 + 카운트) ──
 // 예전엔 하트가 시각 토글뿐이었으나, 이제 실제 좋아요로 저장. 누가 좋아요했는지
 // note_favorites 에 남아 나중에 "내가 좋아요한 글"로 따로 모아볼 수 있음(백엔드 준비됨).
+// 기기 미러(localStorage) — 서버 읽기(RLS)가 막혀 __favoritedNotes 가 비워져도 내 좋아요는
+// 기기에 남아 나갔다 와도 유지됨(초기화 방지).
+window.CollectedNotes = {
+  _key: 'offstage_collected_notes', _ids: null,
+  _load() { if (this._ids) return this._ids; try { const raw = localStorage.getItem(this._key); this._ids = new Set(raw ? JSON.parse(raw) : []); } catch (_) { this._ids = new Set(); } return this._ids; },
+  _save() { try { localStorage.setItem(this._key, JSON.stringify([...this._load()])); } catch (_) {} },
+  has(id) { return !!id && this._load().has(id); },
+  add(id) { if (id) { this._load().add(id); this._save(); } },
+  remove(id) { if (id) { this._load().delete(id); this._save(); } }
+};
+function _isNoteLiked(id) {
+  return !!((window.Walls && window.Walls.isFavorited && window.Walls.isFavorited(id)) || (window.CollectedNotes && window.CollectedNotes.has(id)));
+}
+window._isNoteLiked = _isNoteLiked;
 function _updateNoteLikeDom(noteId) {
-  const liked = !!(window.Walls && window.Walls.isFavorited && window.Walls.isFavorited(noteId));
+  const liked = _isNoteLiked(noteId);
   const count = (window.__noteFavCounts && window.__noteFavCounts[noteId]) || 0;
   let sel;
   try { sel = '.tp-like[data-note-id="' + ((window.CSS && CSS.escape) ? CSS.escape(noteId) : noteId) + '"]'; }
@@ -4906,19 +4934,21 @@ window.toggleNoteLike = async function (noteId, btnEl) {
   const db = window.DB.get();
   if (!db.currentUser) { alert(_t('로그인 후 이용 가능합니다', 'Sign in to like posts')); navigateTo('auth'); return; }
   if (!window.Walls || !window.Walls.toggleFavorite) return;
-  const willLike = !(window.Walls.isFavorited && window.Walls.isFavorited(noteId));
-  // 낙관적 반영 — 캐시(좋아요 set + 카운트) + 같은 노트의 모든 하트 버튼 DOM
+  const willLike = !_isNoteLiked(noteId);
+  // 낙관적 반영 — 캐시(좋아요 set + 카운트) + 기기 미러(localStorage) + 같은 노트의 모든 하트 버튼 DOM
   if (!window.__favoritedNotes) window.__favoritedNotes = new Set();
   if (!window.__noteFavCounts) window.__noteFavCounts = {};
-  if (willLike) window.__favoritedNotes.add(noteId); else window.__favoritedNotes.delete(noteId);
+  if (willLike) { window.__favoritedNotes.add(noteId); window.CollectedNotes.add(noteId); }
+  else { window.__favoritedNotes.delete(noteId); window.CollectedNotes.remove(noteId); }
   window.__noteFavCounts[noteId] = Math.max(0, (window.__noteFavCounts[noteId] || 0) + (willLike ? 1 : -1));
   _updateNoteLikeDom(noteId);
   if (willLike && btnEl) { btnEl.classList.add('pop'); setTimeout(() => btnEl.classList.remove('pop'), 360); }
   try {
     await window.Walls.toggleFavorite(noteId);
   } catch (e) {
-    // 실패 — 되돌리기
-    if (willLike) window.__favoritedNotes.delete(noteId); else window.__favoritedNotes.add(noteId);
+    // 실패 — 되돌리기 (기기 미러도 함께 복구)
+    if (willLike) { window.__favoritedNotes.delete(noteId); window.CollectedNotes.remove(noteId); }
+    else { window.__favoritedNotes.add(noteId); window.CollectedNotes.add(noteId); }
     window.__noteFavCounts[noteId] = Math.max(0, (window.__noteFavCounts[noteId] || 0) + (willLike ? -1 : 1));
     _updateNoteLikeDom(noteId);
     if (typeof showToast === 'function') showToast(_t('좋아요 실패 — 다시 시도해줘', 'Like failed — try again'));
@@ -12249,7 +12279,7 @@ function renderArtistProfile(artistName) {
       track: n.trackId ? _threadTrackOf(n.trackId) : null,
       comments: (n.comments || []).length, isMine: !!(_myId2 && n.authorId === _myId2),
       collected: !!(window.Walls && window.Walls.isBookmarked && window.Walls.isBookmarked(n.id)),
-      liked: !!(window.Walls && window.Walls.isFavorited && window.Walls.isFavorited(n.id)),
+      liked: _isNoteLiked(n.id),
       likeCount: (window.Walls && window.Walls.favoriteCount) ? window.Walls.favoriteCount(n.id) : 0
     }));
 
