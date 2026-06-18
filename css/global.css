@@ -960,6 +960,16 @@ body.is-shapes-route .page-intro {
   display: flex; flex-direction: column;
   transform-origin: center center;
 }
+/* 내 우주에서 포스트잇 빼기 (✕) — 모바일은 hover 없어 항상 살짝 보이게. */
+.universe-note-x {
+  position: absolute; top: 6px; right: 6px;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(0,0,0,0.22); border: none; color: rgba(0,0,0,0.6);
+  font-size: 15px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 5; padding: 0; opacity: 0.55;
+  transition: opacity .15s, background .15s, color .15s;
+}
+.universe-note-x:hover { opacity: 1; background: rgba(220,40,40,0.9); color: #fff; }
 .universe-note-body {
   font-size: inherit;
   line-height: 1.4;

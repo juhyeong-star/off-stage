@@ -4867,6 +4867,20 @@ window.toggleBookmark = async function(noteId) {
   }
 };
 
+// 내 우주에서 포스트잇 빼기 (✕) — 수집 해제 + Set 갱신 + 우주 다시 그리기.
+window._removeNoteFromUniverse = async function (noteId, ev) {
+  if (ev && ev.stopPropagation) ev.stopPropagation();
+  if (!noteId) return;
+  try {
+    if (window.Walls && window.Walls.toggleBookmark && window.Walls.isBookmarked && window.Walls.isBookmarked(noteId)) {
+      await window.Walls.toggleBookmark(noteId);   // 북마크 상태 → 토글하면 해제
+    }
+    if (window.__bookmarkedNotes && window.__bookmarkedNotes.delete) window.__bookmarkedNotes.delete(noteId);
+    if (typeof showToast === 'function') showToast(_t('우주에서 뺐어요', 'Removed from universe'));
+    if (typeof renderUniverse === 'function') renderUniverse();
+  } catch (e) { console.warn('[universe] remove note', e); if (typeof showToast === 'function') showToast(_t('빼기 실패', 'Remove failed')); }
+};
+
 window.deleteWallNote = async function(noteId) {
   if (!confirm('이 포스트잇을 지울까요?')) return;
   try {
@@ -7755,6 +7769,7 @@ window.renderUniverse = async function () {
       itemsHtml += `
         <div class="universe-note floating-shape" data-note-id="${n.id}"
              style="left:${xBase}%; top:${yPx}px; background:${c.bg}; color:${c.text}; animation: floatDrift ${dur+4}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${noteRot}deg;">
+          <button class="universe-note-x" onclick="_removeNoteFromUniverse('${n.id}', event)" aria-label="${_t('우주에서 빼기', 'Remove')}" title="${_t('우주에서 빼기', 'Remove from universe')}"><i class="ri-close-line"></i></button>
           <div class="universe-note-body">${safeTxt}</div>
           <div class="universe-note-sig">— ${safeAuth}</div>
           ${noteChip}
