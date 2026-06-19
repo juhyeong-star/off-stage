@@ -6225,7 +6225,12 @@ html, body { overflow-x: hidden; max-width: 100%; }
   color: #111;
   cursor: pointer;
   line-height: 1.3;
-  word-break: keep-all;
+  /* 긴 제목(공백 없는 한글)이 카드 밖으로 넘치던 것 — 2줄로 자르고 넘으면 … */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
   transition: color 0.2s;
 }
 .tag-track-title:hover { color: #6B46C1; }
@@ -6289,6 +6294,19 @@ html, body { overflow-x: hidden; max-width: 100%; }
   color: #111; font-size: 13px; font-weight: 700;
 }
 .tag-count { color: #111; font-weight: 700; }
+
+/* 태그 상세 = 우주 배경(.cosmic) + 별 반짝임 (사용자 요청). 흰 카드는 그대로 대비. */
+.tag-cosmic .artist-bg-deco { animation: tagStarTwinkle 4.5s ease-in-out infinite; }
+@keyframes tagStarTwinkle { 0%, 100% { opacity: 0.72; } 50% { opacity: 0.34; } }
+.tag-cosmic a[href="#"] { color: #cdc7e4 !important; }
+.tag-cosmic a[href="#"]:hover { color: #fff !important; }
+.tag-cosmic .tag-hero { border-bottom-color: rgba(255,255,255,0.22); }
+.tag-cosmic .tag-hero-stats {
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(255,255,255,0.32);
+  color: #f3f0fb;
+}
+.tag-cosmic .tag-track-card:hover { box-shadow: 5px 5px 0 rgba(255,255,255,0.22); }
 
 /* Admin dashboard */
 .admin-section { margin-top: 24px; }

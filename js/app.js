@@ -3157,7 +3157,7 @@ function renderTagDetail(tag) {
 
   if (matched.length === 0) {
     appContent.innerHTML = `
-      <div class="artist-canvas">
+      <div class="artist-canvas cosmic tag-cosmic">
         <div class="artist-bg-deco"></div>
         <div class="sub-page artist-page">
           <div class="reveal" style="margin-bottom:14px;">
@@ -3168,7 +3168,7 @@ function renderTagDetail(tag) {
           <div class="tag-hero">
             <h1 class="tag-hero-title">#${safeTag}</h1>
           </div>
-          <p style="color:#2a2240; margin-top: 40px; text-align:center; font-weight:600;">${_i18n('이 태그를 가진 곡이 아직 없어요.', 'No tracks with this tag yet.')}</p>
+          <p style="color:#cdc7e4; margin-top: 40px; text-align:center; font-weight:600;">${_i18n('이 태그를 가진 곡이 아직 없어요.', 'No tracks with this tag yet.')}</p>
         </div>
       </div>
     `;
@@ -3198,7 +3198,7 @@ function renderTagDetail(tag) {
   }).join('');
 
   appContent.innerHTML = `
-    <div class="artist-canvas">
+    <div class="artist-canvas cosmic tag-cosmic">
       <div class="artist-bg-deco"></div>
       <div class="sub-page artist-page">
         <div class="reveal" style="margin-bottom:14px;">
@@ -3326,11 +3326,12 @@ function _threadPostHtml(p) {
   const nameAttr = p.name ? `data-artist="${escAttr(p.name)}"` : '';
   const linkCls = p.name ? ' is-link' : '';
   const img = p.image ? `<img class="thread-post-image" src="${p.image}" alt="" loading="lazy">` : '';
+  const _trackAlbumPid = p.track ? (p.track.projectId || ('proj_' + p.track.id)) : '';
   const song = p.track ? `
         <div class="thread-song-card" onclick="playTrack('${p.track.id}','wall')">
           <img class="thread-song-cover" src="${p.track.cover}" alt="">
           <div class="thread-song-info">
-            <div class="thread-song-title">${esc(p.track.title)}</div>
+            <div class="thread-song-title" style="cursor:pointer;" onclick="event.stopPropagation(); navigateTo('album:${_trackAlbumPid}')" title="${_t('앨범 보기', 'View album')}">${esc(p.track.title)}</div>
             <div class="thread-song-artist">${esc(p.track.artist)}</div>
           </div>
           <button class="thread-song-play" onclick="event.stopPropagation(); playTrack('${p.track.id}','wall')" aria-label="재생"><i class="ri-play-fill"></i></button>
@@ -7018,7 +7019,10 @@ function renderShapes() {
   const _fArea = (totalShapes * _avgW * _avgH) / _spread;
   // 가로 스크롤 없이 '세로로만' — 필드 폭 = 화면 폭, 높이만 내용에 따라 늘어남 (사용자 요청).
   const _fieldW = _vwNow;
-  const _fieldH = Math.max(_vhNow - 120, Math.round(_fArea / _fieldW));
+  let _fieldH = Math.max(_vhNow - 120, Math.round(_fArea / _fieldW));
+  // 모바일: 세로 스택(겹침 방지) — 한 줄에 도형 하나, 최신이 맨 위, 아래로 차곡차곡 (사용자 요청).
+  const _stackRow = _avgH + 64;
+  if (_isNarrow) _fieldH = 16 + Math.max(1, totalShapes) * _stackRow + 48;
   // 2D 지터-그리드: 필드를 칸으로 나눠 고르게(쏠림/빈 사분면 없이), 칸 안은 랜덤(유기적)
   let _gCols = Math.max(1, Math.round(Math.sqrt(Math.max(1, totalShapes) * (_fieldW / _fieldH))));
   _gCols = Math.min(_gCols, Math.max(1, totalShapes));
@@ -7065,7 +7069,7 @@ function renderShapes() {
     // Stored user drag overrides the seeded default
     const stored = _loadShapePos(track.id, pass);
     const _newest = _isNewestSlot && !stored;          // 최신 + 드래그 안 함 → 메인 자리
-    const _pinned = !!stored || _newest;               // 고정(드래그/최신) — declump 가 안 흩뜨림
+    const _pinned = _isNarrow || !!stored || _newest;  // 모바일 스택/드래그/최신 = 고정 — declump 가 안 흩뜨림
     // 2D 칸 배치: 필드 전체(상하좌우)에 고르게 + 칸 안 랜덤. 최신은 필드 한가운데(시작 지점).
     const _rx = ((seed >>> 0) & 0xffff) / 0xffff;
     const _ry = ((seed >>> 16) & 0xffff) / 0xffff;
@@ -7075,8 +7079,17 @@ function renderShapes() {
                : (_ci * _cellWpx + _rx * Math.max(8, _cellWpx - _avgW));
     const _ypx = _newest ? (_fieldH - _avgH) / 2
                : (_ri * _cellHpx + _ry * Math.max(8, _cellHpx - _avgH));
-    const xBase = stored ? stored.xPct : (_xpx / _fieldW * 100);   // 필드폭 기준 %
-    const yPx   = stored ? stored.yPx : _ypx;
+    let xBase, yPx;
+    if (_isNarrow && !stored) {
+      // 모바일 세로 스택 — si 순(최신 si=0 맨 위)으로 위→아래, 한 줄에 하나(겹침 방지). 가로는 가운데±약간(유기적).
+      const _jx = ((((seed >>> 0) & 0xffff) / 0xffff) - 0.5) * (_fieldW * 0.14);
+      const _sx = Math.max(8, Math.min(_fieldW - _avgW - 8, (_fieldW - _avgW) / 2 + _jx));
+      xBase = (_sx / _fieldW) * 100;
+      yPx = 16 + si * _stackRow;
+    } else {
+      xBase = stored ? stored.xPct : (_xpx / _fieldW * 100);   // 필드폭 기준 %
+      yPx = stored ? stored.yPx : _ypx;
+    }
     const rot = _newest ? 0 : ((((seed >>> 10) % 140) - 70) / 10);
     const dur = 10 + ((seed >>> 18) % 18);
     // 떠다니는 진폭: 모바일은 좁아서 ±10, PC는 ±25 (겹침 방지)
