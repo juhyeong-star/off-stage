@@ -6955,6 +6955,9 @@ function initDiscoverDrag() {
 // ===================== SHAPES UNIVERSE (original floating shapes view) =====================
 function renderShapes() {
   const db = window.DB.get();
+  // 발견 보기 모드: 'shape'(기본, 도형) | 'jacket'(테스트, 앨범 자켓 블라인드+해시태그). 토글로 비교.
+  if (window.__discoverMode == null) { try { window.__discoverMode = localStorage.getItem('offstage_discover_mode') || 'shape'; } catch (_) { window.__discoverMode = 'shape'; } }
+  const _jacketMode = (window.__discoverMode === 'jacket');
   // 도형 페이지 들어올 때마다 Supabase에서 새 트랙 백그라운드 확인.
   // 트랙 목록이 바뀌었을 때만 다시 그려서 무한루프 방지.
   if (window.Tracks && window.Tracks.refreshInto && !window.__shapesRefreshing) {
@@ -7101,17 +7104,32 @@ function renderShapes() {
     const _popScale = (1 + (_isNarrow ? 0.18 : 0.35) * Math.min(1, _pop / _maxPop)).toFixed(3);
     const _newestStyle = _newest ? ' z-index:30;' : '';     // 최신은 앞으로 (#6)
 
-    const isTriangle = shape === 'triangle';
-    const bgStyle = isTriangle
-      ? `border-bottom-color: ${color}; color: ${color}; --shape-bg: ${color};`
-      : `background: ${color}; --shape-bg: ${color};`;
-
-    shapesHtml += `
+    if (_jacketMode) {
+      // 테스트: 도형 대신 '앨범 자켓' — 커버를 살짝 블러로 깔고 그 위에 해시태그.
+      // 커버 없는 곡(Coming Soon 등)은 곡 색 그라데이션 자켓으로 통일(노란 얼룩 방지).
+      const _cover = track.cover || '';
+      const _hasCover = /^https?:\/\//i.test(_cover);
+      const _coverBg = _hasCover
+        ? `background-image:url('${_cover.replace(/'/g, '%27')}')`
+        : `background-image:linear-gradient(140deg, ${color}, rgba(0,0,0,0.55))`;
+      shapesHtml += `
+      <div class="floating-shape shape-jacket${_newest ? ' is-newest' : ''}" data-track-id="${track.id}" data-pass="${pass}"${_pinned ? ' data-pinned="1"' : ''} data-artist="${encodeURIComponent(track.artist || '')}"
+           style="left:${xBase}%; top:${yPx}px;${_newestStyle} animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg; --scale:${_popScale};">
+        <div class="jkt-cover" style="${_coverBg}"></div>
+        <div class="jkt-veil"></div>
+        <div class="shape-text">${safeLines.join('\n')}</div>
+      </div>`;
+    } else {
+      const isTriangle = shape === 'triangle';
+      const bgStyle = isTriangle
+        ? `border-bottom-color: ${color}; color: ${color}; --shape-bg: ${color};`
+        : `background: ${color}; --shape-bg: ${color};`;
+      shapesHtml += `
       <div class="floating-shape shape-${shape}${_newest ? ' is-newest' : ''}" data-track-id="${track.id}" data-pass="${pass}"${_pinned ? ' data-pinned="1"' : ''} data-artist="${encodeURIComponent(track.artist || '')}"
            style="${bgStyle} left:${xBase}%; top:${yPx}px;${_newestStyle} animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg; --scale:${_popScale};">
         <div class="shape-text">${safeLines.join('\n')}</div>
-      </div>
-    `;
+      </div>`;
+    }
   });
 
   // Activity feed ("지금 일어나는 일") — removed by user request. Was showing
@@ -7147,6 +7165,9 @@ function renderShapes() {
   // .shapes-universe = 뷰포트 크기 스크롤 창, .universe-field = 그보다 큰 2D 필드(사방으로 큼)
   appContent.innerHTML = `
     <div class="page-intro reveal">${_i18n('도형을 발견해보세요', 'Discover the shapes')}</div>
+    <button class="discover-mode-toggle" type="button" onclick="toggleDiscoverMode()" aria-label="${_t('보기 전환', 'Toggle view')}">
+      <i class="ri-${_jacketMode ? 'shape-line' : 'album-2-line'}"></i> ${_jacketMode ? _t('도형으로', 'Shapes') : _t('자켓으로', 'Jackets')}
+    </button>
     <div class="shapes-universe" id="shapes-scroll">
       <div class="universe-field" style="width:100%; height:${_fieldH}px;">
         ${decoHtml}
@@ -7181,6 +7202,13 @@ function renderShapes() {
 // supabase.js 등 외부 스크립트에서 window.renderShapes() 로 호출 가능하게 명시 노출.
 // (비-모듈 스크립트에선 function 선언만으로도 window 에 매달리지만, 모든 환경 안전하게)
 window.renderShapes = renderShapes;
+
+// 발견 보기 토글: 도형 ↔ 앨범 자켓(블라인드+해시태그). 선택은 localStorage 에 저장.
+window.toggleDiscoverMode = function () {
+  window.__discoverMode = (window.__discoverMode === 'jacket') ? 'shape' : 'jacket';
+  try { localStorage.setItem('offstage_discover_mode', window.__discoverMode); } catch (_) {}
+  if (typeof renderShapes === 'function') renderShapes();
+};
 
 // ── Unified "like" for tracks (works for both Supabase tracks and mock tracks).
 // Reads from window.__favoritedTracks (Supabase cache) or db.currentUser.likedTracks (legacy).
