@@ -6621,6 +6621,21 @@ window.openShapeShorts = function (startTrackId) {
 };
 
 function _shapeShortsCardHtml(t) {
+  const artist = (t.artist || '아티스트').replace(/</g, '&lt;');
+  // 자켓 모드: 풀스크린은 '커버를 크게(선명)' — 도형 대신 자켓. (탭해서 들어온 곳과 일관)
+  if (window.__discoverMode === 'jacket') {
+    const _cover = t.cover || '';
+    const _hasCover = /^https?:\/\//i.test(_cover);
+    const _col = SHAPE_COLORS[(_hashSeed('shape-col:' + t.id) >>> 0) % SHAPE_COLORS.length];
+    const _bg = _hasCover
+      ? `background-image:url('${_cover.replace(/'/g, '%27')}')`
+      : `background-image:linear-gradient(140deg, ${_col}, rgba(0,0,0,0.55))`;
+    return `
+    <div class="sshorts-stage">
+      <div class="sshorts-jacket" style="${_bg}"></div>
+      <button class="sshorts-artist" onclick="_shapeShortsGoArtist('${encodeURIComponent(t.artist || '')}')">${artist}</button>
+    </div>`;
+  }
   let shape = t.shape || SHAPE_TYPES[0];
   if (SHAPE_REMAP[shape]) shape = SHAPE_REMAP[shape];
   const color = t.shapeColor || '#FF9800';
@@ -6628,7 +6643,6 @@ function _shapeShortsCardHtml(t) {
   const bg = isTri ? `border-bottom-color:${color}; color:${color}; --shape-bg:${color};` : `background:${color}; --shape-bg:${color};`;
   const lines = t.lines || [t.title || '', t.artist || '', '클릭해서 들어봐!'];
   const safeLines = lines.map(l => (l || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
-  const artist = (t.artist || '아티스트').replace(/</g, '&lt;');
   return `
     <div class="sshorts-stage">
       <div class="floating-shape shape-${shape} sshorts-shape" style="${bg}">
@@ -8348,9 +8362,16 @@ function initShapeDrag() {
       }
       const trackId = el.dataset.trackId;
       const artistEnc = el.dataset.artist;
-      // 모바일 + 도형 페이지에서 도형 탭 → 도형 쇼츠(크게 띄워 글자 잘 보기)로
+      // 모바일 + 도형 페이지에서 도형 탭 → 도형 쇼츠(풀스크린)로 (자켓 모드면 커버를 크게)
       if (trackId && currentView === 'shapes' && typeof openShapeShorts === 'function'
           && _isMobileShorts() && openShapeShorts(trackId)) {
+        return;
+      }
+      // 자켓 모드(PC): 탭 = 자켓 '공개'(커버 선명·해시태그 사라짐) + 재생 (사용자 요청 ⓑ).
+      if (trackId && currentView === 'shapes' && window.__discoverMode === 'jacket' && el.classList.contains('shape-jacket')) {
+        document.querySelectorAll('.floating-shape.shape-jacket.revealed').forEach(j => { if (j !== el) j.classList.remove('revealed'); });
+        el.classList.add('revealed');
+        if (typeof playTrack === 'function') playTrack(trackId, 'shape');
         return;
       }
       if (window.__lastClickedShape === el && artistEnc) {
