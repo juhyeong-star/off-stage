@@ -6171,6 +6171,16 @@ window._removeFromFolder = async function (folderId, id, kind) {
 // 어느 폴더든 담겨 있는 포스트잇/곡 id 모음 (떠다니는 내 우주에서 제외하려고)
 function _allFolderedNoteIds() {
   const ids = new Set();
+  // 서버 캐시(__folderNotes — 기기 간 동기화) 우선. 로드되면 이게 진실원천이라,
+  // 다른 기기서 폴더에 넣은 노트도 '밖(우주)'에서 제대로 제외됨(중복 방지).
+  if (window.__folderNotes) {
+    Object.keys(window.__folderNotes).forEach(pid => {
+      const s = window.__folderNotes[pid];
+      if (s && s.forEach) s.forEach(id => ids.add(id));
+    });
+    return ids;
+  }
+  // 아직 서버 로드 전 → localStorage 폴백
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
