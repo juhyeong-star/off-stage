@@ -15,9 +15,10 @@
   <!-- Google Fonts — non-render-blocking (swap fallback fonts in until loaded) -->
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Gaegu:wght@400;700&family=Caveat:wght@400;700&family=Archivo+Black&family=Bebas+Neue&family=Press+Start+2P&family=VT323&family=Silkscreen:wght@400;700&family=Noto+Serif+KR:wght@400;500;700&display=swap" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Gaegu:wght@400;700&family=Caveat:wght@400;700&family=Archivo+Black&family=Bebas+Neue&family=Press+Start+2P&family=VT323&family=Silkscreen:wght@400;700&family=Noto+Serif+KR:wght@400;500;700&display=swap"></noscript>
-  <!-- Local fonts — Pretendard(본문)만 preload. NanumJungShik(손글씨, 5MB)은 preload 제거 —
-       최우선 다운로드가 다른 리소스를 막아 체감 속도를 떨어뜨림. swap 으로 폴백 먼저 표시. -->
+  <!-- Local fonts. NanumJungShik(손글씨)는 원본 5MB TTF → 한글 서브셋 woff2(약 2.7MB)로
+       줄이고 preload + display:block 으로, 폴백(이상한 글꼴) 없이 로드되면 바로 손글씨 표시. -->
   <link rel="preload" href="/fonts/Pretendard-Regular.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="/fonts/NanumJungShik.subset.woff2" as="font" type="font/woff2" crossorigin>
   <style>
     @font-face {
       font-family: 'Pretendard';
@@ -31,17 +32,18 @@
       font-family: 'Nanum JungShik';
       font-style: normal;
       font-weight: 400;
-      /* optional = 폰트가 캐시에 있으면 바로 쓰고, 없으면 폴백을 쓰되 '도중에 바꾸지 않음'.
-         → 발견으로 돌아올 때 폴백(큰 글꼴)→손글씨로 1~2초 뒤 바뀌는 깜빡임 제거(사용자 요청).
-         (swap 은 폴백을 보였다가 스왑해 깜빡임 발생. block 은 최대 3초 텍스트 숨김.) */
-      font-display: optional;
-      src: url('/fonts/NanumJungShik.ttf') format('truetype');
+      /* block = 폰트 로드 전엔 폴백을 '보여주지 않고' 잠깐 숨겼다가 로드되면 손글씨로 표시.
+         preload + 서브셋(약 2.7MB)이라 거의 즉시 로드 → 폴백(이상한 글꼴) 깜빡임 없음.
+         (optional = 캐시 없으면 폴백 고정 → '글꼴 이상' 원인이었음. swap = 폴백 깜빡임.) */
+      font-display: block;
+      src: url('/fonts/NanumJungShik.subset.woff2') format('woff2'),
+           url('/fonts/NanumJungShik.ttf') format('truetype');
     }
   </style>
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=789">
+  <link rel="stylesheet" href="css/global.css?v=790">
 </head>
 <body>
 
@@ -224,12 +226,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=789"></script>
-  <script defer src="js/data.js?v=789"></script>
-  <script defer src="js/supabase.js?v=789"></script>
-  <script defer src="js/analytics.js?v=789"></script>
-  <script defer src="js/distribute.js?v=789"></script>
-  <script defer src="js/app.js?v=789"></script>
-  <script defer src="js/polaroid.js?v=789"></script>
+  <script defer src="js/supabase-init.js?v=790"></script>
+  <script defer src="js/data.js?v=790"></script>
+  <script defer src="js/supabase.js?v=790"></script>
+  <script defer src="js/analytics.js?v=790"></script>
+  <script defer src="js/distribute.js?v=790"></script>
+  <script defer src="js/app.js?v=790"></script>
+  <script defer src="js/polaroid.js?v=790"></script>
 </body>
 </html>
