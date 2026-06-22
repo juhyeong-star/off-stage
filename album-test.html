@@ -33,15 +33,30 @@
   .tb:active{transform:scale(.94)}
   /* 앨범 페이지는 왼쪽 정렬·넓게 (가운데 정렬 X) */
   #alScreen .sub-page.artist-page{padding:74px 30px 54px !important;max-width:none !important}
-  /* 헤더 — 큰 아바타 + 이름 + 스탯(+발매배지 띠)로 허전함 채움 */
-  .disc-hero{display:flex;align-items:center;gap:18px;margin:0 0 14px}
-  .disc-av{width:72px;height:72px;border-radius:50%;object-fit:cover;flex:0 0 auto;box-shadow:0 0 0 2px rgba(255,255,255,.14),0 6px 18px rgba(0,0,0,.4)}
-  .disc-name{font-size:25px;font-weight:800;color:var(--text-primary);line-height:1.1;letter-spacing:-.3px}
-  .disc-stats{margin-top:8px;display:flex;gap:9px;flex-wrap:wrap}
+  /* 헤더 — 좌: 아바타+이름+소개+스탯+태그 / 우: 최신 데모 카드 (넓은 화면 우측 빈공간 채움) */
+  .disc-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:20px 30px;margin:0 0 16px;flex-wrap:wrap}
+  .disc-hero-left{display:flex;align-items:flex-start;gap:16px;flex:1 1 460px;min-width:0}
+  .disc-av{width:82px;height:82px;border-radius:50%;object-fit:cover;flex:0 0 auto;box-shadow:0 0 0 2px rgba(255,255,255,.14),0 6px 18px rgba(0,0,0,.4)}
+  .disc-name{font-size:26px;font-weight:800;color:var(--text-primary);line-height:1.1;letter-spacing:-.3px}
+  .disc-bio{font-size:13px;color:var(--text-secondary);margin-top:5px;line-height:1.45;max-width:460px}
+  .disc-stats{margin-top:9px;display:flex;gap:9px;flex-wrap:wrap}
   .disc-stat{font-size:12.5px;font-weight:700;color:var(--text-secondary);background:rgba(255,255,255,.06);
      border:1px solid rgba(255,255,255,.1);padding:4px 11px;border-radius:999px}
   .disc-stat b{color:var(--text-primary);font-weight:800;margin-left:3px}
   .disc-stat.rel b{color:#fac775}
+  .disc-tags{margin-top:9px;display:flex;gap:7px;flex-wrap:wrap}
+  .disc-chip{font-size:12px;font-weight:700;color:#cdbcff;background:rgba(127,119,221,.15);
+     border:1px solid rgba(127,119,221,.3);padding:3px 11px;border-radius:999px}
+  /* 우측 최신 데모 카드 */
+  .disc-feat{display:flex;align-items:center;gap:13px;background:var(--surface-color);border:1px solid var(--divider);
+     border-radius:14px;padding:12px 15px;cursor:pointer;flex:0 1 380px;min-width:270px;transition:border-color .2s,transform .15s}
+  .disc-feat:hover{border-color:rgba(127,119,221,.5);transform:translateY(-1px)}
+  .disc-feat-cover{width:62px;height:62px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:1px solid var(--divider)}
+  .disc-feat-label{font-size:11px;font-weight:800;color:#ff6b6b;letter-spacing:.3px}
+  .disc-feat-title{font-size:17px;font-weight:800;color:var(--text-primary);margin-top:3px;line-height:1.15}
+  .disc-feat-sub{font-size:12px;color:var(--text-secondary);margin-top:2px}
+  .disc-feat-play{margin-left:auto;width:42px;height:42px;border-radius:50%;background:var(--brand-color);color:#fff;
+     border:none;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto}
   .disc-divider{height:1px;background:rgba(255,255,255,.1);margin:0 0 16px}
   .disc-secthead{max-width:none;margin:0 0 3px;padding:0;font-size:16px;font-weight:800;color:var(--text-primary);display:flex;align-items:center;gap:7px}
   .disc-secthead i{color:var(--brand-color)}
@@ -61,29 +76,25 @@
   /* 앨범 한 줄 = [마스터 정사각 커버] + [노란 데모 카드…] 가로, 앨범은 아래로 쌓임 */
   .disc-strip{display:flex;gap:14px;align-items:flex-start;overflow-x:auto;padding:4px 2px 10px;scrollbar-width:none}
   .disc-strip::-webkit-scrollbar{display:none}
-  /* 마스터 = 정사각 Coming Soon 커버(포스트잇), 높이=데모카드 높이 */
-  .disc-master{flex:0 0 auto;position:relative;width:169px;height:169px;border:1.5px solid #111;border-radius:2px;
-     box-shadow:2px 2px 0 #111;background:#FFF59D;overflow:hidden;cursor:pointer}
+  /* 마스터 = 정사각 커버. 크기는 JS 가 --mside 로 계산(항상 마스터+데모4=5개 맞춤) */
+  .disc-master{flex:0 0 auto;box-sizing:border-box;position:relative;width:var(--mside,170px);height:var(--mside,170px);
+     border:1.5px solid #111;border-radius:2px;box-shadow:2px 2px 0 #111;background:#FFF59D;overflow:hidden;cursor:pointer}
   .disc-master img{width:100%;height:100%;object-fit:cover;display:block}
   .disc-mchip{position:absolute;left:7px;top:7px;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;
      background:#fac775;color:#3a2a00;z-index:2}
   .disc-mchip.off{background:rgba(0,0,0,.62);color:#fff}
-  /* 데모 = 앱 노란 데모카드 모양을 전용 클래스로 직접 재현(앱 .demo-card 캐스케이드 회피) */
-  .disc-demo{flex:0 0 300px;width:300px;height:170px;position:relative;display:flex;flex-direction:column;
-     background:#FFE500;border:1.5px solid #111;border-radius:2px;box-shadow:2px 2px 0 #111;
-     padding:13px 16px;color:#111;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s}
+  /* 데모 = 노란 데모카드. 폭 --dw, 높이 --mside(마스터와 정렬). 둘 다 JS 가 화면폭에 맞춰 계산 */
+  .disc-demo{flex:0 0 var(--dw,290px);box-sizing:border-box;width:var(--dw,290px);height:var(--mside,170px);
+     position:relative;display:flex;flex-direction:column;background:#FFE500;border:1.5px solid #111;border-radius:2px;
+     box-shadow:2px 2px 0 #111;padding:11px 14px;color:#111;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s}
   .disc-demo:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 #111}
-  .disc-dtop{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
-  .disc-dtag{font:800 17px 'Inter',sans-serif;color:#B5575A;letter-spacing:.3px;text-transform:uppercase;line-height:1}
-  .disc-ddate{font:600 11px 'Inter',sans-serif;color:#111;opacity:.5;white-space:nowrap}
-  .disc-dtitle{font:700 17px 'Pretendard',sans-serif;color:#111;line-height:1.3;
+  .disc-dtop{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
+  .disc-dtag{font:800 15px 'Inter',sans-serif;color:#B5575A;letter-spacing:.3px;text-transform:uppercase;line-height:1}
+  .disc-ddate{font:600 10.5px 'Inter',sans-serif;color:#111;opacity:.5;white-space:nowrap}
+  .disc-dtitle{font:700 15px 'Pretendard',sans-serif;color:#111;line-height:1.3;
      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .disc-dfoot{margin-top:auto;text-align:right}
-  .disc-dmore{font:700 12.5px 'Inter',sans-serif;color:rgba(17,17,17,.5)}
-  @media (min-width:820px){
-    .disc-master{width:188px;height:188px}
-    .disc-demo{flex-basis:300px;width:300px;height:188px}
-  }
+  .disc-dmore{font:700 12px 'Inter',sans-serif;color:rgba(17,17,17,.5)}
   /* 재생 표시 — 초록 테두리 + 이퀄라이저 */
   .disc-demo.play,.disc-master.play{outline:2.5px solid #1DB954;outline-offset:2px}
   .disc-eq{position:absolute;right:9px;bottom:9px;display:none;align-items:flex-end;gap:3px;height:18px;z-index:4}
@@ -172,10 +183,23 @@
       <div class="artist-bg-deco"></div>
       <div class="sub-page artist-page" style="padding-top:0;">
         <div class="disc-hero">
-          <img class="disc-av" src="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=200&h=200&fit=crop" alt="뮤덕1호">
-          <div>
-            <div class="disc-name">뮤덕1호</div>
-            <div class="disc-stats" id="discStats"></div>
+          <div class="disc-hero-left">
+            <img class="disc-av" src="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=200&h=200&fit=crop" alt="뮤덕1호">
+            <div>
+              <div class="disc-name">뮤덕1호</div>
+              <div class="disc-bio">늦은 밤, 혼자 만든 데모와 정규를 차곡차곡 모아둔 작업실 🎧</div>
+              <div class="disc-stats" id="discStats"></div>
+              <div class="disc-tags" id="discTags"></div>
+            </div>
+          </div>
+          <div class="disc-feat" id="discFeat">
+            <img class="disc-feat-cover" id="featCover" src="" alt="">
+            <div>
+              <div class="disc-feat-label">🔥 최신 데모</div>
+              <div class="disc-feat-title" id="featTitle"></div>
+              <div class="disc-feat-sub" id="featSub"></div>
+            </div>
+            <button class="disc-feat-play" onclick="event.stopPropagation();"><i class="ri-play-fill"></i></button>
           </div>
         </div>
         <div class="disc-divider"></div>
@@ -199,11 +223,11 @@ var CS='data:image/svg+xml;utf8,'+encodeURIComponent(
 
 // 뮤덕1호의 음악(최신순). master=정규발매 여부, demos=데모 수. (현재 앱처럼 커버는 전부 Coming Soon)
 var ALBUMS=[
-  {t:'I Am Changing', date:'2024.05', master:false, demos:1},
-  {t:'밤하늘 한 조각',  date:'2024.02', master:true,  demos:2},
+  {t:'I Am Changing', date:'2024.05', master:false, demos:2},
+  {t:'밤하늘 한 조각',  date:'2024.02', master:true,  demos:4},
   {t:'첫 무대',        date:'2023.10', master:true,  demos:1},
-  {t:'연습실에서',      date:'2023.07', master:false, demos:3},
-  {t:'데뷔 전야',       date:'2023.04', master:true,  demos:2}
+  {t:'연습실에서',      date:'2023.07', master:false, demos:5},
+  {t:'데뷔 전야',       date:'2023.04', master:true,  demos:3}
 ];
 
 function shelfMeta(a){ return a.master ? (a.demos? '정규 · 데모 '+a.demos : '정규') : '데모 '+a.demos+'개'; }
@@ -247,10 +271,35 @@ function build(){
     '<span class="disc-stat rel">발매<b>'+nRel+'</b></span>'+
     '<span class="disc-stat">덕질<b style="font-weight:700">2016~</b></span>';
   document.getElementById('discCount').textContent=nAlb;
+  // 해시태그
+  document.getElementById('discTags').innerHTML=
+    ['자작곡','발라드','늦은밤','홈레코딩'].map(function(t){return '<span class="disc-chip">#'+t+'</span>';}).join('');
+  // 최신 데모 카드 = 가장 최근 앨범(ALBUMS[0])
+  var L=ALBUMS[0];
+  document.getElementById('featCover').src=CS;
+  document.getElementById('featTitle').textContent=L.t;
+  document.getElementById('featSub').textContent='DEMO '+L.demos+' · '+L.date;
+  document.getElementById('discFeat').onclick=function(){ open_(0); };
 }
 build();
 
+// 카드 크기 반응형 — 화면폭에 맞춰 '마스터 + 데모 4 = 5개'가 딱 들어가게 계산
+function sizeCards(){
+  var album=document.querySelector('.disc-album');
+  if(!album) return;
+  var avail=album.clientWidth - 28;        // .disc-album 좌우 패딩 14*2
+  var gap=14, ar=1.7;                       // 데모카드 가로:세로 = 1.7 : 1
+  // s(마스터변) + 4*(ar*s)(데모폭) + 4*gap = avail  →  s=(avail-4gap)/(1+4ar)
+  var s=(avail - 4*gap)/(1 + 4*ar);
+  s=Math.max(104, Math.min(s, 208));        // 너무 작/크지 않게 클램프
+  document.documentElement.style.setProperty('--mside', Math.round(s)+'px');
+  document.documentElement.style.setProperty('--dw', Math.round(ar*s)+'px');
+}
+sizeCards();
+window.addEventListener('resize', sizeCards);
+
 function open_(i){
+  sizeCards();
   document.getElementById('stage').classList.add('go');
   var al=document.getElementById('alScreen');
   [].forEach.call(document.querySelectorAll('.disc-album'),function(d){d.classList.remove('cur')});
