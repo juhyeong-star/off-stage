@@ -3,138 +3,226 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>앨범(디스코그래피) 테스트 · Off-Stage</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.24.0/dist/tabler-icons.min.css">
+<title>마이페이지 → 앨범 전환 테스트 · Off-Stage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Gaegu:wght@400;700&family=Caveat:wght@400;700&display=swap">
+<link rel="preload" href="/fonts/Pretendard-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="/fonts/NanumJungShik.subset.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#06050d;min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;font-family:'Pretendard',sans-serif;-webkit-font-smoothing:antialiased}
-.ph{width:372px;height:760px;background:#0b0916;border-radius:30px;overflow:hidden;position:relative;color:#f3f0fb;box-shadow:0 20px 60px rgba(0,0,0,.5)}
-.view{position:absolute;inset:0;overflow-y:auto;padding:20px 16px 30px;transition:transform .4s cubic-bezier(.4,0,.2,1)}
-#album{transform:translateX(100%)}
-.top{display:flex;align-items:center;gap:11px;margin:4px 2px 6px}
-.av{width:46px;height:46px;border-radius:50%;background:linear-gradient(140deg,#7f77dd,#1d9e75);flex:0 0 auto}
-.name{font-size:19px;font-weight:800}
-.sec{font-size:12.5px;color:#9a93b8;margin:10px 4px 11px;display:flex;align-items:center;gap:6px}
-.card{display:flex;align-items:center;gap:13px;padding:11px;border-radius:14px;background:rgba(255,255,255,.04);cursor:pointer;margin-bottom:10px;transition:background .2s}
-.card:hover{background:rgba(255,255,255,.09)}
-.cc{width:56px;height:56px;border-radius:11px;flex:0 0 auto}
-.ct{font-size:15px;font-weight:600}.cs{font-size:12.5px;color:#9a93b8;margin-top:2px}
-.back{display:inline-flex;align-items:center;gap:5px;font-size:14px;color:#cdc7e4;cursor:pointer;background:none;border:none;font-family:inherit;font-weight:600;padding:2px;margin-bottom:8px}
-.album{padding:13px;border-radius:16px;margin-bottom:12px;background:rgba(255,255,255,.035);border:1.5px solid transparent;transition:background .35s,border-color .35s}
-.album.cur{background:rgba(127,119,221,.16);border-color:rgba(127,119,221,.6)}
-.al{display:flex;align-items:baseline;gap:8px;margin:0 2px 11px}
-.at{font-size:16px;font-weight:700}.adate{font-size:11.5px;color:#9a93b8}
-.badge{font-size:10px;font-weight:700;color:#0b0916;background:#b5aef0;padding:2px 9px;border-radius:999px;opacity:0;transition:opacity .35s;margin-left:auto}
-.album.cur .badge{opacity:1}
-.strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
-.cv{flex:0 0 auto;width:74px;text-align:center;cursor:pointer}
-.img{width:74px;height:74px;border-radius:12px;position:relative;overflow:hidden;box-shadow:0 5px 14px rgba(0,0,0,.4)}
-.cv.m .img{outline:2px solid #fac775;outline-offset:1px}
-.tag{position:absolute;left:5px;top:5px;font-size:9.5px;font-weight:700;padding:1px 7px;border-radius:999px;background:rgba(0,0,0,.5);color:#fff;z-index:2}
-.cv.m .tag{background:#fac775;color:#3a2a00}
-.pp{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:21px;opacity:0;background:rgba(0,0,0,.32);transition:opacity .2s}
-.cv:hover .pp{opacity:1}
-.eq{position:absolute;inset:0;display:none;align-items:flex-end;justify-content:center;gap:3px;padding-bottom:12px;background:rgba(0,0,0,.42)}
-.eq i{width:3px;background:#fff;border-radius:1px;height:6px;animation:eq .8s ease-in-out infinite}
-.eq i:nth-child(2){animation-delay:.18s}.eq i:nth-child(3){animation-delay:.36s}.eq i:nth-child(4){animation-delay:.54s}
-@keyframes eq{0%,100%{height:6px}50%{height:19px}}
-.cv.play .eq{display:flex}.cv.play .pp{opacity:0}.cv.play .img{outline:2px solid #1d9e75;outline-offset:1px}
-.lab{font-size:11px;color:#cdc7e4;margin-top:6px;font-weight:600}.cv.play .lab{color:#7fe3c0}
-.hint{font-size:12px;color:#6b6688;text-align:center;margin-top:10px}
-/* ===== PC(와이드) 레이아웃 ===== */
-@media (min-width:820px){
-  .ph{width:min(1060px,95vw);height:min(744px,92vh);border-radius:20px}
-  .view{padding:30px 40px 40px}
-  .top{margin:6px 2px 8px;gap:15px}
-  .av{width:60px;height:60px}
-  .name{font-size:26px}
-  .sec{font-size:14px;margin:16px 4px 18px}
-  #mlist{display:grid;grid-template-columns:1fr 1fr;gap:13px}
-  #mlist .card{margin-bottom:0}
-  .card{padding:14px 16px}
-  .cc{width:64px;height:64px;border-radius:13px}
-  .ct{font-size:17px}.cs{font-size:13px;margin-top:3px}
-  .back{font-size:15px;margin-bottom:6px}
-  .album{padding:18px 22px;margin-bottom:16px;border-radius:20px}
-  .al{margin-bottom:15px;gap:10px}
-  .at{font-size:20px}.adate{font-size:13px}
-  .badge{font-size:12px;padding:3px 13px}
-  .strip{gap:16px;overflow-x:visible;flex-wrap:wrap}
-  .cv{width:108px}
-  .img{width:108px;height:108px;border-radius:16px}
-  .cv.m .img,.cv.play .img{outline-width:3px}
-  .tag{font-size:11px;padding:2px 9px;left:7px;top:7px}
-  .pp{font-size:30px}
-  .lab{font-size:13px;margin-top:9px}
-  .eq{padding-bottom:18px;gap:4px}.eq i{width:4px}
-  .hint{font-size:13px;margin-top:14px}
-}
-@media (max-width:440px){body{align-items:stretch}.ph{width:100%;height:100vh;height:100dvh;border-radius:0}}
+  @font-face{font-family:'Pretendard';font-style:normal;font-weight:400;font-display:swap;src:url('/fonts/Pretendard-Regular.ttf') format('truetype');}
+  @font-face{font-family:'Nanum JungShik';font-style:normal;font-weight:400;font-display:block;src:url('/fonts/NanumJungShik.subset.woff2') format('woff2'),url('/fonts/NanumJungShik.ttf') format('truetype');}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+<link rel="stylesheet" href="css/global.css?v=798">
+<style>
+  /* ===== 테스트 전용: 두 화면 슬라이드 무대 + 디스코그래피 줄 ===== */
+  html,body{margin:0;height:100%;background:#0b0916;overflow:hidden}
+  /* reveal 애니메이션(앱은 IntersectionObserver로 in-view 부여) 무력화 → 바로 보이게 */
+  .reveal{opacity:1!important;transform:none!important}
+  #stage{position:fixed;inset:0;overflow:hidden}
+  .screen{position:absolute;inset:0;overflow-y:auto;transition:transform .42s cubic-bezier(.4,0,.2,1)}
+  #alScreen{transform:translateX(100%)}
+  #stage.go #myScreen{transform:translateX(-26%)}
+  #stage.go #alScreen{transform:translateX(0)}
+  /* 좌상단 뒤로가기(앱과 비슷한 둥근 버튼) */
+  .tb{position:absolute;top:16px;left:16px;z-index:30;width:44px;height:44px;border-radius:50%;
+     background:rgba(18,16,28,.82);border:1px solid rgba(255,255,255,.14);color:#fff;font-size:24px;
+     display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px)}
+  .tb:active{transform:scale(.94)}
+  /* 앨범 페이지 헤더(작게) */
+  .disc-top{display:flex;align-items:center;gap:11px;padding:60px 16px 6px;max-width:700px;margin:0 auto}
+  .disc-top img{width:40px;height:40px;border-radius:50%;object-fit:cover;flex:0 0 auto}
+  .disc-top .dt-name{font-size:16px;font-weight:800;color:var(--text-primary)}
+  .disc-top .dt-sub{font-size:12px;color:var(--text-secondary)}
+  .disc-secthead{max-width:700px;margin:14px auto 4px;padding:0 16px;font-size:15px;font-weight:800;color:var(--text-primary);display:flex;align-items:center;gap:6px}
+  .disc-secthead i{color:var(--brand-color)}
+  .disc-hint{max-width:700px;margin:0 auto;padding:0 16px 10px;font-size:12px;color:var(--text-secondary)}
+  /* 디스코그래피: 앨범마다 [마스터+데모] 한 줄, 세로 누적 */
+  .disc-wrap{max-width:700px;margin:0 auto;padding:4px 16px 60px}
+  .disc-album{padding:14px;border-radius:16px;margin-bottom:14px;border:1.5px solid transparent;
+     background:var(--surface-color);transition:background .35s,border-color .35s}
+  .disc-album.cur{background:rgba(127,119,221,.16);border-color:rgba(127,119,221,.6)}
+  .disc-al-head{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}
+  .disc-al-title{font-size:16px;font-weight:800;color:var(--text-primary)}
+  .disc-al-date{font-size:12px;color:var(--text-secondary)}
+  .disc-here{margin-left:auto;font-size:11px;font-weight:800;color:#0b0916;background:#b5aef0;
+     padding:3px 11px;border-radius:999px;opacity:0;transition:opacity .35s}
+  .disc-album.cur .disc-here{opacity:1}
+  .disc-strip{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+  .disc-strip::-webkit-scrollbar{display:none}
+  .disc-cv{position:relative}
+  .disc-imgwrap{position:relative;width:132px;height:132px}
+  .disc-cv.is-master .atl-album-cover{outline:2px solid #fac775;outline-offset:1px}
+  .disc-tag{position:absolute;left:6px;top:6px;font-size:10px;font-weight:800;padding:2px 8px;
+     border-radius:999px;background:rgba(0,0,0,.6);color:#fff;z-index:2}
+  .disc-cv.is-master .disc-tag{background:#fac775;color:#3a2a00}
+  .disc-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;
+     font-size:30px;opacity:0;background:rgba(0,0,0,.32);border-radius:12px;transition:opacity .2s}
+  .disc-cv:hover .disc-play{opacity:1}
+  .eq{position:absolute;inset:0;display:none;align-items:flex-end;justify-content:center;gap:4px;
+     padding-bottom:20px;background:rgba(0,0,0,.42);border-radius:12px}
+  .eq i{width:4px;background:#fff;border-radius:1px;height:8px;animation:eq .8s ease-in-out infinite}
+  .eq i:nth-child(2){animation-delay:.18s}.eq i:nth-child(3){animation-delay:.36s}.eq i:nth-child(4){animation-delay:.54s}
+  @keyframes eq{0%,100%{height:8px}50%{height:26px}}
+  .disc-cv.play .eq{display:flex}.disc-cv.play .disc-play{opacity:0}
+  .disc-cv.play .atl-album-cover{outline:2px solid #1DB954!important;outline-offset:1px}
+  .disc-cv .atl-album-title{margin-top:7px}
 </style>
 </head>
 <body>
-<div class="ph">
-  <div class="view" id="mypage">
-    <div class="top"><div class="av"></div><div class="name">고은결</div></div>
-    <div class="sec"><i class="ti ti-music"></i> 음악 — 곡을 누르면 그 앨범으로 (최신순)</div>
-    <div id="mlist"></div>
-    <div class="hint">아무 곡이나 눌러보세요 →</div>
-  </div>
-  <div class="view" id="album">
-    <button class="back" onclick="back_()"><i class="ti ti-arrow-left"></i> 음악</button>
-    <div class="sec" style="margin-top:2px"><i class="ti ti-stack-2"></i> 고은결 · 앨범 — 누른 곡 줄로 스크롤됩니다</div>
-    <div id="discog"></div>
-  </div>
+<div id="stage">
+
+  <!-- ===================== 화면 1 : 마이페이지(현재 앱 그대로) ===================== -->
+  <section class="screen" id="myScreen">
+    <button class="tb" title="뒤로"><i class="ri-arrow-left-s-line"></i></button>
+    <div class="artist-canvas cosmic">
+      <div class="artist-bg-deco"></div>
+      <div class="sub-page artist-page">
+
+        <div class="artist-header-row reveal">
+          <div class="artist-strip">
+            <div class="artist-id">
+              <div class="artist-avatar-wrap">
+                <img src="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=300&h=300&fit=crop" class="artist-avatar" alt="뮤덕1호">
+              </div>
+              <div class="artist-id-text">
+                <div class="artist-name-row">
+                  <h1>뮤덕1호</h1>
+                  <button class="follow-btn-inline" type="button"><i class="ri-user-add-line"></i> 팔로우</button>
+                </div>
+                <div class="artist-follow-chips">
+                  <button class="follow-chip" type="button"><i class="ri-group-line"></i> 팔로워 <strong>0</strong></button>
+                  <button class="follow-chip" type="button"><i class="ri-user-3-line"></i> 팔로잉 <strong>0</strong></button>
+                  <button class="follow-chip follow-chip-msg follow-chip-msg-dm" type="button"><i class="ri-mail-send-fill"></i> 메시지</button>
+                </div>
+                <div class="artist-bio-inline"><span class="artist-bio-text">덕질: 2016.07.27~Present</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="artist-content-tabs reveal" style="margin-top:28px;">
+          <button type="button" class="content-tab active" data-content-tab="music"><i class="ri-music-2-fill"></i> 음악</button>
+        </div>
+
+        <div class="artist-content-pane" data-content-tab="music">
+          <div class="atl-page">
+
+            <!-- 최신 데모 hero -->
+            <div class="atl-section-head" style="margin-top:18px;">
+              <div class="atl-section-title"><i class="ri-fire-fill" style="color:#ff6b6b;"></i> 최신 데모</div>
+            </div>
+            <div class="atl-hero reveal" onclick="open_(0)">
+              <img class="atl-hero-cover" id="heroCover" src="" alt="">
+              <div class="atl-hero-info">
+                <span class="atl-hero-badge">I Am Changing</span>
+                <div class="atl-hero-title">I Am Changing</div>
+                <div class="atl-hero-sub">뮤덕1호</div>
+                <div class="atl-hero-actions">
+                  <button class="atl-hero-play" type="button" onclick="event.stopPropagation();" aria-label="재생"><i class="ri-play-fill"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 음악(앨범 카드 선반) — 누르면 앨범 페이지로 -->
+            <div class="atl-section-head">
+              <div class="atl-section-title"><i class="ri-album-fill" style="color:var(--brand-color);"></i> 음악</div>
+            </div>
+            <div class="atl-albums reveal" id="shelf"></div>
+
+            <!-- 주절주절 -->
+            <div class="atl-divider"></div>
+            <div class="atl-feed-head"><i class="ri-chat-smile-2-line" style="color:var(--brand-color);"></i> 주절주절</div>
+            <div class="atl-feed-empty">아직 주절주절이 없어요.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 화면 2 : 앨범 페이지(전체 디스코그래피) ===================== -->
+  <section class="screen" id="alScreen">
+    <button class="tb" onclick="back_()" title="뒤로"><i class="ri-arrow-left-s-line"></i></button>
+    <div class="artist-canvas cosmic">
+      <div class="artist-bg-deco"></div>
+      <div class="sub-page artist-page" style="padding-top:0;">
+        <div class="disc-top">
+          <img src="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=120&h=120&fit=crop" alt="뮤덕1호">
+          <div><div class="dt-name">뮤덕1호</div><div class="dt-sub">전체 음악 · 최신순</div></div>
+        </div>
+        <div class="disc-secthead"><i class="ri-album-fill"></i> 음악</div>
+        <div class="disc-hint">마이페이지에서 누른 곡 줄로 스크롤됩니다 · 커버를 누르면 재생</div>
+        <div class="disc-wrap" id="discog"></div>
+      </div>
+    </div>
+  </section>
+
 </div>
+
 <script>
-var DEMO_C=[['#d4537e','#534ab7'],['#1d9e75','#0f2a3a'],['#378add','#26102a'],['#ef9f27','#5a2a10']];
-var DATA=[
-  {t:'한여름 밤',  d:'2026.06.18', rel:'발매',   demos:3, c:['#ef9f27','#993c1d']},
-  {t:'봄밤 드라이브', d:'2026.05.20', rel:'발매',   demos:2, c:['#7f77dd','#1d9e75']},
-  {t:'고1',       d:'2026.04.10', rel:'발매',   demos:1, c:['#ba7517','#4a1b0c']},
-  {t:'새벽 세시',   d:'2026.03.02', rel:'미발매', demos:3, c:['#378add','#0b1230']},
-  {t:'비 오는 날',  d:'2026.02.14', rel:'발매',   demos:2, c:['#d4537e','#3a1530']},
-  {t:'첫 곡',      d:'2026.01.05', rel:'발매',   demos:1, c:['#1d9e75','#0f2a3a']},
-  {t:'겨울 편지',   d:'2025.12.10', rel:'미발매', demos:2, c:['#9b6dff','#2a1850']}
+// Coming Soon 커버 — 실제 앱과 동일한 SVG
+var CS='data:image/svg+xml;utf8,'+encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">'+
+  '<rect width="500" height="500" fill="#FFF59D"/>'+
+  '<rect x="200" y="0" width="100" height="22" fill="rgba(255,255,255,0.55)"/>'+
+  '<g transform="rotate(-3 250 260)" font-family="Comic Sans MS, Gaegu, cursive" font-weight="800" fill="#3a2a00" text-anchor="middle">'+
+  '<text x="250" y="250" font-size="62">Coming</text><text x="250" y="322" font-size="62">Soon...</text></g></svg>');
+
+// 뮤덕1호의 음악(최신순). master=정규발매 여부, demos=데모 수. (현재 앱처럼 커버는 전부 Coming Soon)
+var ALBUMS=[
+  {t:'I Am Changing', date:'2024.05', master:false, demos:1},
+  {t:'밤하늘 한 조각',  date:'2024.02', master:true,  demos:2},
+  {t:'첫 무대',        date:'2023.10', master:true,  demos:1},
+  {t:'연습실에서',      date:'2023.07', master:false, demos:3},
+  {t:'데뷔 전야',       date:'2023.04', master:true,  demos:2}
 ];
-function grad(c){return 'linear-gradient(140deg,'+c[0]+','+c[1]+')';}
+
+function shelfMeta(a){ return a.master ? (a.demos? '정규 · 데모 '+a.demos : '정규') : '데모 '+a.demos+'개'; }
+function cvHtml(master,tag,label,meta){
+  return '<div class="atl-album disc-cv'+(master?' is-master':'')+'" onclick="play_(this)">'+
+    '<div class="disc-imgwrap"><img class="atl-album-cover" src="'+CS+'">'+
+    '<span class="disc-tag">'+tag+'</span>'+
+    '<span class="disc-play"><i class="ri-play-fill"></i></span>'+
+    '<span class="eq"><i></i><i></i><i></i><i></i></span></div>'+
+    '<div class="atl-album-title">'+label+'</div><div class="atl-album-meta">'+meta+'</div></div>';
+}
 function build(){
-  var list='', dis='';
-  DATA.forEach(function(a,i){
-    list+='<div class="card" onclick="open_('+i+')">'+
-      '<div class="cc" style="background:'+grad(a.c)+'"></div>'+
-      '<div><div class="ct">'+a.t+'</div><div class="cs">'+a.d+' · 데모 '+a.demos+'개 · '+a.rel+'</div></div></div>';
-    var covers='<div class="cv m" onclick="play_(this)"><div class="img" style="background:'+grad(a.c)+'">'+
-      '<span class="tag">MASTER</span><span class="pp"><i class="ti ti-player-play"></i></span>'+
-      '<span class="eq"><i></i><i></i><i></i><i></i></span></div><div class="lab">'+a.rel+'</div></div>';
-    for(var n=a.demos;n>=1;n--){
-      covers+='<div class="cv" onclick="play_(this)"><div class="img" style="background:'+grad(DEMO_C[(n-1)%DEMO_C.length])+'">'+
-        '<span class="tag">D'+n+'</span><span class="pp"><i class="ti ti-player-play"></i></span>'+
-        '<span class="eq"><i></i><i></i><i></i><i></i></span></div><div class="lab">데모 '+n+'</div></div>';
-    }
-    dis+='<div class="album" id="A'+i+'"><div class="al"><span class="at">'+a.t+'</span>'+
-      '<span class="adate">'+a.d+'</span><span class="badge">여기</span></div>'+
-      '<div class="strip">'+covers+'</div></div>';
+  document.getElementById('heroCover').src=CS;
+  var shelf='', dis='';
+  ALBUMS.forEach(function(a,i){
+    shelf+='<div class="atl-album" onclick="open_('+i+')"><img class="atl-album-cover" src="'+CS+'" loading="lazy">'+
+      '<div class="atl-album-title">'+a.t+'</div><div class="atl-album-meta">'+shelfMeta(a)+'</div></div>';
+    var covers='';
+    if(a.master) covers+=cvHtml(true,'MASTER','마스터','정규');
+    for(var n=a.demos;n>=1;n--) covers+=cvHtml(false,'D'+n,'데모 '+n,'');
+    dis+='<div class="disc-album" id="A'+i+'"><div class="disc-al-head">'+
+      '<span class="disc-al-title">'+a.t+'</span><span class="disc-al-date">'+a.date+'</span>'+
+      '<span class="disc-here">여기</span></div><div class="disc-strip">'+covers+'</div></div>';
   });
-  document.getElementById('mlist').innerHTML=list;
+  document.getElementById('shelf').innerHTML=shelf;
   document.getElementById('discog').innerHTML=dis;
 }
 build();
+
 function open_(i){
-  var al=document.getElementById('album');
-  document.getElementById('mypage').style.transform='translateX(-100%)';
-  al.style.transform='translateX(0)';
-  document.querySelectorAll('.album').forEach(function(a){a.classList.remove('cur')});
+  document.getElementById('stage').classList.add('go');
+  var al=document.getElementById('alScreen');
+  [].forEach.call(document.querySelectorAll('.disc-album'),function(d){d.classList.remove('cur')});
   var t=document.getElementById('A'+i);
-  if(t){t.classList.add('cur'); setTimeout(function(){ al.scrollTo({top:Math.max(0,t.offsetTop-16),behavior:'smooth'}); },430);}
+  if(t){
+    t.classList.add('cur');
+    setTimeout(function(){
+      var top=t.getBoundingClientRect().top - al.getBoundingClientRect().top + al.scrollTop - 66;
+      al.scrollTo({top:Math.max(0,top),behavior:'smooth'});
+    },460);
+  }
 }
-function back_(){
-  document.getElementById('mypage').style.transform='translateX(0)';
-  document.getElementById('album').style.transform='translateX(100%)';
-}
+function back_(){ document.getElementById('stage').classList.remove('go'); }
 function play_(el){
-  document.querySelectorAll('.cv.play').forEach(function(c){c.classList.remove('play')});
+  [].forEach.call(document.querySelectorAll('.disc-cv.play'),function(c){c.classList.remove('play')});
   el.classList.add('play');
 }
 </script>
