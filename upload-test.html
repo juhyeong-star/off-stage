@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>업로드 위저드 테스트 · Off-Stage</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.24.0/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#06050d;min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;font-family:'Pretendard',sans-serif;-webkit-font-smoothing:antialiased}
+.uw-phone{width:372px;height:760px;background:#0b0916;border-radius:30px;overflow:hidden;position:relative;color:#f3f0fb;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.uw-step{position:absolute;inset:0;overflow-y:auto;padding:24px 18px 28px;display:none}
+.uw-step.on{display:block}
+#s1.on{display:flex;flex-direction:column}
+.uw-back{display:inline-flex;align-items:center;gap:5px;font-size:14px;color:#cdc7e4;cursor:pointer;background:none;border:none;font-family:inherit;font-weight:600;padding:2px;margin-bottom:14px}
+.uw-h{font-size:23px;font-weight:800;margin:0}
+.uw-sub{font-size:13px;color:#9a93b8;margin:7px 0 18px}
+.kgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1;min-height:0}
+.kbtn{position:relative;border-radius:22px;border:2px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;cursor:pointer;text-align:center;padding:18px 10px;transition:transform .12s,background .2s}
+.kbtn:active{transform:scale(.97)}
+.krel{background:rgba(250,199,117,.10);border-color:rgba(250,199,117,.45)}.krel:hover{background:rgba(250,199,117,.18)}
+.kdemo{background:rgba(127,119,221,.12);border-color:rgba(127,119,221,.5)}.kdemo:hover{background:rgba(127,119,221,.22)}
+.knum{position:absolute;top:13px;left:14px;font-size:13px;font-weight:800;width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.krel .knum{background:#fac775;color:#3a2a00}.kdemo .knum{background:#b5aef0;color:#1a1530}
+.kic{width:80px;height:80px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:42px}
+.krel .kic{background:rgba(250,199,117,.2);color:#fac775}.kdemo .kic{background:rgba(127,119,221,.25);color:#cbc6f5}
+.kt{font-size:24px;font-weight:800}.ken{font-size:11px;color:#857ea8;font-weight:700;margin-top:-8px;letter-spacing:1px}
+.kd{font-size:12.5px;color:#cdc7e4;line-height:1.5}
+.uw-choice{display:flex;flex-direction:column;gap:13px}
+.ucc{display:flex;align-items:center;gap:14px;padding:19px 17px;border-radius:17px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);cursor:pointer;transition:background .2s,border-color .2s}
+.ucc:hover{background:rgba(127,119,221,.16);border-color:rgba(127,119,221,.5)}
+.ucc .i{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:23px;background:rgba(127,119,221,.25);color:#cbc6f5;flex:0 0 auto}
+.ucc .t{font-size:16px;font-weight:700}.ucc .d{font-size:12px;color:#9a93b8;margin-top:2px}
+.uw-field{margin-bottom:16px}
+.uw-lab{font-size:13.5px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.req{font-size:11px;font-weight:700;color:#ff8a8a;background:rgba(255,90,90,.14);padding:1px 8px;border-radius:999px}
+.opt{font-size:11px;color:#9a93b8}
+.drop{display:flex;align-items:center;gap:12px;padding:15px;border-radius:14px;border:1.5px dashed rgba(255,255,255,.22);cursor:pointer;color:#cdc7e4;transition:border-color .2s,background .2s}
+.drop:hover{border-color:rgba(127,119,221,.6);background:rgba(127,119,221,.08)}
+.drop.done{border-style:solid;border-color:#1d9e75;background:rgba(29,158,117,.12);color:#a9ecd3}
+.drop .di{font-size:22px}
+.ta,.in{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:12px;color:#f3f0fb;font-family:inherit;font-size:14px;padding:11px 13px}
+.ta{resize:none}.in:focus,.ta:focus{outline:none;border-color:rgba(127,119,221,.6)}
+.chk{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13.5px;font-weight:600;color:#cdc7e4;user-select:none}
+.box{width:21px;height:21px;border-radius:6px;border:1.5px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font-size:14px;color:#0b0916}
+.box i{display:none}.chk.on .box{background:#1d9e75;border-color:#1d9e75}.chk.on .box i{display:block}
+.lyr{max-height:0;overflow:hidden;transition:max-height .3s ease}.lyr.open{max-height:170px;margin-top:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;background:rgba(127,119,221,.22);color:#d7d3f7;padding:6px 7px 6px 12px;border-radius:999px}
+.chip b{cursor:pointer;opacity:.7;font-size:15px}
+.tagrow{display:flex;gap:8px}.tagrow .in{flex:1}
+.add{flex:0 0 auto;background:rgba(255,255,255,.1);border:none;color:#f3f0fb;border-radius:12px;font-family:inherit;font-weight:700;font-size:14px;padding:0 16px;cursor:pointer}
+.prevwrap{height:196px;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,rgba(127,119,221,.10),transparent 70%);border-radius:16px;margin-bottom:10px;position:relative}
+.pcap{position:absolute;top:9px;left:0;right:0;text-align:center;font-size:11px;color:#7d769e;font-weight:700;letter-spacing:.5px}
+.prev{display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;background:#FF4081;transition:width .25s,height .25s,border-radius .25s,background .25s;box-shadow:0 12px 30px rgba(0,0,0,.4)}
+.prev .pt{font-weight:700;font-size:15px;line-height:1.45;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25);word-break:keep-all}
+.prev .pt span{display:block}
+.shapes{display:flex;gap:10px;overflow-x:auto;padding:2px 0 7px}
+.sh{flex:0 0 auto;width:48px;height:48px;position:relative;cursor:pointer}
+.sh .sp{position:absolute;inset:0;background:#9a93b8;transition:background .2s}.sh:hover .sp{background:#cdc7e4}.sh.sel .sp{background:#7f77dd}
+.sh.sel{outline:2px solid #1d9e75;outline-offset:3px;border-radius:5px}
+.sh .ck{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:#fff;font-size:20px;text-shadow:0 1px 3px rgba(0,0,0,.6)}.sh.sel .ck{display:flex}
+.s-circle{border-radius:50%}.s-oval{border-radius:50%;top:9px;bottom:9px}.s-rect{border-radius:10px}.s-wide{border-radius:6px;top:12px;bottom:12px}.s-pill{border-radius:999px;top:14px;bottom:14px}.s-hex{clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)}
+.cols{display:flex;gap:10px;margin-top:7px}
+.col{width:31px;height:31px;border-radius:50%;cursor:pointer;border:2px solid transparent}.col.sel{border-color:#fff;box-shadow:0 0 0 2px #0b0916,0 0 0 4px #1d9e75}
+.go{width:100%;margin-top:8px;background:#1d9e75;color:#fff;border:none;border-radius:14px;font-family:inherit;font-weight:800;font-size:16px;padding:14px;cursor:pointer}
+.note{font-size:13px;color:#9a93b8;background:rgba(255,255,255,.05);border-radius:13px;padding:15px;line-height:1.65}
+.tagbar{position:fixed;top:0;left:0;right:0;text-align:center;font-size:11px;color:#6b6688;padding:5px;background:#06050d}
+@media (max-width:440px){body{align-items:stretch}.uw-phone{width:100%;height:100vh;height:100dvh;border-radius:0}}
+</style>
+</head>
+<body>
+<div class="uw-phone">
+
+  <div class="uw-step on" id="s1">
+    <p class="uw-h" style="text-align:center;margin-top:6px">무엇을 올릴까요?</p>
+    <p class="uw-sub" style="text-align:center">탭해서 선택하세요</p>
+    <div class="kgrid">
+      <div class="kbtn krel" onclick="go('rel')"><span class="knum">1</span><div class="kic"><i class="ti ti-disc"></i></div><div class="kt">발매</div><div class="ken">RELEASE</div><div class="kd">완성된 곡<br>자세히</div></div>
+      <div class="kbtn kdemo" onclick="go('s2')"><span class="knum">2</span><div class="kic"><i class="ti ti-microphone-2"></i></div><div class="kt">데모</div><div class="ken">DEMO</div><div class="kd">작업 중인 곡<br>가볍게</div></div>
+    </div>
+  </div>
+
+  <div class="uw-step" id="rel">
+    <button class="uw-back" onclick="go('s1')"><i class="ti ti-arrow-left"></i> 뒤로</button>
+    <p class="uw-h">발매</p><p class="uw-sub">완성본은 자세히 받아요</p>
+    <div class="note">데모 항목 + <b style="color:#f3f0fb">제목 · 커버(권장) · 가사(필수) · 발매일 · 유통 아티스트명 · 콜라보</b>까지 받는 풀 폼. (이 테스트는 데모 흐름 위주 — 발매는 자세히 그대로.)</div>
+  </div>
+
+  <div class="uw-step" id="s2">
+    <button class="uw-back" onclick="go('s1')"><i class="ti ti-arrow-left"></i> 뒤로</button>
+    <p class="uw-h">데모 — 어떤 거?</p><p class="uw-sub">새로 시작인가요, 이어서인가요?</p>
+    <div class="uw-choice">
+      <div class="ucc" onclick="go('form')"><div class="i"><i class="ti ti-plus"></i></div><div><div class="t">새 데모</div><div class="d">처음 올리는 곡</div></div></div>
+      <div class="ucc" onclick="go('wip')"><div class="i"><i class="ti ti-stack-2"></i></div><div><div class="t">작업중인 데모</div><div class="d">이미 있는 곡에 다음 버전 추가</div></div></div>
+    </div>
+  </div>
+
+  <div class="uw-step" id="wip">
+    <button class="uw-back" onclick="go('s2')"><i class="ti ti-arrow-left"></i> 뒤로</button>
+    <p class="uw-h">작업중인 데모</p><p class="uw-sub">어느 곡에 이어서?</p>
+    <div class="note">올린 곡 목록에서 고르면 <b style="color:#f3f0fb">오디오만</b> 툭 올려 다음 데모로. (곡 페이지 "+ 데모" 버튼으로도 가능.)</div>
+  </div>
+
+  <div class="uw-step" id="form">
+    <button class="uw-back" onclick="go('s2')"><i class="ti ti-arrow-left"></i> 뒤로</button>
+    <p class="uw-h">새 데모</p>
+    <div class="uw-field"><div class="uw-lab"><i class="ti ti-photo"></i> 커버 <span class="opt">선택</span></div><div class="drop" onclick="file(this,'cover.jpg')"><span class="di"><i class="ti ti-upload"></i></span><span>탭해서 이미지 (없으면 색 자켓)</span></div></div>
+    <div class="uw-field"><div class="uw-lab"><i class="ti ti-music"></i> 오디오 <span class="req">필수</span></div><div class="drop" onclick="file(this,'demo.mp3')"><span class="di"><i class="ti ti-file-music"></i></span><span>탭해서 오디오 · 50MB</span></div></div>
+    <div class="uw-field"><div class="uw-lab">곡 소개 <span class="req">필수</span></div><textarea class="ta" rows="2" placeholder="이 곡 이야기를 짧게"></textarea></div>
+    <div class="uw-field"><label class="chk" onclick="lyr(this)"><span class="box"><i class="ti ti-check"></i></span> 가사도 쓸게요</label><div class="lyr"><textarea class="ta" rows="4" placeholder="가사…" style="margin-top:10px"></textarea></div></div>
+    <div class="uw-field"><div class="uw-lab"><i class="ti ti-hash"></i> 태그 <span class="req">필수</span></div><div class="chips" id="chips"><span class="chip">발라드 <b onclick="this.parentNode.remove()">×</b></span><span class="chip">고1 <b onclick="this.parentNode.remove()">×</b></span></div><div class="tagrow"><input class="in" id="tagin" placeholder="태그 입력 후 추가" onkeydown="if(event.key==='Enter'){event.preventDefault();tag()}"><button class="add" onclick="tag()">추가</button></div></div>
+    <div class="uw-field">
+      <div class="uw-lab"><i class="ti ti-shape"></i> 도형 낙서 — 발견에 이렇게 떠요</div>
+      <div class="prevwrap"><span class="pcap">미리보기</span><div class="prev" id="prev" style="width:154px;height:154px;border-radius:50%"><div class="pt"><span id="l1">#드림걸즈</span><span id="l2">#뮤덕들 들어오세요</span><span id="l3">#뮤덕 10년차</span></div></div></div>
+      <input class="in" style="margin-bottom:8px" value="#드림걸즈" maxlength="20" oninput="setL('l1',this.value)" placeholder="1줄">
+      <input class="in" style="margin-bottom:8px" value="#뮤덕들 들어오세요" maxlength="20" oninput="setL('l2',this.value)" placeholder="2줄">
+      <input class="in" style="margin-bottom:11px" value="#뮤덕 10년차" maxlength="20" oninput="setL('l3',this.value)" placeholder="3줄">
+      <div class="shapes">
+        <div class="sh sel" onclick="shp(this,'circle')"><span class="sp s-circle"></span><span class="ck"><i class="ti ti-check"></i></span></div>
+        <div class="sh" onclick="shp(this,'oval')"><span class="sp s-oval"></span><span class="ck"><i class="ti ti-check"></i></span></div>
+        <div class="sh" onclick="shp(this,'rect')"><span class="sp s-rect"></span><span class="ck"><i class="ti ti-check"></i></span></div>
+        <div class="sh" onclick="shp(this,'wide')"><span class="sp s-wide"></span><span class="ck"><i class="ti ti-check"></i></span></div>
+        <div class="sh" onclick="shp(this,'pill')"><span class="sp s-pill"></span><span class="ck"><i class="ti ti-check"></i></span></div>
+        <div class="sh" onclick="shp(this,'hex')"><span class="sp s-hex"></span><span class="ck"><i class="ti ti-check"></i></span></div>
+      </div>
+      <div class="cols">
+        <span class="col sel" style="background:#FF4081" onclick="clr(this,'#FF4081')"></span>
+        <span class="col" style="background:#FFC107" onclick="clr(this,'#FFC107')"></span>
+        <span class="col" style="background:#7F77DD" onclick="clr(this,'#7F77DD')"></span>
+        <span class="col" style="background:#1D9E75" onclick="clr(this,'#1D9E75')"></span>
+        <span class="col" style="background:#378ADD" onclick="clr(this,'#378ADD')"></span>
+        <span class="col" style="background:#FF6B6B" onclick="clr(this,'#FF6B6B')"></span>
+      </div>
+    </div>
+    <button class="go" onclick="alert('테스트 화면이에요 — 실제 업로드는 안 돼요. 흐름만 보세요!')"><i class="ti ti-arrow-up"></i> 데모 올리기</button>
+  </div>
+
+</div>
+<script>
+var SH={circle:{w:154,h:154,r:'50%',c:'none'},oval:{w:178,h:124,r:'50%',c:'none'},rect:{w:154,h:154,r:'18px',c:'none'},wide:{w:190,h:122,r:'12px',c:'none'},pill:{w:198,h:108,r:'999px',c:'none'},hex:{w:166,h:156,r:'0',c:'polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)'}};
+function go(id){document.querySelectorAll('.uw-step').forEach(function(s){s.classList.remove('on')});var t=document.getElementById(id);if(t){t.classList.add('on');t.scrollTop=0}}
+function file(el,n){el.classList.add('done');el.innerHTML='<span class="di"><i class="ti ti-circle-check"></i></span><span>'+n+' · 선택됨</span>'}
+function lyr(el){el.classList.toggle('on');var b=el.parentNode.querySelector('.lyr');if(b)b.classList.toggle('open')}
+function tag(){var i=document.getElementById('tagin');var v=(i.value||'').trim().replace(/^#/,'');if(!v)return;var c=document.createElement('span');c.className='chip';c.innerHTML=v+' <b>×</b>';c.querySelector('b').onclick=function(){c.remove()};document.getElementById('chips').appendChild(c);i.value=''}
+function setL(id,v){var e=document.getElementById(id);if(e)e.textContent=v}
+function shp(el,k){document.querySelectorAll('.sh').forEach(function(s){s.classList.remove('sel')});el.classList.add('sel');var s=SH[k],p=document.getElementById('prev');p.style.width=s.w+'px';p.style.height=s.h+'px';p.style.borderRadius=s.r;p.style.clipPath=s.c}
+function clr(el,h){document.querySelectorAll('.col').forEach(function(c){c.classList.remove('sel')});el.classList.add('sel');document.getElementById('prev').style.background=h}
+</script>
+</body>
+</html>
