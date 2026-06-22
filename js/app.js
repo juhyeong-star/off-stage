@@ -8741,16 +8741,16 @@ function renderUpload() {
           <label>${_i18n('곡 제목', 'Title')} <span id="up-title-hint" style="color:var(--text-secondary); font-weight:normal;"></span></label>
           <input type="text" class="form-control" id="up-title" required placeholder="${_t('예: 한밤의 드라이브', 'e.g. Midnight Drive')}">
         </div>
-        <div class="form-group">
+        <div class="form-group master-only">
           <label>${_i18n('버전 라벨', 'Version label')}</label>
           <input type="text" class="form-control" id="up-version-label" value="Final" placeholder="${_t('예: Final, Demo 1, Pre-master', 'e.g. Final, Demo 1, Pre-master')}">
-          <div class="form-note">${_i18n('카드에 표시될 이름. 자동으로 채워지지만 자유롭게 수정 가능.', 'Card display name — auto-filled but editable.')}</div>
+          <div class="form-note">${_i18n('카드에 표시될 이름. 데모는 Demo N 으로 자동 — 발매만 편집.', 'Card name — demos auto Demo N; edit for releases.')}</div>
         </div>
 
-        <div class="form-group master-only">
+        <div class="form-group">
           <label>${_i18n('커버 이미지 (선택)', 'Cover image (optional)')}</label>
           <input type="file" class="form-control" id="up-cover" accept="image/*">
-          <div class="form-note">${_i18n('"파일 선택" 으로 이미지 첨부', 'Click "Choose file" to attach an image')}</div>
+          <div class="form-note">${_i18n('안 넣으면 Coming Soon 또는 곡 색 자켓으로 떠요', "Skip it — shows a Coming Soon / color jacket")}</div>
         </div>
         <div class="form-group">
           <label>${_i18n('오디오 파일', 'Audio file')} <span id="up-audio-size" style="color:var(--text-secondary); font-weight:normal;"></span></label>
@@ -9125,17 +9125,15 @@ function renderUpload() {
 
       setStatus('오디오 업로드 중…');
       audioUrl = await window.Tracks.uploadFile(audioFile, 'audio');
-      // 데모는 'Coming Soon' 포스트잇 커버 고정. 마스터일 때만 커버 파일/기존 프로젝트 커버 사용.
-      if (!isFinal) {
-        coverUrl = COMING_SOON_COVER;
+      // 커버는 데모·발매 모두 '선택'. 올리면 그걸 쓰고, 없으면 기존 프로젝트 커버 → 둘 다 없으면
+      // Coming Soon. (예전엔 데모=무조건 Coming Soon, 발매=업로드 스톡사진 기본 — 사용자 요청으로 통일)
+      if (coverFile) {
+        setStatus('커버 업로드 중…');
+        coverUrl = await window.Tracks.uploadFile(coverFile, 'covers');
+      } else if (existingProject && existingProject.cover && existingProject.cover !== COMING_SOON_COVER) {
+        coverUrl = existingProject.cover;
       } else {
-        coverUrl = 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=500';
-        if (coverFile) {
-          setStatus('커버 업로드 중…');
-          coverUrl = await window.Tracks.uploadFile(coverFile, 'covers');
-        } else if (existingProject && existingProject.cover) {
-          coverUrl = existingProject.cover;
-        }
+        coverUrl = COMING_SOON_COVER;
       }
 
       const tagsRaw = document.getElementById('up-tags').value || '';
