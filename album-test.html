@@ -53,10 +53,14 @@
   /* 앱과 동일: .atl-albums 가로 필름스트립(132px 모바일 / 150px PC) 그대로 사용 */
   .disc-strip{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:none}
   .disc-strip::-webkit-scrollbar{display:none}
-  .disc-cv{position:relative}
-  /* 커버 래퍼는 고정폭 없이 .atl-album-cover(앱 사이즈) 에 맞춰 줄어듦 → PC 150 / 모바일 132 그대로 */
-  .disc-imgwrap{position:relative;display:block;width:-moz-fit-content;width:fit-content}
-  .disc-imgwrap .atl-album-cover{display:block}
+  /* 커버 = 앨범 상세페이지 커버 크기로 크게 (모바일 188 / PC 200) — 한눈에 커보이게 */
+  .disc-cv{position:relative;width:188px}
+  .disc-imgwrap{position:relative;display:block;width:188px;height:188px}
+  .disc-imgwrap .atl-album-cover{display:block;width:188px;height:188px}
+  @media (min-width:820px){
+    .disc-cv{width:200px}
+    .disc-imgwrap, .disc-imgwrap .atl-album-cover{width:200px;height:200px}
+  }
   .disc-cv.is-master .atl-album-cover{outline:2px solid #fac775;outline-offset:1px}
   .disc-tag{position:absolute;left:6px;top:6px;font-size:10px;font-weight:800;padding:2px 8px;
      border-radius:999px;background:rgba(0,0,0,.6);color:#fff;z-index:2}
