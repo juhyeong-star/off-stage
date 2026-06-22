@@ -32,15 +32,15 @@
      display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px)}
   .tb:active{transform:scale(.94)}
   /* 앨범 페이지 헤더(작게) */
-  .disc-top{display:flex;align-items:center;gap:11px;padding:60px 16px 6px;max-width:700px;margin:0 auto}
+  .disc-top{display:flex;align-items:center;gap:11px;padding:60px 16px 6px;max-width:1040px;margin:0 auto}
   .disc-top img{width:40px;height:40px;border-radius:50%;object-fit:cover;flex:0 0 auto}
   .disc-top .dt-name{font-size:16px;font-weight:800;color:var(--text-primary)}
   .disc-top .dt-sub{font-size:12px;color:var(--text-secondary)}
-  .disc-secthead{max-width:700px;margin:14px auto 4px;padding:0 16px;font-size:15px;font-weight:800;color:var(--text-primary);display:flex;align-items:center;gap:6px}
+  .disc-secthead{max-width:1040px;margin:14px auto 4px;padding:0 16px;font-size:15px;font-weight:800;color:var(--text-primary);display:flex;align-items:center;gap:6px}
   .disc-secthead i{color:var(--brand-color)}
-  .disc-hint{max-width:700px;margin:0 auto;padding:0 16px 10px;font-size:12px;color:var(--text-secondary)}
+  .disc-hint{max-width:1040px;margin:0 auto;padding:0 16px 10px;font-size:12px;color:var(--text-secondary)}
   /* 디스코그래피: 앨범마다 [마스터+데모] 한 줄, 세로 누적 */
-  .disc-wrap{max-width:700px;margin:0 auto;padding:4px 16px 60px}
+  .disc-wrap{max-width:1040px;margin:0 auto;padding:4px 16px 60px}
   .disc-album{padding:14px;border-radius:16px;margin-bottom:14px;border:1.5px solid transparent;
      background:var(--surface-color);transition:background .35s,border-color .35s}
   .disc-album.cur{background:rgba(127,119,221,.16);border-color:rgba(127,119,221,.6)}
@@ -50,32 +50,39 @@
   .disc-here{margin-left:auto;font-size:11px;font-weight:800;color:#0b0916;background:#b5aef0;
      padding:3px 11px;border-radius:999px;opacity:0;transition:opacity .35s}
   .disc-album.cur .disc-here{opacity:1}
-  /* 앱과 동일: .atl-albums 가로 필름스트립(132px 모바일 / 150px PC) 그대로 사용 */
-  .disc-strip{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:none}
+  /* 앨범 한 줄 = [마스터 정사각 커버] + [노란 데모 카드…] 가로, 앨범은 아래로 쌓임 */
+  .disc-strip{display:flex;gap:14px;align-items:flex-start;overflow-x:auto;padding:4px 2px 10px;scrollbar-width:none}
   .disc-strip::-webkit-scrollbar{display:none}
-  /* 커버 = 앨범 상세페이지 커버 크기로 크게 (모바일 188 / PC 200) — 한눈에 커보이게 */
-  .disc-cv{position:relative;width:188px}
-  .disc-imgwrap{position:relative;display:block;width:188px;height:188px}
-  .disc-imgwrap .atl-album-cover{display:block;width:188px;height:188px}
+  /* 마스터 = 정사각 Coming Soon 커버(포스트잇), 높이=데모카드 높이 */
+  .disc-master{flex:0 0 auto;position:relative;width:169px;height:169px;border:1.5px solid #111;border-radius:2px;
+     box-shadow:2px 2px 0 #111;background:#FFF59D;overflow:hidden;cursor:pointer}
+  .disc-master img{width:100%;height:100%;object-fit:cover;display:block}
+  .disc-mchip{position:absolute;left:7px;top:7px;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;
+     background:#fac775;color:#3a2a00;z-index:2}
+  .disc-mchip.off{background:rgba(0,0,0,.62);color:#fff}
+  /* 데모 = 앱 노란 데모카드 모양을 전용 클래스로 직접 재현(앱 .demo-card 캐스케이드 회피) */
+  .disc-demo{flex:0 0 300px;width:300px;height:170px;position:relative;display:flex;flex-direction:column;
+     background:#FFE500;border:1.5px solid #111;border-radius:2px;box-shadow:2px 2px 0 #111;
+     padding:13px 16px;color:#111;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s}
+  .disc-demo:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 #111}
+  .disc-dtop{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+  .disc-dtag{font:800 17px 'Inter',sans-serif;color:#B5575A;letter-spacing:.3px;text-transform:uppercase;line-height:1}
+  .disc-ddate{font:600 11px 'Inter',sans-serif;color:#111;opacity:.5;white-space:nowrap}
+  .disc-dtitle{font:700 17px 'Pretendard',sans-serif;color:#111;line-height:1.3;
+     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .disc-dfoot{margin-top:auto;text-align:right}
+  .disc-dmore{font:700 12.5px 'Inter',sans-serif;color:rgba(17,17,17,.5)}
   @media (min-width:820px){
-    .disc-cv{width:200px}
-    .disc-imgwrap, .disc-imgwrap .atl-album-cover{width:200px;height:200px}
+    .disc-master{width:203px;height:203px}
+    .disc-demo{flex-basis:360px;width:360px;height:203px}
   }
-  .disc-cv.is-master .atl-album-cover{outline:2px solid #fac775;outline-offset:1px}
-  .disc-tag{position:absolute;left:6px;top:6px;font-size:10px;font-weight:800;padding:2px 8px;
-     border-radius:999px;background:rgba(0,0,0,.6);color:#fff;z-index:2}
-  .disc-cv.is-master .disc-tag{background:#fac775;color:#3a2a00}
-  .disc-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;
-     font-size:30px;opacity:0;background:rgba(0,0,0,.32);border-radius:12px;transition:opacity .2s}
-  .disc-cv:hover .disc-play{opacity:1}
-  .eq{position:absolute;inset:0;display:none;align-items:flex-end;justify-content:center;gap:4px;
-     padding-bottom:20px;background:rgba(0,0,0,.42);border-radius:12px}
-  .eq i{width:4px;background:#fff;border-radius:1px;height:8px;animation:eq .8s ease-in-out infinite}
-  .eq i:nth-child(2){animation-delay:.18s}.eq i:nth-child(3){animation-delay:.36s}.eq i:nth-child(4){animation-delay:.54s}
-  @keyframes eq{0%,100%{height:8px}50%{height:26px}}
-  .disc-cv.play .eq{display:flex}.disc-cv.play .disc-play{opacity:0}
-  .disc-cv.play .atl-album-cover{outline:2px solid #1DB954!important;outline-offset:1px}
-  .disc-cv .atl-album-title{margin-top:7px}
+  /* 재생 표시 — 초록 테두리 + 이퀄라이저 */
+  .disc-demo.play,.disc-master.play{outline:2.5px solid #1DB954;outline-offset:2px}
+  .disc-eq{position:absolute;right:9px;bottom:9px;display:none;align-items:flex-end;gap:3px;height:18px;z-index:4}
+  .disc-eq i{width:3px;background:#111;border-radius:1px;height:5px;animation:dceq .8s ease-in-out infinite}
+  .disc-eq i:nth-child(2){animation-delay:.18s}.disc-eq i:nth-child(3){animation-delay:.36s}.disc-eq i:nth-child(4){animation-delay:.54s}
+  @keyframes dceq{0%,100%{height:5px}50%{height:18px}}
+  .disc-demo.play .disc-eq,.disc-master.play .disc-eq{display:flex}
 </style>
 </head>
 <body>
@@ -188,13 +195,21 @@ var ALBUMS=[
 ];
 
 function shelfMeta(a){ return a.master ? (a.demos? '정규 · 데모 '+a.demos : '정규') : '데모 '+a.demos+'개'; }
-function cvHtml(master,tag,label,meta){
-  return '<div class="atl-album disc-cv'+(master?' is-master':'')+'" onclick="play_(this)">'+
-    '<div class="disc-imgwrap"><img class="atl-album-cover" src="'+CS+'">'+
-    '<span class="disc-tag">'+tag+'</span>'+
-    '<span class="disc-play"><i class="ri-play-fill"></i></span>'+
-    '<span class="eq"><i></i><i></i><i></i><i></i></span></div>'+
-    '<div class="atl-album-title">'+label+'</div><div class="atl-album-meta">'+meta+'</div></div>';
+var EQ='<span class="disc-eq"><i></i><i></i><i></i><i></i></span>';
+// 마스터 = 정사각 Coming Soon 커버(앨범 대표). 발매/미발매 칩.
+function masterHtml(a){
+  return '<div class="disc-master" onclick="play_(this)">'+
+    '<img src="'+CS+'" alt="">'+
+    '<span class="disc-mchip'+(a.master?'':' off')+'">'+(a.master?'발매':'미발매')+'</span>'+EQ+'</div>';
+}
+// 데모 = 앱 노란 데모카드 모양(전용 클래스). 제목 줄 = 곡 제목.
+function demoCardHtml(a,n){
+  return '<div class="disc-demo" onclick="play_(this)">'+
+    '<div class="disc-dtop"><span class="disc-dtag">DEMO '+n+'</span>'+
+    '<span class="disc-ddate">· '+a.date+'</span></div>'+
+    '<div class="disc-dtitle">'+a.t+'</div>'+
+    '<div class="disc-dfoot"><span class="disc-dmore">💬 댓글 달기</span></div>'+
+    EQ+'</div>';
 }
 function build(){
   document.getElementById('heroCover').src=CS;
@@ -202,9 +217,8 @@ function build(){
   ALBUMS.forEach(function(a,i){
     shelf+='<div class="atl-album" onclick="open_('+i+')"><img class="atl-album-cover" src="'+CS+'" loading="lazy">'+
       '<div class="atl-album-title">'+a.t+'</div><div class="atl-album-meta">'+shelfMeta(a)+'</div></div>';
-    var covers='';
-    if(a.master) covers+=cvHtml(true,'MASTER','마스터','정규');
-    for(var n=a.demos;n>=1;n--) covers+=cvHtml(false,'D'+n,'데모 '+n,'');
+    var covers=masterHtml(a);
+    for(var n=a.demos;n>=1;n--) covers+=demoCardHtml(a,n);
     dis+='<div class="disc-album" id="A'+i+'"><div class="disc-al-head">'+
       '<span class="disc-al-title">'+a.t+'</span><span class="disc-al-date">'+a.date+'</span>'+
       '<span class="disc-here">여기</span></div><div class="disc-strip">'+covers+'</div></div>';
@@ -229,7 +243,7 @@ function open_(i){
 }
 function back_(){ document.getElementById('stage').classList.remove('go'); }
 function play_(el){
-  [].forEach.call(document.querySelectorAll('.disc-cv.play'),function(c){c.classList.remove('play')});
+  [].forEach.call(document.querySelectorAll('.disc-demo.play,.disc-master.play'),function(c){c.classList.remove('play')});
   el.classList.add('play');
 }
 </script>
