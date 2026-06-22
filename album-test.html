@@ -50,10 +50,13 @@
   .disc-here{margin-left:auto;font-size:11px;font-weight:800;color:#0b0916;background:#b5aef0;
      padding:3px 11px;border-radius:999px;opacity:0;transition:opacity .35s}
   .disc-album.cur .disc-here{opacity:1}
-  .disc-strip{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+  /* 앱과 동일: .atl-albums 가로 필름스트립(132px 모바일 / 150px PC) 그대로 사용 */
+  .disc-strip{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:none}
   .disc-strip::-webkit-scrollbar{display:none}
   .disc-cv{position:relative}
-  .disc-imgwrap{position:relative;width:132px;height:132px}
+  /* 커버 래퍼는 고정폭 없이 .atl-album-cover(앱 사이즈) 에 맞춰 줄어듦 → PC 150 / 모바일 132 그대로 */
+  .disc-imgwrap{position:relative;display:block;width:-moz-fit-content;width:fit-content}
+  .disc-imgwrap .atl-album-cover{display:block}
   .disc-cv.is-master .atl-album-cover{outline:2px solid #fac775;outline-offset:1px}
   .disc-tag{position:absolute;left:6px;top:6px;font-size:10px;font-weight:800;padding:2px 8px;
      border-radius:999px;background:rgba(0,0,0,.6);color:#fff;z-index:2}
