@@ -31,16 +31,24 @@
      background:rgba(18,16,28,.82);border:1px solid rgba(255,255,255,.14);color:#fff;font-size:24px;
      display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px)}
   .tb:active{transform:scale(.94)}
-  /* 앨범 페이지 헤더(작게) */
-  .disc-top{display:flex;align-items:center;gap:11px;padding:60px 16px 6px;max-width:1040px;margin:0 auto}
-  .disc-top img{width:40px;height:40px;border-radius:50%;object-fit:cover;flex:0 0 auto}
-  .disc-top .dt-name{font-size:16px;font-weight:800;color:var(--text-primary)}
-  .disc-top .dt-sub{font-size:12px;color:var(--text-secondary)}
-  .disc-secthead{max-width:1040px;margin:14px auto 4px;padding:0 16px;font-size:15px;font-weight:800;color:var(--text-primary);display:flex;align-items:center;gap:6px}
+  /* 앨범 페이지는 왼쪽 정렬·넓게 (가운데 정렬 X) */
+  #alScreen .sub-page.artist-page{padding:74px 30px 54px !important;max-width:none !important}
+  /* 헤더 — 큰 아바타 + 이름 + 스탯(+발매배지 띠)로 허전함 채움 */
+  .disc-hero{display:flex;align-items:center;gap:18px;margin:0 0 14px}
+  .disc-av{width:72px;height:72px;border-radius:50%;object-fit:cover;flex:0 0 auto;box-shadow:0 0 0 2px rgba(255,255,255,.14),0 6px 18px rgba(0,0,0,.4)}
+  .disc-name{font-size:25px;font-weight:800;color:var(--text-primary);line-height:1.1;letter-spacing:-.3px}
+  .disc-stats{margin-top:8px;display:flex;gap:9px;flex-wrap:wrap}
+  .disc-stat{font-size:12.5px;font-weight:700;color:var(--text-secondary);background:rgba(255,255,255,.06);
+     border:1px solid rgba(255,255,255,.1);padding:4px 11px;border-radius:999px}
+  .disc-stat b{color:var(--text-primary);font-weight:800;margin-left:3px}
+  .disc-stat.rel b{color:#fac775}
+  .disc-divider{height:1px;background:rgba(255,255,255,.1);margin:0 0 16px}
+  .disc-secthead{max-width:none;margin:0 0 3px;padding:0;font-size:16px;font-weight:800;color:var(--text-primary);display:flex;align-items:center;gap:7px}
   .disc-secthead i{color:var(--brand-color)}
-  .disc-hint{max-width:1040px;margin:0 auto;padding:0 16px 10px;font-size:12px;color:var(--text-secondary)}
-  /* 디스코그래피: 앨범마다 [마스터+데모] 한 줄, 세로 누적 */
-  .disc-wrap{max-width:1040px;margin:0 auto;padding:4px 16px 60px}
+  .disc-count{font-size:13px;color:var(--text-secondary);font-weight:700}
+  .disc-hint{max-width:none;margin:0 0 14px;padding:0;font-size:12.5px;color:var(--text-secondary)}
+  /* 디스코그래피: 앨범마다 [마스터+데모] 한 줄, 세로 누적 — 왼쪽 정렬, 폭 꽉 */
+  .disc-wrap{max-width:none;margin:0;padding:0 0 56px}
   .disc-album{padding:14px;border-radius:16px;margin-bottom:14px;border:1.5px solid transparent;
      background:var(--surface-color);transition:background .35s,border-color .35s}
   .disc-album.cur{background:rgba(127,119,221,.16);border-color:rgba(127,119,221,.6)}
@@ -73,8 +81,8 @@
   .disc-dfoot{margin-top:auto;text-align:right}
   .disc-dmore{font:700 12.5px 'Inter',sans-serif;color:rgba(17,17,17,.5)}
   @media (min-width:820px){
-    .disc-master{width:203px;height:203px}
-    .disc-demo{flex-basis:360px;width:360px;height:203px}
+    .disc-master{width:188px;height:188px}
+    .disc-demo{flex-basis:300px;width:300px;height:188px}
   }
   /* 재생 표시 — 초록 테두리 + 이퀄라이저 */
   .disc-demo.play,.disc-master.play{outline:2.5px solid #1DB954;outline-offset:2px}
@@ -163,12 +171,16 @@
     <div class="artist-canvas cosmic">
       <div class="artist-bg-deco"></div>
       <div class="sub-page artist-page" style="padding-top:0;">
-        <div class="disc-top">
-          <img src="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=120&h=120&fit=crop" alt="뮤덕1호">
-          <div><div class="dt-name">뮤덕1호</div><div class="dt-sub">전체 음악 · 최신순</div></div>
+        <div class="disc-hero">
+          <img class="disc-av" src="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=200&h=200&fit=crop" alt="뮤덕1호">
+          <div>
+            <div class="disc-name">뮤덕1호</div>
+            <div class="disc-stats" id="discStats"></div>
+          </div>
         </div>
-        <div class="disc-secthead"><i class="ri-album-fill"></i> 음악</div>
-        <div class="disc-hint">마이페이지에서 누른 곡 줄로 스크롤됩니다 · 커버를 누르면 재생</div>
+        <div class="disc-divider"></div>
+        <div class="disc-secthead"><i class="ri-album-fill"></i> 음악 <span class="disc-count" id="discCount"></span></div>
+        <div class="disc-hint">마이페이지에서 누른 곡 줄로 스크롤됩니다 · 카드를 누르면 재생</div>
         <div class="disc-wrap" id="discog"></div>
       </div>
     </div>
@@ -225,6 +237,16 @@ function build(){
   });
   document.getElementById('shelf').innerHTML=shelf;
   document.getElementById('discog').innerHTML=dis;
+  // 헤더 스탯: 앨범/데모/발매 수
+  var nAlb=ALBUMS.length;
+  var nDemo=ALBUMS.reduce(function(s,a){return s+a.demos;},0);
+  var nRel=ALBUMS.filter(function(a){return a.master;}).length;
+  document.getElementById('discStats').innerHTML=
+    '<span class="disc-stat">앨범<b>'+nAlb+'</b></span>'+
+    '<span class="disc-stat">데모<b>'+nDemo+'</b></span>'+
+    '<span class="disc-stat rel">발매<b>'+nRel+'</b></span>'+
+    '<span class="disc-stat">덕질<b style="font-weight:700">2016~</b></span>';
+  document.getElementById('discCount').textContent=nAlb;
 }
 build();
 
