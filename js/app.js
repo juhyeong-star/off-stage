@@ -8649,6 +8649,44 @@ window.openTrackDetail = function (trackId) {
 
 // ===================== 3. UPLOAD VIEW =====================
 
+// ── 업로드 위저드(키오스크 발매/데모 → 새/작업중 → 폼) 단계 이동 + 미리보기 ──
+// 화면만 단계로 감싸고, 기존 숨긴 토글(.upload-type-opt)을 .click() 으로 구동 →
+// 기존 검증·동기화·제출 로직은 그대로 동작. DOM 은 호출 시점에 조회(렌더 후라 안전).
+window.uwUpGo = function (step) {
+  document.querySelectorAll('#uploadWizard .uw-step').forEach(function (s) { s.classList.remove('uw-on'); });
+  var t = document.querySelector('#uploadWizard [data-step="' + step + '"]');
+  if (t) { t.classList.add('uw-on'); }
+  try { window.scrollTo(0, 0); var sc = document.getElementById('app-content'); if (sc) sc.scrollTop = 0; } catch (_) {}
+};
+window.uwUpBack = function () { window.uwUpGo(window.__uwFormBack || 'kiosk'); };
+window.uwUpPick = function (what) {
+  var click = function (sel) { var el = document.querySelector('#uploadWizard ' + sel); if (el) el.click(); };
+  if (what === 'release') { click('[data-version-type="master"]'); window.__uwFormBack = 'kiosk'; window.uwUpGo('form'); }
+  else if (what === 'demo') { click('[data-version-type="demo"]'); window.uwUpGo('dchoice'); }
+  else if (what === 'new') { click('[data-proj-choice="new"]'); window.__uwFormBack = 'dchoice'; window.uwUpGo('form'); }
+  else if (what === 'existing') { click('[data-proj-choice="existing"]'); window.__uwFormBack = 'dchoice'; window.uwUpGo('form'); }
+};
+window.uwPrevLine = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
+window.uwPickShape = function (el) {
+  document.querySelectorAll('#uwShapes .uw-sh').forEach(function (s) { s.classList.remove('uw-sel'); });
+  el.classList.add('uw-sel');
+  var shape = el.getAttribute('data-shape');
+  var sel = document.getElementById('up-shape'); if (sel) { sel.value = shape; try { sel.dispatchEvent(new Event('change')); } catch (_) {} }
+  var p = document.getElementById('uwPrev');
+  if (p) {
+    var M = { circle: [150, 150, '50%', 'none'], oval: [174, 120, '50%', 'none'], rect: [150, 150, '18px', 'none'], wide: [186, 120, '12px', 'none'], pill: [196, 106, '999px', 'none'], hexagon: [162, 152, '0', 'polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)'] };
+    var s = M[shape] || M.circle;
+    p.style.width = s[0] + 'px'; p.style.height = s[1] + 'px'; p.style.borderRadius = s[2]; p.style.clipPath = s[3];
+  }
+};
+window.uwPickColor = function (el) {
+  document.querySelectorAll('#uwCols .uw-col').forEach(function (c) { c.classList.remove('uw-sel'); });
+  el.classList.add('uw-sel');
+  var color = el.getAttribute('data-color');
+  var inp = document.getElementById('up-shape-color'); if (inp) inp.value = color;
+  var p = document.getElementById('uwPrev'); if (p) p.style.background = color;
+};
+
 function renderUpload() {
   const db = window.DB.get();
   if (!db.currentUser) {
@@ -8672,7 +8710,60 @@ function renderUpload() {
   );
 
   appContent.innerHTML = `
-    <div style="max-width: 600px; margin: 0 auto; padding: 30px;" class="card">
+    <style>
+      #uploadWizard .uw-step{display:none;max-width:600px;margin:0 auto;padding:22px}
+      #uploadWizard .uw-step.uw-on{display:block}
+      #uploadWizard .upload-type-toggle{display:none !important}
+      #uploadWizard .form-group:has(.upload-type-toggle){display:none !important}
+      .uw-kgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px}
+      .uw-kbtn{position:relative;border-radius:20px;border:2px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;cursor:pointer;text-align:center;padding:30px 12px;min-height:300px;background:none;font-family:inherit;color:inherit;transition:transform .12s,background .2s}
+      .uw-kbtn:active{transform:scale(.97)}
+      .uw-krel{background:rgba(250,199,117,.12);border-color:rgba(250,199,117,.55)}
+      .uw-kdemo{background:rgba(127,119,221,.14);border-color:rgba(127,119,221,.6)}
+      .uw-knum{position:absolute;top:13px;left:14px;font-size:13px;font-weight:800;width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+      .uw-krel .uw-knum{background:#fac775;color:#3a2a00}.uw-kdemo .uw-knum{background:#b5aef0;color:#1a1530}
+      .uw-kic{width:76px;height:76px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:38px}
+      .uw-krel .uw-kic{background:rgba(250,199,117,.22);color:#cf9320}.uw-kdemo .uw-kic{background:rgba(127,119,221,.24);color:#5b51bd}
+      .uw-kt{font-size:23px;font-weight:800}.uw-ken{font-size:11px;opacity:.55;font-weight:700;letter-spacing:1px;margin-top:-7px}
+      .uw-kd{font-size:12.5px;opacity:.78;line-height:1.5}
+      .uw-cc{display:flex;align-items:center;gap:14px;padding:18px 16px;border-radius:16px;border:1.5px solid var(--divider,rgba(0,0,0,.14));cursor:pointer;margin-bottom:12px;background:none;width:100%;font-family:inherit;color:inherit;text-align:left;transition:border-color .2s,background .2s}
+      .uw-cc:hover{border-color:#7f77dd;background:rgba(127,119,221,.06)}
+      .uw-cc .uw-ci{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:23px;background:rgba(127,119,221,.15);color:#5b51bd;flex:0 0 auto}
+      .uw-cc .uw-ct{font-size:16px;font-weight:700;display:block}.uw-cc .uw-cdd{font-size:12px;opacity:.65;margin-top:2px;display:block}
+      .uw-back{display:inline-flex;align-items:center;gap:5px;font-size:14px;font-weight:600;color:inherit;opacity:.72;cursor:pointer;background:none;border:none;font-family:inherit;padding:2px;margin-bottom:14px}
+      .uw-prevwrap{height:184px;display:flex;align-items:center;justify-content:center;border-radius:14px;margin-bottom:12px;position:relative;background:repeating-linear-gradient(45deg,rgba(127,119,221,.05),rgba(127,119,221,.05) 10px,transparent 10px,transparent 20px)}
+      .uw-pcap{position:absolute;top:9px;left:0;right:0;text-align:center;font-size:11px;opacity:.5;font-weight:700;letter-spacing:.5px}
+      .uw-prev{display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;box-sizing:border-box;background:#FF4081;transition:width .25s,height .25s,border-radius .25s,background .25s;box-shadow:0 10px 26px rgba(0,0,0,.22)}
+      .uw-prev .uw-pt{font-family:var(--font-hand,'Gaegu',cursive);font-weight:700;font-size:18px;line-height:1.4;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.2);word-break:keep-all}
+      .uw-prev .uw-pt span{display:block}
+      .uw-shapes{display:flex;gap:10px;overflow-x:auto;padding:2px 0 8px;margin-bottom:6px}
+      .uw-sh{flex:0 0 auto;width:46px;height:46px;position:relative;cursor:pointer}
+      .uw-sh .uw-sp{position:absolute;inset:0;background:#b0b0b8;transition:background .2s}.uw-sh:hover .uw-sp{background:#8a83c9}.uw-sh.uw-sel .uw-sp{background:#7f77dd}
+      .uw-sh.uw-sel{outline:2px solid #1d9e75;outline-offset:3px;border-radius:5px}
+      .uw-sh .uw-ck{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:#fff;font-size:19px;text-shadow:0 1px 3px rgba(0,0,0,.6)}.uw-sh.uw-sel .uw-ck{display:flex}
+      .uws-circle{border-radius:50%}.uws-oval{border-radius:50%;top:9px;bottom:9px}.uws-rect{border-radius:9px}.uws-wide{border-radius:6px;top:11px;bottom:11px}.uws-pill{border-radius:999px;top:13px;bottom:13px}.uws-hexagon{clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)}
+      .uw-cols{display:flex;gap:9px;flex-wrap:wrap}
+      .uw-col{width:31px;height:31px;border-radius:50%;cursor:pointer;border:2px solid transparent}.uw-col.uw-sel{outline:2px solid #1d9e75;outline-offset:2px}
+    </style>
+    <div class="upload-wizard" id="uploadWizard">
+      <div class="uw-step uw-on" data-step="kiosk">
+        <h1 style="text-align:center;margin:8px 0 2px;">${_i18n('무엇을 올릴까요?','What are you uploading?')}</h1>
+        <p style="text-align:center;color:var(--text-secondary);font-size:13px;margin:0;">${_i18n('탭해서 선택하세요','Tap to choose')}</p>
+        <div class="uw-kgrid">
+          <button type="button" class="uw-kbtn uw-krel" onclick="uwUpPick('release')"><span class="uw-knum">1</span><span class="uw-kic"><i class="ri-album-line"></i></span><span class="uw-kt">${_i18n('발매','Release')}</span><span class="uw-ken">RELEASE</span><span class="uw-kd">${_i18n('완성된 곡<br>자세히','Finished<br>full details')}</span></button>
+          <button type="button" class="uw-kbtn uw-kdemo" onclick="uwUpPick('demo')"><span class="uw-knum">2</span><span class="uw-kic"><i class="ri-mic-2-line"></i></span><span class="uw-kt">${_i18n('데모','Demo')}</span><span class="uw-ken">DEMO</span><span class="uw-kd">${_i18n('작업 중인 곡<br>가볍게','Work in progress<br>quick')}</span></button>
+        </div>
+      </div>
+      <div class="uw-step" data-step="dchoice">
+        <button type="button" class="uw-back" onclick="uwUpGo('kiosk')"><i class="ri-arrow-left-line"></i> ${_i18n('뒤로','Back')}</button>
+        <h1 style="margin:0 0 2px;">${_i18n('데모 — 어떤 거?','Demo — which?')}</h1>
+        <p style="color:var(--text-secondary);font-size:13px;margin:0 0 16px;">${_i18n('새로 시작인가요, 이어서인가요?','New, or continue?')}</p>
+        <button type="button" class="uw-cc" onclick="uwUpPick('new')"><span class="uw-ci"><i class="ri-add-line"></i></span><span><span class="uw-ct">${_i18n('새 데모','New demo')}</span><span class="uw-cdd">${_i18n('처음 올리는 곡','First upload')}</span></span></button>
+        <button type="button" class="uw-cc" onclick="uwUpPick('existing')"><span class="uw-ci"><i class="ri-stack-line"></i></span><span><span class="uw-ct">${_i18n('작업중인 데모','In-progress demo')}</span><span class="uw-cdd">${_i18n('이미 있는 곡에 다음 버전','Next version of an existing song')}</span></span></button>
+      </div>
+      <div class="uw-step" data-step="form">
+        <button type="button" class="uw-back" id="uwBack" onclick="uwUpBack()"><i class="ri-arrow-left-line"></i> ${_i18n('뒤로','Back')}</button>
+    <div class="card" style="padding: 24px;">
       <h1 style="margin-bottom: 8px;">${_i18n('음원 업로드', 'Upload Music')}</h1>
       <p style="color:var(--text-secondary); font-size:13px; margin-bottom: 24px;">
         ${_i18n('데모부터 발매까지 — 하나의 Demo 안에 여러 버전을 차곡차곡 쌓을 수 있어요.', 'From demo to release — stack multiple versions inside a single Demo.')}
@@ -8794,22 +8885,31 @@ function renderUpload() {
 
         <hr style="border-color: var(--divider); margin: 20px 0;">
         <h2 style="font-size: 18px; color: var(--brand-color); margin-bottom: 4px;"><i class="ri-shapes-fill"></i> ${_i18n('도형 낙서 (3줄)', 'Shape graffiti (3 lines)')} <span style="color:#ff6b6b; font-size:13px;">${_i18n('(필수)', '(required)')}</span></h2>
-        <p id="up-graffiti-note" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">${_i18n('메인에 뜨는 도형에 적힐 내용. 3줄 다 채워주세요.', 'Text on the floating shape — fill all 3 lines.')}</p>
+        <p id="up-graffiti-note" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">${_i18n('발견에 이렇게 떠요 — 적는 대로 아래 미리보기에 바로 보여요.', 'This is how it shows on Discover — updates as you type.')}</p>
+        <div class="uw-prevwrap"><span class="uw-pcap">${_i18n('미리보기', 'Preview')}</span><div class="uw-prev" id="uwPrev" style="width:150px;height:150px;border-radius:50%;background:#FF4081;"><div class="uw-pt"><span id="uwP1"></span><span id="uwP2"></span><span id="uwP3"></span></div></div></div>
         <div class="form-group">
           <label>${_i18n('1줄', 'Line 1')}</label>
-          <input type="text" class="form-control" id="up-line1" placeholder="" maxlength="40" required>
+          <input type="text" class="form-control" id="up-line1" placeholder="" maxlength="40" oninput="uwPrevLine('uwP1',this.value)" required>
         </div>
         <div class="form-group">
           <label>${_i18n('2줄', 'Line 2')}</label>
-          <input type="text" class="form-control" id="up-line2" placeholder="" maxlength="40" required>
+          <input type="text" class="form-control" id="up-line2" placeholder="" maxlength="40" oninput="uwPrevLine('uwP2',this.value)" required>
         </div>
         <div class="form-group">
           <label>${_i18n('3줄', 'Line 3')}</label>
-          <input type="text" class="form-control" id="up-line3" placeholder="" maxlength="40" required>
+          <input type="text" class="form-control" id="up-line3" placeholder="" maxlength="40" oninput="uwPrevLine('uwP3',this.value)" required>
         </div>
         <div class="form-group">
           <label>${_i18n('도형 모양', 'Shape')}</label>
-          <select class="form-control" id="up-shape">
+          <div class="uw-shapes" id="uwShapes">
+            <div class="uw-sh uw-sel" data-shape="circle" onclick="uwPickShape(this)"><span class="uw-sp uws-circle"></span><span class="uw-ck"><i class="ri-check-line"></i></span></div>
+            <div class="uw-sh" data-shape="oval" onclick="uwPickShape(this)"><span class="uw-sp uws-oval"></span><span class="uw-ck"><i class="ri-check-line"></i></span></div>
+            <div class="uw-sh" data-shape="rect" onclick="uwPickShape(this)"><span class="uw-sp uws-rect"></span><span class="uw-ck"><i class="ri-check-line"></i></span></div>
+            <div class="uw-sh" data-shape="wide" onclick="uwPickShape(this)"><span class="uw-sp uws-wide"></span><span class="uw-ck"><i class="ri-check-line"></i></span></div>
+            <div class="uw-sh" data-shape="pill" onclick="uwPickShape(this)"><span class="uw-sp uws-pill"></span><span class="uw-ck"><i class="ri-check-line"></i></span></div>
+            <div class="uw-sh" data-shape="hexagon" onclick="uwPickShape(this)"><span class="uw-sp uws-hexagon"></span><span class="uw-ck"><i class="ri-check-line"></i></span></div>
+          </div>
+          <select class="form-control" id="up-shape" style="display:none">
             <option value="circle">${_t('원', 'Circle')}</option>
             <option value="oval">${_t('타원', 'Oval')}</option>
             <option value="rect">${_t('둥근 사각형', 'Rounded square')}</option>
@@ -8820,7 +8920,17 @@ function renderUpload() {
         </div>
         <div class="form-group">
           <label>${_i18n('도형 색상', 'Color')}</label>
-          <input type="color" class="form-control" id="up-shape-color" value="#FF4081" style="height:44px; padding:4px;">
+          <div class="uw-cols" id="uwCols">
+            <span class="uw-col uw-sel" data-color="#FF4081" style="background:#FF4081" onclick="uwPickColor(this)"></span>
+            <span class="uw-col" data-color="#FFC107" style="background:#FFC107" onclick="uwPickColor(this)"></span>
+            <span class="uw-col" data-color="#7F77DD" style="background:#7F77DD" onclick="uwPickColor(this)"></span>
+            <span class="uw-col" data-color="#1D9E75" style="background:#1D9E75" onclick="uwPickColor(this)"></span>
+            <span class="uw-col" data-color="#378ADD" style="background:#378ADD" onclick="uwPickColor(this)"></span>
+            <span class="uw-col" data-color="#FF6B6B" style="background:#FF6B6B" onclick="uwPickColor(this)"></span>
+            <span class="uw-col" data-color="#26C6DA" style="background:#26C6DA" onclick="uwPickColor(this)"></span>
+            <span class="uw-col" data-color="#FFFFFF" style="background:#FFFFFF" onclick="uwPickColor(this)"></span>
+          </div>
+          <input type="color" class="form-control" id="up-shape-color" value="#FF4081" style="display:none">
         </div>
 
         <hr style="border-color: var(--divider); margin: 30px 0;">
@@ -8851,6 +8961,8 @@ function renderUpload() {
           ${_i18n('동의하고 업로드 완료하기', 'Agree & Upload')}
         </button>
       </form>
+    </div>
+      </div>
     </div>
   `;
 
@@ -9021,6 +9133,9 @@ function renderUpload() {
         projectSelect.value = pendingProjectId;
         refreshExistingInfo();
       }
+      // 위저드: '+ DEMO 추가'로 넘어왔으면 키오스크 건너뛰고 바로 폼으로
+      window.__uwFormBack = 'dchoice';
+      if (typeof window.uwUpGo === 'function') window.uwUpGo('form');
     } catch (e) { console.warn('[upload] applyPendingUploadState', e); }
   })();
 
