@@ -51,7 +51,8 @@
         /* 도형(피드) — 위치는 JS 물리 루프가 매 프레임 갱신(드리프트+충돌). 부드러운 색 글로우. */
         .neon-bubble { position: absolute; cursor: pointer; will-change: left, top; }
         .neon-bubble:active { transform: scale(0.93); }
-        #bubbles-container { overflow: hidden; }   /* 무한 공간: 가장자리 wrap 시 깔끔히 클립 */
+        #bubbles-container { overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }   /* 세로 스크롤(20개를 6/화면으로) */
+        #bubbles-container::-webkit-scrollbar { display: none; }
         /* Tags — 네온사인 컬러 글자(글로우) */
         .neon-tag {
             color: var(--c); font-weight: 700; cursor: pointer; line-height: 1.2;
@@ -474,15 +475,15 @@
                 canvasEl = document.getElementById('bubbles-canvas');
             }
         }
-        // 도형 = 한 화면(무한 wrap) 안에서 격동적으로 떠다님 + 충돌 팅김. 탭=재생 / 끌면 던지기.
+        // 도형 = 세로로 긴 캔버스(약 6개/화면) 안에서 격동적으로 떠다님 + 벽 팅김. 탭=재생 / 끌면 던지기.
+        const PER_SCREEN = 6;
         function layoutBubbles() {
             ensureCanvas();
             const vh = container.clientHeight || 460;
             const W = container.clientWidth || 360;
-            const H = vh;                                      // 한 화면(가장자리 wrap = 무한 공간)
+            if (bubbleData.length > 40) bubbleData.length = 40;             // 안전 상한
+            const H = vh * Math.max(1, bubbleData.length / PER_SCREEN);     // 한 화면에 ~6개 밀도 → 세로 스크롤
             canvasEl.style.height = H + 'px';
-            const cap = Math.max(5, Math.min(10, Math.round((W * H) / 30000)));
-            if (bubbleData.length > cap) bubbleData.length = cap;
             canvasEl.innerHTML = '';
             bubbleData.forEach((b) => {
                 const size = b.size;
@@ -508,6 +509,7 @@
                 b.el = el;
                 canvasEl.appendChild(el);
             });
+            wireLoop();
             startPhysics();
         }
         // ===== 탭 vs 던지기(flick) =====
@@ -635,19 +637,21 @@
         // 아래 끝까지 가면 → 풀에서 '아직 안 본' 곡을 랜덤 한 배치 뽑아 옴(리서치/새로고침).
         // 만 곡이어도 전부 스크롤할 필요 없음 — 발견 피드라 매번 안 본 곡을 무작위로, 다 보면 초기화.
         let seenTitles = new Set();
-        function loadRandomBatch() {
-            const vh = container.clientHeight || 460;
-            const W = container.clientWidth || 360;
-            const n = Math.max(5, Math.min(10, Math.round((W * vh) / 30000)));
+        const DISCOVER_COUNT = 20;
+        function buildBatch(n) {
             let avail = POOL.filter(t => !seenTitles.has(t.title));
             if (avail.length < n) { seenTitles.clear(); avail = POOL.slice(); }   // 다 봤으면 처음부터
-            const pick = avail.sort(() => Math.random() - 0.5).slice(0, n);
+            const pick = avail.sort(() => Math.random() - 0.5).slice(0, Math.min(n, POOL.length));
             pick.forEach(t => seenTitles.add(t.title));
             bubbleData = pick.map(t => ({
                 id: nextId++, title: t.title, artist: t.artist, color: t.color, tags: t.tags,
-                size: 108 + Math.round(Math.random() * 28)   // 108~136
+                size: 94 + Math.round(Math.random() * 26)   // 94~120 (20개라 살짝 작게)
             }));   // x/y 없음 → layout이 새 위치+격동적 속도 부여
+        }
+        function loadRandomBatch() {
+            buildBatch(DISCOVER_COUNT);
             layoutBubbles();
+            container.scrollTop = 0;
             flashLoop('새로운 음악으로 새로고침!');
         }
 
@@ -1129,6 +1133,7 @@
         });
         window.onload = function() {
             lucide.createIcons();
+            buildBatch(DISCOVER_COUNT);
             layoutBubbles();
             setTimeout(layoutBubbles, 120);
             renderTags();
