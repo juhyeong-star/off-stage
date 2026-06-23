@@ -46,20 +46,18 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
         .bubble { cursor: pointer; }
-        /* 네온사인 도형 — 강한 글로우 + 둥둥(bob) + 펄스 */
-        .neon-bubble {
-            position: absolute;
-            border: 2px solid rgba(255,255,255,0.4);
-            box-shadow: 0 0 16px var(--glow), 0 0 40px var(--glow), inset 0 4px 14px rgba(255,255,255,0.5);
-            animation: bob 4.5s ease-in-out infinite, neonPulse 2.8s ease-in-out infinite;
-        }
+        /* 도형(피드) — 네온 제거, 부드러운 글로우 + 둥둥(bob)만 (글로우는 JS에서 색별로 주입) */
+        .neon-bubble { position: absolute; animation: bob 4.5s ease-in-out infinite; }
         @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
-        @keyframes neonPulse {
-            0%,100% { box-shadow: 0 0 14px var(--glow), 0 0 30px transparent, inset 0 4px 14px rgba(255,255,255,0.5); }
-            50%     { box-shadow: 0 0 26px var(--glow), 0 0 62px var(--glow), inset 0 4px 14px rgba(255,255,255,0.55); }
-        }
         #bubbles-container { overflow-y: auto; scrollbar-width: none; }
         #bubbles-container::-webkit-scrollbar { display: none; }
+        /* Tags — 네온사인 컬러 글자(글로우) */
+        .neon-tag {
+            color: var(--c); font-weight: 700; cursor: pointer; line-height: 1.2;
+            text-shadow: 0 0 6px var(--c), 0 0 14px var(--c);
+            transition: text-shadow .2s, transform .15s;
+        }
+        .neon-tag:hover { transform: translateY(-1px); text-shadow: 0 0 9px var(--c), 0 0 22px var(--c), 0 0 36px var(--c); }
         #loop-hint {
             position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
             background: rgba(124,58,237,0.92); color: #fff; font-size: 11px; font-weight: 700;
@@ -207,19 +205,12 @@
             <section id="content-tags" class="hidden flex-1 min-h-0 overflow-y-auto p-5 space-y-4 z-10">
                 <div class="flex justify-between items-center">
                     <div>
-                        <h2 class="text-lg font-bold">인기 Tags</h2>
-                        <p class="text-xs text-white/40">지금 실시간 핫한 테마 태그들</p>
+                        <h2 class="text-lg font-bold">Tags</h2>
+                        <p class="text-xs text-white/40">지금 우리 우주에 떠도는 태그들</p>
                     </div>
-                    <span class="text-xs bg-purple-500/20 text-purple-300 px-2.5 py-1 rounded-full">총 61개 태그</span>
+                    <span class="text-xs bg-purple-500/20 text-purple-300 px-2.5 py-1 rounded-full" id="tag-count">총 0개</span>
                 </div>
-                <div class="flex flex-wrap gap-2.5 pt-2">
-                    <span class="px-3.5 py-1.5 rounded-full glass border border-purple-500/30 text-xs text-purple-300 font-bold">#고1 <span class="text-[9px] text-white/40 ml-1">23곡</span></span>
-                    <span class="px-3.5 py-1.5 rounded-full glass border border-pink-500/30 text-xs text-pink-300 font-bold">#인디 <span class="text-[9px] text-white/40 ml-1">19곡</span></span>
-                    <span class="px-3.5 py-1.5 rounded-full glass border border-amber-500/30 text-xs text-amber-200 font-bold">#Painkiller <span class="text-[9px] text-white/40 ml-1">15곡</span></span>
-                    <span class="px-3.5 py-1.5 rounded-full glass text-xs text-white/70">#드림걸즈</span>
-                    <span class="px-3.5 py-1.5 rounded-full glass text-xs text-white/70">#ACID</span>
-                    <span class="px-3.5 py-1.5 rounded-full glass text-xs text-white/70">#RNB</span>
-                </div>
+                <div id="tag-wall" class="flex flex-wrap gap-x-3.5 gap-y-3 pt-1"></div>
             </section>
 
             <!-- 즐겨찾기 탭 -->
@@ -462,8 +453,8 @@
                 el.style.left = x + 'px';
                 el.style.top = y + 'px';
                 el.style.background = b.color;
-                el.style.setProperty('--glow', b.color);
-                el.style.animationDelay = (i * 0.22).toFixed(2) + 's, ' + (i * 0.17).toFixed(2) + 's';
+                el.style.boxShadow = '0 10px 28px ' + b.color + '40, inset 0 4px 12px rgba(255,255,255,0.45)';
+                el.style.animationDelay = (i * 0.22).toFixed(2) + 's';
                 el.innerHTML = '<div class="space-y-0.5 w-full flex flex-col justify-center items-center pointer-events-none">' +
                     b.tags.map(t => `<p class="font-extrabold select-none truncate w-full pointer-events-none" style="color:#0b0b0b;font-size:${size > 122 ? '11px' : '9px'}">${t}</p>`).join('') +
                     '</div>';
@@ -618,6 +609,28 @@
             playMusicById(newBubble.id);
         }
 
+        // ===== Tags 탭 — 실제 앱에서 쓰는 태그(스크린샷) + 네온사인 컬러 =====
+        const TAGS = ["고1","우리들의발라드","짝사랑","인디","Painkiller","10","1975","켈라니","영크크","1982년 느낌","성시경","정승환","서울예대들","피아노과탑","고백","사귀자","ㅎㅇ","트로트","뽕짝","중독적","보리보리쌀","채민르","드림걸즈","커버","ACID","RNB","편곡같이할사람","교감","나도작곡가","함께만들자","Dnb","감전","happy","신나는","파워레인져","추억","어릴때","편견","스테레오타입","스케치","경험","pop","RnB","dior","test","허무","2학년","청춘","Gfunk","R&B","소매치기범","읽씹","파리","알엔비힙합","hyperpop","기침감기","지예아","보사노바","팝","쉐이커","준식교수님","발라드","이문세","잠수이별","서정적인팝","R&b","1학년","그루브","자우림","밴드","시티팝","상사병","사랑","fyp","bedroom pop","예시"];
+        const NEON = ["#FF2EA0","#00E5FF","#76FF03","#FFD166","#B14BFF","#FF9100","#2EE6D6","#FF4D6D","#4D9DFF","#C77DFF","#39FF14","#FF6EC7"];
+        function renderTags() {
+            const wall = document.getElementById('tag-wall');
+            if (!wall) return;
+            wall.innerHTML = TAGS.map((t, i) => {
+                const c = NEON[i % NEON.length];
+                const sz = 14 + ((i * 7) % 6);
+                const safe = t.replace(/'/g, "\\'");
+                return `<span class="neon-tag" style="--c:${c};font-size:${sz}px" onclick="tagClick('${safe}')">#${t}</span>`;
+            }).join('');
+            const cn = document.getElementById('tag-count');
+            if (cn) cn.textContent = '총 ' + TAGS.length + '개';
+        }
+        function tagClick(t) {
+            const toast = document.getElementById('toast-notif'), tt = document.getElementById('toast-text');
+            tt.innerText = '#' + t + ' 태그 탐색';
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 1400);
+        }
+
         window.addEventListener('resize', () => {
             if (!document.getElementById('content-discover').classList.contains('hidden')) layoutBubbles();
         });
@@ -625,6 +638,7 @@
             lucide.createIcons();
             layoutBubbles();
             setTimeout(layoutBubbles, 120);
+            renderTags();
         }
     </script>
 </body>
