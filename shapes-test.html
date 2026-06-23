@@ -92,6 +92,19 @@
         .folder-hover { transform: scale(1.08) translateY(-6px); background: rgba(168,85,247,.15) !important; border-color: rgba(168,85,247,.6) !important; box-shadow: 0 10px 25px rgba(168,85,247,.25); }
         .sparkle { position: absolute; pointer-events: none; border-radius: 50%; animation: favExplode .6s cubic-bezier(.1,.8,.3,1) forwards; }
         @keyframes favExplode { 0% { transform: translate(-50%,-50%) scale(1); opacity: 1; } 100% { transform: translate(-50%,-50%) translate(var(--mx),var(--my)) scale(0); opacity: 0; } }
+        /* ===== 주절주절(릴스형 세로 피드) ===== */
+        #feed-reels { height: 100%; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        #feed-reels::-webkit-scrollbar { display: none; }
+        .feed-post { scroll-snap-align: start; scroll-snap-stop: always; position: relative; width: 100%; height: 100%; background: #0a0618; overflow: hidden; }
+        .feed-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        .feed-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(3,0,13,.94) 4%, rgba(3,0,13,.15) 42%, rgba(3,0,13,.5) 100%); }
+        .feed-wave { position: absolute; left: 14px; right: 70px; top: 44%; display: flex; align-items: center; gap: 2px; height: 56px; pointer-events: none; opacity: .9; }
+        .feed-wave i { flex: 1; min-width: 2px; max-width: 3px; background: rgba(255,255,255,.85); border-radius: 2px; height: 8px; animation: fwave 1.1s ease-in-out infinite; }
+        @keyframes fwave { 0%,100% { height: 7px; } 50% { height: 38px; } }
+        .feed-actions { position: absolute; right: 10px; bottom: 26px; display: flex; flex-direction: column; align-items: center; gap: 18px; z-index: 6; }
+        .feed-actions button { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #fff; }
+        .feed-act-count { font-size: 11px; font-weight: 700; }
+        .feed-info { position: absolute; left: 14px; right: 72px; bottom: 20px; z-index: 6; }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -174,46 +187,13 @@
                 </button>
             </section>
 
-            <!-- 주절주절 탭 -->
-            <section id="content-feed" class="hidden flex-1 min-h-0 overflow-y-auto p-4 space-y-4 z-10">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-lg font-bold">주절주절 소통</h2>
-                    <span class="text-xs text-purple-400 font-semibold">최근 7일 인기글</span>
+            <!-- 주절주절 탭 — 릴스형 세로 피드(위아래 스와이프) -->
+            <section id="content-feed" class="hidden flex-1 min-h-0 relative z-10">
+                <div class="absolute top-2.5 left-1/2 -translate-x-1/2 z-30 flex gap-1 bg-black/45 backdrop-blur-md rounded-full p-1 border border-white/10">
+                    <button id="feed-tab-all" onclick="setFeedFilter('all')" class="px-4 py-1 rounded-full text-xs font-bold bg-white text-black transition-colors">전체</button>
+                    <button id="feed-tab-following" onclick="setFeedFilter('following')" class="px-4 py-1 rounded-full text-xs font-bold text-white/70 transition-colors">팔로잉</button>
                 </div>
-                <div class="glass rounded-2xl p-3 flex gap-3 items-center">
-                    <div class="w-8 h-8 rounded-full bg-rose-500 flex items-center justify-center text-[10px] font-bold">OS</div>
-                    <input type="text" placeholder="지금 내 머릿속 멜로디는? 주절주절 남기기..." class="bg-transparent flex-1 text-xs outline-none text-white/80 placeholder:text-white/30">
-                    <button class="p-2 rounded-xl bg-purple-600 hover:bg-purple-700 transition-colors">
-                        <i data-lucide="send" class="w-4 h-4"></i>
-                    </button>
-                </div>
-                <div class="space-y-3" id="feed-list">
-                    <div class="glass rounded-2xl p-4 space-y-3 border border-white/5">
-                        <div class="flex justify-between items-center">
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold text-white">효원</div>
-                                <div>
-                                    <div class="text-xs font-bold">이효원 <span class="text-[10px] text-white/40 font-normal">· 5일 전</span></div>
-                                    <div class="text-[9px] text-purple-300">작곡 전공 2학년</div>
-                                </div>
-                            </div>
-                            <button class="text-white/40"><i data-lucide="more-horizontal" class="w-4 h-4"></i></button>
-                        </div>
-                        <p class="text-xs leading-relaxed text-white/90">"급하게 스케치한 곡이지만 한번만 들어봐줘! 후반부 드럼 비트 들어갈 때 소름돋게 구성해봤음. 편곡 같이 할 베이스 구함!"</p>
-                        <div onclick="playMusicById(4)" class="rounded-xl bg-white/5 p-2.5 flex items-center justify-between border border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-lg bg-lime-500/20 border border-lime-400/30 flex items-center justify-center">
-                                    <i data-lucide="music" class="w-5 h-5 text-lime-400"></i>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-bold text-white">Plastic days</h4>
-                                    <p class="text-[10px] text-lime-400">#G-Funk #R&B #소매치기범</p>
-                                </div>
-                            </div>
-                            <i data-lucide="play-circle" class="w-6 h-6 text-lime-400"></i>
-                        </div>
-                    </div>
-                </div>
+                <div id="feed-reels"></div>
             </section>
 
             <!-- Tags 탭 -->
@@ -481,6 +461,7 @@
             if (tabName === 'discover') startCosmicAnimation();
             else stopCosmicAnimation();
             if (tabName === 'favorites') renderGalaxySpace();   // 즐겨찾기: 탭 열 때 은하 렌더(보일 때 크기 확정)
+            if (tabName === 'feed') renderFeed();               // 주절주절: 릴스 피드 렌더
         }
 
         function stopCosmicAnimation() { stopPhysics(); }
@@ -1022,6 +1003,85 @@
             const btn = document.getElementById('btn-play');
             if (btn) { btn.innerHTML = '<i data-lucide="pause" class="w-4 h-4 fill-black"></i>'; lucide.createIcons(); }
             renderGalaxySpace();
+        }
+
+        // ===================== 주절주절 — 릴스형 세로 피드 =====================
+        const FEED = [
+            { artist:"이효원", handle:"@hyowon_lee", title:"Plastic days", lyrics:"Verse 1: 늦은 밤 너를 떠나다 / 어느 날 떠난 생각으로 / 그게 좋은 걸인 줄도 모르고...", img:"https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=700&h=1300&fit=crop&q=80", color:"#76FF03", likes:1273, comments:85, shares:33, following:true },
+            { artist:"유지호", handle:"@yujiho", title:"네온 드라이브", lyrics:"새벽 도시의 불빛 사이로 / 너와 나 단둘이 달려가 / 멈추지 않을 이 밤...", img:"https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=700&h=1300&fit=crop&q=80", color:"#FF2EA0", likes:842, comments:54, shares:21, following:false },
+            { artist:"김민찬", handle:"@minchan", title:"새벽 세시 Blues", lyrics:"잠 못 드는 새벽 세 시 / 머릿속엔 너의 목소리 / 쫀득하게 감기는 멜로디...", img:"https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=700&h=1300&fit=crop&q=80", color:"#00E5FF", likes:610, comments:39, shares:14, following:true },
+            { artist:"정세림", handle:"@serim", title:"심야 라디오", lyrics:"빗소리에 섞인 로파이 / 켜둔 라디오에 기대 / 오늘도 너를 생각해...", img:"https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=700&h=1300&fit=crop&q=80", color:"#FF4D6D", likes:455, comments:28, shares:9, following:false },
+            { artist:"오제이", handle:"@ohjay", title:"전력질주", lyrics:"숨이 차도 멈추지 않아 / 끝까지 달려보는 거야 / 하이텐션 그대로...", img:"https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=700&h=1300&fit=crop&q=80", color:"#2EE6D6", likes:1102, comments:71, shares:40, following:true }
+        ];
+        let feedFilter = 'all', feedLiked = {}, feedObserver = null;
+        function feedPostHtml(p) {
+            const liked = !!feedLiked[p.title];
+            const waves = Array.from({ length: 46 }).map((_, k) => `<i style="animation-delay:${(k * 0.045).toFixed(2)}s"></i>`).join('');
+            return `<div class="feed-post" data-title="${p.title}" style="background:linear-gradient(165deg, ${p.color}55, #0a0618 70%)">
+                <img class="feed-bg" src="${p.img}" alt="" onerror="this.style.display='none'">
+                <div class="feed-overlay"></div>
+                <div class="feed-wave" style="color:${p.color}">${waves}</div>
+                <div class="feed-actions">
+                    <button onclick="feedLike('${p.title.replace(/'/g, "")}', this)"><i data-lucide="heart" class="w-7 h-7 ${liked ? 'fill-rose-500 text-rose-500' : ''}"></i><span class="feed-act-count">${(p.likes + (liked ? 1 : 0)).toLocaleString()}</span></button>
+                    <button><i data-lucide="message-circle" class="w-7 h-7"></i><span class="feed-act-count">${p.comments}</span></button>
+                    <button><i data-lucide="send" class="w-7 h-7"></i><span class="feed-act-count">${p.shares}</span></button>
+                </div>
+                <div class="feed-info">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-9 h-9 rounded-full border border-white/40 shrink-0" style="background:${p.color}44"></div>
+                        <div class="min-w-0"><div class="text-sm font-bold leading-tight truncate">${p.artist}</div><div class="text-[11px] text-white/60 truncate">${p.handle}</div></div>
+                        <button class="ml-1 text-[10px] font-bold px-3 py-1 rounded-full bg-white/15 border border-white/30 shrink-0">팔로우</button>
+                    </div>
+                    <div class="text-lg font-extrabold mb-1">${p.title}</div>
+                    <div class="text-xs text-white/80 leading-snug" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${p.lyrics} <span class="text-white/50">더보기</span></div>
+                </div>
+            </div>`;
+        }
+        function renderFeed() {
+            const reels = document.getElementById('feed-reels');
+            if (!reels) return;
+            const posts = FEED.filter(p => feedFilter === 'all' || p.following);
+            reels.innerHTML = posts.length ? posts.map(feedPostHtml).join('')
+                : '<div class="feed-post flex items-center justify-center text-white/40 text-sm">팔로잉한 아티스트의 게시물이 없어요</div>';
+            lucide.createIcons();
+            feedSetupObserver();
+            if (posts[0]) feedActivate(posts[0]);
+            reels.scrollTop = 0;
+        }
+        function setFeedFilter(f) {
+            feedFilter = f;
+            document.getElementById('feed-tab-all').className = 'px-4 py-1 rounded-full text-xs font-bold transition-colors ' + (f === 'all' ? 'bg-white text-black' : 'text-white/70');
+            document.getElementById('feed-tab-following').className = 'px-4 py-1 rounded-full text-xs font-bold transition-colors ' + (f === 'following' ? 'bg-white text-black' : 'text-white/70');
+            renderFeed();
+        }
+        function feedLike(title, btn) {
+            feedLiked[title] = !feedLiked[title];
+            const ico = btn.querySelector('svg') || btn.querySelector('i');
+            const cnt = btn.querySelector('.feed-act-count');
+            const p = FEED.find(x => x.title === title);
+            if (ico) { ico.classList.toggle('fill-rose-500', feedLiked[title]); ico.classList.toggle('text-rose-500', feedLiked[title]); }
+            if (cnt && p) cnt.innerText = (p.likes + (feedLiked[title] ? 1 : 0)).toLocaleString();
+        }
+        function feedActivate(p) {
+            document.getElementById('player-title').innerText = p.title;
+            document.getElementById('player-tags').innerText = p.artist;
+            const art = document.getElementById('player-album-art');
+            art.style.backgroundColor = p.color + '22';
+            art.style.borderColor = p.color + '55';
+            art.innerHTML = '<span class="w-4 h-4 rounded-full pointer-events-none" style="background-color:' + p.color + '; box-shadow:0 0 10px ' + p.color + '"></span>';
+        }
+        function feedSetupObserver() {
+            const reels = document.getElementById('feed-reels');
+            if (feedObserver) feedObserver.disconnect();
+            feedObserver = new IntersectionObserver((entries) => {
+                entries.forEach(e => {
+                    if (e.isIntersecting && e.intersectionRatio > 0.6) {
+                        const p = FEED.find(x => x.title === e.target.dataset.title);
+                        if (p) feedActivate(p);
+                    }
+                });
+            }, { root: reels, threshold: [0.6] });
+            reels.querySelectorAll('.feed-post').forEach(el => feedObserver.observe(el));
         }
 
         window.addEventListener('resize', () => {
