@@ -540,8 +540,8 @@
             container.addEventListener('wheel', (e) => {
                 const max = container.scrollHeight - container.clientHeight;
                 if (max <= 4) return;
+                // 아래로 내려서 바닥에 닿을 때만 새로고침. 위로 올리는 건 그냥 일반 스크롤.
                 if (container.scrollTop >= max - 2 && e.deltaY > 0) { loadRandomBatch(); }
-                else if (container.scrollTop <= 2 && e.deltaY < 0) { container.scrollTop = max; flashLoop('맨 아래로'); }
             }, { passive: true });
             container.addEventListener('scroll', () => {
                 if (scrollCooldown) return;
@@ -563,13 +563,18 @@
             clearTimeout(h._t);
             h._t = setTimeout(() => { h.style.opacity = '0'; }, 1100);
         }
-        // 2페이지 끝까지 가면 → 풀에서 랜덤하게 다른 음악 배치를 새로 뽑아 옴(리서치/새로고침)
+        // 아래 끝까지 가면 → 풀에서 '아직 안 본' 곡을 랜덤 한 배치 뽑아 옴(리서치/새로고침).
+        // 만 곡이어도 전부 스크롤할 필요 없음 — 발견 피드라 매번 안 본 곡을 무작위로, 다 보면 초기화.
+        let seenTitles = new Set();
         function loadRandomBatch() {
             const vh = container.clientHeight || 460;
             const W = container.clientWidth || 360;
             const n = Math.max(6, Math.min(12, Math.round((W * vh * 2) / 34000)));
-            const shuffled = POOL.slice().sort(() => Math.random() - 0.5);
-            bubbleData = shuffled.slice(0, n).map(t => ({
+            let avail = POOL.filter(t => !seenTitles.has(t.title));
+            if (avail.length < n) { seenTitles.clear(); avail = POOL.slice(); }   // 다 봤으면 처음부터
+            const pick = avail.sort(() => Math.random() - 0.5).slice(0, n);
+            pick.forEach(t => seenTitles.add(t.title));
+            bubbleData = pick.map(t => ({
                 id: nextId++, title: t.title, artist: t.artist, color: t.color, tags: t.tags,
                 size: 108 + Math.round(Math.random() * 28)   // 108~136
             }));   // x/y 없음 → layout이 위쪽부터 새 위치+속도 부여
