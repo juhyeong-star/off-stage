@@ -609,20 +609,45 @@
             playMusicById(newBubble.id);
         }
 
-        // ===== Tags 탭 — 실제 앱에서 쓰는 태그(스크린샷) + 네온사인 컬러 =====
-        const TAGS = ["고1","우리들의발라드","짝사랑","인디","Painkiller","10","1975","켈라니","영크크","1982년 느낌","성시경","정승환","서울예대들","피아노과탑","고백","사귀자","ㅎㅇ","트로트","뽕짝","중독적","보리보리쌀","채민르","드림걸즈","커버","ACID","RNB","편곡같이할사람","교감","나도작곡가","함께만들자","Dnb","감전","happy","신나는","파워레인져","추억","어릴때","편견","스테레오타입","스케치","경험","pop","RnB","dior","test","허무","2학년","청춘","Gfunk","R&B","소매치기범","읽씹","파리","알엔비힙합","hyperpop","기침감기","지예아","보사노바","팝","쉐이커","준식교수님","발라드","이문세","잠수이별","서정적인팝","R&b","1학년","그루브","자우림","밴드","시티팝","상사병","사랑","fyp","bedroom pop","예시"];
+        // ===== Tags 탭 — 실제 앱 태그(스크린샷) + 네온 컬러. 크기=곡수(실앱과 동일) =====
+        // {t: 태그, c: 곡수}. 실제 앱은 getTagStats()가 자동 집계 — 여기선 mock.
+        const TAG_DATA = [
+            {t:"고1",c:32},{t:"드림걸즈",c:27},{t:"발라드",c:24},{t:"인디",c:22},{t:"ACID",c:19},
+            {t:"RNB",c:18},{t:"시티팝",c:16},{t:"pop",c:15},{t:"자우림",c:14},{t:"커버",c:13},
+            {t:"파워레인져",c:12},{t:"Painkiller",c:11},{t:"hyperpop",c:11},{t:"성시경",c:10},{t:"트로트",c:9},
+            {t:"우리들의발라드",c:9},{t:"청춘",c:8},{t:"감전",c:8},{t:"소매치기범",c:7},{t:"Gfunk",c:7},
+            {t:"짝사랑",c:6},{t:"보사노바",c:6},{t:"밴드",c:6},{t:"신나는",c:5},{t:"추억",c:5},
+            {t:"1975",c:5},{t:"정승환",c:4},{t:"뽕짝",c:4},{t:"중독적",c:4},{t:"happy",c:4},
+            {t:"Dnb",c:3},{t:"dior",c:3},{t:"이문세",c:3},{t:"그루브",c:3},{t:"편곡같이할사람",c:3},
+            {t:"나도작곡가",c:2},{t:"함께만들자",c:2},{t:"피아노과탑",c:2},{t:"고백",c:2},{t:"R&B",c:2},
+            {t:"bedroom pop",c:2},{t:"서정적인팝",c:2},{t:"잠수이별",c:1},{t:"상사병",c:1},{t:"사랑",c:1},
+            {t:"fyp",c:1},{t:"예시",c:1},{t:"기침감기",c:1},{t:"준식교수님",c:1},{t:"쉐이커",c:1},
+            {t:"보리보리쌀",c:1},{t:"켈라니",c:1},{t:"영크크",c:1},{t:"1982년 느낌",c:1},{t:"서울예대들",c:1},
+            {t:"사귀자",c:1},{t:"ㅎㅇ",c:1},{t:"채민르",c:1},{t:"알엔비힙합",c:1},{t:"파리",c:1},
+            {t:"읽씹",c:1},{t:"지예아",c:1},{t:"2학년",c:1},{t:"허무",c:1},{t:"test",c:1},
+            {t:"경험",c:1},{t:"스케치",c:1},{t:"스테레오타입",c:1},{t:"편견",c:1},{t:"어릴때",c:1},
+            {t:"교감",c:1},{t:"RnB",c:1},{t:"R&b",c:1},{t:"1학년",c:1},{t:"10",c:1}
+        ];
         const NEON = ["#FF2EA0","#00E5FF","#76FF03","#FFD166","#B14BFF","#FF9100","#2EE6D6","#FF4D6D","#4D9DFF","#C77DFF","#39FF14","#FF6EC7"];
+        // 실제 앱과 동일한 크기 공식: 13~38px, 곡수 많을수록 큼
+        function tagFontSize(count, max) {
+            const min = 13, cap = 38;
+            if (max <= 1) return 20;
+            return Math.round(min + (cap - min) * Math.pow(count / max, 0.7));
+        }
         function renderTags() {
             const wall = document.getElementById('tag-wall');
             if (!wall) return;
-            wall.innerHTML = TAGS.map((t, i) => {
+            const sorted = TAG_DATA.slice().sort((a, b) => b.c - a.c);   // 곡수 많은 순(실앱과 동일)
+            const max = sorted.length ? sorted[0].c : 1;
+            wall.innerHTML = sorted.map((d, i) => {
                 const c = NEON[i % NEON.length];
-                const sz = 14 + ((i * 7) % 6);
-                const safe = t.replace(/'/g, "\\'");
-                return `<span class="neon-tag" style="--c:${c};font-size:${sz}px" onclick="tagClick('${safe}')">#${t}</span>`;
+                const size = tagFontSize(d.c, max);
+                const safe = d.t.replace(/'/g, "\\'");
+                return `<span class="neon-tag" style="--c:${c};font-size:${size}px" title="#${d.t} · ${d.c}곡" onclick="tagClick('${safe}')">#${d.t}</span>`;
             }).join('');
             const cn = document.getElementById('tag-count');
-            if (cn) cn.textContent = '총 ' + TAGS.length + '개';
+            if (cn) cn.textContent = '총 ' + sorted.length + '개';
         }
         function tagClick(t) {
             const toast = document.getElementById('toast-notif'), tt = document.getElementById('toast-text');
