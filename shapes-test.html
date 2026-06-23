@@ -93,7 +93,7 @@
         .sparkle { position: absolute; pointer-events: none; border-radius: 50%; animation: favExplode .6s cubic-bezier(.1,.8,.3,1) forwards; }
         @keyframes favExplode { 0% { transform: translate(-50%,-50%) scale(1); opacity: 1; } 100% { transform: translate(-50%,-50%) translate(var(--mx),var(--my)) scale(0); opacity: 0; } }
         /* ===== 주절주절(릴스형 세로 피드) ===== */
-        #feed-reels { height: 100%; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        #feed-reels { height: 100%; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain; }
         #feed-reels::-webkit-scrollbar { display: none; }
         .feed-post { scroll-snap-align: start; scroll-snap-stop: always; position: relative; width: 100%; height: 100%; background: #0a0618; overflow: hidden; }
         .feed-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -1011,7 +1011,11 @@
             { artist:"유지호", handle:"@yujiho", title:"네온 드라이브", lyrics:"새벽 도시의 불빛 사이로 / 너와 나 단둘이 달려가 / 멈추지 않을 이 밤...", img:"https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=700&h=1300&fit=crop&q=80", color:"#FF2EA0", likes:842, comments:54, shares:21, following:false },
             { artist:"김민찬", handle:"@minchan", title:"새벽 세시 Blues", lyrics:"잠 못 드는 새벽 세 시 / 머릿속엔 너의 목소리 / 쫀득하게 감기는 멜로디...", img:"https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=700&h=1300&fit=crop&q=80", color:"#00E5FF", likes:610, comments:39, shares:14, following:true },
             { artist:"정세림", handle:"@serim", title:"심야 라디오", lyrics:"빗소리에 섞인 로파이 / 켜둔 라디오에 기대 / 오늘도 너를 생각해...", img:"https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=700&h=1300&fit=crop&q=80", color:"#FF4D6D", likes:455, comments:28, shares:9, following:false },
-            { artist:"오제이", handle:"@ohjay", title:"전력질주", lyrics:"숨이 차도 멈추지 않아 / 끝까지 달려보는 거야 / 하이텐션 그대로...", img:"https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=700&h=1300&fit=crop&q=80", color:"#2EE6D6", likes:1102, comments:71, shares:40, following:true }
+            { artist:"오제이", handle:"@ohjay", title:"전력질주", lyrics:"숨이 차도 멈추지 않아 / 끝까지 달려보는 거야 / 하이텐션 그대로...", img:"https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=700&h=1300&fit=crop&q=80", color:"#2EE6D6", likes:1102, comments:71, shares:40, following:true },
+            { artist:"한승수", handle:"@seungsoo", title:"Hey Hey Hey", lyrics:"자우림처럼 질러보는 밤 / 밴드 사운드에 몸을 맡겨 / 인디의 자유로움...", img:"https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=700&h=1300&fit=crop&q=80", color:"#FF9100", likes:723, comments:46, shares:18, following:false },
+            { artist:"달문", handle:"@dalmoon", title:"보라빛 노을", lyrics:"하늘이 보라빛으로 물들 때 / 너를 떠올리는 이 시간 / 서정적인 발라드...", img:"https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=700&h=1300&fit=crop&q=80", color:"#9D4EDD", likes:988, comments:62, shares:27, following:true },
+            { artist:"리나", handle:"@rina", title:"틱톡 챌린지", lyrics:"한 번 들으면 멈출 수 없어 / 모두가 따라하는 그 춤 / fyp 점령 중...", img:"https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=700&h=1300&fit=crop&q=80", color:"#C77DFF", likes:2140, comments:133, shares:88, following:false },
+            { artist:"무드", handle:"@mood", title:"새벽 감성", lyrics:"잔잔하게 흐르는 로파이 / 새벽 공기처럼 차분히 / 너의 하루를 위로해...", img:"https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=700&h=1300&fit=crop&q=80", color:"#7CF5FF", likes:534, comments:31, shares:12, following:true }
         ];
         let feedFilter = 'all', feedLiked = {}, feedObserver = null;
         function feedPostHtml(p) {
