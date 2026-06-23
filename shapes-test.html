@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>off-stage · 도형(발견) 테스트</title>
+    <title>off-stage · 통합 테스트 (발견 · Tags · 즐겨찾기)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Pretendard (정식 CDN — Google Fonts엔 없음) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.min.css">
+    <!-- 즐겨찾기 손글씨 태그용 -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap">
     <style>
         body {
             font-family: 'Pretendard', sans-serif;
@@ -80,6 +82,17 @@
                 border-radius: 0 !important; border-width: 0 !important;
             }
         }
+        /* ===== 즐겨찾기(드래그&드롭) 탭 ===== */
+        .handwritten { font-family: 'Nanum Pen Script', cursive; line-height: 1.15; }
+        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.06); }
+        /* 행성 — 움직임 없이 제자리에서 둥둥(bob)만 */
+        .bubble-track { position: absolute; cursor: grab; animation: favBob 4s ease-in-out infinite; }
+        @keyframes favBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+        .dragging { opacity: .95 !important; transform: scale(1.12) !important; box-shadow: 0 15px 45px rgba(255,255,255,.4) !important; z-index: 9999 !important; cursor: grabbing; animation: none !important; }
+        .folder-zone { transition: transform .3s cubic-bezier(.175,.885,.32,1.275), background-color .2s, border-color .2s; }
+        .folder-hover { transform: scale(1.08) translateY(-6px); background: rgba(168,85,247,.15) !important; border-color: rgba(168,85,247,.6) !important; box-shadow: 0 10px 25px rgba(168,85,247,.25); }
+        .sparkle { position: absolute; pointer-events: none; border-radius: 50%; animation: favExplode .6s cubic-bezier(.1,.8,.3,1) forwards; }
+        @keyframes favExplode { 0% { transform: translate(-50%,-50%) scale(1); opacity: 1; } 100% { transform: translate(-50%,-50%) translate(var(--mx),var(--my)) scale(0); opacity: 0; } }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -214,19 +227,39 @@
             </section>
 
             <!-- 즐겨찾기 탭 -->
-            <section id="content-favorites" class="hidden flex-1 min-h-0 overflow-y-auto p-5 space-y-4 z-10">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h2 class="text-lg font-bold">즐겨찾기 보관함</h2>
-                        <p class="text-xs text-white/40">내가 수집한 영감 조각들</p>
+            <section id="content-favorites" class="hidden flex-1 min-h-0 flex flex-col z-10">
+                <div class="flex items-center gap-2 px-3 pt-2 pb-1 shrink-0">
+                    <div class="flex-1 flex items-center gap-2 bg-white/5 rounded-xl p-2 border border-white/5 text-[10px] text-white/70">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300 shrink-0"></i>
+                        <span class="leading-tight">행성을 <strong>끌어다</strong> 아래 폴더에 <strong>놓으면</strong> 수집!</span>
                     </div>
+                    <button onclick="createNewFolder()" class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-purple-300 shrink-0" aria-label="새 폴더"><i data-lucide="folder-plus" class="w-4 h-4"></i></button>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="glass rounded-3xl p-4 flex flex-col justify-between h-40 border border-purple-500/20 relative overflow-hidden group">
-                        <i data-lucide="folder" class="w-8 h-8 text-purple-400"></i>
-                        <div>
-                            <h3 class="text-xs font-bold">투자하고픈 명곡</h3>
-                            <p class="text-[10px] text-white/40 mt-1">곡 5개 · 포스트잇 12개</p>
+                <div class="mx-3 mt-1 flex justify-between items-center bg-black/60 backdrop-blur-md border border-white/5 rounded-full py-1.5 pl-4 pr-1.5 hidden shrink-0" id="folder-view-header">
+                    <span class="text-xs font-extrabold flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span><span id="current-folder-title">#투자하고픈</span></span>
+                    <button onclick="resetFolderFilter()" class="text-[10px] bg-white/10 hover:bg-white/20 text-white font-bold px-3 py-1 rounded-full flex items-center gap-1"><i data-lucide="rotate-ccw" class="w-3 h-3"></i> 전체 보기</button>
+                </div>
+                <div id="space-galaxy" class="flex-1 min-h-0 relative overflow-hidden mx-2 my-1 rounded-2xl"></div>
+                <div class="shrink-0 px-3 pt-2 pb-2 bg-[#090614]/70 border-t border-white/10">
+                    <div class="flex justify-between items-center px-1 mb-1.5">
+                        <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">수집 보관함</span>
+                        <span class="text-[9px] text-purple-400 font-semibold">폴더 탭 = 필터</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2" id="folders-grid">
+                        <div id="folder-1" onclick="toggleFolderFilter(1)" class="folder-zone glass rounded-xl p-2 flex flex-col items-center justify-center text-center cursor-pointer border border-purple-500/10 h-[72px] relative overflow-hidden">
+                            <div class="w-6 h-6 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 mb-1"><i data-lucide="folder" class="w-3 h-3"></i></div>
+                            <h4 class="text-[9px] font-black text-white/90 truncate w-full">#투자하고픈</h4>
+                            <p class="text-[7px] text-white/40 mt-0.5" id="folder-count-1">0곡 보관</p>
+                        </div>
+                        <div id="folder-2" onclick="toggleFolderFilter(2)" class="folder-zone glass rounded-xl p-2 flex flex-col items-center justify-center text-center cursor-pointer border border-cyan-500/10 h-[72px] relative overflow-hidden">
+                            <div class="w-6 h-6 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400 mb-1"><i data-lucide="folder" class="w-3 h-3"></i></div>
+                            <h4 class="text-[9px] font-black text-white/90 truncate w-full">#새벽_멜로디</h4>
+                            <p class="text-[7px] text-white/40 mt-0.5" id="folder-count-2">0곡 보관</p>
+                        </div>
+                        <div id="folder-3" onclick="toggleFolderFilter(3)" class="folder-zone glass rounded-xl p-2 flex flex-col items-center justify-center text-center cursor-pointer border border-amber-500/10 h-[72px] relative overflow-hidden">
+                            <div class="w-6 h-6 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400 mb-1"><i data-lucide="folder" class="w-3 h-3"></i></div>
+                            <h4 class="text-[9px] font-black text-white/90 truncate w-full">#레퍼런스</h4>
+                            <p class="text-[7px] text-white/40 mt-0.5" id="folder-count-3">0곡 보관</p>
                         </div>
                     </div>
                 </div>
@@ -445,6 +478,7 @@
             }
             if (tabName === 'discover') startCosmicAnimation();
             else stopCosmicAnimation();
+            if (tabName === 'favorites') renderGalaxySpace();   // 즐겨찾기: 탭 열 때 은하 렌더(보일 때 크기 확정)
         }
 
         function stopCosmicAnimation() { stopPhysics(); }
@@ -743,8 +777,204 @@
             setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 1400);
         }
 
+        // ===================== 즐겨찾기(드래그&드롭) — 행성은 제자리 둥둥(bob), 드래그로 폴더에 수집 =====================
+        let tracksList = [
+            { id: 1, title: "건유레인져", color: "#FF2E93", tags: ["#파워레인져","#포기마","#할수있어"], folderId: null, x: 30, y: 24, size: 86 },
+            { id: 2, title: "새벽 세시 Blues", color: "#00E5FF", tags: ["#새벽세시","#불면","#쫀득"], folderId: null, x: 175, y: 70, size: 96 },
+            { id: 3, title: "Hey Hey Hey", color: "#FF9100", tags: ["#자우림","#밴드","#인디"], folderId: null, x: 44, y: 150, size: 80 },
+            { id: 4, title: "Plastic days", color: "#76FF03", tags: ["#G-Funk","#R&B","#소매치기"], folderId: null, x: 188, y: 196, size: 90 },
+            { id: 5, title: "비오는 등교길", color: "#D500F9", tags: ["#보사노바","#인디","#기분좋은"], folderId: null, x: 96, y: 110, size: 84 }
+        ];
+        let foldersList = [
+            { id: 1, title: "#투자하고픈", color: "#a855f7" },
+            { id: 2, title: "#새벽_멜로디", color: "#06b6d4" },
+            { id: 3, title: "#레퍼런스", color: "#f59e0b" }
+        ];
+        let favActiveFolder = null, favActiveTrack = null, favTarget = null, favOffX = 0, favOffY = 0;
+        const spaceGalaxy = document.getElementById('space-galaxy');
+
+        function renderGalaxySpace() {
+            if (!spaceGalaxy) return;
+            spaceGalaxy.innerHTML = '';
+            const w = spaceGalaxy.clientWidth || 320, h = spaceGalaxy.clientHeight || 360;
+            tracksList.forEach((t, idx) => {
+                if (favActiveFolder !== null && t.folderId !== favActiveFolder) return;
+                if (favActiveFolder === null && t.folderId !== null) return;
+                t.x = Math.max(5, Math.min(w - t.size - 5, t.x));
+                t.y = Math.max(5, Math.min(h - t.size - 5, t.y));
+                const b = document.createElement('div');
+                b.id = 'fav-bubble-' + t.id;
+                b.dataset.id = t.id;
+                b.className = 'bubble-track rounded-full flex flex-col items-center justify-center p-2.5 text-center shadow-lg z-20';
+                b.style.width = t.size + 'px'; b.style.height = t.size + 'px';
+                b.style.left = t.x + 'px'; b.style.top = t.y + 'px';
+                b.style.backgroundColor = t.color;
+                b.style.animationDuration = (3.4 + (idx % 4) * 0.5) + 's';
+                b.style.animationDelay = (-(idx * 0.8)).toFixed(2) + 's';
+                const sel = favActiveTrack && favActiveTrack.id === t.id;
+                b.style.boxShadow = sel ? `0 0 25px ${t.color}, inset 0 4px 10px rgba(255,255,255,0.6)` : `0 6px 20px ${t.color}25, inset 0 4px 10px rgba(255,255,255,0.4)`;
+                if (sel) b.style.border = '2.5px solid #fff';
+                b.innerHTML = '<div class="space-y-0.5 w-full flex flex-col justify-center items-center pointer-events-none">' +
+                    t.tags.map(tag => `<p class="text-black font-extrabold select-none truncate w-full handwritten text-[13px] leading-tight">${tag}</p>`).join('') + '</div>';
+                b.addEventListener('mousedown', favDragStart);
+                b.addEventListener('touchstart', favDragStart, { passive: false });
+                b.addEventListener('dblclick', () => favPlay(t));
+                spaceGalaxy.appendChild(b);
+            });
+            updateFolderCounts();
+        }
+        // 드래그 중엔 body로 띄워(fixed) 어떤 컨테이너 overflow에도 안 잘림(=폴더 근처서 사라지던 버그 해결)
+        function favDragStart(e) {
+            e.preventDefault();
+            const cx = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+            const cy = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+            favTarget = e.currentTarget;
+            const r = favTarget.getBoundingClientRect();
+            favOffX = cx - r.left; favOffY = cy - r.top;
+            favTarget.style.position = 'fixed'; favTarget.style.margin = '0';
+            favTarget.style.left = r.left + 'px'; favTarget.style.top = r.top + 'px';
+            document.body.appendChild(favTarget);
+            favTarget.classList.add('dragging');
+            document.addEventListener('mousemove', favDragMove);
+            document.addEventListener('touchmove', favDragMove, { passive: false });
+            document.addEventListener('mouseup', favDragEnd);
+            document.addEventListener('touchend', favDragEnd);
+        }
+        function favDragMove(e) {
+            if (!favTarget) return;
+            e.preventDefault();
+            const cx = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+            const cy = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+            const vx = cx - favOffX, vy = cy - favOffY;
+            favTarget.style.left = vx + 'px'; favTarget.style.top = vy + 'px';
+            const gr = spaceGalaxy.getBoundingClientRect();
+            const tr = tracksList.find(t => t.id === parseInt(favTarget.dataset.id));
+            if (tr) { tr.x = vx - gr.left; tr.y = vy - gr.top; }
+            favCheckFolderHover(cx, cy);
+        }
+        function favDragEnd(e) {
+            if (!favTarget) return;
+            document.removeEventListener('mousemove', favDragMove);
+            document.removeEventListener('touchmove', favDragMove);
+            document.removeEventListener('mouseup', favDragEnd);
+            document.removeEventListener('touchend', favDragEnd);
+            let cx, cy;
+            if (e.type.startsWith('touch')) { cx = e.changedTouches[0].clientX; cy = e.changedTouches[0].clientY; }
+            else { cx = e.clientX; cy = e.clientY; }
+            const tr = tracksList.find(t => t.id === parseInt(favTarget.dataset.id));
+            const hov = favGetHoveredFolderId(cx, cy);
+            favTarget.classList.remove('dragging');
+            favTarget.remove();
+            favTarget = null;
+            if (tr) {
+                if (hov !== null) { tr.folderId = hov; favSparkle(cx, cy, tr.color); }
+                else {
+                    const w = spaceGalaxy.clientWidth || 320, h = spaceGalaxy.clientHeight || 360;
+                    tr.x = Math.max(5, Math.min(w - tr.size - 5, tr.x));
+                    tr.y = Math.max(5, Math.min(h - tr.size - 5, tr.y));
+                }
+            }
+            foldersList.forEach(f => { const el = document.getElementById('folder-' + f.id); if (el) el.classList.remove('folder-hover'); });
+            renderGalaxySpace();
+        }
+        function favGetHoveredFolderId(cx, cy) {
+            let m = null;
+            foldersList.forEach(f => {
+                const el = document.getElementById('folder-' + f.id);
+                if (!el) return;
+                const r = el.getBoundingClientRect();
+                if (cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom) m = f.id;
+            });
+            return m;
+        }
+        function favCheckFolderHover(cx, cy) {
+            foldersList.forEach(f => {
+                const el = document.getElementById('folder-' + f.id);
+                if (!el) return;
+                const r = el.getBoundingClientRect();
+                if (cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom) el.classList.add('folder-hover');
+                else el.classList.remove('folder-hover');
+            });
+        }
+        function updateFolderCounts() {
+            foldersList.forEach(f => {
+                const el = document.getElementById('folder-count-' + f.id);
+                if (el) el.innerText = tracksList.filter(t => t.folderId === f.id).length + '곡 보관';
+            });
+        }
+        function favSparkle(x, y, color) {
+            for (let i = 0; i < 14; i++) {
+                const s = document.createElement('div');
+                s.className = 'sparkle z-50';
+                s.style.left = x + 'px'; s.style.top = y + 'px';
+                s.style.backgroundColor = color;
+                const sz = Math.random() * 6 + 4;
+                s.style.width = sz + 'px'; s.style.height = sz + 'px';
+                s.style.setProperty('--mx', (Math.random() - 0.5) * 120 + 'px');
+                s.style.setProperty('--my', (Math.random() - 0.5) * 120 + 'px');
+                document.body.appendChild(s);
+                setTimeout(() => s.remove(), 600);
+            }
+        }
+        function toggleFolderFilter(folderId) {
+            if (favActiveFolder === folderId) { resetFolderFilter(); return; }
+            favActiveFolder = folderId;
+            const folder = foldersList.find(f => f.id === folderId);
+            const header = document.getElementById('folder-view-header');
+            header.classList.remove('hidden');
+            document.getElementById('current-folder-title').innerText = folder.title + ' 은하';
+            foldersList.forEach(f => {
+                const el = document.getElementById('folder-' + f.id);
+                if (f.id === folderId) { el.style.borderColor = folder.color; el.style.backgroundColor = folder.color + '15'; }
+                else { el.style.borderColor = 'rgba(255,255,255,0.06)'; el.style.backgroundColor = 'transparent'; }
+            });
+            const cx = (spaceGalaxy.clientWidth || 300) / 2, cy = (spaceGalaxy.clientHeight || 300) / 2;
+            tracksList.forEach((t, idx) => {
+                if (t.folderId === favActiveFolder) { t.x = cx + Math.cos(idx) * 50 - t.size / 2; t.y = cy + Math.sin(idx) * 50 - t.size / 2; }
+            });
+            renderGalaxySpace();
+        }
+        function resetFolderFilter() {
+            favActiveFolder = null;
+            document.getElementById('folder-view-header').classList.add('hidden');
+            foldersList.forEach(f => { const el = document.getElementById('folder-' + f.id); el.style.borderColor = 'rgba(255,255,255,0.06)'; el.style.backgroundColor = 'transparent'; });
+            renderGalaxySpace();
+        }
+        function createNewFolder() {
+            const title = prompt("새로운 폴더 태그명을 적어주세요:", "#자작곡_모음");
+            if (!title) return;
+            const colors = ["#EC4899", "#8B5CF6", "#3B82F6", "#10B981", "#F59E0B"];
+            const rc = colors[Math.floor(Math.random() * colors.length)];
+            const newId = foldersList.length + 1;
+            foldersList.push({ id: newId, title: title, color: rc });
+            const grid = document.getElementById('folders-grid');
+            grid.classList.remove('grid-cols-3'); grid.classList.add('grid-cols-4');
+            const el = document.createElement('div');
+            el.id = 'folder-' + newId;
+            el.onclick = () => toggleFolderFilter(newId);
+            el.className = 'folder-zone glass rounded-xl p-2 flex flex-col items-center justify-center text-center cursor-pointer border h-[72px] relative overflow-hidden';
+            el.style.borderColor = rc + '20';
+            el.innerHTML = '<div class="w-6 h-6 rounded-full flex items-center justify-center mb-1" style="background-color:' + rc + '15; color:' + rc + '"><i data-lucide="folder" class="w-3 h-3"></i></div><h4 class="text-[9px] font-black text-white/90 truncate w-full">' + title + '</h4><p class="text-[7px] text-white/40 mt-0.5" id="folder-count-' + newId + '">0곡 보관</p>';
+            grid.appendChild(el);
+            lucide.createIcons();
+            updateFolderCounts();
+        }
+        function favPlay(track) {
+            favActiveTrack = track;
+            document.getElementById('player-title').innerText = track.title;
+            document.getElementById('player-tags').innerText = track.tags.join(' ');
+            const art = document.getElementById('player-album-art');
+            art.style.backgroundColor = track.color + '15';
+            art.style.borderColor = track.color + '40';
+            art.innerHTML = '<span class="w-4 h-4 rounded-full pointer-events-none" style="background-color:' + track.color + '; box-shadow:0 0 10px ' + track.color + '"></span>';
+            const btn = document.getElementById('btn-play');
+            if (btn) { btn.innerHTML = '<i data-lucide="pause" class="w-4 h-4 fill-black"></i>'; lucide.createIcons(); }
+            renderGalaxySpace();
+        }
+
         window.addEventListener('resize', () => {
             if (!document.getElementById('content-discover').classList.contains('hidden')) layoutBubbles();
+            if (!document.getElementById('content-favorites').classList.contains('hidden')) renderGalaxySpace();
         });
         window.onload = function() {
             lucide.createIcons();
