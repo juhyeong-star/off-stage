@@ -51,8 +51,7 @@
         /* 도형(피드) — 위치는 JS 물리 루프가 매 프레임 갱신(드리프트+충돌). 부드러운 색 글로우. */
         .neon-bubble { position: absolute; cursor: pointer; will-change: left, top; }
         .neon-bubble:active { transform: scale(0.93); }
-        #bubbles-container { overflow-y: auto; scrollbar-width: none; }
-        #bubbles-container::-webkit-scrollbar { display: none; }
+        #bubbles-container { overflow: hidden; }   /* 무한 공간: 가장자리 wrap 시 깔끔히 클립 */
         /* Tags — 네온사인 컬러 글자(글로우) */
         .neon-tag {
             color: var(--c); font-weight: 700; cursor: pointer; line-height: 1.2;
@@ -161,8 +160,11 @@
                 <div class="flex justify-between items-center mb-4">
                     <div>
                         <h2 class="text-lg font-bold" id="discover-title">우주 탐색 피드</h2>
-                        <p class="text-[11px] text-white/40" id="discover-subtitle">둥둥 떠다니는 감성 음악들을 탭해 보세요</p>
+                        <p class="text-[11px] text-white/40" id="discover-subtitle">탭=재생 · 끌어서 휙 던지기 · 무한 공간</p>
                     </div>
+                    <button onclick="loadRandomBatch()" class="text-[10px] flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-purple-300 hover:bg-white/10 transition-colors" aria-label="새 음악">
+                        <i data-lucide="refresh-cw" class="w-3 h-3"></i> 새 음악
+                    </button>
                 </div>
 
                 <div id="bubbles-container" class="relative flex-1 min-h-0 rounded-3xl border border-white/5 bg-black/30 backdrop-blur-sm z-10"></div>
@@ -490,26 +492,24 @@
                 canvasEl = document.getElementById('bubbles-canvas');
             }
         }
-        // 도형 = 2페이지 캔버스 안에서 떠다님(drift) + 벽/서로 충돌 시 분리+팅김. 최신은 위에서 생성.
+        // 도형 = 한 화면(무한 wrap) 안에서 격동적으로 떠다님 + 충돌 팅김. 탭=재생 / 끌면 던지기.
         function layoutBubbles() {
             ensureCanvas();
             const vh = container.clientHeight || 460;
             const W = container.clientWidth || 360;
-            const H = vh * 2;                                  // 2페이지
+            const H = vh;                                      // 한 화면(가장자리 wrap = 무한 공간)
             canvasEl.style.height = H + 'px';
-            const cap = Math.max(6, Math.min(12, Math.round((W * H) / 34000)));   // 덜 붐비게
-            if (bubbleData.length > cap) bubbleData.length = cap;   // 초과분(오래된 꼬리) 제거
+            const cap = Math.max(5, Math.min(10, Math.round((W * H) / 30000)));
+            if (bubbleData.length > cap) bubbleData.length = cap;
             canvasEl.innerHTML = '';
-            bubbleData.forEach((b, i) => {
+            bubbleData.forEach((b) => {
                 const size = b.size;
-                if (b.x == null) {                              // 처음 등장 → 2페이지에 고르게 퍼뜨림(초기 겹침 최소)
+                if (b.x == null) {                             // 처음 등장 → 화면에 흩뿌림 + 격동적 속도(랜덤 방향)
                     b.x = 12 + Math.random() * Math.max(20, W - size - 24);
-                    b.y = 18 + (i + Math.random() * 0.5) * ((H - 36) / Math.max(1, bubbleData.length));
-                    b.dx = (Math.random() - 0.5) * 0.6;
-                    b.dy = (Math.random() - 0.5) * 0.6;
+                    b.y = 12 + Math.random() * Math.max(20, H - size - 24);
+                    const a = Math.random() * Math.PI * 2;
+                    b.dx = Math.cos(a) * 0.95; b.dy = Math.sin(a) * 0.95;
                 }
-                b.x = Math.max(8, Math.min(W - size - 8, b.x));
-                b.y = Math.max(8, Math.min(H - size - 8, b.y));
                 const el = document.createElement('div');
                 el.className = 'neon-bubble rounded-full flex flex-col items-center justify-center p-3 text-center';
                 el.style.width = size + 'px';
@@ -518,45 +518,94 @@
                 el.style.top = b.y + 'px';
                 el.style.background = b.color;
                 el.style.boxShadow = '0 10px 28px ' + b.color + '40, inset 0 4px 12px rgba(255,255,255,0.45)';
+                el.style.touchAction = 'none';
                 el.innerHTML = '<div class="space-y-0.5 w-full flex flex-col justify-center items-center pointer-events-none">' +
                     b.tags.map(t => `<p class="font-extrabold select-none truncate w-full pointer-events-none" style="color:#0b0b0b;font-size:${size > 122 ? '11px' : '9px'}">${t}</p>`).join('') +
                     '</div>';
-                el.onclick = () => playMusicById(b.id);
+                el.addEventListener('pointerdown', (ev) => discPointerDown(ev, b));   // 탭=재생 / 끌면 던지기(flick)
                 b.el = el;
                 canvasEl.appendChild(el);
             });
-            wireLoop();
             startPhysics();
         }
-        // 물리 루프 — 이동 + 벽 반사 + 서로 충돌 시 분리(안 겹침) & 팅김(주신 코드 기반)
+        // ===== 탭 vs 던지기(flick) =====
+        let discDragBubble = null;
+        function discPointerDown(e, b) {
+            e.preventDefault();
+            discDragBubble = b;
+            b._drag = false;
+            b._downX = e.clientX; b._downY = e.clientY;
+            const r = b.el.getBoundingClientRect();
+            b._offX = e.clientX - r.left; b._offY = e.clientY - r.top;
+            b._vx = 0; b._vy = 0;
+            document.addEventListener('pointermove', discPointerMove);
+            document.addEventListener('pointerup', discPointerUp);
+        }
+        function discPointerMove(e) {
+            const b = discDragBubble; if (!b) return;
+            if (Math.hypot(e.clientX - b._downX, e.clientY - b._downY) > 7) b._drag = true;
+            if (b._drag) {
+                e.preventDefault();
+                const cr = canvasEl.getBoundingClientRect();
+                const nx = e.clientX - cr.left - b._offX;
+                const ny = e.clientY - cr.top - b._offY;
+                b._vx = nx - b.x; b._vy = ny - b.y;       // 이번 이동량 = 던질 속도
+                b.x = nx; b.y = ny;
+                if (b.el) { b.el.style.left = b.x + 'px'; b.el.style.top = b.y + 'px'; }
+            }
+        }
+        function discPointerUp() {
+            const b = discDragBubble; discDragBubble = null;
+            document.removeEventListener('pointermove', discPointerMove);
+            document.removeEventListener('pointerup', discPointerUp);
+            if (!b) return;
+            if (!b._drag) {
+                playMusicById(b.id);                      // 탭 = 재생
+            } else {
+                let vx = b._vx || 0, vy = b._vy || 0;     // 던지기 = 마지막 속도 부여(음악 X)
+                const sp = Math.hypot(vx, vy), CAP = 16;
+                if (sp > CAP) { vx = vx / sp * CAP; vy = vy / sp * CAP; }
+                else if (sp < 1) { const a = Math.random() * Math.PI * 2; vx = Math.cos(a); vy = Math.sin(a); }
+                b.dx = vx; b.dy = vy;
+            }
+            b._drag = false;
+        }
+        // 물리 루프 — 격동적 이동 + 가장자리 wrap(무한 공간) + 충돌 분리·팅김. 손으로 잡은 건 정지.
+        const BASE_SPEED = 0.95;
         function startPhysics() {
             stopPhysics();
             function step() {
                 const cw = canvasEl.clientWidth || 360;
-                const ch = parseFloat(canvasEl.style.height) || (canvasEl.clientHeight || 920);
+                const ch = parseFloat(canvasEl.style.height) || (canvasEl.clientHeight || 460);
                 for (let i = 0; i < bubbleData.length; i++) {
                     const b1 = bubbleData[i];
-                    if (b1.dx == null) continue;
-                    if (b1.x < 6 || b1.x + b1.size > cw - 6) { b1.dx *= -1; b1.x = Math.max(6, Math.min(cw - b1.size - 6, b1.x)); }
-                    if (b1.y < 6 || b1.y + b1.size > ch - 6) { b1.dy *= -1; b1.y = Math.max(6, Math.min(ch - b1.size - 6, b1.y)); }
+                    if (b1.dx == null || b1._drag) continue;
                     for (let j = i + 1; j < bubbleData.length; j++) {
                         const b2 = bubbleData[j];
+                        if (b2._drag) continue;
                         const dx = (b2.x + b2.size / 2) - (b1.x + b1.size / 2);
                         const dy = (b2.y + b2.size / 2) - (b1.y + b1.size / 2);
                         const dist = Math.sqrt(dx * dx + dy * dy) || 0.001;
-                        const minD = (b1.size / 2 + b2.size / 2) + 4;   // 살짝 여유 간격
+                        const minD = (b1.size / 2 + b2.size / 2) + 4;
                         if (dist < minD) {
-                            const nx = dx / dist, ny = dy / dist;        // b1 → b2 방향(법선)
+                            const nx = dx / dist, ny = dy / dist;
                             const overlap = minD - dist;
-                            b1.x -= nx * overlap * 0.5; b1.y -= ny * overlap * 0.5;   // 겹친 만큼 완전히 떼어놓음
+                            b1.x -= nx * overlap * 0.5; b1.y -= ny * overlap * 0.5;
                             b2.x += nx * overlap * 0.5; b2.y += ny * overlap * 0.5;
-                            const s1 = Math.hypot(b1.dx, b1.dy) || 0.3;
-                            const s2 = Math.hypot(b2.dx, b2.dy) || 0.3;
-                            b1.dx = -nx * s1; b1.dy = -ny * s1;          // 서로 반대로 튕겨 나감(들러붙음 방지)
+                            const s1 = Math.hypot(b1.dx, b1.dy) || BASE_SPEED;
+                            const s2 = Math.hypot(b2.dx, b2.dy) || BASE_SPEED;
+                            b1.dx = -nx * s1; b1.dy = -ny * s1;
                             b2.dx = nx * s2; b2.dy = ny * s2;
                         }
                     }
+                    // 마찰 + 기본 속도 유지: 던지면 빨랐다가 기본 드리프트로 수렴, 느려지면 다시 활발
+                    let sp = Math.hypot(b1.dx, b1.dy);
+                    if (sp > BASE_SPEED) { b1.dx *= 0.985; b1.dy *= 0.985; sp = Math.hypot(b1.dx, b1.dy); }
+                    if (sp < BASE_SPEED && sp > 0.0001) { const k = BASE_SPEED / sp; b1.dx *= k; b1.dy *= k; }
                     b1.x += b1.dx; b1.y += b1.dy;
+                    // 가장자리 wrap = 무한 공간(나가면 반대편서 다시 등장)
+                    if (b1.x > cw) b1.x = -b1.size; else if (b1.x + b1.size < 0) b1.x = cw;
+                    if (b1.y > ch) b1.y = -b1.size; else if (b1.y + b1.size < 0) b1.y = ch;
                     if (b1.el) { b1.el.style.left = b1.x + 'px'; b1.el.style.top = b1.y + 'px'; }
                 }
                 rafId = requestAnimationFrame(step);
@@ -603,7 +652,7 @@
         function loadRandomBatch() {
             const vh = container.clientHeight || 460;
             const W = container.clientWidth || 360;
-            const n = Math.max(6, Math.min(12, Math.round((W * vh * 2) / 34000)));
+            const n = Math.max(5, Math.min(10, Math.round((W * vh) / 30000)));
             let avail = POOL.filter(t => !seenTitles.has(t.title));
             if (avail.length < n) { seenTitles.clear(); avail = POOL.slice(); }   // 다 봤으면 처음부터
             const pick = avail.sort(() => Math.random() - 0.5).slice(0, n);
@@ -611,9 +660,8 @@
             bubbleData = pick.map(t => ({
                 id: nextId++, title: t.title, artist: t.artist, color: t.color, tags: t.tags,
                 size: 108 + Math.round(Math.random() * 28)   // 108~136
-            }));   // x/y 없음 → layout이 위쪽부터 새 위치+속도 부여
+            }));   // x/y 없음 → layout이 새 위치+격동적 속도 부여
             layoutBubbles();
-            container.scrollTop = 0;
             flashLoop('새로운 음악으로 새로고침!');
         }
 
