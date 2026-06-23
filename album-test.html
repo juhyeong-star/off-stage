@@ -102,6 +102,20 @@
   .disc-eq i:nth-child(2){animation-delay:.18s}.disc-eq i:nth-child(3){animation-delay:.36s}.disc-eq i:nth-child(4){animation-delay:.54s}
   @keyframes dceq{0%,100%{height:5px}50%{height:18px}}
   .disc-demo.play .disc-eq,.disc-master.play .disc-eq{display:flex}
+  /* ===== 모바일 ===== */
+  @media (max-width:600px){
+    #alScreen .sub-page.artist-page{padding:60px 14px 40px !important}
+    .disc-hero{gap:14px;margin-bottom:14px}
+    .disc-hero-left{flex:1 1 100%;gap:13px}
+    .disc-av{width:62px;height:62px}
+    .disc-name{font-size:21px}
+    .disc-bio{font-size:12.5px;max-width:none}
+    .disc-feat{flex:1 1 100%;max-width:none;width:100%}
+    .disc-al-title{font-size:15px}
+    .disc-strip{gap:11px}
+    .disc-album{padding:12px}
+    .tb{top:12px;left:12px;width:40px;height:40px;font-size:22px}
+  }
 </style>
 </head>
 <body>
@@ -283,17 +297,24 @@ function build(){
 }
 build();
 
-// 카드 크기 반응형 — 화면폭에 맞춰 '마스터 + 데모 4 = 5개'가 딱 들어가게 계산
+// 카드 크기 반응형 — PC: '마스터+데모4=5개' 딱 맞춤 / 모바일: 편한 스와이프 크기
 function sizeCards(){
   var album=document.querySelector('.disc-album');
   if(!album) return;
-  var avail=album.clientWidth - 28;        // .disc-album 좌우 패딩 14*2
-  var gap=14, ar=1.7;                       // 데모카드 가로:세로 = 1.7 : 1
-  // s(마스터변) + 4*(ar*s)(데모폭) + 4*gap = avail  →  s=(avail-4gap)/(1+4ar)
-  var s=(avail - 4*gap)/(1 + 4*ar);
-  s=Math.max(104, Math.min(s, 208));        // 너무 작/크지 않게 클램프
-  document.documentElement.style.setProperty('--mside', Math.round(s)+'px');
-  document.documentElement.style.setProperty('--dw', Math.round(ar*s)+'px');
+  var vw=window.innerWidth, ar=1.7, gap=14, s, dw;
+  var avail=album.clientWidth - 28;          // .disc-album 좌우 패딩 14*2
+  if(vw < 760){
+    // 모바일: 마스터 + 데모 1개 + 살짝(다음 카드 peek) 보이게 → 가로 스와이프
+    s=Math.max(104, Math.min(150, Math.round(avail*0.38)));
+    dw=Math.round(s*ar);
+  } else {
+    // PC: s + 4*(ar*s) + 4*gap = avail  →  s=(avail-4gap)/(1+4ar)
+    s=(avail - 4*gap)/(1 + 4*ar);
+    s=Math.round(Math.max(104, Math.min(s, 208)));
+    dw=Math.round(ar*s);
+  }
+  document.documentElement.style.setProperty('--mside', s+'px');
+  document.documentElement.style.setProperty('--dw', dw+'px');
 }
 sizeCards();
 window.addEventListener('resize', sizeCards);
