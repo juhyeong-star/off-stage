@@ -92,19 +92,22 @@
         .folder-hover { transform: scale(1.08) translateY(-6px); background: rgba(168,85,247,.15) !important; border-color: rgba(168,85,247,.6) !important; box-shadow: 0 10px 25px rgba(168,85,247,.25); }
         .sparkle { position: absolute; pointer-events: none; border-radius: 50%; animation: favExplode .6s cubic-bezier(.1,.8,.3,1) forwards; }
         @keyframes favExplode { 0% { transform: translate(-50%,-50%) scale(1); opacity: 1; } 100% { transform: translate(-50%,-50%) translate(var(--mx),var(--my)) scale(0); opacity: 0; } }
-        /* ===== 주절주절(릴스형 세로 피드) ===== */
+        /* ===== 주절주절 피드 — 위 절반=게시물(사진), 아래 절반=글(가사) 깔끔히 ===== */
         #feed-reels { height: 100%; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain; }
         #feed-reels::-webkit-scrollbar { display: none; }
-        .feed-post { scroll-snap-align: start; scroll-snap-stop: always; position: relative; width: 100%; height: 100%; background: #0a0618; overflow: hidden; }
+        .feed-post { scroll-snap-align: start; scroll-snap-stop: always; width: 100%; height: 100%; display: flex; flex-direction: column; background: #06030f; overflow: hidden; }
+        .feed-media { position: relative; flex: 0 0 47%; min-height: 0; overflow: hidden; }
         .feed-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-        .feed-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(3,0,13,.94) 4%, rgba(3,0,13,.15) 42%, rgba(3,0,13,.5) 100%); }
-        .feed-wave { position: absolute; left: 14px; right: 70px; top: 44%; display: flex; align-items: center; gap: 2px; height: 56px; pointer-events: none; opacity: .9; }
-        .feed-wave i { flex: 1; min-width: 2px; max-width: 3px; background: rgba(255,255,255,.85); border-radius: 2px; height: 8px; animation: fwave 1.1s ease-in-out infinite; }
-        @keyframes fwave { 0%,100% { height: 7px; } 50% { height: 38px; } }
-        .feed-actions { position: absolute; right: 10px; bottom: 26px; display: flex; flex-direction: column; align-items: center; gap: 18px; z-index: 6; }
-        .feed-actions button { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #fff; }
+        .feed-media-grad { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(6,3,15,.1) 28%, rgba(6,3,15,.92) 100%); }
+        .feed-headline { position: absolute; top: 12px; left: 16px; right: 16px; z-index: 3; }
+        .feed-wave { position: absolute; left: 16px; right: 16px; bottom: 13px; display: flex; align-items: center; gap: 2px; height: 42px; z-index: 3; pointer-events: none; }
+        .feed-wave i { flex: 1; min-width: 2px; max-width: 3px; background: currentColor; border-radius: 2px; height: 7px; animation: fwave 1.1s ease-in-out infinite; }
+        @keyframes fwave { 0%,100% { height: 6px; } 50% { height: 30px; } }
+        .feed-text { flex: 1 1 auto; min-height: 0; padding: 14px 14px 16px; display: flex; gap: 12px; }
+        .feed-text-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        .feed-actions-col { display: flex; flex-direction: column; align-items: center; gap: 15px; padding-top: 2px; }
+        .feed-actions-col button { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #fff; }
         .feed-act-count { font-size: 11px; font-weight: 700; }
-        .feed-info { position: absolute; left: 14px; right: 72px; bottom: 20px; z-index: 6; }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -1020,24 +1023,30 @@
         let feedFilter = 'all', feedLiked = {}, feedObserver = null;
         function feedPostHtml(p) {
             const liked = !!feedLiked[p.title];
-            const waves = Array.from({ length: 46 }).map((_, k) => `<i style="animation-delay:${(k * 0.045).toFixed(2)}s"></i>`).join('');
-            return `<div class="feed-post" data-title="${p.title}" style="background:linear-gradient(165deg, ${p.color}55, #0a0618 70%)">
-                <img class="feed-bg" src="${p.img}" alt="" onerror="this.style.display='none'">
-                <div class="feed-overlay"></div>
-                <div class="feed-wave" style="color:${p.color}">${waves}</div>
-                <div class="feed-actions">
-                    <button onclick="feedLike('${p.title.replace(/'/g, "")}', this)"><i data-lucide="heart" class="w-7 h-7 ${liked ? 'fill-rose-500 text-rose-500' : ''}"></i><span class="feed-act-count">${(p.likes + (liked ? 1 : 0)).toLocaleString()}</span></button>
-                    <button><i data-lucide="message-circle" class="w-7 h-7"></i><span class="feed-act-count">${p.comments}</span></button>
-                    <button><i data-lucide="send" class="w-7 h-7"></i><span class="feed-act-count">${p.shares}</span></button>
+            const waves = Array.from({ length: 40 }).map((_, k) => `<i style="animation-delay:${(k * 0.05).toFixed(2)}s"></i>`).join('');
+            return `<div class="feed-post" data-title="${p.title}">
+                <div class="feed-media" style="background:linear-gradient(160deg, ${p.color}55, #06030f 78%)">
+                    <img class="feed-bg" src="${p.img}" alt="" onerror="this.style.display='none'">
+                    <div class="feed-media-grad"></div>
+                    <div class="feed-headline"><div class="text-[11px] text-white/70 font-semibold">${p.artist}'s</div><div class="text-xl font-extrabold leading-tight" style="color:${p.color}">${p.title}</div></div>
+                    <div class="feed-wave" style="color:${p.color}">${waves}</div>
                 </div>
-                <div class="feed-info">
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="w-9 h-9 rounded-full border border-white/40 shrink-0" style="background:${p.color}44"></div>
-                        <div class="min-w-0"><div class="text-sm font-bold leading-tight truncate">${p.artist}</div><div class="text-[11px] text-white/60 truncate">${p.handle}</div></div>
-                        <button class="ml-1 text-[10px] font-bold px-3 py-1 rounded-full bg-white/15 border border-white/30 shrink-0">팔로우</button>
+                <div class="feed-text">
+                    <div class="feed-text-main">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="w-9 h-9 rounded-full border border-white/30 shrink-0" style="background:${p.color}44"></div>
+                            <div class="min-w-0"><div class="text-sm font-bold leading-tight truncate">${p.artist}</div><div class="text-[11px] text-white/50 truncate">${p.handle}</div></div>
+                            <button class="ml-1 text-[10px] font-bold px-3 py-1 rounded-full bg-white/12 border border-white/25 shrink-0">팔로우</button>
+                        </div>
+                        <div class="text-base font-extrabold mb-1.5">${p.title}</div>
+                        <div class="text-[13px] text-white/85 leading-relaxed flex-1 min-h-0 overflow-hidden" style="display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;">${p.lyrics}</div>
+                        <div class="text-[11px] text-white/45 mt-2">더보기 · 번역</div>
                     </div>
-                    <div class="text-lg font-extrabold mb-1">${p.title}</div>
-                    <div class="text-xs text-white/80 leading-snug" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${p.lyrics} <span class="text-white/50">더보기</span></div>
+                    <div class="feed-actions-col">
+                        <button onclick="feedLike('${p.title.replace(/'/g, "")}', this)"><i data-lucide="heart" class="w-7 h-7 ${liked ? 'fill-rose-500 text-rose-500' : ''}"></i><span class="feed-act-count">${(p.likes + (liked ? 1 : 0)).toLocaleString()}</span></button>
+                        <button><i data-lucide="message-circle" class="w-7 h-7"></i><span class="feed-act-count">${p.comments}</span></button>
+                        <button><i data-lucide="send" class="w-7 h-7"></i><span class="feed-act-count">${p.shares}</span></button>
+                    </div>
                 </div>
             </div>`;
         }
