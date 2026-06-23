@@ -46,9 +46,9 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
         .bubble { cursor: pointer; }
-        /* 도형(피드) — 네온 제거, 부드러운 글로우 + 둥둥(bob)만 (글로우는 JS에서 색별로 주입) */
-        .neon-bubble { position: absolute; animation: bob 4.5s ease-in-out infinite; }
-        @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+        /* 도형(피드) — 위치는 JS 물리 루프가 매 프레임 갱신(드리프트+충돌). 부드러운 색 글로우. */
+        .neon-bubble { position: absolute; cursor: pointer; will-change: left, top; }
+        .neon-bubble:active { transform: scale(0.93); }
         #bubbles-container { overflow-y: auto; scrollbar-width: none; }
         #bubbles-container::-webkit-scrollbar { display: none; }
         /* Tags — 네온사인 컬러 글자(글로우) */
@@ -419,50 +419,85 @@
             else stopCosmicAnimation();
         }
 
-        function stopCosmicAnimation() { /* 정적 레이아웃 — 멈출 물리 루프 없음 */ }
+        function stopCosmicAnimation() { stopPhysics(); }
 
-        let canvasEl = null, loopWired = false, scrollCooldown = false;
+        let canvasEl = null, loopWired = false, scrollCooldown = false, rafId = null;
         function ensureCanvas() {
             if (!canvasEl || !container.contains(canvasEl)) {
                 container.innerHTML = '<div id="bubbles-canvas" style="position:relative;width:100%;"></div>';
                 canvasEl = document.getElementById('bubbles-canvas');
             }
         }
-        // 도형 배치 — 최신이 맨 위, 위→아래로 딱 2페이지까지 채움(초과분은 가장 오래된 것 제거)
+        // 도형 = 2페이지 캔버스 안에서 떠다님(drift) + 벽/서로 충돌 시 분리+팅김. 최신은 위에서 생성.
         function layoutBubbles() {
             ensureCanvas();
             const vh = container.clientHeight || 460;
             const W = container.clientWidth || 360;
             const H = vh * 2;                                  // 2페이지
             canvasEl.style.height = H + 'px';
-            const rowGap = 138, colW = W / 2;
-            const rows = Math.max(2, Math.floor((H - 24) / rowGap));
-            const cap = rows * 2;
-            if (bubbleData.length > cap) bubbleData.length = cap;   // 최신은 앞(유지), 오래된 꼬리 제거
+            const cap = Math.max(8, Math.min(18, Math.round((W * H) / 26000)));
+            if (bubbleData.length > cap) bubbleData.length = cap;   // 초과분(오래된 꼬리) 제거
             canvasEl.innerHTML = '';
             bubbleData.forEach((b, i) => {
-                const size = b.size, col = i % 2, row = Math.floor(i / 2);
-                let y = 18 + row * rowGap + (col ? rowGap * 0.5 : 0);
-                if (y + size > H) y = H - size - 8;
-                let x = col * colW + (colW - size) / 2 + ((i % 3) - 1) * 16;
-                x = Math.max(8, Math.min(W - size - 8, x));
+                const size = b.size;
+                if (b.x == null) {                              // 처음 등장 → 초기 위치(위쪽 우선) + 속도
+                    b.x = 12 + Math.random() * Math.max(20, W - size - 24);
+                    b.y = 14 + Math.min(H - size - 24, (i * 0.7 + Math.random()) * 96);
+                    b.dx = (Math.random() - 0.5) * 0.9;
+                    b.dy = (Math.random() - 0.5) * 0.9;
+                }
+                b.x = Math.max(8, Math.min(W - size - 8, b.x));
+                b.y = Math.max(8, Math.min(H - size - 8, b.y));
                 const el = document.createElement('div');
-                el.className = 'bubble neon-bubble rounded-full flex flex-col items-center justify-center p-3 text-center';
+                el.className = 'neon-bubble rounded-full flex flex-col items-center justify-center p-3 text-center';
                 el.style.width = size + 'px';
                 el.style.height = size + 'px';
-                el.style.left = x + 'px';
-                el.style.top = y + 'px';
+                el.style.left = b.x + 'px';
+                el.style.top = b.y + 'px';
                 el.style.background = b.color;
                 el.style.boxShadow = '0 10px 28px ' + b.color + '40, inset 0 4px 12px rgba(255,255,255,0.45)';
-                el.style.animationDelay = (i * 0.22).toFixed(2) + 's';
                 el.innerHTML = '<div class="space-y-0.5 w-full flex flex-col justify-center items-center pointer-events-none">' +
                     b.tags.map(t => `<p class="font-extrabold select-none truncate w-full pointer-events-none" style="color:#0b0b0b;font-size:${size > 122 ? '11px' : '9px'}">${t}</p>`).join('') +
                     '</div>';
                 el.onclick = () => playMusicById(b.id);
+                b.el = el;
                 canvasEl.appendChild(el);
             });
             wireLoop();
+            startPhysics();
         }
+        // 물리 루프 — 이동 + 벽 반사 + 서로 충돌 시 분리(안 겹침) & 팅김(주신 코드 기반)
+        function startPhysics() {
+            stopPhysics();
+            function step() {
+                const cw = canvasEl.clientWidth || 360;
+                const ch = parseFloat(canvasEl.style.height) || (canvasEl.clientHeight || 920);
+                for (let i = 0; i < bubbleData.length; i++) {
+                    const b1 = bubbleData[i];
+                    if (b1.dx == null) continue;
+                    if (b1.x < 6 || b1.x + b1.size > cw - 6) { b1.dx *= -1; b1.x = Math.max(6, Math.min(cw - b1.size - 6, b1.x)); }
+                    if (b1.y < 6 || b1.y + b1.size > ch - 6) { b1.dy *= -1; b1.y = Math.max(6, Math.min(ch - b1.size - 6, b1.y)); }
+                    for (let j = i + 1; j < bubbleData.length; j++) {
+                        const b2 = bubbleData[j];
+                        const dx = (b2.x + b2.size / 2) - (b1.x + b1.size / 2);
+                        const dy = (b2.y + b2.size / 2) - (b1.y + b1.size / 2);
+                        const dist = Math.sqrt(dx * dx + dy * dy) || 0.001;
+                        const minD = (b1.size / 2 + b2.size / 2);
+                        if (dist < minD) {
+                            const overlap = minD - dist;
+                            const ax = (dx / dist) * overlap * 0.5, ay = (dy / dist) * overlap * 0.5;
+                            b1.x -= ax; b1.y -= ay; b2.x += ax; b2.y += ay;
+                            b1.dx = -b1.dx; b1.dy = -b1.dy; b2.dx = -b2.dx; b2.dy = -b2.dy;
+                        }
+                    }
+                    b1.x += b1.dx; b1.y += b1.dy;
+                    if (b1.el) { b1.el.style.left = b1.x + 'px'; b1.el.style.top = b1.y + 'px'; }
+                }
+                rafId = requestAnimationFrame(step);
+            }
+            step();
+        }
+        function stopPhysics() { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
         function renderCosmic() { layoutBubbles(); }
         function startCosmicAnimation() { layoutBubbles(); }
 
@@ -595,7 +630,9 @@
             const t1 = document.getElementById('input-tag1').value || "#offstage";
             const t2 = document.getElementById('input-tag2').value || "#영감기록";
             const t3 = document.getElementById('input-tag3').value || "#도형음악";
-            const newBubble = { id: nextId++, title: titleInput, artist: artistInput, color: selectedColor, tags: [t1, t2, t3], size: 120 };
+            const W = container.clientWidth || 360;
+            const newBubble = { id: nextId++, title: titleInput, artist: artistInput, color: selectedColor, tags: [t1, t2, t3], size: 120,
+                x: Math.max(10, Math.min(W - 130, W / 2 - 60)), y: 14, dx: (Math.random() - 0.5) * 0.9, dy: 0.6 };  // 맨 위에서 생성 후 드리프트
             bubbleData.unshift(newBubble);          // 최신 = 맨 앞(맨 위)
             document.getElementById('input-title').value = '';
             document.getElementById('input-artist').value = '';
