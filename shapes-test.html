@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>off-stage · 도형(발견) 테스트</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Pretendard (정식 CDN — Google Fonts엔 없음) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.min.css">
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #03000a;
+            color: #ffffff;
+            user-select: none;
+        }
+        .cosmic-bg {
+            background: radial-gradient(circle at 50% 50%, #0d0826 0%, #03000a 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image:
+                radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
+                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px),
+                radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 40px);
+            background-size: 550px 550px, 350px 350px, 250px 250px;
+            background-position: 0 0, 40px 60px, 130px 270px;
+            opacity: 0.4;
+            animation: starsMove 100s linear infinite;
+        }
+        @keyframes starsMove {
+            from { background-position: 0 0, 40px 60px, 130px 270px; }
+            to { background-position: 550px 1100px, 390px 760px, 130px 1370px; }
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .bubble {
+            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        .bubble:active { transform: scale(0.92); }
+        .bar {
+            width: 3px; height: 5px; background: #ffffff;
+            display: inline-block; margin: 0 1px; border-radius: 2px;
+            animation: bounce 1.2s infinite ease-in-out alternate;
+        }
+        @keyframes bounce { 0% { height: 5px; } 100% { height: 28px; } }
+        .fade-in { animation: fadeIn 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* 모바일에선 폰 프레임 없이 풀스크린 */
+        @media (max-width: 440px) {
+            .device-frame {
+                max-width: 100% !important; width: 100% !important;
+                height: 100vh !important; height: 100dvh !important;
+                border-radius: 0 !important; border-width: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- 모바일 아이폰 프레임 래퍼 -->
+    <div class="device-frame relative w-full max-w-[393px] h-[852px] rounded-[55px] border-[10px] border-[#1d1b26] bg-[#03000a] shadow-2xl overflow-hidden flex flex-col">
+
+        <!-- 상태바 -->
+        <div class="absolute top-0 left-0 right-0 h-11 bg-transparent flex justify-between items-center px-8 z-50 pointer-events-none text-xs font-semibold">
+            <span>11:55</span>
+            <div class="w-28 h-6 bg-black rounded-full mx-auto -mt-1 flex items-center justify-center">
+                <div class="w-3 h-3 bg-[#111] rounded-full mr-2"></div>
+                <div class="w-12 h-1.5 bg-[#222] rounded-full"></div>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <i data-lucide="signal" class="w-3.5 h-3.5"></i>
+                <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+                <i data-lucide="battery" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+        </div>
+
+        <!-- 앱 헤더 및 상단 탭 -->
+        <header class="pt-12 pb-3 bg-[#03000a]/90 backdrop-blur-md z-40 border-b border-white/5">
+            <div class="flex justify-between items-center px-5 mb-3">
+                <span class="text-2xl font-black tracking-tight lowercase text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-amber-300">off-stage</span>
+                <div class="flex items-center gap-3">
+                    <button class="text-xs px-2.5 py-1 rounded-full glass text-amber-200 border border-amber-500/20 flex items-center gap-1">
+                        <i data-lucide="compass" class="w-3 h-3"></i> 가이드
+                    </button>
+                    <div class="flex rounded-md bg-white/5 p-0.5 text-[10px]">
+                        <span class="px-2 py-0.5 rounded-sm bg-white/10 text-white font-bold">KO</span>
+                        <span class="px-2 py-0.5 rounded-sm text-white/50">EN</span>
+                    </div>
+                </div>
+            </div>
+            <nav class="flex justify-around text-xs font-semibold text-white/60 px-2">
+                <button onclick="switchTab('discover')" id="tab-discover" class="flex flex-col items-center gap-1 pb-1 border-b-2 border-purple-500 text-white">
+                    <i data-lucide="triangle" class="w-4 h-4 fill-white/10"></i>
+                    <span>발견</span>
+                </button>
+                <button onclick="switchTab('feed')" id="tab-feed" class="flex flex-col items-center gap-1 pb-1 border-b-2 border-transparent">
+                    <i data-lucide="message-square" class="w-4 h-4"></i>
+                    <span>주절주절</span>
+                </button>
+                <button onclick="switchTab('tags')" id="tab-tags" class="flex flex-col items-center gap-1 pb-1 border-b-2 border-transparent">
+                    <i data-lucide="hash" class="w-4 h-4"></i>
+                    <span>Tags</span>
+                </button>
+                <button onclick="switchTab('favorites')" id="tab-favorites" class="flex flex-col items-center gap-1 pb-1 border-b-2 border-transparent">
+                    <i data-lucide="folder-heart" class="w-4 h-4"></i>
+                    <span>즐겨찾기</span>
+                </button>
+                <button onclick="switchTab('more')" id="tab-more" class="flex flex-col items-center gap-1 pb-1 border-b-2 border-transparent">
+                    <i data-lucide="menu" class="w-4 h-4"></i>
+                    <span>더보기</span>
+                </button>
+            </nav>
+        </header>
+
+        <!-- 메인 컨텐츠 -->
+        <main class="flex-1 overflow-y-auto relative cosmic-bg flex flex-col">
+            <div class="stars"></div>
+
+            <!-- 발견(도형) 탭 — 토글 제거, 코스믹 도형만 -->
+            <section id="content-discover" class="flex-1 flex flex-col p-4 relative z-10">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold" id="discover-title">우주 탐색 피드</h2>
+                        <p class="text-[11px] text-white/40" id="discover-subtitle">둥둥 떠다니는 감성 음악들을 탭해 보세요</p>
+                    </div>
+                </div>
+
+                <div id="bubbles-container" class="relative flex-1 rounded-3xl border border-white/5 overflow-hidden bg-black/30 backdrop-blur-sm flex flex-col z-10"></div>
+
+                <button onclick="openUploadModal()" class="absolute bottom-4 right-4 w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30 hover:scale-105 active:scale-95 transition-transform z-20" aria-label="도형 올리기">
+                    <i data-lucide="plus" class="w-6 h-6 text-white"></i>
+                </button>
+            </section>
+
+            <!-- 주절주절 탭 -->
+            <section id="content-feed" class="hidden p-4 space-y-4 z-10">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-bold">주절주절 소통</h2>
+                    <span class="text-xs text-purple-400 font-semibold">최근 7일 인기글</span>
+                </div>
+                <div class="glass rounded-2xl p-3 flex gap-3 items-center">
+                    <div class="w-8 h-8 rounded-full bg-rose-500 flex items-center justify-center text-[10px] font-bold">OS</div>
+                    <input type="text" placeholder="지금 내 머릿속 멜로디는? 주절주절 남기기..." class="bg-transparent flex-1 text-xs outline-none text-white/80 placeholder:text-white/30">
+                    <button class="p-2 rounded-xl bg-purple-600 hover:bg-purple-700 transition-colors">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <div class="space-y-3" id="feed-list">
+                    <div class="glass rounded-2xl p-4 space-y-3 border border-white/5">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold text-white">효원</div>
+                                <div>
+                                    <div class="text-xs font-bold">이효원 <span class="text-[10px] text-white/40 font-normal">· 5일 전</span></div>
+                                    <div class="text-[9px] text-purple-300">작곡 전공 2학년</div>
+                                </div>
+                            </div>
+                            <button class="text-white/40"><i data-lucide="more-horizontal" class="w-4 h-4"></i></button>
+                        </div>
+                        <p class="text-xs leading-relaxed text-white/90">"급하게 스케치한 곡이지만 한번만 들어봐줘! 후반부 드럼 비트 들어갈 때 소름돋게 구성해봤음. 편곡 같이 할 베이스 구함!"</p>
+                        <div onclick="playMusicById(4)" class="rounded-xl bg-white/5 p-2.5 flex items-center justify-between border border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-lime-500/20 border border-lime-400/30 flex items-center justify-center">
+                                    <i data-lucide="music" class="w-5 h-5 text-lime-400"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-white">Plastic days</h4>
+                                    <p class="text-[10px] text-lime-400">#G-Funk #R&B #소매치기범</p>
+                                </div>
+                            </div>
+                            <i data-lucide="play-circle" class="w-6 h-6 text-lime-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tags 탭 -->
+            <section id="content-tags" class="hidden p-5 space-y-4 z-10">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-bold">인기 Tags</h2>
+                        <p class="text-xs text-white/40">지금 실시간 핫한 테마 태그들</p>
+                    </div>
+                    <span class="text-xs bg-purple-500/20 text-purple-300 px-2.5 py-1 rounded-full">총 61개 태그</span>
+                </div>
+                <div class="flex flex-wrap gap-2.5 pt-2">
+                    <span class="px-3.5 py-1.5 rounded-full glass border border-purple-500/30 text-xs text-purple-300 font-bold">#고1 <span class="text-[9px] text-white/40 ml-1">23곡</span></span>
+                    <span class="px-3.5 py-1.5 rounded-full glass border border-pink-500/30 text-xs text-pink-300 font-bold">#인디 <span class="text-[9px] text-white/40 ml-1">19곡</span></span>
+                    <span class="px-3.5 py-1.5 rounded-full glass border border-amber-500/30 text-xs text-amber-200 font-bold">#Painkiller <span class="text-[9px] text-white/40 ml-1">15곡</span></span>
+                    <span class="px-3.5 py-1.5 rounded-full glass text-xs text-white/70">#드림걸즈</span>
+                    <span class="px-3.5 py-1.5 rounded-full glass text-xs text-white/70">#ACID</span>
+                    <span class="px-3.5 py-1.5 rounded-full glass text-xs text-white/70">#RNB</span>
+                </div>
+            </section>
+
+            <!-- 즐겨찾기 탭 -->
+            <section id="content-favorites" class="hidden p-5 space-y-4 z-10">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-bold">즐겨찾기 보관함</h2>
+                        <p class="text-xs text-white/40">내가 수집한 영감 조각들</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="glass rounded-3xl p-4 flex flex-col justify-between h-40 border border-purple-500/20 relative overflow-hidden group">
+                        <i data-lucide="folder" class="w-8 h-8 text-purple-400"></i>
+                        <div>
+                            <h3 class="text-xs font-bold">투자하고픈 명곡</h3>
+                            <p class="text-[10px] text-white/40 mt-1">곡 5개 · 포스트잇 12개</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 더보기 탭 -->
+            <section id="content-more" class="hidden p-5 space-y-5 z-10">
+                <div class="flex items-center gap-4 bg-white/5 rounded-3xl p-4 border border-white/5">
+                    <div class="w-16 h-16 rounded-full bg-rose-500 border-2 border-purple-500 flex items-center justify-center text-base font-bold">OS</div>
+                    <div>
+                        <h3 class="font-bold text-base">off-stage</h3>
+                        <p class="text-xs text-white/40">@off-stage</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- 토스트 알림 -->
+        <div id="toast-notif" class="absolute top-16 left-1/2 transform -translate-x-1/2 bg-purple-600/90 text-white text-[11px] font-bold px-4 py-2.5 rounded-full shadow-lg backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center gap-2">
+            <i data-lucide="play" class="w-3.5 h-3.5 fill-white"></i>
+            <span id="toast-text">음악 조각이 재생 목록에 로드되었습니다!</span>
+        </div>
+
+        <!-- 하단 미니 플레이어 -->
+        <footer class="bg-[#0c091a]/95 backdrop-blur-xl border-t border-white/10 px-4 py-3 z-40 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 flex-1 overflow-hidden cursor-pointer" onclick="togglePlayerCard()">
+                <div class="w-11 h-11 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center overflow-hidden relative" id="player-album-art">
+                    <i data-lucide="music-4" class="w-5 h-5 text-purple-400"></i>
+                    <div class="absolute inset-0 border-2 border-purple-400/50 rounded-full animate-spin hidden" id="player-disc-spin"></div>
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    <h4 class="text-xs font-bold truncate text-white" id="player-title">선택된 곡 없음</h4>
+                    <p class="text-[9px] text-white/40 truncate mt-0.5" id="player-tags">도형을 클릭해 재생해 보세요</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 z-50">
+                <button onclick="prevMusic()" class="text-white/60 hover:text-white p-1 transition-colors">
+                    <i data-lucide="skip-back" class="w-4 h-4"></i>
+                </button>
+                <button onclick="togglePlayState()" class="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-transform" id="btn-play">
+                    <i data-lucide="play" class="w-4 h-4 fill-black"></i>
+                </button>
+                <button onclick="nextMusic()" class="text-white/60 hover:text-white p-1 transition-colors">
+                    <i data-lucide="skip-forward" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </footer>
+
+        <!-- 곡 상세 풀 플레이어 카드 -->
+        <div id="player-card" class="absolute inset-x-0 bottom-0 top-12 bg-[#050212]/98 backdrop-blur-3xl z-50 transform translate-y-full transition-transform duration-500 ease-out flex flex-col justify-between p-6 pointer-events-none">
+            <div class="flex justify-between items-center pointer-events-auto">
+                <button onclick="togglePlayerCard()" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/60">
+                    <i data-lucide="chevron-down" class="w-6 h-6"></i>
+                </button>
+                <span class="text-xs font-bold text-purple-400">NOW PLAYING</span>
+                <button class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/60">
+                    <i data-lucide="more-vertical" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="flex-1 flex flex-col items-center justify-center space-y-6 px-4">
+                <div id="card-giant-shape" class="w-48 h-48 rounded-full flex flex-col items-center justify-center p-6 text-center shadow-2xl relative transition-all duration-300">
+                    <div class="absolute inset-0 rounded-full border-4 border-white/20 animate-ping opacity-25"></div>
+                    <div class="z-10 space-y-1">
+                        <p class="text-black font-extrabold text-[15px] tracking-wide" id="card-giant-tag-1">#태그</p>
+                        <p class="text-black font-extrabold text-[15px] tracking-wide" id="card-giant-tag-2">#태그2</p>
+                        <p class="text-black font-extrabold text-[15px] tracking-wide" id="card-giant-tag-3">#태그3</p>
+                    </div>
+                </div>
+                <div class="text-center space-y-2 w-full">
+                    <h2 class="text-xl font-extrabold text-white" id="card-title">Plastic days</h2>
+                    <p class="text-sm text-purple-400" id="card-artist">이효원</p>
+                    <div class="flex items-end justify-center gap-1 h-8 mt-4" id="visualizer-container">
+                        <div class="bar" style="animation-delay: 0.1s"></div>
+                        <div class="bar" style="animation-delay: 0.3s"></div>
+                        <div class="bar" style="animation-delay: 0.6s"></div>
+                        <div class="bar" style="animation-delay: 0.2s"></div>
+                        <div class="bar" style="animation-delay: 0.5s"></div>
+                        <div class="bar" style="animation-delay: 0.4s"></div>
+                        <div class="bar" style="animation-delay: 0.7s"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="space-y-6 pointer-events-auto">
+                <div class="space-y-1">
+                    <div class="w-full h-1 bg-white/10 rounded-full overflow-hidden relative">
+                        <div class="absolute left-0 top-0 bottom-0 w-1/3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"></div>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-white/40">
+                        <span>1:04</span>
+                        <span>3:12</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between px-4 pb-4">
+                    <button class="text-white/40 hover:text-white"><i data-lucide="shuffle" class="w-5 h-5"></i></button>
+                    <div class="flex items-center gap-6">
+                        <button onclick="prevMusic()" class="text-white/80 hover:text-white"><i data-lucide="skip-back" class="w-7 h-7"></i></button>
+                        <button onclick="togglePlayState()" class="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-transform" id="card-btn-play">
+                            <i data-lucide="play" class="w-6 h-6 fill-black"></i>
+                        </button>
+                        <button onclick="nextMusic()" class="text-white/80 hover:text-white"><i data-lucide="skip-forward" class="w-7 h-7"></i></button>
+                    </div>
+                    <button class="text-white/40 hover:text-white"><i data-lucide="repeat" class="w-5 h-5"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 도형 새로 올리기 모달 -->
+        <div id="upload-modal" class="absolute inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-6 hidden">
+            <div class="glass w-full rounded-[40px] p-6 space-y-5 border border-white/10 max-w-[340px]">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-sm text-purple-400">새로운 음악 도형 올리기</h3>
+                    <button onclick="closeUploadModal()" class="text-white/40"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-[10px] text-white/50 block mb-1">곡명</label>
+                        <input id="input-title" type="text" placeholder="예: 건유레인져" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white focus:border-purple-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-white/50 block mb-1">작곡가 / 아티스트</label>
+                        <input id="input-artist" type="text" placeholder="예: 이유노" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none text-white focus:border-purple-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-white/50 block mb-1">핵심 감성 태그 3개</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <input id="input-tag1" type="text" placeholder="#신나는" class="bg-white/5 border border-white/10 rounded-xl px-2 py-2 text-[10px] text-center outline-none text-white focus:border-purple-500 transition-colors">
+                            <input id="input-tag2" type="text" placeholder="#웅장한" class="bg-white/5 border border-white/10 rounded-xl px-2 py-2 text-[10px] text-center outline-none text-white focus:border-purple-500 transition-colors">
+                            <input id="input-tag3" type="text" placeholder="#일렉트릭" class="bg-white/5 border border-white/10 rounded-xl px-2 py-2 text-[10px] text-center outline-none text-white focus:border-purple-500 transition-colors">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-white/50 block mb-1">도형 색상 선택</label>
+                        <div class="flex gap-3 justify-center pt-1" id="color-selectors">
+                            <button onclick="selectColor('#FF2E93')" class="w-8 h-8 rounded-full bg-[#FF2E93] border-2 border-white ring-4 ring-purple-500/30 transition-transform" data-color="#FF2E93"></button>
+                            <button onclick="selectColor('#00E5FF')" class="w-8 h-8 rounded-full bg-[#00E5FF] border-2 border-transparent hover:scale-105 transition-transform" data-color="#00E5FF"></button>
+                            <button onclick="selectColor('#FF9100')" class="w-8 h-8 rounded-full bg-[#FF9100] border-2 border-transparent hover:scale-105 transition-transform" data-color="#FF9100"></button>
+                            <button onclick="selectColor('#76FF03')" class="w-8 h-8 rounded-full bg-[#76FF03] border-2 border-transparent hover:scale-105 transition-transform" data-color="#76FF03"></button>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="createCustomBubble()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 text-xs font-bold shadow-lg shadow-purple-500/20 active:scale-[0.98] transition-transform">
+                    우주 피드에 도형 올리기
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let bubbleData = [
+            { id: 1, title: "건유레인져", artist: "이유노", color: "#FF2E93", tags: ["#파워레인져", "#포기하지마", "#할수있어!!"], x: 30, y: 50, dx: 0.3, dy: 0.4, size: 115 },
+            { id: 2, title: "새벽 세시 층간소음 Blues", artist: "김민찬", color: "#00E5FF", tags: ["#새벽세시", "#머리에서불남", "#쫀득!"], x: 180, y: 120, dx: -0.4, dy: 0.3, size: 135 },
+            { id: 3, title: "Hey Hey Hey (Cover)", artist: "한승수", color: "#FF9100", tags: ["#자우림", "#밴드", "#인디"], x: 50, y: 250, dx: 0.2, dy: -0.3, size: 110 },
+            { id: 4, title: "Plastic days", artist: "이효원", color: "#76FF03", tags: ["#G-Funk", "#R&B", "#소매치기범"], x: 210, y: 280, dx: -0.3, dy: -0.2, size: 120 }
+        ];
+
+        let selectedColor = "#FF2E93";
+        let currentActiveMusic = null;
+        let isPlaying = false;
+        let animationFrameId = null;
+
+        const container = document.getElementById('bubbles-container');
+
+        function switchTab(tabName) {
+            const sections = ['discover', 'feed', 'tags', 'favorites', 'more'];
+            sections.forEach(s => {
+                const sectionEl = document.getElementById(`content-${s}`);
+                if (sectionEl) sectionEl.classList.add('hidden');
+                const tabEl = document.getElementById(`tab-${s}`);
+                if (tabEl) {
+                    tabEl.classList.remove('text-white', 'border-purple-500');
+                    tabEl.classList.add('text-white/60', 'border-transparent');
+                }
+            });
+            const currentSection = document.getElementById(`content-${tabName}`);
+            if (currentSection) currentSection.classList.remove('hidden');
+            const currentTab = document.getElementById(`tab-${tabName}`);
+            if (currentTab) {
+                currentTab.classList.add('text-white', 'border-purple-500');
+                currentTab.classList.remove('text-white/60', 'border-transparent');
+            }
+            if (tabName === 'discover') startCosmicAnimation();
+            else stopCosmicAnimation();
+        }
+
+        function stopCosmicAnimation() {
+            if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
+        }
+
+        function startCosmicAnimation() {
+            stopCosmicAnimation();
+            function updatePhysics() {
+                const width = container.clientWidth || 360;
+                const height = container.clientHeight || 450;
+                for (let i = 0; i < bubbleData.length; i++) {
+                    let b1 = bubbleData[i];
+                    if (b1.x < 5 || b1.x + b1.size > width - 5) {
+                        b1.dx *= -1;
+                        b1.x = Math.max(5, Math.min(width - b1.size - 5, b1.x));
+                    }
+                    if (b1.y < 5 || b1.y + b1.size > height - 5) {
+                        b1.dy *= -1;
+                        b1.y = Math.max(5, Math.min(height - b1.size - 5, b1.y));
+                    }
+                    for (let j = i + 1; j < bubbleData.length; j++) {
+                        let b2 = bubbleData[j];
+                        let dx = (b2.x + b2.size/2) - (b1.x + b1.size/2);
+                        let dy = (b2.y + b2.size/2) - (b1.y + b1.size/2);
+                        let distance = Math.sqrt(dx * dx + dy * dy) || 0.001;
+                        let minDistance = (b1.size/2 + b2.size/2) - 5;
+                        if (distance < minDistance) {
+                            let overlap = minDistance - distance;
+                            let ax = (dx / distance) * overlap * 0.5;
+                            let ay = (dy / distance) * overlap * 0.5;
+                            b1.x -= ax;
+                            b1.y -= ay;
+                            b2.x += ax;
+                            b2.y += ay;
+                            b1.dx = -b1.dx; b1.dy = -b1.dy;
+                            b2.dx = -b2.dx; b2.dy = -b2.dy;
+                        }
+                    }
+                    b1.x += b1.dx;
+                    b1.y += b1.dy;
+                }
+                renderCosmic();
+                animationFrameId = requestAnimationFrame(updatePhysics);
+            }
+            updatePhysics();
+        }
+
+        function renderCosmic() {
+            container.innerHTML = '';
+            bubbleData.forEach(b => {
+                const bubbleEl = document.createElement('div');
+                bubbleEl.className = 'bubble absolute rounded-full flex flex-col items-center justify-center p-3 text-center transition-shadow shadow-lg hover:scale-105 active:scale-95 duration-200 z-10';
+                bubbleEl.style.width = `${b.size}px`;
+                bubbleEl.style.height = `${b.size}px`;
+                bubbleEl.style.left = `${b.x}px`;
+                bubbleEl.style.top = `${b.y}px`;
+                bubbleEl.style.backgroundColor = b.color;
+                bubbleEl.style.boxShadow = `0 10px 30px ${b.color}35, inset 0 4px 12px rgba(255,255,255,0.45)`;
+                let tagsHTML = b.tags.map(t =>
+                    `<p class="text-black font-extrabold select-none truncate w-full pointer-events-none" style="font-size: ${b.size > 120 ? '11px' : '9px'}">${t}</p>`
+                ).join('');
+                bubbleEl.innerHTML = `<div class="space-y-0.5 w-full flex flex-col justify-center items-center pointer-events-none">${tagsHTML}</div>`;
+                bubbleEl.onclick = () => playMusicById(b.id);
+                container.appendChild(bubbleEl);
+            });
+        }
+
+        function playMusicById(id) {
+            const music = bubbleData.find(b => b.id === id);
+            if (!music) return;
+            currentActiveMusic = music;
+            isPlaying = true;
+
+            const toast = document.getElementById('toast-notif');
+            const toastText = document.getElementById('toast-text');
+            toastText.innerText = `[${music.title}] 재생이 선택되었습니다!`;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => { toast.classList.add('opacity-0', 'pointer-events-none'); }, 1800);
+
+            document.getElementById('player-title').innerText = music.title;
+            document.getElementById('player-tags').innerText = `${music.artist} · ${music.tags.join(' ')}`;
+            const miniAlbumArt = document.getElementById('player-album-art');
+            miniAlbumArt.style.backgroundColor = `${music.color}15`;
+            miniAlbumArt.style.borderColor = `${music.color}40`;
+            miniAlbumArt.innerHTML = `<span class="w-4 h-4 rounded-full pointer-events-none" style="background-color: ${music.color}; box-shadow: 0 0 12px ${music.color}"></span><div class="absolute inset-0 border-2 rounded-full animate-spin hidden pointer-events-none" id="player-disc-spin" style="border-color: ${music.color}80"></div>`;
+
+            document.getElementById('card-title').innerText = music.title;
+            document.getElementById('card-artist').innerText = music.artist;
+            const giantShape = document.getElementById('card-giant-shape');
+            giantShape.style.backgroundColor = music.color;
+            giantShape.style.boxShadow = `0 16px 48px ${music.color}35, inset 0 8px 24px rgba(255,255,255,0.4)`;
+            document.getElementById('card-giant-tag-1').innerText = music.tags[0] || '';
+            document.getElementById('card-giant-tag-2').innerText = music.tags[1] || '';
+            document.getElementById('card-giant-tag-3').innerText = music.tags[2] || '';
+
+            updatePlayButtons();
+        }
+
+        function togglePlayState() {
+            if (!currentActiveMusic) { playMusicById(1); return; }
+            isPlaying = !isPlaying;
+            updatePlayButtons();
+        }
+
+        function updatePlayButtons() {
+            const btnMini = document.getElementById('btn-play');
+            const btnCard = document.getElementById('card-btn-play');
+            const discSpin = document.getElementById('player-disc-spin');
+            const bars = document.querySelectorAll('.bar');
+            const ico = isPlaying ? 'pause' : 'play';
+            if (btnMini) btnMini.innerHTML = `<i data-lucide="${ico}" class="w-4 h-4 fill-black text-black"></i>`;
+            if (btnCard) btnCard.innerHTML = `<i data-lucide="${ico}" class="w-6 h-6 fill-black text-black"></i>`;
+            if (discSpin) discSpin.classList.toggle('hidden', !isPlaying);
+            bars.forEach(bar => bar.style.animationPlayState = isPlaying ? 'running' : 'paused');
+            lucide.createIcons();
+        }
+
+        function nextMusic() {
+            if (!currentActiveMusic) return;
+            let nextIndex = bubbleData.findIndex(b => b.id === currentActiveMusic.id) + 1;
+            if (nextIndex >= bubbleData.length) nextIndex = 0;
+            playMusicById(bubbleData[nextIndex].id);
+        }
+
+        function prevMusic() {
+            if (!currentActiveMusic) return;
+            let prevIndex = bubbleData.findIndex(b => b.id === currentActiveMusic.id) - 1;
+            if (prevIndex < 0) prevIndex = bubbleData.length - 1;
+            playMusicById(bubbleData[prevIndex].id);
+        }
+
+        function togglePlayerCard() {
+            const card = document.getElementById('player-card');
+            if (card.classList.contains('translate-y-full')) {
+                card.classList.remove('translate-y-full', 'pointer-events-none');
+                card.classList.add('pointer-events-auto');
+            } else {
+                card.classList.add('translate-y-full', 'pointer-events-none');
+                card.classList.remove('pointer-events-auto');
+            }
+        }
+
+        function openUploadModal() { document.getElementById('upload-modal').classList.remove('hidden'); }
+        function closeUploadModal() { document.getElementById('upload-modal').classList.add('hidden'); }
+
+        function selectColor(color) {
+            selectedColor = color;
+            document.querySelectorAll('#color-selectors button').forEach(btn => {
+                if (btn.getAttribute('data-color') === color) {
+                    btn.classList.add('border-white', 'ring-4', 'ring-purple-500/30');
+                    btn.classList.remove('border-transparent');
+                } else {
+                    btn.classList.remove('border-white', 'ring-4', 'ring-purple-500/30');
+                    btn.classList.add('border-transparent');
+                }
+            });
+        }
+
+        function createCustomBubble() {
+            const titleInput = document.getElementById('input-title').value || "무제 음악조각";
+            const artistInput = document.getElementById('input-artist').value || "익명 작곡가";
+            const t1 = document.getElementById('input-tag1').value || "#offstage";
+            const t2 = document.getElementById('input-tag2').value || "#영감기록";
+            const t3 = document.getElementById('input-tag3').value || "#도형음악";
+            const newBubble = {
+                id: bubbleData.length + 1, title: titleInput, artist: artistInput, color: selectedColor,
+                tags: [t1, t2, t3], x: 100, y: 100,
+                dx: (Math.random() - 0.5) * 0.4, dy: (Math.random() - 0.5) * 0.4, size: 115
+            };
+            bubbleData.push(newBubble);
+            document.getElementById('input-title').value = '';
+            document.getElementById('input-artist').value = '';
+            document.getElementById('input-tag1').value = '';
+            document.getElementById('input-tag2').value = '';
+            document.getElementById('input-tag3').value = '';
+            closeUploadModal();
+            renderCosmic();
+            playMusicById(newBubble.id);
+        }
+
+        window.onload = function() {
+            lucide.createIcons();
+            startCosmicAnimation();
+        }
+    </script>
+</body>
+</html>
