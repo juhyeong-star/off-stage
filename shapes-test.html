@@ -391,6 +391,34 @@
         ];
         let nextId = 10;
 
+        // 전체 음악 풀 — 2페이지 끝까지 가면 여기서 랜덤 배치를 새로 뽑아 옴(리서치/새로고침)
+        const POOL = [
+            {title:"네온 드라이브",artist:"유지호",color:"#FF2EA0",tags:["#시티팝","#야간주행","#네온"]},
+            {title:"건유레인져",artist:"이유노",color:"#00E5FF",tags:["#파워레인져","#포기마","#할수있어"]},
+            {title:"새벽 세시 Blues",artist:"김민찬",color:"#B14BFF",tags:["#새벽세시","#불면","#쫀득"]},
+            {title:"Hey Hey Hey",artist:"한승수",color:"#FF9100",tags:["#자우림","#밴드","#인디"]},
+            {title:"Plastic days",artist:"이효원",color:"#76FF03",tags:["#G-Funk","#R&B","#소매치기"]},
+            {title:"심야 라디오",artist:"정세림",color:"#FF4D6D",tags:["#로파이","#빗소리","#감성"]},
+            {title:"전력질주",artist:"오제이",color:"#2EE6D6",tags:["#하이텐션","#운동","#EDM"]},
+            {title:"보라빛 노을",artist:"달문",color:"#9D4EDD",tags:["#발라드","#노을","#서정"]},
+            {title:"첫 데모",artist:"신입생",color:"#FFD166",tags:["#첫곡","#설렘","#데모"]},
+            {title:"우산 없이",artist:"이로",color:"#4D9DFF",tags:["#비","#발라드","#우울"]},
+            {title:"콜라보 구함",artist:"제이엠",color:"#39FF14",tags:["#협업","#힙합","#데모"]},
+            {title:"여름의 끝",artist:"하늘",color:"#FF6EC7",tags:["#시티팝","#여름","#이별"]},
+            {title:"체육관 락",artist:"준",color:"#FF3B3B",tags:["#락","#밴드","#에너지"]},
+            {title:"새벽 감성",artist:"무드",color:"#7CF5FF",tags:["#로파이","#새벽","#잔잔"]},
+            {title:"틱톡 챌린지",artist:"리나",color:"#C77DFF",tags:["#fyp","#댄스","#중독"]},
+            {title:"교실에서",artist:"강은",color:"#FFE066",tags:["#청춘","#고1","#설렘"]},
+            {title:"드림팝 스케치",artist:"몽",color:"#A0FFE6",tags:["#드림팝","#몽환","#스케치"]},
+            {title:"분노의 베이스",artist:"베이스맨",color:"#FF8A3D",tags:["#Dnb","#베이스","#클럽"]},
+            {title:"고백송",artist:"수민",color:"#FF9EC4",tags:["#고백","#발라드","#짝사랑"]},
+            {title:"하이퍼팝 실험",artist:"엑스",color:"#B14BFF",tags:["#hyperpop","#실험","#글리치"]},
+            {title:"비 오는 트로트",artist:"명자",color:"#FFB23E",tags:["#트로트","#비","#뽕짝"]},
+            {title:"R&B 새벽",artist:"소울",color:"#6EE7FF",tags:["#RnB","#소울","#새벽"]},
+            {title:"인디 첫 무대",artist:"밴드온",color:"#9DFF6E",tags:["#인디","#밴드","#첫무대"]},
+            {title:"잠수 이별",artist:"무소식",color:"#FF5DA2",tags:["#잠수이별","#슬픔","#발라드"]}
+        ];
+
         let selectedColor = "#FF2E93";
         let currentActiveMusic = null;
         let isPlaying = false;
@@ -508,7 +536,7 @@
             container.addEventListener('wheel', (e) => {
                 const max = container.scrollHeight - container.clientHeight;
                 if (max <= 4) return;
-                if (container.scrollTop >= max - 2 && e.deltaY > 0) { container.scrollTop = 0; flashLoop('맨 위로 돌아왔어요'); }
+                if (container.scrollTop >= max - 2 && e.deltaY > 0) { loadRandomBatch(); }
                 else if (container.scrollTop <= 2 && e.deltaY < 0) { container.scrollTop = max; flashLoop('맨 아래로'); }
             }, { passive: true });
             container.addEventListener('scroll', () => {
@@ -517,9 +545,8 @@
                 if (max <= 4) return;
                 if (container.scrollTop >= max - 1) {
                     scrollCooldown = true;
-                    container.scrollTop = 0;
-                    flashLoop('맨 위로 돌아왔어요');
-                    setTimeout(() => { scrollCooldown = false; }, 420);
+                    loadRandomBatch();
+                    setTimeout(() => { scrollCooldown = false; }, 500);
                 }
             }, { passive: true });
         }
@@ -530,7 +557,21 @@
             h.textContent = '↻ ' + msg;
             h.style.opacity = '1';
             clearTimeout(h._t);
-            h._t = setTimeout(() => { h.style.opacity = '0'; }, 1000);
+            h._t = setTimeout(() => { h.style.opacity = '0'; }, 1100);
+        }
+        // 2페이지 끝까지 가면 → 풀에서 랜덤하게 다른 음악 배치를 새로 뽑아 옴(리서치/새로고침)
+        function loadRandomBatch() {
+            const vh = container.clientHeight || 460;
+            const W = container.clientWidth || 360;
+            const n = Math.max(7, Math.min(14, Math.round((W * vh * 2) / 28000)));
+            const shuffled = POOL.slice().sort(() => Math.random() - 0.5);
+            bubbleData = shuffled.slice(0, n).map(t => ({
+                id: nextId++, title: t.title, artist: t.artist, color: t.color, tags: t.tags,
+                size: 108 + Math.round(Math.random() * 28)   // 108~136
+            }));   // x/y 없음 → layout이 위쪽부터 새 위치+속도 부여
+            layoutBubbles();
+            container.scrollTop = 0;
+            flashLoop('새로운 음악으로 새로고침!');
         }
 
         function playMusicById(id) {
