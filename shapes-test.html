@@ -471,8 +471,8 @@
                 if (b.x == null) {                              // 처음 등장 → 2페이지에 고르게 퍼뜨림(초기 겹침 최소)
                     b.x = 12 + Math.random() * Math.max(20, W - size - 24);
                     b.y = 18 + (i + Math.random() * 0.5) * ((H - 36) / Math.max(1, bubbleData.length));
-                    b.dx = (Math.random() - 0.5) * 0.45;
-                    b.dy = (Math.random() - 0.5) * 0.45;
+                    b.dx = (Math.random() - 0.5) * 0.6;
+                    b.dy = (Math.random() - 0.5) * 0.6;
                 }
                 b.x = Math.max(8, Math.min(W - size - 8, b.x));
                 b.y = Math.max(8, Math.min(H - size - 8, b.y));
@@ -682,7 +682,7 @@
             const t3 = document.getElementById('input-tag3').value || "#도형음악";
             const W = container.clientWidth || 360;
             const newBubble = { id: nextId++, title: titleInput, artist: artistInput, color: selectedColor, tags: [t1, t2, t3], size: 120,
-                x: Math.max(10, Math.min(W - 130, W / 2 - 60)), y: 14, dx: (Math.random() - 0.5) * 0.45, dy: 0.32 };  // 맨 위에서 생성 후 드리프트
+                x: Math.max(10, Math.min(W - 130, W / 2 - 60)), y: 14, dx: (Math.random() - 0.5) * 0.6, dy: 0.42 };  // 맨 위에서 생성 후 드리프트
             bubbleData.unshift(newBubble);          // 최신 = 맨 앞(맨 위)
             document.getElementById('input-title').value = '';
             document.getElementById('input-artist').value = '';
