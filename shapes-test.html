@@ -45,11 +45,27 @@
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
-        .bubble {
-            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease;
-            cursor: pointer;
+        .bubble { cursor: pointer; }
+        /* 네온사인 도형 — 강한 글로우 + 둥둥(bob) + 펄스 */
+        .neon-bubble {
+            position: absolute;
+            border: 2px solid rgba(255,255,255,0.4);
+            box-shadow: 0 0 16px var(--glow), 0 0 40px var(--glow), inset 0 4px 14px rgba(255,255,255,0.5);
+            animation: bob 4.5s ease-in-out infinite, neonPulse 2.8s ease-in-out infinite;
         }
-        .bubble:active { transform: scale(0.92); }
+        @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+        @keyframes neonPulse {
+            0%,100% { box-shadow: 0 0 14px var(--glow), 0 0 30px transparent, inset 0 4px 14px rgba(255,255,255,0.5); }
+            50%     { box-shadow: 0 0 26px var(--glow), 0 0 62px var(--glow), inset 0 4px 14px rgba(255,255,255,0.55); }
+        }
+        #bubbles-container { overflow-y: auto; scrollbar-width: none; }
+        #bubbles-container::-webkit-scrollbar { display: none; }
+        #loop-hint {
+            position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+            background: rgba(124,58,237,0.92); color: #fff; font-size: 11px; font-weight: 700;
+            padding: 5px 13px; border-radius: 999px; z-index: 30; opacity: 0;
+            transition: opacity .25s; pointer-events: none; white-space: nowrap;
+        }
         .bar {
             width: 3px; height: 5px; background: #ffffff;
             display: inline-block; margin: 0 1px; border-radius: 2px;
@@ -126,11 +142,11 @@
         </header>
 
         <!-- 메인 컨텐츠 -->
-        <main class="flex-1 overflow-y-auto relative cosmic-bg flex flex-col">
+        <main class="flex-1 overflow-hidden relative cosmic-bg flex flex-col">
             <div class="stars"></div>
 
             <!-- 발견(도형) 탭 — 토글 제거, 코스믹 도형만 -->
-            <section id="content-discover" class="flex-1 flex flex-col p-4 relative z-10">
+            <section id="content-discover" class="flex-1 min-h-0 flex flex-col p-4 relative z-10">
                 <div class="flex justify-between items-center mb-4">
                     <div>
                         <h2 class="text-lg font-bold" id="discover-title">우주 탐색 피드</h2>
@@ -138,7 +154,7 @@
                     </div>
                 </div>
 
-                <div id="bubbles-container" class="relative flex-1 rounded-3xl border border-white/5 overflow-hidden bg-black/30 backdrop-blur-sm flex flex-col z-10"></div>
+                <div id="bubbles-container" class="relative flex-1 min-h-0 rounded-3xl border border-white/5 bg-black/30 backdrop-blur-sm z-10"></div>
 
                 <button onclick="openUploadModal()" class="absolute bottom-4 right-4 w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30 hover:scale-105 active:scale-95 transition-transform z-20" aria-label="도형 올리기">
                     <i data-lucide="plus" class="w-6 h-6 text-white"></i>
@@ -146,7 +162,7 @@
             </section>
 
             <!-- 주절주절 탭 -->
-            <section id="content-feed" class="hidden p-4 space-y-4 z-10">
+            <section id="content-feed" class="hidden flex-1 min-h-0 overflow-y-auto p-4 space-y-4 z-10">
                 <div class="flex items-center justify-between">
                     <h2 class="text-lg font-bold">주절주절 소통</h2>
                     <span class="text-xs text-purple-400 font-semibold">최근 7일 인기글</span>
@@ -188,7 +204,7 @@
             </section>
 
             <!-- Tags 탭 -->
-            <section id="content-tags" class="hidden p-5 space-y-4 z-10">
+            <section id="content-tags" class="hidden flex-1 min-h-0 overflow-y-auto p-5 space-y-4 z-10">
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-lg font-bold">인기 Tags</h2>
@@ -207,7 +223,7 @@
             </section>
 
             <!-- 즐겨찾기 탭 -->
-            <section id="content-favorites" class="hidden p-5 space-y-4 z-10">
+            <section id="content-favorites" class="hidden flex-1 min-h-0 overflow-y-auto p-5 space-y-4 z-10">
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-lg font-bold">즐겨찾기 보관함</h2>
@@ -226,7 +242,7 @@
             </section>
 
             <!-- 더보기 탭 -->
-            <section id="content-more" class="hidden p-5 space-y-5 z-10">
+            <section id="content-more" class="hidden flex-1 min-h-0 overflow-y-auto p-5 space-y-5 z-10">
                 <div class="flex items-center gap-4 bg-white/5 rounded-3xl p-4 border border-white/5">
                     <div class="w-16 h-16 rounded-full bg-rose-500 border-2 border-purple-500 flex items-center justify-center text-base font-bold">OS</div>
                     <div>
@@ -370,17 +386,23 @@
     </div>
 
     <script>
+        // 최신이 배열 앞(맨 위). 위→아래로 2페이지까지 채움.
         let bubbleData = [
-            { id: 1, title: "건유레인져", artist: "이유노", color: "#FF2E93", tags: ["#파워레인져", "#포기하지마", "#할수있어!!"], x: 30, y: 50, dx: 0.3, dy: 0.4, size: 115 },
-            { id: 2, title: "새벽 세시 층간소음 Blues", artist: "김민찬", color: "#00E5FF", tags: ["#새벽세시", "#머리에서불남", "#쫀득!"], x: 180, y: 120, dx: -0.4, dy: 0.3, size: 135 },
-            { id: 3, title: "Hey Hey Hey (Cover)", artist: "한승수", color: "#FF9100", tags: ["#자우림", "#밴드", "#인디"], x: 50, y: 250, dx: 0.2, dy: -0.3, size: 110 },
-            { id: 4, title: "Plastic days", artist: "이효원", color: "#76FF03", tags: ["#G-Funk", "#R&B", "#소매치기범"], x: 210, y: 280, dx: -0.3, dy: -0.2, size: 120 }
+            { id: 9, title: "네온 드라이브", artist: "유지호", color: "#FF2EA0", tags: ["#시티팝", "#야간주행", "#네온"], size: 128 },
+            { id: 8, title: "건유레인져", artist: "이유노", color: "#00E5FF", tags: ["#파워레인져", "#포기마", "#할수있어"], size: 116 },
+            { id: 7, title: "새벽 세시 Blues", artist: "김민찬", color: "#B14BFF", tags: ["#새벽세시", "#불면", "#쫀득"], size: 134 },
+            { id: 6, title: "Hey Hey Hey", artist: "한승수", color: "#FF9100", tags: ["#자우림", "#밴드", "#인디"], size: 112 },
+            { id: 5, title: "Plastic days", artist: "이효원", color: "#76FF03", tags: ["#G-Funk", "#R&B", "#소매치기"], size: 122 },
+            { id: 4, title: "심야 라디오", artist: "정세림", color: "#FF4D6D", tags: ["#로파이", "#빗소리", "#감성"], size: 120 },
+            { id: 3, title: "전력질주", artist: "오제이", color: "#2EE6D6", tags: ["#하이텐션", "#운동", "#EDM"], size: 126 },
+            { id: 2, title: "보라빛 노을", artist: "달문", color: "#9D4EDD", tags: ["#발라드", "#노을", "#서정"], size: 114 },
+            { id: 1, title: "첫 데모", artist: "신입생", color: "#FFD166", tags: ["#첫곡", "#설렘", "#데모"], size: 118 }
         ];
+        let nextId = 10;
 
         let selectedColor = "#FF2E93";
         let currentActiveMusic = null;
         let isPlaying = false;
-        let animationFrameId = null;
 
         const container = document.getElementById('bubbles-container');
 
@@ -406,70 +428,83 @@
             else stopCosmicAnimation();
         }
 
-        function stopCosmicAnimation() {
-            if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
-        }
+        function stopCosmicAnimation() { /* 정적 레이아웃 — 멈출 물리 루프 없음 */ }
 
-        function startCosmicAnimation() {
-            stopCosmicAnimation();
-            function updatePhysics() {
-                const width = container.clientWidth || 360;
-                const height = container.clientHeight || 450;
-                for (let i = 0; i < bubbleData.length; i++) {
-                    let b1 = bubbleData[i];
-                    if (b1.x < 5 || b1.x + b1.size > width - 5) {
-                        b1.dx *= -1;
-                        b1.x = Math.max(5, Math.min(width - b1.size - 5, b1.x));
-                    }
-                    if (b1.y < 5 || b1.y + b1.size > height - 5) {
-                        b1.dy *= -1;
-                        b1.y = Math.max(5, Math.min(height - b1.size - 5, b1.y));
-                    }
-                    for (let j = i + 1; j < bubbleData.length; j++) {
-                        let b2 = bubbleData[j];
-                        let dx = (b2.x + b2.size/2) - (b1.x + b1.size/2);
-                        let dy = (b2.y + b2.size/2) - (b1.y + b1.size/2);
-                        let distance = Math.sqrt(dx * dx + dy * dy) || 0.001;
-                        let minDistance = (b1.size/2 + b2.size/2) - 5;
-                        if (distance < minDistance) {
-                            let overlap = minDistance - distance;
-                            let ax = (dx / distance) * overlap * 0.5;
-                            let ay = (dy / distance) * overlap * 0.5;
-                            b1.x -= ax;
-                            b1.y -= ay;
-                            b2.x += ax;
-                            b2.y += ay;
-                            b1.dx = -b1.dx; b1.dy = -b1.dy;
-                            b2.dx = -b2.dx; b2.dy = -b2.dy;
-                        }
-                    }
-                    b1.x += b1.dx;
-                    b1.y += b1.dy;
-                }
-                renderCosmic();
-                animationFrameId = requestAnimationFrame(updatePhysics);
+        let canvasEl = null, loopWired = false, scrollCooldown = false;
+        function ensureCanvas() {
+            if (!canvasEl || !container.contains(canvasEl)) {
+                container.innerHTML = '<div id="bubbles-canvas" style="position:relative;width:100%;"></div>';
+                canvasEl = document.getElementById('bubbles-canvas');
             }
-            updatePhysics();
         }
-
-        function renderCosmic() {
-            container.innerHTML = '';
-            bubbleData.forEach(b => {
-                const bubbleEl = document.createElement('div');
-                bubbleEl.className = 'bubble absolute rounded-full flex flex-col items-center justify-center p-3 text-center transition-shadow shadow-lg hover:scale-105 active:scale-95 duration-200 z-10';
-                bubbleEl.style.width = `${b.size}px`;
-                bubbleEl.style.height = `${b.size}px`;
-                bubbleEl.style.left = `${b.x}px`;
-                bubbleEl.style.top = `${b.y}px`;
-                bubbleEl.style.backgroundColor = b.color;
-                bubbleEl.style.boxShadow = `0 10px 30px ${b.color}35, inset 0 4px 12px rgba(255,255,255,0.45)`;
-                let tagsHTML = b.tags.map(t =>
-                    `<p class="text-black font-extrabold select-none truncate w-full pointer-events-none" style="font-size: ${b.size > 120 ? '11px' : '9px'}">${t}</p>`
-                ).join('');
-                bubbleEl.innerHTML = `<div class="space-y-0.5 w-full flex flex-col justify-center items-center pointer-events-none">${tagsHTML}</div>`;
-                bubbleEl.onclick = () => playMusicById(b.id);
-                container.appendChild(bubbleEl);
+        // 도형 배치 — 최신이 맨 위, 위→아래로 딱 2페이지까지 채움(초과분은 가장 오래된 것 제거)
+        function layoutBubbles() {
+            ensureCanvas();
+            const vh = container.clientHeight || 460;
+            const W = container.clientWidth || 360;
+            const H = vh * 2;                                  // 2페이지
+            canvasEl.style.height = H + 'px';
+            const rowGap = 138, colW = W / 2;
+            const rows = Math.max(2, Math.floor((H - 24) / rowGap));
+            const cap = rows * 2;
+            if (bubbleData.length > cap) bubbleData.length = cap;   // 최신은 앞(유지), 오래된 꼬리 제거
+            canvasEl.innerHTML = '';
+            bubbleData.forEach((b, i) => {
+                const size = b.size, col = i % 2, row = Math.floor(i / 2);
+                let y = 18 + row * rowGap + (col ? rowGap * 0.5 : 0);
+                if (y + size > H) y = H - size - 8;
+                let x = col * colW + (colW - size) / 2 + ((i % 3) - 1) * 16;
+                x = Math.max(8, Math.min(W - size - 8, x));
+                const el = document.createElement('div');
+                el.className = 'bubble neon-bubble rounded-full flex flex-col items-center justify-center p-3 text-center';
+                el.style.width = size + 'px';
+                el.style.height = size + 'px';
+                el.style.left = x + 'px';
+                el.style.top = y + 'px';
+                el.style.background = b.color;
+                el.style.setProperty('--glow', b.color);
+                el.style.animationDelay = (i * 0.22).toFixed(2) + 's, ' + (i * 0.17).toFixed(2) + 's';
+                el.innerHTML = '<div class="space-y-0.5 w-full flex flex-col justify-center items-center pointer-events-none">' +
+                    b.tags.map(t => `<p class="font-extrabold select-none truncate w-full pointer-events-none" style="color:#0b0b0b;font-size:${size > 122 ? '11px' : '9px'}">${t}</p>`).join('') +
+                    '</div>';
+                el.onclick = () => playMusicById(b.id);
+                canvasEl.appendChild(el);
             });
+            wireLoop();
+        }
+        function renderCosmic() { layoutBubbles(); }
+        function startCosmicAnimation() { layoutBubbles(); }
+
+        // 2페이지 끝에서 더 내리면 맨 위로 루프(초기화) — 위에서 더 올리면 맨 아래로
+        function wireLoop() {
+            if (loopWired) return;
+            loopWired = true;
+            container.addEventListener('wheel', (e) => {
+                const max = container.scrollHeight - container.clientHeight;
+                if (max <= 4) return;
+                if (container.scrollTop >= max - 2 && e.deltaY > 0) { container.scrollTop = 0; flashLoop('맨 위로 돌아왔어요'); }
+                else if (container.scrollTop <= 2 && e.deltaY < 0) { container.scrollTop = max; flashLoop('맨 아래로'); }
+            }, { passive: true });
+            container.addEventListener('scroll', () => {
+                if (scrollCooldown) return;
+                const max = container.scrollHeight - container.clientHeight;
+                if (max <= 4) return;
+                if (container.scrollTop >= max - 1) {
+                    scrollCooldown = true;
+                    container.scrollTop = 0;
+                    flashLoop('맨 위로 돌아왔어요');
+                    setTimeout(() => { scrollCooldown = false; }, 420);
+                }
+            }, { passive: true });
+        }
+        function flashLoop(msg) {
+            let h = document.getElementById('loop-hint');
+            if (!h) { h = document.createElement('div'); h.id = 'loop-hint'; document.getElementById('content-discover').appendChild(h); }
+            h.style.top = (container.offsetTop + 10) + 'px';
+            h.textContent = '↻ ' + msg;
+            h.style.opacity = '1';
+            clearTimeout(h._t);
+            h._t = setTimeout(() => { h.style.opacity = '0'; }, 1000);
         }
 
         function playMusicById(id) {
@@ -569,25 +604,27 @@
             const t1 = document.getElementById('input-tag1').value || "#offstage";
             const t2 = document.getElementById('input-tag2').value || "#영감기록";
             const t3 = document.getElementById('input-tag3').value || "#도형음악";
-            const newBubble = {
-                id: bubbleData.length + 1, title: titleInput, artist: artistInput, color: selectedColor,
-                tags: [t1, t2, t3], x: 100, y: 100,
-                dx: (Math.random() - 0.5) * 0.4, dy: (Math.random() - 0.5) * 0.4, size: 115
-            };
-            bubbleData.push(newBubble);
+            const newBubble = { id: nextId++, title: titleInput, artist: artistInput, color: selectedColor, tags: [t1, t2, t3], size: 120 };
+            bubbleData.unshift(newBubble);          // 최신 = 맨 앞(맨 위)
             document.getElementById('input-title').value = '';
             document.getElementById('input-artist').value = '';
             document.getElementById('input-tag1').value = '';
             document.getElementById('input-tag2').value = '';
             document.getElementById('input-tag3').value = '';
             closeUploadModal();
-            renderCosmic();
+            layoutBubbles();
+            container.scrollTop = 0;                 // 새 도형(맨 위)으로 이동
+            flashLoop('새 도형이 맨 위에 추가됐어요!');
             playMusicById(newBubble.id);
         }
 
+        window.addEventListener('resize', () => {
+            if (!document.getElementById('content-discover').classList.contains('hidden')) layoutBubbles();
+        });
         window.onload = function() {
             lucide.createIcons();
-            startCosmicAnimation();
+            layoutBubbles();
+            setTimeout(layoutBubbles, 120);
         }
     </script>
 </body>
