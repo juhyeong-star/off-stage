@@ -2522,6 +2522,7 @@ window.openPlayerFs = function () {
   fs.classList.add('open');
   fs.setAttribute('aria-hidden', 'false');
   document.body.classList.add('player-fs-open');
+  if (window._attachPlayerFsSwipe) window._attachPlayerFsSwipe();
 };
 window.closePlayerFs = function () {
   const fs = document.getElementById('player-fs');
@@ -2574,6 +2575,32 @@ window._pfsPrev = function () {
 window._pfsNext = function () {
   const b = document.querySelector('#global-player .control-btn[aria-label="다음 곡"]');
   if (b) b.click();
+};
+// 풀스크린 플레이어 스와이프 — 좌:이전곡 / 우:다음곡 / 아래:축소(닫기). (사용자 지정, 멱등)
+window._attachPlayerFsSwipe = function () {
+  const fs = document.getElementById('player-fs');
+  if (!fs || fs._swipeWired) return;
+  fs._swipeWired = true;
+  let sx = 0, sy = 0, tracking = false;
+  const EXCLUDE = 'button, .pfs-track, input, a';
+  fs.addEventListener('touchstart', function (e) {
+    const t = e.touches && e.touches[0]; if (!t) { tracking = false; return; }
+    if (e.target && e.target.closest && e.target.closest(EXCLUDE)) { tracking = false; return; }
+    sx = t.clientX; sy = t.clientY; tracking = true;
+  }, { passive: true });
+  fs.addEventListener('touchend', function (e) {
+    if (!tracking) return; tracking = false;
+    const t = e.changedTouches && e.changedTouches[0]; if (!t) return;
+    const dx = t.clientX - sx, dy = t.clientY - sy;
+    const adx = Math.abs(dx), ady = Math.abs(dy);
+    const TH = 48;   // 최소 이동
+    if (adx > ady && adx > TH) {
+      if (dx < 0) { if (window._pfsPrev) window._pfsPrev(); }   // 좌 → 이전 곡
+      else { if (window._pfsNext) window._pfsNext(); }          // 우 → 다음 곡
+    } else if (dy > TH && ady > adx) {
+      if (window.closePlayerFs) window.closePlayerFs();         // 아래 → 축소
+    }
+  }, { passive: true });
 };
 
 // 🔗 현재 재생 곡 공유 — 미니바/풀스크린 플레이어의 공유 버튼.
