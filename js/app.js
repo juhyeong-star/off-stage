@@ -7846,9 +7846,7 @@ function _floatingFolderHtml(it, pos) {
   // ── 즐겨찾기 폴더 바(row 모드) = 테스트 글래스 카드(폴더 아이콘 + 이름 + "N곡 보관").
   //    drag-drop(곡→폴더) 위해 .floating-folder + data-folder-id 유지. pos 모드(캔버스 floating)는 아래 윈도우 폴더 그대로. ──
   if (row) {
-    if (it.kind === 'folderNew') {
-      return `<div class="floating-folder uni-folder-row-item folder-glass is-folder-new" data-folder-new="1" data-uid="${it.id}" onclick="window.promptNewPlaylist && promptNewPlaylist()"><div class="fg-icon"><i class="ri-add-line"></i></div><div class="fg-title">${_t('새 폴더', 'New folder')}</div></div>`;
-    }
+    if (it.kind === 'folderNew') return '';   // 새 폴더 생성은 상단 헤더 버튼(✨ 옆)으로 이동 — 폴더 바엔 카드 안 넣음(사용자 요청)
     if (it.kind === 'folderTpl') {
       const f = it.tpl; const ttl = (f.title || '폴더').replace(/</g, '&lt;');
       return `<div class="floating-folder uni-folder-row-item folder-glass" data-folder-template="${ttl.replace(/"/g, '&quot;')}" data-uid="${it.id}" style="--folder-color:${f.color};" onclick="window.createDefaultPlaylist && createDefaultPlaylist('${ttl.replace(/'/g, "\\'")}')"><div class="fg-icon" style="color:${f.color};"><i class="ri-folder-3-line"></i></div><div class="fg-title">${ttl}</div><div class="fg-count">0${_t('곡 보관', ' saved')}</div></div>`;
