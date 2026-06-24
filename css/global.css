@@ -19105,6 +19105,15 @@ body.is-shapes-route .page-intro { font-size: 18px !important; font-weight: 700 
     text-align: left !important; pointer-events: none;
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
   }
+  /* 도형 필드를 제목/부제 아래에서 시작 → 도형이 헤더(제목)를 안 가림(테스트처럼 제목 위·도형 아래) */
+  body.is-shapes-route .shapes-universe {
+    top: calc(var(--mobile-tab-h, 96px) + env(safe-area-inset-top, 0px) + 52px) !important;
+  }
+}
+/* 발견 도형 글자 = 테스트 폰트(Pretendard, 손글씨 아님). 손글씨 강제룰(16932)을 특이도로 덮음 */
+.shapes-universe .floating-shape .shape-text {
+  font-family: 'Pretendard', 'Inter', sans-serif !important;
+  font-weight: 800;
 }
 /* 자켓 토글 흔적 제거(마크업은 이미 뺐지만 안전망) */
 .discover-mode-toggle { display: none !important; }
