@@ -1587,6 +1587,8 @@ function navigateTo(route) {
   if (route !== 'universe') document.body.classList.remove('is-universe-route');
   // 도형 페이지일 때 body 클래스 — CSS 가 page-intro 를 fixed 로 띄우는 데 사용
   document.body.classList.toggle('is-shapes-route', route === 'shapes');
+  // 발견 페이지를 떠나면 물리 루프 정지(rAF 누수 방지)
+  if (route !== 'shapes' && typeof stopShapesPhysics === 'function') stopShapesPhysics();
   // Toggle global back button visibility based on the new route.
   _updateBackButton(route);
   appContent.innerHTML = '';
@@ -7070,9 +7072,8 @@ function renderShapes() {
 
   shapeEntries.forEach((entry, si) => {
     const { track, idx, pass } = entry;
-    let shape = track.shape || SHAPE_TYPES[idx % SHAPE_TYPES.length];
-    // 애매한 모양(별/삼각/다이아/평행) → 깔끔한 모양으로 정리
-    if (SHAPE_REMAP[shape]) shape = SHAPE_REMAP[shape];
+    // 발견 도형 = 전부 동그라미(사용자 요청, 테스트와 동일). 기존 혼합 모양/리맵 대신 circle 고정.
+    let shape = 'circle';
     // 저장된 shapeColor 무시 → 스크린샷 팔레트에서만 (트랙 id 시드로 안정적). 사용자 요청.
     const color = SHAPE_COLORS[(_hashSeed('shape-col:' + track.id) >>> 0) % SHAPE_COLORS.length];
     const lines = track.lines || [track.title, track.artist, '클릭해서 들어봐!'];
@@ -7211,11 +7212,98 @@ function renderShapes() {
   if (_scroll) { _scroll.scrollLeft = 0; _scroll.scrollTop = 0; }
 
   initShapeDrag();
+  // 발견(도형) 물리 — shape 모드에서만 드리프트+벽튕김+충돌+던지기. 자켓 모드는 정적 유지.
+  try {
+    stopShapesPhysics();
+    if (!_jacketMode && _scroll && _field) startShapesPhysics(_field, _scroll);
+  } catch (e) { console.warn('[shapes] physics start', e); }
   // initDiceDrag() removed — dice is now fixed-position above upload-fab.
 }
 // supabase.js 등 외부 스크립트에서 window.renderShapes() 로 호출 가능하게 명시 노출.
 // (비-모듈 스크립트에선 function 선언만으로도 window 에 매달리지만, 모든 환경 안전하게)
 window.renderShapes = renderShapes;
+
+// ============================================================
+// 발견(도형) 물리 — 드리프트 + 벽 튕김 + 충돌 + 끌어서 던지기(flick).
+// shape 모드에서만 동작(각 도형 el.__phys 부착). universe(즐겨찾기)는
+// __phys 가 안 붙으므로 기존 floatDrift/드래그 그대로 유지된다.
+// 탭1=재생 / 탭2=아티스트 페이지 는 initShapeDrag 의 탭 로직이 처리.
+// ============================================================
+window.__shapesPhys = window.__shapesPhys || { raf: 0, items: [] };
+function stopShapesPhysics() {
+  const P = window.__shapesPhys;
+  if (P.raf) { cancelAnimationFrame(P.raf); P.raf = 0; }
+  if (P.items) P.items.forEach(b => { try { delete b.el.__phys; } catch (_) {} });
+  P.items = [];
+}
+window.stopShapesPhysics = stopShapesPhysics;
+
+function startShapesPhysics(field, viewport) {
+  if (!field) return;
+  const els = Array.prototype.slice.call(field.querySelectorAll('.floating-shape'));
+  if (!els.length) return;
+  const P = window.__shapesPhys;
+  const fieldW = field.clientWidth || (viewport && viewport.clientWidth) || window.innerWidth;
+  const vh = (viewport && viewport.clientHeight) || window.innerHeight || 700;
+  const PER = 6;                                          // 한 화면에 ~6개
+  const rows = Math.max(1, Math.ceil(els.length / PER));
+  const fieldH = Math.max(vh - 8, rows * (vh - 12));      // 6/화면, 세로로 쌓여 스크롤
+  field.style.height = fieldH + 'px';
+  const items = els.map(el => {
+    const sc = parseFloat((el.style.getPropertyValue('--scale') || '1')) || 1;
+    el.style.animation = 'none';                          // floatDrift 끔 — 물리가 위치를 몲
+    el.style.transform = (sc !== 1) ? ('scale(' + sc + ')') : '';
+    el.style.transition = 'none';
+    const w = el.offsetWidth * sc, h = el.offsetHeight * sc;
+    const x = Math.random() * Math.max(8, fieldW - w);
+    const y = Math.random() * Math.max(8, fieldH - h);
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    const ang = Math.random() * Math.PI * 2, sp = 0.3 + Math.random() * 0.3;
+    const item = { el, x, y, w, h, r: Math.max(w, h) / 2, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp };
+    el.__phys = item;
+    return item;
+  });
+  P.items = items;
+  function step() {
+    const its = P.items, n = its.length;
+    if (!n) return;
+    const BW = field.clientWidth || fieldW, BH = parseFloat(field.style.height) || fieldH;
+    for (let i = 0; i < n; i++) {
+      const b = its[i];
+      if (b.el.classList.contains('dragging')) continue;
+      b.x += b.vx; b.y += b.vy;
+      if (b.x <= 0) { b.x = 0; b.vx = Math.abs(b.vx); }
+      else if (b.x + b.w >= BW) { b.x = BW - b.w; b.vx = -Math.abs(b.vx); }
+      if (b.y <= 0) { b.y = 0; b.vy = Math.abs(b.vy); }
+      else if (b.y + b.h >= BH) { b.y = BH - b.h; b.vy = -Math.abs(b.vy); }
+      const sp = Math.hypot(b.vx, b.vy);
+      if (sp > 0.65) { b.vx *= 0.985; b.vy *= 0.985; }                    // 던진 속도는 서서히 감속
+      else if (sp < 0.2) { const a = Math.atan2(b.vy, b.vx) || (Math.random() * 6.283); b.vx = Math.cos(a) * 0.2; b.vy = Math.sin(a) * 0.2; }  // 최소 드리프트 유지
+    }
+    // 충돌 분리 + 튕김 (도형 수십 개 → O(n^2) 허용)
+    for (let i = 0; i < n; i++) {
+      const a = its[i]; if (a.el.classList.contains('dragging')) continue;
+      for (let j = i + 1; j < n; j++) {
+        const c = its[j]; if (c.el.classList.contains('dragging')) continue;
+        const acx = a.x + a.w / 2, acy = a.y + a.h / 2, ccx = c.x + c.w / 2, ccy = c.y + c.h / 2;
+        let dx = ccx - acx, dy = ccy - acy; const dist = Math.hypot(dx, dy) || 0.01;
+        const min = (a.r + c.r) * 0.92;                                   // 살짝 겹침 허용
+        if (dist < min) {
+          const ov = (min - dist) / 2, nx = dx / dist, ny = dy / dist;
+          a.x -= nx * ov; a.y -= ny * ov; c.x += nx * ov; c.y += ny * ov;
+          const avn = a.vx * nx + a.vy * ny, cvn = c.vx * nx + c.vy * ny;
+          a.vx += (cvn - avn) * nx; a.vy += (cvn - avn) * ny;
+          c.vx += (avn - cvn) * nx; c.vy += (avn - cvn) * ny;
+        }
+      }
+    }
+    for (let i = 0; i < n; i++) { const b = its[i]; if (b.el.classList.contains('dragging')) continue; b.el.style.left = b.x + 'px'; b.el.style.top = b.y + 'px'; }
+    P.raf = requestAnimationFrame(step);
+  }
+  P.raf = requestAnimationFrame(step);
+}
+window.startShapesPhysics = startShapesPhysics;
 
 // 발견 보기 토글: 도형 ↔ 앨범 자켓(블라인드+해시태그). 선택은 localStorage 에 저장.
 window.toggleDiscoverMode = function () {
@@ -8224,6 +8312,8 @@ function initShapeDrag() {
       dragEl.style.left = (origLeft + dx) + 'px';
       dragEl.style.top = (origTop + dy) + 'px';
       e.preventDefault();
+      // 던지기(flick) 속도 — 마지막 이동 델타를 도형에 기록(놓을 때 물리 속도로 주입).
+      if (dragEl) { dragEl.__flickVX = ptr.clientX - lastX; dragEl.__flickVY = ptr.clientY - lastY; }
       lastX = ptr.clientX; lastY = ptr.clientY;
       // 곡/포스트잇을 끌고 있을 때 폴더 위 하이라이트 (내 우주 한정)
       if (currentView === 'universe' && (dragEl.dataset.trackId || dragEl.dataset.noteId)) {
@@ -8335,6 +8425,15 @@ function initShapeDrag() {
       }
     }
 
+    // 발견 물리: 드래그 놓을 때 = 던지기(flick). 물리 아이템 있을 때만(즐겨찾기 영향 X).
+    if (moved && el.__phys) {
+      el.__phys.x = parseFloat(el.style.left) || el.__phys.x;
+      el.__phys.y = parseFloat(el.style.top)  || el.__phys.y;
+      const _cap = 16;
+      el.__phys.vx = Math.max(-_cap, Math.min(_cap, (el.__flickVX || 0) * 0.7));
+      el.__phys.vy = Math.max(-_cap, Math.min(_cap, (el.__flickVY || 0) * 0.7));
+    }
+
     // If barely moved, treat as click — first click on a shape plays the song,
     // a second click on the SAME shape (no time limit) navigates to artist page.
     // Clicking a different shape resets: that shape is now the "primed" one.
@@ -8362,11 +8461,10 @@ function initShapeDrag() {
       }
       const trackId = el.dataset.trackId;
       const artistEnc = el.dataset.artist;
-      // 모바일 + 도형 페이지에서 도형 탭 → 도형 쇼츠(풀스크린)로 (자켓 모드면 커버를 크게)
-      if (trackId && currentView === 'shapes' && typeof openShapeShorts === 'function'
-          && _isMobileShorts() && openShapeShorts(trackId)) {
-        return;
-      }
+      // (이전: 모바일 도형 탭 → 풀스크린 쇼츠. 사용자 요청으로 비활성화 —
+      //  이제 도형 탭1=재생 / 탭2=해당 곡 아티스트 페이지. 아래 기본 탭 로직으로 흐름.)
+      // if (trackId && currentView === 'shapes' && typeof openShapeShorts === 'function'
+      //     && _isMobileShorts() && openShapeShorts(trackId)) { return; }
       // 자켓 모드(PC): 탭 = 자켓 '공개'(커버 선명·해시태그 사라짐) + 재생 (사용자 요청 ⓑ).
       if (trackId && currentView === 'shapes' && window.__discoverMode === 'jacket' && el.classList.contains('shape-jacket')) {
         document.querySelectorAll('.floating-shape.shape-jacket.revealed').forEach(j => { if (j !== el) j.classList.remove('revealed'); });
