@@ -8477,16 +8477,10 @@ function initShapeDrag() {
         if (typeof playTrack === 'function') playTrack(trackId, 'shape');
         return;
       }
-      if (window.__lastClickedShape === el && artistEnc) {
-        window.__lastClickedShape = null;
-        navigateTo('artist:' + artistEnc);
-      } else {
-        window.__lastClickedShape = el;
-        // source 를 currentView 에 맞게 정함 → 큐 자동 빌드. 'universe' 면 즐겨찾기
-        // 곡 전체, 'shapes' 면 도형 페이지 곡 전체가 다음 곡으로 흐름.
-        const _src = (currentView === 'universe') ? 'universe' : 'shape';
-        if (trackId) playTrack(trackId, _src);
-      }
+      // 탭 = 항상 재생. (두 번째 클릭 → 아티스트 이동 제거 — 아티스트는 아래 플레이바의 가수/제목 클릭으로.)
+      // source 를 currentView 에 맞게 정함 → 큐 자동 빌드. 'universe' 면 즐겨찾기, 'shapes' 면 도형 페이지 곡 전체.
+      const _src = (currentView === 'universe') ? 'universe' : 'shape';
+      if (trackId) playTrack(trackId, _src);
     }
   }
 

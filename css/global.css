@@ -19115,6 +19115,8 @@ body.is-shapes-route .page-intro { font-size: 18px !important; font-weight: 700 
 }
 /* 자켓 토글 흔적 제거(마크업은 이미 뺐지만 안전망) */
 .discover-mode-toggle { display: none !important; }
+/* 토성(랜덤재생 행성) 제거 — 사용자 요청 '필요 없음' */
+#random-dice, .planet-fab { display: none !important; }
 
 /* 플레이바 — 테스트의 깔끔한 룩: 다크바 + 둥근 아트 + 흰 디스크 재생 + 흐린 컨트롤 */
 #global-player { background: rgba(12, 9, 26, 0.95); }
