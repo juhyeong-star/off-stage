@@ -7843,6 +7843,20 @@ function _floatingFolderHtml(it, pos) {
   // pos 가 없으면(null) = 상단 '폴더 줄' 모드 — 절대위치/드리프트 없이 인라인 배치 +
   // 클릭은 드래그 캔버스 밖이라 명시 onclick 으로 연결(열기/생성/템플릿).
   const row = !pos;
+  // ── 즐겨찾기 폴더 바(row 모드) = 테스트 글래스 카드(폴더 아이콘 + 이름 + "N곡 보관").
+  //    drag-drop(곡→폴더) 위해 .floating-folder + data-folder-id 유지. pos 모드(캔버스 floating)는 아래 윈도우 폴더 그대로. ──
+  if (row) {
+    if (it.kind === 'folderNew') {
+      return `<div class="floating-folder uni-folder-row-item folder-glass is-folder-new" data-folder-new="1" data-uid="${it.id}" onclick="window.promptNewPlaylist && promptNewPlaylist()"><div class="fg-icon"><i class="ri-add-line"></i></div><div class="fg-title">${_t('새 폴더', 'New folder')}</div></div>`;
+    }
+    if (it.kind === 'folderTpl') {
+      const f = it.tpl; const ttl = (f.title || '폴더').replace(/</g, '&lt;');
+      return `<div class="floating-folder uni-folder-row-item folder-glass" data-folder-template="${ttl.replace(/"/g, '&quot;')}" data-uid="${it.id}" style="--folder-color:${f.color};" onclick="window.createDefaultPlaylist && createDefaultPlaylist('${ttl.replace(/'/g, "\\'")}')"><div class="fg-icon" style="color:${f.color};"><i class="ri-folder-3-line"></i></div><div class="fg-title">${ttl}</div><div class="fg-count">0${_t('곡 보관', ' saved')}</div></div>`;
+    }
+    const fp = it.folder; const ftitle = (fp.title || '무제').replace(/</g, '&lt;');
+    const fcount = (fp.trackIds || []).length + (typeof _getFolderNoteIds === 'function' ? _getFolderNoteIds(fp.id).size : 0);
+    return `<div class="floating-folder uni-folder-row-item folder-glass" data-folder-id="${fp.id}" onclick="window.enterFolderWithAnim && enterFolderWithAnim('${fp.id}', this)"><div class="fg-icon"><i class="ri-folder-3-line"></i></div><div class="fg-title">${ftitle}</div><div class="fg-count">${fcount}${_t('곡 보관', ' saved')}</div></div>`;
+  }
   const posStyle = row ? '' : `left:${pos.xBase}%; top:${pos.yPx}px; animation: floatDrift ${pos.dur}s ease-in-out infinite; --dx:${pos.dx}px; --dy:${pos.dy}px; --rot:${pos.rot}deg;`;
   const cls = row ? 'floating-folder is-winfolder uni-folder-row-item' : 'floating-shape floating-folder is-winfolder';
 

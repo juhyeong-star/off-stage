@@ -19148,6 +19148,41 @@ body.is-universe-route #universe-head {
 body.is-universe-route .my-universe {
   background: radial-gradient(circle at 50% 45%, #170a3c 0%, #050212 78%, #03000d 100%) !important;
 }
+/* 폴더 바 = 테스트 글래스 카드 3열 (윈도우 3D → 납작 글래스). drag-drop 타깃 유지 */
+.universe-folder-row {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 8px !important;
+  padding: 10px 12px 14px !important;
+  overflow: visible !important;
+}
+.folder-glass {
+  position: static !important; animation: none !important; transform: none !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 14px !important;
+  height: 84px !important; width: auto !important;
+  display: flex !important; flex-direction: column !important;
+  align-items: center !important; justify-content: center !important;
+  gap: 5px !important; padding: 8px !important; cursor: pointer;
+  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+}
+.folder-glass .fg-icon {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(168, 132, 255, 0.14);
+  display: flex; align-items: center; justify-content: center;
+  color: #b388ff; font-size: 16px;
+}
+.folder-glass .fg-title {
+  font-size: 10px; font-weight: 800; color: rgba(255, 255, 255, 0.9);
+  max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.folder-glass .fg-count { font-size: 8px; color: rgba(255, 255, 255, 0.4); }
+.folder-glass.folder-drop-hover {
+  background: rgba(168, 132, 255, 0.18) !important;
+  border-color: rgba(168, 132, 255, 0.55) !important;
+  transform: translateY(-4px) scale(1.04) !important;
+}
 /* 자켓 토글 흔적 제거(마크업은 이미 뺐지만 안전망) */
 .discover-mode-toggle { display: none !important; }
 /* 토성(랜덤재생 행성) 제거 — 사용자 요청 '필요 없음' */
