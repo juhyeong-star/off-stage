@@ -7604,6 +7604,18 @@ window.goToPlayerArtist = function (e) {
   navigateTo('artist:' + encodeURIComponent(name));
 };
 
+// 미니바 탭 = 풀스크린 펼치기 / 풀스크린(expanded) 상태에서 이름·아트 탭 = 아티스트 마이페이지로.
+// (사용자 요청 흐름: 플레이바 누르면 풀스크린 → 거기서 이름 누르면 마이페이지)
+window.playerArtOrExpand = function (e) {
+  if (e) { try { e.stopPropagation(); } catch (_) {} }
+  const player = document.getElementById('global-player');
+  if (player && player.classList.contains('expanded')) {
+    if (window.goToPlayerArtist) window.goToPlayerArtist(e);
+  } else {
+    if (window.togglePlayerExpand) window.togglePlayerExpand(e);
+  }
+};
+
 // Long-press the dice to enter drag mode. Short click still triggers bounce+play.
 function initDiceDrag() {
   const dice = document.getElementById('random-dice');
