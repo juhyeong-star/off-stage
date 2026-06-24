@@ -3338,25 +3338,44 @@ function _threadPostHtml(p) {
           </div>
           <button class="thread-song-play" onclick="event.stopPropagation(); playTrack('${p.track.id}','wall')" aria-label="재생"><i class="ri-play-fill"></i></button>
         </div>` : '';
-  const cmCount = p.comments ? ` ${p.comments}` : '';
+  const cmCount = p.comments || '';
+  // 릴스형: 위 미디어(사진 or 색 그라데이션) + 아래 글. 게시물 색 = 노래색/작성자 시드(무사진 그라데이션 + 헤드라인 강조).
+  const _seed = p.track ? p.track.id : (p.name || p.id);
+  const postColor = SHAPE_COLORS[(_hashSeed('feed:' + _seed) >>> 0) % SHAPE_COLORS.length];
+  const hasImg = !!p.image;
+  const mediaInner = hasImg ? `<img class="feed-bg" src="${p.image}" alt="" loading="lazy">` : '';
+  const mediaStyle = hasImg ? '' : `background:linear-gradient(155deg, ${postColor}66, #0a0618 78%);`;
+  const songChip = p.track ? `
+          <div class="feed-song-chip" onclick="event.stopPropagation(); playTrack('${p.track.id}','wall')">
+            <img src="${p.track.cover}" alt=""><span class="feed-song-chip-t">${esc(p.track.title)}</span><i class="ri-play-fill"></i>
+          </div>` : '';
   return `
-    <div class="thread-post" data-note-id="${p.id}">
-      <img class="thread-avatar${linkCls}" src="${p.avatar}" alt="" loading="lazy" ${nameAttr} onclick="_threadGoArtist(this)">
-      <div class="thread-post-col">
-        <div class="thread-post-head">
-          <span class="thread-post-name${linkCls}" ${nameAttr} onclick="_threadGoArtist(this)">${esc(p.name)}</span>
-          <span class="thread-post-time">· ${esc(p.time)}</span>
-          <button class="thread-post-more" aria-label="더보기" onclick="_threadPostMenu('${p.id}', ${p.isMine ? 'true' : 'false'})"><i class="ri-more-fill"></i></button>
+    <div class="feed-post" data-note-id="${p.id}">
+      <div class="feed-media" style="${mediaStyle}">
+        ${mediaInner}
+        <div class="feed-media-grad"></div>
+        <div class="feed-headline">
+          <div class="feed-hl-sub${linkCls}" ${nameAttr} onclick="_threadGoArtist(this)">${esc(p.name)}</div>
+          ${p.track ? `<div class="feed-hl-title" style="color:${postColor}">${esc(p.track.title)}</div>` : ''}
         </div>
-        ${p.text ? _collapsible(p.text, 'thread-post-body') : ''}
-        ${p.text ? `<button class="tp-translate" type="button" onclick="translatePost('${p.id}', this)"><i class="ri-translate-2"></i> ${_t('번역', 'Translate')}</button>` : ''}
-        ${img}
-        ${song}
-        <div class="thread-post-actions">
-          <button class="tp-act tp-like ${p.liked ? 'is-liked' : ''}" data-note-id="${p.id}" aria-label="${_t('좋아요', 'Like')}" onclick="toggleNoteLike('${p.id}', this)"><i class="${p.liked ? 'ri-heart-3-fill' : 'ri-heart-3-line'}"></i><span class="tp-like-count">${p.likeCount > 0 ? p.likeCount : ''}</span></button>
-          <button class="tp-act" onclick="openCommentSheet('${p.id}')"><i class="ri-chat-3-line"></i>${cmCount}</button>
-          <button class="tp-act" aria-label="${_t('공유', 'Share')}" onclick="_threadShare('${p.id}')"><i class="ri-send-plane-line"></i></button>
-          <button class="tp-act tp-collect ${p.collected ? 'is-bookmarked' : ''}" aria-label="${_t('내 우주에 담기', 'Save to my universe')}" onclick="toggleBookmark('${p.id}')"><i class="${p.collected ? 'ri-bookmark-fill' : 'ri-bookmark-line'}"></i></button>
+        ${songChip}
+      </div>
+      <div class="feed-text">
+        <div class="feed-text-main">
+          <div class="feed-author">
+            <img class="feed-avatar${linkCls}" src="${p.avatar}" alt="" loading="lazy" ${nameAttr} onclick="_threadGoArtist(this)">
+            <span class="feed-author-name${linkCls}" ${nameAttr} onclick="_threadGoArtist(this)">${esc(p.name)}</span>
+            <span class="feed-author-time">· ${esc(p.time)}</span>
+            <button class="feed-post-more" aria-label="${_t('더보기', 'More')}" onclick="_threadPostMenu('${p.id}', ${p.isMine ? 'true' : 'false'})"><i class="ri-more-fill"></i></button>
+          </div>
+          ${p.text ? `<div class="feed-lyrics">${esc(p.text)}</div>` : ''}
+          ${p.text ? `<button class="tp-translate" type="button" onclick="translatePost('${p.id}', this)"><i class="ri-translate-2"></i> ${_t('번역', 'Translate')}</button>` : ''}
+        </div>
+        <div class="feed-actions-col">
+          <button class="fa-act tp-like ${p.liked ? 'is-liked' : ''}" data-note-id="${p.id}" aria-label="${_t('좋아요', 'Like')}" onclick="toggleNoteLike('${p.id}', this)"><i class="${p.liked ? 'ri-heart-3-fill' : 'ri-heart-3-line'}"></i><span class="fa-count tp-like-count">${p.likeCount > 0 ? p.likeCount : ''}</span></button>
+          <button class="fa-act" aria-label="${_t('댓글', 'Comments')}" onclick="openCommentSheet('${p.id}')"><i class="ri-chat-3-line"></i><span class="fa-count">${cmCount}</span></button>
+          <button class="fa-act" aria-label="${_t('공유', 'Share')}" onclick="_threadShare('${p.id}')"><i class="ri-send-plane-line"></i></button>
+          <button class="fa-act tp-collect ${p.collected ? 'is-bookmarked' : ''}" aria-label="${_t('내 우주에 담기', 'Save to my universe')}" onclick="toggleBookmark('${p.id}')"><i class="${p.collected ? 'ri-bookmark-fill' : 'ri-bookmark-line'}"></i></button>
         </div>
       </div>
     </div>`;
@@ -3487,15 +3506,11 @@ async function renderWall() {
         <p>${_i18n('아직 주절주절이 없어요.<br>첫 글을 남겨보세요!', 'Nothing here yet.<br>Be the first to post!')}</p>
       </div>` : '';
   appContent.innerHTML = `
-    <div class="thread-feed">
-      <div class="thread-composer" onclick="openThreadComposer()">
-        <img class="thread-avatar" src="${composerAvatar}" alt="">
-        <div class="thread-composer-hint">${_i18n('무슨 생각 중이에요? · 노래·사진 올리기', "What's on your mind? · Add a song or photo")}</div>
-        <button class="thread-composer-go" aria-label="${_t('새 글', 'New post')}"><i class="ri-add-line"></i></button>
-      </div>
+    <div id="feed-reels" class="feed-reels">
       ${posts.map(_threadPostHtml).join('')}
       ${empty}
-    </div>`;
+    </div>
+    <button class="feed-compose-fab" onclick="openThreadComposer()" aria-label="${_t('새 글', 'New post')}" title="${_t('새 글', 'New post')}"><i class="ri-add-line"></i></button>`;
 }
 // 프리뷰/구버전 호환 — 같은 함수를 가리킴.
 window.renderWallThreadTest = renderWall;

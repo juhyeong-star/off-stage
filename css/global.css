@@ -19183,6 +19183,78 @@ body.is-universe-route .my-universe {
   border-color: rgba(168, 132, 255, 0.55) !important;
   transform: translateY(-4px) scale(1.04) !important;
 }
+
+/* ============================================================
+   테스트 디자인 적용 #5 — 주절주절(wall) 릴스형 1차
+   미디어 위(64%) + 글 아래 + 무사진=색 그라데이션 + 세로 스크롤스냅(한 게시물씩).
+   영상·전체/팔로잉 토글은 후속. 기존 액션(좋아요/댓글/공유/담기/번역/곡/메뉴) 보존.
+   ============================================================ */
+.feed-reels {
+  position: fixed; left: 0; right: 0;
+  top: calc(var(--mobile-tab-h, 96px) + env(safe-area-inset-top, 0px));
+  bottom: calc(var(--player-height, 64px) + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto; scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain; scrollbar-width: none;
+}
+.feed-reels::-webkit-scrollbar { display: none; }
+.feed-post {
+  scroll-snap-align: start; scroll-snap-stop: always;
+  height: 100%; width: 100%;
+  display: flex; flex-direction: column; position: relative; overflow: hidden;
+}
+.feed-media {
+  flex: 0 0 64%; position: relative; overflow: hidden;
+  display: flex; align-items: flex-end; background: #0a0618;
+}
+.feed-media .feed-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.feed-media-grad {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.18) 0%, transparent 32%, transparent 56%, rgba(8,3,18,0.88) 100%);
+}
+.feed-headline { position: relative; z-index: 2; padding: 16px; width: 100%; }
+.feed-hl-sub { font-size: 13px; color: rgba(255,255,255,0.85); font-weight: 600; }
+.feed-hl-title { font-size: 22px; font-weight: 900; line-height: 1.1; margin-top: 2px; text-shadow: 0 2px 12px rgba(0,0,0,0.5); }
+.feed-song-chip {
+  position: absolute; top: 14px; left: 14px; z-index: 3;
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(0,0,0,0.45); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 5px 11px 5px 5px;
+  max-width: 72%; cursor: pointer;
+}
+.feed-song-chip img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.feed-song-chip-t { font-size: 11px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.feed-song-chip i { color: #fff; font-size: 14px; flex-shrink: 0; }
+.feed-text {
+  flex: 1 1 auto; min-height: 0;
+  display: flex; flex-direction: row; gap: 10px; padding: 12px 14px 14px; background: #06030f;
+}
+.feed-text-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.feed-author { display: flex; align-items: center; gap: 7px; }
+.feed-avatar { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; cursor: pointer; flex-shrink: 0; }
+.feed-author-name { font-size: 13px; font-weight: 800; color: #fff; cursor: pointer; }
+.feed-author-time { font-size: 11px; color: rgba(255,255,255,0.4); }
+.feed-post-more { margin-left: auto; color: rgba(255,255,255,0.5); font-size: 18px; background: none; border: none; }
+.feed-lyrics {
+  font-size: 13px; line-height: 1.45; color: rgba(255,255,255,0.82);
+  white-space: pre-wrap; word-break: break-word;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.tp-translate { align-self: flex-start; background: none; border: none; color: #8b5cf6; font-size: 11px; padding: 0; }
+.feed-actions-col {
+  flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 14px; justify-content: flex-end; padding-bottom: 2px;
+}
+.fa-act { background: none; border: none; color: #fff; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 22px; line-height: 1; }
+.fa-act .fa-count { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.85); }
+.fa-act.tp-like.is-liked { color: #ff2e63; }
+.fa-act.tp-collect.is-bookmarked { color: #ffd166; }
+.feed-compose-fab {
+  position: fixed; right: 18px;
+  bottom: calc(var(--player-height, 64px) + env(safe-area-inset-bottom, 0px) + 16px);
+  width: 50px; height: 50px; border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899); color: #fff; border: none;
+  font-size: 26px; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 22px rgba(139,92,246,0.4); z-index: 40;
+}
 /* 자켓 토글 흔적 제거(마크업은 이미 뺐지만 안전망) */
 .discover-mode-toggle { display: none !important; }
 /* 토성(랜덤재생 행성) 제거 — 사용자 요청 '필요 없음' */
