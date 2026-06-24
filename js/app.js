@@ -8128,9 +8128,12 @@ window.renderUniverse = async function () {
   });
 
   appContent.innerHTML = `
-    <div id="universe-head" style="padding:20px 24px 8px; text-align:center;">
-      <h1 style="font-size:22px; margin-bottom:4px;"><i class="ri-galaxy-fill" style="color:#9C27B0;"></i> ${_i18n('즐겨찾기', 'Favorites')}</h1>
-      <p style="font-size:13px; color:var(--text-secondary);">${_i18n(`폴더 ${myPlaylists.length} · 곡 ${likedTracks.length} · 포스트잇 ${bookmarkedNotes.length} — 끌어서 자리 옮길 수 있어요`, `${myPlaylists.length} folders · ${likedTracks.length} tracks · ${bookmarkedNotes.length} notes — drag to rearrange`)}</p>
+    <div id="universe-head">
+      <div class="uni-guide">
+        <i class="ri-sparkling-2-fill uni-guide-spark"></i>
+        <span>${_i18n('행성을 끌어다 아래 폴더에 놓으면 수집!', 'Drag a planet into a folder below to collect!')}</span>
+      </div>
+      <button class="uni-newfolder-btn" type="button" onclick="window.promptNewPlaylist && window.promptNewPlaylist()" aria-label="${_t('새 폴더', 'New folder')}"><i class="ri-folder-add-line"></i></button>
     </div>
     <div class="universe-folder-row">${folderRowItems.map(it => _floatingFolderHtml(it, null)).join('')}</div>
     <div class="shapes-universe my-universe" style="height: ${universeHeight}px;">

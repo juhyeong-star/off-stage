@@ -19116,6 +19116,38 @@ body.is-shapes-route .page-intro { font-size: 18px !important; font-weight: 700 
   font-size: 10px !important;
   line-height: 1.25 !important;
 }
+
+/* ============================================================
+   테스트 디자인 적용 #4 — 즐겨찾기(universe) 1차: 헤더 안내 + 버블 글자 + 배경
+   폴더 글래스카드는 후속(로그인 페이지라 프리뷰 불가 → 실기기 확인).
+   ============================================================ */
+/* 헤더 = 테스트: [반짝이 + 안내문구] 글래스 알약 + 우측 새폴더 버튼 */
+body.is-universe-route #universe-head {
+  display: flex; align-items: center; gap: 10px; padding: 12px 16px 8px; text-align: left;
+}
+.uni-guide {
+  flex: 1; display: flex; align-items: center; gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px; padding: 9px 12px;
+  font-size: 11px; color: rgba(255, 255, 255, 0.72); line-height: 1.3;
+}
+.uni-guide-spark { color: #fcd34d; font-size: 14px; flex-shrink: 0; }
+.uni-newfolder-btn {
+  flex-shrink: 0; width: 38px; height: 38px; border-radius: 11px;
+  background: rgba(168, 132, 255, 0.14); border: 1px solid rgba(168, 132, 255, 0.3);
+  color: #b388ff; font-size: 18px; display: inline-flex; align-items: center; justify-content: center;
+}
+/* 버블 글자 = 테스트(손글씨 Nanum Pen Script, 작게). discover(Pretendard) 규칙보다 뒤라 universe에 우선. */
+.my-universe .floating-shape .shape-text {
+  font-family: 'Nanum Pen Script', cursive !important;
+  font-size: 14px !important;
+  line-height: 1.15 !important;
+}
+/* 배경 = 테스트의 진한 중앙 네뷸라 */
+body.is-universe-route .my-universe {
+  background: radial-gradient(circle at 50% 45%, #170a3c 0%, #050212 78%, #03000d 100%) !important;
+}
 /* 자켓 토글 흔적 제거(마크업은 이미 뺐지만 안전망) */
 .discover-mode-toggle { display: none !important; }
 /* 토성(랜덤재생 행성) 제거 — 사용자 요청 '필요 없음' */
