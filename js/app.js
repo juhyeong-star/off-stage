@@ -3316,7 +3316,8 @@ function _threadTrackOf(trackId) {
   const t = ((window.DB.get().tracks) || []).find(x => x && x.id === trackId);
   if (!t) return null;
   return { id: t.id, title: t.title || '제목 없음', artist: t.artist || '',
-           cover: t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=200' };
+           cover: t.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=200',
+           tags: Array.isArray(t.tags) ? t.tags : [] };
 }
 // 긴 글 → 6줄로 접고 더보기/접기 토글. raw=원문(미이스케이프), cls=래퍼 클래스.
 function _collapsible(raw, cls) {
@@ -3349,18 +3350,42 @@ function _threadPostHtml(p) {
   // 릴스형: 위 미디어(사진 or 색 그라데이션) + 아래 글. 게시물 색 = 노래색/작성자 시드(무사진 그라데이션 + 헤드라인 강조).
   const _seed = p.track ? p.track.id : (p.name || p.id);
   const postColor = SHAPE_COLORS[(_hashSeed('feed:' + _seed) >>> 0) % SHAPE_COLORS.length];
-  const hasImg = !!p.image;
-  const mediaInner = hasImg ? `<img class="feed-bg" src="${p.image}" alt="" loading="lazy">` : '';
-  const mediaStyle = hasImg ? '' : `background:linear-gradient(155deg, ${postColor}66, #0a0618 78%);`;
-  const songChip = p.track ? `
+  // 미디어: 사진 여러장→캐러셀(인스타식 스와이프) / 1장→풀 / 사진없고 음원→곡 색 디스크+#태그 / 둘다없으면 그라데이션.
+  const images = Array.isArray(p.images) ? p.images.filter(Boolean) : (p.image ? [p.image] : []);
+  const hasImg = images.length > 0;
+  const multi = images.length > 1;
+  const discTags = (p.track && Array.isArray(p.track.tags)) ? p.track.tags.slice(0, 3) : [];
+  let mediaInner;
+  if (multi) {
+    mediaInner = `<div class="feed-carousel">`
+      + images.map(u => `<div class="feed-slide"><img src="${u}" alt="" loading="lazy"></div>`).join('')
+      + `</div><div class="feed-count">1/${images.length}</div>`
+      + `<div class="feed-dots">` + images.map((_, i) => `<span class="${i === 0 ? 'on' : ''}"></span>`).join('') + `</div>`;
+  } else if (hasImg) {
+    mediaInner = `<img class="feed-bg" src="${images[0]}" alt="" loading="lazy">`;
+  } else if (p.track) {
+    mediaInner = `<div class="feed-disc-wrap" onclick="event.stopPropagation(); playTrack('${p.track.id}','wall')">`
+      + `<div class="feed-disc" style="--disc:${postColor}"><i class="ri-play-fill"></i></div>`
+      + (discTags.length ? `<div class="feed-disc-tags">${discTags.map(t => `<span>#${esc(t)}</span>`).join('')}</div>` : '')
+      + `</div>`;
+  } else {
+    mediaInner = '';
+  }
+  const mediaStyle = hasImg ? '' : `background:linear-gradient(160deg, ${postColor}40, #0a0612 80%);`;
+  const mediaCls = (!hasImg && p.track) ? 'feed-media feed-media-disc' : 'feed-media';
+  // 음원 글은 디스크가 곡 비주얼이라 칩 생략, 사진 글에선 칩 유지.
+  const songChip = (p.track && hasImg) ? `
           <div class="feed-song-chip" onclick="event.stopPropagation(); playTrack('${p.track.id}','wall')">
             <img src="${p.track.cover}" alt=""><span class="feed-song-chip-t">${esc(p.track.title)}</span><i class="ri-play-fill"></i>
           </div>` : '';
+  // 업로드 + — 각 글 미디어 왼쪽 위 (아래 FAB 대체, 사용자 요청).
+  const plusBtn = `<button class="feed-plus" type="button" onclick="event.stopPropagation(); window.openThreadComposer && window.openThreadComposer()" aria-label="${_t('올리기', 'Upload')}" title="${_t('올리기', 'Upload')}"><i class="ri-add-line"></i></button>`;
   return `
     <div class="feed-post" data-note-id="${p.id}">
-      <div class="feed-media" style="${mediaStyle}">
+      <div class="${mediaCls}" style="${mediaStyle}">
         ${mediaInner}
         <div class="feed-media-grad"></div>
+        ${plusBtn}
         <div class="feed-headline">
           <div class="feed-hl-sub${linkCls}" ${nameAttr} onclick="_threadGoArtist(this)">${esc(p.name)}</div>
           ${p.track ? `<div class="feed-hl-title" style="color:${postColor}">${esc(p.track.title)}</div>` : ''}
@@ -3499,6 +3524,7 @@ async function renderWall() {
     time: _threadTimeAgo(n.createdAt),
     text: n.text || '',
     image: n.imageUrl || null,
+    images: Array.isArray(n.imageUrls) ? n.imageUrls.filter(Boolean) : (n.imageUrl ? [n.imageUrl] : []),
     track: n.trackId ? _threadTrackOf(n.trackId) : null,
     comments: (n.comments || []).length,
     isMine: !!(myId && n.authorId === myId),
@@ -3516,9 +3542,25 @@ async function renderWall() {
     <div id="feed-reels" class="feed-reels">
       ${posts.map(_threadPostHtml).join('')}
       ${empty}
-    </div>
-    <button class="feed-compose-fab" onclick="openThreadComposer()" aria-label="${_t('새 글', 'New post')}" title="${_t('새 글', 'New post')}"><i class="ri-add-line"></i></button>`;
+    </div>`;
+  if (window._wireFeedCarousels) window._wireFeedCarousels();
 }
+// 피드 캐러셀(여러 사진) — 스크롤 위치로 점·카운터 갱신. (멱등)
+window._wireFeedCarousels = function () {
+  document.querySelectorAll('#feed-reels .feed-carousel').forEach(function (car) {
+    if (car._wired) return;
+    car._wired = true;
+    const media = car.parentElement;
+    const dots = media ? media.querySelectorAll('.feed-dots span') : [];
+    const count = media ? media.querySelector('.feed-count') : null;
+    const total = car.querySelectorAll('.feed-slide').length;
+    car.addEventListener('scroll', function () {
+      const i = Math.round(car.scrollLeft / car.clientWidth);
+      if (count) count.textContent = (i + 1) + '/' + total;
+      dots.forEach(function (d, j) { d.classList.toggle('on', j === i); });
+    }, { passive: true });
+  });
+};
 // 프리뷰/구버전 호환 — 같은 함수를 가리킴.
 window.renderWallThreadTest = renderWall;
 window.__threadDraft = { imageFile: null, imageData: null };
