@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <!-- 항상 최신 받게 — index.html 캐시로 옛 v= 에셋 참조하던 문제 방지 -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Off-Stage | 감성으로 팬을 만드는 음악 플랫폼</title>
   <meta name="description" content="아티스트의 데모, 기록, 감성이 모이는 곳. 음악과 팬이 만나는 플랫폼.">
   <meta property="og:title" content="Off-Stage — 감성으로 팬을 만드는 음악 플랫폼">
@@ -43,7 +47,7 @@
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=811">
+  <link rel="stylesheet" href="css/global.css?v=812">
 </head>
 <body>
 
@@ -226,12 +230,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=811"></script>
-  <script defer src="js/data.js?v=811"></script>
-  <script defer src="js/supabase.js?v=811"></script>
-  <script defer src="js/analytics.js?v=811"></script>
-  <script defer src="js/distribute.js?v=811"></script>
-  <script defer src="js/app.js?v=811"></script>
-  <script defer src="js/polaroid.js?v=811"></script>
+  <script defer src="js/supabase-init.js?v=812"></script>
+  <script defer src="js/data.js?v=812"></script>
+  <script defer src="js/supabase.js?v=812"></script>
+  <script defer src="js/analytics.js?v=812"></script>
+  <script defer src="js/distribute.js?v=812"></script>
+  <script defer src="js/app.js?v=812"></script>
+  <script defer src="js/polaroid.js?v=812"></script>
 </body>
 </html>
