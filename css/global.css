@@ -820,7 +820,7 @@ body.is-shapes-route .shapes-universe {
   top: 0;
   left: 0;
   right: 0;
-  bottom: var(--player-height, 0px);
+  bottom: calc(var(--player-height, 0px) + env(safe-area-inset-bottom, 0px));
   width: auto;
   height: auto;
   min-height: 0;
@@ -11910,6 +11910,8 @@ body {
 
 /* --- M5: body padding-bottom — player + tab-bar + safe-area + buffer --- */
 @media (max-width: 768px) {
+  /* 모바일 미니 플레이어 실제 높이(60px)에 맞춤 — 콘텐츠 바닥 예약(--player-height)이 72라 12px 빈 공간 생기던 것 제거 */
+  :root { --player-height: 60px; }
   body {
     padding-top: calc(var(--mobile-tab-h, 56px) + env(safe-area-inset-top, 0px) + 8px) !important;
     padding-bottom: calc(var(--player-height) + var(--safe-bottom) + 8px) !important;
