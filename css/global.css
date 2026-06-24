@@ -19070,16 +19070,16 @@ body.is-shapes-route .page-intro { font-size: 18px !important; font-weight: 700 
 @media (max-width: 768px) {
   /* === 모바일 헤더 = 테스트 순서: [off-stage ... 가이드/언어] 맨 위 줄 → 탭 → 콘텐츠 === */
   :root { --mobile-tab-h: 96px !important; }            /* 워드마크줄(40) + 탭(56) — 콘텐츠가 둘 다 비켜가게(보장) */
-  .mobile-tab-bar { top: 40px !important; }             /* 탭을 워드마크 줄 아래로 */
-  .mobile-tab-bar::before {                             /* 맨 위 워드마크 줄 배경(0~40) */
-    content: ''; position: fixed; top: 0; left: 0; right: 0; height: 40px;
+  .mobile-tab-bar { top: calc(40px + env(safe-area-inset-top, 0px)) !important; padding-top: 6px !important; }   /* 탭을 워드마크 줄 아래로(노치만큼 함께 내림) */
+  .mobile-tab-bar::before {                             /* 맨 위 워드마크 줄 배경(노치~워드마크줄) */
+    content: ''; position: fixed; top: 0; left: 0; right: 0; height: calc(40px + env(safe-area-inset-top, 0px));
     background: rgba(10, 6, 24, 0.95);
     -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.06); z-index: 1100;
   }
   .beta-wordmark-float {                                /* off-stage 좌상단(맨 위 줄) */
     display: inline-flex !important; position: fixed !important;
-    top: 7px !important; left: 16px !important; right: auto !important; bottom: auto !important;
+    top: calc(7px + env(safe-area-inset-top, 0px)) !important; left: 16px !important; right: auto !important; bottom: auto !important;
     transform: none !important; z-index: 1102; text-shadow: none !important;
   }
   /* off-stage 글자 = 테스트와 동일: Inter font-black + 보라→핑크→앰버 그라데이션, lowercase, BETA 숨김 */
@@ -19091,8 +19091,8 @@ body.is-shapes-route .page-intro { font-size: 18px !important; font-weight: 700 
     -webkit-text-fill-color: transparent !important; color: transparent !important;
   }
   .beta-wordmark-float .bw-tag { display: none !important; }
-  #guide-btn { position: fixed !important; top: 6px !important; right: 98px !important; left: auto !important; bottom: auto !important; z-index: 1102; }
-  #lang-toggle { position: fixed !important; top: 7px !important; right: 14px !important; left: auto !important; bottom: auto !important; z-index: 1102; }
+  #guide-btn { position: fixed !important; top: calc(6px + env(safe-area-inset-top, 0px)) !important; right: 98px !important; left: auto !important; bottom: auto !important; z-index: 1102; }
+  #lang-toggle { position: fixed !important; top: calc(7px + env(safe-area-inset-top, 0px)) !important; right: 14px !important; left: auto !important; bottom: auto !important; z-index: 1102; }
   /* 발견 제목/부제 — 탭(96) 아래 좌측 */
   body.is-shapes-route .page-intro {
     text-align: left !important; left: 16px !important; right: 16px !important; max-width: none !important;
