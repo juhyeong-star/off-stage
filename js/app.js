@@ -7243,44 +7243,48 @@ function startShapesPhysics(field, viewport) {
   const P = window.__shapesPhys;
   // 홈 = renderShapes 가 씨드로 정한 고정 위치(최신이 맨 위, 아래로 차곡차곡). 재진입해도 동일 →
   // 매번 흩어지지 않아 '초기화' 느낌이 없고, 새 곡은 맨 위로 들어오고 기존은 아래로 밀린다.
+  // 한 화면에 ~8개(3열). 씨드 결정적 배치 → 재진입해도 동일(랜덤 초기화 없음).
+  const fieldW0 = field.clientWidth || (viewport && viewport.clientWidth) || window.innerWidth;
+  const vvh = (viewport && viewport.clientHeight) || window.innerHeight || 600;
+  const PER = 8, cols = 3;
+  const rows = Math.max(1, Math.ceil(els.length / cols));
+  const cellH = Math.max(60, vvh / (PER / cols));         // 화면당 PER개가 되도록 행 높이
+  const fieldH = Math.max(vvh, rows * cellH);
+  field.style.height = fieldH + 'px';
+  const cellW = fieldW0 / cols;
+  function _h(n) { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); }  // 결정적 0~1
+  const BASE = 0.9;                                        // 기본 드리프트 속도(테스트처럼 계속 떠다님)
   const items = els.map((el, idx) => {
     const sc = parseFloat((el.style.getPropertyValue('--scale') || '1')) || 1;
-    el.style.animation = 'none';                          // floatDrift 끔 — 물리가 위치를 몲
+    el.style.animation = 'none';                           // floatDrift 끔 — 물리가 위치를 몲
     el.style.transform = (sc !== 1) ? ('scale(' + sc + ')') : '';
     el.style.transition = 'none';
     const w = el.offsetWidth * sc, h = el.offsetHeight * sc;
-    const hx = el.offsetLeft, hy = el.offsetTop;          // 씨드 홈 위치(고정)
-    el.style.left = hx + 'px';
-    el.style.top = hy + 'px';
-    const ph = idx * 2.399;                               // 결정적 위상(매번 동일 → 초기화 느낌 없음)
-    const item = { el, x: hx, y: hy, hx, hy, w, h, r: Math.max(w, h) / 2,
-                   vx: Math.cos(ph) * 0.9, vy: Math.sin(ph) * 0.9, ph: ph };
+    const col = idx % cols, row = Math.floor(idx / cols);
+    const x = col * cellW + 4 + _h(idx * 2 + 1) * Math.max(4, cellW - w - 8);
+    const y = row * cellH + 4 + _h(idx * 2 + 3) * Math.max(4, cellH - h - 8);
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    const ang = _h(idx + 7) * Math.PI * 2;                 // 결정적 방향
+    const item = { el, x, y, w, h, r: Math.max(w, h) / 2, vx: Math.cos(ang) * BASE, vy: Math.sin(ang) * BASE };
     el.__phys = item;
     return item;
   });
   P.items = items;
-  // 느슨한 스프링(멀리 안 흩어지게) + 큰 흔들림(통통 튀게) + 충돌/벽 튕김. 씨드 홈이라 재진입해도 동일.
-  const SPRING = 0.0035, DAMP = 0.93, WANDER = 0.14;
-  let t = 0;
   function step() {
     const its = P.items, n = its.length;
     if (!n) return;
     const BW = field.clientWidth, BH = field.scrollHeight || field.offsetHeight || BW;
-    t += 0.016;
     for (let i = 0; i < n; i++) {
       const b = its[i];
       if (b.el.classList.contains('dragging')) continue;
-      b.vx += (b.hx - b.x) * SPRING;                       // 홈 주변에 느슨히 묶기
-      b.vy += (b.hy - b.y) * SPRING;
-      b.vx += Math.cos(t * 1.3 + b.ph) * WANDER;           // 활기찬 흔들림 — 통통 튀는 느낌
-      b.vy += Math.sin(t * 1.6 + b.ph) * WANDER;
-      b.vx *= DAMP; b.vy *= DAMP;
-      b.x += b.vx; b.y += b.vy;
-      // 벽에서 튕김(반사, 거의 안 죽음)
-      if (b.x < 0) { b.x = 0; b.vx = Math.abs(b.vx) * 0.85; }
-      else if (b.x + b.w > BW) { b.x = BW - b.w; b.vx = -Math.abs(b.vx) * 0.85; }
-      if (b.y < 0) { b.y = 0; b.vy = Math.abs(b.vy) * 0.85; }
-      else if (b.y + b.h > BH) { b.y = BH - b.h; b.vy = -Math.abs(b.vy) * 0.85; }
+      b.x += b.vx; b.y += b.vy;                            // 자유 드리프트
+      if (b.x <= 0) { b.x = 0; b.vx = Math.abs(b.vx); }    // 벽 튕김(반사)
+      else if (b.x + b.w >= BW) { b.x = BW - b.w; b.vx = -Math.abs(b.vx); }
+      if (b.y <= 0) { b.y = 0; b.vy = Math.abs(b.vy); }
+      else if (b.y + b.h >= BH) { b.y = BH - b.h; b.vy = -Math.abs(b.vy); }
+      const sp = Math.hypot(b.vx, b.vy);                   // 계속 떠다니게 속도 유지(던진 건 감속)
+      if (sp > BASE * 1.5) { b.vx *= 0.99; b.vy *= 0.99; }
+      else if (sp < BASE * 0.55) { const a = (sp < 0.01) ? (_h(i + 2) * 6.283) : Math.atan2(b.vy, b.vx); b.vx = Math.cos(a) * BASE; b.vy = Math.sin(a) * BASE; }
     }
     // 서로 부딪히면 튕김 — 분리 + 법선 방향 속도 교환(탄성)
     for (let i = 0; i < n; i++) {
@@ -7289,12 +7293,12 @@ function startShapesPhysics(field, viewport) {
         const c = its[j]; if (c.el.classList.contains('dragging')) continue;
         const acx = a.x + a.w / 2, acy = a.y + a.h / 2, ccx = c.x + c.w / 2, ccy = c.y + c.h / 2;
         let dx = ccx - acx, dy = ccy - acy; const dist = Math.hypot(dx, dy) || 0.01;
-        const min = (a.r + c.r) * 0.88;
+        const min = (a.r + c.r) * 0.9;
         if (dist < min) {
           const ov = (min - dist) / 2, nx = dx / dist, ny = dy / dist;
           a.x -= nx * ov; a.y -= ny * ov; c.x += nx * ov; c.y += ny * ov;
           const avn = a.vx * nx + a.vy * ny, cvn = c.vx * nx + c.vy * ny, diff = cvn - avn;
-          a.vx += diff * nx; a.vy += diff * ny;            // 속도 교환 → 서로 튕김
+          a.vx += diff * nx; a.vy += diff * ny;
           c.vx -= diff * nx; c.vy -= diff * ny;
         }
       }
