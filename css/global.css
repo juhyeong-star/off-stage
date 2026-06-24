@@ -19104,9 +19104,9 @@ body.is-shapes-route .page-intro { font-size: 18px !important; font-weight: 700 
     text-align: left !important; pointer-events: none;
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
   }
-  /* 도형 필드를 제목/부제 아래에서 시작 → 도형이 헤더(제목)를 안 가림(테스트처럼 제목 위·도형 아래) */
+  /* 도형 필드 — 부제 멘트 삭제 후 제목 바로 아래부터 (공간 확보, 사용자 요청) */
   body.is-shapes-route .shapes-universe {
-    top: calc(var(--mobile-tab-h, 96px) + env(safe-area-inset-top, 0px) + 52px) !important;
+    top: calc(var(--mobile-tab-h, 96px) + env(safe-area-inset-top, 0px) + 34px) !important;
   }
 }
 /* 발견 도형 글자 = 테스트 폰트(Pretendard, 손글씨 아님) + 테스트처럼 작게. 손글씨/크기 룰을 특이도로 덮음 */
@@ -19431,12 +19431,15 @@ body.is-universe-route .my-universe {
 @media (min-width: 769px) {
   /* 주절주절 = 인스타처럼 가운데 좁은 컬럼 (full-width 방지) */
   #feed-reels { left: 50%; right: auto; transform: translateX(-50%); width: 470px; max-width: 94vw; border-left: 1px solid rgba(255,255,255,0.06); border-right: 1px solid rgba(255,255,255,0.06); }
-  /* 발견 도형 글자 +3px (10 → 13) */
-  .shapes-universe .floating-shape .shape-text { font-size: 13px !important; }
-  /* 발견 상단 겹침 — 부제/도형 필드를 헤더(off-stage 워드마크) 아래로 내림 */
-  body.is-shapes-route .shapes-subtitle { position: fixed; z-index: 50; top: 42px; left: 0; right: 0; margin: 0; text-align: center; pointer-events: none; text-shadow: 0 1px 6px rgba(0,0,0,0.85); }
-  body.is-shapes-route .shapes-universe { top: 66px; }
+  /* 발견 도형 글자 +3px (10 → 13) — 발견 전용(즐겨찾기 손글씨엔 영향 X) */
+  body.is-shapes-route .shapes-universe .floating-shape .shape-text { font-size: 13px !important; }
+  /* 발견 도형 필드 — 부제 멘트 삭제했으니 제목 바로 아래부터 (공간 확보) */
+  body.is-shapes-route .shapes-universe { top: 46px; }
+  /* 즐겨찾기(universe) — 콘텐츠를 헤더(off-stage 워드마크) 아래로 내려 겹침 방지 (PC) */
+  body.is-universe-route #app-content { padding-top: 52px; }
 }
+/* 발견 부제 멘트("탭=재생 · …") 삭제 — 모바일+PC, 그 공간만큼 도형 필드 위로 (사용자 요청) */
+body.is-shapes-route .shapes-subtitle { display: none !important; }
 /* 여러 사진 — 인스타식 가로 스와이프 캐러셀 + 점/카운터 */
 #feed-reels .feed-carousel { position: absolute; inset: 0; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
 #feed-reels .feed-carousel::-webkit-scrollbar { display: none; }
