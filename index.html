@@ -47,7 +47,7 @@
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=825">
+  <link rel="stylesheet" href="css/global.css?v=826">
 </head>
 <body>
 
@@ -222,6 +222,39 @@
     <audio id="audio-element" playsinline preload="metadata" style="display:none;"></audio>
   </div>
 
+  <!-- 풀스크린 플레이어 카드 — 테스트(#player-card) 디자인 그대로. 미니바 탭/스와이프업/펼치기 → openPlayerFs -->
+  <div id="player-fs" aria-hidden="true">
+    <div class="pfs-top">
+      <button class="pfs-icon-btn" type="button" aria-label="닫기" onclick="window.closePlayerFs && window.closePlayerFs()"><i class="ri-arrow-down-s-line"></i></button>
+      <span class="pfs-nowplaying">NOW PLAYING</span>
+      <button class="pfs-icon-btn" type="button" aria-label="더보기" onclick="event.stopPropagation()"><i class="ri-more-2-fill"></i></button>
+    </div>
+    <div class="pfs-stage">
+      <div class="pfs-circle" id="pfs-circle">
+        <span class="pfs-ping" aria-hidden="true"></span>
+        <div class="pfs-tags" id="pfs-tags"></div>
+      </div>
+      <div class="pfs-meta">
+        <h2 class="pfs-title" id="pfs-title" onclick="window.goToPlayerArtist && window.goToPlayerArtist(event)">선택된 곡 없음</h2>
+        <p class="pfs-artist" id="pfs-artist" onclick="window.goToPlayerArtist && window.goToPlayerArtist(event)">-</p>
+        <div class="pfs-viz" id="pfs-viz" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+    </div>
+    <div class="pfs-bottom">
+      <div class="pfs-progress">
+        <div class="pfs-track"><div class="pfs-fill" id="pfs-fill"></div></div>
+        <div class="pfs-times"><span id="pfs-cur">0:00</span><span id="pfs-tot">0:00</span></div>
+      </div>
+      <div class="pfs-controls">
+        <button class="pfs-side" type="button" aria-label="셔플" onclick="window.toggleShuffle && window.toggleShuffle()"><i class="ri-shuffle-line"></i></button>
+        <button class="pfs-skip" type="button" aria-label="이전 곡" onclick="window._pfsPrev && window._pfsPrev()"><i class="ri-skip-back-fill"></i></button>
+        <button class="pfs-play" id="pfs-play" type="button" aria-label="재생/일시정지" onclick="window._pfsTogglePlay && window._pfsTogglePlay()"><i class="ri-play-fill"></i></button>
+        <button class="pfs-skip" type="button" aria-label="다음 곡" onclick="window._pfsNext && window._pfsNext()"><i class="ri-skip-forward-fill"></i></button>
+        <button class="pfs-side" type="button" aria-label="반복" onclick="event.stopPropagation()"><i class="ri-repeat-2-line"></i></button>
+      </div>
+    </div>
+  </div>
+
   <!-- 가운데 볼륨 토스트 — 키보드 단축키 (↑/↓/M) 누를 때 1.5초 등장 -->
   <div id="vol-toast" aria-hidden="true">
     <i class="ri-volume-up-fill vol-toast-icon"></i>
@@ -235,12 +268,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=825"></script>
-  <script defer src="js/data.js?v=825"></script>
-  <script defer src="js/supabase.js?v=825"></script>
-  <script defer src="js/analytics.js?v=825"></script>
-  <script defer src="js/distribute.js?v=825"></script>
-  <script defer src="js/app.js?v=825"></script>
-  <script defer src="js/polaroid.js?v=825"></script>
+  <script defer src="js/supabase-init.js?v=826"></script>
+  <script defer src="js/data.js?v=826"></script>
+  <script defer src="js/supabase.js?v=826"></script>
+  <script defer src="js/analytics.js?v=826"></script>
+  <script defer src="js/distribute.js?v=826"></script>
+  <script defer src="js/app.js?v=826"></script>
+  <script defer src="js/polaroid.js?v=826"></script>
 </body>
 </html>

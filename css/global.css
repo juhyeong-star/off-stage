@@ -19299,6 +19299,84 @@ body.is-universe-route .my-universe {
 #global-player.expanded .player-wave i:nth-child(6) { animation-delay: .35s; }
 #global-player.expanded .player-wave i:nth-child(7) { animation-delay: .1s; }
 @keyframes playerWave { 0%, 100% { height: 22%; } 50% { height: 95%; } }
+
+/* ════════════════════════════════════════════════════════════════════
+   풀스크린 플레이어 카드 (#player-fs) — 테스트 디자인 그대로 이식.
+   미니바 탭/스와이프업/펼치기버튼 → openPlayerFs() 가 .open 추가.
+   ════════════════════════════════════════════════════════════════════ */
+#player-fs {
+  position: fixed; inset: 0; z-index: 3000;
+  background: rgba(5, 2, 18, 0.98);
+  -webkit-backdrop-filter: blur(40px); backdrop-filter: blur(40px);
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: calc(env(safe-area-inset-top) + 18px) 24px calc(env(safe-area-inset-bottom) + 20px);
+  transform: translateY(100%); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none; box-sizing: border-box;
+}
+#player-fs.open { transform: translateY(0); pointer-events: auto; }
+/* 상단 바 — 닫기 / NOW PLAYING / 더보기 */
+#player-fs .pfs-top { display: flex; align-items: center; justify-content: space-between; flex: 0 0 auto; }
+#player-fs .pfs-icon-btn {
+  width: 40px; height: 40px; border-radius: 50%; border: none;
+  background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6);
+  display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer;
+}
+#player-fs .pfs-icon-btn:active { transform: scale(0.92); }
+#player-fs .pfs-nowplaying { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: #c084fc; }
+/* 가운데 무대 — 큰 원(색)+검정 #태그 / 제목·아티스트 / 비주얼라이저 */
+#player-fs .pfs-stage { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; padding: 0 16px; min-height: 0; }
+#player-fs .pfs-circle {
+  width: 192px; height: 192px; border-radius: 50%;
+  background: var(--pfs-color, #8b5cf6);
+  box-shadow: 0 16px 48px color-mix(in srgb, var(--pfs-color, #8b5cf6) 35%, transparent), inset 0 8px 24px rgba(255,255,255,0.4);
+  display: flex; align-items: center; justify-content: center; position: relative; flex-shrink: 0;
+}
+#player-fs .pfs-ping { position: absolute; inset: 0; border-radius: 50%; border: 4px solid rgba(255,255,255,0.2); opacity: 0; pointer-events: none; }
+#player-fs.playing .pfs-ping { animation: pfsPing 1.6s cubic-bezier(0,0,0.2,1) infinite; }
+@keyframes pfsPing { 0% { transform: scale(1); opacity: 0.3; } 100% { transform: scale(1.35); opacity: 0; } }
+#player-fs .pfs-tags { z-index: 1; text-align: center; display: flex; flex-direction: column; gap: 4px; pointer-events: none; }
+#player-fs .pfs-tags p { color: #000; font-weight: 800; font-size: 15px; line-height: 1.3; letter-spacing: 0.01em; margin: 0; }
+#player-fs .pfs-meta { text-align: center; width: 100%; flex: 0 0 auto; }
+#player-fs .pfs-title { font-size: 20px; font-weight: 800; color: #fff; margin: 0; cursor: pointer; }
+#player-fs .pfs-artist { font-size: 14px; color: #c084fc; margin: 8px 0 0; cursor: pointer; display: inline-block; }
+#player-fs .pfs-viz { display: flex; align-items: flex-end; justify-content: center; gap: 4px; height: 32px; margin-top: 16px; }
+#player-fs .pfs-viz i { width: 3px; height: 5px; background: #fff; border-radius: 2px; display: inline-block; }
+#player-fs.playing .pfs-viz i { animation: pfsBounce 1.2s infinite ease-in-out alternate; }
+#player-fs .pfs-viz i:nth-child(1){animation-delay:.1s}
+#player-fs .pfs-viz i:nth-child(2){animation-delay:.3s}
+#player-fs .pfs-viz i:nth-child(3){animation-delay:.6s}
+#player-fs .pfs-viz i:nth-child(4){animation-delay:.2s}
+#player-fs .pfs-viz i:nth-child(5){animation-delay:.5s}
+#player-fs .pfs-viz i:nth-child(6){animation-delay:.4s}
+#player-fs .pfs-viz i:nth-child(7){animation-delay:.7s}
+@keyframes pfsBounce { 0% { height: 5px; } 100% { height: 28px; } }
+/* 하단 — 진행바 + 컨트롤 */
+#player-fs .pfs-bottom { display: flex; flex-direction: column; gap: 22px; flex: 0 0 auto; }
+#player-fs .pfs-track { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 999px; overflow: hidden; }
+#player-fs .pfs-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #a855f7, #ec4899); border-radius: 999px; }
+#player-fs .pfs-times { display: flex; justify-content: space-between; font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 5px; }
+#player-fs .pfs-controls { display: flex; align-items: center; justify-content: space-between; padding: 0 8px 4px; }
+#player-fs .pfs-side { background: none; border: none; color: rgba(255,255,255,0.4); font-size: 20px; cursor: pointer; padding: 6px; display: flex; }
+#player-fs .pfs-skip { background: none; border: none; color: rgba(255,255,255,0.8); font-size: 28px; cursor: pointer; padding: 4px; display: flex; }
+#player-fs .pfs-skip:active, #player-fs .pfs-side:active { transform: scale(0.9); }
+#player-fs .pfs-play {
+  width: 64px; height: 64px; border-radius: 50%; border: none; background: #fff; color: #000;
+  display: flex; align-items: center; justify-content: center; font-size: 26px; cursor: pointer; flex-shrink: 0;
+}
+#player-fs .pfs-play:active { transform: scale(0.95); }
+/* 미니바 앨범아트 = 테스트: 둥근 사각 프레임 + 가운데 색 점 (디스크 대체) */
+#global-player:not(.expanded) .player-art {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: color-mix(in srgb, var(--player-color, #8b5cf6) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--player-color, #8b5cf6) 30%, transparent);
+  align-items: center; justify-content: center; box-sizing: border-box;
+}
+#global-player:not(.expanded) .player-cover {
+  width: 16px !important; height: 16px !important; border-radius: 50% !important;
+  background: var(--player-color, #8b5cf6) !important;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--player-color, #8b5cf6) 85%, transparent) !important;
+  border: none !important; object-fit: cover;
+}
 /* 자켓 토글 흔적 제거(마크업은 이미 뺐지만 안전망) */
 .discover-mode-toggle { display: none !important; }
 /* 토성(랜덤재생 행성) 제거 — 사용자 요청 '필요 없음' */

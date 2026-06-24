@@ -1507,12 +1507,16 @@ async function init() {
   audioElement.addEventListener('play', syncNoteTrackThumbIcons);
   audioElement.addEventListener('pause', syncNoteTrackThumbIcons);
   audioElement.addEventListener('emptied', syncNoteTrackThumbIcons);
-  // 플레이어 펄스/파형 — 재생 중일 때만 애니메이션(.is-playing). 풀스크린 원 펄스 + 이름 아래 파형이 음악에 맞게.
+  // 재생 상태 → 미니 디스크 펄스(.is-playing) + 풀스크린 카드(비주얼라이저/펄스/아이콘) 동기화.
   const _gpEl = () => document.getElementById('global-player');
-  audioElement.addEventListener('play',  () => { const p = _gpEl(); if (p) p.classList.add('is-playing'); });
-  audioElement.addEventListener('playing', () => { const p = _gpEl(); if (p) p.classList.add('is-playing'); });
-  audioElement.addEventListener('pause', () => { const p = _gpEl(); if (p) p.classList.remove('is-playing'); });
-  audioElement.addEventListener('ended', () => { const p = _gpEl(); if (p) p.classList.remove('is-playing'); });
+  const _onPlayState = (playing) => {
+    const p = _gpEl(); if (p) p.classList.toggle('is-playing', playing);
+    if (window._syncPfsPlayState) window._syncPfsPlayState();
+  };
+  audioElement.addEventListener('play',  () => _onPlayState(true));
+  audioElement.addEventListener('playing', () => _onPlayState(true));
+  audioElement.addEventListener('pause', () => _onPlayState(false));
+  audioElement.addEventListener('ended', () => _onPlayState(false));
 
   // Load Initial View — honor URL hash so refreshing /#/admin lands on admin
   const initialRoute = _hashToRoute(location.hash) || 'shapes';
@@ -2456,86 +2460,17 @@ window._attachPlayerTrackSwipe = function (player) {
 
 // ===================== MOBILE PLAYER EXPAND TOGGLE =====================
 window.togglePlayerExpand = function(e) {
-  // Only on mobile
-  if (window.innerWidth > 720) return;
-  const player = document.getElementById('global-player');
-  if (!player) return;
-  // Skip if click was on a control button
+  // 풀스크린은 전용 카드(#player-fs)로 — 기존 푸터 reflow 대신 테스트 디자인 오버레이.
   const target = e && e.target;
-  if (target && target.closest('.control-btn, .progress-bar, .progress-container')) return;
-  const willExpand = !player.classList.contains('expanded');
-  if (!willExpand) {
-    // Swipe-Up from mini player: expand
-    player.classList.add('expanded');
-    document.body.classList.add('player-fullscreen');
-    // Minimal wiring on mini-to-expand path
-    if (!player._trackSwipeWired) window._attachPlayerTrackSwipe(player);
-    if (!player._swipeDismissWired) window._attachSwipeDismiss(player, {
-      enabled: () => player.classList.contains('expanded'),
-      onClose: () => {
-        player.classList.remove('expanded');
-        document.body.classList.remove('player-fullscreen');
-      },
-      exclude: '.control-btn, .play-btn, .progress-bar, .progress-container, .vol-slider, input[type="range"], .player-expand-btn, button'
-    });
-    return;
-  }
-  player.classList.toggle('expanded', willExpand);
-
-  // 🔒 body lock — iOS Safari < 16 은 body:has() 미지원이라
-  //    CSS selector 만으론 안 됨. JS 에서 직접 class 토글.
-  document.body.classList.toggle('player-fullscreen', willExpand);
-
-  // 📱 풀스크린 펼친 상태에서 아래로 스와이프 → 미니로 접기.
-  //    엔진은 멱등이라 매 expand 마다 불러도 1회만 wire. 컨트롤/슬라이더는 exclude.
-  if (willExpand) {
-    // 좌우 스와이프 → 이전/다음 곡 (멱등).
-    try { window._attachPlayerTrackSwipe(player); } catch (_) {}
-    window._attachSwipeDismiss(player, {
-      // 플레이어는 영구 요소 — 펼친(expanded) 상태일 때만 드래그 발동.
-      //   (미니 바 상태에서 드래그로 움직이는 것 방지)
-      enabled: () => player.classList.contains('expanded'),
-      onClose: () => {
-        player.classList.remove('expanded');
-        document.body.classList.remove('player-fullscreen');
-      },
-      exclude: '.control-btn, .play-btn, .progress-bar, .progress-container, .vol-slider, input[type="range"], .player-expand-btn, button'
-    });
-  }
-
-  // 🔒 iOS 모멘텀 스크롤 추가 차단 — touchmove preventDefault.
-  //    한 번만 wire 하고 캡처 단계 + 컨트롤 영역은 제외.
-  if (willExpand && !window.__playerLockWired) {
-    window.__playerLockWired = true;
-    document.addEventListener('touchmove', (ev) => {
-      if (!document.body.classList.contains('player-fullscreen')) return;
-      // 슬라이더 / 컨트롤 위에선 허용 (볼륨 슬라이더 등)
-      if (ev.target && ev.target.closest('input[type="range"], .progress-bar, .progress-container, .vol-slider')) return;
-      ev.preventDefault();
-    }, { passive: false, capture: true });
-  }
+  if (target && target.closest && target.closest('.control-btn, .progress-bar, .progress-container')) return;
+  if (window.openPlayerFs) window.openPlayerFs();
 };
 
 // 📱 미니 → 펼치기를 '접기(아래로 슬라이드 닫힘)'의 반대로 — 아래에서 위로 부드럽게
 //    슬라이드 인. 클래스만 토글하면 height 가 즉시 점프해 부자연스러우므로 transform 으로 애니메이션.
 window._smoothExpandPlayer = function (player) {
-  if (!player || player.classList.contains('expanded')) return;
-  // 상태 전환 + 닫기/트랙 스와이프 와이어링은 기존 togglePlayerExpand 재사용.
-  if (typeof window.togglePlayerExpand === 'function') window.togglePlayerExpand({ target: player });
-  else { player.classList.add('expanded'); document.body.classList.add('player-fullscreen'); }
-  // translateY 100%(화면 아래) → 0 으로 슬라이드 인. dismiss 가 110% 로 내려가 닫는 것의 반대.
-  //   expanded 가 transform:none !important 라서 important 로 덮어쓴다.
-  player.style.transition = 'none';
-  player.style.setProperty('transform', 'translateY(100%)', 'important');
-  void player.offsetHeight;   // reflow — 시작점(아래) 커밋
-  player.style.transition = 'transform 0.34s cubic-bezier(0.22,1,0.36,1)';
-  player.style.setProperty('transform', 'translateY(0)', 'important');
-  setTimeout(() => {
-    // 슬라이드 인이 끝났고 그 사이 다른 제스처(아래로 접기)가 transform 을 안 바꿨을 때만 정리.
-    if (player.style.getPropertyValue('transform') === 'translateY(0px)') {
-      player.style.transition = ''; player.style.removeProperty('transform');
-    }
-  }, 360);
+  // 스와이프 업 → 풀스크린 카드 오버레이 (자체 슬라이드 인 애니메이션).
+  if (window.openPlayerFs) window.openPlayerFs();
 };
 // 📱 미니 플레이어에서 위로 스와이프 → 펼치기. 컨트롤/슬라이더/버튼만 제외.
 window._attachPlayerSwipeUp = function (player) {
@@ -2574,6 +2509,72 @@ window._attachPlayerSwipeUp = function (player) {
   player.addEventListener('touchcancel', end, { passive: true });
 };
 try { window._attachPlayerSwipeUp(document.getElementById('global-player')); } catch (_) {}
+
+// ════════════════════════════════════════════════════════════════════
+// 풀스크린 플레이어 카드 (#player-fs) — 테스트 디자인 그대로.
+//   미니바 탭 / 스와이프업 / 펼치기 버튼 → openPlayerFs.
+//   실제 동작은 기존 함수(togglePlay)·푸터 이전/다음 버튼·updateProgress 에 배선.
+// ════════════════════════════════════════════════════════════════════
+window.openPlayerFs = function () {
+  const fs = document.getElementById('player-fs');
+  if (!fs) return;
+  if (window.syncPlayerFs) window.syncPlayerFs();
+  fs.classList.add('open');
+  fs.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('player-fs-open');
+};
+window.closePlayerFs = function () {
+  const fs = document.getElementById('player-fs');
+  if (!fs) return;
+  fs.classList.remove('open');
+  fs.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('player-fs-open');
+};
+// 현재 곡 정보로 풀스크린 카드 채우기 (색·태그·제목·아티스트·재생상태).
+window.syncPlayerFs = function () {
+  const fs = document.getElementById('player-fs');
+  if (!fs) return;
+  const gp = document.getElementById('global-player');
+  const color = ((gp && gp.style.getPropertyValue('--player-color')) || '').trim() || '#8b5cf6';
+  fs.style.setProperty('--pfs-color', color);
+  const titleEl = document.getElementById('player-title');
+  const t = document.getElementById('pfs-title');
+  if (t) t.innerText = (titleEl && titleEl.innerText) || '선택된 곡 없음';
+  const a = document.getElementById('pfs-artist');
+  if (a) a.innerText = window.__playerArtistName || '-';
+  // 원 안 #태그 — 미니에 채워둔 #player-tags span 복사.
+  const src = document.getElementById('player-tags');
+  const dst = document.getElementById('pfs-tags');
+  if (dst) {
+    const spans = src ? Array.prototype.slice.call(src.querySelectorAll('span')) : [];
+    dst.innerHTML = spans.length ? spans.map(function (s) { return '<p>' + s.textContent + '</p>'; }).join('') : '';
+  }
+  if (window._syncPfsPlayState) window._syncPfsPlayState();
+};
+// 재생/일시정지 → 풀스크린 카드 아이콘 + 비주얼라이저/펄스 on·off.
+window._syncPfsPlayState = function () {
+  const fs = document.getElementById('player-fs');
+  const audio = document.getElementById('audio-element');
+  if (!fs || !audio) return;
+  const playing = !audio.paused && !audio.ended;
+  fs.classList.toggle('playing', playing);
+  const icon = document.querySelector('#pfs-play i');
+  if (icon) icon.className = playing ? 'ri-pause-fill' : 'ri-play-fill';
+};
+// 풀스크린 컨트롤 → 실제 동작 (기존 함수/푸터 버튼 재사용).
+window._pfsTogglePlay = function () {
+  if (typeof togglePlay === 'function') togglePlay();
+  else { const au = document.getElementById('audio-element'); if (au) { au.paused ? au.play() : au.pause(); } }
+  if (window._syncPfsPlayState) window._syncPfsPlayState();
+};
+window._pfsPrev = function () {
+  const b = document.querySelector('#global-player .control-btn[aria-label="이전 곡"]');
+  if (b) b.click();
+};
+window._pfsNext = function () {
+  const b = document.querySelector('#global-player .control-btn[aria-label="다음 곡"]');
+  if (b) b.click();
+};
 
 // 🔗 현재 재생 곡 공유 — 미니바/풀스크린 플레이어의 공유 버튼.
 //    카드 페이지(#card:<id>) 링크를 시스템 공유(navigator.share) 또는 클립보드 복사.
@@ -7601,7 +7602,8 @@ window.goToPlayerArtist = function (e) {
   if (e) { try { e.stopPropagation(); e.preventDefault(); } catch (_) {} }
   const name = window.__playerArtistName;
   if (!name || name === '-') return;
-  // 풀스크린 플레이어 열려있으면 접고 이동
+  // 풀스크린 카드/펼침 열려있으면 닫고 이동
+  if (window.closePlayerFs) window.closePlayerFs();
   const player = document.getElementById('global-player');
   if (player && player.classList.contains('expanded')) {
     player.classList.remove('expanded');
@@ -14868,6 +14870,7 @@ window.playTrack = function (trackId, source) {
   document.getElementById('player-artist').innerText = track.artist;
   window.__playerArtistName = track.artist;   // 제목/아티스트 클릭 시 이동 대상
   if (typeof _updatePlayerCollectState === 'function') _updatePlayerCollectState();
+  if (window.syncPlayerFs) window.syncPlayerFs();   // 풀스크린 카드도 현재 곡으로 갱신
 
   // MediaSession API — iOS 락스크린/컨트롤센터 위젯 + 미디어 볼륨 라우팅.
   // 이게 있어야 iOS 컨트롤센터 볼륨 슬라이더가 "벨소리" 가 아니라 "미디어" 로 인식됨.
@@ -14962,6 +14965,11 @@ function updateProgress() {
   if (duration) {
     document.getElementById('time-total').innerText = formatTime(duration);
   }
+  // 풀스크린 카드 진행바/시간도 동기화
+  const _pf = document.getElementById('pfs-fill');
+  if (_pf) _pf.style.width = `${progressPercent || 0}%`;
+  const _pc = document.getElementById('pfs-cur'); if (_pc) _pc.innerText = formatTime(currentTime);
+  const _pt = document.getElementById('pfs-tot'); if (_pt && duration) _pt.innerText = formatTime(duration);
 }
 
 function formatTime(seconds) {
