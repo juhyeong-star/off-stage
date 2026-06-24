@@ -176,9 +176,6 @@
                         <h2 class="text-lg font-bold" id="discover-title">우주 탐색 피드</h2>
                         <p class="text-[11px] text-white/40" id="discover-subtitle">탭=재생 · 끌어서 휙 던지기 · 벽에서 팅김</p>
                     </div>
-                    <button onclick="loadRandomBatch()" class="text-[10px] flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-purple-300 hover:bg-white/10 transition-colors" aria-label="새 음악">
-                        <i data-lucide="refresh-cw" class="w-3 h-3"></i> 새 음악
-                    </button>
                 </div>
 
                 <div id="bubbles-container" class="relative flex-1 min-h-0 rounded-3xl border border-white/5 bg-black/30 backdrop-blur-sm z-10"></div>
@@ -481,36 +478,62 @@
             ensureCanvas();
             const vh = container.clientHeight || 460;
             const W = container.clientWidth || 360;
-            if (bubbleData.length > 40) bubbleData.length = 40;             // 안전 상한
+            if (bubbleData.length > 200) bubbleData.length = 200;           // 안전 상한(무한 스크롤이라 높게)
             const H = vh * Math.max(1, bubbleData.length / PER_SCREEN);     // 한 화면에 ~6개 밀도 → 세로 스크롤
             canvasEl.style.height = H + 'px';
             canvasEl.innerHTML = '';
             bubbleData.forEach((b) => {
-                const size = b.size;
                 if (b.x == null) {                             // 처음 등장 → 화면에 흩뿌림 + 격동적 속도(랜덤 방향)
-                    b.x = 12 + Math.random() * Math.max(20, W - size - 24);
-                    b.y = 12 + Math.random() * Math.max(20, H - size - 24);
+                    b.x = 12 + Math.random() * Math.max(20, W - b.size - 24);
+                    b.y = 12 + Math.random() * Math.max(20, H - b.size - 24);
                     const a = Math.random() * Math.PI * 2;
                     b.dx = Math.cos(a) * 0.95; b.dy = Math.sin(a) * 0.95;
                 }
-                const el = document.createElement('div');
-                el.className = 'neon-bubble rounded-full flex flex-col items-center justify-center p-3 text-center';
-                el.style.width = size + 'px';
-                el.style.height = size + 'px';
-                el.style.left = b.x + 'px';
-                el.style.top = b.y + 'px';
-                el.style.background = b.color;
-                el.style.boxShadow = '0 10px 28px ' + b.color + '40, inset 0 4px 12px rgba(255,255,255,0.45)';
-                el.style.touchAction = 'none';
-                el.innerHTML = '<div class="space-y-0.5 w-full flex flex-col justify-center items-center pointer-events-none">' +
-                    b.tags.map(t => `<p class="font-extrabold select-none truncate w-full pointer-events-none" style="color:#0b0b0b;font-size:${size > 122 ? '11px' : '9px'}">${t}</p>`).join('') +
-                    '</div>';
-                el.addEventListener('pointerdown', (ev) => discPointerDown(ev, b));   // 탭=재생 / 끌면 던지기(flick)
-                b.el = el;
-                canvasEl.appendChild(el);
+                canvasEl.appendChild(makeBubbleEl(b));
             });
             wireLoop();
             startPhysics();
+        }
+        // 도형 엘리먼트 생성(레이아웃/무한추가 공용)
+        function makeBubbleEl(b) {
+            const size = b.size;
+            const el = document.createElement('div');
+            el.className = 'neon-bubble rounded-full flex flex-col items-center justify-center p-3 text-center';
+            el.style.width = size + 'px'; el.style.height = size + 'px';
+            el.style.left = b.x + 'px'; el.style.top = b.y + 'px';
+            el.style.background = b.color;
+            el.style.boxShadow = '0 10px 28px ' + b.color + '40, inset 0 4px 12px rgba(255,255,255,0.45)';
+            el.style.touchAction = 'none';
+            el.innerHTML = '<div class="space-y-0.5 w-full flex flex-col justify-center items-center pointer-events-none">' +
+                b.tags.map(t => `<p class="font-extrabold select-none truncate w-full pointer-events-none" style="color:#0b0b0b;font-size:${size > 122 ? '11px' : '9px'}">${t}</p>`).join('') +
+                '</div>';
+            el.addEventListener('pointerdown', (ev) => discPointerDown(ev, b));   // 탭=재생 / 끌면 던지기(flick)
+            b.el = el;
+            return el;
+        }
+        // 무한 스크롤 — 바닥 근처 가면 도형 더 추가(캔버스 세로로 계속 확장). 새로고침/맨위점프 없음.
+        let discAppending = false;
+        function appendDiscover() {
+            if (discAppending) return;
+            discAppending = true;
+            const vh = container.clientHeight || 460, W = container.clientWidth || 360;
+            const oldH = parseFloat(canvasEl.style.height) || vh;
+            let avail = POOL.filter(t => !seenTitles.has(t.title));
+            if (avail.length < PER_SCREEN) { seenTitles.clear(); avail = POOL.slice(); }
+            const pick = avail.sort(() => Math.random() - 0.5).slice(0, PER_SCREEN);
+            pick.forEach(t => seenTitles.add(t.title));
+            const fresh = pick.map(t => {
+                const size = 94 + Math.round(Math.random() * 26);
+                const a = Math.random() * Math.PI * 2;
+                return { id: nextId++, title: t.title, artist: t.artist, color: t.color, tags: t.tags, size: size,
+                    x: 12 + Math.random() * Math.max(20, W - size - 24),
+                    y: oldH + 8 + Math.random() * Math.max(20, vh - size - 16),   // 새로 펼쳐지는 아래 구간에 등장
+                    dx: Math.cos(a) * 0.95, dy: Math.sin(a) * 0.95 };
+            });
+            bubbleData.push(...fresh);
+            canvasEl.style.height = (vh * Math.max(1, bubbleData.length / PER_SCREEN)) + 'px';
+            fresh.forEach(b => canvasEl.appendChild(makeBubbleEl(b)));
+            setTimeout(() => { discAppending = false; }, 250);
         }
         // ===== 탭 vs 던지기(flick) =====
         let discDragBubble = null;
@@ -604,25 +627,12 @@
         function renderCosmic() { layoutBubbles(); }
         function startCosmicAnimation() { layoutBubbles(); }
 
-        // 2페이지 끝에서 더 내리면 맨 위로 루프(초기화) — 위에서 더 올리면 맨 아래로
+        // 무한 스크롤 — 바닥 1.3화면 이내로 내려가면 도형 더 추가(끝없이). 새로고침/맨위 점프 없음.
         function wireLoop() {
             if (loopWired) return;
             loopWired = true;
-            container.addEventListener('wheel', (e) => {
-                const max = container.scrollHeight - container.clientHeight;
-                if (max <= 4) return;
-                // 아래로 내려서 바닥에 닿을 때만 새로고침. 위로 올리는 건 그냥 일반 스크롤.
-                if (container.scrollTop >= max - 2 && e.deltaY > 0) { loadRandomBatch(); }
-            }, { passive: true });
             container.addEventListener('scroll', () => {
-                if (scrollCooldown) return;
-                const max = container.scrollHeight - container.clientHeight;
-                if (max <= 4) return;
-                if (container.scrollTop >= max - 1) {
-                    scrollCooldown = true;
-                    loadRandomBatch();
-                    setTimeout(() => { scrollCooldown = false; }, 500);
-                }
+                if (container.scrollTop + container.clientHeight >= container.scrollHeight - container.clientHeight * 1.3) appendDiscover();
             }, { passive: true });
         }
         function flashLoop(msg) {
