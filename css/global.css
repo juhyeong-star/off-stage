@@ -19427,6 +19427,16 @@ body.is-universe-route .my-universe {
 /* 액션 아이콘(하트·댓글·공유·북마크) — 우측 세로 중앙쯤으로 올림 (사용자 요청) */
 #feed-reels .feed-actions-col { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); z-index: 4; justify-content: center; padding-bottom: 0; }
 #feed-reels .fa-act { text-shadow: 0 1px 6px rgba(0,0,0,0.6); }
+/* ===== 데스크탑(PC) — 피드 가운데 컬럼 + 도형 글자 +3px + 상단 겹침 수정 (사용자 요청) ===== */
+@media (min-width: 769px) {
+  /* 주절주절 = 인스타처럼 가운데 좁은 컬럼 (full-width 방지) */
+  #feed-reels { left: 50%; right: auto; transform: translateX(-50%); width: 470px; max-width: 94vw; border-left: 1px solid rgba(255,255,255,0.06); border-right: 1px solid rgba(255,255,255,0.06); }
+  /* 발견 도형 글자 +3px (10 → 13) */
+  .shapes-universe .floating-shape .shape-text { font-size: 13px !important; }
+  /* 발견 상단 겹침 — 부제/도형 필드를 헤더(off-stage 워드마크) 아래로 내림 */
+  body.is-shapes-route .shapes-subtitle { position: fixed; z-index: 50; top: 42px; left: 0; right: 0; margin: 0; text-align: center; pointer-events: none; text-shadow: 0 1px 6px rgba(0,0,0,0.85); }
+  body.is-shapes-route .shapes-universe { top: 66px; }
+}
 /* 여러 사진 — 인스타식 가로 스와이프 캐러셀 + 점/카운터 */
 #feed-reels .feed-carousel { position: absolute; inset: 0; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
 #feed-reels .feed-carousel::-webkit-scrollbar { display: none; }
