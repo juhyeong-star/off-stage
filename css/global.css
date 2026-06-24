@@ -19255,6 +19255,16 @@ body.is-universe-route .my-universe {
   font-size: 26px; display: flex; align-items: center; justify-content: center;
   box-shadow: 0 8px 22px rgba(139,92,246,0.4); z-index: 40;
 }
+
+/* ============================================================
+   테스트 디자인 적용 #6 — 플레이어 1차: 커버 → 곡 색 디스크
+   (Coming Soon 등 커버를 곡 색 디스크로 통일. 펄스/풀스크린 원+태그/파형은 후속 — img라 마크업 필요.)
+   ============================================================ */
+#global-player .player-cover {
+  background: radial-gradient(circle at 50% 36%, var(--player-color, #8b5cf6), color-mix(in srgb, var(--player-color, #8b5cf6) 26%, #07040f)) !important;
+  box-shadow: 0 0 14px -2px color-mix(in srgb, var(--player-color, #8b5cf6) 70%, transparent), inset 0 2px 7px rgba(255, 255, 255, 0.28) !important;
+  object-fit: cover;
+}
 /* 자켓 토글 흔적 제거(마크업은 이미 뺐지만 안전망) */
 .discover-mode-toggle { display: none !important; }
 /* 토성(랜덤재생 행성) 제거 — 사용자 요청 '필요 없음' */

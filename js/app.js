@@ -14834,7 +14834,13 @@ window.playTrack = function (trackId, source) {
 
   globalPlayer.classList.add('active');
 
-  document.getElementById('player-cover').src = track.cover;
+  // 커버 이미지 대신 '곡 색 디스크'로 통일 (Coming Soon 등 대체 — 사용자 요청).
+  // 색은 발견 도형과 동일 규칙(트랙 id 해시 → SHAPE_COLORS). --player-color 로 CSS 가 디스크/펄스에 사용.
+  const _discColor = SHAPE_COLORS[(_hashSeed('disc:' + track.id) >>> 0) % SHAPE_COLORS.length];
+  globalPlayer.style.setProperty('--player-color', _discColor);
+  const _coverEl = document.getElementById('player-cover');
+  _coverEl.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';   // 1x1 투명 → CSS 배경(디스크)만 보이게
+  _coverEl.dataset.tags = (Array.isArray(track.tags) && track.tags.length) ? track.tags.slice(0, 3).join('\n') : '';   // 풀스크린 태그용(후속)
   document.getElementById('player-title').innerText = track.title;
   document.getElementById('player-artist').innerText = track.artist;
   window.__playerArtistName = track.artist;   // 제목/아티스트 클릭 시 이동 대상
