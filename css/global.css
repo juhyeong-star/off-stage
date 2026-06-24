@@ -19265,6 +19265,40 @@ body.is-universe-route .my-universe {
   box-shadow: 0 0 14px -2px color-mix(in srgb, var(--player-color, #8b5cf6) 70%, transparent), inset 0 2px 7px rgba(255, 255, 255, 0.28) !important;
   object-fit: cover;
 }
+/* === 플레이어 2차 — 풀스크린 원+#태그 + 재생 펄스(스피커 파장) + 이름 아래 파형 === */
+.player-art { position: relative; display: inline-flex; flex-shrink: 0; }
+.player-tags, .player-pulse, .player-wave { display: none; }   /* 미니에선 숨김 */
+/* 풀스크린: 커버 → 서브틀 원(글로우+링), 가운데 흰 #태그 */
+#global-player.expanded .player-cover {
+  border-radius: 50% !important;
+  background: radial-gradient(circle, color-mix(in srgb, var(--player-color, #8b5cf6) 24%, transparent) 0%, transparent 68%) !important;
+  border: 1.5px solid color-mix(in srgb, var(--player-color, #8b5cf6) 45%, transparent) !important;
+  box-shadow: 0 0 64px -12px color-mix(in srgb, var(--player-color, #8b5cf6) 55%, transparent) !important;
+}
+#global-player.expanded .player-tags {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  position: absolute; inset: 0; z-index: 2; pointer-events: none; text-align: center;
+}
+#global-player.expanded .player-tags span { font-size: 18px; font-weight: 800; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.55); }
+/* 재생 중 펄스 — 원 둘레가 커졌다 사라짐(스피커 파장) */
+#global-player.expanded .player-pulse {
+  display: block; position: absolute; inset: 0; border-radius: 50%;
+  border: 3px solid var(--player-color, #8b5cf6); pointer-events: none; opacity: 0;
+}
+#global-player.expanded.is-playing .player-pulse { animation: playerPing 1.8s ease-out infinite; }
+@keyframes playerPing { 0% { transform: scale(1); opacity: 0.55; } 100% { transform: scale(1.5); opacity: 0; } }
+/* 이름 아래 파형 — 재생 중 음악처럼 막대가 움직임 */
+#global-player.expanded .player-wave { display: flex; align-items: flex-end; justify-content: center; gap: 3px; height: 24px; margin-top: 12px; }
+#global-player.expanded .player-wave i { width: 3px; height: 24%; background: var(--player-color, #8b5cf6); border-radius: 2px; }
+#global-player.expanded.is-playing .player-wave i { animation: playerWave 0.9s ease-in-out infinite; }
+#global-player.expanded .player-wave i:nth-child(1) { animation-delay: 0s; }
+#global-player.expanded .player-wave i:nth-child(2) { animation-delay: .15s; }
+#global-player.expanded .player-wave i:nth-child(3) { animation-delay: .3s; }
+#global-player.expanded .player-wave i:nth-child(4) { animation-delay: .45s; }
+#global-player.expanded .player-wave i:nth-child(5) { animation-delay: .2s; }
+#global-player.expanded .player-wave i:nth-child(6) { animation-delay: .35s; }
+#global-player.expanded .player-wave i:nth-child(7) { animation-delay: .1s; }
+@keyframes playerWave { 0%, 100% { height: 22%; } 50% { height: 95%; } }
 /* 자켓 토글 흔적 제거(마크업은 이미 뺐지만 안전망) */
 .discover-mode-toggle { display: none !important; }
 /* 토성(랜덤재생 행성) 제거 — 사용자 요청 '필요 없음' */

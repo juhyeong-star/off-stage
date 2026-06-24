@@ -1507,6 +1507,12 @@ async function init() {
   audioElement.addEventListener('play', syncNoteTrackThumbIcons);
   audioElement.addEventListener('pause', syncNoteTrackThumbIcons);
   audioElement.addEventListener('emptied', syncNoteTrackThumbIcons);
+  // 플레이어 펄스/파형 — 재생 중일 때만 애니메이션(.is-playing). 풀스크린 원 펄스 + 이름 아래 파형이 음악에 맞게.
+  const _gpEl = () => document.getElementById('global-player');
+  audioElement.addEventListener('play',  () => { const p = _gpEl(); if (p) p.classList.add('is-playing'); });
+  audioElement.addEventListener('playing', () => { const p = _gpEl(); if (p) p.classList.add('is-playing'); });
+  audioElement.addEventListener('pause', () => { const p = _gpEl(); if (p) p.classList.remove('is-playing'); });
+  audioElement.addEventListener('ended', () => { const p = _gpEl(); if (p) p.classList.remove('is-playing'); });
 
   // Load Initial View — honor URL hash so refreshing /#/admin lands on admin
   const initialRoute = _hashToRoute(location.hash) || 'shapes';
@@ -14852,7 +14858,12 @@ window.playTrack = function (trackId, source) {
   globalPlayer.style.setProperty('--player-color', _discColor);
   const _coverEl = document.getElementById('player-cover');
   _coverEl.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';   // 1x1 투명 → CSS 배경(디스크)만 보이게
-  _coverEl.dataset.tags = (Array.isArray(track.tags) && track.tags.length) ? track.tags.slice(0, 3).join('\n') : '';   // 풀스크린 태그용(후속)
+  // 풀스크린 원 안 #태그 (커버 대신). 태그 없으면 비움.
+  const _tagsEl = document.getElementById('player-tags');
+  if (_tagsEl) {
+    const _tgs = (Array.isArray(track.tags) && track.tags.length) ? track.tags.slice(0, 3) : [];
+    _tagsEl.innerHTML = _tgs.map(t => `<span>#${(t || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>`).join('');
+  }
   document.getElementById('player-title').innerText = track.title;
   document.getElementById('player-artist').innerText = track.artist;
   window.__playerArtistName = track.artist;   // 제목/아티스트 클릭 시 이동 대상

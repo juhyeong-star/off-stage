@@ -47,7 +47,7 @@
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=824">
+  <link rel="stylesheet" href="css/global.css?v=825">
 </head>
 <body>
 
@@ -185,10 +185,15 @@
       <span class="time-text" id="time-total">0:00</span>
     </div>
     <div class="player-track-info">
+      <div class="player-art">
       <img src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' fill='%23333'/%3E%3C/svg%3E" alt="Cover" class="player-cover" id="player-cover" width="48" height="48" loading="lazy" decoding="async" onclick="event.stopPropagation(); window.playerArtOrExpand && window.playerArtOrExpand(event)" title="펼치기 / 아티스트" style="cursor:pointer;">
+        <div class="player-tags" id="player-tags" aria-hidden="true"></div>
+        <span class="player-pulse" aria-hidden="true"></span>
+      </div>
       <div class="player-text" onclick="window.playerArtOrExpand && window.playerArtOrExpand(event)" title="펼치기 / 아티스트" style="cursor:pointer;">
         <div class="player-title" id="player-title">선택된 곡 없음</div>
         <div class="player-artist" id="player-artist">-</div>
+        <div class="player-wave" id="player-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       </div>
     </div>
     <!-- 담기 — 현재 곡을 즐겨찾기에 모으기. 음향(볼륨) 옆에 배치 (사용자 요청). -->
@@ -230,12 +235,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=824"></script>
-  <script defer src="js/data.js?v=824"></script>
-  <script defer src="js/supabase.js?v=824"></script>
-  <script defer src="js/analytics.js?v=824"></script>
-  <script defer src="js/distribute.js?v=824"></script>
-  <script defer src="js/app.js?v=824"></script>
-  <script defer src="js/polaroid.js?v=824"></script>
+  <script defer src="js/supabase-init.js?v=825"></script>
+  <script defer src="js/data.js?v=825"></script>
+  <script defer src="js/supabase.js?v=825"></script>
+  <script defer src="js/analytics.js?v=825"></script>
+  <script defer src="js/distribute.js?v=825"></script>
+  <script defer src="js/app.js?v=825"></script>
+  <script defer src="js/polaroid.js?v=825"></script>
 </body>
 </html>
