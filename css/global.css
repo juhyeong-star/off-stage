@@ -19097,3 +19097,11 @@ body.is-shapes-route .page-intro { font-size: 18px !important; font-weight: 700 
 #global-player .player-cover { border-radius: 12px !important; border: 1px solid rgba(168, 132, 255, 0.22); }
 #global-player .control-btn { color: rgba(255, 255, 255, 0.6); }
 #global-player .control-btn.play-btn { color: #ffffff; }
+/* 미니바(모바일) — 테스트처럼 [아트][제목/아티스트] ... [prev][play][next] 만. 나머지는 펼치면 나옴 */
+@media (max-width: 768px) {
+  #global-player:not(.expanded) .swipe-grabber,
+  #global-player:not(.expanded) .shuffle-btn,
+  #global-player:not(.expanded) .player-collect-btn,
+  #global-player:not(.expanded) .player-share-btn,
+  #global-player:not(.expanded) .player-volume { display: none !important; }
+}

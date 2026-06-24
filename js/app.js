@@ -5573,8 +5573,8 @@ function initNoteDrag() {
 const SHAPE_TYPES = ['circle', 'oval', 'rect', 'wide', 'pill', 'hexagon'];
 // 제외된(애매한) 모양 → 깔끔한 모양으로 매핑 (기존 트랙의 star 등도 정리)
 const SHAPE_REMAP = { triangle: 'circle', star: 'circle', diamond: 'hexagon', parallelogram: 'rect' };
-// 스크린샷 팔레트 — 주황/라임/블루/틸/라벤더/옐로 (사용자 요청, 테스트). 검정은 텍스트 가독성 위해 제외.
-const SHAPE_COLORS = ['#E07B4C', '#A4CC5B', '#4A77E0', '#3DBCB0', '#C4B5E8', '#F0C84A'];
+// 테스트 팔레트 그대로 — 비비드 네온(핑크/시안/퍼플/주황/라임/레드핑크/틸/바이올렛/옐로/블루). 사용자 요청.
+const SHAPE_COLORS = ['#FF2EA0', '#00E5FF', '#B14BFF', '#FF9100', '#76FF03', '#FF4D6D', '#2EE6D6', '#9D4EDD', '#FFD166', '#4D9DFF'];
 
 function renderHome() {
   const db = window.DB.get();
@@ -7241,59 +7241,55 @@ function startShapesPhysics(field, viewport) {
   const els = Array.prototype.slice.call(field.querySelectorAll('.floating-shape'));
   if (!els.length) return;
   const P = window.__shapesPhys;
-  const fieldW = field.clientWidth || (viewport && viewport.clientWidth) || window.innerWidth;
-  const vh = (viewport && viewport.clientHeight) || window.innerHeight || 700;
-  const PER = 6;                                          // 한 화면에 ~6개
-  const rows = Math.max(1, Math.ceil(els.length / PER));
-  const fieldH = Math.max(vh - 8, rows * (vh - 12));      // 6/화면, 세로로 쌓여 스크롤
-  field.style.height = fieldH + 'px';
+  // 홈 = renderShapes 가 씨드로 정한 고정 위치(최신이 맨 위, 아래로 차곡차곡). 재진입해도 동일 →
+  // 매번 흩어지지 않아 '초기화' 느낌이 없고, 새 곡은 맨 위로 들어오고 기존은 아래로 밀린다.
   const items = els.map(el => {
     const sc = parseFloat((el.style.getPropertyValue('--scale') || '1')) || 1;
     el.style.animation = 'none';                          // floatDrift 끔 — 물리가 위치를 몲
     el.style.transform = (sc !== 1) ? ('scale(' + sc + ')') : '';
     el.style.transition = 'none';
     const w = el.offsetWidth * sc, h = el.offsetHeight * sc;
-    const x = Math.random() * Math.max(8, fieldW - w);
-    const y = Math.random() * Math.max(8, fieldH - h);
-    el.style.left = x + 'px';
-    el.style.top = y + 'px';
-    const ang = Math.random() * Math.PI * 2, sp = 0.3 + Math.random() * 0.3;
-    const item = { el, x, y, w, h, r: Math.max(w, h) / 2, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp };
+    const hx = el.offsetLeft, hy = el.offsetTop;          // 씨드 홈 위치(고정)
+    el.style.left = hx + 'px';
+    el.style.top = hy + 'px';
+    const item = { el, x: hx, y: hy, hx, hy, w, h, r: Math.max(w, h) / 2, vx: 0, vy: 0, ph: Math.random() * 6.283 };
     el.__phys = item;
     return item;
   });
   P.items = items;
+  const SPRING = 0.018, DAMP = 0.82;
+  let t = 0;
   function step() {
     const its = P.items, n = its.length;
     if (!n) return;
-    const BW = field.clientWidth || fieldW, BH = parseFloat(field.style.height) || fieldH;
+    const BW = field.clientWidth, BH = field.scrollHeight || field.offsetHeight || BW;
+    t += 0.016;
     for (let i = 0; i < n; i++) {
       const b = its[i];
       if (b.el.classList.contains('dragging')) continue;
+      // 홈으로 당기는 스프링 + 감쇠 → 항상 제자리(최신 위 순서)로 복귀. 던져도 슥 돌아옴.
+      b.vx += (b.hx - b.x) * SPRING;
+      b.vy += (b.hy - b.y) * SPRING;
+      // 가벼운 바브 — 살아있는 느낌(제자리 주변 작은 흔들림)
+      b.vx += Math.cos(t * 0.8 + b.ph) * 0.03;
+      b.vy += Math.sin(t * 1.1 + b.ph) * 0.03;
+      b.vx *= DAMP; b.vy *= DAMP;
       b.x += b.vx; b.y += b.vy;
-      if (b.x <= 0) { b.x = 0; b.vx = Math.abs(b.vx); }
-      else if (b.x + b.w >= BW) { b.x = BW - b.w; b.vx = -Math.abs(b.vx); }
-      if (b.y <= 0) { b.y = 0; b.vy = Math.abs(b.vy); }
-      else if (b.y + b.h >= BH) { b.y = BH - b.h; b.vy = -Math.abs(b.vy); }
-      const sp = Math.hypot(b.vx, b.vy);
-      if (sp > 0.65) { b.vx *= 0.985; b.vy *= 0.985; }                    // 던진 속도는 서서히 감속
-      else if (sp < 0.2) { const a = Math.atan2(b.vy, b.vx) || (Math.random() * 6.283); b.vx = Math.cos(a) * 0.2; b.vy = Math.sin(a) * 0.2; }  // 최소 드리프트 유지
+      // 화면 밖으로 안 나감
+      if (b.x < 0) { b.x = 0; if (b.vx < 0) b.vx = -b.vx * 0.5; }
+      else if (b.x + b.w > BW) { b.x = BW - b.w; if (b.vx > 0) b.vx = -b.vx * 0.5; }
+      if (b.y < 0) { b.y = 0; if (b.vy < 0) b.vy = -b.vy * 0.5; }
+      else if (b.y + b.h > BH) { b.y = BH - b.h; if (b.vy > 0) b.vy = -b.vy * 0.5; }
     }
-    // 충돌 분리 + 튕김 (도형 수십 개 → O(n^2) 허용)
+    // 충돌 분리(겹침 방지) — 주로 던졌을 때. 평소엔 홈 간격이 충분.
     for (let i = 0; i < n; i++) {
       const a = its[i]; if (a.el.classList.contains('dragging')) continue;
       for (let j = i + 1; j < n; j++) {
         const c = its[j]; if (c.el.classList.contains('dragging')) continue;
         const acx = a.x + a.w / 2, acy = a.y + a.h / 2, ccx = c.x + c.w / 2, ccy = c.y + c.h / 2;
         let dx = ccx - acx, dy = ccy - acy; const dist = Math.hypot(dx, dy) || 0.01;
-        const min = (a.r + c.r) * 0.92;                                   // 살짝 겹침 허용
-        if (dist < min) {
-          const ov = (min - dist) / 2, nx = dx / dist, ny = dy / dist;
-          a.x -= nx * ov; a.y -= ny * ov; c.x += nx * ov; c.y += ny * ov;
-          const avn = a.vx * nx + a.vy * ny, cvn = c.vx * nx + c.vy * ny;
-          a.vx += (cvn - avn) * nx; a.vy += (cvn - avn) * ny;
-          c.vx += (avn - cvn) * nx; c.vy += (avn - cvn) * ny;
-        }
+        const min = (a.r + c.r) * 0.86;
+        if (dist < min) { const ov = (min - dist) / 2, nx = dx / dist, ny = dy / dist; a.x -= nx * ov; a.y -= ny * ov; c.x += nx * ov; c.y += ny * ov; }
       }
     }
     for (let i = 0; i < n; i++) { const b = its[i]; if (b.el.classList.contains('dragging')) continue; b.el.style.left = b.x + 'px'; b.el.style.top = b.y + 'px'; }
