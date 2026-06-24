@@ -19043,5 +19043,19 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
 }
 #mobile-tab-bar .mobile-tab:active { background: rgba(255, 255, 255, 0.06); }
 
-/* Tags 네온 — 글자에 자기 색 글로우(항상 켜짐, 호버 시 더 강하게) */
-.tags-cloud .tag-chip { text-shadow: 0 0 7px currentColor, 0 0 16px currentColor; }
+/* Tags 네온 — 글자에 자기 색 글로우(살짝만, 너무 안 쌔게) */
+.tags-cloud .tag-chip { text-shadow: 0 0 4px currentColor, 0 0 9px currentColor; }
+
+/* ============================================================
+   테스트 디자인 적용 #2 — 발견(도형) 버블을 테스트의 광택 네온으로
+   각 버블의 --shape-bg 색으로 부드러운 글로우 + 인셋 광택. 너무 안 쌔게 톤다운.
+   즐겨찾기(.my-universe)·자켓모드(.shape-jacket)는 제외(기존 유지).
+   ============================================================ */
+.shapes-universe .floating-shape:not(.shape-jacket) {
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--shape-bg, #ffffff) 22%, transparent),
+              inset 0 5px 13px rgba(255, 255, 255, 0.42);
+}
+.shapes-universe .floating-shape:not(.shape-jacket):hover {
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--shape-bg, #ffffff) 30%, transparent),
+              inset 0 5px 13px rgba(255, 255, 255, 0.5);
+}

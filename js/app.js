@@ -7178,7 +7178,7 @@ function renderShapes() {
 
   // .shapes-universe = 뷰포트 크기 스크롤 창, .universe-field = 그보다 큰 2D 필드(사방으로 큼)
   appContent.innerHTML = `
-    <div class="page-intro reveal">${_i18n('도형을 발견해보세요', 'Discover the shapes')}</div>
+    <div class="page-intro reveal">${_i18n('우주 탐색 피드', 'Explore the Universe')}</div>
     <button class="discover-mode-toggle" type="button" onclick="toggleDiscoverMode()" aria-label="${_t('보기 전환', 'Toggle view')}">
       <i class="ri-${_jacketMode ? 'shape-line' : 'album-2-line'}"></i> ${_jacketMode ? _t('도형으로', 'Shapes') : _t('자켓으로', 'Jackets')}
     </button>
