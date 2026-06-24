@@ -19059,3 +19059,19 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
   box-shadow: 0 10px 26px color-mix(in srgb, var(--shape-bg, #ffffff) 30%, transparent),
               inset 0 5px 13px rgba(255, 255, 255, 0.5);
 }
+
+/* ============================================================
+   테스트 디자인 적용 #3 — 발견 헤더(제목+부제) + 플레이바 테스트룩 + 자켓 토글 제거
+   2026-06-24.
+   ============================================================ */
+/* 발견 헤더 — 테스트처럼: 제목 18px 굵게 + 11px 회색 부제(물리 안내) */
+body.is-shapes-route .page-intro { font-size: 18px; font-weight: 700; margin-bottom: 3px; }
+.shapes-subtitle { font-size: 11px; color: rgba(255, 255, 255, 0.4); margin: 0 0 10px; line-height: 1.3; }
+/* 자켓 토글 흔적 제거(마크업은 이미 뺐지만 안전망) */
+.discover-mode-toggle { display: none !important; }
+
+/* 플레이바 — 테스트의 깔끔한 룩: 다크바 + 둥근 아트 + 흰 디스크 재생 + 흐린 컨트롤 */
+#global-player { background: rgba(12, 9, 26, 0.95); }
+#global-player .player-cover { border-radius: 12px !important; border: 1px solid rgba(168, 132, 255, 0.22); }
+#global-player .control-btn { color: rgba(255, 255, 255, 0.6); }
+#global-player .control-btn.play-btn { color: #ffffff; }

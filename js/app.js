@@ -6971,9 +6971,9 @@ function initDiscoverDrag() {
 // ===================== SHAPES UNIVERSE (original floating shapes view) =====================
 function renderShapes() {
   const db = window.DB.get();
-  // 발견 보기 모드: 'shape'(기본, 도형) | 'jacket'(테스트, 앨범 자켓 블라인드+해시태그). 토글로 비교.
-  if (window.__discoverMode == null) { try { window.__discoverMode = localStorage.getItem('offstage_discover_mode') || 'shape'; } catch (_) { window.__discoverMode = 'shape'; } }
-  const _jacketMode = (window.__discoverMode === 'jacket');
+  // 자켓 모드 제거(사용자 요청) — 발견은 항상 도형(shape) 모드. 저장된 jacket 선택도 무시.
+  window.__discoverMode = 'shape';
+  const _jacketMode = false;
   // 도형 페이지 들어올 때마다 Supabase에서 새 트랙 백그라운드 확인.
   // 트랙 목록이 바뀌었을 때만 다시 그려서 무한루프 방지.
   if (window.Tracks && window.Tracks.refreshInto && !window.__shapesRefreshing) {
@@ -7180,9 +7180,7 @@ function renderShapes() {
   // .shapes-universe = 뷰포트 크기 스크롤 창, .universe-field = 그보다 큰 2D 필드(사방으로 큼)
   appContent.innerHTML = `
     <div class="page-intro reveal">${_i18n('우주 탐색 피드', 'Explore the Universe')}</div>
-    <button class="discover-mode-toggle" type="button" onclick="toggleDiscoverMode()" aria-label="${_t('보기 전환', 'Toggle view')}">
-      <i class="ri-${_jacketMode ? 'shape-line' : 'album-2-line'}"></i> ${_jacketMode ? _t('도형으로', 'Shapes') : _t('자켓으로', 'Jackets')}
-    </button>
+    <div class="shapes-subtitle reveal">${_i18n('탭=재생 · 끌어서 휙 던지기 · 벽에서 팅김', 'Tap = play · Drag = throw · Bounce off walls')}</div>
     <div class="shapes-universe" id="shapes-scroll">
       <div class="universe-field" style="width:100%; height:${_fieldH}px;">
         ${decoHtml}
