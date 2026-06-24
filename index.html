@@ -47,7 +47,7 @@
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=816">
+  <link rel="stylesheet" href="css/global.css?v=817">
 </head>
 <body>
 
@@ -150,16 +150,16 @@
   <!-- Mobile Bottom Tab Bar — 5 slots: 도형 / 벽 / TAG / 내 페이지 / 더보기 -->
   <nav class="mobile-tab-bar" id="mobile-tab-bar" aria-label="메인 탭">
     <a href="#" class="mobile-tab" data-route="shapes" aria-label="발견" onclick="event.preventDefault(); navigateTo('shapes');">
-      <i class="ri-triangle-fill"></i><span class="mobile-tab-label"><span data-i18n-ko>발견</span><span data-i18n-en>Discover</span></span>
+      <i class="ri-triangle-line"></i><span class="mobile-tab-label"><span data-i18n-ko>발견</span><span data-i18n-en>Discover</span></span>
     </a>
     <a href="#" class="mobile-tab" data-route="wall" aria-label="주절주절" onclick="event.preventDefault(); navigateTo('wall');">
-      <i class="ri-sticky-note-fill"></i><span class="mobile-tab-label"><span data-i18n-ko>주절주절</span><span data-i18n-en>blah blah</span></span>
+      <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="mobile-tab-label"><span data-i18n-ko>주절주절</span><span data-i18n-en>blah blah</span></span>
     </a>
     <a href="#" class="mobile-tab" data-route="tags" aria-label="TAG" onclick="event.preventDefault(); navigateTo('tags');">
       <i class="ri-hashtag"></i><span class="mobile-tab-label">Tags</span>
     </a>
     <a href="#" class="mobile-tab" data-route="universe" aria-label="즐겨찾기" onclick="event.preventDefault(); navigateTo('universe');">
-      <span class="mini-planet" aria-hidden="true"><span class="mp-ring mp-ring-back"></span><span class="mp-sphere"></span><span class="mp-ring mp-ring-front"></span></span><span class="mobile-tab-label"><span data-i18n-ko>즐겨찾기</span><span data-i18n-en>Favorites</span></span>
+      <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H20a2 2 0 0 1 2 2v3"/><path d="M21.29 13.7a2.43 2.43 0 0 0-2.65-.52c-.3.12-.57.3-.8.53l-.34.34-.35-.34a2.43 2.43 0 0 0-2.65-.53c-.3.12-.56.3-.79.53-.95.94-1 2.53.2 3.74L17.5 21l3.6-3.55c1.2-1.21 1.14-2.8.19-3.74Z"/></svg><span class="mobile-tab-label"><span data-i18n-ko>즐겨찾기</span><span data-i18n-en>Favorites</span></span>
     </a>
     <a href="#" class="mobile-tab" data-route="__more" aria-label="더보기" onclick="event.preventDefault(); window.openMoreSheet && window.openMoreSheet();">
       <i class="ri-menu-line"></i><span class="mobile-tab-label"><span data-i18n-ko>더보기</span><span data-i18n-en>More</span></span>
@@ -230,12 +230,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=816"></script>
-  <script defer src="js/data.js?v=816"></script>
-  <script defer src="js/supabase.js?v=816"></script>
-  <script defer src="js/analytics.js?v=816"></script>
-  <script defer src="js/distribute.js?v=816"></script>
-  <script defer src="js/app.js?v=816"></script>
-  <script defer src="js/polaroid.js?v=816"></script>
+  <script defer src="js/supabase-init.js?v=817"></script>
+  <script defer src="js/data.js?v=817"></script>
+  <script defer src="js/supabase.js?v=817"></script>
+  <script defer src="js/analytics.js?v=817"></script>
+  <script defer src="js/distribute.js?v=817"></script>
+  <script defer src="js/app.js?v=817"></script>
+  <script defer src="js/polaroid.js?v=817"></script>
 </body>
 </html>

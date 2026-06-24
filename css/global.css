@@ -19038,6 +19038,9 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
 #mobile-tab-bar .mobile-tab[data-route].is-active i {
   filter: drop-shadow(0 0 5px rgba(139, 92, 246, 0.65));
 }
+/* 탭 아이콘 SVG(테스트 Lucide: 주절주절 말풍선·즐겨찾기 folder-heart) — 크기·색(currentColor)·글로우 통일 */
+#mobile-tab-bar .mobile-tab .tab-ico { width: 22px; height: 22px; display: block; }
+#mobile-tab-bar .mobile-tab[data-route].is-active .tab-ico { filter: drop-shadow(0 0 5px rgba(139, 92, 246, 0.65)); }
 #mobile-tab-bar .mobile-tab[data-route="universe"].is-active .mp-sphere {
   box-shadow: 0 0 8px rgba(139, 92, 246, 0.85);
 }
