@@ -19069,14 +19069,10 @@ body.is-shapes-route .page-intro { font-size: 18px !important; font-weight: 700 
 .shapes-subtitle { font-size: 11px; color: rgba(255, 255, 255, 0.55); line-height: 1.3; opacity: 1 !important; }
 @media (max-width: 768px) {
   /* === 모바일 헤더 = 테스트 순서: [off-stage ... 가이드/언어] 맨 위 줄 → 탭 → 콘텐츠 === */
-  :root { --mobile-tab-h: 96px !important; }            /* 워드마크줄(40) + 탭(56) — 콘텐츠가 둘 다 비켜가게(보장) */
-  .mobile-tab-bar { top: calc(40px + env(safe-area-inset-top, 0px)) !important; padding-top: 6px !important; }   /* 탭을 워드마크 줄 아래로(노치만큼 함께 내림) */
-  .mobile-tab-bar::before {                             /* 맨 위 워드마크 줄 배경(노치~워드마크줄) */
-    content: ''; position: fixed; top: 0; left: 0; right: 0; height: calc(40px + env(safe-area-inset-top, 0px));
-    background: rgba(10, 6, 24, 0.95);
-    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06); z-index: 1100;
-  }
+  :root { --mobile-tab-h: 92px !important; }            /* 워드마크줄(40)+탭(46)+패딩(6) — 탭바가 헤더 전체 한 컨테이너 */
+  /* 탭바 = 헤더 전체: top:0, 위 패딩(노치 + 워드마크줄 40px) 아래에 탭이 옴. 탭바 자체 배경이 다 덮음 → 별도 strip 불필요(탭 잘림 구조 제거) */
+  .mobile-tab-bar { top: 0 !important; padding-top: calc(env(safe-area-inset-top, 0px) + 40px) !important; }
+  .mobile-tab-bar::before { display: none !important; }
   .beta-wordmark-float {                                /* off-stage 좌상단(맨 위 줄) */
     display: inline-flex !important; position: fixed !important;
     top: calc(7px + env(safe-area-inset-top, 0px)) !important; left: 16px !important; right: auto !important; bottom: auto !important;
