@@ -3011,7 +3011,9 @@ body:has(#shape-shorts-overlay) .deco-shape {
   position: fixed; bottom: 0; left: 0; right: 0; height: var(--player-height);
   background: rgba(10,10,10,0.95); border-top: 1px solid var(--divider);
   display: flex; align-items: center; padding: 0 16px; z-index: 1001;
-  transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  /* 항상 표시 — 음원 미재생이어도 플레이바가 늘 바닥에 (아래 빈칸 제거, 사용자 요청).
+     예전엔 translateY(100%)로 숨겼다가 .active 로 올렸는데, 그러면 미재생시 예약공간이 빈칸이 됨. */
+  transform: translateY(0); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
   backdrop-filter: blur(16px);
 }
 #global-player.active { transform: translateY(0); }
