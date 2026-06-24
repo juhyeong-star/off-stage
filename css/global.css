@@ -19017,3 +19017,31 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
   .alb2-songtitle { font-size: 24px; }
   .alb2-artistname { font-size: 20px; }
 }
+
+/* ============================================================
+   테스트 디자인 적용 #1 — 모바일 상단 탭(off-stage 룩) + Tags 네온
+   2026-06-25. 모바일 우선(데스크탑 사이드바는 안 건드림). CSS만.
+   ============================================================ */
+/* 모바일 상단 탭바 — 테스트처럼 깔끔하게: 흰 글씨 + 보라 밑줄. (#id 특이도로 기존 칸칸이/색 덮음) */
+#mobile-tab-bar { background: rgba(3, 0, 13, 0.92); }
+#mobile-tab-bar .mobile-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: rgba(255, 255, 255, 0.55);
+}
+#mobile-tab-bar .mobile-tab[data-route].is-active {
+  color: #ffffff;
+  background: transparent;
+  border-bottom-color: #8b5cf6;
+}
+#mobile-tab-bar .mobile-tab[data-route].is-active i {
+  filter: drop-shadow(0 0 5px rgba(139, 92, 246, 0.65));
+}
+#mobile-tab-bar .mobile-tab[data-route="universe"].is-active .mp-sphere {
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.85);
+}
+#mobile-tab-bar .mobile-tab:active { background: rgba(255, 255, 255, 0.06); }
+
+/* Tags 네온 — 글자에 자기 색 글로우(항상 켜짐, 호버 시 더 강하게) */
+.tags-cloud .tag-chip { text-shadow: 0 0 7px currentColor, 0 0 16px currentColor; }
