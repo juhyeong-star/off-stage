@@ -19388,16 +19388,25 @@ body.is-universe-route .my-universe {
 }
 #feed-reels .feed-plus:active { transform: scale(0.92); }
 /* 음원 글 — 곡 색 디스크 + #태그 (커버 대신, 사용자 요청) */
-#feed-reels .feed-media-disc { display: flex; align-items: center; justify-content: center; }
-#feed-reels .feed-disc-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; z-index: 1; cursor: pointer; }
+#feed-reels .feed-media-disc { display: flex; flex-direction: column; }
+#feed-reels .feed-disc-wrap { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; z-index: 1; cursor: pointer; }
 #feed-reels .feed-disc {
   width: 120px; height: 120px; border-radius: 50%;
   background: radial-gradient(circle at 50% 36%, var(--disc), color-mix(in srgb, var(--disc) 26%, #0a0612));
   box-shadow: 0 14px 36px -8px color-mix(in srgb, var(--disc) 60%, transparent), inset 0 5px 15px rgba(255,255,255,0.42);
   display: flex; align-items: center; justify-content: center; color: rgba(0,0,0,0.5); font-size: 34px;
 }
-#feed-reels .feed-disc-tags { display: flex; flex-direction: column; gap: 4px; align-items: center; }
-#feed-reels .feed-disc-tags span { font-size: 15px; font-weight: 800; color: #fff; text-shadow: 0 1px 7px rgba(0,0,0,0.6); }
+#feed-reels .feed-disc-meta { display: flex; flex-direction: column; gap: 3px; align-items: center; text-align: center; }
+#feed-reels .feed-disc-title { font-size: 18px; font-weight: 800; color: #fff; text-shadow: 0 1px 8px rgba(0,0,0,0.6); max-width: 80vw; }
+#feed-reels .feed-disc-artist { font-size: 13px; color: rgba(255,255,255,0.72); }
+#feed-reels .feed-headline-tags { display: flex; flex-wrap: wrap; gap: 9px; }
+#feed-reels .feed-headline-tags span { font-size: 14px; font-weight: 800; }
+/* 긴 글 더보기/접기 + 번역 (피드) */
+#feed-reels .feed-lyrics.expanded { -webkit-line-clamp: unset; overflow: visible; }
+#feed-reels .feed-text-main { overflow-y: auto; }
+#feed-reels .feed-more-btn { align-self: flex-start; background: none; border: none; color: rgba(255,255,255,0.55); font-size: 11px; font-weight: 700; padding: 2px 0 0; cursor: pointer; }
+#feed-reels .thread-post-translation { font-size: 12.5px; line-height: 1.5; color: rgba(255,255,255,0.72); margin-top: 4px; }
+#feed-reels .thread-post-translation .tpt-label { display: inline-block; font-size: 10px; font-weight: 700; color: #8b5cf6; margin-right: 6px; }
 /* 여러 사진 — 인스타식 가로 스와이프 캐러셀 + 점/카운터 */
 #feed-reels .feed-carousel { position: absolute; inset: 0; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
 #feed-reels .feed-carousel::-webkit-scrollbar { display: none; }

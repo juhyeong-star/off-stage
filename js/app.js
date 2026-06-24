@@ -3364,9 +3364,10 @@ function _threadPostHtml(p) {
   } else if (hasImg) {
     mediaInner = `<img class="feed-bg" src="${images[0]}" alt="" loading="lazy">`;
   } else if (p.track) {
+    // 사용자 요청: 디스크 아래 = 가수이름·제목, 바닥 헤드라인 = #태그 (서로 swap).
     mediaInner = `<div class="feed-disc-wrap" onclick="event.stopPropagation(); playTrack('${p.track.id}','wall')">`
       + `<div class="feed-disc" style="--disc:${postColor}"><i class="ri-play-fill"></i></div>`
-      + (discTags.length ? `<div class="feed-disc-tags">${discTags.map(t => `<span>#${esc(t)}</span>`).join('')}</div>` : '')
+      + `<div class="feed-disc-meta"><div class="feed-disc-title">${esc(p.track.title)}</div><div class="feed-disc-artist">${esc(p.track.artist || p.name)}</div></div>`
       + `</div>`;
   } else {
     mediaInner = '';
@@ -3386,10 +3387,12 @@ function _threadPostHtml(p) {
         ${mediaInner}
         <div class="feed-media-grad"></div>
         ${plusBtn}
-        <div class="feed-headline">
+        ${(!hasImg && p.track)
+          ? `<div class="feed-headline feed-headline-tags" style="color:${postColor}">${discTags.map(t => `<span>#${esc(t)}</span>`).join('')}</div>`
+          : `<div class="feed-headline">
           <div class="feed-hl-sub${linkCls}" ${nameAttr} onclick="_threadGoArtist(this)">${esc(p.name)}</div>
           ${p.track ? `<div class="feed-hl-title" style="color:${postColor}">${esc(p.track.title)}</div>` : ''}
-        </div>
+        </div>`}
         ${songChip}
       </div>
       <div class="feed-text">
@@ -3428,11 +3431,11 @@ window._threadShare = function (id) {
 // 번역 (테스트) — 글을 반대 언어(한↔영)로 번역해 아래에 표시. 다시 누르면 원문으로.
 // Google 번역(비공식 translate_a 엔드포인트, 키 불필요, 자동 언어감지). 한글 포함이면 →en, 아니면 →ko.
 window.translatePost = async function (id, btn) {
-  const post = btn && btn.closest('.thread-post');
+  const post = btn && (btn.closest('.feed-post') || btn.closest('.thread-post'));
   if (!post) return;
   const existing = post.querySelector('.thread-post-translation');
   if (existing) { existing.remove(); btn.innerHTML = '<i class="ri-translate-2"></i> ' + _t('번역', 'Translate'); return; }
-  const bodyEl = post.querySelector('.thread-post-body');
+  const bodyEl = post.querySelector('.feed-lyrics') || post.querySelector('.thread-post-body');
   const text = bodyEl ? (bodyEl.textContent || '').trim() : '';
   if (!text) return;
   const orig = btn.innerHTML;
@@ -3544,6 +3547,7 @@ async function renderWall() {
       ${empty}
     </div>`;
   if (window._wireFeedCarousels) window._wireFeedCarousels();
+  requestAnimationFrame(function () { if (window._wireFeedExpanders) window._wireFeedExpanders(); });
 }
 // 피드 캐러셀(여러 사진) — 스크롤 위치로 점·카운터 갱신. (멱등)
 window._wireFeedCarousels = function () {
@@ -3559,6 +3563,24 @@ window._wireFeedCarousels = function () {
       if (count) count.textContent = (i + 1) + '/' + total;
       dots.forEach(function (d, j) { d.classList.toggle('on', j === i); });
     }, { passive: true });
+  });
+};
+// 긴 글 — 3줄 클램프 넘으면 '더보기' 노출, 누르면 인라인으로 펼침(접기 토글).
+window._wireFeedExpanders = function () {
+  document.querySelectorAll('#feed-reels .feed-lyrics').forEach(function (el) {
+    if (el._expWired) return;
+    el._expWired = true;
+    if (el.clientHeight > 0 && el.scrollHeight - el.clientHeight > 2) {
+      const btn = document.createElement('button');
+      btn.className = 'feed-more-btn'; btn.type = 'button';
+      btn.textContent = _t('더보기', 'More');
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        const open = el.classList.toggle('expanded');
+        btn.textContent = open ? _t('접기', 'Less') : _t('더보기', 'More');
+      });
+      el.insertAdjacentElement('afterend', btn);
+    }
   });
 };
 // 프리뷰/구버전 호환 — 같은 함수를 가리킴.
