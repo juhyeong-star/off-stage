@@ -7246,7 +7246,7 @@ function startShapesPhysics(field, viewport) {
   // 한 화면에 ~8개(3열). 씨드 결정적 배치 → 재진입해도 동일(랜덤 초기화 없음).
   const fieldW0 = field.clientWidth || (viewport && viewport.clientWidth) || window.innerWidth;
   const vvh = (viewport && viewport.clientHeight) || window.innerHeight || 600;
-  const PER = 8, cols = 3;
+  const PER = 7, cols = 3;   // 한 화면에 ~7개(사용자 요청)
   const rows = Math.max(1, Math.ceil(els.length / cols));
   const cellH = Math.max(60, vvh / (PER / cols));         // 화면당 PER개가 되도록 행 높이
   const fieldH = Math.max(vvh, rows * cellH);
