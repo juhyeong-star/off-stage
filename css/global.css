@@ -19079,9 +19079,18 @@ body.is-shapes-route .page-intro { font-size: 18px !important; font-weight: 700 
   }
   .beta-wordmark-float {                                /* off-stage 좌상단(맨 위 줄) */
     display: inline-flex !important; position: fixed !important;
-    top: 8px !important; left: 16px !important; right: auto !important; bottom: auto !important;
-    transform: none !important; z-index: 1102;
+    top: 7px !important; left: 16px !important; right: auto !important; bottom: auto !important;
+    transform: none !important; z-index: 1102; text-shadow: none !important;
   }
+  /* off-stage 글자 = 테스트와 동일: Inter font-black + 보라→핑크→앰버 그라데이션, lowercase, BETA 숨김 */
+  .beta-wordmark-float .bw-name {
+    font-family: 'Inter', sans-serif !important; font-weight: 900 !important; font-size: 22px !important;
+    letter-spacing: -0.6px !important; text-transform: lowercase !important;
+    background: linear-gradient(90deg, #c084fc 0%, #f472b6 50%, #fcd34d 100%) !important;
+    -webkit-background-clip: text !important; background-clip: text !important;
+    -webkit-text-fill-color: transparent !important; color: transparent !important;
+  }
+  .beta-wordmark-float .bw-tag { display: none !important; }
   #guide-btn { position: fixed !important; top: 6px !important; right: 98px !important; left: auto !important; bottom: auto !important; z-index: 1102; }
   #lang-toggle { position: fixed !important; top: 7px !important; right: 14px !important; left: auto !important; bottom: auto !important; z-index: 1102; }
   /* 발견 제목/부제 — 탭(96) 아래 좌측 */

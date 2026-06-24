@@ -7243,7 +7243,7 @@ function startShapesPhysics(field, viewport) {
   const P = window.__shapesPhys;
   // 홈 = renderShapes 가 씨드로 정한 고정 위치(최신이 맨 위, 아래로 차곡차곡). 재진입해도 동일 →
   // 매번 흩어지지 않아 '초기화' 느낌이 없고, 새 곡은 맨 위로 들어오고 기존은 아래로 밀린다.
-  const items = els.map(el => {
+  const items = els.map((el, idx) => {
     const sc = parseFloat((el.style.getPropertyValue('--scale') || '1')) || 1;
     el.style.animation = 'none';                          // floatDrift 끔 — 물리가 위치를 몲
     el.style.transform = (sc !== 1) ? ('scale(' + sc + ')') : '';
@@ -7252,12 +7252,15 @@ function startShapesPhysics(field, viewport) {
     const hx = el.offsetLeft, hy = el.offsetTop;          // 씨드 홈 위치(고정)
     el.style.left = hx + 'px';
     el.style.top = hy + 'px';
-    const item = { el, x: hx, y: hy, hx, hy, w, h, r: Math.max(w, h) / 2, vx: 0, vy: 0, ph: Math.random() * 6.283 };
+    const ph = idx * 2.399;                               // 결정적 위상(매번 동일 → 초기화 느낌 없음)
+    const item = { el, x: hx, y: hy, hx, hy, w, h, r: Math.max(w, h) / 2,
+                   vx: Math.cos(ph) * 0.9, vy: Math.sin(ph) * 0.9, ph: ph };
     el.__phys = item;
     return item;
   });
   P.items = items;
-  const SPRING = 0.018, DAMP = 0.82;
+  // 느슨한 스프링(멀리 안 흩어지게) + 큰 흔들림(통통 튀게) + 충돌/벽 튕김. 씨드 홈이라 재진입해도 동일.
+  const SPRING = 0.0035, DAMP = 0.93, WANDER = 0.14;
   let t = 0;
   function step() {
     const its = P.items, n = its.length;
@@ -7267,29 +7270,33 @@ function startShapesPhysics(field, viewport) {
     for (let i = 0; i < n; i++) {
       const b = its[i];
       if (b.el.classList.contains('dragging')) continue;
-      // 홈으로 당기는 스프링 + 감쇠 → 항상 제자리(최신 위 순서)로 복귀. 던져도 슥 돌아옴.
-      b.vx += (b.hx - b.x) * SPRING;
+      b.vx += (b.hx - b.x) * SPRING;                       // 홈 주변에 느슨히 묶기
       b.vy += (b.hy - b.y) * SPRING;
-      // 가벼운 바브 — 살아있는 느낌(제자리 주변 작은 흔들림)
-      b.vx += Math.cos(t * 0.8 + b.ph) * 0.03;
-      b.vy += Math.sin(t * 1.1 + b.ph) * 0.03;
+      b.vx += Math.cos(t * 1.3 + b.ph) * WANDER;           // 활기찬 흔들림 — 통통 튀는 느낌
+      b.vy += Math.sin(t * 1.6 + b.ph) * WANDER;
       b.vx *= DAMP; b.vy *= DAMP;
       b.x += b.vx; b.y += b.vy;
-      // 화면 밖으로 안 나감
-      if (b.x < 0) { b.x = 0; if (b.vx < 0) b.vx = -b.vx * 0.5; }
-      else if (b.x + b.w > BW) { b.x = BW - b.w; if (b.vx > 0) b.vx = -b.vx * 0.5; }
-      if (b.y < 0) { b.y = 0; if (b.vy < 0) b.vy = -b.vy * 0.5; }
-      else if (b.y + b.h > BH) { b.y = BH - b.h; if (b.vy > 0) b.vy = -b.vy * 0.5; }
+      // 벽에서 튕김(반사, 거의 안 죽음)
+      if (b.x < 0) { b.x = 0; b.vx = Math.abs(b.vx) * 0.85; }
+      else if (b.x + b.w > BW) { b.x = BW - b.w; b.vx = -Math.abs(b.vx) * 0.85; }
+      if (b.y < 0) { b.y = 0; b.vy = Math.abs(b.vy) * 0.85; }
+      else if (b.y + b.h > BH) { b.y = BH - b.h; b.vy = -Math.abs(b.vy) * 0.85; }
     }
-    // 충돌 분리(겹침 방지) — 주로 던졌을 때. 평소엔 홈 간격이 충분.
+    // 서로 부딪히면 튕김 — 분리 + 법선 방향 속도 교환(탄성)
     for (let i = 0; i < n; i++) {
       const a = its[i]; if (a.el.classList.contains('dragging')) continue;
       for (let j = i + 1; j < n; j++) {
         const c = its[j]; if (c.el.classList.contains('dragging')) continue;
         const acx = a.x + a.w / 2, acy = a.y + a.h / 2, ccx = c.x + c.w / 2, ccy = c.y + c.h / 2;
         let dx = ccx - acx, dy = ccy - acy; const dist = Math.hypot(dx, dy) || 0.01;
-        const min = (a.r + c.r) * 0.86;
-        if (dist < min) { const ov = (min - dist) / 2, nx = dx / dist, ny = dy / dist; a.x -= nx * ov; a.y -= ny * ov; c.x += nx * ov; c.y += ny * ov; }
+        const min = (a.r + c.r) * 0.88;
+        if (dist < min) {
+          const ov = (min - dist) / 2, nx = dx / dist, ny = dy / dist;
+          a.x -= nx * ov; a.y -= ny * ov; c.x += nx * ov; c.y += ny * ov;
+          const avn = a.vx * nx + a.vy * ny, cvn = c.vx * nx + c.vy * ny, diff = cvn - avn;
+          a.vx += diff * nx; a.vy += diff * ny;            // 속도 교환 → 서로 튕김
+          c.vx -= diff * nx; c.vy -= diff * ny;
+        }
       }
     }
     for (let i = 0; i < n; i++) { const b = its[i]; if (b.el.classList.contains('dragging')) continue; b.el.style.left = b.x + 'px'; b.el.style.top = b.y + 'px'; }
