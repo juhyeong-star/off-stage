@@ -7179,8 +7179,8 @@ function renderShapes() {
 
   // .shapes-universe = 뷰포트 크기 스크롤 창, .universe-field = 그보다 큰 2D 필드(사방으로 큼)
   appContent.innerHTML = `
-    <div class="page-intro reveal">${_i18n('우주 탐색 피드', 'Explore the Universe')}</div>
-    <div class="shapes-subtitle reveal">${_i18n('탭=재생 · 끌어서 휙 던지기 · 벽에서 팅김', 'Tap = play · Drag = throw · Bounce off walls')}</div>
+    <div class="page-intro">${_i18n('우주 탐색 피드', 'Explore the Universe')}</div>
+    <div class="shapes-subtitle">${_i18n('탭=재생 · 끌어서 휙 던지기 · 벽에서 팅김', 'Tap = play · Drag = throw · Bounce off walls')}</div>
     <div class="shapes-universe" id="shapes-scroll">
       <div class="universe-field" style="width:100%; height:${_fieldH}px;">
         ${decoHtml}

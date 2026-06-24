@@ -19064,9 +19064,31 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
    테스트 디자인 적용 #3 — 발견 헤더(제목+부제) + 플레이바 테스트룩 + 자켓 토글 제거
    2026-06-24.
    ============================================================ */
-/* 발견 헤더 — 테스트처럼: 제목 18px 굵게 + 11px 회색 부제(물리 안내) */
-body.is-shapes-route .page-intro { font-size: 18px; font-weight: 700; margin-bottom: 3px; }
-.shapes-subtitle { font-size: 11px; color: rgba(255, 255, 255, 0.4); margin: 0 0 10px; line-height: 1.3; }
+/* 발견 헤더 — 테스트처럼: 제목 18px 굵게(좌측) + 11px 부제. reveal 제거했지만 opacity 강제(안 보이던 버그 방지) */
+body.is-shapes-route .page-intro { font-size: 18px !important; font-weight: 700 !important; opacity: 1 !important; }
+.shapes-subtitle { font-size: 11px; color: rgba(255, 255, 255, 0.55); line-height: 1.3; opacity: 1 !important; }
+@media (max-width: 768px) {
+  /* 발견 모바일 헤더 = 테스트 배열: [off-stage 워드마크(좌) ... 가이드/언어(우)] 한 줄,
+     그 아래 제목, 그 아래 부제. (탭바는 맨 위 그대로) */
+  body.is-shapes-route .beta-wordmark-float {
+    display: inline-flex !important;
+    position: fixed !important;
+    top: calc(var(--mobile-tab-h, 56px) + env(safe-area-inset-top, 0px) + 8px) !important;
+    left: 16px !important; right: auto !important; bottom: auto !important;
+    z-index: 60; transform: none !important;
+  }
+  body.is-shapes-route .page-intro {
+    text-align: left !important; left: 16px !important; right: 16px !important; max-width: none !important;
+    top: calc(var(--mobile-tab-h, 56px) + env(safe-area-inset-top, 0px) + 44px) !important;
+  }
+  body.is-shapes-route .shapes-subtitle {
+    position: fixed !important; z-index: 50;
+    top: calc(var(--mobile-tab-h, 56px) + env(safe-area-inset-top, 0px) + 70px) !important;
+    left: 16px !important; right: 16px !important; margin: 0 !important;
+    text-align: left !important; pointer-events: none;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
+  }
+}
 /* 자켓 토글 흔적 제거(마크업은 이미 뺐지만 안전망) */
 .discover-mode-toggle { display: none !important; }
 
