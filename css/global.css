@@ -19110,7 +19110,7 @@ body.is-shapes-route .page-intro { font-size: 18px !important; font-weight: 700 
 .shapes-universe .floating-shape .shape-text {
   font-family: 'Pretendard', 'Inter', sans-serif !important;
   font-weight: 800;
-  font-size: 12px !important;
+  font-size: 10px !important;
   line-height: 1.25 !important;
 }
 /* 자켓 토글 흔적 제거(마크업은 이미 뺐지만 안전망) */
