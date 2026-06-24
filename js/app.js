@@ -3381,6 +3381,9 @@ function _threadPostHtml(p) {
           </div>` : '';
   // 업로드 + — 각 글 미디어 왼쪽 위 (아래 FAB 대체, 사용자 요청).
   const plusBtn = `<button class="feed-plus" type="button" onclick="event.stopPropagation(); window.openThreadComposer && window.openThreadComposer()" aria-label="${_t('올리기', 'Upload')}" title="${_t('올리기', 'Upload')}"><i class="ri-add-line"></i></button>`;
+  // 작성자 옆 팔로우 버튼 (내 글 제외).
+  const _following = (typeof window._isFollowingName === 'function') && window._isFollowingName(p.name);
+  const followBtn = (!p.isMine && p.name) ? `<button class="feed-follow-btn${_following ? ' following' : ''}" type="button" data-author="${escAttr(p.name)}" data-author-id="${escAttr(p.authorId || '')}" onclick="event.stopPropagation(); _feedToggleFollow(this)">${_following ? _t('팔로잉', 'Following') : _t('팔로우', 'Follow')}</button>` : '';
   return `
     <div class="feed-post" data-note-id="${p.id}">
       <div class="${mediaCls}" style="${mediaStyle}">
@@ -3401,6 +3404,7 @@ function _threadPostHtml(p) {
             <img class="feed-avatar${linkCls}" src="${p.avatar}" alt="" loading="lazy" ${nameAttr} onclick="_threadGoArtist(this)">
             <span class="feed-author-name${linkCls}" ${nameAttr} onclick="_threadGoArtist(this)">${esc(p.name)}</span>
             <span class="feed-author-time">· ${esc(p.time)}</span>
+            ${followBtn}
             <button class="feed-post-more" aria-label="${_t('더보기', 'More')}" onclick="_threadPostMenu('${p.id}', ${p.isMine ? 'true' : 'false'})"><i class="ri-more-fill"></i></button>
           </div>
           ${p.text ? `<div class="feed-lyrics">${esc(p.text)}</div>` : ''}
@@ -3520,7 +3524,12 @@ async function renderWall() {
     : (n.authorAvatar || (n.authorId && _avById[n.authorId]) || _avByName[n.author] || ('https://i.pravatar.cc/150?u=' + (n.authorId || n.author || n.id)));
   window.__resolveNoteAvatar = _resolveAuthorAvatar;   // 댓글 시트 등에서 재사용
   const notes = (db.notes || []).slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-  const posts = notes.map(n => ({
+  // 전체/팔로잉 필터 — 팔로잉이면 내가 팔로우한 작성자 글만.
+  const _feedFilter = window.__feedFilter || 'all';
+  const _filteredNotes = (_feedFilter === 'following' && typeof window._isFollowingName === 'function')
+    ? notes.filter(n => window._isFollowingName(n.author))
+    : notes;
+  const posts = _filteredNotes.map(n => ({
     id: n.id,
     name: n.author || '익명',
     avatar: _resolveAuthorAvatar(n),
@@ -3531,6 +3540,7 @@ async function renderWall() {
     track: n.trackId ? _threadTrackOf(n.trackId) : null,
     comments: (n.comments || []).length,
     isMine: !!(myId && n.authorId === myId),
+    authorId: n.authorId || null,
     collected: !!(window.Walls && window.Walls.isBookmarked && window.Walls.isBookmarked(n.id)),
     liked: _isNoteLiked(n.id),
     likeCount: (window.Walls && window.Walls.favoriteCount) ? window.Walls.favoriteCount(n.id) : 0
@@ -3539,9 +3549,15 @@ async function renderWall() {
   const empty = posts.length === 0 ? `
       <div class="thread-empty">
         <i class="ri-quill-pen-line"></i>
-        <p>${_i18n('아직 주절주절이 없어요.<br>첫 글을 남겨보세요!', 'Nothing here yet.<br>Be the first to post!')}</p>
+        <p>${_feedFilter === 'following'
+          ? _i18n('팔로잉한 사람의 글이 없어요.<br>아티스트를 팔로우해보세요!', 'No posts from people you follow.<br>Follow some artists!')
+          : _i18n('아직 주절주절이 없어요.<br>첫 글을 남겨보세요!', 'Nothing here yet.<br>Be the first to post!')}</p>
       </div>` : '';
   appContent.innerHTML = `
+    <div class="feed-filter">
+      <button class="feed-filter-btn ${_feedFilter === 'all' ? 'on' : ''}" type="button" onclick="setFeedFilter('all')">${_t('전체', 'All')}</button>
+      <button class="feed-filter-btn ${_feedFilter === 'following' ? 'on' : ''}" type="button" onclick="setFeedFilter('following')">${_t('팔로잉', 'Following')}</button>
+    </div>
     <div id="feed-reels" class="feed-reels">
       ${posts.map(_threadPostHtml).join('')}
       ${empty}
@@ -3580,6 +3596,25 @@ window._wireFeedExpanders = function () {
         btn.textContent = open ? _t('접기', 'Less') : _t('더보기', 'More');
       });
       el.insertAdjacentElement('afterend', btn);
+    }
+  });
+};
+// 전체/팔로잉 필터 토글 — 모드 저장 후 피드 다시 그림.
+window.setFeedFilter = function (mode) {
+  window.__feedFilter = mode;
+  if (typeof renderWall === 'function') renderWall();
+};
+// 피드 작성자 팔로우 토글 — 토글 후 같은 작성자 버튼 전부 갱신.
+window._feedToggleFollow = async function (btn) {
+  const name = btn.getAttribute('data-author');
+  const aid = btn.getAttribute('data-author-id') || null;
+  if (!name) return;
+  try { if (window.toggleFollowArtist) await window.toggleFollowArtist(aid || null, name); } catch (_) {}
+  const now = (typeof window._isFollowingName === 'function') && window._isFollowingName(name);
+  document.querySelectorAll('.feed-follow-btn').forEach(function (b) {
+    if (b.getAttribute('data-author') === name) {
+      b.classList.toggle('following', !!now);
+      b.textContent = now ? _t('팔로잉', 'Following') : _t('팔로우', 'Follow');
     }
   });
 };

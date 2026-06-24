@@ -19407,6 +19407,23 @@ body.is-universe-route .my-universe {
 #feed-reels .feed-more-btn { align-self: flex-start; background: none; border: none; color: rgba(255,255,255,0.55); font-size: 11px; font-weight: 700; padding: 2px 0 0; cursor: pointer; }
 #feed-reels .thread-post-translation { font-size: 12.5px; line-height: 1.5; color: rgba(255,255,255,0.72); margin-top: 4px; }
 #feed-reels .thread-post-translation .tpt-label { display: inline-block; font-size: 10px; font-weight: 700; color: #8b5cf6; margin-right: 6px; }
+/* 전체/팔로잉 필터 바 — 피드 상단 가운데 고정 */
+.feed-filter {
+  position: fixed; z-index: 30;
+  top: calc(var(--mobile-tab-h, 96px) + env(safe-area-inset-top, 0px) + 12px);
+  left: 50%; transform: translateX(-50%);
+  display: flex; gap: 3px; padding: 3px;
+  background: rgba(10,6,20,0.55); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.14); border-radius: 999px;
+}
+.feed-filter-btn { background: none; border: none; color: rgba(255,255,255,0.62); font-size: 12px; font-weight: 700; padding: 6px 18px; border-radius: 999px; cursor: pointer; }
+.feed-filter-btn.on { background: #fff; color: #111; }
+/* 작성자 옆 팔로우 버튼 (팔로우=흰 채움 / 팔로잉=흐린 아웃라인) */
+#feed-reels .feed-follow-btn { margin-left: 8px; flex-shrink: 0; background: #fff; color: #111; border: none; font-size: 11px; font-weight: 800; padding: 4px 13px; border-radius: 999px; cursor: pointer; }
+#feed-reels .feed-follow-btn.following { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.28); }
+/* 액션 아이콘(하트·댓글·공유·북마크) — 우측 세로 중앙쯤으로 올림 (사용자 요청) */
+#feed-reels .feed-actions-col { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); z-index: 4; justify-content: center; padding-bottom: 0; }
+#feed-reels .fa-act { text-shadow: 0 1px 6px rgba(0,0,0,0.6); }
 /* 여러 사진 — 인스타식 가로 스와이프 캐러셀 + 점/카운터 */
 #feed-reels .feed-carousel { position: absolute; inset: 0; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
 #feed-reels .feed-carousel::-webkit-scrollbar { display: none; }
