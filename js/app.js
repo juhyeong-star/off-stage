@@ -3364,10 +3364,11 @@ function _threadPostHtml(p) {
   } else if (hasImg) {
     mediaInner = `<img class="feed-bg" src="${images[0]}" alt="" loading="lazy">`;
   } else if (p.track) {
-    // 사용자 요청: 디스크 아래 = 가수이름·제목, 바닥 헤드라인 = #태그 (서로 swap).
+    // 사용자 요청: 디스크 왼쪽 + 오른쪽에 #태그(세로), 그 아래에 가수·제목.
+    const _tagsHtml = discTags.length ? `<div class="feed-disc-tags">${discTags.map(t => `<span>#${esc(t)}</span>`).join('')}</div>` : '';
     mediaInner = `<div class="feed-disc-wrap" onclick="event.stopPropagation(); playTrack('${p.track.id}','wall')">`
-      + `<div class="feed-disc" style="--disc:${postColor}"><i class="ri-play-fill"></i></div>`
-      + `<div class="feed-disc-meta"><div class="feed-disc-title">${esc(p.track.title)}</div><div class="feed-disc-artist">${esc(p.track.artist || p.name)}</div></div>`
+      + `<div class="feed-disc-row"><div class="feed-disc" style="--disc:${postColor}"><i class="ri-play-fill"></i></div>${_tagsHtml}</div>`
+      + `<div class="feed-disc-meta"><div class="feed-disc-artist">${esc(p.track.artist || p.name)}</div><div class="feed-disc-title">${esc(p.track.title)}</div></div>`
       + `</div>`;
   } else {
     mediaInner = '';
@@ -3391,7 +3392,7 @@ function _threadPostHtml(p) {
         <div class="feed-media-grad"></div>
         ${plusBtn}
         ${(!hasImg && p.track)
-          ? `<div class="feed-headline feed-headline-tags" style="color:${postColor}">${discTags.map(t => `<span>#${esc(t)}</span>`).join('')}</div>`
+          ? ''
           : `<div class="feed-headline">
           <div class="feed-hl-sub${linkCls}" ${nameAttr} onclick="_threadGoArtist(this)">${esc(p.name)}</div>
           ${p.track ? `<div class="feed-hl-title" style="color:${postColor}">${esc(p.track.title)}</div>` : ''}
