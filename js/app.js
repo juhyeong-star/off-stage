@@ -1696,9 +1696,9 @@ function navigateTo(route) {
       // Pseudo-route: jump to the current user's own /artist:<name> page
       case 'my-artist': {
         const _u = window.__currentUser || window.DB.get().currentUser;
-        if (_u && _u.name) navigateTo('artist:' + encodeURIComponent(_u.name));
+        if (_u && _u.name) { currentView = 'myhome'; renderMyHome(); }
         else navigateTo('auth');
-        return;
+        break;
       }
       // 내 페이지 비활성화(사용자 요청) — 폴더는 내 우주로 통합됨.
       // profile/me/studio 로 들어와도 항상 도형으로 돌려보낸다.
@@ -12620,6 +12620,270 @@ window.closeStoryViewer = function () {
 };
 
 // === Active artist profile (restored) ===
+// ===================== MY HOME (아티스트 홈 — 데모 타임라인) =====================
+// my-artist 라우트 전용. 사용자가 공유한 "SMHS Artist Home Redesign" 디자인을
+// 앱 스택(자체 CSS + Remixicon + Nanum Pen Script)으로 재현하고 실데이터를 연결한다.
+// 디자인의 폰목업 크롬(상태바/가짜 헤더/하단 플레이어)은 빼고, 곡 재생은 앱의 실제
+// 플레이어(playTrack)로 위임 — 이중 플레이어 방지.
+window.__mhState = window.__mhState || {};   // { [projectId]: 선택된 데모 idx }
+
+function _mhYM(d) {
+  const dt = new Date(d || 0);
+  if (!dt.getTime()) return '';
+  return dt.getFullYear() + '.' + String(dt.getMonth() + 1).padStart(2, '0');
+}
+
+window.mhSelectDemo = function (pid, idx, ev) {
+  if (ev && ev.stopPropagation) ev.stopPropagation();
+  window.__mhState[pid] = idx;
+  try { renderMyHome(); } catch (e) { console.warn('[myhome] reselect', e); }
+};
+
+function _mhStyle() {
+  return `<style id="mh-style">
+.mh-page{position:relative;min-height:100%;padding:56px 0 calc(var(--player-height,60px) + env(safe-area-inset-bottom) + 28px);background:radial-gradient(circle at 50% 8%,#170b3b 0%,#050213 58%,#03000d 100%);color:#fff;font-family:'Pretendard',sans-serif;overflow-x:hidden;}
+.mh-page *{box-sizing:border-box;}
+.mh-stars{position:absolute;inset:0;pointer-events:none;opacity:.26;background-image:radial-gradient(#fff,rgba(255,255,255,.2) 1.4px,transparent 38px),radial-gradient(#fff,rgba(255,255,255,.14) 1px,transparent 28px);background-size:340px 340px,220px 220px;background-position:0 0,40px 60px;}
+.mh-inner{position:relative;z-index:1;padding:0 18px;}
+.mh-hand{font-family:'Nanum Pen Script',cursive;line-height:1.05;}
+.mh-glass{background:rgba(255,255,255,.035);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.07);}
+.mh-prof{display:flex;flex-direction:column;align-items:center;text-align:center;}
+.mh-avatar{position:relative;width:72px;height:72px;border-radius:50%;padding:2px;background:linear-gradient(135deg,#facc15,#7c3aed);margin-bottom:10px;box-shadow:0 8px 24px rgba(124,58,237,.18);}
+.mh-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
+.mh-avatar .mh-dot{position:absolute;bottom:1px;right:1px;width:14px;height:14px;background:#10b981;border:2px solid #03000d;border-radius:50%;}
+.mh-name-row{display:flex;align-items:center;gap:8px;}
+.mh-name{font-size:21px;font-weight:800;margin:0;}
+.mh-editbtn{font-size:11px;font-weight:700;color:#fff;background:rgba(124,58,237,.9);padding:4px 11px;border-radius:999px;display:inline-flex;align-items:center;gap:3px;border:none;cursor:pointer;}
+.mh-bio{font-size:11.5px;color:rgba(255,255,255,.55);max-width:280px;line-height:1.55;margin:6px 0 0;}
+.mh-stats{display:flex;gap:6px;margin-top:13px;flex-wrap:wrap;justify-content:center;}
+.mh-stat{font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);}
+.mh-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:14px;justify-content:center;}
+.mh-tag{font-size:10px;color:rgba(255,255,255,.6);background:rgba(255,255,255,.05);padding:4px 11px;border-radius:999px;}
+.mh-fancard{width:100%;margin-top:16px;background:#fbbf24;color:#000;border-radius:18px;padding:11px 14px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 8px 24px rgba(251,191,36,.08);}
+.mh-fancard .lbl{font-size:8px;font-weight:800;color:rgba(0,0,0,.5);letter-spacing:.12em;text-transform:uppercase;display:block;line-height:1;}
+.mh-fancard .val{font-size:13px;font-weight:900;display:block;margin-top:2px;}
+.mh-fancard .rgt{width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center;color:#000;font-size:15px;}
+.mh-sec{padding:0 18px;margin-top:24px;position:relative;z-index:1;}
+.mh-sec-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;gap:8px;}
+.mh-sec-title{font-size:12px;font-weight:700;color:rgba(255,255,255,.42);display:flex;align-items:center;gap:5px;margin:0;}
+.mh-sec-sub{font-size:9px;color:rgba(255,255,255,.3);margin:0;text-align:right;}
+.mh-cover{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;padding:6px;text-align:center;flex-shrink:0;position:relative;overflow:hidden;}
+.mh-cover.big{width:64px;height:64px;border-radius:18px;}
+.mh-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,0,0,.18),transparent);}
+.mh-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;}
+.mh-cover .ln{color:#000;font-weight:800;font-size:16px;position:relative;z-index:2;}
+.mh-latest{border-radius:26px;padding:14px;display:flex;gap:12px;align-items:center;justify-content:space-between;border:1px solid rgba(244,63,94,.2);box-shadow:0 12px 30px rgba(244,63,94,.05);}
+.mh-latest .meta{display:flex;gap:12px;align-items:center;min-width:0;}
+.mh-chip-demo{font-size:9px;background:rgba(244,63,94,.2);color:#fda4af;font-weight:700;padding:1px 6px;border-radius:6px;}
+.mh-play{width:40px;height:40px;border-radius:50%;background:#1db954;color:#000;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:18px;transition:transform .15s;}
+.mh-play:active{transform:scale(.94);}
+.mh-track{border-radius:28px;padding:14px;border:1px solid rgba(255,255,255,.05);margin-bottom:11px;}
+.mh-track-head{display:flex;align-items:center;gap:12px;}
+.mh-state{font-size:8px;font-weight:800;padding:1px 6px;border-radius:6px;border:1px solid;white-space:nowrap;}
+.mh-track-title{font-size:12px;font-weight:900;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mh-track-note{font-size:10px;color:rgba(255,255,255,.5);margin:4px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mh-pbtn{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.8);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:15px;transition:transform .15s;}
+.mh-pbtn:active{transform:scale(.9);}
+.mh-nodes{margin-top:11px;padding:11px 8px 0;border-top:1px solid rgba(255,255,255,.05);display:flex;align-items:center;justify-content:space-between;}
+.mh-node{display:flex;flex-direction:column;align-items:center;cursor:pointer;flex-shrink:0;}
+.mh-node-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;transition:all .25s;}
+.mh-node-date{font-size:8px;margin-top:4px;transition:color .2s;}
+.mh-node-bar{flex:1;height:1.5px;background:rgba(255,255,255,.1);margin:-12px 4px 0;}
+.mh-empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:48px 0;}
+@media(min-width:769px){.mh-page{max-width:520px;margin:0 auto;}}
+</style>`;
+}
+
+function renderMyHome() {
+  const appContent = document.getElementById('app-content');
+  if (!appContent) return;
+  const db = window.DB.get();
+  const me = window.__currentUser || (db && db.currentUser);
+  if (!me || !me.name) { navigateTo('auth'); return; }
+  const myName = me.name;
+  const myId = me.id;
+  const esc = (s) => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const COLORS = ['#FF2EA0','#00E5FF','#B14BFF','#FF9100','#76FF03','#FF4D6D','#2EE6D6','#9D4EDD','#FFD166','#4D9DFF'];
+  const colorFor = (s) => COLORS[(_hashSeed(s || 'x') >>> 0) % COLORS.length];
+
+  const myTracks = (db.tracks || []).filter(t => t && (t.artist === myName || (myId && t.artistId === myId)));
+  const avatar = me.avatar || (myTracks[0] && myTracks[0].artistAvatar) || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(myName));
+  const bio = me.bio || _t('아직 소개가 없어요. 프로필 편집에서 한 줄 남겨보세요 🎧', 'No bio yet — add a line in profile settings 🎧');
+  const cleanTitle = (s) => (s || '무제').replace(/\s*\(.*\)$/, '');
+
+  // 프로젝트(곡) 단위로 묶기 → 각 프로젝트의 versions = 데모 타임라인
+  const projMap = {};
+  myTracks.forEach(t => {
+    const pid = t.projectId || ('proj_' + t.id);
+    (projMap[pid] = projMap[pid] || []).push(t);
+  });
+
+  const tracks = Object.entries(projMap).map(([pid, versions]) => {
+    const vs = versions.slice().sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    const hasFinal = vs.some(v => v && !v.isDemo && v.version === 'final');
+    const rep = vs.find(v => !v.isDemo) || vs[vs.length - 1];
+    const title = cleanTitle(rep.title);
+    const demos = vs.map((v, i) => {
+      const m = /^demo(\d+)$/.exec(v.version || '');
+      const isFinal = (v.version === 'final' && !v.isDemo);
+      return {
+        id: v.id,
+        label: isFinal ? '★' : (m ? ('D' + m[1]) : ('D' + (i + 1))),
+        date: _mhYM(v.createdAt),
+        verLabel: v.versionLabel || (isFinal ? _t('정규 발매','Release') : ('Demo ' + (m ? m[1] : (i + 1)))),
+        desc: v.artistNote || v.description || '',
+        isFinal
+      };
+    });
+    let idx = window.__mhState[pid];
+    if (idx == null || idx >= demos.length || idx < 0) idx = demos.length - 1;
+    const lastTime = new Date(vs[vs.length - 1].createdAt || 0).getTime();
+    return { pid, title, hasFinal, color: colorFor(title), cover: rep.cover || '', demos, currentDemoIdx: idx, lastTime };
+  }).sort((a, b) => b.lastTime - a.lastTime);
+
+  // 통계
+  const albumCount = tracks.length;
+  const demoTotal = myTracks.filter(t => t.isDemo).length;
+  const releasedCount = tracks.filter(t => t.hasFinal).length;
+  const times = myTracks.map(t => new Date(t.createdAt || 0).getTime()).filter(n => n > 0);
+  const sinceLabel = times.length ? _mhYM(new Date(Math.min(...times))) : '';
+
+  // 태그 클라우드 (트랙 태그 집계 상위 4)
+  const tagCount = {};
+  myTracks.forEach(t => (Array.isArray(t.tags) ? t.tags : []).forEach(tg => { if (tg) tagCount[tg] = (tagCount[tg] || 0) + 1; }));
+  const topTags = Object.keys(tagCount).sort((a, b) => tagCount[b] - tagCount[a]).slice(0, 4);
+
+  // 최신 활성 데모
+  const sortedDesc = myTracks.slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  const latest = sortedDesc.find(t => t.isDemo) || sortedDesc[0] || null;
+
+  const coverTile = (cls, color, cover, title) => {
+    if (cover) return `<div class="mh-cover ${cls}" style="background:${color}"><img src="${esc(cover)}" alt=""></div>`;
+    return `<div class="mh-cover ${cls}" style="background:${color}"><span class="mh-hand ln">${esc((title || '').slice(0, 4))}</span></div>`;
+  };
+
+  // === 최신 활성 데모 위젯 ===
+  let latestHtml = '';
+  if (latest) {
+    const lt = cleanTitle(latest.title);
+    const lc = colorFor(lt);
+    const lLabel = latest.versionLabel || (latest.isDemo ? 'DEMO' : 'MASTER');
+    latestHtml = `
+      <div class="mh-sec">
+        <div class="mh-sec-head">
+          <h2 class="mh-sec-title"><i class="ri-fire-fill" style="color:#f43f5e"></i> ${_t('최신 활성 데모','Latest active demo')}</h2>
+        </div>
+        <div class="mh-latest mh-glass">
+          <div class="meta">
+            ${coverTile('big', lc, latest.cover, lt)}
+            <div style="min-width:0;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span class="mh-chip-demo">${esc(lLabel)}</span>
+                <span style="font-size:9px;color:rgba(255,255,255,.4);">${_mhYM(latest.createdAt)}</span>
+              </div>
+              <h3 style="font-size:14px;font-weight:900;margin:4px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(lt)}</h3>
+              <p style="font-size:10px;color:rgba(255,255,255,.5);margin:2px 0 0;">${esc(myName)}</p>
+            </div>
+          </div>
+          <button class="mh-play" onclick="playTrack('${latest.id}')" aria-label="play"><i class="ri-play-fill"></i></button>
+        </div>
+      </div>`;
+  }
+
+  // === 음악 히스토리 ===
+  let histHtml = '';
+  if (tracks.length) {
+    const cards = tracks.map(tr => {
+      const cur = tr.demos[tr.currentDemoIdx] || tr.demos[tr.demos.length - 1];
+      const stateLabel = tr.hasFinal ? _t('발매완료','Released') : _t('미발매','Unreleased');
+      const stBg = tr.hasFinal ? 'rgba(16,185,129,.15)' : 'rgba(255,255,255,.05)';
+      const stCol = tr.hasFinal ? '#34d399' : 'rgba(255,255,255,.6)';
+      const stBd = tr.hasFinal ? 'rgba(16,185,129,.2)' : 'rgba(255,255,255,.1)';
+      const nodes = tr.demos.map((d, i) => {
+        const on = (i === tr.currentDemoIdx);
+        return `<div class="mh-node ${on ? 'active' : ''}" onclick="mhSelectDemo('${tr.pid}',${i},event)">`
+          + `<div class="mh-node-dot" style="background:${on ? tr.color : 'rgba(255,255,255,.15)'};color:${on ? '#000' : 'rgba(255,255,255,.7)'};box-shadow:${on ? '0 0 10px ' + tr.color : 'none'};">${d.label}</div>`
+          + `<span class="mh-node-date" style="color:${on ? '#fff' : 'rgba(255,255,255,.4)'};">${d.date}</span></div>`;
+      }).join('<div class="mh-node-bar"></div>');
+      return `
+        <div class="mh-track mh-glass">
+          <div class="mh-track-head">
+            ${coverTile('', tr.color, tr.cover, tr.title)}
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span class="mh-state" style="background:${stBg};color:${stCol};border-color:${stBd};">${stateLabel}</span>
+                <h3 class="mh-track-title">${esc(tr.title)}</h3>
+              </div>
+              <p class="mh-track-note"><strong style="color:${tr.color};">${esc(cur.verLabel)} ${_t('에디션','edit')}</strong>${cur.desc ? ' · ' + esc(cur.desc) : ''}</p>
+            </div>
+            <button class="mh-pbtn" onclick="playTrack('${cur.id}')" aria-label="play"><i class="ri-play-fill"></i></button>
+          </div>
+          <div class="mh-nodes">${nodes}</div>
+        </div>`;
+    }).join('');
+    histHtml = `
+      <div class="mh-sec">
+        <div class="mh-sec-head">
+          <h2 class="mh-sec-title"><i class="ri-music-2-line" style="color:#a78bfa"></i> ${_t('음악 히스토리','Music history')} (${tracks.length})</h2>
+          <p class="mh-sec-sub">${_t('데모 단계를 탭해 들어보세요','Tap a demo stage to listen')}</p>
+        </div>
+        ${cards}
+      </div>`;
+  } else {
+    histHtml = `
+      <div class="mh-sec">
+        <div class="mh-empty">
+          <i class="ri-disc-line" style="font-size:32px;opacity:.4;"></i>
+          <p style="margin:10px 0 0;font-size:13px;color:rgba(255,255,255,.6);">${_t('아직 올린 곡이 없어요','No tracks yet')}</p>
+          <button class="mh-editbtn" style="margin-top:12px;" onclick="navigateTo('upload')"><i class="ri-add-line"></i> ${_t('곡 올리기','Upload a track')}</button>
+        </div>
+      </div>`;
+  }
+
+  const tagsHtml = topTags.length
+    ? `<div class="mh-tags">${topTags.map(tg => `<span class="mh-tag">#${esc(tg)}</span>`).join('')}</div>`
+    : '';
+
+  const fanHtml = sinceLabel ? `
+    <div class="mh-fancard">
+      <div style="display:flex;align-items:center;gap:8px;text-align:left;">
+        <i class="ri-heart-3-fill" style="color:#e11d48;font-size:16px;"></i>
+        <div>
+          <span class="lbl">${_t('작업 타임라인','Studio timeline')}</span>
+          <span class="val">${sinceLabel} ~ Present</span>
+        </div>
+      </div>
+      <span class="rgt"><i class="ri-arrow-right-s-line"></i></span>
+    </div>` : '';
+
+  appContent.innerHTML = `${_mhStyle()}
+    <div class="mh-page">
+      <div class="mh-stars"></div>
+      <div class="mh-inner">
+        <section class="mh-prof">
+          <div class="mh-avatar"><img src="${esc(avatar)}" alt=""><span class="mh-dot"></span></div>
+          <div class="mh-name-row">
+            <h1 class="mh-name">${esc(myName)}</h1>
+            <button class="mh-editbtn" onclick="editProfile()"><i class="ri-settings-3-line"></i> ${_t('편집','Edit')}</button>
+          </div>
+          <p class="mh-bio">${esc(bio)}</p>
+          <div class="mh-stats">
+            <span class="mh-stat" style="color:#c4b5fd;">${_t('앨범','Albums')} ${albumCount}</span>
+            <span class="mh-stat" style="color:#fcd34d;">${_t('데모','Demos')} ${demoTotal}</span>
+            <span class="mh-stat" style="color:#6ee7b7;">${_t('발매','Released')} ${releasedCount}</span>
+            ${sinceLabel ? `<span class="mh-stat" style="color:rgba(255,255,255,.4);">${esc(sinceLabel.slice(0,4))}~</span>` : ''}
+          </div>
+          ${tagsHtml}
+          ${fanHtml}
+        </section>
+        ${latestHtml}
+        ${histHtml}
+      </div>
+    </div>`;
+  window.__currentArtistName = null;
+}
+
 function renderArtistProfile(artistName) {
   // Defensive decode — if the caller passed a URL-encoded name like
   // "%EA%B9%80..." we want to display "김주형" in the header instead.
