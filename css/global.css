@@ -19476,11 +19476,14 @@ body.is-shapes-route .shapes-subtitle { display: none !important; }
 #global-player .player-cover { border-radius: 12px !important; border: 1px solid rgba(168, 132, 255, 0.22); }
 #global-player .control-btn { color: rgba(255, 255, 255, 0.6); }
 #global-player .control-btn.play-btn { color: #ffffff; }
-/* 미니바(모바일) — 테스트처럼 [아트][제목/아티스트] ... [prev][play][next] 만. 나머지는 펼치면 나옴 */
+/* 미니바(모바일) — 담기(저장/플레이리스트)·공유는 노출(사용자 요청). 셔플·볼륨만 숨김. */
 @media (max-width: 768px) {
   #global-player:not(.expanded) .swipe-grabber,
   #global-player:not(.expanded) .shuffle-btn,
-  #global-player:not(.expanded) .player-collect-btn,
-  #global-player:not(.expanded) .player-share-btn,
   #global-player:not(.expanded) .player-volume { display: none !important; }
 }
+/* 풀스크린 ±15초 구간 건너뛰기 버튼 (후렴/벌스 점프 대용) */
+.pfs-seek { position: relative; width: 42px; height: 42px; border-radius: 50%; background: transparent; border: none; color: rgba(255,255,255,.82); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+.pfs-seek i { font-size: 25px; }
+.pfs-seek b { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; font-size: 8px; font-weight: 800; pointer-events: none; }
+.pfs-seek:active { transform: scale(.9); }

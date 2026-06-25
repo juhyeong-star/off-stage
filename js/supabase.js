@@ -2028,9 +2028,17 @@
       return data;
     },
 
-    // Cheers received by an artist (for the heart wall).
+    // Cheers received by an artist (for the 응원 루프 — count + supporters).
     async fetchForArtist(artistId, limit) {
-      return []; // 응원 기능 미사용 — 비활성
+      if (!window.supabase || !artistId) return [];
+      const { data, error } = await window.supabase
+        .from('cheers')
+        .select('id, supporter_id, supporter_name, message, created_at, track_title')
+        .eq('artist_id', artistId)
+        .order('created_at', { ascending: false })
+        .limit(limit || 60);
+      if (error) { console.warn('[Cheers] fetchForArtist', error.message); return []; }
+      return data || [];
     },
 
     // Resolve an artist name → id, then fetch their cheers.

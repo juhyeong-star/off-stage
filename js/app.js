@@ -12655,6 +12655,16 @@ function _mhStyle() {
 .mh-name{font-size:21px;font-weight:800;margin:0;}
 .mh-editbtn{font-size:11px;font-weight:700;color:#fff;background:rgba(124,58,237,.9);padding:4px 11px;border-radius:999px;display:inline-flex;align-items:center;gap:3px;border:none;cursor:pointer;}
 .mh-followbtn.is-following{background:rgba(255,255,255,.1);color:rgba(255,255,255,.78);}
+.mh-cheer{border-radius:22px;padding:16px;}
+.mh-cheer-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.mh-cheer-avs{display:flex;}
+.mh-cheer-avs span{width:26px;height:26px;border-radius:50%;border:2px solid #0b0b11;margin-left:-8px;font-size:10px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;}
+.mh-cheer-avs span:first-child{margin-left:0;}
+.mh-cheer-cnt{font-size:12.5px;color:rgba(255,255,255,.7);font-weight:600;}
+.mh-cheer-cnt b{color:#fff;}
+.mh-cheer-btn{width:100%;border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;background:linear-gradient(95deg,#FB6F92,#F472B6);color:#fff;box-shadow:0 10px 24px rgba(251,111,146,.28);}
+.mh-cheer-btn:active{transform:scale(.98);}
+.mh-cheer-benefit{text-align:center;font-size:11.5px;color:rgba(255,255,255,.5);margin:11px 0 0;}
 .mh-bio{font-size:11.5px;color:rgba(255,255,255,.55);max-width:280px;line-height:1.55;margin:6px 0 0;}
 .mh-stats{display:flex;gap:6px;margin-top:13px;flex-wrap:wrap;justify-content:center;}
 .mh-stat{font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);}
@@ -12707,6 +12717,21 @@ window.mhFollow = function (btn) {
   if (!btn) return;
   try { toggleFollowArtist(btn.dataset.aid || '', btn.dataset.aname || ''); }
   catch (e) { console.warn('[myhome] follow', e); }
+};
+
+// 응원 버튼 → openCheerModal(트랙id, 제목, 아티스트) (data-속성으로 안전 전달)
+window.mhCheer = function (btn) {
+  if (!btn) return;
+  try { openCheerModal(btn.dataset.tid || '', btn.dataset.tt || '', btn.dataset.an || ''); }
+  catch (e) { console.warn('[myhome] cheer', e); }
+};
+
+// 플레이어 구간 건너뛰기 — 현재 곡 내에서 delta초 앞/뒤로 (후렴/벌스 점프 대용).
+window.playerSeek = function (delta) {
+  const a = window.audioElement;
+  if (!a || !a.duration || isNaN(a.duration)) return;
+  a.currentTime = Math.max(0, Math.min(a.duration - 0.3, (a.currentTime || 0) + delta));
+  try { if (typeof updateProgress === 'function') updateProgress(); } catch (_) {}
 };
 
 // 아티스트 홈(데모 타임라인) — 내 페이지(my-artist)와 남의 아티스트 페이지(artist:) 공용.
@@ -12817,6 +12842,23 @@ function renderArtistHome(artistName) {
       </div>`;
   }
 
+  // === 응원 루프 (청취자 디자인 — 서포터 + 응원하기) ===
+  let cheerHtml = '';
+  if (latest) {
+    const ltitle = cleanTitle(latest.title);
+    cheerHtml = `
+      <div class="mh-sec">
+        <div class="mh-cheer mh-glass">
+          <div class="mh-cheer-row">
+            <div class="mh-cheer-avs" id="mh-cheer-avs"></div>
+            <span class="mh-cheer-cnt" id="mh-cheer-cnt">${isSelf ? _t('응원을 기다리는 중 💌','Waiting for cheers 💌') : _t('첫 응원을 보내보세요','Be the first to cheer')}</span>
+          </div>
+          ${isSelf ? '' : `<button class="mh-cheer-btn" data-tid="${esc(latest.id)}" data-tt="${esc(ltitle)}" data-an="${esc(artistName)}" onclick="mhCheer(this)"><i class="ri-heart-3-fill"></i> ${_t('응원하기','Cheer')}</button>`}
+          <p class="mh-cheer-benefit">${isSelf ? _t('받은 응원이 여기 모여요','Cheers you receive gather here') : _t('응원하면 다음 데모를 가장 먼저 들어요','Cheer to hear the next demo first')}</p>
+        </div>
+      </div>`;
+  }
+
   // === 음악 히스토리 ===
   let histHtml = '';
   if (tracks.length) {
@@ -12906,9 +12948,27 @@ function renderArtistHome(artistName) {
           ${fanHtml}
         </section>
         ${latestHtml}
+        ${cheerHtml}
         ${histHtml}
       </div>
     </div>`;
+
+  // 비동기: 응원 카운트 + 서포터 아바타 채우기 (Cheers 재활성됨)
+  if (latest && window.Cheers && window.Cheers.fetchForArtistByName) {
+    Promise.resolve(window.Cheers.fetchForArtistByName(artistName, 60)).then(function (list) {
+      list = list || [];
+      const names = [], seen = {};
+      list.forEach(c => { const n = (c && c.supporter_name) || '익명'; if (!seen[n]) { seen[n] = 1; names.push(n); } });
+      const cntEl = document.getElementById('mh-cheer-cnt');
+      const avsEl = document.getElementById('mh-cheer-avs');
+      if (!cntEl) return; // 페이지가 바뀌었으면 중단
+      if (names.length) {
+        cntEl.innerHTML = `<b>${names.length}</b>${_t('명이 응원 중','cheering')}`;
+        if (avsEl) avsEl.innerHTML = names.slice(0, 5).map(n => `<span style="background:${colorFor(n)}">${esc(String(n).slice(0, 1))}</span>`).join('');
+      }
+    }).catch(() => {});
+  }
+
   window.__currentArtistName = artistName;
 }
 
