@@ -19402,7 +19402,7 @@ body.is-universe-route .my-universe {
 }
 #feed-reels .feed-plus:active { transform: scale(0.92); }
 /* 음원 글 — 곡 색 디스크 + #태그 (커버 대신, 사용자 요청) */
-#feed-reels .feed-media-disc { display: flex; flex-direction: column; }
+#feed-reels .feed-media-disc { display: flex; flex-direction: column; align-items: flex-start; }
 #feed-reels .feed-disc-wrap { flex: 1 1 auto; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 16px; padding: 0 22px; z-index: 1; cursor: pointer; }
 #feed-reels .feed-disc-row { display: flex; align-items: center; gap: 18px; }
 #feed-reels .feed-disc {

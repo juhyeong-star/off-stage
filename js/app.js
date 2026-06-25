@@ -3418,12 +3418,9 @@ function _threadPostHtml(p) {
         ${mediaInner}
         <div class="feed-media-grad"></div>
         ${plusBtn}
-        ${(!hasImg && p.track)
-          ? ''
-          : `<div class="feed-headline">
-          <div class="feed-hl-sub${linkCls}" ${nameAttr} onclick="_threadGoArtist(this)">${esc(p.name)}</div>
-          ${p.track ? `<div class="feed-hl-title" style="color:${postColor}">${esc(p.track.title)}</div>` : ''}
-        </div>`}
+        ${(p.track && hasImg)
+          ? `<div class="feed-headline"><div class="feed-hl-title" style="color:${postColor}">${esc(p.track.title)}</div></div>`
+          : ''}
         ${songChip}
       </div>
       <div class="feed-text">
