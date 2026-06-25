@@ -8962,6 +8962,14 @@ window.uwPickColor = function (el) {
   var inp = document.getElementById('up-shape-color'); if (inp) inp.value = color;
   var p = document.getElementById('uwPrev'); if (p) p.style.background = color;
 };
+// 업로드 태그 → 발견 도형 미리보기 (앞 3개를 #태그로). 도형 낙서 입력 통합(사용자 요청).
+window.uwTagsPreview = function (raw) {
+  var tags = (raw || '').split(/[#,]/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 3);
+  ['uwP1', 'uwP2', 'uwP3'].forEach(function (id, i) {
+    var e = document.getElementById(id);
+    if (e) e.textContent = tags[i] ? ('#' + tags[i]) : '';
+  });
+};
 
 function renderUpload() {
   const db = window.DB.get();
@@ -9136,7 +9144,7 @@ function renderUpload() {
         </div>
         <div class="form-group">
           <label><i class="ri-hashtag" style="color:var(--brand-color);"></i> ${_i18n('태그', 'Tags')} <span style="color:#ff6b6b;">${_i18n('(필수)', '(required)')}</span></label>
-          <input type="text" class="form-control" id="up-tags" placeholder="${_t('예: #1982년 느낌 #funky #고2 기타과 음악', 'e.g. #1982 vibe #funky #11thGradeGuitar')}" required>
+          <input type="text" class="form-control" id="up-tags" placeholder="${_t('예: #1982년 느낌 #funky #고2 기타과 음악', 'e.g. #1982 vibe #funky #11thGradeGuitar')}" oninput="window.uwTagsPreview && uwTagsPreview(this.value)" required>
           <div class="form-note">${_i18n('장르·무드·학년·연도 등 자유롭게. #은 자동으로 붙어요.', 'Genre, mood, year, etc. — # is auto-added.')}</div>
         </div>
 
@@ -9160,21 +9168,9 @@ function renderUpload() {
         </div>
 
         <hr style="border-color: var(--divider); margin: 20px 0;">
-        <h2 style="font-size: 18px; color: var(--brand-color); margin-bottom: 4px;"><i class="ri-shapes-fill"></i> ${_i18n('도형 낙서 (3줄)', 'Shape graffiti (3 lines)')} <span style="color:#ff6b6b; font-size:13px;">${_i18n('(필수)', '(required)')}</span></h2>
-        <p id="up-graffiti-note" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">${_i18n('발견에 이렇게 떠요 — 적는 대로 아래 미리보기에 바로 보여요.', 'This is how it shows on Discover — updates as you type.')}</p>
+        <h2 style="font-size: 18px; color: var(--brand-color); margin-bottom: 4px;"><i class="ri-shapes-fill"></i> ${_i18n('발견 도형 미리보기', 'Discover shape preview')}</h2>
+        <p id="up-graffiti-note" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">${_i18n('위에 적은 태그가 발견 도형에 이렇게 떠요 (앞 3개).', 'Your tags above appear on the Discover shape (first 3).')}</p>
         <div class="uw-prevwrap"><span class="uw-pcap">${_i18n('미리보기', 'Preview')}</span><div class="uw-prev" id="uwPrev" style="width:150px;height:150px;border-radius:50%;background:#FF4081;"><div class="uw-pt"><span id="uwP1"></span><span id="uwP2"></span><span id="uwP3"></span></div></div></div>
-        <div class="form-group">
-          <label>${_i18n('1줄', 'Line 1')}</label>
-          <input type="text" class="form-control" id="up-line1" placeholder="" maxlength="40" oninput="uwPrevLine('uwP1',this.value)" required>
-        </div>
-        <div class="form-group">
-          <label>${_i18n('2줄', 'Line 2')}</label>
-          <input type="text" class="form-control" id="up-line2" placeholder="" maxlength="40" oninput="uwPrevLine('uwP2',this.value)" required>
-        </div>
-        <div class="form-group">
-          <label>${_i18n('3줄', 'Line 3')}</label>
-          <input type="text" class="form-control" id="up-line3" placeholder="" maxlength="40" oninput="uwPrevLine('uwP3',this.value)" required>
-        </div>
         <!-- 도형 모양 선택 제거 — 발견 도형이 전부 '원'으로 통일됨(사용자 요청). up-shape는 circle 고정(제출/줄수제한 호환). -->
         <select class="form-control" id="up-shape" style="display:none"><option value="circle" selected>${_t('원', 'Circle')}</option></select>
         <div class="form-group">
@@ -9413,31 +9409,8 @@ function renderUpload() {
     pill: 15,     // 알약
     wide: 18      // 직사각형 — 가장 넓음
   };
-  const _graffitiLineEls = ['up-line1', 'up-line2', 'up-line3']
-    .map(id => document.getElementById(id)).filter(Boolean);
-  const shapeSelectEl = document.getElementById('up-shape');
-  const graffitiNoteEl = document.getElementById('up-graffiti-note');
-  const _nonSpaceLen = (s) => (s || '').replace(/\s+/g, '').length;
-  function applyShapeLineLimit() {
-    const shape = (shapeSelectEl && shapeSelectEl.value) || 'circle';
-    const lim = SHAPE_LINE_LIMIT[shape] || 12;
-    _graffitiLineEls.forEach(el => {
-      el.dataset.lim = String(lim);
-      el.removeAttribute('maxlength');  // 공백 제외해야 해서 HTML maxlength는 사용 X
-      // 모양을 좁은 걸로 바꿔서 한도 초과면 비공백 기준으로 끝부터 잘라준다.
-      while (_nonSpaceLen(el.value) > lim) el.value = el.value.slice(0, -1);
-      if (!el.__limWired) {
-        el.__limWired = true;
-        el.addEventListener('input', () => {
-          const cur = parseInt(el.dataset.lim || '12', 10);
-          while (_nonSpaceLen(el.value) > cur) el.value = el.value.slice(0, -1);
-        });
-      }
-    });
-    if (graffitiNoteEl) graffitiNoteEl.textContent = `메인에 뜨는 도형에 적힐 내용. 3줄 다 채워주세요. 지금 모양은 한 줄 최대 ${lim}자 (공백 제외). #은 자동. / Text on the floating shape — fill all 3 lines. Max ${lim} chars per line for this shape (excl. spaces). # auto-added.`;
-  }
-  if (shapeSelectEl) shapeSelectEl.addEventListener('change', applyShapeLineLimit);
-  applyShapeLineLimit();
+  // 도형 낙서 입력 제거 — 발견 도형은 이제 '태그 앞 3개'를 표시(태그 통합, 사용자 요청).
+  //   줄수제한/노트 덮어쓰기 셋업 불필요. 미리보기는 #up-tags 의 uwTagsPreview 가 갱신.
 
   document.getElementById('upload-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -9462,10 +9435,6 @@ function renderUpload() {
         throw new Error('곡 소개 및 코멘트를 적어주세요. (필수)');
       if (!((document.getElementById('up-tags').value || '').trim()))
         throw new Error('태그를 한 개 이상 적어주세요. (필수)');
-      if (!((document.getElementById('up-line1')?.value || '').trim())
-          || !((document.getElementById('up-line2')?.value || '').trim())
-          || !((document.getElementById('up-line3')?.value || '').trim()))
-        throw new Error('도형 낙서 3줄을 모두 적어주세요. (필수)');
       if (getUploadState().isFinal && !((document.getElementById('up-lyrics')?.value || '').trim()))
         throw new Error('발매(마스터)는 가사가 필요해요. 데모는 비워둬도 됩니다. (가사는 곡 페이지에 표시돼요)');
 
@@ -9602,7 +9571,7 @@ function renderUpload() {
           tags,
           shape: shapeEl ? shapeEl.value : 'circle',
           shapeColor: colorEl ? colorEl.value : '#FF4081',
-          lines: [_hashLine(line1), _hashLine(line2), _hashLine(line3)],
+          lines: tags.slice(0, 3).map(_hashLine),   // 도형 낙서 입력 제거 → 태그 앞 3개가 발견 도형에 표시 (태그 통합)
           // Distribution metadata (admin ZIP uses these). Empty for demos.
           distArtist,
           releaseDate,
