@@ -1545,7 +1545,7 @@ window.logout = async function () {
   // 2) Update UI right away
   try { updateHeaderAuth(); } catch (_) {}
   try { renderSidebarPlaylists(); } catch (_) {}
-  showToast('로그아웃 되었어요');
+  showToast(_t('로그아웃 되었어요', 'Signed out'));
   navigateTo('shapes');
 
   // 3) Best-effort Supabase signOut in background (don't await blocking UI)
@@ -2328,7 +2328,7 @@ window.submitArtistDiary = async function() {
     window.DB.save(db);
   }
   closeStoMini();
-  showToast('🎤 작업일지가 우리들의 벽에 올라갔어요!');
+  showToast(_t('🎤 작업일지가 우리들의 벽에 올라갔어요!', '🎤 Your work log is up on our wall!'));
   // Refresh wall if visible
   if (currentView === 'wall' && typeof renderWall === 'function') renderWall();
   if (currentView === 'profile' && typeof renderProfile === 'function') setTimeout(renderProfile, 200);
@@ -2426,7 +2426,7 @@ window.editStoForTrack = function(trackId) {
   // Save to track + localStorage
   track.stoConfig = newCfg;
   window.DB.save(db);
-  showToast('💎 SPO 설정 저장됨');
+  showToast(_t('💎 SPO 설정 저장됨', '💎 SPO settings saved'));
   // Re-open manager to show updated values
   window.openStoManager();
 };
@@ -3454,7 +3454,7 @@ window._threadShare = function (id) {
   try {
     const url = location.origin + location.pathname + '#wall';
     if (navigator.share) { navigator.share({ url }).catch(() => {}); }
-    else if (navigator.clipboard) { navigator.clipboard.writeText(url); showToast && showToast('링크 복사됐어요'); }
+    else if (navigator.clipboard) { navigator.clipboard.writeText(url); showToast && showToast(_t('링크 복사됐어요', 'Link copied')); }
   } catch (_) {}
 };
 // 번역 (테스트) — 글을 반대 언어(한↔영)로 번역해 아래에 표시. 다시 누르면 원문으로.
@@ -3764,7 +3764,7 @@ window.submitThreadPost = async function () {
     window.__threadDraft = { imageFile: null, imageData: null };
     window.__threadAttachedSong = null;
     closeThreadComposer();
-    if (typeof showToast === 'function') showToast(photoSkipped ? '글은 올렸어요 — 사진은 DB 설정(SQL) 후 올라가요' : '올렸어요 📌');
+    if (typeof showToast === 'function') showToast(photoSkipped ? _t('글은 올렸어요 — 사진은 DB 설정(SQL) 후 올라가요', 'Post is up — photos go live after DB setup (SQL)') : _t('올렸어요 📌', 'Posted 📌'));
     Promise.resolve(renderWall()).catch(e => console.warn('[thread] renderWall', e));
   } catch (e) {
     alert('올리기 실패: ' + (e.message || e));
@@ -3967,7 +3967,7 @@ window.renderArtistTestLayout = function () {
 
       <div class="atl-section-head">
         <div class="atl-section-title"><i class="ri-album-fill" style="color:var(--brand-color);"></i> 음악</div>
-        <button class="atl-more-btn" type="button" onclick="showToast && showToast('전체 음악 보기 (테스트)')">음원 더보기 <i class="ri-arrow-right-s-line"></i></button>
+        <button class="atl-more-btn" type="button" onclick="showToast && showToast(_t('전체 음악 보기 (테스트)', 'View all music (test)'))">음원 더보기 <i class="ri-arrow-right-s-line"></i></button>
       </div>
       <div class="atl-albums">
         ${albums.map(a => `
@@ -4813,7 +4813,7 @@ window.saveProfileBio = async function () {
         window.DB.save(cached);
       }
     } catch (_) {}
-    showToast('자기소개 저장됨 ✨');
+    showToast(_t('자기소개 저장됨 ✨', 'Bio saved ✨'));
     closeProfileBioModal();
     // 현재 보고 있는 아티스트 페이지가 자기 거면 다시 그려서 bio 표시 갱신
     if (currentView && currentView.startsWith('artist:')) {
@@ -5071,7 +5071,7 @@ window.submitWallNote = async function() {
     if (preview) { preview.innerHTML = ''; preview.hidden = true; }
     const panel = document.getElementById('wall-compose-panel');
     if (panel) panel.hidden = true;
-    showToast('벽에 붙었어요 📌');
+    showToast(_t('벽에 붙었어요 📌', 'Posted to the wall 📌'));
     // renderWall은 fire-and-forget — 실패해도 form 잠기는 일 없게
     if (btn) { btn.disabled = false; btn.innerHTML = '붙이기 📌'; }
     Promise.resolve(renderWall()).catch(e => console.warn('[submitWallNote] renderWall', e));
@@ -5211,7 +5211,7 @@ window.deleteWallNote = async function(noteId) {
       window.DB.deleteNote(noteId);
     }
     await renderWall();
-    showToast('삭제됐어요');
+    showToast(_t('삭제됐어요', 'Deleted'));
   } catch (e) {
     alert('삭제 실패: ' + (e.message || e));
   }
@@ -5494,7 +5494,7 @@ window.deleteNoteComment = async function(noteId, commentId) {
       const wn = window.__wallNotes.find(n => n.id === noteId);
       if (wn && Array.isArray(wn.comments)) wn.comments = wn.comments.filter(c => c.id !== commentId);
     }
-    showToast('댓글 삭제됨');
+    showToast(_t('댓글 삭제됨', 'Comment deleted'));
     // Re-open the modal to refresh the comment list, then re-render wall behind it
     openNoteDetail(noteId);
     renderWall();
@@ -5581,7 +5581,7 @@ window.submitInlineComment = async function(noteId, formEl) {
         listEl.innerHTML = ''; listEl.appendChild(line); // 최신 1개만 보이게
       }
     } catch (_) {}
-    if (typeof showToast === 'function') showToast('댓글 남겼어요 ✏');
+    if (typeof showToast === 'function') showToast(_t('댓글 남겼어요 ✏', 'Comment posted ✏'));
     // Re-render the wall to show the new comment inline. Preserve scroll.
     if (currentView === 'wall' && typeof renderWall === 'function') {
       const scrollY = window.scrollY;
@@ -6253,7 +6253,7 @@ function _addNoteToFolder(folderId, noteId) {
 window._dropNoteIntoFolder = function (noteId, folderId) {
   if (!noteId || !folderId) return;
   _addNoteToFolder(folderId, noteId);
-  if (typeof showToast === 'function') showToast('폴더에 담았어요 📌');
+  if (typeof showToast === 'function') showToast(_t('폴더에 담았어요 📌', 'Added to folder 📌'));
   // 끊김 방지 — 전체 renderUniverse() 대신 드롭된 노트만 DOM 에서 제거 +
   // 폴더 배지 카운트 surgical update. (다른 도형들 transform/움직임 보존)
   _surgicalDropCleanup({ itemSelector: `[data-note-id="${noteId}"]`, folderId });
@@ -6309,7 +6309,7 @@ window._removeFromFolder = async function (folderId, id, kind) {
       }
     } catch (e) { console.warn('[removeFromFolder]', e); }
   }
-  if (typeof showToast === 'function') showToast('폴더에서 뺐어요');
+  if (typeof showToast === 'function') showToast(_t('폴더에서 뺐어요', 'Removed from folder'));
   if (typeof renderSidebarPlaylists === 'function') renderSidebarPlaylists();
   // 보고 있던 폴더 화면 다시 그리기
   if (window.__universeFolderId === folderId && typeof _renderFolderUniverse === 'function') {
@@ -6471,7 +6471,7 @@ window.openFolderShorts = async function (playlistId, startId) {
   }
   if (!playlist) return;
   let items = _buildFolderCards(playlist);
-  if (!items.length) { if (typeof showToast === 'function') showToast('이 폴더는 비어 있어요'); return; }
+  if (!items.length) { if (typeof showToast === 'function') showToast(_t('이 폴더는 비어 있어요', 'This folder is empty')); return; }
   // 순서는 매번 무작위 — 누른 아이템을 1번으로, 그 뒤는 랜덤. (Fisher–Yates)
   for (let i = items.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -7631,12 +7631,12 @@ window._dropTrackIntoFolder = async function(trackId, folderId) {
     }
   } catch (e) {
     console.warn('[universe] dropTrackIntoFolder', e);
-    if (typeof showToast === 'function') showToast(e.message || '담기에 실패했어요');
+    if (typeof showToast === 'function') showToast(e.message || _t('담기에 실패했어요', 'Failed to add'));
   }
 
   if (ok) {
     // 수집(❤)은 그대로 유지 — 폴더에 담긴 곡은 떠다니는 우주에서만 빠진다(폴더 안에 있으니까).
-    if (typeof showToast === 'function') showToast('폴더에 담았어요 🎵');
+    if (typeof showToast === 'function') showToast(_t('폴더에 담았어요 🎵', 'Added to folder 🎵'));
     if (typeof renderSidebarPlaylists === 'function') renderSidebarPlaylists();
     // 끊김 방지 — 전체 renderUniverse() 대신 surgical 정리만.
     // 다른 도형/포스트잇 움직임/transform 그대로 보존.
@@ -9304,7 +9304,7 @@ function renderUpload() {
         if (opt.classList.contains('is-disabled')) {
           ev.preventDefault();
           ev.stopPropagation();
-          if (typeof showToast === 'function') showToast('"발매 단독" 은 준비중이에요. 곧 열려요!');
+          if (typeof showToast === 'function') showToast(_t('"발매 단독" 은 준비중이에요. 곧 열려요!', '"Release only" is coming soon. Stay tuned!'));
           return;
         }
         opt.parentElement.querySelectorAll('.upload-type-opt').forEach(o => o.classList.remove('active'));
@@ -9577,7 +9577,7 @@ function renderUpload() {
         new Promise((_, reject) => setTimeout(() => reject(new Error('DB 저장 타임아웃 (20초). RLS 정책 또는 네트워크 확인 필요.')), 20000))
       ]);
 
-      showToast(isFinal ? '발매 완료! (Released)' : '데모 업로드 완료 (Demo uploaded)');
+      showToast(isFinal ? _t('발매 완료! (Released)', 'Released!') : _t('데모 업로드 완료 (Demo uploaded)', 'Demo uploaded'));
       // refreshInto는 백그라운드 — 여기서 await하면 느릴 때 또 멈춤
       Promise.resolve(window.Tracks.refreshInto(db)).catch(e => console.warn('[upload] refreshInto bg', e));
       // 가사 → 우리들의 벽(주절주절) 자동 게시는 사용자 요청으로 비활성화.
@@ -10664,7 +10664,7 @@ window.editProfile = function () {
 
       console.log('[edit-profile] done');
       updateHeaderAuth();
-      showToast('프로필 저장 완료 ✨');
+      showToast(_t('프로필 저장 완료 ✨', 'Profile saved ✨'));
       // 저장 후 본인 아티스트 페이지로 — 새 아바타/이름이 거기 헤더에 바로 보임.
       navigateTo('artist:' + encodeURIComponent(newName || ''));
     } catch (err) {
@@ -11290,7 +11290,7 @@ window.selectDemoShape = function(trackId, projectId, shapeKey) {
     // Unpin
     track.pinned = false;
     window.DB.save(db);
-    showToast('메인 노출 해제');
+    showToast(_t('메인 노출 해제', 'Removed from main'));
   } else {
     // Unpin all other demos in this project first
     (db.tracks || []).forEach(t => {
@@ -11301,7 +11301,7 @@ window.selectDemoShape = function(trackId, projectId, shapeKey) {
     track.pinned = true;
     track.shape = shapeKey;
     window.DB.save(db);
-    showToast(`${shapeKey === 'star' ? '⭐' : shapeKey === 'circle' ? '●' : shapeKey === 'triangle' ? '▲' : shapeKey === 'diamond' ? '◆' : '🔷'} 메인 노출 도형 변경됨`);
+    showToast(_t(`${shapeKey === 'star' ? '⭐' : shapeKey === 'circle' ? '●' : shapeKey === 'triangle' ? '▲' : shapeKey === 'diamond' ? '◆' : '🔷'} 메인 노출 도형 변경됨`, `${shapeKey === 'star' ? '⭐' : shapeKey === 'circle' ? '●' : shapeKey === 'triangle' ? '▲' : shapeKey === 'diamond' ? '◆' : '🔷'} Main shape changed`));
   }
   if (typeof renderProfile === 'function' && currentView === 'profile') renderProfile();
 };
@@ -11469,7 +11469,7 @@ window.votePoll = function(trackId, optionKey) {
   if (!trackId || !optionKey) return;
   const db = window.DB.get();
   if (!db.currentUser) {
-    showToast('로그인 후 투표 가능');
+    showToast(_t('로그인 후 투표 가능', 'Sign in to vote'));
     return;
   }
   const myVotes = _getMyVotes();
@@ -11507,9 +11507,9 @@ window.votePoll = function(trackId, optionKey) {
     widget.outerHTML = renderPollWidget(track);
   }
   if (myVotes[trackId]) {
-    showToast(isBacker ? '🗳 후원자 표 반영됨 (2×)' : '🗳 표 반영됨');
+    showToast(isBacker ? _t('🗳 후원자 표 반영됨 (2×)', '🗳 Backer vote counted (2×)') : _t('🗳 표 반영됨', '🗳 Vote counted'));
   } else {
-    showToast('표 취소됨');
+    showToast(_t('표 취소됨', 'Vote canceled'));
   }
 };
 
@@ -11518,7 +11518,7 @@ window.setProjectStageHandler = async function(projectId, stage) {
   if (!window.Tracks) return;
   try {
     await window.Tracks.setProjectStage(projectId, stage);
-    showToast('단계 변경됨 ✨');
+    showToast(_t('단계 변경됨 ✨', 'Stage changed ✨'));
     // Re-render lightly: just update the timeline classes in DOM
     const box = document.querySelector(`.project-box[data-project="${projectId}"]`);
     if (box) {
@@ -11736,7 +11736,7 @@ window.submitTrackComment = async function(trackId) {
   // (deleteBtn 의 commentId 가 real id 로 정확히 들어가야 함)
   try { _refreshTrackCommentUI(trackId); } catch (_) {}
   if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '남기기'; }
-  showToast('낙서 남겼어요');
+  showToast(_t('낙서 남겼어요', 'Scribble posted'));
 };
 
 // ===================== 댓글 UI 동기 helper (single source of truth) =====================
@@ -11864,7 +11864,7 @@ window.deleteTrackComment = async function(trackId, commentId, fromModal) {
       try { window.DB.save(db); } catch (_) {}
     }
 
-    showToast('댓글 삭제됨');
+    showToast(_t('댓글 삭제됨', 'Comment deleted'));
 
     // 3) 모달 열려있으면 모달 다시 그리기 (최신 댓글 리스트로).
     //    note-detail-modal (벽 스타일) 도 같은 식으로 갱신.
@@ -11912,7 +11912,7 @@ window.toggleJoinTrack = async function(trackId) {
   try {
     const { backing } = await window.Backers.toggle(trackId);
     refreshJoinUI(trackId);
-    showToast(backing ? '참여했어요 🤝' : '참여 취소됐어요');
+    showToast(backing ? _t('참여했어요 🤝', 'Joined 🤝') : _t('참여 취소됐어요', 'Left'));
   } catch (e) {
     alert(e.message || '참여 실패');
   } finally {
@@ -11958,13 +11958,13 @@ window.changeProjectCover = async function(projectId) {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { alert('커버 이미지는 5MB 이하만 가능해요.'); return; }
-    showToast('커버 업로드 중…');
+    showToast(_t('커버 업로드 중…', 'Uploading cover…'));
     try {
       const url = await window.Tracks.uploadFile(file, 'covers');
       await window.Tracks.setProjectCover(projectId, url);
       // Refresh cache + re-render current view
       await window.Tracks.refreshInto(window.DB.get());
-      showToast('커버 바꿨어요 ✨');
+      showToast(_t('커버 바꿨어요 ✨', 'Cover updated ✨'));
       if (currentView === 'artist') {
         const h = document.querySelector('.artist-strip h1');
         if (h) renderArtistProfile(h.textContent.trim());
@@ -11988,7 +11988,7 @@ window.promoteDemoToFinal = async function(trackId) {
   try {
     await window.Tracks.promoteToFinal(trackId);
     await window.Tracks.refreshInto(db);
-    showToast('🎉 마스터로 승격됐어요!');
+    showToast(_t('🎉 마스터로 승격됐어요!', '🎉 Promoted to master!'));
     if (currentView === 'artist') {
       const h = document.querySelector('.artist-strip h1');
       if (h) renderArtistProfile(h.textContent.trim());
@@ -12016,7 +12016,7 @@ window.deleteMyTrack = async function(trackId, trackTitle) {
       db.tracks = db.tracks.filter(t => t.id !== trackId);
       window.DB.save(db);
     }
-    showToast('삭제 완료');
+    showToast(_t('삭제 완료', 'Deleted'));
     // Re-render current view. Artist page needs the artist name to
     // re-render, so we re-trigger the router by re-navigating to the
     // current hash. Other views just call their render fn directly.
@@ -13460,7 +13460,7 @@ window.toggleLike = async function (trackId, btnEl) {
         window.DB.save(db);
       }
       if (typeof showToast === 'function') {
-        showToast(res.favorited ? '⭐ 즐겨찾기에 추가' : '☆ 즐겨찾기에서 제거');
+        showToast(res.favorited ? _t('⭐ 즐겨찾기에 추가', '⭐ Added to favorites') : _t('☆ 즐겨찾기에서 제거', '☆ Removed from favorites'));
       }
     } catch (e) {
       console.warn('[toggleLike] Favorites sync', e);
@@ -13520,9 +13520,9 @@ window.addToPlaylist = async function(playlistId) {
     }
     closePlaylistModal();
     renderSidebarPlaylists();
-    showToast('플레이리스트에 추가됐어요!');
+    showToast(_t('플레이리스트에 추가됐어요!', 'Added to playlist!'));
   } catch (e) {
-    if (typeof showToast === 'function') showToast(e.message || '추가 실패'); else alert('추가 실패: ' + (e.message || e));
+    if (typeof showToast === 'function') showToast(e.message || _t('추가 실패', 'Add failed')); else alert('추가 실패: ' + (e.message || e));
   }
 };
 
@@ -13659,7 +13659,7 @@ window.finishOnboarding = function(skip) {
       if (a) window.addMockFollow(a);
     });
     if (window._onboardingPicked.size > 0) {
-      showToast(`✨ ${window._onboardingPicked.size}명과 함께 시작! 카드는 내 페이지에서 확인`);
+      showToast(_t(`✨ ${window._onboardingPicked.size}명과 함께 시작! 카드는 내 페이지에서 확인`, `✨ Started with ${window._onboardingPicked.size} artists! Find their cards on your page`));
     }
   }
   _markOnboarded();
@@ -14039,7 +14039,7 @@ window.submitStoMini = function(trackId, amount, artistName, trackTitle) {
   } catch (_) {}
 
   closeStoMini();
-  showToast(`✨ ${(Number(amount)/10000).toFixed(0)}만원 함께 만들기 신청 완료!`);
+  showToast(_t(`✨ ${(Number(amount)/10000).toFixed(0)}만원 함께 만들기 신청 완료!`, `✨ Signed up to co-create with ${(Number(amount)/10000).toFixed(0)}0,000 KRW!`));
 
   // Check for level-up celebration after a short delay (after toast)
   setTimeout(() => {
@@ -14139,7 +14139,7 @@ window.openShareCard = function(artistName) {
   const mockFollows = (typeof window._getMockFollows === 'function') ? window._getMockFollows() : [];
   const artist = mockFollows.find(a => a.name === artistName);
   if (!artist) {
-    showToast('카드 정보를 못 찾았어요');
+    showToast(_t('카드 정보를 못 찾았어요', "Couldn't find card info"));
     return;
   }
   const stage = getTamaStage(artist.streamCount || 0, artist.spoBackers || 0);
@@ -14273,7 +14273,7 @@ async function _drawAndShareCard(artist, stage) {
 
   // Trigger download + show share modal
   canvas.toBlob((blob) => {
-    if (!blob) { showToast('이미지 생성 실패'); return; }
+    if (!blob) { showToast(_t('이미지 생성 실패', 'Image creation failed')); return; }
     const url = URL.createObjectURL(blob);
     _showShareModal(url, artist.name, stage);
   }, 'image/png');
@@ -14310,7 +14310,7 @@ function _showShareModal(imgUrl, artistName, stage) {
 window.copyShareText = function(artistName, stageName) {
   const text = `🎵 ${artistName}와 함께 만들고 있어요!\n현재 단계: ${stageName} ⭐\n\n#OffStage #함께만드는아티스트\nhttps://off-stage-weld.vercel.app`;
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(() => showToast('📋 텍스트 복사됨!')).catch(() => alert(text));
+    navigator.clipboard.writeText(text).then(() => showToast(_t('📋 텍스트 복사됨!', '📋 Text copied!'))).catch(() => alert(text));
   } else {
     alert(text);
   }
@@ -14374,7 +14374,7 @@ window.openTamaCardModal = function(artistName, opts) {
   }).join('') : `<div class="tama-big-empty-row">아직 발매된 곡이 없어요 🎵</div>`;
 
   const followBtnHtml = isSample
-    ? `<button class="tama-big-action-follow" onclick="event.stopPropagation(); showToast('예시 카드입니다 ✨')">🌱 함께하기</button>`
+    ? `<button class="tama-big-action-follow" onclick="event.stopPropagation(); showToast(_t('예시 카드입니다 ✨', 'This is a sample card ✨'))">🌱 함께하기</button>`
     : (artistSupabaseId
         ? `<button class="tama-big-action-follow ${isFollowing ? 'is-following' : ''}" onclick="event.stopPropagation(); toggleFollowArtist('${artistSupabaseId}', '${safeName}'); setTimeout(closeTamaModal, 200);">
             ${isFollowing ? '<i class="ri-seedling-fill"></i> 함께하는 중' : '<i class="ri-seedling-line"></i> 함께하기'}
@@ -14489,7 +14489,7 @@ window.promptNewPlaylist = async function() {
       window.DB.createPlaylist(name.trim());
     }
     renderSidebarPlaylists();
-    showToast('폴더 만들었어요 ✨');
+    showToast(_t('폴더 만들었어요 ✨', 'Folder created ✨'));
     if (currentView === 'profile') renderProfile();
     else if (currentView === 'universe' && window.renderUniverse) window.renderUniverse();
   } catch (e) {
@@ -14527,7 +14527,7 @@ window.createDefaultPlaylist = async function(title) {
       window.DB.createPlaylist(title);
     }
     renderSidebarPlaylists();
-    showToast(`"${title}" 폴더 시작! 🎵`);
+    showToast(_t(`"${title}" 폴더 시작! 🎵`, `"${title}" folder started! 🎵`));
     if (currentView === 'profile') renderProfile();
     else if (currentView === 'universe' && window.renderUniverse) window.renderUniverse();
   } catch (e) {
@@ -14762,7 +14762,7 @@ window.createAndAddPlaylist = async function() {
     nameInput.value = '';
     closePlaylistModal();
     renderSidebarPlaylists();
-    showToast('플레이리스트 만들었어요 ✨');
+    showToast(_t('플레이리스트 만들었어요 ✨', 'Playlist created ✨'));
   } catch (e) {
     alert('생성 실패: ' + (e.message || e));
   }
@@ -15449,7 +15449,7 @@ window.adminSetUserRole = async function(userId, newRole, selectEl) {
   }
   try {
     await window.Admin.setUserRole(userId, newRole);
-    showToast('역할이 변경됐어요');
+    showToast(_t('역할이 변경됐어요', 'Role changed'));
     renderAdmin();
   } catch (e) {
     alert('변경 실패: ' + (e.message || e));
@@ -15462,7 +15462,7 @@ window.adminDeleteTrack = async function(id) {
   try {
     await window.Admin.deleteTrack(id);
     if (Array.isArray(window.__tracks)) window.__tracks = window.__tracks.filter(t => t.id !== id);
-    showToast('트랙 삭제됨');
+    showToast(_t('트랙 삭제됨', 'Track deleted'));
     renderAdmin();
   } catch (e) {
     alert('삭제 실패: ' + (e.message || e));
@@ -15504,7 +15504,7 @@ window.adminDownloadZip = async function(trackId) {
     if (result && result.skipped) {
       alert('ZIP 생성 불가: ' + result.reason);
     } else if (result) {
-      showToast(`📦 ${result.name} (${(result.sizeBytes/1048576).toFixed(1)}MB) 다운로드됨`);
+      showToast(_t(`📦 ${result.name} (${(result.sizeBytes/1048576).toFixed(1)}MB) 다운로드됨`, `📦 ${result.name} (${(result.sizeBytes/1048576).toFixed(1)}MB) downloaded`));
     }
   } catch (e) {
     alert('ZIP 실패: ' + (e.message || e));
@@ -15518,7 +15518,7 @@ window.adminDeleteNote = async function(id) {
   try {
     await window.Admin.deleteNote(id);
     if (Array.isArray(window.__wallNotes)) window.__wallNotes = window.__wallNotes.filter(n => n.id !== id);
-    showToast('포스트잇 삭제됨');
+    showToast(_t('포스트잇 삭제됨', 'Note deleted'));
     renderAdmin();
   } catch (e) {
     alert('삭제 실패: ' + (e.message || e));
@@ -15731,7 +15731,7 @@ function renderAuth() {
     try {
       await window.Auth.signInWithMagicLink(email);
       magicBtn.textContent = '✅ 메일을 확인해주세요';
-      showToast(`${email} 로 로그인 링크를 보냈어요. 메일함을 확인해주세요!`);
+      showToast(_t(`${email} 로 로그인 링크를 보냈어요. 메일함을 확인해주세요!`, `Sent a sign-in link to ${email}. Check your inbox!`));
     } catch (err) {
       const msg = (err && err.message) || '';
       if (/rate limit|too many/i.test(msg)) {
@@ -15756,7 +15756,7 @@ function renderAuth() {
       await window.Auth.signIn({ email, password });
       updateHeaderAuth();
       renderSidebarPlaylists();
-      showToast('다시 만나서 반가워요! 🎵');
+      showToast(_t('다시 만나서 반가워요! 🎵', 'Welcome back! 🎵'));
       navigateTo('shapes');
     } catch (err) {
       const msg = (err && err.message) || '';
@@ -16037,13 +16037,13 @@ window.hasCheeredLocal = function (trackId) {
 window.openCheerModal = function (trackId, trackTitle, artistName) {
   const user = window.__currentUser || (window.DB.get() && window.DB.get().currentUser);
   if (!user) {
-    showToast('로그인하고 응원해보세요 💌');
+    showToast(_t('로그인하고 응원해보세요 💌', 'Sign in to send some love 💌'));
     navigateTo('auth');
     return;
   }
   // Already cheered (local cache) → just a toast, no modal
   if (_getCheeredSet().has(trackId)) {
-    showToast('이미 응원했어요 💝');
+    showToast(_t('이미 응원했어요 💝', 'You already cheered 💝'));
     return;
   }
   const existing = document.getElementById('cheer-modal');
@@ -16093,7 +16093,7 @@ window.submitCheer = async function (trackId, trackTitle, artistName) {
   const ta = document.getElementById('cheer-message-input');
   const msg = (ta && ta.value || '').trim();
   if (!msg) {
-    showToast('응원 메시지를 적어주세요 ✍️');
+    showToast(_t('응원 메시지를 적어주세요 ✍️', 'Write a cheer message ✍️'));
     if (ta) ta.focus();
     return;
   }
@@ -16112,7 +16112,7 @@ window.submitCheer = async function (trackId, trackTitle, artistName) {
     if (e && e.message === 'ALREADY_CHEERED') {
       _addCheered(trackId);
       closeCheerModal();
-      showToast('이미 응원했어요 💝');
+      showToast(_t('이미 응원했어요 💝', 'You already cheered 💝'));
     } else {
       alert('응원 전송 실패: ' + (e.message || e));
       if (btn) { btn.disabled = false; btn.textContent = '💝 응원 보내기'; }
@@ -16128,7 +16128,7 @@ window.openSongInfoModal = function (trackId) {
   if (!trackId) return;
   const db = window.DB.get();
   const track = (db.tracks || []).find(t => t && t.id === trackId);
-  if (!track) { if (typeof showToast === 'function') showToast('곡을 찾을 수 없어요'); return; }
+  if (!track) { if (typeof showToast === 'function') showToast(_t('곡을 찾을 수 없어요', 'Song not found')); return; }
 
   const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const safeTitle  = esc(track.title || '제목 없음');
@@ -16208,7 +16208,7 @@ window.openDemoWallModal = function (trackId) {
   if (!trackId) return;
   const db = window.DB.get();
   const track = (db.tracks || []).find(t => t && t.id === trackId);
-  if (!track) { showToast('곡을 찾을 수 없어요'); return; }
+  if (!track) { showToast(_t('곡을 찾을 수 없어요', 'Song not found')); return; }
 
   const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const safeTitle = esc(track.title || '제목 없음');
@@ -16300,7 +16300,7 @@ window.submitDemoWallComment = async function (trackId) {
 
   const db = window.DB.get();
   const track = (db.tracks || []).find(t => t && t.id === trackId);
-  if (!track) { showToast('곡을 찾을 수 없어요'); return; }
+  if (!track) { showToast(_t('곡을 찾을 수 없어요', 'Song not found')); return; }
   const profileName = (window.__currentUser && window.__currentUser.name) || '';
   const authorName = profileName || '익명';
   const myId = (window.__currentUser && window.__currentUser.id) || null;
@@ -16447,7 +16447,7 @@ window.openTrackCommentsModal = function (trackId) {
   if (!trackId) return;
   const db = window.DB.get();
   const track = (db.tracks || []).find(t => t && t.id === trackId);
-  if (!track) { showToast('곡을 찾을 수 없어요'); return; }
+  if (!track) { showToast(_t('곡을 찾을 수 없어요', 'Song not found')); return; }
 
   const esc = (s) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const safeTitle = esc(track.title || '');
@@ -16524,7 +16524,7 @@ window.submitTrackCommentFromModal = async function (trackId) {
   const db = window.DB.get();
   const track = (db.tracks || []).find(t => t && t.id === trackId);
   if (!track) {
-    showToast('곡을 찾을 수 없어요');
+    showToast(_t('곡을 찾을 수 없어요', 'Song not found'));
     if (sendBtn) sendBtn.disabled = false;
     return;
   }
