@@ -1675,6 +1675,16 @@ function navigateTo(route) {
     return;
   }
 
+  // 곡 상세(응원 루프 + 진화 기록): "song:<trackId>"
+  if (route && route.startsWith('song:')) {
+    currentView = 'song';
+    const tid = decodeURIComponent(route.slice(5));
+    try { renderSongDetail(tid); }
+    catch (err) { _renderError(err, '곡 페이지'); }
+    setTimeout(observeReveals, 20);
+    return;
+  }
+
   try {
     switch (route) {
       case 'shapes': renderShapes(); break;
@@ -9629,6 +9639,115 @@ function _afterUploadPrompt(track, artistName) {
 
 // ===================== 5. PROFILE & SETTINGS =====================
 
+// ===== 곡 상세 (응원 루프 + 진화 기록) — 청취자 디자인 Screen 2. 라우트 song:<id> =====
+function _sdStyle() {
+  return `<style id="sd-style">
+.sd-page{position:relative;min-height:100%;padding:48px 0 calc(var(--player-height,60px) + env(safe-area-inset-bottom) + 28px);background:#0B0B11;color:#F4F4F7;font-family:'Pretendard',sans-serif;overflow-x:hidden;}
+.sd-page *{box-sizing:border-box;}
+.sd-inner{padding:0 16px;max-width:430px;margin:0 auto;}
+.sd-back{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#8B8B9A;font-weight:600;padding:8px 2px 4px;cursor:pointer;}
+.sd-back i{font-size:18px;}
+.sd-cover{position:relative;border-radius:22px;height:200px;overflow:hidden;margin:8px 0 16px;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 100% at 50% 20%,rgba(72,224,139,.28),transparent 62%),#15151F;border:1px solid rgba(72,224,139,.2);cursor:pointer;}
+.sd-orb{width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 38% 32%,#7DF7AE,#36C977 60%,#1f9a57);box-shadow:0 0 40px rgba(72,224,139,.5);color:#06140C;font-size:30px;}
+.sd-head .who{font-size:13px;color:#8B8B9A;font-weight:600;}
+.sd-head .ti{font-size:24px;font-weight:800;margin-top:2px;}
+.sd-stg{display:inline-flex;align-items:center;gap:8px;margin:12px 2px 0;font-size:13px;font-weight:800;}
+.sd-stg .now{color:#48E08B;background:rgba(72,224,139,.14);padding:4px 11px;border-radius:999px;}
+.sd-stg .left{color:#8B8B9A;}
+.sd-tl{margin:20px 4px 6px;position:relative;padding-left:8px;}
+.sd-tlrow{display:flex;align-items:flex-start;gap:13px;position:relative;padding-bottom:16px;}
+.sd-tlrow:last-child{padding-bottom:0;}
+.sd-tlrow::before{content:"";position:absolute;left:8px;top:20px;bottom:-2px;width:2px;background:rgba(255,255,255,.08);}
+.sd-tlrow:last-child::before{display:none;}
+.sd-tlrow.fill::before{background:linear-gradient(180deg,#36C977,rgba(54,201,119,.25));}
+.sd-dot{width:18px;height:18px;border-radius:50%;flex:0 0 auto;z-index:1;display:flex;align-items:center;justify-content:center;}
+.sd-dot.done{background:linear-gradient(135deg,#7DF7AE,#36C977);}
+.sd-dot.done i{font-size:10px;color:#06140C;}
+.sd-dot.now{background:#0B0B11;border:2px solid #48E08B;}
+.sd-dot.now i{width:7px;height:7px;border-radius:50%;background:#48E08B;display:block;}
+.sd-dot.lock{background:#15151F;border:1.5px dashed rgba(255,255,255,.18);}
+.sd-dot.lock i{font-size:9px;color:#5E5E6E;}
+.sd-tt{font-size:13.5px;font-weight:700;}
+.sd-tt.mut{color:#5E5E6E;}
+.sd-td{font-size:11px;color:#8B8B9A;margin-top:1px;}
+.sd-supp{display:flex;align-items:center;gap:10px;margin:18px 2px;padding:13px;background:#15151F;border:1px solid rgba(255,255,255,.06);border-radius:15px;}
+.sd-avs{display:flex;flex:0 0 auto;}
+.sd-avs span{width:25px;height:25px;border-radius:50%;border:2px solid #15151F;margin-left:-8px;font-size:10px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;}
+.sd-avs span:first-child{margin-left:0;}
+.sd-supp .cnt{font-size:12.5px;color:#8B8B9A;font-weight:600;}
+.sd-supp .cnt b{color:#F4F4F7;}
+.sd-cheer{width:100%;border:none;border-radius:16px;padding:16px;cursor:pointer;background:linear-gradient(95deg,#FB6F92,#F472B6);color:#fff;font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 10px 26px rgba(251,111,146,.32);font-family:inherit;}
+.sd-cheer i{font-size:19px;}
+.sd-cheer:active{transform:scale(.98);}
+.sd-csub{text-align:center;font-size:11.5px;color:#8B8B9A;margin:10px 0 4px;}
+.sd-listen{width:100%;border:1px solid rgba(255,255,255,.12);background:#15151F;color:#F4F4F7;border-radius:14px;padding:13px;font-family:inherit;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;cursor:pointer;}
+.sd-story{margin:20px 2px 0;padding:15px;background:#15151F;border:1px solid rgba(255,255,255,.06);border-radius:15px;}
+.sd-story .lab{font-size:11px;font-weight:800;color:#8B8B9A;letter-spacing:.3px;margin-bottom:8px;}
+.sd-story p{font-size:13.5px;line-height:1.6;}
+.sd-story .lyr{color:#8B8B9A;font-size:13px;margin-top:9px;line-height:1.7;white-space:pre-line;}
+@media(min-width:769px){.sd-inner{max-width:460px;}}
+</style>`;
+}
+
+function renderSongDetail(trackId) {
+  const appContent = document.getElementById('app-content');
+  if (!appContent) return;
+  const db = window.DB.get();
+  const track = (db.tracks || []).find(t => t && String(t.id) === String(trackId));
+  if (!track) { navigateTo('shapes'); return; }
+  const esc = (s) => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const clean = (s) => (s || '무제').replace(/\s*\(.*\)$/, '');
+  let ti = clean(track.title);
+  if (ti === '무제' || /^demo\s*\d*$/i.test(ti)) ti = track.artist || ti;
+
+  // 같은 프로젝트의 모든 데모 (진화 기록)
+  const pid = track.projectId || ('proj_' + track.id);
+  const vs = (db.tracks || []).filter(t => t && (t.projectId || ('proj_' + t.id)) === pid).sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+  const demos = vs.filter(v => v && v.isDemo);
+  const hasFinal = vs.some(v => v && !v.isDemo && v.version === 'final');
+  const _md = (d) => { const dt = new Date(d || 0); return dt.getTime() ? (String(dt.getMonth() + 1).padStart(2, '0') + '.' + String(dt.getDate()).padStart(2, '0')) : ''; };
+
+  // 진화 타임라인
+  let tlRows = '';
+  demos.forEach((d, i) => {
+    const isCur = (i === demos.length - 1) && !hasFinal;
+    const cls = isCur ? 'now' : 'done';
+    const note = d.artistNote || d.description || (i === 0 ? _t('첫 스케치', 'First sketch') : _t('데모 업데이트', 'Demo update'));
+    tlRows += `<div class="sd-tlrow${cls === 'done' ? ' fill' : ''}"><span class="sd-dot ${cls}">${cls === 'done' ? '<i class="ri-check-line"></i>' : '<i></i>'}</span>`
+      + `<div><div class="sd-tt"${isCur ? ' style="color:#48E08B"' : ''}>데모 ${i + 1}${isCur ? ' · ' + _t('지금 여기', 'You are here') : ' ' + _t('올림', 'uploaded')}</div><div class="sd-td">${esc(_md(d.createdAt))} · ${esc(note)}</div></div></div>`;
+  });
+  tlRows += `<div class="sd-tlrow"><span class="sd-dot ${hasFinal ? 'done' : 'lock'}">${hasFinal ? '<i class="ri-check-line"></i>' : '<i class="ri-lock-2-line"></i>'}</span>`
+    + `<div><div class="sd-tt${hasFinal ? '' : ' mut'}">${_t('마스터 발매', 'Master release')}</div><div class="sd-td">${hasFinal ? _t('발매 완료 🎉', 'Released 🎉') : _t('응원이 모이면 잠금 해제', 'Unlocks as cheers gather')}</div></div></div>`;
+
+  const supN = track.likes || track.plays || 0;
+  const story = track.description || track.artistNote || '';
+  const lyrics = track.lyrics || '';
+  const curStage = hasFinal ? _t('발매', 'Released') : ('데모 ' + demos.length);
+  const leftTxt = hasFinal ? _t('정규 발매', 'Released') : _t('마스터까지 1단계', '1 step to master');
+  const avInit = ['서', '민', '지', '하', '윤'];
+  const avCol = ['#7C6FF0', '#FB6F92', '#36C977', '#FBBF24', '#54E0CE'];
+  const avs = supN > 0 ? avCol.slice(0, Math.min(supN, 5)).map((c, i) => `<span style="background:${c}">${avInit[i] || '♥'}</span>`).join('') : '';
+
+  appContent.innerHTML = `${_sdStyle()}
+    <div class="sd-page"><div class="sd-inner">
+      <div class="sd-back" onclick="(window.goBack&&goBack())||navigateTo('profile')"><i class="ri-arrow-left-s-line"></i> ${_t('뒤로', 'Back')}</div>
+      <div class="sd-cover" onclick="playTrack('${track.id}')"><div class="sd-orb"><i class="ri-play-fill"></i></div></div>
+      <div class="sd-head"><div class="who">${esc(track.artist || '')}</div><div class="ti">${esc(ti)}</div>
+        <div class="sd-stg"><span class="now">${esc(curStage)}</span><span class="left">${leftTxt}</span></div>
+      </div>
+      <div class="sd-tl">${tlRows}</div>
+      <div class="sd-supp">
+        <div class="sd-avs">${avs}</div>
+        <span class="cnt">${supN > 0 ? `<b>${supN}</b>${_t('명이 이 곡을 키우는 중', ' raising this song')}` : _t('첫 응원의 주인공이 되어보세요', 'Be the first to cheer')}</span>
+      </div>
+      <button class="sd-cheer" data-tid="${esc(track.id)}" data-tt="${esc(ti)}" data-an="${esc(track.artist || '')}" onclick="mhCheer(this)"><i class="ri-heart-3-fill"></i> ${_t('응원하기', 'Cheer')}</button>
+      <div class="sd-csub">${_t('이 곡의 성장을 응원해요', 'Support this song')}${supN > 0 ? ` · ${supN + 1}${_t('번째 응원', 'th cheer')}` : ''}</div>
+      <button class="sd-listen" onclick="playTrack('${track.id}')"><i class="ri-play-fill"></i> ${_t('같이 듣기', 'Listen along')}</button>
+      ${(story || lyrics) ? `<div class="sd-story"><div class="lab">${_t('이 곡 이야기', 'About this song')}</div>${story ? `<p>${esc(story)}</p>` : ''}${lyrics ? `<div class="lyr">${esc(lyrics)}</div>` : ''}</div>` : ''}
+    </div></div>`;
+  window.__currentSongId = trackId;
+}
+
 // 계정 프로필(청취자 디자인) 스코프 CSS — <style> 자체 포함, global.css 안 건드림.
 function _apStyle() {
   return `<style id="ap-style">
@@ -9846,7 +9965,7 @@ async function _renderProfileImpl() {
         <div class="ap-slab"><h2>${_t('지금 자라는 곡','Growing now')} <span class="ap-live">● LIVE</span></h2></div>
         <div class="ap-hero">
           <div class="ap-orbwrap"><div class="ap-orb" onclick="playTrack('${apFeatured.id}')"><i class="ri-play-fill"></i></div></div>
-          <div class="ap-hmeta">${ft !== (apFeatured.artist || '') ? `<div class="who">${apEsc(apFeatured.artist || '')}</div>` : ''}<div class="ti">${apEsc(ft)}</div></div>
+          <div class="ap-hmeta" style="cursor:pointer;" onclick="navigateTo('song:${apFeatured.id}')">${ft !== (apFeatured.artist || '') ? `<div class="who">${apEsc(apFeatured.artist || '')}</div>` : ''}<div class="ti">${apEsc(ft)}</div></div>
           <div class="ap-evo">
             <div class="ap-evo-track">${trackInner}</div>
             <div class="ap-evo-lab">${labels}</div>
@@ -9885,8 +10004,8 @@ async function _renderProfileImpl() {
       const tags = (Array.isArray(t.tags) ? t.tags : []).slice(0, 3).map(x => '#' + x).join(' ');
       const tot = Math.max(p.demoCount + (p.hasFinal ? 1 : 0), 4);
       const sub = (ti === t.artist) ? (tags || '') : (t.artist || '');
-      return `<div class="ap-frow" onclick="playTrack('${t.id}')">`
-        + `<div class="ap-thumb" style="background:radial-gradient(circle at 38% 32%, ${col}, ${col}cc)"><i class="ri-play-fill"></i></div>`
+      return `<div class="ap-frow" onclick="navigateTo('song:${t.id}')">`
+        + `<div class="ap-thumb" style="background:radial-gradient(circle at 38% 32%, ${col}, ${col}cc)" onclick="event.stopPropagation(); playTrack('${t.id}')"><i class="ri-play-fill"></i></div>`
         + `<div class="ap-finfo"><div class="ap-ft"><span class="nm">${apEsc(ti)}</span> <span class="ap-stg">데모 ${p.demoCount}/${tot}</span></div>`
         + `${sub ? `<div class="ap-fw">${apEsc(sub)}</div>` : ''}${(tags && ti !== t.artist) ? `<div class="ap-ftags">${apEsc(tags)}</div>` : ''}</div>`
         + `<div class="ap-flike"><i class="ri-heart-3-fill"></i>${t.likes || 0}</div></div>`;
