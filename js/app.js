@@ -2600,6 +2600,12 @@ window._attachPlayerFsSwipe = function () {
     if (e.target && e.target.closest && e.target.closest(EXCLUDE)) { tracking = false; return; }
     sx = t.clientX; sy = t.clientY; tracking = true;
   }, { passive: true });
+  // 스와이프 중엔 브라우저 기본 동작(당겨서 새로고침/세로 바운스) 차단 — 좌우 곡넘김이 화면을 안 흔들게.
+  fs.addEventListener('touchmove', function (e) {
+    if (!tracking) return;
+    const t = e.touches && e.touches[0]; if (!t) return;
+    if (e.cancelable && (Math.abs(t.clientX - sx) > 6 || Math.abs(t.clientY - sy) > 6)) e.preventDefault();
+  }, { passive: false });
   fs.addEventListener('touchend', function (e) {
     if (!tracking) return; tracking = false;
     const t = e.changedTouches && e.changedTouches[0]; if (!t) return;
@@ -7430,10 +7436,14 @@ function startShapesPhysics(field, viewport) {
     return item;
   });
   P.items = items;
+  // 경계는 init 때 한 번만 — step 안에서 clientWidth/scrollHeight 읽으면 직전 프레임의 left/top 쓰기 때문에
+  // 매 프레임 강제 리플로우(레이아웃 thrash)가 일어나 '던질 때 끊김'의 주범. 캐시해서 제거.
+  const BW0 = field.clientWidth || fieldW0;
+  const BH0 = fieldH;
   function step() {
     const its = P.items, n = its.length;
     if (!n) return;
-    const BW = field.clientWidth, BH = field.scrollHeight || field.offsetHeight || BW;
+    const BW = BW0, BH = BH0;
     for (let i = 0; i < n; i++) {
       const b = its[i];
       if (b.el.classList.contains('dragging')) continue;
@@ -13043,6 +13053,11 @@ function _mhYM(d) {
   if (!dt.getTime()) return '';
   return dt.getFullYear() + '.' + String(dt.getMonth() + 1).padStart(2, '0');
 }
+function _mhYMD(d) {
+  const dt = new Date(d || 0);
+  if (!dt.getTime()) return '';
+  return dt.getFullYear() + '.' + String(dt.getMonth() + 1).padStart(2, '0') + '.' + String(dt.getDate()).padStart(2, '0');
+}
 
 window.mhSelectDemo = function (pid, idx, ev) {
   if (ev && ev.stopPropagation) ev.stopPropagation();
@@ -13215,7 +13230,7 @@ function renderArtistHome(artistName) {
       return {
         id: v.id,
         label: isFinal ? '★' : (m ? ('D' + m[1]) : ('D' + (i + 1))),
-        date: _mhYM(v.createdAt),
+        date: _mhYMD(v.createdAt),
         verLabel: v.versionLabel || (isFinal ? _t('정규 발매','Release') : ('Demo ' + (m ? m[1] : (i + 1)))),
         desc: v.artistNote || v.description || '',
         isFinal
