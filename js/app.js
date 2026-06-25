@@ -12665,6 +12665,29 @@ function _mhStyle() {
 .mh-cheer-btn{width:100%;border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;background:linear-gradient(95deg,#FB6F92,#F472B6);color:#fff;box-shadow:0 10px 24px rgba(251,111,146,.28);}
 .mh-cheer-btn:active{transform:scale(.98);}
 .mh-cheer-benefit{text-align:center;font-size:11.5px;color:rgba(255,255,255,.5);margin:11px 0 0;}
+.mh-evo{border-radius:18px;padding:14px 16px;margin-top:10px;}
+.mh-evo-track{display:flex;align-items:center;}
+.mh-evo-node{width:22px;height:22px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;}
+.mh-evo-node.done{background:linear-gradient(135deg,#7DF7AE,#36C977);color:#06140C;}
+.mh-evo-node.done i{font-size:13px;}
+.mh-evo-node.now{background:#0b0b11;border:2px solid #48E08B;color:#48E08B;box-shadow:0 0 10px rgba(72,224,139,.5);}
+.mh-evo-node.lock{background:rgba(255,255,255,.05);border:1.5px dashed rgba(255,255,255,.2);color:rgba(255,255,255,.4);}
+.mh-evo-node.lock i{font-size:10px;}
+.mh-evo-seg{flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,.1);margin:0 3px;}
+.mh-evo-seg.fill{background:linear-gradient(90deg,#36C977,#48E08B);}
+.mh-evo-labels{display:flex;justify-content:space-between;margin-top:8px;}
+.mh-evo-labels span{font-size:9px;color:rgba(255,255,255,.42);font-weight:600;flex:1;text-align:center;}
+.mh-evo-labels span:first-child{text-align:left;}
+.mh-evo-labels span:last-child{text-align:right;}
+.mh-evo-go{text-align:center;font-size:12px;font-weight:700;color:#48E08B;margin-top:9px;}
+.mh-shelf{display:flex;gap:11px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.mh-shelf::-webkit-scrollbar{display:none;}
+.mh-shelf-empty{font-size:12px;color:rgba(255,255,255,.4);padding:6px 2px;}
+.mh-rcard{flex:0 0 116px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:12px;cursor:pointer;}
+.mh-rcover{width:100%;height:68px;border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:9px;overflow:hidden;}
+.mh-rcover .mh-hand{color:#000;font-weight:800;font-size:20px;}
+.mh-rn{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mh-rs{font-size:10.5px;color:rgba(255,255,255,.5);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .mh-bio{font-size:11.5px;color:rgba(255,255,255,.55);max-width:280px;line-height:1.55;margin:6px 0 0;}
 .mh-stats{display:flex;gap:6px;margin-top:13px;flex-wrap:wrap;justify-content:center;}
 .mh-stat{font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);}
@@ -12814,12 +12837,39 @@ function renderArtistHome(artistName) {
     return `<div class="mh-cover ${cls}" style="background:${color}"><span class="mh-hand ln">${esc((title || '').slice(0, 4))}</span></div>`;
   };
 
-  // === 최신 활성 데모 위젯 ===
+  // === 최신 활성 데모 위젯 + 데모 진화 stepper (청취자 디자인 히어로) ===
   let latestHtml = '';
   if (latest) {
     const lt = cleanTitle(latest.title);
     const lc = colorFor(lt);
     const lLabel = latest.versionLabel || (latest.isDemo ? 'DEMO' : 'MASTER');
+    // 최신 곡이 속한 프로젝트의 데모 진화 단계
+    const lpid = latest.projectId || ('proj_' + latest.id);
+    const lproj = tracks.find(tr => tr.pid === lpid);
+    let evoHtml = '';
+    if (lproj && lproj.demos.length) {
+      const ds = lproj.demos;
+      const nodeList = ds.map((d, i) => {
+        const isLast = (i === ds.length - 1);
+        const st = (!d.isFinal && isLast && !lproj.hasFinal) ? 'now' : 'done';
+        return { cls: st, num: d.isFinal ? 'M' : (i + 1), lab: d.isFinal ? _t('마스터', 'Master') : ('데모' + (i + 1)) };
+      });
+      if (!ds.some(d => d.isFinal)) nodeList.push({ cls: lproj.hasFinal ? 'done' : 'lock', num: 'M', lab: _t('마스터', 'Master') });
+      let trackInner = '';
+      nodeList.forEach((n, i) => {
+        if (i > 0) trackInner += `<span class="mh-evo-seg${nodeList[i - 1].cls === 'done' ? ' fill' : ''}"></span>`;
+        const inner = n.cls === 'done' ? '<i class="ri-check-line"></i>' : (n.cls === 'lock' ? '<i class="ri-lock-2-line"></i>' : n.num);
+        trackInner += `<span class="mh-evo-node ${n.cls}">${inner}</span>`;
+      });
+      const labels = nodeList.map(n => `<span>${esc(n.lab)}</span>`).join('');
+      const goTxt = lproj.hasFinal ? _t('발매까지 완성됐어요 🎉', 'Fully released 🎉') : _t('마스터까지 한 단계 남았어요', 'One step to master');
+      evoHtml = `
+        <div class="mh-evo mh-glass">
+          <div class="mh-evo-track">${trackInner}</div>
+          <div class="mh-evo-labels">${labels}</div>
+          <div class="mh-evo-go">${goTxt}</div>
+        </div>`;
+    }
     latestHtml = `
       <div class="mh-sec">
         <div class="mh-sec-head">
@@ -12839,6 +12889,7 @@ function renderArtistHome(artistName) {
           </div>
           <button class="mh-play" onclick="playTrack('${latest.id}')" aria-label="play"><i class="ri-play-fill"></i></button>
         </div>
+        ${evoHtml}
       </div>`;
   }
 
@@ -12925,6 +12976,15 @@ function renderArtistHome(artistName) {
       <span class="rgt"><i class="ri-arrow-right-s-line"></i></span>
     </div>` : '';
 
+  // 내가 키우는 곡 (내가 응원한 곡들 — 본인 페이지만)
+  const shelfHtml = isSelf ? `
+    <div class="mh-sec">
+      <div class="mh-sec-head">
+        <h2 class="mh-sec-title"><i class="ri-seedling-fill" style="color:#48E08B"></i> ${_t('내가 키우는 곡','Songs I support')}</h2>
+      </div>
+      <div class="mh-shelf" id="mh-shelf"><div class="mh-shelf-empty">${_t('아직 응원한 곡이 없어요','No cheered songs yet')}</div></div>
+    </div>` : '';
+
   appContent.innerHTML = `${_mhStyle()}
     <div class="mh-page">
       <div class="mh-stars"></div>
@@ -12950,6 +13010,7 @@ function renderArtistHome(artistName) {
         ${latestHtml}
         ${cheerHtml}
         ${histHtml}
+        ${shelfHtml}
       </div>
     </div>`;
 
@@ -12966,6 +13027,24 @@ function renderArtistHome(artistName) {
         cntEl.innerHTML = `<b>${names.length}</b>${_t('명이 응원 중','cheering')}`;
         if (avsEl) avsEl.innerHTML = names.slice(0, 5).map(n => `<span style="background:${colorFor(n)}">${esc(String(n).slice(0, 1))}</span>`).join('');
       }
+    }).catch(() => {});
+  }
+
+  // 비동기: 내가 키우는 곡 (내가 보낸 응원) 채우기
+  if (isSelf && window.Cheers && window.Cheers.fetchMySent) {
+    Promise.resolve(window.Cheers.fetchMySent(20)).then(function (list) {
+      list = list || [];
+      const shelf = document.getElementById('mh-shelf');
+      if (!shelf || !list.length) return;
+      shelf.innerHTML = list.map(function (c) {
+        const title = (c && c.track_title) || '무제';
+        const artist = (c && c.artist_name) || '';
+        const aenc = encodeURIComponent(artist);
+        return `<div class="mh-rcard" onclick="navigateTo('artist:${aenc}')">`
+          + `<div class="mh-rcover" style="background:${colorFor(title)}"><span class="mh-hand">${esc(String(title).slice(0, 3))}</span></div>`
+          + `<div class="mh-rn">${esc(title)}</div>`
+          + `<div class="mh-rs">💝 ${esc(artist)}</div></div>`;
+      }).join('');
     }).catch(() => {});
   }
 

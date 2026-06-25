@@ -2050,9 +2050,19 @@
       return this.fetchForArtist(prof.id, limit);
     },
 
-    // Cheers the current user has sent (for the 응원하는곡 tab).
-    async fetchMySent() {
-      return []; // 응원 기능 미사용 — 비활성
+    // Cheers the current user has sent (내가 키우는 곡 — 응원한 곡들).
+    async fetchMySent(limit) {
+      if (!window.supabase) return [];
+      const { data: { user } } = await window.supabase.auth.getUser();
+      if (!user) return [];
+      const { data, error } = await window.supabase
+        .from('cheers')
+        .select('id, track_id, track_title, artist_name, created_at')
+        .eq('supporter_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(limit || 30);
+      if (error) { console.warn('[Cheers] fetchMySent', error.message); return []; }
+      return data || [];
     },
 
     async remove(cheerId) {
