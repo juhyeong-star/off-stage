@@ -8017,7 +8017,7 @@ function _floatingFolderHtml(it, pos) {
     }
     const fp = it.folder; const ftitle = (fp.title || '무제').replace(/</g, '&lt;');
     const fcount = (fp.trackIds || []).length + (typeof _getFolderNoteIds === 'function' ? _getFolderNoteIds(fp.id).size : 0);
-    return `<div class="floating-folder uni-folder-row-item folder-glass" data-folder-id="${fp.id}" onclick="window.enterFolderWithAnim && enterFolderWithAnim('${fp.id}', this)"><div class="fg-icon"><i class="ri-folder-3-line"></i></div><div class="fg-title">${ftitle}</div><div class="fg-count">${fcount}${_t('곡 보관', ' saved')}</div></div>`;
+    return `<div class="floating-folder uni-folder-row-item folder-glass" data-folder-id="${fp.id}" onclick="window.enterFolderWithAnim && enterFolderWithAnim('${fp.id}', this)"><button class="fg-del" type="button" onclick="event.stopPropagation(); window.deletePlaylistFolder && deletePlaylistFolder('${fp.id}')" aria-label="${_t('폴더 삭제', 'Delete folder')}" title="${_t('폴더 삭제', 'Delete folder')}"><i class="ri-close-line"></i></button><div class="fg-icon"><i class="ri-folder-3-line"></i></div><div class="fg-title">${ftitle}</div><div class="fg-count">${fcount}${_t('곡 보관', ' saved')}</div></div>`;
   }
   const posStyle = row ? '' : `left:${pos.xBase}%; top:${pos.yPx}px; animation: floatDrift ${pos.dur}s ease-in-out infinite; --dx:${pos.dx}px; --dy:${pos.dy}px; --rot:${pos.rot}deg;`;
   const cls = row ? 'floating-folder is-winfolder uni-folder-row-item' : 'floating-shape floating-folder is-winfolder';
@@ -14528,6 +14528,26 @@ window.promptNewPlaylist = async function() {
     else if (currentView === 'universe' && window.renderUniverse) window.renderUniverse();
   } catch (e) {
     alert('만들기 실패: ' + (e.message || e));
+  }
+};
+
+// 즐겨찾기 폴더 삭제 — 폴더(플레이리스트)만 지움. 담은 곡/메모는 그대로(각자 테이블).
+window.deletePlaylistFolder = async function(folderId) {
+  if (!folderId) return;
+  if (!confirm(_t('이 폴더를 삭제할까요?\n(담은 곡·메모는 사라지지 않아요)', 'Delete this folder?\n(Saved songs/notes are kept)'))) return;
+  try {
+    if (window.Playlists && window.Playlists.deletePlaylist) {
+      await window.Playlists.deletePlaylist(folderId);
+      if (window.Playlists.refreshInto) await window.Playlists.refreshInto(window.DB.get());
+    } else if (window.DB && window.DB.deletePlaylist) {
+      window.DB.deletePlaylist(folderId);
+    }
+    if (typeof showToast === 'function') showToast(_t('폴더 삭제됐어요', 'Folder deleted'));
+    if (currentView === 'universe' && window.renderUniverse) window.renderUniverse();
+    else if (currentView === 'profile' && typeof renderProfile === 'function') renderProfile();
+    if (typeof renderSidebarPlaylists === 'function') renderSidebarPlaylists();
+  } catch (e) {
+    alert(_t('삭제 실패: ', 'Delete failed: ') + (e.message || e));
   }
 };
 

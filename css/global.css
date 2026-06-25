@@ -19163,7 +19163,7 @@ body.is-universe-route .my-universe {
   overflow: visible !important;
 }
 .folder-glass {
-  position: static !important; animation: none !important; transform: none !important;
+  position: relative !important; animation: none !important; transform: none !important;
   background: rgba(255, 255, 255, 0.04) !important;
   border: 1px solid rgba(255, 255, 255, 0.07) !important;
   border-radius: 14px !important;
@@ -19184,6 +19184,14 @@ body.is-universe-route .my-universe {
   max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .folder-glass .fg-count { font-size: 8px; color: rgba(255, 255, 255, 0.4); }
+/* 폴더 삭제 ✕ — 모바일도 보이게 항상 표시(호버 X), 확인창으로 오삭제 방지 */
+.folder-glass .fg-del {
+  position: absolute; top: 3px; right: 3px; z-index: 3; padding: 0;
+  width: 20px; height: 20px; border-radius: 50%; line-height: 1;
+  background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.65);
+  display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer;
+}
+.folder-glass .fg-del:active { transform: scale(0.9); background: rgba(255, 77, 77, 0.55); }
 .folder-glass.folder-drop-hover {
   background: rgba(168, 132, 255, 0.18) !important;
   border-color: rgba(168, 132, 255, 0.55) !important;
