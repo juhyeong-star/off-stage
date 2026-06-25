@@ -12654,6 +12654,7 @@ function _mhStyle() {
 .mh-name-row{display:flex;align-items:center;gap:8px;}
 .mh-name{font-size:21px;font-weight:800;margin:0;}
 .mh-editbtn{font-size:11px;font-weight:700;color:#fff;background:rgba(124,58,237,.9);padding:4px 11px;border-radius:999px;display:inline-flex;align-items:center;gap:3px;border:none;cursor:pointer;}
+.mh-followbtn.is-following{background:rgba(255,255,255,.1);color:rgba(255,255,255,.78);}
 .mh-bio{font-size:11.5px;color:rgba(255,255,255,.55);max-width:280px;line-height:1.55;margin:6px 0 0;}
 .mh-stats{display:flex;gap:6px;margin-top:13px;flex-wrap:wrap;justify-content:center;}
 .mh-stat{font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);}
@@ -12694,22 +12695,47 @@ function _mhStyle() {
 </style>`;
 }
 
+// 내 페이지(my-artist)용 얇은 래퍼 — 로그인 사용자 이름으로 홈 디자인 렌더.
 function renderMyHome() {
+  const me = window.__currentUser || (window.DB.get() || {}).currentUser;
+  if (!me || !me.name) { navigateTo('auth'); return; }
+  renderArtistHome(me.name);
+}
+
+// 팔로우 버튼 → toggleFollowArtist(id, name) (data-속성으로 안전 전달, JS 문자열 이스케이프 회피)
+window.mhFollow = function (btn) {
+  if (!btn) return;
+  try { toggleFollowArtist(btn.dataset.aid || '', btn.dataset.aname || ''); }
+  catch (e) { console.warn('[myhome] follow', e); }
+};
+
+// 아티스트 홈(데모 타임라인) — 내 페이지(my-artist)와 남의 아티스트 페이지(artist:) 공용.
+// isSelf 면 편집, 아니면 팔로우 버튼. 데이터는 db.tracks(해당 아티스트)에서 그대로.
+function renderArtistHome(artistName) {
+  if (typeof artistName === 'string' && artistName.indexOf('%') >= 0) {
+    try { artistName = decodeURIComponent(artistName); } catch (_) {}
+  }
   const appContent = document.getElementById('app-content');
   if (!appContent) return;
   const db = window.DB.get();
   const me = window.__currentUser || (db && db.currentUser);
-  if (!me || !me.name) { navigateTo('auth'); return; }
-  const myName = me.name;
-  const myId = me.id;
-  const esc = (s) => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  if (!artistName) { if (me && me.name) artistName = me.name; else { navigateTo('auth'); return; } }
+  const isSelf = !!(me && me.name === artistName);
+  const myName = artistName;
+  const myId = isSelf ? me.id : null;
+  const esc = (s) => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
   const COLORS = ['#FF2EA0','#00E5FF','#B14BFF','#FF9100','#76FF03','#FF4D6D','#2EE6D6','#9D4EDD','#FFD166','#4D9DFF'];
   const colorFor = (s) => COLORS[(_hashSeed(s || 'x') >>> 0) % COLORS.length];
 
+  const artistData = (db.following || []).find(a => a && a.name === artistName) || {};
   const myTracks = (db.tracks || []).filter(t => t && (t.artist === myName || (myId && t.artistId === myId)));
-  const avatar = me.avatar || (myTracks[0] && myTracks[0].artistAvatar) || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(myName));
-  const bio = me.bio || _t('아직 소개가 없어요. 프로필 편집에서 한 줄 남겨보세요 🎧', 'No bio yet — add a line in profile settings 🎧');
+  const artistSupaId = (myTracks.find(t => t && t.artistId) || {}).artistId || artistData.id || '';
+  const isFollowing = (!isSelf && window._isFollowingName) ? window._isFollowingName(artistName) : false;
+  const avatar = (isSelf && me.avatar) || (myTracks[0] && myTracks[0].artistAvatar) || artistData.avatar || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(myName));
+  const bio = (isSelf && me.bio) || artistData.bio
+            || (isSelf ? _t('아직 소개가 없어요. 프로필 편집에서 한 줄 남겨보세요 🎧', 'No bio yet — add a line in profile settings 🎧')
+                       : _t('아직 소개가 없어요', 'No bio yet'));
   const cleanTitle = (s) => (s || '무제').replace(/\s*\(.*\)$/, '');
 
   // 프로젝트(곡) 단위로 묶기 → 각 프로젝트의 versions = 데모 타임라인
@@ -12836,7 +12862,7 @@ function renderMyHome() {
         <div class="mh-empty">
           <i class="ri-disc-line" style="font-size:32px;opacity:.4;"></i>
           <p style="margin:10px 0 0;font-size:13px;color:rgba(255,255,255,.6);">${_t('아직 올린 곡이 없어요','No tracks yet')}</p>
-          <button class="mh-editbtn" style="margin-top:12px;" onclick="navigateTo('upload')"><i class="ri-add-line"></i> ${_t('곡 올리기','Upload a track')}</button>
+          ${isSelf ? `<button class="mh-editbtn" style="margin-top:12px;" onclick="navigateTo('upload')"><i class="ri-add-line"></i> ${_t('곡 올리기','Upload a track')}</button>` : ''}
         </div>
       </div>`;
   }
@@ -12865,7 +12891,9 @@ function renderMyHome() {
           <div class="mh-avatar"><img src="${esc(avatar)}" alt=""><span class="mh-dot"></span></div>
           <div class="mh-name-row">
             <h1 class="mh-name">${esc(myName)}</h1>
-            <button class="mh-editbtn" onclick="editProfile()"><i class="ri-settings-3-line"></i> ${_t('편집','Edit')}</button>
+            ${isSelf
+              ? `<button class="mh-editbtn" onclick="editProfile()"><i class="ri-settings-3-line"></i> ${_t('편집','Edit')}</button>`
+              : `<button class="mh-editbtn mh-followbtn${isFollowing ? ' is-following' : ''}" data-aid="${esc(artistSupaId)}" data-aname="${esc(artistName)}" onclick="mhFollow(this)"><i class="ri-${isFollowing ? 'user-follow-fill' : 'user-add-line'}"></i> ${isFollowing ? _t('팔로잉','Following') : _t('팔로우','Follow')}</button>`}
           </div>
           <p class="mh-bio">${esc(bio)}</p>
           <div class="mh-stats">
@@ -12881,10 +12909,14 @@ function renderMyHome() {
         ${histHtml}
       </div>
     </div>`;
-  window.__currentArtistName = null;
+  window.__currentArtistName = artistName;
 }
 
 function renderArtistProfile(artistName) {
+  // 통일(2026-06-25): 아티스트 페이지도 홈 디자인(데모 타임라인)으로 렌더.
+  // renderArtistHome 가 self/남(편집/팔로우)·데이터·비동기를 모두 처리.
+  // ↓ 아래 옛 단일스크롤 렌더는 이제 호출 안 됨(dead code, 참조용 보존).
+  return renderArtistHome(artistName);
   // Defensive decode — if the caller passed a URL-encoded name like
   // "%EA%B9%80..." we want to display "김주형" in the header instead.
   if (typeof artistName === 'string' && artistName.indexOf('%') >= 0) {
