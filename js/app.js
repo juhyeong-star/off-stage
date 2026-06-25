@@ -9986,117 +9986,98 @@ async function _renderProfileImpl() {
   // Pre-compute myBackings here (used in header KPIs + later STO section)
   const myBackings = (typeof window._getMyBackings === 'function') ? window._getMyBackings() : [];
 
-  // ===== 내 계정 = '내 기획사' 디자인 (계약=팔로우, 곡 캐비닛) — 2026-06-25 =====
-  // 마이페이지(아티스트 홈)와 별개. 소속 아티스트(계약) + cascade 곡 + 워치리스트 + 데모 캐비닛.
+  // ===== 내 계정 — 깔끔 버전 (나 + 응원한 곡(데모 성장) + 팔로우한 아티스트) — 2026-06-25 =====
+  // 마이페이지(아티스트 홈)와 별개. 계약/기획사 메타포 제거, 핵심만. 곡 행 → 곡 상세(song:).
   {
-    const agEsc = (s) => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    const AG_COLORS = ['#46E08B','#FB6FB0','#5AA9FF','#FFC94D','#B06BFF','#FF9F45','#54E0CE','#8B7CF6'];
-    const agColor = (s) => AG_COLORS[(_hashSeed(s || 'x') >>> 0) % AG_COLORS.length];
-    const agClean = (s) => (s || '무제').replace(/\s*\(.*\)$/, '');
-    const agTitle = (raw, artist) => { const ti = agClean(raw); return (ti === '무제' || /^demo\s*\d*$/i.test(ti)) ? (artist || ti) : ti; };
-    const agMe = db.currentUser;
-    const agAvatar = agMe.avatar || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(agMe.name || 'user'));
+    const maEsc = (s) => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const MA_COLORS = ['#8B7CF6','#FB6F92','#46E08B','#54E0CE','#FFC94D','#5AA9FF','#B06BFF','#FF9F45'];
+    const maColor = (s) => MA_COLORS[(_hashSeed(s || 'x') >>> 0) % MA_COLORS.length];
+    const maClean = (s) => (s || '무제').replace(/\s*\(.*\)$/, '');
+    const maTitle = (raw, artist) => { const ti = maClean(raw); return (ti === '무제' || /^demo\s*\d*$/i.test(ti)) ? (artist || ti) : ti; };
+    const maMe = db.currentUser;
+    const maAvatar = maMe.avatar || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(maMe.name || 'user'));
 
-    // 프로젝트 묶기
-    const agProjMap = {};
-    allTracks.forEach(t => { if (!t) return; const pid = t.projectId || ('proj_' + t.id); (agProjMap[pid] = agProjMap[pid] || []).push(t); });
-    const agProjInfo = (pid) => {
-      const vs = (agProjMap[pid] || []).slice().sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    const maProjMap = {};
+    allTracks.forEach(t => { if (!t) return; const pid = t.projectId || ('proj_' + t.id); (maProjMap[pid] = maProjMap[pid] || []).push(t); });
+    const maProjOf = (track) => {
+      const pid = track.projectId || ('proj_' + track.id);
+      const vs = (maProjMap[pid] || [track]).slice().sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
       const demos = vs.filter(v => v && v.isDemo);
       const hasFinal = vs.some(v => v && !v.isDemo && v.version === 'final');
       const rep = vs.find(v => v && !v.isDemo) || vs[vs.length - 1] || vs[0];
-      return { pid, vs, demos, demoCount: demos.length, hasFinal, rep };
-    };
-    const agArtistProjects = (name) => {
-      const pids = [], seen = {};
-      allTracks.forEach(t => { if (t && t.artist === name) { const pid = t.projectId || ('proj_' + t.id); if (!seen[pid]) { seen[pid] = 1; pids.push(pid); } } });
-      return pids.map(agProjInfo).filter(p => p && p.rep);
-    };
-    const cheeredArtists = new Set(mySentCheers.map(c => c && (c.artist_name || c.artist)).filter(Boolean));
-    const followedNames = new Set(followedArtists.map(a => a && a.name).filter(Boolean));
-
-    // 곡 카드 (cascade / cabinet 공용). 발매(★)=홀로 골드.
-    const agSongCard = (p, color, kind) => {
-      const holo = p.hasFinal;
-      const tc = holo ? '#FFC94D' : color;
-      const ti = agTitle(p.rep.title, p.rep.artist);
-      if (kind === 'cab') {
-        return `<div class="ag-cabcard" style="--tc:${tc}" onclick="navigateTo('song:${p.rep.id}')"><div class="ag-cabin"><div class="ag-cabart"><span class="ag-caborb"></span></div><div class="ag-cabn">${agEsc(ti)}</div><div class="ag-cabs">${holo ? '★ ' + _t('발매','Release') : '데모 ' + p.demoCount}</div></div></div>`;
-      }
-      const stg = holo ? _t('★ 발매 · 홀로', '★ Release · holo') : ('데모 ' + p.demoCount + (p.demoCount > 1 ? ' · ' + _t('진화중', 'growing') : ''));
-      return `<div class="ag-scard${holo ? ' holo' : ''}" style="--tc:${tc}" onclick="navigateTo('song:${p.rep.id}')"><div class="ag-scin"><div class="ag-sart"><span class="ag-sorb"></span>${holo ? '<span class="ag-sholo"></span>' : ''}</div><div class="ag-sn">${agEsc(ti)}</div><div class="ag-sstg${holo ? ' holo' : ''}">${stg}</div></div></div>`;
+      return { demoCount: demos.length, hasFinal, rep: rep || track };
     };
 
-    // 소속 아티스트 (계약 = 팔로우)
-    const roster = followedArtists.map(a => {
-      const name = (a && a.name) || '';
-      return { name, avatar: (a && a.avatar) || '', color: agColor(name), projects: agArtistProjects(name), cheering: cheeredArtists.has(name) };
-    });
-    const rosterHtml = roster.length ? roster.map(r => {
-      const releaseProj = r.projects.find(p => p.hasFinal);
-      const alert = releaseProj ? `<div class="ag-alert"><span class="dot"></span>${agEsc(agTitle(releaseProj.rep.title, r.name))} · ${_t('발매','Released')} — ${_t('응원한 사람은 홀로 카드를 받아요','cheerers get a holo card')}</div>` : '';
-      const cards = r.projects.length ? r.projects.map(p => agSongCard(p, r.color, 'cascade')).join('') : `<div class="ag-empty">${_t('아직 올라온 곡이 없어요','No songs yet')}</div>`;
-      return `<div class="ag-roster" style="--tc:${r.color}">
-        <div class="ag-rtop">
-          <div class="ag-portrait">${r.avatar ? `<img src="${agEsc(r.avatar)}" alt="">` : ''}<span class="ag-seal">${_t('계약중','Signed')}</span></div>
-          <div class="ag-rmid"><div class="ag-rname">${agEsc(r.name)}</div><div class="ag-rsub">${_t('곡','Songs')} ${r.projects.length}</div></div>
-          ${r.cheering ? `<div class="ag-rcheer"><i class="ri-heart-3-fill"></i>${_t('응원중','Cheering')}</div>` : ''}
-        </div>
-        ${alert}
-        <div class="ag-cascade">
-          <div class="ag-cazlab">📥 <b>${agEsc(r.name)}</b>${_t('를 계약해서 들어온 카드','’s contracted cards')} · ${r.projects.length}</div>
-          <div class="ag-songrow">${cards}</div>
-        </div>
+    // 내가 응원하는 곡 (데모 성장 바)
+    const supRows = mySentCheers.length ? mySentCheers.map(c => {
+      const t = allTracks.find(x => x && x.id === (c && c.track_id));
+      const artist = (c && (c.artist_name || c.artist)) || (t && t.artist) || '';
+      const title = maTitle((c && (c.track_title || c.title)) || (t && t.title), artist);
+      let demoCount = 1, hasFinal = false, repId = (c && c.track_id) || '';
+      if (t) { const p = maProjOf(t); demoCount = p.demoCount || 1; hasFinal = p.hasFinal; repId = (p.rep && p.rep.id) || t.id; }
+      const tot = Math.max(demoCount + (hasFinal ? 1 : 0), 4);
+      const pct = hasFinal ? 100 : Math.min(Math.round(demoCount / 4 * 100), 90);
+      const col = maColor(title);
+      return `<div class="ma-row" onclick="navigateTo('song:${repId}')">
+        <div class="ma-cover" style="background:${col}">${maEsc(String(title).slice(0, 2))}</div>
+        <div class="ma-rmid"><div class="ma-rt">${maEsc(title)}</div><div class="ma-rsub">${maEsc(artist)}</div><div class="ma-bar"><i style="width:${pct}%"></i></div></div>
+        <div class="ma-stage">${hasFinal ? _t('발매','Out') : '데모 ' + demoCount}${hasFinal ? '' : `<span>/${tot}</span>`}</div>
       </div>`;
-    }).join('') : `<div class="ag-empty">${_t('아직 계약한 아티스트가 없어요 — 아래 워치리스트에서 계약해보세요','No signed artists yet — sign from your watchlist below')}</div>`;
+    }).join('') : `<div class="ma-empty">${_t('아직 응원한 곡이 없어요 — 마음에 드는 데모를 응원해보세요','No cheered songs yet — cheer a demo you like')}</div>`;
 
-    // 워치리스트 (응원한 곡의 아티스트 중 미팔로우) — 계약=팔로우.
-    // 응원 곡 track_id → 트랙의 artistId 해석해서 넘겨야 서버 팔로우(=소속 승격)가 됨.
-    const watchMap = {};
-    mySentCheers.forEach(c => {
-      const name = c && (c.artist_name || c.artist);
-      if (!name || followedNames.has(name) || watchMap[name]) return;
-      const ct = allTracks.find(x => x && x.id === (c && c.track_id));
-      const aid = (ct && ct.artistId) || (allTracks.find(x => x && x.artist === name && x.artistId) || {}).artistId || '';
-      watchMap[name] = { name, id: aid, projects: agArtistProjects(name) };
-    });
-    const watchNames = Object.values(watchMap);
-    const watchHtml = watchNames.length ? watchNames.map(w => {
-      const col = agColor(w.name);
-      return `<div class="ag-watch">
-        <div class="ag-wp" style="background:radial-gradient(circle at 38% 32%, color-mix(in srgb, ${col} 60%, #fff), ${col})"></div>
-        <div class="ag-wmid"><div class="ag-wname">${agEsc(w.name)}</div><div class="ag-wsub">${_t('곡','Songs')} ${w.projects.length} · ${_t('응원함','Cheered')}</div></div>
-        <button class="ag-signbtn" data-aid="${agEsc(w.id)}" data-aname="${agEsc(w.name)}" onclick="mhFollow(this)"><i class="ri-add-line"></i>${_t('계약','Sign')}</button>
-      </div>`;
-    }).join('') : `<div class="ag-empty">${_t('응원한 아티스트가 워치리스트에 모여요','Cheered artists gather here')}</div>`;
+    // 팔로우한 아티스트
+    const folCards = followedArtists.length ? followedArtists.map(a => {
+      const nm = (a && a.name) || '';
+      const av = (a && a.avatar) || ('https://i.pravatar.cc/100?u=' + encodeURIComponent(nm));
+      return `<div class="ma-artist" onclick="navigateTo('artist:${encodeURIComponent(nm)}')"><img class="ma-aav" src="${maEsc(av)}" alt=""><div class="ma-an">${maEsc(nm)}</div></div>`;
+    }).join('') : `<div class="ma-empty">${_t('관심 아티스트를 팔로우해보세요','Follow artists you like')}</div>`;
 
-    // 데모 캐비닛 (소속+응원 곡, 프로젝트 dedupe)
-    const cabSeen = {}, cabinet = [];
-    roster.forEach(r => r.projects.forEach(p => { if (!cabSeen[p.pid]) { cabSeen[p.pid] = 1; cabinet.push(p); } }));
-    mySentCheers.forEach(c => { const t = allTracks.find(x => x && x.id === (c && c.track_id)); if (t) { const pid = t.projectId || ('proj_' + t.id); if (!cabSeen[pid]) { cabSeen[pid] = 1; cabinet.push(agProjInfo(pid)); } } });
-    const cabHtml = cabinet.length ? cabinet.map(p => agSongCard(p, agColor(agTitle(p.rep.title, p.rep.artist)), 'cab')).join('') : `<div class="ag-empty">${_t('계약·응원한 곡이 여기 모여요','Your collected demos gather here')}</div>`;
-
-    appContent.innerHTML = `${_agStyle()}
-      <div class="ag-page"><div class="ag-inner">
-        <div class="ag-top">
-          <div class="ag-id"><img class="ag-id-av" src="${agEsc(agAvatar)}" alt=""><div class="ag-id-nm">${agEsc(agMe.name || '')}</div></div>
-          <div class="ag-set" onclick="editProfile()" title="${_t('설정','Settings')}"><i class="ri-settings-3-line"></i></div>
+    appContent.innerHTML = `<style id="ma-style">
+.ma-page{position:relative;min-height:100%;padding:46px 0 calc(var(--player-height,60px) + env(safe-area-inset-bottom) + 28px);background:#0B0B12;color:#F4F4F7;font-family:'Pretendard',sans-serif;overflow-x:hidden;}
+.ma-page *{box-sizing:border-box;}
+.ma-inner{padding:0 18px;max-width:440px;margin:0 auto;}
+.ma-head{display:flex;align-items:center;gap:13px;padding:6px 2px 4px;}
+.ma-av{width:58px;height:58px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.1);flex:0 0 auto;}
+.ma-info{flex:1;min-width:0;}
+.ma-nm{font-size:19px;font-weight:800;}
+.ma-sub{font-size:12px;color:#8B8B9A;margin-top:3px;}
+.ma-set{width:36px;height:36px;border-radius:50%;background:#17171F;border:1px solid rgba(255,255,255,.08);color:#8B8B9A;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex:0 0 auto;}
+.ma-sec{margin-top:26px;}
+.ma-sec-t{font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px;margin:0 0 12px 2px;}
+.ma-sec-t .ct{font-size:12px;font-weight:600;color:#8B8B9A;margin-left:auto;}
+.ma-list{display:flex;flex-direction:column;gap:9px;}
+.ma-row{display:flex;align-items:center;gap:13px;padding:11px;border-radius:15px;background:#15151E;border:1px solid rgba(255,255,255,.06);cursor:pointer;}
+.ma-cover{width:46px;height:46px;border-radius:12px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#0b0b12;font-weight:800;font-size:13px;overflow:hidden;}
+.ma-cover img{width:100%;height:100%;object-fit:cover;}
+.ma-rmid{flex:1;min-width:0;}
+.ma-rt{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ma-rsub{font-size:11.5px;color:#8B8B9A;margin-top:2px;}
+.ma-bar{height:4px;border-radius:4px;background:rgba(255,255,255,.08);margin-top:7px;overflow:hidden;}
+.ma-bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#8B7CF6,#FB6F92);}
+.ma-stage{flex:0 0 auto;font-size:11px;font-weight:800;color:#C9C4F5;text-align:right;}
+.ma-stage span{color:#5A5A6C;font-weight:600;}
+.ma-artists{display:flex;gap:14px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.ma-artists::-webkit-scrollbar{display:none;}
+.ma-artist{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;flex:0 0 auto;width:68px;}
+.ma-aav{width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.1);}
+.ma-an{font-size:11.5px;font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68px;}
+.ma-empty{font-size:12.5px;color:#5A5A6C;padding:16px;text-align:center;background:#15151E;border:1px solid rgba(255,255,255,.05);border-radius:14px;}
+@media(min-width:769px){.ma-inner{max-width:470px;}}
+</style>
+      <div class="ma-page"><div class="ma-inner">
+        <div class="ma-head">
+          <img class="ma-av" src="${maEsc(maAvatar)}" alt="">
+          <div class="ma-info"><div class="ma-nm">${maEsc(maMe.name || '')}</div><div class="ma-sub">🎧 ${_t('리스너','Listener')} · ${_t('팔로우','Follow')} ${followedArtists.length} · ${_t('응원','Cheers')} ${mySentCheers.length}</div></div>
+          <button class="ma-set" onclick="editProfile()" aria-label="${_t('설정','Settings')}"><i class="ri-settings-3-line"></i></button>
         </div>
-        <div class="ag-dash">
-          <div class="ag-dl">MY AGENCY</div><div class="ag-dt">${_t('내 기획사','My Agency')}</div>
-          <div class="ag-ds">${_t('계약한 아티스트가 새 데모를 올리면 알려줘요.','Get notified when your signed artists drop new demos.')}</div>
-          <div class="ag-stats">
-            <div class="ag-stat"><b style="color:#FFC94D">${roster.length}</b><span>${_t('소속 아티스트','Signed')}</span></div>
-            <div class="ag-stat"><b style="color:#7FA8FF">${watchNames.length}</b><span>${_t('워치리스트','Watchlist')}</span></div>
-            <div class="ag-stat"><b style="color:#46E08B">${cabinet.length}</b><span>${_t('데모 캐비닛','Cabinet')}</span></div>
-          </div>
+        <div class="ma-sec">
+          <div class="ma-sec-t"><i class="ri-heart-3-fill" style="color:#FB6F92"></i> ${_t('내가 응원하는 곡','Songs I support')} <span class="ct">${mySentCheers.length}</span></div>
+          <div class="ma-list">${supRows}</div>
         </div>
-        <div class="ag-tier"><h2>${_t('내 소속 아티스트','My Roster')} <span class="ag-step ag-s1">${_t('계약중','Signed')}</span></h2><span class="ag-ct">${roster.length}${_t('팀','')}</span></div>
-        ${rosterHtml}
-        <div class="ag-tier"><h2>${_t('워치리스트','Watchlist')} <span class="ag-step ag-s2">${_t('눈여겨보는','Watching')}</span></h2><span class="ag-ct">${watchNames.length}${_t('명','')}</span></div>
-        ${watchHtml}
-        <div class="ag-tier"><h2>${_t('데모 캐비닛','Demo Cabinet')} <span class="ag-step ag-s3">${_t('저장한 곡','Saved')}</span></h2><span class="ag-ct">${cabinet.length}${_t('곡','')}</span></div>
-        <div class="ag-cab">${cabHtml}</div>
+        <div class="ma-sec">
+          <div class="ma-sec-t"><i class="ri-user-heart-line" style="color:#8B7CF6"></i> ${_t('팔로우한 아티스트','Following')} <span class="ct">${followedArtists.length}</span></div>
+          <div class="ma-artists">${folCards}</div>
+        </div>
       </div></div>`;
     return;
   }
