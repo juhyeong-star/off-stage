@@ -16972,7 +16972,12 @@ window.submitCheer = async function (trackId, trackTitle, artistName) {
       closeCheerModal();
       showToast(_t('이미 응원했어요 💝', 'You already cheered 💝'));
     } else {
-      alert('응원 전송 실패: ' + (e.message || e));
+      console.warn('[cheer] send failed', e && (e.message || e));
+      // 'cheers' 테이블 미적용(PGRST205) 등 — 사용자에겐 부드러운 토스트, 상세는 콘솔.
+      const _missing = /find the table|does not exist|PGRST205|schema cache/i.test((e && e.message) || '');
+      showToast(_missing
+        ? _t('응원 기능 준비 중이에요 🙏', 'Cheers coming soon 🙏')
+        : _t('응원 전송에 실패했어요. 잠시 후 다시 시도해주세요', 'Cheer failed — please try again'));
       if (btn) { btn.disabled = false; btn.textContent = '💝 응원 보내기'; }
     }
   }
