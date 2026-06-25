@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SMHS Audio-Visual Social Feed</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Pretendard:wght@300;400;600;700;800;900&display=swap');
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #03000d;
+            color: #ffffff;
+            user-select: none;
+            touch-action: pan-y;
+            margin: 0; padding: 0; overflow: hidden;
+        }
+        .handwritten { font-family: 'Nanum Pen Script', cursive; line-height: 1.1; }
+        .nebula-bg { background: radial-gradient(circle at 50% 0%, #150a30 0%, #050212 60%, #03000d 100%); position: relative; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.06); }
+        .glass-post { background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s ease; }
+        .glass-post:active { transform: scale(0.98); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .bar { width: 3px; height: 4px; background: currentColor; display: inline-block; margin: 0 1px; border-radius: 2px; animation: bounce 0.8s infinite ease-in-out alternate; transform-origin: bottom; }
+        @keyframes bounce { 0% { transform: scaleY(1); } 100% { transform: scaleY(5); } }
+        .playing-spin { animation: spin 6s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .heart-beat { animation: heartbeat 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes heartbeat { 0% { transform: scale(1); } 50% { transform: scale(1.4); color: #f43f5e; fill: #f43f5e; } 100% { transform: scale(1); color: #f43f5e; fill: #f43f5e; } }
+    </style>
+</head>
+<body class="flex items-center justify-center h-[100dvh] p-2 sm:p-4">
+
+    <div class="relative w-full max-w-[393px] h-[calc(100dvh-1rem)] max-h-[852px] rounded-[45px] border-[8px] border-[#1d1a29] bg-[#03000d] shadow-2xl overflow-hidden flex flex-col justify-between">
+
+        <div class="w-full h-10 bg-transparent flex justify-between items-center px-7 z-50 pointer-events-none text-xs font-semibold shrink-0">
+            <span>11:48</span>
+            <div class="w-24 h-5 bg-black rounded-full mx-auto -mt-1 flex items-center justify-center">
+                <div class="w-2.5 h-2.5 bg-[#111] rounded-full mr-2"></div>
+                <div class="w-10 h-1 bg-[#222] rounded-full"></div>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <i data-lucide="signal" class="w-3.5 h-3.5"></i>
+                <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+                <i data-lucide="battery" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+        </div>
+
+        <header class="w-full pt-1 pb-2 px-5 bg-[#03000d]/90 backdrop-blur-md z-40 border-b border-white/5 flex flex-col gap-3 shrink-0">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-lg font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-amber-300">SMHS</span>
+                    <span class="text-[9px] bg-purple-500/20 text-purple-300 font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">주절주절 피드</span>
+                </div>
+                <div class="flex gap-3">
+                    <button class="text-white/60 hover:text-white transition-colors"><i data-lucide="search" class="w-5 h-5"></i></button>
+                    <button class="text-white/60 hover:text-white transition-colors relative">
+                        <i data-lucide="bell" class="w-5 h-5"></i>
+                        <span class="absolute top-0 right-0 w-2 h-2 bg-rose-500 rounded-full border border-[#03000d]"></span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex gap-2 overflow-x-auto no-scrollbar">
+                <button class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-black shrink-0">추천</button>
+                <button class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white/5 border border-white/10 text-white/70 shrink-0">팔로잉</button>
+                <button class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white/5 border border-white/10 text-rose-300 border-rose-500/30 bg-rose-500/10 shrink-0 flex items-center gap-1">
+                    <i data-lucide="flame" class="w-3 h-3"></i> 핫데모
+                </button>
+                <button class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white/5 border border-white/10 text-white/70 shrink-0">협업구함</button>
+            </div>
+        </header>
+
+        <main class="flex-1 w-full overflow-y-auto no-scrollbar nebula-bg">
+
+            <div class="px-4 py-4 border-b border-white/5 bg-white/[0.02]">
+                <div class="flex gap-3 items-center">
+                    <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-400 to-rose-500 flex items-center justify-center text-[10px] font-black text-white shrink-0 shadow-md p-0.5">
+                        <div class="w-full h-full bg-[#03000d] rounded-full flex items-center justify-center">나</div>
+                    </div>
+                    <div class="flex-1 bg-black/40 border border-white/10 rounded-full px-4 py-2.5 flex items-center gap-2 cursor-pointer hover:bg-white/5 transition-colors">
+                        <span class="text-xs text-white/40 flex-1">지금 떠오르는 음악 조각은?</span>
+                        <div class="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 shrink-0">
+                            <i data-lucide="music" class="w-3.5 h-3.5"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col pb-6" id="feed-container">
+                <div class="glass-post p-4 border-b border-white/5">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-xs font-bold text-white shrink-0">효원</div>
+                            <div>
+                                <h3 class="text-xs font-bold text-white flex items-center gap-1">
+                                    이효원 <span class="text-[9px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded-sm font-semibold">작곡 2</span>
+                                </h3>
+                                <p class="text-[9px] text-white/40">2시간 전</p>
+                            </div>
+                        </div>
+                        <button class="text-white/30 hover:text-white"><i data-lucide="more-horizontal" class="w-4 h-4"></i></button>
+                    </div>
+
+                    <p class="text-[13px] leading-relaxed text-white/90 mb-3 pl-10 pr-2">
+                        급하게 스케치한 곡이지만 한번만 들어봐줘! 후반부 드럼 비트 들어갈 때 소름돋게 구성해봤음. <br>
+                        <span class="text-amber-300 font-bold">#편곡같이할 베이스 세션 구함!</span> 디엠줘 🎸
+                    </p>
+
+                    <div class="ml-10 mb-3 bg-black/40 border border-white/10 rounded-2xl p-2.5 flex items-center gap-3 relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-lime-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <div class="relative w-14 h-14 shrink-0 cursor-pointer" onclick="toggleFeedPlay(1, this, '#76FF03', 'Plastic days', '이효원')">
+                            <div class="w-full h-full rounded-full flex flex-col items-center justify-center text-center shadow-lg transition-transform"
+                                 style="background-color: #76FF03; box-shadow: 0 4px 15px rgba(118, 255, 3, 0.2);" id="shape-1">
+                                <span class="text-black font-extrabold text-[10px] handwritten leading-tight">G-Funk</span>
+                                <span class="text-black font-extrabold text-[10px] handwritten leading-tight">R&B</span>
+                                <span class="text-black font-extrabold text-[10px] handwritten leading-tight">소매치기</span>
+                            </div>
+                            <div class="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity" id="play-overlay-1">
+                                <i data-lucide="play" class="w-6 h-6 fill-white text-white ml-0.5"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0 pr-2">
+                            <h4 class="text-xs font-bold text-white truncate">Plastic days</h4>
+                            <p class="text-[10px] text-lime-400 font-semibold truncate mt-0.5">DEMO 2 에디션</p>
+                            <div class="flex items-end h-3 mt-1.5 text-lime-400 opacity-0 transition-opacity" id="eq-1">
+                                <div class="bar" style="animation-delay: 0.1s"></div>
+                                <div class="bar" style="animation-delay: 0.3s"></div>
+                                <div class="bar" style="animation-delay: 0.2s"></div>
+                                <div class="bar" style="animation-delay: 0.5s"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ml-10 flex items-center gap-5 text-white/50 text-xs mt-1">
+                        <button class="flex items-center gap-1.5 hover:text-rose-400 transition-colors group" onclick="likePost(this)">
+                            <i data-lucide="heart" class="w-4 h-4 group-hover:scale-110 transition-transform"></i> <span class="count">1,273</span>
+                        </button>
+                        <button class="flex items-center gap-1.5 hover:text-white transition-colors">
+                            <i data-lucide="message-square" class="w-4 h-4"></i> 85
+                        </button>
+                        <button class="flex items-center gap-1.5 hover:text-white transition-colors ml-auto">
+                            <i data-lucide="bookmark" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="glass-post p-4 border-b border-white/5">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center text-xs font-bold text-white shrink-0">민찬</div>
+                            <div>
+                                <h3 class="text-xs font-bold text-white flex items-center gap-1">
+                                    김민찬 <span class="text-[9px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded-sm font-semibold">미디 1</span>
+                                </h3>
+                                <p class="text-[9px] text-white/40">5시간 전</p>
+                            </div>
+                        </div>
+                        <button class="text-white/30 hover:text-white"><i data-lucide="more-horizontal" class="w-4 h-4"></i></button>
+                    </div>
+
+                    <p class="text-[13px] leading-relaxed text-white/90 mb-3 pl-10 pr-2">
+                        아 윗집 진짜 새벽 세시마다 탭댄스 추나;; 화나서 비트 찍어버림. 들어보셈 🤬
+                    </p>
+
+                    <div class="ml-10 mb-3 bg-black/40 border border-white/10 rounded-2xl p-2.5 flex items-center gap-3 relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <div class="relative w-14 h-14 shrink-0 cursor-pointer" onclick="toggleFeedPlay(2, this, '#00E5FF', '새벽 세시 층간소음 Blues', '김민찬')">
+                            <div class="w-full h-full rounded-full flex flex-col items-center justify-center text-center shadow-lg transition-transform"
+                                 style="background-color: #00E5FF; box-shadow: 0 4px 15px rgba(0, 229, 255, 0.2);" id="shape-2">
+                                <span class="text-black font-extrabold text-[10px] handwritten leading-tight">새벽세시</span>
+                                <span class="text-black font-extrabold text-[10px] handwritten leading-tight">머리에서</span>
+                                <span class="text-black font-extrabold text-[10px] handwritten leading-tight">불난다</span>
+                            </div>
+                            <div class="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity" id="play-overlay-2">
+                                <i data-lucide="play" class="w-6 h-6 fill-white text-white ml-0.5"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0 pr-2">
+                            <h4 class="text-xs font-bold text-white truncate">새벽 세시 층간소음 Blues</h4>
+                            <p class="text-[10px] text-cyan-400 font-semibold truncate mt-0.5">#쫀득 #신나는</p>
+                            <div class="flex items-end h-3 mt-1.5 text-cyan-400 opacity-0 transition-opacity" id="eq-2">
+                                <div class="bar" style="animation-delay: 0.1s"></div>
+                                <div class="bar" style="animation-delay: 0.4s"></div>
+                                <div class="bar" style="animation-delay: 0.2s"></div>
+                                <div class="bar" style="animation-delay: 0.6s"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ml-10 flex items-center gap-5 text-white/50 text-xs mt-1">
+                        <button class="flex items-center gap-1.5 hover:text-rose-400 transition-colors group" onclick="likePost(this)">
+                            <i data-lucide="heart" class="w-4 h-4 group-hover:scale-110 transition-transform"></i> <span class="count">482</span>
+                        </button>
+                        <button class="flex items-center gap-1.5 hover:text-white transition-colors">
+                            <i data-lucide="message-square" class="w-4 h-4"></i> 32
+                        </button>
+                        <button class="flex items-center gap-1.5 hover:text-white transition-colors ml-auto">
+                            <i data-lucide="bookmark" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="glass-post p-4 border-b border-white/5">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-xs font-bold text-white shrink-0">승수</div>
+                            <div>
+                                <h3 class="text-xs font-bold text-white flex items-center gap-1">
+                                    한승수 <span class="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-sm font-semibold">보컬 3</span>
+                                </h3>
+                                <p class="text-[9px] text-white/40">어제</p>
+                            </div>
+                        </div>
+                        <button class="text-white/30 hover:text-white"><i data-lucide="more-horizontal" class="w-4 h-4"></i></button>
+                    </div>
+
+                    <p class="text-[13px] leading-relaxed text-white/90 mb-3 pl-10 pr-2">
+                        실기 대비 자우림 슨배님들 곡 카피 연습 🎤
+                    </p>
+
+                    <div class="ml-10 mb-3 bg-black/40 border border-white/10 rounded-2xl p-2.5 flex items-center gap-3 relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <div class="relative w-14 h-14 shrink-0 cursor-pointer" onclick="toggleFeedPlay(3, this, '#FF9100', 'Hey Hey Hey (Cover)', '한승수')">
+                            <div class="w-full h-full rounded-full flex flex-col items-center justify-center text-center shadow-lg transition-transform"
+                                 style="background-color: #FF9100; box-shadow: 0 4px 15px rgba(255, 145, 0, 0.2);" id="shape-3">
+                                <span class="text-black font-extrabold text-[10px] handwritten leading-tight">자우림</span>
+                                <span class="text-black font-extrabold text-[10px] handwritten leading-tight">밴드</span>
+                                <span class="text-black font-extrabold text-[10px] handwritten leading-tight">인디</span>
+                            </div>
+                            <div class="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity" id="play-overlay-3">
+                                <i data-lucide="play" class="w-6 h-6 fill-white text-white ml-0.5"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0 pr-2">
+                            <h4 class="text-xs font-bold text-white truncate">Hey Hey Hey (Cover)</h4>
+                            <p class="text-[10px] text-amber-400 font-semibold truncate mt-0.5">#명곡카피</p>
+                            <div class="flex items-end h-3 mt-1.5 text-amber-400 opacity-0 transition-opacity" id="eq-3">
+                                <div class="bar" style="animation-delay: 0.1s"></div>
+                                <div class="bar" style="animation-delay: 0.3s"></div>
+                                <div class="bar" style="animation-delay: 0.5s"></div>
+                                <div class="bar" style="animation-delay: 0.2s"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ml-10 flex items-center gap-5 text-white/50 text-xs mt-1">
+                        <button class="flex items-center gap-1.5 hover:text-rose-400 transition-colors group" onclick="likePost(this)">
+                            <i data-lucide="heart" class="w-4 h-4 group-hover:scale-110 transition-transform"></i> <span class="count">892</span>
+                        </button>
+                        <button class="flex items-center gap-1.5 hover:text-white transition-colors">
+                            <i data-lucide="message-square" class="w-4 h-4"></i> 45
+                        </button>
+                        <button class="flex items-center gap-1.5 hover:text-white transition-colors ml-auto">
+                            <i data-lucide="bookmark" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <footer class="w-full bg-[#04020a] border-t border-white/5 px-4 py-3 pb-6 sm:pb-3 z-40 flex items-center justify-between gap-3 shrink-0 rounded-b-[45px]">
+            <div class="flex items-center gap-3 flex-1 overflow-hidden">
+                <div class="w-10 h-10 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center overflow-hidden relative" id="global-art">
+                    <i data-lucide="music-4" class="w-4 h-4 text-purple-400"></i>
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    <h4 class="text-[13px] font-bold truncate text-white" id="global-title">피드에서 곡을 탭하세요</h4>
+                    <p class="text-[10px] text-white/40 truncate mt-0.5" id="global-artist">스크롤하며 음악을 들을 수 있어요</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button class="text-white/40 hover:text-white p-1.5"><i data-lucide="skip-back" class="w-4 h-4"></i></button>
+                <button onclick="toggleGlobalPlay()" id="global-play-btn" class="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shrink-0 shadow-lg">
+                    <i data-lucide="play" class="w-4 h-4 fill-black text-black ml-0.5" id="global-play-icon"></i>
+                </button>
+                <button class="text-white/40 hover:text-white p-1.5"><i data-lucide="skip-forward" class="w-4 h-4"></i></button>
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        let currentlyPlayingId = null;
+        let isPlaying = false;
+        let currentTrackData = { id: null, color: null, title: null, artist: null };
+
+        function toggleFeedPlay(id, element, color, title, artist) {
+            const overlay = document.getElementById(`play-overlay-${id}`);
+            const shape = document.getElementById(`shape-${id}`);
+            const eq = document.getElementById(`eq-${id}`);
+
+            if (currentlyPlayingId === id && isPlaying) {
+                pauseFeedItem(id);
+                isPlaying = false;
+                syncGlobalPlayer();
+                return;
+            }
+            if (currentlyPlayingId !== null && currentlyPlayingId !== id) {
+                pauseFeedItem(currentlyPlayingId);
+            }
+            currentlyPlayingId = id;
+            isPlaying = true;
+            currentTrackData = { id, color, title, artist };
+
+            overlay.innerHTML = `<i data-lucide="pause" class="w-6 h-6 fill-white text-white"></i>`;
+            shape.classList.add('playing-spin');
+            eq.style.opacity = '1';
+            syncGlobalPlayer();
+            lucide.createIcons();
+        }
+
+        function pauseFeedItem(id) {
+            const overlay = document.getElementById(`play-overlay-${id}`);
+            const shape = document.getElementById(`shape-${id}`);
+            const eq = document.getElementById(`eq-${id}`);
+            if(overlay) overlay.innerHTML = `<i data-lucide="play" class="w-6 h-6 fill-white text-white ml-0.5"></i>`;
+            if(shape) shape.classList.remove('playing-spin');
+            if(eq) eq.style.opacity = '0';
+        }
+
+        function toggleGlobalPlay() {
+            if (currentlyPlayingId === null) return;
+            isPlaying = !isPlaying;
+            if (isPlaying) {
+                const overlay = document.getElementById(`play-overlay-${currentlyPlayingId}`);
+                const shape = document.getElementById(`shape-${currentlyPlayingId}`);
+                const eq = document.getElementById(`eq-${currentlyPlayingId}`);
+                if(overlay) overlay.innerHTML = `<i data-lucide="pause" class="w-6 h-6 fill-white text-white"></i>`;
+                if(shape) shape.classList.add('playing-spin');
+                if(eq) eq.style.opacity = '1';
+            } else {
+                pauseFeedItem(currentlyPlayingId);
+            }
+            syncGlobalPlayer();
+            lucide.createIcons();
+        }
+
+        function syncGlobalPlayer() {
+            const art = document.getElementById('global-art');
+            const titleEl = document.getElementById('global-title');
+            const artistEl = document.getElementById('global-artist');
+            const icon = document.getElementById('global-play-icon');
+
+            if (currentlyPlayingId) {
+                titleEl.innerText = currentTrackData.title;
+                artistEl.innerText = currentTrackData.artist;
+                art.style.backgroundColor = currentTrackData.color;
+                art.style.boxShadow = `0 0 15px ${currentTrackData.color}40`;
+                art.innerHTML = '';
+                if (isPlaying) {
+                    art.classList.add('playing-spin');
+                    icon.setAttribute('data-lucide', 'pause');
+                    icon.classList.remove('ml-0.5');
+                } else {
+                    art.classList.remove('playing-spin');
+                    icon.setAttribute('data-lucide', 'play');
+                    icon.classList.add('ml-0.5');
+                }
+            } else {
+                icon.setAttribute('data-lucide', 'play');
+            }
+        }
+
+        function likePost(button) {
+            const icon = button.querySelector('i');
+            const countSpan = button.querySelector('.count');
+            let currentCount = parseInt(countSpan.innerText.replace(/,/g, ''));
+            if (icon.classList.contains('text-rose-500')) {
+                icon.classList.remove('text-rose-500', 'fill-rose-500', 'heart-beat');
+                currentCount--;
+            } else {
+                icon.classList.add('text-rose-500', 'fill-rose-500');
+                icon.classList.remove('heart-beat');
+                void icon.offsetWidth;
+                icon.classList.add('heart-beat');
+                currentCount++;
+            }
+            countSpan.innerText = currentCount.toLocaleString();
+        }
+
+        window.onload = function() { lucide.createIcons(); }
+    </script>
+</body>
+</html>

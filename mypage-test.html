@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SMHS My Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Pretendard:wght@300;400;600;700;800;900&display=swap');
+        body { font-family: 'Pretendard', sans-serif; background-color: #03000d; color: #fff; user-select: none; touch-action: pan-y; margin: 0; padding: 0; overflow: hidden; }
+        .handwritten { font-family: 'Nanum Pen Script', cursive; line-height: 1.1; }
+        .nebula-bg { background: radial-gradient(circle at 50% 0%, #160b32 0%, #060214 52%, #03000d 100%); }
+        .glass { background: rgba(255,255,255,0.035); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.06); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .mp-tab { flex:1; text-align:center; padding:11px 0; font-size:12.5px; font-weight:700; color:rgba(255,255,255,0.42); border-bottom:2px solid transparent; cursor:pointer; transition: color 0.2s; }
+        .mp-tab.on { color:#fff; border-bottom-color:#c084fc; }
+        .mp-pane { display:none; }
+        .mp-pane.on { display:block; }
+        .disc { border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+    </style>
+</head>
+<body class="flex items-center justify-center h-[100dvh] p-2 sm:p-4">
+
+    <div class="relative w-full max-w-[393px] h-[calc(100dvh-1rem)] max-h-[852px] rounded-[45px] border-[8px] border-[#1d1a29] bg-[#03000d] shadow-2xl overflow-hidden flex flex-col">
+
+        <div class="w-full h-10 bg-transparent flex justify-between items-center px-7 z-50 pointer-events-none text-xs font-semibold shrink-0">
+            <span>11:48</span>
+            <div class="w-24 h-5 bg-black rounded-full mx-auto -mt-1 flex items-center justify-center">
+                <div class="w-2.5 h-2.5 bg-[#111] rounded-full mr-2"></div>
+                <div class="w-10 h-1 bg-[#222] rounded-full"></div>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <i data-lucide="signal" class="w-3.5 h-3.5"></i>
+                <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+                <i data-lucide="battery" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto no-scrollbar nebula-bg">
+
+            <div class="flex items-center justify-between px-4 pt-1 pb-1">
+                <button class="text-white/60"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
+                <span class="text-[13px] text-white/55 font-medium">@hyowon</span>
+                <button class="text-white/60"><i data-lucide="settings" class="w-5 h-5"></i></button>
+            </div>
+
+            <div class="px-5 pb-4 text-center">
+                <div class="disc w-24 h-24 mx-auto" style="background: radial-gradient(circle at 50% 34%, #b4ff66, #2f6b12); box-shadow: 0 8px 30px rgba(118,255,3,0.32), inset 0 5px 12px rgba(255,255,255,0.45);">
+                    <span class="handwritten text-[32px] leading-none" style="color:#0c2a00;">효원</span>
+                </div>
+                <div class="mt-3 flex items-center justify-center gap-2">
+                    <span class="text-[19px] font-extrabold">이효원</span>
+                    <span class="text-[10px] font-bold bg-purple-500/20 text-purple-200 px-2.5 py-1 rounded-full">작곡 2학년</span>
+                </div>
+                <div class="handwritten text-[18px] text-white/75 mt-1.5">급하게 만든 데모가 제일 진심 🎹</div>
+
+                <div class="flex mt-4">
+                    <div class="flex-1"><div class="text-base font-extrabold">12</div><div class="text-[10px] text-white/40 mt-0.5">곡</div></div>
+                    <div class="flex-1 border-x border-white/10"><div class="text-base font-extrabold">1,273</div><div class="text-[10px] text-white/40 mt-0.5">팔로워</div></div>
+                    <div class="flex-1"><div class="text-base font-extrabold">84</div><div class="text-[10px] text-white/40 mt-0.5">팔로잉</div></div>
+                </div>
+
+                <div class="flex gap-2 mt-4">
+                    <button class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none py-2.5 rounded-xl text-[13px] font-bold">프로필 편집</button>
+                    <button class="bg-white/5 border border-white/10 text-white px-4 rounded-xl"><i data-lucide="share-2" class="w-4 h-4"></i></button>
+                </div>
+            </div>
+
+            <div class="flex border-y border-white/5">
+                <div class="mp-tab on" data-pane="songs">곡 12</div>
+                <div class="mp-tab" data-pane="posts">주절주절</div>
+                <div class="mp-tab" data-pane="saved">즐겨찾기</div>
+            </div>
+
+            <div class="p-4">
+                <div class="mp-pane on" id="pane-songs">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="text-center">
+                            <div class="disc w-full aspect-square" style="background: radial-gradient(circle at 50% 34%, #b4ff66, #2f6b12); box-shadow: 0 6px 18px rgba(118,255,3,0.22), inset 0 4px 10px rgba(255,255,255,0.42);"><span class="handwritten text-[17px]" style="color:#0c2a00;">G-Funk<br>R&B<br>소매치기</span></div>
+                            <div class="text-xs font-bold mt-1.5">Plastic days</div>
+                            <div class="text-[10px] text-white/40 mt-0.5"><i data-lucide="play" class="w-2.5 h-2.5 inline-block"></i> 1.2k · <i data-lucide="heart" class="w-2.5 h-2.5 inline-block"></i> 482</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="disc w-full aspect-square" style="background: radial-gradient(circle at 50% 34%, #5de0ff, #0a4a5e); box-shadow: 0 6px 18px rgba(0,229,255,0.22), inset 0 4px 10px rgba(255,255,255,0.42);"><span class="handwritten text-[17px]" style="color:#04212b;">새벽세시<br>머리에서<br>불난다</span></div>
+                            <div class="text-xs font-bold mt-1.5 truncate">층간소음 Blues</div>
+                            <div class="text-[10px] text-white/40 mt-0.5"><i data-lucide="play" class="w-2.5 h-2.5 inline-block"></i> 980 · <i data-lucide="heart" class="w-2.5 h-2.5 inline-block"></i> 311</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="disc w-full aspect-square" style="background: radial-gradient(circle at 50% 34%, #ffb74d, #5e3a00); box-shadow: 0 6px 18px rgba(255,145,0,0.22), inset 0 4px 10px rgba(255,255,255,0.42);"><span class="handwritten text-[17px]" style="color:#3a2400;">자우림<br>밴드<br>인디</span></div>
+                            <div class="text-xs font-bold mt-1.5">Hey Hey Hey</div>
+                            <div class="text-[10px] text-white/40 mt-0.5"><i data-lucide="play" class="w-2.5 h-2.5 inline-block"></i> 892 · <i data-lucide="heart" class="w-2.5 h-2.5 inline-block"></i> 245</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="disc w-full aspect-square" style="background: radial-gradient(circle at 50% 34%, #ff7eb6, #5e1535); box-shadow: 0 6px 18px rgba(255,46,160,0.22), inset 0 4px 10px rgba(255,255,255,0.42);"><span class="handwritten text-[16px]" style="color:#3a0a20;">파워레인저<br>포기마<br>할수있어</span></div>
+                            <div class="text-xs font-bold mt-1.5">건유레인저</div>
+                            <div class="text-[10px] text-white/40 mt-0.5"><i data-lucide="play" class="w-2.5 h-2.5 inline-block"></i> 1.5k · <i data-lucide="heart" class="w-2.5 h-2.5 inline-block"></i> 760</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mp-pane" id="pane-posts">
+                    <div class="glass rounded-2xl p-3 mb-3">
+                        <div class="text-[11px] text-white/40 mb-1.5">2시간 전</div>
+                        <div class="text-[12.5px] text-white/90 leading-relaxed">급하게 스케치한 곡이지만 한번만 들어봐줘! 후반부 드럼 소름 🥁 <span class="text-amber-300 font-semibold">#베이스세션구함</span></div>
+                        <div class="flex items-center gap-2.5 mt-2.5 bg-black/35 rounded-xl p-1.5">
+                            <div class="disc w-9 h-9 shrink-0" style="background: radial-gradient(circle at 50% 36%, #b4ff66, #2f6b12);"><i data-lucide="play" class="w-3.5 h-3.5" style="color:#0c2a00;"></i></div>
+                            <div class="flex-1 min-w-0"><div class="text-[11px] font-bold">Plastic days</div><div class="text-[9px] text-lime-400">#G-Funk #R&B</div></div>
+                        </div>
+                        <div class="flex gap-4 mt-2.5 text-white/50 text-[11px]"><span><i data-lucide="heart" class="w-3 h-3 inline-block"></i> 1,273</span><span><i data-lucide="message-circle" class="w-3 h-3 inline-block"></i> 85</span></div>
+                    </div>
+                    <div class="glass rounded-2xl p-3">
+                        <div class="text-[11px] text-white/40 mb-1.5">어제</div>
+                        <div class="text-[12.5px] text-white/90 leading-relaxed">오늘 가사 한 줄 끄적 — "너의 눈 볼 때마다…"</div>
+                        <div class="flex gap-4 mt-2.5 text-white/50 text-[11px]"><span><i data-lucide="heart" class="w-3 h-3 inline-block"></i> 64</span><span><i data-lucide="message-circle" class="w-3 h-3 inline-block"></i> 7</span></div>
+                    </div>
+                </div>
+
+                <div class="mp-pane" id="pane-saved">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="glass rounded-2xl py-4 px-2.5 text-center">
+                            <div class="w-9 h-9 rounded-full bg-purple-500/15 flex items-center justify-center mx-auto text-purple-300"><i data-lucide="folder" class="w-[18px] h-[18px]"></i></div>
+                            <div class="text-[11px] font-bold mt-2">투자하고픈 명곡</div>
+                            <div class="text-[9px] text-white/40 mt-0.5">5곡 보관</div>
+                        </div>
+                        <div class="glass rounded-2xl py-4 px-2.5 text-center">
+                            <div class="w-9 h-9 rounded-full bg-cyan-500/15 flex items-center justify-center mx-auto text-cyan-300"><i data-lucide="folder" class="w-[18px] h-[18px]"></i></div>
+                            <div class="text-[11px] font-bold mt-2">밤샘 작업 BGM</div>
+                            <div class="text-[9px] text-white/40 mt-0.5">8곡 보관</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <footer class="w-full bg-[#04020a] border-t border-white/5 px-4 py-3 pb-6 sm:pb-3 z-40 flex items-center gap-3 shrink-0 rounded-b-[45px]">
+            <div class="disc w-9 h-9 shrink-0" style="background: radial-gradient(circle at 50% 36%, #b4ff66, #2f6b12); box-shadow: 0 0 12px rgba(118,255,3,0.4);"></div>
+            <div class="flex-1 min-w-0"><div class="text-xs font-bold">Plastic days</div><div class="text-[10px] text-white/45">이효원</div></div>
+            <button class="text-white/55"><i data-lucide="skip-back" class="w-4 h-4"></i></button>
+            <button class="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center shrink-0"><i data-lucide="play" class="w-4 h-4 fill-black"></i></button>
+            <button class="text-white/55"><i data-lucide="skip-forward" class="w-4 h-4"></i></button>
+        </footer>
+
+    </div>
+
+    <script>
+        document.querySelectorAll('.mp-tab').forEach(function(t){
+            t.addEventListener('click', function(){
+                document.querySelectorAll('.mp-tab').forEach(function(x){ x.classList.remove('on'); });
+                t.classList.add('on');
+                document.querySelectorAll('.mp-pane').forEach(function(p){ p.classList.remove('on'); });
+                var pane = document.getElementById('pane-' + t.getAttribute('data-pane'));
+                if(pane) pane.classList.add('on');
+            });
+        });
+        window.onload = function() { lucide.createIcons(); }
+    </script>
+</body>
+</html>
