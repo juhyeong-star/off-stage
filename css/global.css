@@ -19431,6 +19431,9 @@ body.is-universe-route .my-universe {
 /* 액션 아이콘(하트·댓글·공유·북마크) — 우측 세로 중앙쯤으로 올림 (사용자 요청) */
 #feed-reels .feed-actions-col { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); z-index: 4; justify-content: center; padding-bottom: 0; }
 #feed-reels .fa-act { text-shadow: 0 1px 6px rgba(0,0,0,0.6); }
+/* 수집/좋아요 탭 모션 — 새 피드 .fa-act (옛 .pop 규칙은 .tp-act/.player-collect-btn 만이라 새 피드선 누락됐었음) */
+#feed-reels .fa-act.pop { animation: faActPop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes faActPop { 0% { transform: scale(1); } 35% { transform: scale(1.4); } 60% { transform: scale(0.86); } 100% { transform: scale(1); } }
 /* ===== 데스크탑(PC) — 피드 가운데 컬럼 + 도형 글자 +3px + 상단 겹침 수정 (사용자 요청) ===== */
 @media (min-width: 769px) {
   /* 주절주절 = 인스타처럼 가운데 좁은 컬럼 (full-width 방지) */

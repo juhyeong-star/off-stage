@@ -3442,7 +3442,7 @@ function _threadPostHtml(p) {
           <button class="fa-act tp-like ${p.liked ? 'is-liked' : ''}" data-note-id="${p.id}" aria-label="${_t('좋아요', 'Like')}" onclick="toggleNoteLike('${p.id}', this)"><i class="${p.liked ? 'ri-heart-3-fill' : 'ri-heart-3-line'}"></i><span class="fa-count tp-like-count">${p.likeCount > 0 ? p.likeCount : ''}</span></button>
           <button class="fa-act" aria-label="${_t('댓글', 'Comments')}" onclick="openCommentSheet('${p.id}')"><i class="ri-chat-3-line"></i><span class="fa-count">${cmCount}</span></button>
           <button class="fa-act" aria-label="${_t('공유', 'Share')}" onclick="_threadShare('${p.id}')"><i class="ri-send-plane-line"></i></button>
-          <button class="fa-act tp-collect ${p.collected ? 'is-bookmarked' : ''}" aria-label="${_t('내 우주에 담기', 'Save to my universe')}" onclick="toggleBookmark('${p.id}')"><i class="${p.collected ? 'ri-bookmark-fill' : 'ri-bookmark-line'}"></i></button>
+          <button class="fa-act tp-collect ${p.collected ? 'is-bookmarked' : ''}" aria-label="${_t('내 우주에 담기', 'Save to my universe')}" onclick="toggleBookmark('${p.id}', this)"><i class="${p.collected ? 'ri-bookmark-fill' : 'ri-bookmark-line'}"></i></button>
         </div>
       </div>
     </div>`;
@@ -5141,7 +5141,7 @@ window.toggleNoteLike = async function (noteId, btnEl) {
   }
 };
 
-window.toggleBookmark = async function(noteId) {
+window.toggleBookmark = async function(noteId, btnEl) {
   if (!window.Walls || !window.Walls.toggleBookmark) {
     alert('아직 준비 중이에요. 잠시 후 다시 시도해주세요.');
     return;
@@ -5152,10 +5152,12 @@ window.toggleBookmark = async function(noteId) {
     if (confirm('포스트잇을 수집하려면 로그인이 필요해요. 로그인할까요?')) navigateTo('auth');
     return;
   }
+  // 탭 즉시 모션 피드백 (서버 응답 전, 좋아요와 동일하게 pop).
+  if (btnEl) { btnEl.classList.add('pop'); setTimeout(() => btnEl.classList.remove('pop'), 420); }
   try {
     const { bookmarked } = await window.Walls.toggleBookmark(noteId);
-    // Update icon in DOM in-place
-    document.querySelectorAll(`.wall-note[data-note-id="${noteId}"] .note-bookmark, #note-detail-modal .note-bookmark[data-note-id="${noteId}"], .thread-post[data-note-id="${noteId}"] .tp-collect`).forEach(btn => {
+    // Update icon in DOM in-place — 새 피드(.feed-post)도 포함 (옛 .thread-post 만이라 새 피드선 아이콘이 안 바뀌던 버그)
+    document.querySelectorAll(`.wall-note[data-note-id="${noteId}"] .note-bookmark, #note-detail-modal .note-bookmark[data-note-id="${noteId}"], .thread-post[data-note-id="${noteId}"] .tp-collect, .feed-post[data-note-id="${noteId}"] .tp-collect`).forEach(btn => {
       btn.classList.toggle('is-bookmarked', bookmarked);
       const i = btn.querySelector('i');
       if (i) i.className = bookmarked ? 'ri-bookmark-fill' : 'ri-bookmark-line';
