@@ -7423,15 +7423,17 @@ function startShapesPhysics(field, viewport) {
   const items = els.map((el, idx) => {
     const sc = parseFloat((el.style.getPropertyValue('--scale') || '1')) || 1;
     el.style.animation = 'none';                           // floatDrift 끔 — 물리가 위치를 몲
-    el.style.transform = (sc !== 1) ? ('scale(' + sc + ')') : '';
     el.style.transition = 'none';
     const w = el.offsetWidth * sc, h = el.offsetHeight * sc;
     const col = idx % cols, row = Math.floor(idx / cols);
     const x = col * cellW + 4 + _h(idx * 2 + 1) * Math.max(4, cellW - w - 8);
     const y = row * cellH + 4 + _h(idx * 2 + 3) * Math.max(4, cellH - h - 8);
-    el.style.left = x + 'px'; el.style.top = y + 'px';
+    // 위치를 transform(translate3d)으로 — GPU 합성이라 left/top 리플로우/리페인트 회피(모바일 끊김 해결).
+    el.style.left = '0'; el.style.top = '0';
+    el.style.willChange = 'transform';
+    el.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)' + (sc !== 1 ? ' scale(' + sc + ')' : '');
     const ang = _h(idx + 7) * Math.PI * 2;                 // 결정적 방향
-    const item = { el, x, y, w, h, r: Math.max(w, h) / 2, vx: Math.cos(ang) * BASE, vy: Math.sin(ang) * BASE };
+    const item = { el, x, y, w, h, sc, r: Math.max(w, h) / 2, vx: Math.cos(ang) * BASE, vy: Math.sin(ang) * BASE };
     el.__phys = item;
     return item;
   });
@@ -7473,7 +7475,7 @@ function startShapesPhysics(field, viewport) {
         }
       }
     }
-    for (let i = 0; i < n; i++) { const b = its[i]; if (b.el.classList.contains('dragging')) continue; b.el.style.left = b.x + 'px'; b.el.style.top = b.y + 'px'; }
+    for (let i = 0; i < n; i++) { const b = its[i]; if (b.el.classList.contains('dragging')) continue; b.el.style.transform = 'translate3d(' + b.x + 'px,' + b.y + 'px,0)' + (b.sc && b.sc !== 1 ? ' scale(' + b.sc + ')' : ''); }
     P.raf = requestAnimationFrame(step);
   }
   P.raf = requestAnimationFrame(step);
@@ -8496,7 +8498,13 @@ function initShapeDrag() {
         dragEl.classList.add('drag-paused');
         // floatDrift 애니가 주던 축소(--scale)를 드래그 중에도 유지 (안 그러면 커짐)
         const _sc = (getComputedStyle(dragEl).getPropertyValue('--scale') || '').trim();
-        if (_sc && _sc !== '1' && _sc !== '') dragEl.style.transform = 'scale(' + _sc + ')';
+        if (dragEl.__phys) {
+          // 발견 도형: 위치가 transform(translate3d)에 있음 → 잡으면 translate 제거(스케일만 남김)하고
+          //   left/top 으로 전환. 안 그러면 translate + left/top 이중 오프셋(도형이 튐).
+          dragEl.style.transform = (_sc && _sc !== '1') ? ('scale(' + _sc + ')') : 'none';
+        } else if (_sc && _sc !== '1' && _sc !== '') {
+          dragEl.style.transform = 'scale(' + _sc + ')';
+        }
         dragEl.style.left = origLeft + 'px';
         dragEl.style.top = origTop + 'px';
         dragEl.style.zIndex = '1000';   // 폴더 줄(z:5)·다른 도형보다 확실히 위로 — 끌 때 안 가려지게
@@ -8632,6 +8640,11 @@ function initShapeDrag() {
     if (moved && el.__phys) {
       el.__phys.x = parseFloat(el.style.left) || el.__phys.x;
       el.__phys.y = parseFloat(el.style.top)  || el.__phys.y;
+      // 드래그 동안 쓰던 left/top → transform 으로 되돌림(물리가 transform 으로 이어받음). 안 하면 left/top+translate 이중 오프셋.
+      const _sc = el.__phys.sc || 1;
+      el.style.transition = 'none';
+      el.style.left = '0'; el.style.top = '0';
+      el.style.transform = 'translate3d(' + el.__phys.x + 'px,' + el.__phys.y + 'px,0)' + (_sc !== 1 ? ' scale(' + _sc + ')' : '');
       const _cap = 16;
       el.__phys.vx = Math.max(-_cap, Math.min(_cap, (el.__flickVX || 0) * 0.7));
       el.__phys.vy = Math.max(-_cap, Math.min(_cap, (el.__flickVY || 0) * 0.7));
