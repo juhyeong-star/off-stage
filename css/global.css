@@ -19120,6 +19120,8 @@ body.is-shapes-route .page-intro { font-size: 18px !important; font-weight: 700 
   font-size: 12px !important;   /* 10 → 12 (사용자 요청 +2px, 모바일) */
   line-height: 1.25 !important;
 }
+/* 발견 도형 글자 더 두껍게 (사용자 요청) — Pretendard는 400만 로드라 weight만으론 한계 → text-stroke로 글리프 굵기 ↑. 발견 전용(즐겨찾기 손글씨 제외) */
+body.is-shapes-route .shapes-universe .floating-shape .shape-text { font-weight: 900 !important; -webkit-text-stroke: 0.4px currentColor; }
 
 /* ============================================================
    테스트 디자인 적용 #4 — 즐겨찾기(universe) 1차: 헤더 안내 + 버블 글자 + 배경
