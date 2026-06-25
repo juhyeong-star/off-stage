@@ -5162,7 +5162,7 @@ window.toggleBookmark = async function(noteId, btnEl) {
       const i = btn.querySelector('i');
       if (i) i.className = bookmarked ? 'ri-bookmark-fill' : 'ri-bookmark-line';
     });
-    showToast(bookmarked ? '수집했어요 📌' : '수집 취소됐어요');
+    showToast(bookmarked ? _t('수집했어요 📌', 'Collected 📌') : _t('수집 취소됐어요', 'Removed from collection'));
   } catch (e) {
     alert(e.message || '수집 실패');
   }
