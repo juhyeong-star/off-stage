@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMHS Artist Home Redesign</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Pretendard:wght@300;400;600;700;800;900&display=swap');
+        body { font-family: 'Pretendard', sans-serif; background-color: #03000d; color: #ffffff; user-select: none; }
+        .handwritten { font-family: 'Nanum Pen Script', cursive; line-height: 1.1; }
+        .cosmic-bg { background: radial-gradient(circle at 50% 10%, #170b3b 0%, #050213 60%, #03000d 100%); position: relative; }
+        .stars {
+            position: absolute; width: 100%; height: 100%;
+            background-image: radial-gradient(white, rgba(255,255,255,.2) 1.5px, transparent 40px), radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px);
+            background-size: 400px 400px, 250px 250px; background-position: 0 0, 40px 60px; opacity: 0.3; pointer-events: none;
+        }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.06); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .active-node { box-shadow: 0 0 12px currentColor; transform: scale(1.15); }
+        .bar { width: 2px; height: 3px; background: currentColor; display: inline-block; margin: 0 1px; border-radius: 1px; animation: bounce 0.8s infinite ease-in-out alternate; }
+        @keyframes bounce { 0% { height: 3px; } 100% { height: 18px; } }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="relative w-full max-w-[393px] h-[852px] rounded-[55px] border-[10px] border-[#1a1724] bg-[#03000d] shadow-2xl overflow-hidden flex flex-col">
+
+        <div class="absolute top-0 left-0 right-0 h-11 bg-transparent flex justify-between items-center px-8 z-50 pointer-events-none text-xs font-semibold">
+            <span>07:52</span>
+            <div class="w-28 h-6 bg-black rounded-full mx-auto -mt-1 flex items-center justify-center">
+                <div class="w-3 h-3 bg-[#111] rounded-full mr-2"></div>
+                <div class="w-12 h-1.5 bg-[#222] rounded-full"></div>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <i data-lucide="signal" class="w-3.5 h-3.5"></i>
+                <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+                <i data-lucide="battery" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+        </div>
+
+        <header class="absolute top-11 left-0 right-0 z-40 flex justify-between items-center px-5 py-2">
+            <button class="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10">
+                <i data-lucide="chevron-left" class="w-5 h-5 text-white"></i>
+            </button>
+            <div class="flex-1 mx-3 px-3 py-1 rounded-full bg-black/30 backdrop-blur-md border border-white/5 text-[10px] text-white/50 text-center truncate">
+                onoff-stage.com/muduck1
+            </div>
+            <button class="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10">
+                <i data-lucide="more-horizontal" class="w-4 h-4 text-white"></i>
+            </button>
+        </header>
+
+        <main class="flex-1 overflow-y-auto no-scrollbar cosmic-bg pt-24 pb-28">
+            <div class="stars"></div>
+
+            <section class="px-5 flex flex-col items-center text-center z-10 relative">
+                <div class="relative w-16 h-16 rounded-full p-[1.5px] bg-gradient-to-tr from-yellow-400 to-purple-600 shadow-xl shadow-purple-500/10 mb-2.5">
+                    <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=150&auto=format&fit=crop&q=80" alt="프로필" class="w-full h-full rounded-full object-cover">
+                    <span class="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-[#03000d] rounded-full"></span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <h1 class="text-xl font-extrabold text-white">뮤덕1호</h1>
+                    <button class="text-[10px] bg-purple-600/90 text-white font-bold px-2.5 py-1 rounded-full flex items-center gap-0.5 shadow-md">
+                        <i data-lucide="user-plus" class="w-3 h-3"></i> 팔로우
+                    </button>
+                </div>
+
+                <p class="text-[11px] text-white/50 max-w-[280px] leading-relaxed mt-1.5">
+                    늦은 밤, 혼자 만든 데모와 정규곡을 차곡차곡 모아두는 작업실 🎧
+                </p>
+
+                <div class="flex gap-1.5 mt-3 text-[10px] font-bold">
+                    <span class="px-2.5 py-1 rounded-md bg-white/5 border border-white/5 text-purple-300">앨범 5</span>
+                    <span class="px-2.5 py-1 rounded-md bg-white/5 border border-white/5 text-amber-300">데모 15</span>
+                    <span class="px-2.5 py-1 rounded-md bg-white/5 border border-white/5 text-emerald-300">발매 3</span>
+                    <span class="px-2.5 py-1 rounded-md bg-white/5 border border-white/5 text-white/40">덕질 2016~</span>
+                </div>
+
+                <div class="flex flex-wrap gap-1 mt-3.5 justify-center">
+                    <span class="text-[9px] text-white/60 bg-white/5 px-2.5 py-1 rounded-full">#자작곡</span>
+                    <span class="text-[9px] text-white/60 bg-white/5 px-2.5 py-1 rounded-full">#발라드</span>
+                    <span class="text-[9px] text-white/60 bg-white/5 px-2.5 py-1 rounded-full">#늦은밤</span>
+                    <span class="text-[9px] text-white/60 bg-white/5 px-2.5 py-1 rounded-full">#홈레코딩</span>
+                </div>
+
+                <div class="w-full mt-4 bg-amber-400 text-black rounded-2xl p-3 flex justify-between items-center shadow-lg shadow-amber-400/5">
+                    <div class="flex items-center gap-2 text-left">
+                        <i data-lucide="heart" class="w-4 h-4 text-rose-600 fill-rose-600"></i>
+                        <div>
+                            <span class="text-[8px] font-extrabold text-black/50 uppercase tracking-widest block leading-none">덕질 타임라인</span>
+                            <span class="text-xs font-black">2016.07.27 ~ Present</span>
+                        </div>
+                    </div>
+                    <button class="w-7 h-7 rounded-full bg-black/10 flex items-center justify-center hover:bg-black/20 text-black">
+                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </section>
+
+            <section class="px-5 mt-6 z-10 relative">
+                <div class="flex justify-between items-center mb-2.5">
+                    <h2 class="text-xs font-bold text-white/40 flex items-center gap-1">
+                        <i data-lucide="flame" class="w-3.5 h-3.5 text-rose-500 fill-rose-500"></i> 최신 활성 데모
+                    </h2>
+                    <span class="text-[9px] text-rose-400 font-extrabold flex items-center gap-0.5">실시간 피드백 중 <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span></span>
+                </div>
+
+                <div class="glass rounded-[28px] p-4 flex gap-4 items-center justify-between border border-rose-500/20 shadow-xl shadow-rose-500/5">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-16 h-16 rounded-2xl flex flex-col items-center justify-center p-2 text-center shrink-0 relative overflow-hidden"
+                             style="background-color: #FF2E93; box-shadow: 0 4px 15px rgba(255, 46, 147, 0.3);">
+                            <div class="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent"></div>
+                            <span class="text-black font-extrabold text-[12px] handwritten leading-tight z-10">변화할래</span>
+                            <span class="text-black font-extrabold text-[12px] handwritten leading-tight z-10">어제보다</span>
+                            <span class="text-black font-extrabold text-[12px] handwritten leading-tight z-10">오늘더</span>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[9px] bg-rose-500/20 text-rose-300 font-bold px-1.5 py-0.5 rounded-md">DEMO 2</span>
+                                <span class="text-[9px] text-white/40 font-medium">2024.05</span>
+                            </div>
+                            <h3 class="text-sm font-black mt-1 text-white">I Am Changing</h3>
+                            <p class="text-[10px] text-white/50 mt-0.5">뮤덕1호 · 보컬 스케치 보강 에디션</p>
+                        </div>
+                    </div>
+                    <button onclick="playDemoTrack(1, 2)" class="w-10 h-10 rounded-full bg-[#1db954] hover:bg-[#1ed760] text-black flex items-center justify-center shadow-md active:scale-95 transition-transform">
+                        <i data-lucide="play" class="w-5 h-5 fill-black ml-0.5" id="latest-play-icon"></i>
+                    </button>
+                </div>
+            </section>
+
+            <section class="px-5 mt-6 z-10 relative">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-xs font-bold text-white/40 flex items-center gap-1">
+                        <i data-lucide="music" class="w-3.5 h-3.5 text-purple-400"></i> 음악 히스토리 (5)
+                    </h2>
+                    <p class="text-[9px] text-white/30">각 데모 단계를 클릭해 성장 기록을 들어보세요</p>
+                </div>
+
+                <div class="space-y-3" id="timeline-tracks-container"></div>
+            </section>
+
+        </main>
+
+        <div id="toast" class="absolute top-16 left-1/2 transform -translate-x-1/2 bg-purple-600/90 text-white text-[10px] font-bold px-4 py-2.5 rounded-full shadow-lg backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center gap-1.5">
+            <i data-lucide="disc" class="w-3.5 h-3.5 animate-spin"></i>
+            <span id="toast-text">재생 정보 로드 중...</span>
+        </div>
+
+        <footer class="bg-[#0b081a]/95 backdrop-blur-xl border-t border-white/10 px-4 py-3 z-40 flex items-center justify-between gap-3 absolute bottom-0 left-0 right-0">
+            <div class="flex items-center gap-3 flex-1 overflow-hidden" onclick="showHapticToast()">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden relative border border-white/10" id="mini-cover" style="background-color: #FF2E93;">
+                    <span class="text-black font-extrabold text-[8px] handwritten leading-none" id="mini-cover-text">변화</span>
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    <h4 class="text-xs font-bold truncate text-white" id="mini-title">I Am Changing</h4>
+                    <p class="text-[9px] text-white/40 truncate mt-0.5" id="mini-artist-info">DEMO 2 · 보컬 스케치 보강 에디션</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-1">
+                <div class="flex items-end h-6 mr-2 gap-0.5 text-rose-500 hidden" id="equalizer">
+                    <div class="bar" style="animation-delay: 0.1s"></div>
+                    <div class="bar" style="animation-delay: 0.4s"></div>
+                    <div class="bar" style="animation-delay: 0.2s"></div>
+                </div>
+                <button onclick="toggleGlobalPlayback()" id="global-play-btn" class="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-transform">
+                    <i data-lucide="play" class="w-4 h-4 fill-black text-black"></i>
+                </button>
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        let tracksHistory = [
+            {
+                id: 1, title: "I Am Changing", state: "미발매", themeColor: "#FF2E93",
+                coverTags: ["변화할래", "어제보다", "오늘더"],
+                demos: [
+                    { version: 1, date: "2024.01", note: "피아노 즉흥 멜로디 스케치", type: "sketch" },
+                    { version: 2, date: "2024.05", note: "메인 코러스 보컬 세션 보강", type: "active" }
+                ],
+                currentDemoIdx: 1
+            },
+            {
+                id: 2, title: "밤하늘 한 조각", state: "발매완료", themeColor: "#00E5FF",
+                coverTags: ["밤하늘에", "뿌려둔", "별별조각"],
+                demos: [
+                    { version: 1, date: "2023.11", note: "기타 아르페지오 가사 초안", type: "sketch" },
+                    { version: 2, date: "2023.12", note: "신디사이저 및 베이스 삽입", type: "development" },
+                    { version: 3, date: "2024.01", note: "가이드 드럼 비트 보강 작업", type: "mixing" },
+                    { version: 4, date: "2024.02", note: "정규 앨범 수록 마스터링 완료", type: "final" }
+                ],
+                currentDemoIdx: 3
+            },
+            {
+                id: 3, title: "첫 무대", state: "발매완료", themeColor: "#FF9100",
+                coverTags: ["첫경험", "무대울렁", "비켜라!"],
+                demos: [
+                    { version: 1, date: "2023.10", note: "보컬 스크림 가이드 스케치", type: "final" }
+                ],
+                currentDemoIdx: 0
+            },
+            {
+                id: 4, title: "연습실에서", state: "미발매", themeColor: "#76FF03",
+                coverTags: ["연습만이", "살길이다", "에이플러스"],
+                demos: [
+                    { version: 1, date: "2023.01", note: "어쿠스틱 단선율 코드 기록", type: "sketch" },
+                    { version: 2, date: "2023.04", note: "파트별 세션 가이드 인트로", type: "development" },
+                    { version: 3, date: "2023.07", note: "중간 보컬 점검 버스 녹음본", type: "active" }
+                ],
+                currentDemoIdx: 2
+            },
+            {
+                id: 5, title: "데뷔 전야", state: "발매완료", themeColor: "#D500F9",
+                coverTags: ["내일우린", "우주로", "도약한다"],
+                demos: [
+                    { version: 1, date: "2023.01", note: "건반 연주 인트로 가이드", type: "sketch" },
+                    { version: 2, date: "2023.03", note: "메인 후렴 편곡 디렉팅 에디션", type: "development" },
+                    { version: 3, date: "2023.04", note: "전 음원 사이트 정식 스트리밍", type: "final" }
+                ],
+                currentDemoIdx: 2
+            }
+        ];
+
+        let activeTrack = null;
+        let isPlaying = false;
+
+        function renderTracksHistory() {
+            const container = document.getElementById('timeline-tracks-container');
+            container.innerHTML = '';
+
+            tracksHistory.forEach(track => {
+                const activeDemo = track.demos[track.currentDemoIdx];
+                const isSelected = activeTrack && activeTrack.id === track.id;
+
+                const trackCard = document.createElement('div');
+                trackCard.className = `glass rounded-[32px] p-4 flex flex-col border transition-all ${isSelected ? 'border-purple-500/30 bg-white/[0.04]' : 'border-white/5'}`;
+
+                let handwrittenTags = track.coverTags.map(tag =>
+                    `<p class="text-black font-extrabold leading-none handwritten text-[12px]">${tag}</p>`
+                ).join('');
+
+                let demoNodesHTML = track.demos.map((demo, idx) => {
+                    const isNodeActive = track.currentDemoIdx === idx;
+                    const nodeBg = isNodeActive ? track.themeColor : 'rgba(255, 255, 255, 0.15)';
+                    const nodeTextColor = isNodeActive ? 'text-white font-extrabold' : 'text-white/40 font-medium';
+                    const pulseClass = isNodeActive ? 'active-node scale-110' : '';
+
+                    return `
+                        <div onclick="selectDemoVersion(${track.id}, ${idx}, event)"
+                             class="flex flex-col items-center cursor-pointer shrink-0 group">
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center text-[8px] transition-all duration-300 ${pulseClass}"
+                                 style="background-color: ${nodeBg}; color: ${isNodeActive ? '#000000' : 'rgba(255,255,255,0.7)'}; box-shadow: ${isNodeActive ? '0 0 10px ' + track.themeColor : 'none'}">
+                                D${demo.version}
+                            </div>
+                            <span class="text-[8px] mt-1 transition-colors group-hover:text-white ${nodeTextColor}">${demo.date}</span>
+                        </div>
+                    `;
+                }).join(`
+                    <div class="flex-1 h-[1.5px] bg-white/10 mx-1 -mt-2"></div>
+                `);
+
+                trackCard.innerHTML = `
+                    <div class="flex items-center gap-3.5 pb-3">
+                        <div class="w-14 h-14 rounded-2xl flex flex-col items-center justify-center p-1.5 text-center shrink-0 relative overflow-hidden"
+                             style="background-color: ${track.themeColor}; box-shadow: 0 4px 12px ${track.themeColor}30;">
+                            <div class="absolute inset-0 bg-gradient-to-tr from-black/15 to-transparent"></div>
+                            ${handwrittenTags}
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded-md border"
+                                      style="background-color: ${track.state === '발매완료' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)'};
+                                             color: ${track.state === '발매완료' ? '#34d399' : 'rgba(255,255,255,0.6)'};
+                                             border-color: ${track.state === '발매완료' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.1)'};">
+                                    ${track.state}
+                                </span>
+                                <h3 class="text-xs font-black text-white truncate">${track.title}</h3>
+                            </div>
+                            <p class="text-[10px] text-white/50 mt-1 truncate">
+                                <strong style="color: ${track.themeColor}">DEMO ${activeDemo.version} 에디션</strong>: ${activeDemo.note}
+                            </p>
+                        </div>
+
+                        <button onclick="playTrack(${track.id}, event)" class="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 active:scale-90 transition-transform text-white/80 shrink-0">
+                            <i data-lucide="${isSelected && isPlaying ? 'pause' : 'play'}" class="w-4 h-4 ${isSelected && isPlaying ? 'fill-white' : ''}"></i>
+                        </button>
+                    </div>
+
+                    <div class="mt-2.5 pt-2.5 border-t border-white/5 flex items-center justify-between px-2">
+                        ${demoNodesHTML}
+                    </div>
+                `;
+
+                container.appendChild(trackCard);
+            });
+            lucide.createIcons();
+        }
+
+        function selectDemoVersion(trackId, demoIdx, event) {
+            event.stopPropagation();
+            const track = tracksHistory.find(t => t.id === trackId);
+            if (!track) return;
+            track.currentDemoIdx = demoIdx;
+            if (activeTrack && activeTrack.id === trackId) {
+                playDemoTrack(trackId, track.demos[demoIdx].version);
+            } else {
+                renderTracksHistory();
+                showToast(`🔔 [${track.title}] 데모 ${track.demos[demoIdx].version} 단계를 로드했습니다.`);
+            }
+        }
+
+        function playDemoTrack(trackId, demoVersion) {
+            const track = tracksHistory.find(t => t.id === trackId);
+            if (!track) return;
+            const demoIdx = track.demos.findIndex(d => d.version === demoVersion);
+            if (demoIdx !== -1) track.currentDemoIdx = demoIdx;
+
+            activeTrack = track;
+            isPlaying = true;
+
+            document.getElementById('mini-title').innerText = track.title;
+            const activeDemo = track.demos[track.currentDemoIdx];
+            document.getElementById('mini-artist-info').innerText = `DEMO ${activeDemo.version} · ${activeDemo.note}`;
+            const miniCover = document.getElementById('mini-cover');
+            miniCover.style.backgroundColor = track.themeColor;
+            document.getElementById('mini-cover-text').innerText = track.title.substring(0, 2);
+
+            showToast(`🎵 DEMO ${activeDemo.version} 재생을 시작합니다!`);
+            renderTracksHistory();
+            updatePlaybackInterface();
+        }
+
+        function playTrack(trackId, event) {
+            if (event) event.stopPropagation();
+            const track = tracksHistory.find(t => t.id === trackId);
+            if (!track) return;
+            if (activeTrack && activeTrack.id === trackId) {
+                isPlaying = !isPlaying;
+                updatePlaybackInterface();
+                renderTracksHistory();
+            } else {
+                const currentDemoVersion = track.demos[track.currentDemoIdx].version;
+                playDemoTrack(trackId, currentDemoVersion);
+            }
+        }
+
+        function toggleGlobalPlayback() {
+            if (!activeTrack) { playTrack(1); return; }
+            isPlaying = !isPlaying;
+            updatePlaybackInterface();
+            renderTracksHistory();
+        }
+
+        function updatePlaybackInterface() {
+            const miniPlayBtn = document.getElementById('global-play-btn');
+            const latestPlayIcon = document.getElementById('latest-play-icon');
+            const equalizer = document.getElementById('equalizer');
+            const bars = document.querySelectorAll('.bar');
+
+            if (isPlaying) {
+                miniPlayBtn.innerHTML = `<i data-lucide="pause" class="w-4 h-4 fill-black text-black"></i>`;
+                if (latestPlayIcon && activeTrack && activeTrack.id === 1) {
+                    latestPlayIcon.className = "w-5 h-5 text-black";
+                    latestPlayIcon.setAttribute('data-lucide', 'pause');
+                }
+                equalizer.classList.remove('hidden');
+                bars.forEach(bar => bar.style.animationPlayState = 'running');
+            } else {
+                miniPlayBtn.innerHTML = `<i data-lucide="play" class="w-4 h-4 fill-black text-black"></i>`;
+                if (latestPlayIcon) {
+                    latestPlayIcon.className = "w-5 h-5 text-black fill-black ml-0.5";
+                    latestPlayIcon.setAttribute('data-lucide', 'play');
+                }
+                equalizer.classList.add('hidden');
+                bars.forEach(bar => bar.style.animationPlayState = 'paused');
+            }
+            lucide.createIcons();
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-text').innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => { toast.classList.add('opacity-0', 'pointer-events-none'); }, 1800);
+        }
+
+        function showHapticToast() {
+            if (activeTrack) {
+                showToast(`💜 '${activeTrack.title}' (DEMO ${activeTrack.demos[activeTrack.currentDemoIdx].version}) 감상 중`);
+            }
+        }
+
+        window.onload = function() {
+            lucide.createIcons();
+            renderTracksHistory();
+        }
+    </script>
+</body>
+</html>
