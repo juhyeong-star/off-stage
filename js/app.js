@@ -9175,25 +9175,8 @@ function renderUpload() {
           <label>${_i18n('3줄', 'Line 3')}</label>
           <input type="text" class="form-control" id="up-line3" placeholder="" maxlength="40" oninput="uwPrevLine('uwP3',this.value)" required>
         </div>
-        <div class="form-group">
-          <label>${_i18n('도형 모양', 'Shape')}</label>
-          <div class="uw-shapes" id="uwShapes">
-            <div class="uw-sh uw-sel" data-shape="circle" onclick="uwPickShape(this)"><span class="uw-sp uws-circle"></span><span class="uw-ck"><i class="ri-check-line"></i></span></div>
-            <div class="uw-sh" data-shape="oval" onclick="uwPickShape(this)"><span class="uw-sp uws-oval"></span><span class="uw-ck"><i class="ri-check-line"></i></span></div>
-            <div class="uw-sh" data-shape="rect" onclick="uwPickShape(this)"><span class="uw-sp uws-rect"></span><span class="uw-ck"><i class="ri-check-line"></i></span></div>
-            <div class="uw-sh" data-shape="wide" onclick="uwPickShape(this)"><span class="uw-sp uws-wide"></span><span class="uw-ck"><i class="ri-check-line"></i></span></div>
-            <div class="uw-sh" data-shape="pill" onclick="uwPickShape(this)"><span class="uw-sp uws-pill"></span><span class="uw-ck"><i class="ri-check-line"></i></span></div>
-            <div class="uw-sh" data-shape="hexagon" onclick="uwPickShape(this)"><span class="uw-sp uws-hexagon"></span><span class="uw-ck"><i class="ri-check-line"></i></span></div>
-          </div>
-          <select class="form-control" id="up-shape" style="display:none">
-            <option value="circle">${_t('원', 'Circle')}</option>
-            <option value="oval">${_t('타원', 'Oval')}</option>
-            <option value="rect">${_t('둥근 사각형', 'Rounded square')}</option>
-            <option value="wide">${_t('직사각형', 'Rectangle')}</option>
-            <option value="pill">${_t('알약', 'Pill')}</option>
-            <option value="hexagon">${_t('육각형', 'Hexagon')}</option>
-          </select>
-        </div>
+        <!-- 도형 모양 선택 제거 — 발견 도형이 전부 '원'으로 통일됨(사용자 요청). up-shape는 circle 고정(제출/줄수제한 호환). -->
+        <select class="form-control" id="up-shape" style="display:none"><option value="circle" selected>${_t('원', 'Circle')}</option></select>
         <div class="form-group">
           <label>${_i18n('도형 색상', 'Color')}</label>
           <div class="uw-cols" id="uwCols">
