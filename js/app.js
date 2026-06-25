@@ -9748,7 +9748,78 @@ function renderSongDetail(trackId) {
   window.__currentSongId = trackId;
 }
 
-// 계정 프로필(청취자 디자인) 스코프 CSS — <style> 자체 포함, global.css 안 건드림.
+// 내 계정 = '내 기획사' 디자인 스코프 CSS (.ag-*) — <style> 자체 포함.
+function _agStyle() {
+  return `<style id="ag-style">
+.ag-page{position:relative;min-height:100%;padding:46px 0 calc(var(--player-height,60px) + env(safe-area-inset-bottom) + 28px);background:radial-gradient(800px 500px at 18% -5%,rgba(139,124,246,.10),transparent 60%),radial-gradient(700px 460px at 96% 8%,rgba(255,201,77,.06),transparent 55%),#070710;color:#F5F5F8;font-family:'Pretendard',sans-serif;overflow-x:hidden;}
+.ag-page *{box-sizing:border-box;}
+.ag-inner{padding:0 16px;max-width:440px;margin:0 auto;}
+.ag-top{display:flex;align-items:center;justify-content:space-between;padding:4px 2px 12px;}
+.ag-id{display:flex;align-items:center;gap:10px;}
+.ag-id-av{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.1);}
+.ag-id-nm{font-size:15px;font-weight:800;}
+.ag-set{width:32px;height:32px;border-radius:50%;background:#15151F;border:1px solid rgba(255,255,255,.08);color:#8C8C9E;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;}
+.ag-dash{position:relative;border-radius:18px;padding:16px;overflow:hidden;margin:2px 2px 6px;background:linear-gradient(135deg,rgba(139,124,246,.16),rgba(251,111,146,.10)),#15151F;border:1px solid rgba(139,124,246,.28);}
+.ag-dl{font-size:11px;font-weight:800;color:#8B7CF6;letter-spacing:.4px;}
+.ag-dt{font-size:20px;font-weight:900;margin:3px 0 2px;}
+.ag-ds{font-size:12px;color:#8C8C9E;}
+.ag-stats{display:flex;margin-top:13px;background:rgba(0,0,0,.25);border-radius:12px;overflow:hidden;}
+.ag-stat{flex:1;text-align:center;padding:9px 4px;border-right:1px solid rgba(255,255,255,.08);}
+.ag-stat:last-child{border-right:none;}
+.ag-stat b{display:block;font-size:17px;font-weight:900;}
+.ag-stat span{font-size:10.5px;color:#8C8C9E;font-weight:600;}
+.ag-tier{display:flex;align-items:center;justify-content:space-between;margin:22px 2px 11px;}
+.ag-tier h2{font-size:15px;font-weight:900;display:flex;align-items:center;gap:8px;}
+.ag-step{font-size:9.5px;font-weight:900;color:#06140C;padding:2px 7px;border-radius:6px;}
+.ag-s1{background:#FFC94D;}.ag-s2{background:#7FA8FF;}.ag-s3{background:#9DE0B4;}
+.ag-ct{font-size:12px;color:#8C8C9E;}
+.ag-roster{--tc:#46E08B;border-radius:18px;padding:14px;background:#15151F;border:1px solid rgba(255,255,255,.14);position:relative;margin-bottom:12px;}
+.ag-rtop{display:flex;align-items:center;gap:13px;}
+.ag-portrait{width:54px;height:54px;border-radius:16px;flex:0 0 auto;position:relative;background:radial-gradient(circle at 38% 32%,color-mix(in srgb,var(--tc) 55%,#fff),var(--tc) 60%,color-mix(in srgb,var(--tc) 50%,#000));box-shadow:0 0 24px color-mix(in srgb,var(--tc) 45%,transparent);}
+.ag-portrait img{width:100%;height:100%;border-radius:16px;object-fit:cover;}
+.ag-seal{position:absolute;bottom:-6px;right:-6px;font-size:9px;font-weight:900;color:#06140C;background:#FFC94D;padding:3px 7px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.4);}
+.ag-rmid{flex:1;min-width:0;}
+.ag-rname{font-size:16px;font-weight:900;}
+.ag-rsub{font-size:11.5px;color:#8C8C9E;margin-top:2px;}
+.ag-rcheer{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:800;color:#FB6F92;flex:0 0 auto;}
+.ag-rcheer i{font-size:14px;}
+.ag-alert{display:flex;align-items:center;gap:7px;margin-top:12px;padding:9px 11px;border-radius:11px;background:rgba(255,201,77,.12);border:1px solid rgba(255,201,77,.3);font-size:12px;font-weight:700;color:#FFE39A;}
+.ag-alert .dot{width:7px;height:7px;border-radius:50%;background:#FFC94D;flex:0 0 auto;}
+.ag-cascade{margin-top:13px;padding-left:14px;position:relative;}
+.ag-cascade::before{content:"";position:absolute;left:3px;top:-2px;bottom:14px;width:2px;background:linear-gradient(180deg,color-mix(in srgb,var(--tc) 60%,transparent),transparent);}
+.ag-cazlab{font-size:10.5px;color:#8C8C9E;font-weight:700;margin-bottom:9px;}
+.ag-cazlab b{color:var(--tc);}
+.ag-songrow{display:flex;gap:9px;overflow-x:auto;margin:0 -14px;padding:0 14px 4px;scrollbar-width:none;}
+.ag-songrow::-webkit-scrollbar{display:none;}
+.ag-scard{--tc:#46E08B;flex:0 0 108px;border-radius:13px;padding:3px;cursor:pointer;background:linear-gradient(150deg,color-mix(in srgb,var(--tc) 58%,#fff),var(--tc) 42%,color-mix(in srgb,var(--tc) 50%,#000));}
+.ag-scin{background:linear-gradient(180deg,#101019,#0B0B12);border-radius:10px;padding:8px;position:relative;overflow:hidden;}
+.ag-sart{height:54px;border-radius:8px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 100% at 50% 25%,color-mix(in srgb,var(--tc) 40%,transparent),#0c0c14 60%);}
+.ag-sorb{width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 38% 32%,color-mix(in srgb,var(--tc) 60%,#fff),var(--tc) 60%);box-shadow:0 0 14px color-mix(in srgb,var(--tc) 55%,transparent);}
+.ag-sholo{position:absolute;inset:0;mix-blend-mode:color-dodge;opacity:.5;background:repeating-linear-gradient(108deg,rgba(255,40,140,.6),rgba(255,196,0,.55) 8%,rgba(40,255,170,.55) 16%,rgba(40,170,255,.6) 24%,rgba(180,40,255,.6) 32%);background-size:220% 220%;animation:agFoil 6s linear infinite;}
+@keyframes agFoil{0%{background-position:0 0}100%{background-position:220% 220%}}
+.ag-sn{font-size:11.5px;font-weight:800;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ag-sstg{font-size:9.5px;font-weight:800;color:var(--tc);margin-top:2px;}
+.ag-sstg.holo{color:#FFC94D;}
+.ag-watch{display:flex;align-items:center;gap:12px;padding:11px;border-radius:14px;background:#15151F;border:1px solid rgba(255,255,255,.08);margin-bottom:9px;}
+.ag-wp{width:42px;height:42px;border-radius:12px;flex:0 0 auto;}
+.ag-wmid{flex:1;min-width:0;}
+.ag-wname{font-size:14px;font-weight:800;}
+.ag-wsub{font-size:11px;color:#8C8C9E;margin-top:2px;}
+.ag-signbtn{flex:0 0 auto;font-family:inherit;font-size:12px;font-weight:800;color:#06140C;cursor:pointer;background:#FFC94D;border:none;padding:9px 13px;border-radius:11px;display:flex;align-items:center;gap:5px;}
+.ag-signbtn i{font-size:14px;}
+.ag-cab{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
+.ag-cabcard{--tc:#5AA9FF;border-radius:12px;padding:3px;cursor:pointer;background:linear-gradient(150deg,color-mix(in srgb,var(--tc) 55%,#fff),var(--tc) 42%,color-mix(in srgb,var(--tc) 50%,#000));}
+.ag-cabin{background:linear-gradient(180deg,#101019,#0B0B12);border-radius:9px;padding:6px;overflow:hidden;}
+.ag-cabart{height:46px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 100% at 50% 25%,color-mix(in srgb,var(--tc) 38%,transparent),#0c0c14 60%);}
+.ag-caborb{width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 38% 32%,color-mix(in srgb,var(--tc) 60%,#fff),var(--tc) 60%);box-shadow:0 0 12px color-mix(in srgb,var(--tc) 50%,transparent);}
+.ag-cabn{font-size:10.5px;font-weight:800;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ag-cabs{font-size:9px;color:#8C8C9E;margin-top:1px;}
+.ag-empty{font-size:12px;color:#5A5A6C;padding:12px 2px;text-align:center;}
+@media(min-width:769px){.ag-inner{max-width:470px;}}
+</style>`;
+}
+
+// 계정 프로필(청취자 디자인) 스코프 CSS — <style> 자체 포함. (현재 미사용 — '내 기획사' 디자인으로 대체)
 function _apStyle() {
   return `<style id="ap-style">
 .ap-page{position:relative;min-height:100%;padding:48px 0 calc(var(--player-height,60px) + env(safe-area-inset-bottom) + 28px);background:#0B0B11;color:#F4F4F7;font-family:'Pretendard',sans-serif;overflow-x:hidden;}
@@ -9915,122 +9986,118 @@ async function _renderProfileImpl() {
   // Pre-compute myBackings here (used in header KPIs + later STO section)
   const myBackings = (typeof window._getMyBackings === 'function') ? window._getMyBackings() : [];
 
-  // ===== 계정 프로필 (청취자 디자인 — 리스너 홈) — 2026-06-25 =====
-  // 마이페이지(아티스트 홈)와 별개. 무드칩 + 지금 자라는 곡 히어로 + 내가 키우는 곡(진행률 링) + 무드 피드.
+  // ===== 내 계정 = '내 기획사' 디자인 (계약=팔로우, 곡 캐비닛) — 2026-06-25 =====
+  // 마이페이지(아티스트 홈)와 별개. 소속 아티스트(계약) + cascade 곡 + 워치리스트 + 데모 캐비닛.
   {
-    const apEsc = (s) => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    const AP_COLORS = ['#FF2EA0','#00E5FF','#B14BFF','#FF9100','#76FF03','#FF4D6D','#2EE6D6','#9D4EDD','#FFD166','#4D9DFF'];
-    const apColor = (s) => AP_COLORS[(_hashSeed(s || 'x') >>> 0) % AP_COLORS.length];
-    const apClean = (s) => (s || '무제').replace(/\s*\(.*\)$/, '');
-    // 제목이 비어있거나 "Demo N"(곡명 미설정)이면 아티스트 이름으로 대체 — 실데이터 곡명 누락 보정
-    const apTitle = (raw, artist) => { const ti = apClean(raw); return (ti === '무제' || /^demo\s*\d*$/i.test(ti)) ? (artist || ti) : ti; };
-    const apMe = db.currentUser;
-    const apAvatar = apMe.avatar || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(apMe.name || 'user'));
+    const agEsc = (s) => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const AG_COLORS = ['#46E08B','#FB6FB0','#5AA9FF','#FFC94D','#B06BFF','#FF9F45','#54E0CE','#8B7CF6'];
+    const agColor = (s) => AG_COLORS[(_hashSeed(s || 'x') >>> 0) % AG_COLORS.length];
+    const agClean = (s) => (s || '무제').replace(/\s*\(.*\)$/, '');
+    const agTitle = (raw, artist) => { const ti = agClean(raw); return (ti === '무제' || /^demo\s*\d*$/i.test(ti)) ? (artist || ti) : ti; };
+    const agMe = db.currentUser;
+    const agAvatar = agMe.avatar || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(agMe.name || 'user'));
 
-    // 프로젝트 묶기 — 진행률/stepper/피드 단계
-    const apProjMap = {};
-    allTracks.forEach(t => { if (!t) return; const pid = t.projectId || ('proj_' + t.id); (apProjMap[pid] = apProjMap[pid] || []).push(t); });
-    const apProjOf = (track) => {
-      const pid = track.projectId || ('proj_' + track.id);
-      const vs = (apProjMap[pid] || [track]).slice().sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    // 프로젝트 묶기
+    const agProjMap = {};
+    allTracks.forEach(t => { if (!t) return; const pid = t.projectId || ('proj_' + t.id); (agProjMap[pid] = agProjMap[pid] || []).push(t); });
+    const agProjInfo = (pid) => {
+      const vs = (agProjMap[pid] || []).slice().sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
       const demos = vs.filter(v => v && v.isDemo);
       const hasFinal = vs.some(v => v && !v.isDemo && v.version === 'final');
-      return { pid, vs, demos, demoCount: demos.length, hasFinal };
+      const rep = vs.find(v => v && !v.isDemo) || vs[vs.length - 1] || vs[0];
+      return { pid, vs, demos, demoCount: demos.length, hasFinal, rep };
     };
-    const apDemos = allTracks.filter(t => t && t.isDemo).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-    const apCheerIds = new Set(mySentCheers.map(c => c && c.track_id).filter(Boolean));
+    const agArtistProjects = (name) => {
+      const pids = [], seen = {};
+      allTracks.forEach(t => { if (t && t.artist === name) { const pid = t.projectId || ('proj_' + t.id); if (!seen[pid]) { seen[pid] = 1; pids.push(pid); } } });
+      return pids.map(agProjInfo).filter(p => p && p.rep);
+    };
+    const cheeredArtists = new Set(mySentCheers.map(c => c && (c.artist_name || c.artist)).filter(Boolean));
+    const followedNames = new Set(followedArtists.map(a => a && a.name).filter(Boolean));
 
-    // ① 무드 칩
-    const apChips = ['새벽','허무','설렘','드라이브','짝사랑','인디'].map((m, i) => `<span class="ap-chip${i === 0 ? ' on' : ''}">#${apEsc(m)}</span>`).join('');
+    // 곡 카드 (cascade / cabinet 공용). 발매(★)=홀로 골드.
+    const agSongCard = (p, color, kind) => {
+      const holo = p.hasFinal;
+      const tc = holo ? '#FFC94D' : color;
+      const ti = agTitle(p.rep.title, p.rep.artist);
+      if (kind === 'cab') {
+        return `<div class="ag-cabcard" style="--tc:${tc}" onclick="navigateTo('song:${p.rep.id}')"><div class="ag-cabin"><div class="ag-cabart"><span class="ag-caborb"></span></div><div class="ag-cabn">${agEsc(ti)}</div><div class="ag-cabs">${holo ? '★ ' + _t('발매','Release') : '데모 ' + p.demoCount}</div></div></div>`;
+      }
+      const stg = holo ? _t('★ 발매 · 홀로', '★ Release · holo') : ('데모 ' + p.demoCount + (p.demoCount > 1 ? ' · ' + _t('진화중', 'growing') : ''));
+      return `<div class="ag-scard${holo ? ' holo' : ''}" style="--tc:${tc}" onclick="navigateTo('song:${p.rep.id}')"><div class="ag-scin"><div class="ag-sart"><span class="ag-sorb"></span>${holo ? '<span class="ag-sholo"></span>' : ''}</div><div class="ag-sn">${agEsc(ti)}</div><div class="ag-sstg${holo ? ' holo' : ''}">${stg}</div></div></div>`;
+    };
 
-    // ② 지금 자라는 곡 (응원한 데모 우선, 없으면 최신 데모)
-    const apFeatured = apDemos.find(t => apCheerIds.has(t.id)) || apDemos[0] || null;
-    let apHero = '';
-    if (apFeatured) {
-      const fp = apProjOf(apFeatured);
-      const ft = apTitle(apFeatured.title, apFeatured.artist);
-      const ds = fp.demos;
-      const nodeList = ds.map((d, i) => ({ cls: (i === ds.length - 1 && !fp.hasFinal) ? 'now' : 'done', num: i + 1, lab: '데모' + (i + 1) }));
-      nodeList.push({ cls: fp.hasFinal ? 'done' : 'lock', num: 'M', lab: _t('마스터', 'Master') });
-      let trackInner = '';
-      nodeList.forEach((n, i) => {
-        if (i > 0) trackInner += `<span class="ap-evo-seg${nodeList[i - 1].cls === 'done' ? ' fill' : ''}"></span>`;
-        const inner = n.cls === 'done' ? '<i class="ri-check-line"></i>' : (n.cls === 'lock' ? '<i class="ri-lock-2-line"></i>' : n.num);
-        trackInner += `<span class="ap-evo-node ${n.cls}">${inner}</span>`;
-      });
-      const labels = nodeList.map(n => `<span>${apEsc(n.lab)}</span>`).join('');
-      const goTxt = fp.hasFinal ? _t('발매까지 완성됐어요 🎉', 'Fully released 🎉') : _t('마스터까지 한 단계 남았어요', 'One step to master');
-      const supN = apFeatured.likes || apFeatured.plays || 0;
-      apHero = `
-        <div class="ap-slab"><h2>${_t('지금 자라는 곡','Growing now')} <span class="ap-live">● LIVE</span></h2></div>
-        <div class="ap-hero">
-          <div class="ap-orbwrap"><div class="ap-orb" onclick="playTrack('${apFeatured.id}')"><i class="ri-play-fill"></i></div></div>
-          <div class="ap-hmeta" style="cursor:pointer;" onclick="navigateTo('song:${apFeatured.id}')">${ft !== (apFeatured.artist || '') ? `<div class="who">${apEsc(apFeatured.artist || '')}</div>` : ''}<div class="ti">${apEsc(ft)}</div></div>
-          <div class="ap-evo">
-            <div class="ap-evo-track">${trackInner}</div>
-            <div class="ap-evo-lab">${labels}</div>
-            <div class="ap-evo-go">${goTxt}</div>
-          </div>
-          <div class="ap-supp">${supN > 0 ? `<span class="cnt"><b>${supN}</b>${_t('명이 키우는 중','raising it')}</span>` : `<span class="cnt">${_t('첫 응원의 주인공이 되어보세요','Be the first to cheer')}</span>`}</div>
-          <div class="ap-acts">
-            <button class="ap-btn play" onclick="playTrack('${apFeatured.id}')"><i class="ri-play-fill"></i> ${_t('재생','Play')}</button>
-            <button class="ap-btn cheer" data-tid="${apEsc(apFeatured.id)}" data-tt="${apEsc(ft)}" data-an="${apEsc(apFeatured.artist || '')}" onclick="mhCheer(this)"><i class="ri-heart-3-fill"></i> ${_t('응원','Cheer')}</button>
-          </div>
-          <div class="ap-benefit">${_t('응원하면 다음 데모를 가장 먼저 들어요','Cheer to hear the next demo first')}</div>
-        </div>`;
-    }
-
-    // ③ 내가 키우는 곡 (진행률 링)
-    const apRaise = mySentCheers.length ? mySentCheers.map(c => {
-      const t = allTracks.find(x => x && x.id === (c && c.track_id));
-      let pct = 50, stage = _t('응원 중', 'Cheering');
-      if (t) { const p = apProjOf(t); pct = p.hasFinal ? 100 : Math.min(Math.round(p.demoCount / 4 * 100), 95); stage = p.hasFinal ? _t('곧 발매', 'Soon') : ('데모 ' + p.demoCount + ' / 4'); }
-      const artist = (c && (c.artist_name || c.artist)) || (t && t.artist) || '';
-      const title = apTitle((c && (c.track_title || c.title)) || (t && t.title), artist);
-      const rc = pct >= 90 ? '#FBBF24' : (pct >= 60 ? '#48E08B' : '#54E0CE');
-      return `<div class="ap-rcard" onclick="navigateTo('artist:${encodeURIComponent(artist)}')">`
-        + `<div class="ap-ring" style="background:conic-gradient(${rc} ${pct}%, rgba(255,255,255,.08) 0)"><i style="color:${rc}">${pct}%</i></div>`
-        + `<div class="ap-rn">${apEsc(title)}</div><div class="ap-rs">${apEsc(stage)}</div></div>`;
-    }).join('') : `<div class="ap-empty">${_t('아직 응원한 곡이 없어요 — 자라는 곡을 응원해보세요','No cheered songs yet')}</div>`;
-
-    // ④ 무드 피드 (최근 데모) — 곡(프로젝트)당 1줄, 최신 데모 (버전별 중복 제거)
-    const apFeedSeen = {};
-    const apFeed = apDemos.filter(t => {
-      const pid = t.projectId || ('proj_' + t.id);
-      if (apFeedSeen[pid]) return false; apFeedSeen[pid] = 1; return true;
-    }).slice(0, 6).map(t => {
-      const ti = apTitle(t.title, t.artist); const col = apColor(ti);
-      const p = apProjOf(t);
-      const tags = (Array.isArray(t.tags) ? t.tags : []).slice(0, 3).map(x => '#' + x).join(' ');
-      const tot = Math.max(p.demoCount + (p.hasFinal ? 1 : 0), 4);
-      const sub = (ti === t.artist) ? (tags || '') : (t.artist || '');
-      return `<div class="ap-frow" onclick="navigateTo('song:${t.id}')">`
-        + `<div class="ap-thumb" style="background:radial-gradient(circle at 38% 32%, ${col}, ${col}cc)" onclick="event.stopPropagation(); playTrack('${t.id}')"><i class="ri-play-fill"></i></div>`
-        + `<div class="ap-finfo"><div class="ap-ft"><span class="nm">${apEsc(ti)}</span> <span class="ap-stg">데모 ${p.demoCount}/${tot}</span></div>`
-        + `${sub ? `<div class="ap-fw">${apEsc(sub)}</div>` : ''}${(tags && ti !== t.artist) ? `<div class="ap-ftags">${apEsc(tags)}</div>` : ''}</div>`
-        + `<div class="ap-flike"><i class="ri-heart-3-fill"></i>${t.likes || 0}</div></div>`;
-    }).join('');
-
-    appContent.innerHTML = `${_apStyle()}
-      <div class="ap-page">
-        <div class="ap-inner">
-          <div class="ap-id">
-            <div class="ap-id-av"><img src="${apEsc(apAvatar)}" alt=""></div>
-            <div class="ap-id-tx">
-              <div class="ap-id-nm">${apEsc(apMe.name || '')}</div>
-              <div class="ap-id-sub">🎧 ${_t('리스너','Listener')} · ${_t('팔로우','Follow')} ${followedArtists.length} · ${_t('응원','Cheers')} ${mySentCheers.length}</div>
-            </div>
-            <div class="ap-id-set" onclick="editProfile()" title="${_t('설정','Settings')}"><i class="ri-settings-3-line"></i></div>
-          </div>
-          <div class="ap-lab">${_t('지금 기분으로 듣기','Listen by mood')}</div>
-          <div class="ap-chips">${apChips}</div>
-          ${apHero}
-          <div class="ap-slab"><h2><i class="ri-seedling-fill" style="color:#48E08B"></i> ${_t('내가 키우는 곡','Songs I support')}</h2></div>
-          <div class="ap-shelf">${apRaise}</div>
-          <div class="ap-slab"><h2>${_t('최근 데모','Fresh demos')}</h2></div>
-          <div class="ap-feed">${apFeed || `<div class="ap-empty">${_t('아직 데모가 없어요','No demos yet')}</div>`}</div>
+    // 소속 아티스트 (계약 = 팔로우)
+    const roster = followedArtists.map(a => {
+      const name = (a && a.name) || '';
+      return { name, avatar: (a && a.avatar) || '', color: agColor(name), projects: agArtistProjects(name), cheering: cheeredArtists.has(name) };
+    });
+    const rosterHtml = roster.length ? roster.map(r => {
+      const releaseProj = r.projects.find(p => p.hasFinal);
+      const alert = releaseProj ? `<div class="ag-alert"><span class="dot"></span>${agEsc(agTitle(releaseProj.rep.title, r.name))} · ${_t('발매','Released')} — ${_t('응원한 사람은 홀로 카드를 받아요','cheerers get a holo card')}</div>` : '';
+      const cards = r.projects.length ? r.projects.map(p => agSongCard(p, r.color, 'cascade')).join('') : `<div class="ag-empty">${_t('아직 올라온 곡이 없어요','No songs yet')}</div>`;
+      return `<div class="ag-roster" style="--tc:${r.color}">
+        <div class="ag-rtop">
+          <div class="ag-portrait">${r.avatar ? `<img src="${agEsc(r.avatar)}" alt="">` : ''}<span class="ag-seal">${_t('계약중','Signed')}</span></div>
+          <div class="ag-rmid"><div class="ag-rname">${agEsc(r.name)}</div><div class="ag-rsub">${_t('곡','Songs')} ${r.projects.length}</div></div>
+          ${r.cheering ? `<div class="ag-rcheer"><i class="ri-heart-3-fill"></i>${_t('응원중','Cheering')}</div>` : ''}
+        </div>
+        ${alert}
+        <div class="ag-cascade">
+          <div class="ag-cazlab">📥 <b>${agEsc(r.name)}</b>${_t('를 계약해서 들어온 카드','’s contracted cards')} · ${r.projects.length}</div>
+          <div class="ag-songrow">${cards}</div>
         </div>
       </div>`;
+    }).join('') : `<div class="ag-empty">${_t('아직 계약한 아티스트가 없어요 — 아래 워치리스트에서 계약해보세요','No signed artists yet — sign from your watchlist below')}</div>`;
+
+    // 워치리스트 (응원한 곡의 아티스트 중 미팔로우) — 계약=팔로우.
+    // 응원 곡 track_id → 트랙의 artistId 해석해서 넘겨야 서버 팔로우(=소속 승격)가 됨.
+    const watchMap = {};
+    mySentCheers.forEach(c => {
+      const name = c && (c.artist_name || c.artist);
+      if (!name || followedNames.has(name) || watchMap[name]) return;
+      const ct = allTracks.find(x => x && x.id === (c && c.track_id));
+      const aid = (ct && ct.artistId) || (allTracks.find(x => x && x.artist === name && x.artistId) || {}).artistId || '';
+      watchMap[name] = { name, id: aid, projects: agArtistProjects(name) };
+    });
+    const watchNames = Object.values(watchMap);
+    const watchHtml = watchNames.length ? watchNames.map(w => {
+      const col = agColor(w.name);
+      return `<div class="ag-watch">
+        <div class="ag-wp" style="background:radial-gradient(circle at 38% 32%, color-mix(in srgb, ${col} 60%, #fff), ${col})"></div>
+        <div class="ag-wmid"><div class="ag-wname">${agEsc(w.name)}</div><div class="ag-wsub">${_t('곡','Songs')} ${w.projects.length} · ${_t('응원함','Cheered')}</div></div>
+        <button class="ag-signbtn" data-aid="${agEsc(w.id)}" data-aname="${agEsc(w.name)}" onclick="mhFollow(this)"><i class="ri-add-line"></i>${_t('계약','Sign')}</button>
+      </div>`;
+    }).join('') : `<div class="ag-empty">${_t('응원한 아티스트가 워치리스트에 모여요','Cheered artists gather here')}</div>`;
+
+    // 데모 캐비닛 (소속+응원 곡, 프로젝트 dedupe)
+    const cabSeen = {}, cabinet = [];
+    roster.forEach(r => r.projects.forEach(p => { if (!cabSeen[p.pid]) { cabSeen[p.pid] = 1; cabinet.push(p); } }));
+    mySentCheers.forEach(c => { const t = allTracks.find(x => x && x.id === (c && c.track_id)); if (t) { const pid = t.projectId || ('proj_' + t.id); if (!cabSeen[pid]) { cabSeen[pid] = 1; cabinet.push(agProjInfo(pid)); } } });
+    const cabHtml = cabinet.length ? cabinet.map(p => agSongCard(p, agColor(agTitle(p.rep.title, p.rep.artist)), 'cab')).join('') : `<div class="ag-empty">${_t('계약·응원한 곡이 여기 모여요','Your collected demos gather here')}</div>`;
+
+    appContent.innerHTML = `${_agStyle()}
+      <div class="ag-page"><div class="ag-inner">
+        <div class="ag-top">
+          <div class="ag-id"><img class="ag-id-av" src="${agEsc(agAvatar)}" alt=""><div class="ag-id-nm">${agEsc(agMe.name || '')}</div></div>
+          <div class="ag-set" onclick="editProfile()" title="${_t('설정','Settings')}"><i class="ri-settings-3-line"></i></div>
+        </div>
+        <div class="ag-dash">
+          <div class="ag-dl">MY AGENCY</div><div class="ag-dt">${_t('내 기획사','My Agency')}</div>
+          <div class="ag-ds">${_t('계약한 아티스트가 새 데모를 올리면 알려줘요.','Get notified when your signed artists drop new demos.')}</div>
+          <div class="ag-stats">
+            <div class="ag-stat"><b style="color:#FFC94D">${roster.length}</b><span>${_t('소속 아티스트','Signed')}</span></div>
+            <div class="ag-stat"><b style="color:#7FA8FF">${watchNames.length}</b><span>${_t('워치리스트','Watchlist')}</span></div>
+            <div class="ag-stat"><b style="color:#46E08B">${cabinet.length}</b><span>${_t('데모 캐비닛','Cabinet')}</span></div>
+          </div>
+        </div>
+        <div class="ag-tier"><h2>${_t('내 소속 아티스트','My Roster')} <span class="ag-step ag-s1">${_t('계약중','Signed')}</span></h2><span class="ag-ct">${roster.length}${_t('팀','')}</span></div>
+        ${rosterHtml}
+        <div class="ag-tier"><h2>${_t('워치리스트','Watchlist')} <span class="ag-step ag-s2">${_t('눈여겨보는','Watching')}</span></h2><span class="ag-ct">${watchNames.length}${_t('명','')}</span></div>
+        ${watchHtml}
+        <div class="ag-tier"><h2>${_t('데모 캐비닛','Demo Cabinet')} <span class="ag-step ag-s3">${_t('저장한 곡','Saved')}</span></h2><span class="ag-ct">${cabinet.length}${_t('곡','')}</span></div>
+        <div class="ag-cab">${cabHtml}</div>
+      </div></div>`;
     return;
   }
 
