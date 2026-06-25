@@ -2050,6 +2050,19 @@
       return this.fetchForArtist(prof.id, limit);
     },
 
+    // Cheers for one track — count + supporters (곡 상세 '키우는 중' 수).
+    async fetchForTrack(trackId, limit) {
+      if (!window.supabase || !trackId) return [];
+      const { data, error } = await window.supabase
+        .from('cheers')
+        .select('id, supporter_id, supporter_name, message, created_at')
+        .eq('track_id', trackId)
+        .order('created_at', { ascending: false })
+        .limit(limit || 60);
+      if (error) { console.warn('[Cheers] fetchForTrack', error.message); return []; }
+      return data || [];
+    },
+
     // Cheers the current user has sent (내가 키우는 곡 — 응원한 곡들).
     async fetchMySent(limit) {
       if (!window.supabase) return [];

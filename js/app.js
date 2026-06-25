@@ -9762,12 +9762,58 @@ function _sdStyle() {
 }
 
 // '같이 듣기' — 곡 재생 + 응원하며 듣는 사람 수를 토스트로(커뮤니티 느낌). 실시간 동기화는 아님.
+// 카운트는 라이브 값(window.__sdSupCount)을 우선 사용하고, 없으면 렌더 시 넘긴 n 사용.
 window._sdListenAlong = function (id, n) {
   try { playTrack(id); } catch (_) {}
+  var cnt = (typeof window.__sdSupCount === 'number') ? window.__sdSupCount : (n || 0);
   if (typeof showToast === 'function') {
-    showToast((n > 0)
-      ? _t(n + '명과 함께 듣는 중 🎧', 'Listening with ' + n + ' others 🎧')
+    showToast((cnt > 0)
+      ? _t(cnt + '명과 함께 듣는 중 🎧', 'Listening with ' + cnt + ' others 🎧')
       : _t('이 곡 듣는 중 🎧', 'Now playing 🎧'));
+  }
+};
+
+// 곡 상세 — 실제 응원 수(cheers 테이블)를 비동기로 읽어 화면 갱신.
+// track.likes/plays(가짜 수) 대신 진짜 '키운 사람 수'를 표시한다. 응원 직후에도 호출.
+window._sdRefreshSupporters = async function (trackId) {
+  if (!window.supabase || !window.Cheers || !window.Cheers.fetchForTrack) return;
+  if (String(window.__currentSongId) !== String(trackId)) return;
+  var rows = [];
+  try { rows = await window.Cheers.fetchForTrack(trackId, 60); } catch (_) { return; }
+  if (String(window.__currentSongId) !== String(trackId)) return; // 그새 페이지 이동
+  // 고유 응원자만
+  var seen = {}, sup = [];
+  rows.forEach(function (r) {
+    var k = r.supporter_id || r.supporter_name || r.id;
+    if (!seen[k]) { seen[k] = 1; sup.push(r); }
+  });
+  var n = sup.length;
+  window.__sdSupCount = n;
+  var _esc = function (s) { return (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+  var avCol = ['#7C6FF0', '#FB6F92', '#36C977', '#FBBF24', '#54E0CE', '#5AA9FF', '#B06BFF'];
+  var avEl = document.getElementById('sd-avs');
+  if (avEl) {
+    avEl.innerHTML = n > 0
+      ? sup.slice(0, 5).map(function (r, i) {
+          return '<span style="background:' + avCol[i % avCol.length] + '">' + _esc((r.supporter_name || '♥').trim().charAt(0) || '♥') + '</span>';
+        }).join('')
+      : '';
+  }
+  var cntEl = document.getElementById('sd-cnt');
+  if (cntEl) {
+    cntEl.innerHTML = n > 0
+      ? '<b>' + n + '</b>' + _t('명이 이 곡을 키우는 중', ' raising this song')
+      : _t('첫 응원의 주인공이 되어보세요', 'Be the first to cheer');
+  }
+  var csubEl = document.getElementById('sd-csub');
+  if (csubEl) {
+    csubEl.textContent = _t('이 곡의 성장을 응원해요', 'Support this song') + (n > 0 ? ' · ' + (n + 1) + _t('번째 응원', 'th cheer') : '');
+  }
+  var lsubEl = document.getElementById('sd-listen-sub');
+  if (lsubEl) {
+    lsubEl.textContent = n > 0
+      ? _t(n + '명이 응원하며 듣고 있어요 🎧', n + ' fans listening along 🎧')
+      : _t('이 곡을 들어보세요 🎧', 'Give it a listen 🎧');
   }
 };
 
@@ -9801,7 +9847,10 @@ function renderSongDetail(trackId) {
   tlRows += `<div class="sd-tlrow"><span class="sd-dot ${hasFinal ? 'done' : 'lock'}">${hasFinal ? '<i class="ri-check-line"></i>' : '<i class="ri-lock-2-line"></i>'}</span>`
     + `<div><div class="sd-tt${hasFinal ? '' : ' mut'}">${_t('마스터 발매', 'Master release')}</div><div class="sd-td">${hasFinal ? _t('발매 완료 🎉', 'Released 🎉') : _t('응원이 모이면 잠금 해제', 'Unlocks as cheers gather')}</div></div></div>`;
 
-  const supN = track.likes || track.plays || 0;
+  // 라이브(Supabase)면 실제 응원 수를 비동기로 채운다 → 시작값 0(가짜 재생수 안 씀).
+  // 오프라인/데모면 track.likes/plays 로 활기있게 보이기.
+  const _supaLive = !!(window.supabase && window.Cheers && window.Cheers.fetchForTrack);
+  const supN = _supaLive ? 0 : (track.likes || track.plays || 0);
   const story = track.description || track.artistNote || '';
   const lyrics = track.lyrics || '';
   const curStage = hasFinal ? _t('발매', 'Released') : ('데모 ' + demos.length);
@@ -9819,18 +9868,21 @@ function renderSongDetail(trackId) {
       </div>
       <div class="sd-tl">${tlRows}</div>
       <div class="sd-supp">
-        <div class="sd-avs">${avs}</div>
-        <span class="cnt">${supN > 0 ? `<b>${supN}</b>${_t('명이 이 곡을 키우는 중', ' raising this song')}` : _t('첫 응원의 주인공이 되어보세요', 'Be the first to cheer')}</span>
+        <div class="sd-avs" id="sd-avs">${avs}</div>
+        <span class="cnt" id="sd-cnt">${supN > 0 ? `<b>${supN}</b>${_t('명이 이 곡을 키우는 중', ' raising this song')}` : _t('첫 응원의 주인공이 되어보세요', 'Be the first to cheer')}</span>
       </div>
       <button class="sd-cheer" data-tid="${esc(track.id)}" data-tt="${esc(ti)}" data-an="${esc(track.artist || '')}" onclick="mhCheer(this)"><i class="ri-heart-3-fill"></i> ${_t('응원하기', 'Cheer')}</button>
-      <div class="sd-csub">${_t('이 곡의 성장을 응원해요', 'Support this song')}${supN > 0 ? ` · ${supN + 1}${_t('번째 응원', 'th cheer')}` : ''}</div>
+      <div class="sd-csub" id="sd-csub">${_t('이 곡의 성장을 응원해요', 'Support this song')}${supN > 0 ? ` · ${supN + 1}${_t('번째 응원', 'th cheer')}` : ''}</div>
       <button class="sd-listen" onclick="window._sdListenAlong('${track.id}', ${supN})">
         <div class="sd-listen-main"><i class="ri-headphone-fill"></i> ${_t('같이 듣기', 'Listen along')}</div>
-        <div class="sd-listen-sub">${supN > 0 ? _t(supN + '명이 응원하며 듣고 있어요 🎧', supN + ' fans listening along 🎧') : _t('이 곡을 들어보세요 🎧', 'Give it a listen 🎧')}</div>
+        <div class="sd-listen-sub" id="sd-listen-sub">${supN > 0 ? _t(supN + '명이 응원하며 듣고 있어요 🎧', supN + ' fans listening along 🎧') : _t('이 곡을 들어보세요 🎧', 'Give it a listen 🎧')}</div>
       </button>
       ${(story || lyrics) ? `<div class="sd-story"><div class="lab">${_t('이 곡 이야기', 'About this song')}</div>${story ? `<p>${esc(story)}</p>` : ''}${lyrics ? `<div class="lyr">${esc(lyrics)}</div>` : ''}</div>` : ''}
     </div></div>`;
   window.__currentSongId = trackId;
+  window.__sdSupCount = supN;
+  // 실제 응원 수(cheers)를 비동기로 읽어 카운트·아바타·서브문구 갱신.
+  try { window._sdRefreshSupporters(trackId); } catch (_) {}
 }
 
 // 내 계정 = '내 기획사' 디자인 스코프 CSS (.ag-*) — <style> 자체 포함.
@@ -16963,6 +17015,13 @@ window.closeCheerModal = function () {
   if (m) m.remove();
 };
 
+// 응원 직후 — 지금 보고 있는 곡 상세면 응원 수를 다시 읽어 갱신.
+function _sdBumpAfterCheer(trackId) {
+  if (!window.__currentSongId || String(window.__currentSongId) !== String(trackId)) return;
+  if (!window._sdRefreshSupporters) return;
+  setTimeout(function () { try { window._sdRefreshSupporters(trackId); } catch (_) {} }, 250);
+}
+
 window.submitCheer = async function (trackId, trackTitle, artistName) {
   const ta = document.getElementById('cheer-message-input');
   const msg = (ta && ta.value || '').trim();
@@ -16982,11 +17041,13 @@ window.submitCheer = async function (trackId, trackTitle, artistName) {
     _addCheered(trackId);
     closeCheerModal();
     _showCheerSuccess(artistName);
+    _sdBumpAfterCheer(trackId);
   } catch (e) {
     if (e && e.message === 'ALREADY_CHEERED') {
       _addCheered(trackId);
       closeCheerModal();
       showToast(_t('이미 응원했어요 💝', 'You already cheered 💝'));
+      _sdBumpAfterCheer(trackId);
     } else {
       console.warn('[cheer] send failed', e && (e.message || e));
       // 'cheers' 테이블 미적용(PGRST205) 등 — 사용자에겐 부드러운 토스트, 상세는 콘솔.
