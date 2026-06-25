@@ -12837,39 +12837,12 @@ function renderArtistHome(artistName) {
     return `<div class="mh-cover ${cls}" style="background:${color}"><span class="mh-hand ln">${esc((title || '').slice(0, 4))}</span></div>`;
   };
 
-  // === 최신 활성 데모 위젯 + 데모 진화 stepper (청취자 디자인 히어로) ===
+  // === 최신 활성 데모 위젯 ===
   let latestHtml = '';
   if (latest) {
     const lt = cleanTitle(latest.title);
     const lc = colorFor(lt);
     const lLabel = latest.versionLabel || (latest.isDemo ? 'DEMO' : 'MASTER');
-    // 최신 곡이 속한 프로젝트의 데모 진화 단계
-    const lpid = latest.projectId || ('proj_' + latest.id);
-    const lproj = tracks.find(tr => tr.pid === lpid);
-    let evoHtml = '';
-    if (lproj && lproj.demos.length) {
-      const ds = lproj.demos;
-      const nodeList = ds.map((d, i) => {
-        const isLast = (i === ds.length - 1);
-        const st = (!d.isFinal && isLast && !lproj.hasFinal) ? 'now' : 'done';
-        return { cls: st, num: d.isFinal ? 'M' : (i + 1), lab: d.isFinal ? _t('마스터', 'Master') : ('데모' + (i + 1)) };
-      });
-      if (!ds.some(d => d.isFinal)) nodeList.push({ cls: lproj.hasFinal ? 'done' : 'lock', num: 'M', lab: _t('마스터', 'Master') });
-      let trackInner = '';
-      nodeList.forEach((n, i) => {
-        if (i > 0) trackInner += `<span class="mh-evo-seg${nodeList[i - 1].cls === 'done' ? ' fill' : ''}"></span>`;
-        const inner = n.cls === 'done' ? '<i class="ri-check-line"></i>' : (n.cls === 'lock' ? '<i class="ri-lock-2-line"></i>' : n.num);
-        trackInner += `<span class="mh-evo-node ${n.cls}">${inner}</span>`;
-      });
-      const labels = nodeList.map(n => `<span>${esc(n.lab)}</span>`).join('');
-      const goTxt = lproj.hasFinal ? _t('발매까지 완성됐어요 🎉', 'Fully released 🎉') : _t('마스터까지 한 단계 남았어요', 'One step to master');
-      evoHtml = `
-        <div class="mh-evo mh-glass">
-          <div class="mh-evo-track">${trackInner}</div>
-          <div class="mh-evo-labels">${labels}</div>
-          <div class="mh-evo-go">${goTxt}</div>
-        </div>`;
-    }
     latestHtml = `
       <div class="mh-sec">
         <div class="mh-sec-head">
@@ -12888,24 +12861,6 @@ function renderArtistHome(artistName) {
             </div>
           </div>
           <button class="mh-play" onclick="playTrack('${latest.id}')" aria-label="play"><i class="ri-play-fill"></i></button>
-        </div>
-        ${evoHtml}
-      </div>`;
-  }
-
-  // === 응원 루프 (청취자 디자인 — 서포터 + 응원하기) ===
-  let cheerHtml = '';
-  if (latest) {
-    const ltitle = cleanTitle(latest.title);
-    cheerHtml = `
-      <div class="mh-sec">
-        <div class="mh-cheer mh-glass">
-          <div class="mh-cheer-row">
-            <div class="mh-cheer-avs" id="mh-cheer-avs"></div>
-            <span class="mh-cheer-cnt" id="mh-cheer-cnt">${isSelf ? _t('응원을 기다리는 중 💌','Waiting for cheers 💌') : _t('첫 응원을 보내보세요','Be the first to cheer')}</span>
-          </div>
-          ${isSelf ? '' : `<button class="mh-cheer-btn" data-tid="${esc(latest.id)}" data-tt="${esc(ltitle)}" data-an="${esc(artistName)}" onclick="mhCheer(this)"><i class="ri-heart-3-fill"></i> ${_t('응원하기','Cheer')}</button>`}
-          <p class="mh-cheer-benefit">${isSelf ? _t('받은 응원이 여기 모여요','Cheers you receive gather here') : _t('응원하면 다음 데모를 가장 먼저 들어요','Cheer to hear the next demo first')}</p>
         </div>
       </div>`;
   }
@@ -12976,15 +12931,6 @@ function renderArtistHome(artistName) {
       <span class="rgt"><i class="ri-arrow-right-s-line"></i></span>
     </div>` : '';
 
-  // 내가 키우는 곡 (내가 응원한 곡들 — 본인 페이지만)
-  const shelfHtml = isSelf ? `
-    <div class="mh-sec">
-      <div class="mh-sec-head">
-        <h2 class="mh-sec-title"><i class="ri-seedling-fill" style="color:#48E08B"></i> ${_t('내가 키우는 곡','Songs I support')}</h2>
-      </div>
-      <div class="mh-shelf" id="mh-shelf"><div class="mh-shelf-empty">${_t('아직 응원한 곡이 없어요','No cheered songs yet')}</div></div>
-    </div>` : '';
-
   appContent.innerHTML = `${_mhStyle()}
     <div class="mh-page">
       <div class="mh-stars"></div>
@@ -13008,45 +12954,9 @@ function renderArtistHome(artistName) {
           ${fanHtml}
         </section>
         ${latestHtml}
-        ${cheerHtml}
         ${histHtml}
-        ${shelfHtml}
       </div>
     </div>`;
-
-  // 비동기: 응원 카운트 + 서포터 아바타 채우기 (Cheers 재활성됨)
-  if (latest && window.Cheers && window.Cheers.fetchForArtistByName) {
-    Promise.resolve(window.Cheers.fetchForArtistByName(artistName, 60)).then(function (list) {
-      list = list || [];
-      const names = [], seen = {};
-      list.forEach(c => { const n = (c && c.supporter_name) || '익명'; if (!seen[n]) { seen[n] = 1; names.push(n); } });
-      const cntEl = document.getElementById('mh-cheer-cnt');
-      const avsEl = document.getElementById('mh-cheer-avs');
-      if (!cntEl) return; // 페이지가 바뀌었으면 중단
-      if (names.length) {
-        cntEl.innerHTML = `<b>${names.length}</b>${_t('명이 응원 중','cheering')}`;
-        if (avsEl) avsEl.innerHTML = names.slice(0, 5).map(n => `<span style="background:${colorFor(n)}">${esc(String(n).slice(0, 1))}</span>`).join('');
-      }
-    }).catch(() => {});
-  }
-
-  // 비동기: 내가 키우는 곡 (내가 보낸 응원) 채우기
-  if (isSelf && window.Cheers && window.Cheers.fetchMySent) {
-    Promise.resolve(window.Cheers.fetchMySent(20)).then(function (list) {
-      list = list || [];
-      const shelf = document.getElementById('mh-shelf');
-      if (!shelf || !list.length) return;
-      shelf.innerHTML = list.map(function (c) {
-        const title = (c && c.track_title) || '무제';
-        const artist = (c && c.artist_name) || '';
-        const aenc = encodeURIComponent(artist);
-        return `<div class="mh-rcard" onclick="navigateTo('artist:${aenc}')">`
-          + `<div class="mh-rcover" style="background:${colorFor(title)}"><span class="mh-hand">${esc(String(title).slice(0, 3))}</span></div>`
-          + `<div class="mh-rn">${esc(title)}</div>`
-          + `<div class="mh-rs">💝 ${esc(artist)}</div></div>`;
-      }).join('');
-    }).catch(() => {});
-  }
 
   window.__currentArtistName = artistName;
 }
