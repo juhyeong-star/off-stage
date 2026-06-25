@@ -13059,10 +13059,12 @@ function _mhYMD(d) {
   return dt.getFullYear() + '.' + String(dt.getMonth() + 1).padStart(2, '0') + '.' + String(dt.getDate()).padStart(2, '0');
 }
 
-window.mhSelectDemo = function (pid, idx, ev) {
+window.mhSelectDemo = function (pid, idx, trackId, ev) {
   if (ev && ev.stopPropagation) ev.stopPropagation();
   window.__mhState[pid] = idx;
-  try { renderMyHome(); } catch (e) { console.warn('[myhome] reselect', e); }
+  if (trackId) { try { playTrack(trackId); } catch (_) {} }   // 데모 노드 누르면 그 버전 재생
+  // 현재 보고 있는 아티스트 페이지(내 페이지/남 페이지 공용)를 다시 그림 (renderMyHome 고정이면 남 페이지서 내 페이지로 튐)
+  try { renderArtistHome(window.__currentArtistName); } catch (e) { console.warn('[myhome] reselect', e); }
 };
 
 function _mhStyle() {
@@ -13302,7 +13304,7 @@ function renderArtistHome(artistName) {
       const stBd = tr.hasFinal ? 'rgba(16,185,129,.2)' : 'rgba(255,255,255,.1)';
       const nodes = tr.demos.map((d, i) => {
         const on = (i === tr.currentDemoIdx);
-        return `<div class="mh-node ${on ? 'active' : ''}" onclick="mhSelectDemo('${tr.pid}',${i},event)">`
+        return `<div class="mh-node ${on ? 'active' : ''}" onclick="mhSelectDemo('${tr.pid}',${i},'${d.id}',event)">`
           + `<div class="mh-node-dot" style="background:${on ? tr.color : 'rgba(255,255,255,.15)'};color:${on ? '#000' : 'rgba(255,255,255,.7)'};box-shadow:${on ? '0 0 10px ' + tr.color : 'none'};">${d.label}</div>`
           + `<span class="mh-node-date" style="color:${on ? '#fff' : 'rgba(255,255,255,.4)'};">${d.date}</span></div>`;
       }).join('<div class="mh-node-bar"></div>');
