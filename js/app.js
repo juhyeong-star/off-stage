@@ -2623,24 +2623,70 @@ window._attachPlayerFsSwipe = function () {
 
 // 🔗 현재 재생 곡 공유 — 미니바/풀스크린 플레이어의 공유 버튼.
 //    카드 페이지(#card:<id>) 링크를 시스템 공유(navigator.share) 또는 클립보드 복사.
-window.sharePlayerTrack = async function (e) {
+// 공유 — 음악앱처럼 깔끔한 바텀 시트(곡정보 + 링크복사 + 다른앱공유).
+// navigator.share 직접호출은 iOS/Mac에서 제목/텍스트/URL이 이상하게 뜨던 문제 → 자체 시트로 통일하고
+// '다른 앱으로'는 시트 안의 한 옵션으로만 둠(데스크탑/미지원은 링크복사로 깔끔하게 폴백).
+window.sharePlayerTrack = function (e) {
   if (e && e.stopPropagation) e.stopPropagation();
   const tid = window.currentPlayingTrack;
   if (!tid) { if (typeof showToast === 'function') showToast(_t('재생 중인 곡이 없어요', 'No song playing')); return; }
+  if (window.openShareSheet) window.openShareSheet(tid);
+};
+
+window.openShareSheet = function (tid) {
+  if (!tid) return;
   const db = window.DB.get();
   const t = (db.tracks || []).find(x => x && x.id === tid) || {};
+  const title = t.title || 'Off-Stage';
+  const artist = t.artist || '';
   const url = location.origin + location.pathname + '#card:' + encodeURIComponent(tid);
-  const text = (t.title || 'Off-Stage') + (t.artist ? ' — ' + t.artist : '');
+  const _esc = (s) => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const PAL = ['#8B7CF6', '#FB6F92', '#46E08B', '#54E0CE', '#FFC94D', '#5AA9FF'];
+  const col = PAL[(_hashSeed('disc:' + tid) >>> 0) % PAL.length];
+  window.__shareData = { title, artist, url };
+  const ex = document.getElementById('share-sheet'); if (ex) ex.remove();
+  const nativeBtn = navigator.share ? `<button class="ssh-opt" onclick="window._shareNative()"><i class="ri-share-forward-line"></i><span>${_t('다른 앱으로', 'Share to apps')}</span></button>` : '';
+  const html = `<div id="share-sheet" class="ssh-ov" onclick="if(event.target===this) closeShareSheet()"><style>
+.ssh-ov{position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .2s;}
+.ssh-ov.show{opacity:1;}
+.ssh-card{width:100%;max-width:440px;background:#15151E;border:1px solid rgba(255,255,255,.08);border-radius:22px 22px 0 0;padding:10px 18px calc(18px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .24s cubic-bezier(.22,1,.36,1);color:#F4F4F7;font-family:'Pretendard',sans-serif;}
+.ssh-ov.show .ssh-card{transform:translateY(0);}
+.ssh-grab{width:38px;height:4px;border-radius:3px;background:rgba(255,255,255,.2);margin:2px auto 14px;}
+.ssh-song{display:flex;align-items:center;gap:13px;margin-bottom:16px;}
+.ssh-disc{width:48px;height:48px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 16px rgba(0,0,0,.35);}
+.ssh-t{font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ssh-a{font-size:12.5px;color:#8B8B9A;margin-top:2px;}
+.ssh-opts{display:flex;gap:10px;margin-bottom:6px;}
+.ssh-opt{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;padding:14px;border-radius:14px;background:#1D1D2A;border:1px solid rgba(255,255,255,.07);color:#F4F4F7;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+.ssh-opt:active{transform:scale(.97);}
+.ssh-opt i{font-size:23px;color:#8B7CF6;}
+.ssh-cancel{width:100%;padding:13px;border-radius:14px;background:transparent;border:none;color:#8B8B9A;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:6px;}
+</style>
+    <div class="ssh-card">
+      <div class="ssh-grab"></div>
+      <div class="ssh-song"><div class="ssh-disc" style="background:${col}"></div><div style="min-width:0;"><div class="ssh-t">${_esc(title)}</div><div class="ssh-a">${_esc(artist)}</div></div></div>
+      <div class="ssh-opts">
+        <button class="ssh-opt" onclick="window._shareCopy()"><i class="ri-link"></i><span>${_t('링크 복사', 'Copy link')}</span></button>
+        ${nativeBtn}
+      </div>
+      <button class="ssh-cancel" onclick="closeShareSheet()">${_t('닫기', 'Close')}</button>
+    </div></div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  requestAnimationFrame(() => { const s = document.getElementById('share-sheet'); if (s) s.classList.add('show'); });
+};
+window.closeShareSheet = function () { const s = document.getElementById('share-sheet'); if (s) { s.classList.remove('show'); setTimeout(() => { try { s.remove(); } catch (_) {} }, 220); } };
+window._shareCopy = async function () {
+  const d = window.__shareData || {};
   try {
-    if (navigator.share) {
-      await navigator.share({ title: t.title || 'Off-Stage', text, url });
-    } else if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(url);
-      if (typeof showToast === 'function') showToast(_t('링크 복사됐어요', 'Link copied'));
-    } else {
-      if (typeof showToast === 'function') showToast(url);
-    }
-  } catch (_) { /* 사용자가 공유 시트 취소 — 무시 */ }
+    if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(d.url); if (typeof showToast === 'function') showToast(_t('링크 복사됐어요 🔗', 'Link copied 🔗')); }
+    else { const ta = document.createElement('textarea'); ta.value = d.url; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); if (typeof showToast === 'function') showToast(_t('링크 복사됐어요 🔗', 'Link copied 🔗')); } catch (_) { if (typeof showToast === 'function') showToast(d.url); } ta.remove(); }
+  } catch (_) { if (typeof showToast === 'function') showToast(d.url); }
+  closeShareSheet();
+};
+window._shareNative = async function () {
+  const d = window.__shareData || {};
+  closeShareSheet();
+  try { await navigator.share({ title: d.title, text: d.title + (d.artist ? ' — ' + d.artist : ''), url: d.url }); } catch (_) { /* 취소 무시 */ }
 };
 
 // (event banner removed)
@@ -10085,6 +10131,26 @@ async function _renderProfileImpl() {
       return `<div class="ma-artist" onclick="navigateTo('artist:${encodeURIComponent(nm)}')"><img class="ma-aav" src="${maEsc(av)}" alt=""><div class="ma-an">${maEsc(nm)}</div></div>`;
     }).join('') : `<div class="ma-empty">${_t('관심 아티스트를 팔로우해보세요','Follow artists you like')}</div>`;
 
+    // 🔥 내 아티스트의 새 데모 (팔로우한 아티스트의 최근 데모 — 응원 시작점, 휑한 페이지 채움)
+    const followedNameSet = new Set(followedArtists.map(a => a && a.name).filter(Boolean));
+    const cheeredTrackIds = new Set(mySentCheers.map(c => c && c.track_id).filter(Boolean));
+    const newSeen = {};
+    const newDemos = allTracks
+      .filter(t => t && t.isDemo && followedNameSet.has(t.artist))
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+      .filter(t => { const pid = t.projectId || ('proj_' + t.id); if (newSeen[pid]) return false; newSeen[pid] = 1; return true; })
+      .slice(0, 6);
+    const newRows = newDemos.map(t => {
+      const ti = maTitle(t.title, t.artist);
+      const already = cheeredTrackIds.has(t.id);
+      const p = maProjOf(t);
+      return `<div class="ma-row" onclick="navigateTo('song:${t.id}')">
+        <div class="ma-cover" style="background:${maColor(ti)}">${maEsc(String(ti).slice(0, 2))}</div>
+        <div class="ma-rmid"><div class="ma-rt">${maEsc(ti)} <span class="ma-rby">${maEsc(t.artist || '')}</span></div><div class="ma-rnote" style="color:${already ? '#9DE0B4' : '#FB6F92'}">${already ? '🌱 ' + _t('응원 중','Cheering') : '💗 ' + _t('응원해보세요','Cheer this one')}</div></div>
+        <div class="ma-stage">데모 ${p.demoCount}<span>/4</span></div>
+      </div>`;
+    }).join('');
+
     const headSub = (followedArtists.length ? `🌱 ${followedArtists.length}${_t('명과 함께 자라는 중','artists growing with you')}` : `🌱 ${_t('아티스트의 성장을 함께해요','Grow together with artists')}`)
       + (sinceLabel ? ` · ${_t('덕질','Fan since')} ${sinceLabel}${_t('부터','')}` : '');
 
@@ -10141,6 +10207,10 @@ async function _renderProfileImpl() {
           <div class="ma-sec-t"><i class="ri-seedling-fill" style="color:#46E08B"></i> ${_t('지금 키우는 곡','Growing now')} <span class="ct">${growing.length}</span></div>
           <div class="ma-list">${growRows}</div>
         </div>
+        ${newRows ? `<div class="ma-sec">
+          <div class="ma-sec-t"><i class="ri-fire-fill" style="color:#FB6F92"></i> ${_t('내 아티스트의 새 데모','Fresh from your artists')}</div>
+          <div class="ma-list">${newRows}</div>
+        </div>` : ''}
         <div class="ma-sec">
           <div class="ma-sec-t"><i class="ri-user-heart-fill" style="color:#FB6F92"></i> ${_t('내 아티스트','My artists')} <span class="ct">${followedArtists.length}</span></div>
           <div class="ma-artists">${folCards}</div>
