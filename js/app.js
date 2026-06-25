@@ -1700,10 +1700,12 @@ function navigateTo(route) {
         else navigateTo('auth');
         break;
       }
-      // 내 페이지 비활성화(사용자 요청) — 폴더는 내 우주로 통합됨.
-      // profile/me/studio 로 들어와도 항상 도형으로 돌려보낸다.
+      // 계정 프로필 (청취자 디자인) — 2026-06-25 재활성. studio 는 도형으로.
       case 'profile':
       case 'me':
+        currentView = 'profile';
+        renderProfile();
+        break;
       case 'studio':
         navigateTo('shapes');
         return;
@@ -2949,13 +2951,13 @@ function updateHeaderAuth() {
     const role = user.role || 'listener';
     const isAdmin = role === 'admin';
     container.innerHTML = `
-      <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; cursor:pointer;" onclick="editProfile()" title="프로필 설정">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; cursor:pointer;" onclick="navigateTo('profile')" title="내 계정 프로필">
         <img src="${user.avatar}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" alt="${(user.name||'').replace(/"/g,'&quot;')}">
         <div style="flex:1;min-width:0;">
           <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${user.name}</div>
           <div style="font-size:11px;color:var(--text-secondary);">${isAdmin ? _t('관리자', 'Admin') : '@' + (user.name || '').replace(/\s+/g,'').toLowerCase()}</div>
         </div>
-        <i class="ri-settings-3-line" style="color:var(--text-secondary);font-size:16px;"></i>
+        <i class="ri-settings-3-line" style="color:var(--text-secondary);font-size:16px;cursor:pointer;" onclick="event.stopPropagation(); editProfile();" title="${_t('설정','Settings')}"></i>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         ${isAdmin ? `<button class="btn-primary" style="padding:6px 14px;font-size:12px;background:#9C27B0;" onclick="navigateTo('admin')"><i class="ri-dashboard-fill"></i> Admin</button>` : ''}
@@ -9627,6 +9629,45 @@ function _afterUploadPrompt(track, artistName) {
 
 // ===================== 5. PROFILE & SETTINGS =====================
 
+// 계정 프로필(청취자 디자인) 스코프 CSS — <style> 자체 포함, global.css 안 건드림.
+function _apStyle() {
+  return `<style id="ap-style">
+.ap-page{position:relative;min-height:100%;padding:56px 0 calc(var(--player-height,60px) + env(safe-area-inset-bottom) + 28px);background:#0B0B11;color:#F4F4F7;font-family:'Pretendard',sans-serif;overflow-x:hidden;}
+.ap-page *{box-sizing:border-box;}
+.ap-inner{position:relative;z-index:1;padding:0 18px;max-width:520px;margin:0 auto;}
+.ap-hand{font-family:'Nanum Pen Script',cursive;color:#000;font-weight:800;}
+.ap-prof{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:8px;}
+.ap-avatar{width:78px;height:78px;border-radius:50%;padding:2px;background:linear-gradient(135deg,#48E08B,#FB6F92);margin-bottom:10px;}
+.ap-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
+.ap-name-row{display:flex;align-items:center;gap:8px;}
+.ap-name{font-size:21px;font-weight:800;margin:0;}
+.ap-set{width:30px;height:30px;border-radius:50%;background:#15151F;border:1px solid rgba(255,255,255,.08);color:#8B8B9A;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;}
+.ap-role{font-size:12px;color:#8B8B9A;margin:5px 0 0;}
+.ap-stats{display:flex;gap:10px;margin-top:16px;}
+.ap-stat{background:#15151F;border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:10px 18px;text-align:center;min-width:64px;}
+.ap-stat b{display:block;font-size:18px;font-weight:800;}
+.ap-stat span{font-size:10.5px;color:#8B8B9A;}
+.ap-sec{margin-top:26px;}
+.ap-sec-t{font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px;margin:0 0 12px;}
+.ap-shelf{display:flex;gap:11px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.ap-shelf::-webkit-scrollbar{display:none;}
+.ap-empty{font-size:12px;color:#5E5E6E;padding:10px 2px;}
+.ap-rcard{flex:0 0 116px;background:#15151F;border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:12px;cursor:pointer;}
+.ap-rcover{width:100%;height:68px;border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:9px;}
+.ap-rcover .ap-hand{font-size:20px;}
+.ap-rn{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ap-rs{font-size:10.5px;color:#8B8B9A;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ap-acard{flex:0 0 84px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;}
+.ap-aav{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.1);}
+.ap-an{font-size:11.5px;font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;}
+.ap-bmlist{display:flex;flex-direction:column;gap:8px;}
+.ap-bm{display:flex;align-items:center;gap:10px;background:#15151F;border:1px solid rgba(255,255,255,.06);border-radius:13px;padding:12px 14px;cursor:pointer;font-size:13px;}
+.ap-bm i{color:#FBBF24;flex:0 0 auto;}
+.ap-bm span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#C8C8D0;}
+@media(min-width:769px){.ap-inner{max-width:560px;}}
+</style>`;
+}
+
 async function renderProfile() {
   try {
     return await _renderProfileImpl();
@@ -9714,6 +9755,70 @@ async function _renderProfileImpl() {
 
   // Pre-compute myBackings here (used in header KPIs + later STO section)
   const myBackings = (typeof window._getMyBackings === 'function') ? window._getMyBackings() : [];
+
+  // ===== 계정 프로필 (청취자 디자인) — 2026-06-25 =====
+  // 마이페이지(아티스트 홈)와 별개인 '계정 프로필'. 데이터(팔로우·즐겨찾기·응원한 곡)는
+  // 위에서 이미 fetch 했고, 아래 옛 UI 대신 청취자 디자인으로 렌더하고 early-return.
+  {
+    const apEsc = (s) => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const AP_COLORS = ['#FF2EA0','#00E5FF','#B14BFF','#FF9100','#76FF03','#FF4D6D','#2EE6D6','#9D4EDD','#FFD166','#4D9DFF'];
+    const apColor = (s) => AP_COLORS[(_hashSeed(s || 'x') >>> 0) % AP_COLORS.length];
+    const apMe = db.currentUser;
+    const apAvatar = apMe.avatar || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(apMe.name || 'user'));
+    const apFollowN = followedArtists.length, apCheerN = mySentCheers.length, apBmN = bookmarkedNotes.length;
+
+    const apRaise = mySentCheers.length ? mySentCheers.map(c => {
+      const title = (c && (c.track_title || c.title)) || '무제';
+      const artist = (c && (c.artist_name || c.artist)) || '';
+      return `<div class="ap-rcard" onclick="navigateTo('artist:${encodeURIComponent(artist)}')">`
+        + `<div class="ap-rcover" style="background:${apColor(title)}"><span class="ap-hand">${apEsc(String(title).slice(0, 3))}</span></div>`
+        + `<div class="ap-rn">${apEsc(title)}</div><div class="ap-rs">💝 ${apEsc(artist)}</div></div>`;
+    }).join('') : `<div class="ap-empty">${_t('아직 응원한 곡이 없어요','No cheered songs yet')}</div>`;
+
+    const apFollow = followedArtists.length ? followedArtists.map(a => {
+      const nm = (a && a.name) || '';
+      const av = (a && a.avatar) || ('https://i.pravatar.cc/100?u=' + encodeURIComponent(nm));
+      return `<div class="ap-acard" onclick="navigateTo('artist:${encodeURIComponent(nm)}')">`
+        + `<img class="ap-aav" src="${apEsc(av)}" alt=""><div class="ap-an">${apEsc(nm)}</div></div>`;
+    }).join('') : `<div class="ap-empty">${_t('아직 팔로우한 아티스트가 없어요','No followed artists yet')}</div>`;
+
+    const apBm = bookmarkedNotes.length ? bookmarkedNotes.slice(0, 12).map(n => {
+      const txt = ((n && (n.text || n.title)) || '').replace(/\n/g, ' ').trim();
+      return `<div class="ap-bm" onclick="openNoteDetail('${apEsc(n && n.id)}')"><i class="ri-bookmark-fill"></i><span>${apEsc(txt.slice(0, 42)) || _t('저장한 항목','Saved item')}</span></div>`;
+    }).join('') : `<div class="ap-empty">${_t('아직 즐겨찾기가 없어요','Nothing saved yet')}</div>`;
+
+    appContent.innerHTML = `${_apStyle()}
+      <div class="ap-page">
+        <div class="ap-inner">
+          <section class="ap-prof">
+            <div class="ap-avatar"><img src="${apEsc(apAvatar)}" alt=""></div>
+            <div class="ap-name-row">
+              <h1 class="ap-name">${apEsc(apMe.name || '')}</h1>
+              <button class="ap-set" onclick="editProfile()" aria-label="${_t('설정','Settings')}"><i class="ri-settings-3-line"></i></button>
+            </div>
+            <p class="ap-role">🎧 ${_t('리스너','Listener')}</p>
+            <div class="ap-stats">
+              <div class="ap-stat"><b>${apFollowN}</b><span>${_t('팔로우','Following')}</span></div>
+              <div class="ap-stat"><b>${apCheerN}</b><span>${_t('응원','Cheers')}</span></div>
+              <div class="ap-stat"><b>${apBmN}</b><span>${_t('즐겨찾기','Saved')}</span></div>
+            </div>
+          </section>
+          <div class="ap-sec">
+            <h2 class="ap-sec-t"><i class="ri-seedling-fill" style="color:#48E08B"></i> ${_t('내가 키우는 곡','Songs I support')}</h2>
+            <div class="ap-shelf">${apRaise}</div>
+          </div>
+          <div class="ap-sec">
+            <h2 class="ap-sec-t"><i class="ri-user-heart-fill" style="color:#FB6F92"></i> ${_t('팔로우한 아티스트','Following')}</h2>
+            <div class="ap-shelf">${apFollow}</div>
+          </div>
+          <div class="ap-sec">
+            <h2 class="ap-sec-t"><i class="ri-bookmark-fill" style="color:#FBBF24"></i> ${_t('즐겨찾기','Saved')}</h2>
+            <div class="ap-bmlist">${apBm}</div>
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
 
   // Own notes grid — show all
   const notesGridHtml = userNotes.map((n, i) => {
