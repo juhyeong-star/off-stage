@@ -10008,29 +10008,62 @@ async function _renderProfileImpl() {
       return { demoCount: demos.length, hasFinal, rep: rep || track };
     };
 
-    // 내가 응원하는 곡 (데모 성장 바)
-    const supRows = mySentCheers.length ? mySentCheers.map(c => {
+    // 응원한 곡 + 데모 성장 정보 (응원 후 얼마나 자랐나 = 같이 기뻐할 거리)
+    const supported = mySentCheers.map(c => {
       const t = allTracks.find(x => x && x.id === (c && c.track_id));
       const artist = (c && (c.artist_name || c.artist)) || (t && t.artist) || '';
       const title = maTitle((c && (c.track_title || c.title)) || (t && t.title), artist);
-      let demoCount = 1, hasFinal = false, repId = (c && c.track_id) || '';
-      if (t) { const p = maProjOf(t); demoCount = p.demoCount || 1; hasFinal = p.hasFinal; repId = (p.rep && p.rep.id) || t.id; }
-      const tot = Math.max(demoCount + (hasFinal ? 1 : 0), 4);
-      const pct = hasFinal ? 100 : Math.min(Math.round(demoCount / 4 * 100), 90);
-      const col = maColor(title);
-      return `<div class="ma-row" onclick="navigateTo('song:${repId}')">
-        <div class="ma-cover" style="background:${col}">${maEsc(String(title).slice(0, 2))}</div>
-        <div class="ma-rmid"><div class="ma-rt">${maEsc(title)}</div><div class="ma-rsub">${maEsc(artist)}</div><div class="ma-bar"><i style="width:${pct}%"></i></div></div>
-        <div class="ma-stage">${hasFinal ? _t('발매','Out') : '데모 ' + demoCount}${hasFinal ? '' : `<span>/${tot}</span>`}</div>
-      </div>`;
-    }).join('') : `<div class="ma-empty">${_t('아직 응원한 곡이 없어요 — 마음에 드는 데모를 응원해보세요','No cheered songs yet — cheer a demo you like')}</div>`;
+      const cheerAt = new Date((c && c.created_at) || 0).getTime();
+      let demoCount = 1, hasFinal = false, repId = (c && c.track_id) || '', grew = 0;
+      if (t) {
+        const pid = t.projectId || ('proj_' + t.id);
+        const vs = (maProjMap[pid] || [t]).slice().sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+        const demos = vs.filter(v => v && v.isDemo);
+        demoCount = demos.length || 1;
+        hasFinal = vs.some(v => v && !v.isDemo && v.version === 'final');
+        repId = ((vs.find(v => v && !v.isDemo) || demos[demos.length - 1] || t)).id;
+        if (cheerAt) grew = vs.filter(v => new Date(v.createdAt || 0).getTime() > cheerAt).length;
+      }
+      return { title, artist, demoCount, hasFinal, repId, grew, color: maColor(title) };
+    });
+    const celebrated = supported.filter(s => s.hasFinal);   // 발매 = 함께 이룬 것
+    const growing = supported.filter(s => !s.hasFinal);     // 자라는 중
 
-    // 팔로우한 아티스트
+    // 덕질 시작일
+    const cheerTimes = mySentCheers.map(c => new Date((c && c.created_at) || 0).getTime()).filter(n => n > 0);
+    let sinceLabel = '';
+    if (cheerTimes.length) { const d = new Date(Math.min(...cheerTimes)); sinceLabel = d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0'); }
+
+    // 🎉 함께 이룬 발매 (데모 때부터 응원한 곡이 발매됨)
+    const celebHtml = celebrated.map(s => `<div class="ma-celeb" onclick="navigateTo('song:${s.repId}')">
+      <div class="ma-celeb-orb" style="background:linear-gradient(135deg,${s.color},#FFC94D)">🎉</div>
+      <div class="ma-celeb-tx"><div class="ma-celeb-t">${maEsc(s.title)}</div><div class="ma-celeb-s">${_t('발매 완료 — 데모 때부터 응원했어요!','Released — you cheered since the demo!')}</div></div>
+      <i class="ri-arrow-right-s-line"></i>
+    </div>`).join('');
+
+    // 🌱 지금 키우는 곡 (성장 바 + 덕질 멘트)
+    const growRows = growing.length ? growing.map(s => {
+      const pct = Math.min(Math.round(s.demoCount / 4 * 100), 90);
+      let note;
+      if (s.demoCount >= 3) note = '🔥 ' + _t('마스터까지 한 걸음!', 'One step to master!');
+      else if (s.grew > 0) note = '🌱 ' + _t('응원 후 데모 ' + s.grew + '개 더 자랐어요', '+' + s.grew + ' demos since you cheered');
+      else note = '🌱 ' + _t('이제 막 자라기 시작했어요', 'Just starting to grow');
+      return `<div class="ma-row" onclick="navigateTo('song:${s.repId}')">
+        <div class="ma-cover" style="background:${s.color}">${maEsc(String(s.title).slice(0, 2))}</div>
+        <div class="ma-rmid"><div class="ma-rt">${maEsc(s.title)} <span class="ma-rby">${maEsc(s.artist)}</span></div><div class="ma-rnote">${maEsc(note)}</div><div class="ma-bar"><i style="width:${pct}%"></i></div></div>
+        <div class="ma-stage">데모 ${s.demoCount}<span>/4</span></div>
+      </div>`;
+    }).join('') : `<div class="ma-empty">${_t('아직 키우는 곡이 없어요 — 마음에 드는 데모를 응원하면 함께 자라는 걸 지켜볼 수 있어요 🌱','Cheer a demo to watch it grow with you 🌱')}</div>`;
+
+    // 💜 내 아티스트 (팔로우)
     const folCards = followedArtists.length ? followedArtists.map(a => {
       const nm = (a && a.name) || '';
       const av = (a && a.avatar) || ('https://i.pravatar.cc/100?u=' + encodeURIComponent(nm));
       return `<div class="ma-artist" onclick="navigateTo('artist:${encodeURIComponent(nm)}')"><img class="ma-aav" src="${maEsc(av)}" alt=""><div class="ma-an">${maEsc(nm)}</div></div>`;
     }).join('') : `<div class="ma-empty">${_t('관심 아티스트를 팔로우해보세요','Follow artists you like')}</div>`;
+
+    const headSub = (followedArtists.length ? `🌱 ${followedArtists.length}${_t('명과 함께 자라는 중','artists growing with you')}` : `🌱 ${_t('아티스트의 성장을 함께해요','Grow together with artists')}`)
+      + (sinceLabel ? ` · ${_t('덕질','Fan since')} ${sinceLabel}${_t('부터','')}` : '');
 
     appContent.innerHTML = `<style id="ma-style">
 .ma-page{position:relative;min-height:100%;padding:46px 0 calc(var(--player-height,60px) + env(safe-area-inset-bottom) + 28px);background:#0B0B12;color:#F4F4F7;font-family:'Pretendard',sans-serif;overflow-x:hidden;}
@@ -10040,18 +10073,25 @@ async function _renderProfileImpl() {
 .ma-av{width:58px;height:58px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.1);flex:0 0 auto;}
 .ma-info{flex:1;min-width:0;}
 .ma-nm{font-size:19px;font-weight:800;}
-.ma-sub{font-size:12px;color:#8B8B9A;margin-top:3px;}
+.ma-sub{font-size:12px;color:#9DE0B4;margin-top:3px;font-weight:600;}
 .ma-set{width:36px;height:36px;border-radius:50%;background:#17171F;border:1px solid rgba(255,255,255,.08);color:#8B8B9A;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex:0 0 auto;}
-.ma-sec{margin-top:26px;}
+.ma-sec{margin-top:24px;}
 .ma-sec-t{font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px;margin:0 0 12px 2px;}
 .ma-sec-t .ct{font-size:12px;font-weight:600;color:#8B8B9A;margin-left:auto;}
+.ma-celeb{display:flex;align-items:center;gap:13px;padding:13px;border-radius:16px;cursor:pointer;background:linear-gradient(120deg,rgba(255,201,77,.16),rgba(251,111,146,.12)),#15151E;border:1px solid rgba(255,201,77,.32);margin-bottom:9px;}
+.ma-celeb-orb{width:44px;height:44px;border-radius:13px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:21px;box-shadow:0 0 18px rgba(255,201,77,.4);}
+.ma-celeb-tx{flex:1;min-width:0;}
+.ma-celeb-t{font-size:14.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ma-celeb-s{font-size:11.5px;color:#FFE39A;margin-top:2px;}
+.ma-celeb i{color:#8B8B9A;font-size:20px;flex:0 0 auto;}
 .ma-list{display:flex;flex-direction:column;gap:9px;}
 .ma-row{display:flex;align-items:center;gap:13px;padding:11px;border-radius:15px;background:#15151E;border:1px solid rgba(255,255,255,.06);cursor:pointer;}
 .ma-cover{width:46px;height:46px;border-radius:12px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#0b0b12;font-weight:800;font-size:13px;overflow:hidden;}
 .ma-cover img{width:100%;height:100%;object-fit:cover;}
 .ma-rmid{flex:1;min-width:0;}
 .ma-rt{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ma-rsub{font-size:11.5px;color:#8B8B9A;margin-top:2px;}
+.ma-rby{font-size:11px;color:#8B8B9A;font-weight:600;}
+.ma-rnote{font-size:11px;color:#9DE0B4;font-weight:600;margin-top:3px;}
 .ma-bar{height:4px;border-radius:4px;background:rgba(255,255,255,.08);margin-top:7px;overflow:hidden;}
 .ma-bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#8B7CF6,#FB6F92);}
 .ma-stage{flex:0 0 auto;font-size:11px;font-weight:800;color:#C9C4F5;text-align:right;}
@@ -10061,21 +10101,25 @@ async function _renderProfileImpl() {
 .ma-artist{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;flex:0 0 auto;width:68px;}
 .ma-aav{width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.1);}
 .ma-an{font-size:11.5px;font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68px;}
-.ma-empty{font-size:12.5px;color:#5A5A6C;padding:16px;text-align:center;background:#15151E;border:1px solid rgba(255,255,255,.05);border-radius:14px;}
+.ma-empty{font-size:12.5px;color:#7A7A8C;padding:16px;text-align:center;background:#15151E;border:1px solid rgba(255,255,255,.05);border-radius:14px;line-height:1.5;}
 @media(min-width:769px){.ma-inner{max-width:470px;}}
 </style>
       <div class="ma-page"><div class="ma-inner">
         <div class="ma-head">
           <img class="ma-av" src="${maEsc(maAvatar)}" alt="">
-          <div class="ma-info"><div class="ma-nm">${maEsc(maMe.name || '')}</div><div class="ma-sub">🎧 ${_t('리스너','Listener')} · ${_t('팔로우','Follow')} ${followedArtists.length} · ${_t('응원','Cheers')} ${mySentCheers.length}</div></div>
+          <div class="ma-info"><div class="ma-nm">${maEsc(maMe.name || '')}</div><div class="ma-sub">${headSub}</div></div>
           <button class="ma-set" onclick="editProfile()" aria-label="${_t('설정','Settings')}"><i class="ri-settings-3-line"></i></button>
         </div>
+        ${celebrated.length ? `<div class="ma-sec">
+          <div class="ma-sec-t"><i class="ri-trophy-fill" style="color:#FFC94D"></i> ${_t('함께 이룬 발매','We made it together')} <span class="ct">${celebrated.length}</span></div>
+          ${celebHtml}
+        </div>` : ''}
         <div class="ma-sec">
-          <div class="ma-sec-t"><i class="ri-heart-3-fill" style="color:#FB6F92"></i> ${_t('내가 응원하는 곡','Songs I support')} <span class="ct">${mySentCheers.length}</span></div>
-          <div class="ma-list">${supRows}</div>
+          <div class="ma-sec-t"><i class="ri-seedling-fill" style="color:#46E08B"></i> ${_t('지금 키우는 곡','Growing now')} <span class="ct">${growing.length}</span></div>
+          <div class="ma-list">${growRows}</div>
         </div>
         <div class="ma-sec">
-          <div class="ma-sec-t"><i class="ri-user-heart-line" style="color:#8B7CF6"></i> ${_t('팔로우한 아티스트','Following')} <span class="ct">${followedArtists.length}</span></div>
+          <div class="ma-sec-t"><i class="ri-user-heart-fill" style="color:#FB6F92"></i> ${_t('내 아티스트','My artists')} <span class="ct">${followedArtists.length}</span></div>
           <div class="ma-artists">${folCards}</div>
         </div>
       </div></div>`;
