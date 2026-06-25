@@ -10110,19 +10110,14 @@ async function _renderProfileImpl() {
       <i class="ri-arrow-right-s-line"></i>
     </div>`).join('');
 
-    // 🌱 지금 키우는 곡 (성장 바 + 덕질 멘트)
-    const growRows = growing.length ? growing.map(s => {
-      const pct = Math.min(Math.round(s.demoCount / 4 * 100), 90);
-      let note;
-      if (s.demoCount >= 3) note = '🔥 ' + _t('마스터까지 한 걸음!', 'One step to master!');
-      else if (s.grew > 0) note = '🌱 ' + _t('응원 후 데모 ' + s.grew + '개 더 자랐어요', '+' + s.grew + ' demos since you cheered');
-      else note = '🌱 ' + _t('이제 막 자라기 시작했어요', 'Just starting to grow');
-      return `<div class="ma-row" onclick="navigateTo('song:${s.repId}')">
-        <div class="ma-cover" style="background:${s.color}">${maEsc(String(s.title).slice(0, 2))}</div>
-        <div class="ma-rmid"><div class="ma-rt">${maEsc(s.title)} <span class="ma-rby">${maEsc(s.artist)}</span></div><div class="ma-rnote">${maEsc(note)}</div><div class="ma-bar"><i style="width:${pct}%"></i></div></div>
-        <div class="ma-stage">데모 ${s.demoCount}<span>/4</span></div>
+    // 🃏 내 바인더 (응원한 곡 = 모은 카드. 발매 = 홀로 카드. 진화는 카드 누르면 곡 상세에서)
+    const binderCards = supported.length ? supported.map(s => {
+      const holo = s.hasFinal;
+      return `<div class="ma-card${holo ? ' holo' : ''}" style="--cc:${holo ? '#FFC94D' : s.color}" onclick="navigateTo('song:${s.repId}')">
+        <div class="ma-card-in"><div class="ma-card-art"><span class="ma-card-orb"></span>${holo ? '<span class="ma-card-foil"></span>' : ''}</div>
+        <div class="ma-card-n">${maEsc(s.title)}</div><div class="ma-card-s">${holo ? '★ ' + _t('발매','Out') : '데모 ' + s.demoCount}</div></div>
       </div>`;
-    }).join('') : `<div class="ma-empty">${_t('아직 키우는 곡이 없어요 — 마음에 드는 데모를 응원하면 함께 자라는 걸 지켜볼 수 있어요 🌱','Cheer a demo to watch it grow with you 🌱')}</div>`;
+    }).join('') : `<div class="ma-empty">${_t('응원해서 첫 카드를 모아보세요 🃏','Cheer a song to collect your first card 🃏')}</div>`;
 
     // 💜 내 아티스트 (팔로우)
     const folCards = followedArtists.length ? followedArtists.map(a => {
@@ -10140,14 +10135,13 @@ async function _renderProfileImpl() {
       .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
       .filter(t => { const pid = t.projectId || ('proj_' + t.id); if (newSeen[pid]) return false; newSeen[pid] = 1; return true; })
       .slice(0, 6);
-    const newRows = newDemos.map(t => {
+    const collectCards = newDemos.map(t => {
       const ti = maTitle(t.title, t.artist);
-      const already = cheeredTrackIds.has(t.id);
       const p = maProjOf(t);
-      return `<div class="ma-row" onclick="navigateTo('song:${t.id}')">
-        <div class="ma-cover" style="background:${maColor(ti)}">${maEsc(String(ti).slice(0, 2))}</div>
-        <div class="ma-rmid"><div class="ma-rt">${maEsc(ti)} <span class="ma-rby">${maEsc(t.artist || '')}</span></div><div class="ma-rnote" style="color:${already ? '#9DE0B4' : '#FB6F92'}">${already ? '🌱 ' + _t('응원 중','Cheering') : '💗 ' + _t('응원해보세요','Cheer this one')}</div></div>
-        <div class="ma-stage">데모 ${p.demoCount}<span>/4</span></div>
+      const already = cheeredTrackIds.has(t.id);
+      return `<div class="ma-card" style="--cc:${maColor(ti)}" onclick="navigateTo('song:${t.id}')">
+        <div class="ma-card-in"><div class="ma-card-art"><span class="ma-card-orb"></span></div>
+        <div class="ma-card-n">${maEsc(ti)}</div><div class="ma-card-s" style="color:${already ? '#9DE0B4' : '#FB6F92'}">${already ? '🌱 ' + _t('응원 중','Cheering') : '💗 ' + _t('응원','Cheer')}</div></div>
       </div>`;
     }).join('');
 
@@ -10185,6 +10179,18 @@ async function _renderProfileImpl() {
 .ma-bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#8B7CF6,#FB6F92);}
 .ma-stage{flex:0 0 auto;font-size:11px;font-weight:800;color:#C9C4F5;text-align:right;}
 .ma-stage span{color:#5A5A6C;font-weight:600;}
+.ma-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.ma-card{--cc:#8B7CF6;border-radius:13px;padding:3px;cursor:pointer;background:linear-gradient(150deg,color-mix(in srgb,var(--cc) 58%,#fff),var(--cc) 42%,color-mix(in srgb,var(--cc) 50%,#000));}
+.ma-card:active{transform:scale(.97);}
+.ma-card-in{background:linear-gradient(180deg,#101019,#0B0B12);border-radius:10px;padding:7px;overflow:hidden;}
+.ma-card-art{height:60px;border-radius:8px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 100% at 50% 25%,color-mix(in srgb,var(--cc) 40%,transparent),#0c0c14 60%);}
+.ma-card-orb{width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 38% 32%,color-mix(in srgb,var(--cc) 60%,#fff),var(--cc) 60%);box-shadow:0 0 14px color-mix(in srgb,var(--cc) 55%,transparent);}
+.ma-card-foil{position:absolute;inset:0;mix-blend-mode:color-dodge;opacity:.5;background:repeating-linear-gradient(108deg,rgba(255,40,140,.6),rgba(255,196,0,.55) 8%,rgba(40,255,170,.55) 16%,rgba(40,170,255,.6) 24%,rgba(180,40,255,.6) 32%);background-size:220% 220%;animation:maFoil 7s linear infinite;}
+@keyframes maFoil{0%{background-position:0 0}100%{background-position:220% 220%}}
+.ma-card-n{font-size:11.5px;font-weight:800;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ma-card-s{font-size:10px;font-weight:800;color:var(--cc);margin-top:2px;}
+.ma-card.holo .ma-card-s{color:#FFC94D;}
+@media (prefers-reduced-motion:reduce){.ma-card-foil{animation:none;}}
 .ma-artists{display:flex;gap:14px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
 .ma-artists::-webkit-scrollbar{display:none;}
 .ma-artist{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;flex:0 0 auto;width:68px;}
@@ -10199,17 +10205,13 @@ async function _renderProfileImpl() {
           <div class="ma-info"><div class="ma-nm">${maEsc(maMe.name || '')}</div><div class="ma-sub">${headSub}</div></div>
           <button class="ma-set" onclick="editProfile()" aria-label="${_t('설정','Settings')}"><i class="ri-settings-3-line"></i></button>
         </div>
-        ${celebrated.length ? `<div class="ma-sec">
-          <div class="ma-sec-t"><i class="ri-trophy-fill" style="color:#FFC94D"></i> ${_t('함께 이룬 발매','We made it together')} <span class="ct">${celebrated.length}</span></div>
-          ${celebHtml}
-        </div>` : ''}
         <div class="ma-sec">
-          <div class="ma-sec-t"><i class="ri-seedling-fill" style="color:#46E08B"></i> ${_t('지금 키우는 곡','Growing now')} <span class="ct">${growing.length}</span></div>
-          <div class="ma-list">${growRows}</div>
+          <div class="ma-sec-t"><i class="ri-folder-music-fill" style="color:#8B7CF6"></i> ${_t('내 바인더','My binder')} <span class="ct">${supported.length}${_t('장','')}</span></div>
+          <div class="ma-grid">${binderCards}</div>
         </div>
-        ${newRows ? `<div class="ma-sec">
-          <div class="ma-sec-t"><i class="ri-fire-fill" style="color:#FB6F92"></i> ${_t('내 아티스트의 새 데모','Fresh from your artists')}</div>
-          <div class="ma-list">${newRows}</div>
+        ${collectCards ? `<div class="ma-sec">
+          <div class="ma-sec-t"><i class="ri-add-circle-fill" style="color:#FB6F92"></i> ${_t('모을 카드','Cards to collect')}</div>
+          <div class="ma-grid">${collectCards}</div>
         </div>` : ''}
         <div class="ma-sec">
           <div class="ma-sec-t"><i class="ri-user-heart-fill" style="color:#FB6F92"></i> ${_t('내 아티스트','My artists')} <span class="ct">${followedArtists.length}</span></div>
