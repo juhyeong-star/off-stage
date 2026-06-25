@@ -9632,39 +9632,79 @@ function _afterUploadPrompt(track, artistName) {
 // 계정 프로필(청취자 디자인) 스코프 CSS — <style> 자체 포함, global.css 안 건드림.
 function _apStyle() {
   return `<style id="ap-style">
-.ap-page{position:relative;min-height:100%;padding:56px 0 calc(var(--player-height,60px) + env(safe-area-inset-bottom) + 28px);background:#0B0B11;color:#F4F4F7;font-family:'Pretendard',sans-serif;overflow-x:hidden;}
+.ap-page{position:relative;min-height:100%;padding:48px 0 calc(var(--player-height,60px) + env(safe-area-inset-bottom) + 28px);background:#0B0B11;color:#F4F4F7;font-family:'Pretendard',sans-serif;overflow-x:hidden;}
 .ap-page *{box-sizing:border-box;}
-.ap-inner{position:relative;z-index:1;padding:0 18px;max-width:520px;margin:0 auto;}
-.ap-hand{font-family:'Nanum Pen Script',cursive;color:#000;font-weight:800;}
-.ap-prof{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:8px;}
-.ap-avatar{width:78px;height:78px;border-radius:50%;padding:2px;background:linear-gradient(135deg,#48E08B,#FB6F92);margin-bottom:10px;}
-.ap-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
-.ap-name-row{display:flex;align-items:center;gap:8px;}
-.ap-name{font-size:21px;font-weight:800;margin:0;}
-.ap-set{width:30px;height:30px;border-radius:50%;background:#15151F;border:1px solid rgba(255,255,255,.08);color:#8B8B9A;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;}
-.ap-role{font-size:12px;color:#8B8B9A;margin:5px 0 0;}
-.ap-stats{display:flex;gap:10px;margin-top:16px;}
-.ap-stat{background:#15151F;border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:10px 18px;text-align:center;min-width:64px;}
-.ap-stat b{display:block;font-size:18px;font-weight:800;}
-.ap-stat span{font-size:10.5px;color:#8B8B9A;}
-.ap-sec{margin-top:26px;}
-.ap-sec-t{font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px;margin:0 0 12px;}
-.ap-shelf{display:flex;gap:11px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.ap-inner{position:relative;z-index:1;padding:0 16px;max-width:430px;margin:0 auto;}
+.ap-id{display:flex;align-items:center;gap:11px;margin-bottom:18px;}
+.ap-id-av{width:46px;height:46px;border-radius:50%;padding:2px;background:linear-gradient(135deg,#48E08B,#FB6F92);flex:0 0 auto;}
+.ap-id-av img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
+.ap-id-tx{flex:1;min-width:0;}
+.ap-id-nm{font-size:16px;font-weight:800;}
+.ap-id-sub{font-size:11.5px;color:#8B8B9A;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ap-id-set{width:34px;height:34px;border-radius:50%;background:#15151F;border:1px solid rgba(255,255,255,.08);color:#8B8B9A;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex:0 0 auto;}
+.ap-lab{font-size:12px;color:#8B8B9A;font-weight:600;margin:2px 2px 9px;}
+.ap-chips{display:flex;gap:7px;overflow-x:auto;padding:0 16px 4px;margin:0 -16px;scrollbar-width:none;}
+.ap-chips::-webkit-scrollbar{display:none;}
+.ap-chip{flex:0 0 auto;font-size:13px;font-weight:600;color:#8B8B9A;background:#15151F;border:1px solid rgba(255,255,255,.07);padding:7px 13px;border-radius:999px;white-space:nowrap;cursor:pointer;}
+.ap-chip.on{color:#F4F4F7;background:rgba(139,124,246,.16);border-color:rgba(139,124,246,.5);}
+.ap-slab{display:flex;align-items:center;justify-content:space-between;margin:22px 2px 11px;}
+.ap-slab h2{font-size:15px;font-weight:800;display:flex;align-items:center;gap:7px;margin:0;}
+.ap-live{font-size:10px;font-weight:800;color:#48E08B;background:rgba(72,224,139,.13);padding:3px 8px;border-radius:999px;}
+.ap-hero{position:relative;border-radius:22px;padding:20px 18px 18px;overflow:hidden;background:radial-gradient(120% 90% at 50% -10%,rgba(72,224,139,.22),transparent 60%),#15151F;border:1px solid rgba(72,224,139,.22);}
+.ap-orbwrap{display:flex;justify-content:center;margin:4px 0 14px;}
+.ap-orb{width:108px;height:108px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:radial-gradient(circle at 38% 32%,#7DF7AE,#36C977 60%,#1f9a57);box-shadow:0 0 40px rgba(72,224,139,.5),inset 0 -8px 22px rgba(0,0,0,.25);color:#06140C;font-size:33px;}
+.ap-orb:active{transform:scale(.96);}
+.ap-hmeta{text-align:center;margin-bottom:14px;}
+.ap-hmeta .who{font-size:12.5px;color:#8B8B9A;font-weight:600;}
+.ap-hmeta .ti{font-size:21px;font-weight:800;margin-top:2px;}
+.ap-evo{margin:4px 4px 6px;}
+.ap-evo-track{display:flex;align-items:center;}
+.ap-evo-node{width:22px;height:22px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;}
+.ap-evo-node.done{background:linear-gradient(135deg,#7DF7AE,#36C977);color:#06140C;}
+.ap-evo-node.done i{font-size:12px;}
+.ap-evo-node.now{background:#0B0B11;border:2px solid #48E08B;color:#48E08B;box-shadow:0 0 10px rgba(72,224,139,.5);}
+.ap-evo-node.lock{background:#15151F;border:1.5px dashed rgba(255,255,255,.18);color:#5E5E6E;}
+.ap-evo-node.lock i{font-size:10px;}
+.ap-evo-seg{flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,.08);margin:0 3px;}
+.ap-evo-seg.fill{background:linear-gradient(90deg,#36C977,#48E08B);}
+.ap-evo-lab{display:flex;justify-content:space-between;margin-top:9px;}
+.ap-evo-lab span{font-size:10px;color:#5E5E6E;font-weight:600;flex:1;text-align:center;}
+.ap-evo-lab span:first-child{text-align:left;}.ap-evo-lab span:last-child{text-align:right;}
+.ap-evo-go{text-align:center;font-size:12.5px;font-weight:700;color:#48E08B;margin-top:10px;}
+.ap-supp{display:flex;align-items:center;justify-content:center;gap:9px;margin:14px 0 15px;}
+.ap-avs{display:flex;}
+.ap-avs span{width:25px;height:25px;border-radius:50%;border:2px solid #15151F;margin-left:-8px;font-size:10px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;}
+.ap-avs span:first-child{margin-left:0;}
+.ap-supp .cnt{font-size:12.5px;color:#8B8B9A;font-weight:600;}
+.ap-supp .cnt b{color:#F4F4F7;}
+.ap-acts{display:flex;gap:9px;}
+.ap-btn{flex:1;border:none;border-radius:14px;padding:13px;font-size:14.5px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;font-family:inherit;}
+.ap-btn.play{background:#fff;color:#0B0B11;}
+.ap-btn.cheer{background:rgba(251,111,146,.15);color:#FB6F92;border:1px solid rgba(251,111,146,.45);}
+.ap-btn:active{transform:scale(.98);}
+.ap-benefit{text-align:center;font-size:11.5px;color:#8B8B9A;margin-top:11px;}
+.ap-shelf{display:flex;gap:11px;overflow-x:auto;margin:0 -16px;padding:0 16px 4px;scrollbar-width:none;}
 .ap-shelf::-webkit-scrollbar{display:none;}
-.ap-empty{font-size:12px;color:#5E5E6E;padding:10px 2px;}
-.ap-rcard{flex:0 0 116px;background:#15151F;border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:12px;cursor:pointer;}
-.ap-rcover{width:100%;height:68px;border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:9px;}
-.ap-rcover .ap-hand{font-size:20px;}
-.ap-rn{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ap-rs{font-size:10.5px;color:#8B8B9A;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ap-acard{flex:0 0 84px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;}
-.ap-aav{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.1);}
-.ap-an{font-size:11.5px;font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;}
-.ap-bmlist{display:flex;flex-direction:column;gap:8px;}
-.ap-bm{display:flex;align-items:center;gap:10px;background:#15151F;border:1px solid rgba(255,255,255,.06);border-radius:13px;padding:12px 14px;cursor:pointer;font-size:13px;}
-.ap-bm i{color:#FBBF24;flex:0 0 auto;}
-.ap-bm span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#C8C8D0;}
-@media(min-width:769px){.ap-inner{max-width:560px;}}
+.ap-rcard{flex:0 0 116px;background:#15151F;border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:13px 12px 12px;position:relative;cursor:pointer;}
+.ap-ring{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 9px;}
+.ap-ring i{width:44px;height:44px;border-radius:50%;background:#15151F;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;font-style:normal;}
+.ap-rn{font-size:12.5px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ap-rs{font-size:10.5px;color:#8B8B9A;text-align:center;margin-top:2px;}
+.ap-badge{position:absolute;top:8px;right:8px;font-size:9px;font-weight:800;color:#06140C;background:#48E08B;padding:2px 6px;border-radius:999px;}
+.ap-empty{font-size:12px;color:#5E5E6E;padding:8px 2px;}
+.ap-feed{margin-top:2px;}
+.ap-frow{display:flex;align-items:center;gap:12px;padding:11px 2px;border-top:1px solid rgba(255,255,255,.06);cursor:pointer;}
+.ap-frow:first-child{border-top:none;}
+.ap-thumb{width:48px;height:48px;border-radius:13px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:rgba(0,0,0,.55);font-size:18px;}
+.ap-finfo{flex:1;min-width:0;}
+.ap-ft{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px;}
+.ap-ft .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ap-stg{font-size:10px;font-weight:800;color:#FBBF24;background:rgba(251,191,36,.14);padding:2px 7px;border-radius:999px;flex:0 0 auto;}
+.ap-fw{font-size:12px;color:#8B8B9A;margin-top:3px;}
+.ap-ftags{font-size:11px;color:#5E5E6E;margin-top:3px;}
+.ap-flike{display:flex;flex-direction:column;align-items:center;gap:2px;color:#FB6F92;font-size:11px;font-weight:700;flex:0 0 auto;}
+.ap-flike i{font-size:18px;}
+@media(min-width:769px){.ap-inner{max-width:460px;}}
 </style>`;
 }
 
@@ -9756,65 +9796,120 @@ async function _renderProfileImpl() {
   // Pre-compute myBackings here (used in header KPIs + later STO section)
   const myBackings = (typeof window._getMyBackings === 'function') ? window._getMyBackings() : [];
 
-  // ===== 계정 프로필 (청취자 디자인) — 2026-06-25 =====
-  // 마이페이지(아티스트 홈)와 별개인 '계정 프로필'. 데이터(팔로우·즐겨찾기·응원한 곡)는
-  // 위에서 이미 fetch 했고, 아래 옛 UI 대신 청취자 디자인으로 렌더하고 early-return.
+  // ===== 계정 프로필 (청취자 디자인 — 리스너 홈) — 2026-06-25 =====
+  // 마이페이지(아티스트 홈)와 별개. 무드칩 + 지금 자라는 곡 히어로 + 내가 키우는 곡(진행률 링) + 무드 피드.
   {
     const apEsc = (s) => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     const AP_COLORS = ['#FF2EA0','#00E5FF','#B14BFF','#FF9100','#76FF03','#FF4D6D','#2EE6D6','#9D4EDD','#FFD166','#4D9DFF'];
     const apColor = (s) => AP_COLORS[(_hashSeed(s || 'x') >>> 0) % AP_COLORS.length];
+    const apClean = (s) => (s || '무제').replace(/\s*\(.*\)$/, '');
+    // 제목이 비어있거나 "Demo N"(곡명 미설정)이면 아티스트 이름으로 대체 — 실데이터 곡명 누락 보정
+    const apTitle = (raw, artist) => { const ti = apClean(raw); return (ti === '무제' || /^demo\s*\d*$/i.test(ti)) ? (artist || ti) : ti; };
     const apMe = db.currentUser;
     const apAvatar = apMe.avatar || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(apMe.name || 'user'));
-    const apFollowN = followedArtists.length, apCheerN = mySentCheers.length, apBmN = bookmarkedNotes.length;
 
+    // 프로젝트 묶기 — 진행률/stepper/피드 단계
+    const apProjMap = {};
+    allTracks.forEach(t => { if (!t) return; const pid = t.projectId || ('proj_' + t.id); (apProjMap[pid] = apProjMap[pid] || []).push(t); });
+    const apProjOf = (track) => {
+      const pid = track.projectId || ('proj_' + track.id);
+      const vs = (apProjMap[pid] || [track]).slice().sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+      const demos = vs.filter(v => v && v.isDemo);
+      const hasFinal = vs.some(v => v && !v.isDemo && v.version === 'final');
+      return { pid, vs, demos, demoCount: demos.length, hasFinal };
+    };
+    const apDemos = allTracks.filter(t => t && t.isDemo).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    const apCheerIds = new Set(mySentCheers.map(c => c && c.track_id).filter(Boolean));
+
+    // ① 무드 칩
+    const apChips = ['새벽','허무','설렘','드라이브','짝사랑','인디'].map((m, i) => `<span class="ap-chip${i === 0 ? ' on' : ''}">#${apEsc(m)}</span>`).join('');
+
+    // ② 지금 자라는 곡 (응원한 데모 우선, 없으면 최신 데모)
+    const apFeatured = apDemos.find(t => apCheerIds.has(t.id)) || apDemos[0] || null;
+    let apHero = '';
+    if (apFeatured) {
+      const fp = apProjOf(apFeatured);
+      const ft = apTitle(apFeatured.title, apFeatured.artist);
+      const ds = fp.demos;
+      const nodeList = ds.map((d, i) => ({ cls: (i === ds.length - 1 && !fp.hasFinal) ? 'now' : 'done', num: i + 1, lab: '데모' + (i + 1) }));
+      nodeList.push({ cls: fp.hasFinal ? 'done' : 'lock', num: 'M', lab: _t('마스터', 'Master') });
+      let trackInner = '';
+      nodeList.forEach((n, i) => {
+        if (i > 0) trackInner += `<span class="ap-evo-seg${nodeList[i - 1].cls === 'done' ? ' fill' : ''}"></span>`;
+        const inner = n.cls === 'done' ? '<i class="ri-check-line"></i>' : (n.cls === 'lock' ? '<i class="ri-lock-2-line"></i>' : n.num);
+        trackInner += `<span class="ap-evo-node ${n.cls}">${inner}</span>`;
+      });
+      const labels = nodeList.map(n => `<span>${apEsc(n.lab)}</span>`).join('');
+      const goTxt = fp.hasFinal ? _t('발매까지 완성됐어요 🎉', 'Fully released 🎉') : _t('마스터까지 한 단계 남았어요', 'One step to master');
+      const supN = apFeatured.likes || apFeatured.plays || 0;
+      apHero = `
+        <div class="ap-slab"><h2>${_t('지금 자라는 곡','Growing now')} <span class="ap-live">● LIVE</span></h2></div>
+        <div class="ap-hero">
+          <div class="ap-orbwrap"><div class="ap-orb" onclick="playTrack('${apFeatured.id}')"><i class="ri-play-fill"></i></div></div>
+          <div class="ap-hmeta">${ft !== (apFeatured.artist || '') ? `<div class="who">${apEsc(apFeatured.artist || '')}</div>` : ''}<div class="ti">${apEsc(ft)}</div></div>
+          <div class="ap-evo">
+            <div class="ap-evo-track">${trackInner}</div>
+            <div class="ap-evo-lab">${labels}</div>
+            <div class="ap-evo-go">${goTxt}</div>
+          </div>
+          <div class="ap-supp">${supN > 0 ? `<span class="cnt"><b>${supN}</b>${_t('명이 키우는 중','raising it')}</span>` : `<span class="cnt">${_t('첫 응원의 주인공이 되어보세요','Be the first to cheer')}</span>`}</div>
+          <div class="ap-acts">
+            <button class="ap-btn play" onclick="playTrack('${apFeatured.id}')"><i class="ri-play-fill"></i> ${_t('재생','Play')}</button>
+            <button class="ap-btn cheer" data-tid="${apEsc(apFeatured.id)}" data-tt="${apEsc(ft)}" data-an="${apEsc(apFeatured.artist || '')}" onclick="mhCheer(this)"><i class="ri-heart-3-fill"></i> ${_t('응원','Cheer')}</button>
+          </div>
+          <div class="ap-benefit">${_t('응원하면 다음 데모를 가장 먼저 들어요','Cheer to hear the next demo first')}</div>
+        </div>`;
+    }
+
+    // ③ 내가 키우는 곡 (진행률 링)
     const apRaise = mySentCheers.length ? mySentCheers.map(c => {
-      const title = (c && (c.track_title || c.title)) || '무제';
-      const artist = (c && (c.artist_name || c.artist)) || '';
+      const t = allTracks.find(x => x && x.id === (c && c.track_id));
+      let pct = 50, stage = _t('응원 중', 'Cheering');
+      if (t) { const p = apProjOf(t); pct = p.hasFinal ? 100 : Math.min(Math.round(p.demoCount / 4 * 100), 95); stage = p.hasFinal ? _t('곧 발매', 'Soon') : ('데모 ' + p.demoCount + ' / 4'); }
+      const artist = (c && (c.artist_name || c.artist)) || (t && t.artist) || '';
+      const title = apTitle((c && (c.track_title || c.title)) || (t && t.title), artist);
+      const rc = pct >= 90 ? '#FBBF24' : (pct >= 60 ? '#48E08B' : '#54E0CE');
       return `<div class="ap-rcard" onclick="navigateTo('artist:${encodeURIComponent(artist)}')">`
-        + `<div class="ap-rcover" style="background:${apColor(title)}"><span class="ap-hand">${apEsc(String(title).slice(0, 3))}</span></div>`
-        + `<div class="ap-rn">${apEsc(title)}</div><div class="ap-rs">💝 ${apEsc(artist)}</div></div>`;
-    }).join('') : `<div class="ap-empty">${_t('아직 응원한 곡이 없어요','No cheered songs yet')}</div>`;
+        + `<div class="ap-ring" style="background:conic-gradient(${rc} ${pct}%, rgba(255,255,255,.08) 0)"><i style="color:${rc}">${pct}%</i></div>`
+        + `<div class="ap-rn">${apEsc(title)}</div><div class="ap-rs">${apEsc(stage)}</div></div>`;
+    }).join('') : `<div class="ap-empty">${_t('아직 응원한 곡이 없어요 — 자라는 곡을 응원해보세요','No cheered songs yet')}</div>`;
 
-    const apFollow = followedArtists.length ? followedArtists.map(a => {
-      const nm = (a && a.name) || '';
-      const av = (a && a.avatar) || ('https://i.pravatar.cc/100?u=' + encodeURIComponent(nm));
-      return `<div class="ap-acard" onclick="navigateTo('artist:${encodeURIComponent(nm)}')">`
-        + `<img class="ap-aav" src="${apEsc(av)}" alt=""><div class="ap-an">${apEsc(nm)}</div></div>`;
-    }).join('') : `<div class="ap-empty">${_t('아직 팔로우한 아티스트가 없어요','No followed artists yet')}</div>`;
-
-    const apBm = bookmarkedNotes.length ? bookmarkedNotes.slice(0, 12).map(n => {
-      const txt = ((n && (n.text || n.title)) || '').replace(/\n/g, ' ').trim();
-      return `<div class="ap-bm" onclick="openNoteDetail('${apEsc(n && n.id)}')"><i class="ri-bookmark-fill"></i><span>${apEsc(txt.slice(0, 42)) || _t('저장한 항목','Saved item')}</span></div>`;
-    }).join('') : `<div class="ap-empty">${_t('아직 즐겨찾기가 없어요','Nothing saved yet')}</div>`;
+    // ④ 무드 피드 (최근 데모) — 곡(프로젝트)당 1줄, 최신 데모 (버전별 중복 제거)
+    const apFeedSeen = {};
+    const apFeed = apDemos.filter(t => {
+      const pid = t.projectId || ('proj_' + t.id);
+      if (apFeedSeen[pid]) return false; apFeedSeen[pid] = 1; return true;
+    }).slice(0, 6).map(t => {
+      const ti = apTitle(t.title, t.artist); const col = apColor(ti);
+      const p = apProjOf(t);
+      const tags = (Array.isArray(t.tags) ? t.tags : []).slice(0, 3).map(x => '#' + x).join(' ');
+      const tot = Math.max(p.demoCount + (p.hasFinal ? 1 : 0), 4);
+      const sub = (ti === t.artist) ? (tags || '') : (t.artist || '');
+      return `<div class="ap-frow" onclick="playTrack('${t.id}')">`
+        + `<div class="ap-thumb" style="background:radial-gradient(circle at 38% 32%, ${col}, ${col}cc)"><i class="ri-play-fill"></i></div>`
+        + `<div class="ap-finfo"><div class="ap-ft"><span class="nm">${apEsc(ti)}</span> <span class="ap-stg">데모 ${p.demoCount}/${tot}</span></div>`
+        + `${sub ? `<div class="ap-fw">${apEsc(sub)}</div>` : ''}${(tags && ti !== t.artist) ? `<div class="ap-ftags">${apEsc(tags)}</div>` : ''}</div>`
+        + `<div class="ap-flike"><i class="ri-heart-3-fill"></i>${t.likes || 0}</div></div>`;
+    }).join('');
 
     appContent.innerHTML = `${_apStyle()}
       <div class="ap-page">
         <div class="ap-inner">
-          <section class="ap-prof">
-            <div class="ap-avatar"><img src="${apEsc(apAvatar)}" alt=""></div>
-            <div class="ap-name-row">
-              <h1 class="ap-name">${apEsc(apMe.name || '')}</h1>
-              <button class="ap-set" onclick="editProfile()" aria-label="${_t('설정','Settings')}"><i class="ri-settings-3-line"></i></button>
+          <div class="ap-id">
+            <div class="ap-id-av"><img src="${apEsc(apAvatar)}" alt=""></div>
+            <div class="ap-id-tx">
+              <div class="ap-id-nm">${apEsc(apMe.name || '')}</div>
+              <div class="ap-id-sub">🎧 ${_t('리스너','Listener')} · ${_t('팔로우','Follow')} ${followedArtists.length} · ${_t('응원','Cheers')} ${mySentCheers.length}</div>
             </div>
-            <p class="ap-role">🎧 ${_t('리스너','Listener')}</p>
-            <div class="ap-stats">
-              <div class="ap-stat"><b>${apFollowN}</b><span>${_t('팔로우','Following')}</span></div>
-              <div class="ap-stat"><b>${apCheerN}</b><span>${_t('응원','Cheers')}</span></div>
-              <div class="ap-stat"><b>${apBmN}</b><span>${_t('즐겨찾기','Saved')}</span></div>
-            </div>
-          </section>
-          <div class="ap-sec">
-            <h2 class="ap-sec-t"><i class="ri-seedling-fill" style="color:#48E08B"></i> ${_t('내가 키우는 곡','Songs I support')}</h2>
-            <div class="ap-shelf">${apRaise}</div>
+            <div class="ap-id-set" onclick="editProfile()" title="${_t('설정','Settings')}"><i class="ri-settings-3-line"></i></div>
           </div>
-          <div class="ap-sec">
-            <h2 class="ap-sec-t"><i class="ri-user-heart-fill" style="color:#FB6F92"></i> ${_t('팔로우한 아티스트','Following')}</h2>
-            <div class="ap-shelf">${apFollow}</div>
-          </div>
-          <div class="ap-sec">
-            <h2 class="ap-sec-t"><i class="ri-bookmark-fill" style="color:#FBBF24"></i> ${_t('즐겨찾기','Saved')}</h2>
-            <div class="ap-bmlist">${apBm}</div>
-          </div>
+          <div class="ap-lab">${_t('지금 기분으로 듣기','Listen by mood')}</div>
+          <div class="ap-chips">${apChips}</div>
+          ${apHero}
+          <div class="ap-slab"><h2><i class="ri-seedling-fill" style="color:#48E08B"></i> ${_t('내가 키우는 곡','Songs I support')}</h2></div>
+          <div class="ap-shelf">${apRaise}</div>
+          <div class="ap-slab"><h2>${_t('최근 데모','Fresh demos')}</h2></div>
+          <div class="ap-feed">${apFeed || `<div class="ap-empty">${_t('아직 데모가 없어요','No demos yet')}</div>`}</div>
         </div>
       </div>`;
     return;
