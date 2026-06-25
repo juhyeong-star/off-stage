@@ -19052,7 +19052,11 @@ body:has(#global-player.expanded) .guide-btn { display: none !important; }
 #mobile-tab-bar .mobile-tab:active { background: rgba(255, 255, 255, 0.06); }
 
 /* Tags 네온 — 글자에 자기 색 글로우(살짝만, 너무 안 쌔게) */
-.tags-cloud .tag-chip { text-shadow: 0 0 4px currentColor, 0 0 9px currentColor; }
+.tags-cloud .tag-chip { text-shadow: 0 0 2px currentColor; }   /* 네온 글로우 완화(번짐 줄임) */
+@media (max-width: 768px) {
+  /* 모바일은 더 줄임 — 작은 화면에서 글로우가 번져 보임(사용자 요청). */
+  .tags-cloud .tag-chip { text-shadow: 0 0 0.5px currentColor; }
+}
 
 /* ============================================================
    테스트 디자인 적용 #2 — 발견(도형) 버블을 테스트의 광택 네온으로
