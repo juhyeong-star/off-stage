@@ -12074,8 +12074,9 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 .player-expand-btn:hover { color: #fff; background: rgba(40,40,40,0.95); }
+/* 위로 올리는 화살표 제거 — 스와이프업(+상단 작은 바)로 대체(사용자 요청). */
 @media (max-width: 768px) {
-  .player-expand-btn { display: inline-flex; }
+  .player-expand-btn { display: none !important; }
 }
 #global-player.expanded .player-expand-btn i { transform: rotate(180deg); }
 /* The legacy expand-handle (absorbed by button) — hide */
@@ -19478,9 +19479,11 @@ body.is-shapes-route .shapes-subtitle { display: none !important; }
 #global-player .control-btn.play-btn { color: #ffffff; }
 /* 미니바(모바일) — 담기(저장/플레이리스트)·공유는 노출(사용자 요청). 셔플·볼륨만 숨김. */
 @media (max-width: 768px) {
-  #global-player:not(.expanded) .swipe-grabber,
   #global-player:not(.expanded) .shuffle-btn,
   #global-player:not(.expanded) .player-volume { display: none !important; }
+  /* 위 화살표 대신 상단 작은 바(그래버) 노출 — 스와이프업 안내. */
+  #global-player:not(.expanded) .swipe-grabber { display: block; top: 5px; width: 36px; height: 4px; }
+  #global-player:not(.expanded) { padding-top: 4px; }
 }
 /* 풀스크린 ±15초 구간 건너뛰기 버튼 (후렴/벌스 점프 대용) */
 .pfs-seek { position: relative; width: 42px; height: 42px; border-radius: 50%; background: transparent; border: none; color: rgba(255,255,255,.82); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
