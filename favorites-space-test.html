@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SMHS Drag & Drop Favorites Space</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Pretendard:wght@300;400;600;700;800;900&display=swap');
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #03000d;
+            color: #ffffff;
+            user-select: none;
+            touch-action: none; /* 모바일 끌기 시 브라우저 강제 바운스/스크롤 원천 차단 */
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* 전체 페이지 스크롤 방지 */
+        }
+        .handwritten {
+            font-family: 'Nanum Pen Script', cursive;
+            line-height: 1.15;
+        }
+        .nebula-bg {
+            background: radial-gradient(circle at 50% 50%, #170a3c 0%, #050212 80%, #03000d 100%);
+            position: relative;
+        }
+        .stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image:
+                radial-gradient(white, rgba(255,255,255,.2) 1.5px, transparent 40px),
+                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px);
+            background-size: 350px 350px, 200px 200px;
+            background-position: 0 0, 30px 40px;
+            opacity: 0.35;
+            pointer-events: none;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .dragging {
+            opacity: 0.95 !important;
+            transform: scale(1.15) !important;
+            box-shadow: 0 15px 45px rgba(255, 255, 255, 0.4) !important;
+            z-index: 50 !important;
+            cursor: grabbing;
+        }
+        .bubble-track {
+            position: absolute;
+            cursor: grab;
+            transition: box-shadow 0.2s ease, transform 0.1s ease;
+        }
+        .folder-zone {
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s, border-color 0.2s;
+        }
+        .folder-hover {
+            transform: scale(1.08) translateY(-6px);
+            background: rgba(168, 85, 247, 0.15) !important;
+            border-color: rgba(168, 85, 247, 0.6) !important;
+            box-shadow: 0 10px 25px rgba(168, 85, 247, 0.25);
+        }
+        .sparkle {
+            position: absolute;
+            pointer-events: none;
+            border-radius: 50%;
+            animation: explode 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+        }
+        @keyframes explode {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) translate(var(--mx), var(--my)) scale(0); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center h-[100dvh] p-2 sm:p-4">
+
+    <!-- 반응형 높이 적용: h-[calc(100dvh-1rem)] 으로 변경하여 하단이 무조건 화면 안에 들어오도록 수정 -->
+    <div class="relative w-full max-w-[393px] h-[calc(100dvh-1rem)] max-h-[852px] rounded-[45px] border-[8px] border-[#1d1a29] bg-[#03000d] shadow-2xl overflow-hidden flex flex-col justify-between">
+
+        <!-- 상태바 구조 확보 -->
+        <div class="w-full h-10 bg-transparent flex justify-between items-center px-7 z-50 pointer-events-none text-xs font-semibold shrink-0">
+            <span>11:48</span>
+            <div class="w-24 h-5 bg-black rounded-full mx-auto -mt-1 flex items-center justify-center">
+                <div class="w-2.5 h-2.5 bg-[#111] rounded-full mr-2"></div>
+                <div class="w-10 h-1 bg-[#222] rounded-full"></div>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <i data-lucide="signal" class="w-3.5 h-3.5"></i>
+                <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+                <i data-lucide="battery" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+        </div>
+
+        <!-- 1. 상단 헤더 영역 -->
+        <header class="w-full pt-1 pb-3 px-5 bg-[#03000d]/90 backdrop-blur-md z-40 border-b border-white/5 flex flex-col gap-2 shrink-0">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-lg font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-amber-300">SMHS</span>
+                    <span class="text-[9px] bg-purple-500/20 text-purple-300 font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">FAVORITES</span>
+                </div>
+                <button onclick="createNewFolder()" class="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 text-purple-300 transition-colors">
+                    <i data-lucide="folder-plus" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="flex items-center gap-2 bg-white/5 rounded-xl p-2 border border-white/5 text-[10px] text-white/70 shadow-inner">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300 shrink-0"></i>
+                <span class="leading-tight">행성을 <strong>끌어다(Drag)</strong> 하단 폴더에 <strong>놓으면(Drop)</strong> 수집됩니다!</span>
+            </div>
+        </header>
+
+        <!-- 2. 중앙 우주 영역 (flex-1로 화면 높이에 맞춰 자동 크기 조절됨!) -->
+        <main class="flex-1 w-full relative overflow-hidden nebula-bg select-none">
+            <div class="stars"></div>
+
+            <!-- 폴더 진입 필터 시 활성화되는 상단 표식 -->
+            <div class="absolute top-3 left-4 right-4 z-30 flex justify-between items-center bg-black/60 backdrop-blur-md border border-white/5 rounded-full py-1.5 pl-4 pr-1.5 hidden" id="folder-view-header">
+                <span class="text-xs font-extrabold flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
+                    <span id="current-folder-title">#투자하고픈</span>
+                </span>
+                <button onclick="resetFolderFilter()" class="text-[10px] bg-white/10 hover:bg-white/20 text-white font-bold px-3 py-1 rounded-full flex items-center gap-1 transition-colors">
+                    <i data-lucide="rotate-ccw" class="w-3 h-3"></i> 전체 보기
+                </button>
+            </div>
+
+            <!-- 실제 공전 입자들이 렌더링되는 공간 -->
+            <div id="space-galaxy" class="w-full h-full relative overflow-hidden"></div>
+        </main>
+
+        <!-- ★3. 하단 폴더 영역 (화면 하단에 절대 고정되도록 shrink-0 적용) -->
+        <section class="w-full p-3 pb-2 bg-[#090614] border-t border-white/10 z-30 flex flex-col gap-2 shrink-0">
+            <div class="flex justify-between items-center px-1">
+                <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">수집 보관함</span>
+                <span class="text-[9px] text-purple-400 font-semibold">폴더를 탭하면 필터링됩니다</span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2" id="folders-grid">
+                <div id="folder-1" onclick="toggleFolderFilter(1)" class="folder-zone glass rounded-xl p-2.5 flex flex-col items-center justify-center text-center cursor-pointer border border-purple-500/10 h-20 relative overflow-hidden">
+                    <div class="w-7 h-7 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 mb-1">
+                        <i data-lucide="folder" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <h4 class="text-[9px] font-black tracking-wide text-white/90 truncate w-full">#투자하고픈</h4>
+                    <p class="text-[7px] text-white/40 mt-0.5" id="folder-count-1">0곡 보관</p>
+                </div>
+
+                <div id="folder-2" onclick="toggleFolderFilter(2)" class="folder-zone glass rounded-xl p-2.5 flex flex-col items-center justify-center text-center cursor-pointer border border-cyan-500/10 h-20 relative overflow-hidden">
+                    <div class="w-7 h-7 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400 mb-1">
+                        <i data-lucide="folder" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <h4 class="text-[9px] font-black tracking-wide text-white/90 truncate w-full">#새벽_멜로디</h4>
+                    <p class="text-[7px] text-white/40 mt-0.5" id="folder-count-2">0곡 보관</p>
+                </div>
+
+                <div id="folder-3" onclick="toggleFolderFilter(3)" class="folder-zone glass rounded-xl p-2.5 flex flex-col items-center justify-center text-center cursor-pointer border border-amber-500/10 h-20 relative overflow-hidden">
+                    <div class="w-7 h-7 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400 mb-1">
+                        <i data-lucide="folder" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <h4 class="text-[9px] font-black tracking-wide text-white/90 truncate w-full">#레퍼런스</h4>
+                    <p class="text-[7px] text-white/40 mt-0.5" id="folder-count-3">0곡 보관</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ★4. 최하단 미디어 플레이어 바 -->
+        <footer class="w-full bg-[#04020a] border-t border-white/5 px-4 py-3 pb-6 sm:pb-3 z-40 flex items-center justify-between gap-3 shrink-0 rounded-b-[45px]">
+            <div class="flex items-center gap-3 flex-1 overflow-hidden">
+                <div class="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center overflow-hidden relative" id="player-art">
+                    <i data-lucide="music-4" class="w-4 h-4 text-purple-400"></i>
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    <h4 class="text-xs font-bold truncate text-white" id="player-title">도형을 더블클릭해 재생</h4>
+                    <p class="text-[9px] text-white/40 truncate mt-0.5" id="player-info">음악을 재생하며 즐겨찾기 하세요!</p>
+                </div>
+            </div>
+            <button onclick="togglePlayback()" id="play-btn" class="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shrink-0">
+                <i data-lucide="play" class="w-3.5 h-3.5 fill-black text-black"></i>
+            </button>
+        </footer>
+
+    </div>
+
+    <script>
+        // 보관용 행성 데이터
+        let tracksList = [
+            {
+                id: 1, title: "건유레인져", color: "#FF2E93",
+                tags: ["#파워레인져", "#포기하지마", "#할수있어!!"],
+                folderId: null, x: 40, y: 30, dx: 0.15, dy: 0.25, size: 85
+            },
+            {
+                id: 2, title: "새벽 세시 층간소음 Blues", color: "#00E5FF",
+                tags: ["#새벽세시", "#머리에서불남", "#쫀득!"],
+                folderId: null, x: 180, y: 90, dx: -0.2, dy: 0.18, size: 95
+            },
+            {
+                id: 3, title: "Hey Hey Hey Cover", color: "#FF9100",
+                tags: ["#자우림", "#밴드", "#인디"],
+                folderId: null, x: 50, y: 150, dx: 0.18, dy: -0.22, size: 80
+            },
+            {
+                id: 4, title: "Plastic days", color: "#76FF03",
+                tags: ["#G-Funk", "#R&B", "#소매치기범"],
+                folderId: null, x: 210, y: 180, dx: -0.15, dy: -0.15, size: 90
+            },
+            {
+                id: 5, title: "비오는 등교길", color: "#D500F9",
+                tags: ["#보사노바", "#인디", "#기분좋은"],
+                folderId: null, x: 110, y: 120, dx: 0.22, dy: -0.12, size: 85
+            }
+        ];
+
+        let foldersList = [
+            { id: 1, title: "#투자하고픈", color: "#a855f7" },
+            { id: 2, title: "#새벽_멜로디", color: "#06b6d4" },
+            { id: 3, title: "#레퍼런스", color: "#f59e0b" }
+        ];
+
+        let activeFolderId = null;
+        let animationFrameId = null;
+        let isPlaying = false;
+        let activeTrack = null;
+
+        let dragTarget = null;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        const spaceGalaxy = document.getElementById('space-galaxy');
+
+        function runGalaxyOrbit() {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+            function update() {
+                const width = spaceGalaxy.clientWidth || 300;
+                const height = spaceGalaxy.clientHeight || 300;
+
+                tracksList.forEach(t => {
+                    if (activeFolderId !== null && t.folderId !== activeFolderId) return;
+                    if (activeFolderId === null && t.folderId !== null) return;
+                    if (dragTarget && dragTarget.dataset.id == t.id) return;
+
+                    if (t.x < 5 || t.x + t.size > width - 5) {
+                        t.dx *= -1;
+                        t.x = Math.max(5, Math.min(width - t.size - 5, t.x));
+                    }
+                    if (t.y < 5 || t.y + t.size > height - 5) {
+                        t.dy *= -1;
+                        t.y = Math.max(5, Math.min(height - t.size - 5, t.y));
+                    }
+
+                    t.x += t.dx;
+                    t.y += t.dy;
+
+                    const el = document.getElementById(`bubble-${t.id}`);
+                    if (el) {
+                        el.style.left = `${t.x}px`;
+                        el.style.top = `${t.y}px`;
+                    }
+                });
+
+                animationFrameId = requestAnimationFrame(update);
+            }
+
+            update();
+        }
+
+        function renderGalaxySpace() {
+            spaceGalaxy.innerHTML = '';
+
+            tracksList.forEach(t => {
+                if (activeFolderId !== null && t.folderId !== activeFolderId) return;
+                if (activeFolderId === null && t.folderId !== null) return;
+
+                const bubble = document.createElement('div');
+                bubble.id = `bubble-${t.id}`;
+                bubble.dataset.id = t.id;
+                bubble.className = 'bubble-track rounded-full flex flex-col items-center justify-center p-2.5 text-center transition-shadow shadow-lg z-20';
+                bubble.style.width = `${t.size}px`;
+                bubble.style.height = `${t.size}px`;
+                bubble.style.left = `${t.x}px`;
+                bubble.style.top = `${t.y}px`;
+                bubble.style.backgroundColor = t.color;
+
+                const isSelected = activeTrack && activeTrack.id === t.id;
+                if (isSelected) {
+                    bubble.style.boxShadow = `0 0 25px ${t.color}, inset 0 4px 10px rgba(255,255,255,0.6)`;
+                    bubble.style.border = `2.5px solid #ffffff`;
+                } else {
+                    bubble.style.boxShadow = `0 6px 20px ${t.color}25, inset 0 4px 10px rgba(255,255,255,0.4)`;
+                }
+
+                let tagsHTML = t.tags.map(tag =>
+                    `<p class="text-black font-extrabold select-none truncate w-full handwritten text-[13px] leading-tight">${tag}</p>`
+                ).join('');
+
+                bubble.innerHTML = `<div class="space-y-0.5 w-full flex flex-col justify-center items-center pointer-events-none">${tagsHTML}</div>`;
+
+                bubble.addEventListener('mousedown', dragStart);
+                bubble.addEventListener('touchstart', dragStart, { passive: false });
+                bubble.addEventListener('dblclick', () => playTrack(t));
+
+                spaceGalaxy.appendChild(bubble);
+            });
+
+            updateFolderCounts();
+        }
+
+        function dragStart(e) {
+            e.preventDefault();
+            const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+
+            dragTarget = e.currentTarget;
+            dragTarget.classList.add('dragging');
+
+            const rect = dragTarget.getBoundingClientRect();
+            offsetX = clientX - rect.left;
+            offsetY = clientY - rect.top;
+
+            document.addEventListener('mousemove', dragMove);
+            document.addEventListener('touchmove', dragMove, { passive: false });
+            document.addEventListener('mouseup', dragEnd);
+            document.addEventListener('touchend', dragEnd);
+        }
+
+        function dragMove(e) {
+            if (!dragTarget) return;
+            e.preventDefault();
+
+            const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+
+            const spaceRect = spaceGalaxy.getBoundingClientRect();
+
+            let targetX = clientX - spaceRect.left - offsetX;
+            let targetY = clientY - spaceRect.top - offsetY;
+
+            const trackId = parseInt(dragTarget.dataset.id);
+            const track = tracksList.find(t => t.id === trackId);
+            if (track) {
+                track.x = targetX;
+                track.y = targetY;
+            }
+
+            dragTarget.style.left = `${targetX}px`;
+            dragTarget.style.top = `${targetY}px`;
+
+            checkFolderHover(clientX, clientY);
+        }
+
+        function dragEnd(e) {
+            if (!dragTarget) return;
+
+            document.removeEventListener('mousemove', dragMove);
+            document.removeEventListener('touchmove', dragMove);
+            document.removeEventListener('mouseup', dragEnd);
+            document.removeEventListener('touchend', dragEnd);
+
+            const trackId = parseInt(dragTarget.dataset.id);
+            const track = tracksList.find(t => t.id === trackId);
+
+            dragTarget.classList.remove('dragging');
+
+            let clientX, clientY;
+            if (e.type.startsWith('touch')) {
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            const hoveredFolderId = getHoveredFolderId(clientX, clientY);
+
+            if (hoveredFolderId !== null && track) {
+                track.folderId = hoveredFolderId;
+                createSparkleSplash(clientX, clientY, track.color);
+                dragTarget = null;
+                renderGalaxySpace();
+            } else {
+                if (track) {
+                    track.dx = (Math.random() - 0.5) * 0.5;
+                    track.dy = (Math.random() - 0.5) * 0.5;
+                }
+                dragTarget = null;
+            }
+
+            foldersList.forEach(f => {
+                document.getElementById(`folder-${f.id}`).classList.remove('folder-hover');
+            });
+        }
+
+        function getHoveredFolderId(clientX, clientY) {
+            let matchedId = null;
+            foldersList.forEach(f => {
+                const folderEl = document.getElementById(`folder-${f.id}`);
+                const rect = folderEl.getBoundingClientRect();
+                if (clientX >= rect.left && clientX <= rect.right &&
+                    clientY >= rect.top && clientY <= rect.bottom) {
+                    matchedId = f.id;
+                }
+            });
+            return matchedId;
+        }
+
+        function checkFolderHover(clientX, clientY) {
+            foldersList.forEach(f => {
+                const folderEl = document.getElementById(`folder-${f.id}`);
+                const rect = folderEl.getBoundingClientRect();
+                if (clientX >= rect.left && clientX <= rect.right &&
+                    clientY >= rect.top && clientY <= rect.bottom) {
+                    folderEl.classList.add('folder-hover');
+                } else {
+                    folderEl.classList.remove('folder-hover');
+                }
+            });
+        }
+
+        function updateFolderCounts() {
+            foldersList.forEach(f => {
+                const count = tracksList.filter(t => t.folderId === f.id).length;
+                document.getElementById(`folder-count-${f.id}`).innerText = `${count}곡 보관`;
+            });
+        }
+
+        function createSparkleSplash(x, y, color) {
+            const body = document.body;
+            for (let i = 0; i < 15; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle z-50';
+                sparkle.style.left = `${x}px`;
+                sparkle.style.top = `${y}px`;
+                sparkle.style.backgroundColor = color;
+
+                const size = Math.random() * 6 + 4;
+                sparkle.style.width = `${size}px`;
+                sparkle.style.height = `${size}px`;
+
+                const mx = (Math.random() - 0.5) * 120 + 'px';
+                const my = (Math.random() - 0.5) * 120 + 'px';
+                sparkle.style.setProperty('--mx', mx);
+                sparkle.style.setProperty('--my', my);
+
+                body.appendChild(sparkle);
+                setTimeout(() => sparkle.remove(), 600);
+            }
+        }
+
+        function toggleFolderFilter(folderId) {
+            if (activeFolderId === folderId) {
+                resetFolderFilter();
+                return;
+            }
+
+            activeFolderId = folderId;
+            const folder = foldersList.find(f => f.id === folderId);
+
+            const header = document.getElementById('folder-view-header');
+            header.classList.remove('hidden');
+            document.getElementById('current-folder-title').innerText = `${folder.title} 은하`;
+
+            foldersList.forEach(f => {
+                const el = document.getElementById(`folder-${f.id}`);
+                if (f.id === folderId) {
+                    el.style.borderColor = folder.color;
+                    el.style.backgroundColor = `${folder.color}15`;
+                } else {
+                    el.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+                    el.style.backgroundColor = 'transparent';
+                }
+            });
+
+            const cx = spaceGalaxy.clientWidth / 2 || 150;
+            const cy = spaceGalaxy.clientHeight / 2 || 150;
+
+            tracksList.forEach((t, idx) => {
+                if (t.folderId === activeFolderId) {
+                    t.x = cx + Math.cos(idx) * 40 - (t.size / 2);
+                    t.y = cy + Math.sin(idx) * 40 - (t.size / 2);
+                    t.dx = (Math.random() - 0.5) * 0.3;
+                    t.dy = (Math.random() - 0.5) * 0.3;
+                }
+            });
+
+            renderGalaxySpace();
+        }
+
+        function resetFolderFilter() {
+            activeFolderId = null;
+            document.getElementById('folder-view-header').classList.add('hidden');
+
+            foldersList.forEach(f => {
+                const el = document.getElementById(`folder-${f.id}`);
+                el.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+                el.style.backgroundColor = 'transparent';
+            });
+
+            tracksList.forEach((t, idx) => {
+                if (t.folderId === null) {
+                    t.x = 40 + (idx * 50) % 150;
+                    t.y = 50 + (idx * 40) % 150;
+                    t.dx = (Math.random() - 0.5) * 0.2;
+                    t.dy = (Math.random() - 0.5) * 0.2;
+                }
+            });
+
+            renderGalaxySpace();
+        }
+
+        function createNewFolder() {
+            const folderTitle = prompt("새로운 폴더 태그명을 적어주세요:", "#자작곡_모음");
+            if (!folderTitle) return;
+
+            const colors = ["#EC4899", "#8B5CF6", "#3B82F6", "#10B981", "#F59E0B"];
+            const randColor = colors[Math.floor(Math.random() * colors.length)];
+
+            const newId = foldersList.length + 1;
+            foldersList.push({ id: newId, title: folderTitle, color: randColor });
+
+            const grid = document.getElementById('folders-grid');
+            grid.classList.remove('grid-cols-3');
+            grid.classList.add('grid-cols-4'); // 폴더 추가 시 4칸으로 확장
+
+            const newFolderEl = document.createElement('div');
+            newFolderEl.id = `folder-${newId}`;
+            newFolderEl.onclick = () => toggleFolderFilter(newId);
+            newFolderEl.className = 'folder-zone glass rounded-xl p-2.5 flex flex-col items-center justify-center text-center cursor-pointer border h-20 relative overflow-hidden';
+            newFolderEl.style.borderColor = `${randColor}20`;
+
+            newFolderEl.innerHTML = `
+                <div class="w-7 h-7 rounded-full flex items-center justify-center mb-1" style="background-color: ${randColor}15; color: ${randColor}">
+                    <i data-lucide="folder" class="w-3.5 h-3.5"></i>
+                </div>
+                <h4 class="text-[9px] font-black tracking-wide text-white/90 truncate w-full">${folderTitle}</h4>
+                <p class="text-[7px] text-white/40 mt-0.5" id="folder-count-${newId}">0곡 보관</p>
+            `;
+
+            grid.appendChild(newFolderEl);
+            lucide.createIcons();
+            updateFolderCounts();
+        }
+
+        function playTrack(track) {
+            activeTrack = track;
+            isPlaying = true;
+
+            document.getElementById('player-title').innerText = track.title;
+            document.getElementById('player-info').innerText = `${track.tags.join(' ')}`;
+
+            const art = document.getElementById('player-art');
+            art.style.backgroundColor = `${track.color}15`;
+            art.style.borderColor = `${track.color}40`;
+            art.innerHTML = `<span class="w-4 h-4 rounded-full" style="background-color: ${track.color}; box-shadow: 0 0 10px ${track.color}"></span>`;
+
+            updateControls();
+            renderGalaxySpace();
+        }
+
+        function togglePlayback() {
+            if (!activeTrack) {
+                playTrack(tracksList[0]);
+                return;
+            }
+            isPlaying = !isPlaying;
+            updateControls();
+        }
+
+        function updateControls() {
+            const btn = document.getElementById('play-btn');
+            if (isPlaying) {
+                btn.innerHTML = `<i data-lucide="pause" class="w-3.5 h-3.5 fill-black text-black"></i>`;
+            } else {
+                btn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5 fill-black text-black"></i>`;
+            }
+            lucide.createIcons();
+        }
+
+        window.onload = function() {
+            lucide.createIcons();
+            renderGalaxySpace();
+            runGalaxyOrbit();
+
+            // 윈도우 리사이즈 대응 추가
+            window.addEventListener('resize', () => {
+                if(spaceGalaxy) runGalaxyOrbit();
+            });
+        }
+    </script>
+</body>
+</html>
