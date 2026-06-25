@@ -9749,7 +9749,10 @@ function _sdStyle() {
 .sd-cheer i{font-size:19px;}
 .sd-cheer:active{transform:scale(.98);}
 .sd-csub{text-align:center;font-size:11.5px;color:#8B8B9A;margin:10px 0 4px;}
-.sd-listen{width:100%;border:1px solid rgba(255,255,255,.12);background:#15151F;color:#F4F4F7;border-radius:14px;padding:13px;font-family:inherit;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;cursor:pointer;}
+.sd-listen{width:100%;border:1px solid rgba(255,255,255,.12);background:#15151F;color:#F4F4F7;border-radius:14px;padding:11px;font-family:inherit;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px;margin-top:10px;cursor:pointer;}
+.sd-listen:active{transform:scale(.99);}
+.sd-listen-main{font-size:14px;display:flex;align-items:center;gap:8px;}
+.sd-listen-sub{font-size:11px;color:#9DE0B4;font-weight:600;}
 .sd-story{margin:20px 2px 0;padding:15px;background:#15151F;border:1px solid rgba(255,255,255,.06);border-radius:15px;}
 .sd-story .lab{font-size:11px;font-weight:800;color:#8B8B9A;letter-spacing:.3px;margin-bottom:8px;}
 .sd-story p{font-size:13.5px;line-height:1.6;}
@@ -9757,6 +9760,16 @@ function _sdStyle() {
 @media(min-width:769px){.sd-inner{max-width:460px;}}
 </style>`;
 }
+
+// '같이 듣기' — 곡 재생 + 응원하며 듣는 사람 수를 토스트로(커뮤니티 느낌). 실시간 동기화는 아님.
+window._sdListenAlong = function (id, n) {
+  try { playTrack(id); } catch (_) {}
+  if (typeof showToast === 'function') {
+    showToast((n > 0)
+      ? _t(n + '명과 함께 듣는 중 🎧', 'Listening with ' + n + ' others 🎧')
+      : _t('이 곡 듣는 중 🎧', 'Now playing 🎧'));
+  }
+};
 
 function renderSongDetail(trackId) {
   const appContent = document.getElementById('app-content');
@@ -9811,7 +9824,10 @@ function renderSongDetail(trackId) {
       </div>
       <button class="sd-cheer" data-tid="${esc(track.id)}" data-tt="${esc(ti)}" data-an="${esc(track.artist || '')}" onclick="mhCheer(this)"><i class="ri-heart-3-fill"></i> ${_t('응원하기', 'Cheer')}</button>
       <div class="sd-csub">${_t('이 곡의 성장을 응원해요', 'Support this song')}${supN > 0 ? ` · ${supN + 1}${_t('번째 응원', 'th cheer')}` : ''}</div>
-      <button class="sd-listen" onclick="playTrack('${track.id}')"><i class="ri-play-fill"></i> ${_t('같이 듣기', 'Listen along')}</button>
+      <button class="sd-listen" onclick="window._sdListenAlong('${track.id}', ${supN})">
+        <div class="sd-listen-main"><i class="ri-headphone-fill"></i> ${_t('같이 듣기', 'Listen along')}</div>
+        <div class="sd-listen-sub">${supN > 0 ? _t(supN + '명이 응원하며 듣고 있어요 🎧', supN + ' fans listening along 🎧') : _t('이 곡을 들어보세요 🎧', 'Give it a listen 🎧')}</div>
+      </button>
       ${(story || lyrics) ? `<div class="sd-story"><div class="lab">${_t('이 곡 이야기', 'About this song')}</div>${story ? `<p>${esc(story)}</p>` : ''}${lyrics ? `<div class="lyr">${esc(lyrics)}</div>` : ''}</div>` : ''}
     </div></div>`;
   window.__currentSongId = trackId;
