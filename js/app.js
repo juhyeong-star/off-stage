@@ -2563,8 +2563,7 @@ window.syncPlayerFs = function () {
   const t = document.getElementById('pfs-title');
   if (t) t.innerText = (titleEl && titleEl.innerText) || '선택된 곡 없음';
   const a = document.getElementById('pfs-artist');
-  const artistEl = document.getElementById('player-artist');
-  if (a) a.innerText = (artistEl && artistEl.innerText) || window.__playerArtistName || '-';
+  if (a) a.innerText = window.__playerArtistName || '-';   // 원(#pfs-tags)이 도형 글을 보여주므로 서브는 아티스트
   // 원 안 #태그 — 미니에 채워둔 #player-tags span 복사.
   const src = document.getElementById('player-tags');
   const dst = document.getElementById('pfs-tags');
@@ -15858,19 +15857,21 @@ window.playTrack = function (trackId, source) {
   globalPlayer.style.setProperty('--player-color', _discColor);
   const _coverEl = document.getElementById('player-cover');
   _coverEl.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';   // 1x1 투명 → CSS 배경(디스크)만 보이게
-  // #태그 — 도형처럼 표시(풀스크린 원 안 #pfs-tags 로 복사됨). 태그 없으면 비움.
-  const _tgs = (Array.isArray(track.tags) && track.tags.length) ? track.tags.slice(0, 3) : [];
+  // 도형에 '쓴 글'(track.lines) — 발견 도형의 .shape-text 와 동일 소스. (track.tags 키워드가 아님!)
+  // 풀스크린 원 안(#pfs-tags)으로 복사돼 도형처럼 보임. 글 없으면 비움.
+  const _esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const _lines = (Array.isArray(track.lines) ? track.lines : []).map(l => (l || '').trim()).filter(Boolean).slice(0, 4);
   const _tagsEl = document.getElementById('player-tags');
-  if (_tagsEl) _tagsEl.innerHTML = _tgs.map(t => `<span>#${(t || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>`).join('');
+  if (_tagsEl) _tagsEl.innerHTML = _lines.map(l => `<span>${_esc(l)}</span>`).join('');
   // 타이틀 = 데모 버전("데모 N"), 마스터(발매)는 곡 제목. 'Coming Soon' 은 표시 안 함.
-  // 서브 = 도형처럼 #태그(태그 없으면 아티스트). → 플레이바·풀스크린 모두 "데모 N" + #태그.
+  // 미니 서브 = 도형에 쓴 글(없으면 아티스트). 풀스크린 원 = 도형 글, 서브 = 아티스트.
   const _dm = /^demo\s*(\d+)$/i.exec((track.version || '').trim()) || /demo\s*(\d+)/i.exec((track.versionLabel || '').trim());
   const _demoLabel = _dm ? _t('데모 ' + _dm[1], 'Demo ' + _dm[1]) : (track.isDemo ? _t('데모', 'Demo') : '');
   const _stripCS = (s) => (s || '').replace(/coming\s*soon\.*/ig, '').trim();
   const _cleanTitle = _stripCS(track.title), _cleanArtist = _stripCS(track.artist);
-  const _tagText = _tgs.map(t => '#' + t).join(' ');
+  const _linesText = _lines.join(' ');
   document.getElementById('player-title').innerText = _demoLabel || _cleanTitle || _t('데모', 'Demo');
-  document.getElementById('player-artist').innerText = _tagText || _cleanArtist || '';
+  document.getElementById('player-artist').innerText = _linesText || _cleanArtist || '';
   window.__playerArtistName = track.artist;   // 표시와 무관 — 제목/아티스트 클릭 시 이동 대상
   if (typeof _updatePlayerCollectState === 'function') _updatePlayerCollectState();
   if (window.syncPlayerFs) window.syncPlayerFs();   // 풀스크린 카드도 현재 곡으로 갱신
