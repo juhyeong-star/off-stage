@@ -1491,6 +1491,20 @@ async function init() {
           }
         }, 400);
       }
+    } else if (window.__autoplayRadio !== false) {
+      // 큐 끝/없음 → 취향 추천(recommendDemos)으로 라디오식 이어재생. 끝난 곡 시드로 비슷한 데모.
+      const endedId = window.__nowPlayingId || (q && q.tracks && q.tracks[q.idx]) || null;
+      const pick = window._autoplayRecommend ? window._autoplayRecommend(endedId) : null;
+      if (pick && pick.id) {
+        if (window.__autoNextTimer) clearTimeout(window.__autoNextTimer);
+        window.__autoNextTimer = setTimeout(() => {
+          window.__autoNextTimer = null;
+          if (!(window.__autoplayHistory instanceof Set)) window.__autoplayHistory = new Set();
+          window.__autoplayHistory.add(pick.id);
+          if (window.__autoplayHistory.size > 25) window.__autoplayHistory = new Set([...window.__autoplayHistory].slice(-15));
+          try { window.playTrack(pick.id, 'radio'); } catch (_) {}
+        }, 600);
+      }
     }
   });
   // 🎵 이전/다음 곡 버튼 (헤더 컨트롤) — 큐 안에서 이동
@@ -5902,6 +5916,28 @@ window.recommendDemos = function (allTracks, cheers, followed, opts) {
   let picks = hasTaste ? scored.map(x => x.t)
     : candidates.slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   return picks.slice(0, limit);
+};
+
+// 자동재생(라디오) — 방금 끝난 곡을 취향 시드로 비슷한 데모 1곡 고름. 최근 자동재생곡은 제외(반복 방지).
+window._autoplayRecommend = function (endedTrackId) {
+  try {
+    if (!window.recommendDemos) return null;
+    const db = window.DB.get();
+    let allTracks = (db.tracks || []).slice();
+    if (Array.isArray(window.__tracks)) {
+      const seen = new Set(allTracks.map(t => t && t.id));
+      window.__tracks.forEach(t => { if (t && !seen.has(t.id)) allTracks.push(t); });
+    }
+    const cur = allTracks.find(t => t && t.id === endedTrackId) || null;
+    const seedCheers = cur ? [{ track_id: cur.id, artist_name: cur.artist }] : [];
+    const followed = window.__followedArtistsCache || [];
+    const myName = (window.__currentUser && window.__currentUser.name) || null;
+    const recs = window.recommendDemos(allTracks, seedCheers, followed, { limit: 16, myName });
+    const recent = (window.__autoplayHistory instanceof Set) ? window.__autoplayHistory : new Set();
+    return recs.find(t => t && t.id !== endedTrackId && !recent.has(t.id))
+        || recs.find(t => t && t.id !== endedTrackId)
+        || null;
+  } catch (e) { console.warn('[autoplay] recommend', e); return null; }
 };
 
 function renderHome() {
@@ -16028,6 +16064,7 @@ window.playTrack = function (trackId, source) {
   document.getElementById('player-title').innerText = _demoLabel || _cleanTitle || _t('데모', 'Demo');
   document.getElementById('player-artist').innerText = _linesText || _cleanArtist || '';
   window.__playerArtistName = track.artist;   // 표시와 무관 — 제목/아티스트 클릭 시 이동 대상
+  window.__nowPlayingId = track.id;            // 자동재생(라디오) 이 끝난 곡을 알기 위해
   if (typeof _updatePlayerCollectState === 'function') _updatePlayerCollectState();
   if (window.syncPlayerFs) window.syncPlayerFs();   // 풀스크린 카드도 현재 곡으로 갱신
 
