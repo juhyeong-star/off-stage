@@ -13344,6 +13344,8 @@ function _mhStyle() {
 .mh-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,0,0,.18),transparent);}
 .mh-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;}
 .mh-cover .ln{color:#000;font-weight:800;font-size:16px;position:relative;z-index:2;}
+.mh-cover-lines{position:relative;z-index:2;color:rgba(0,0,0,.82);font-weight:800;font-size:7.5px;line-height:1.22;text-align:center;padding:3px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;}
+.mh-cover.big .mh-cover-lines{font-size:9px;line-height:1.25;}
 .mh-latest{border-radius:26px;padding:14px;display:flex;gap:12px;align-items:center;justify-content:space-between;border:1px solid rgba(244,63,94,.2);box-shadow:0 12px 30px rgba(244,63,94,.05);}
 .mh-latest .meta{display:flex;gap:12px;align-items:center;min-width:0;}
 .mh-chip-demo{font-size:9px;background:rgba(244,63,94,.2);color:#fda4af;font-weight:700;padding:1px 6px;border-radius:6px;}
@@ -13457,7 +13459,7 @@ function renderArtistHome(artistName) {
     let idx = window.__mhState[pid];
     if (idx == null || idx >= demos.length || idx < 0) idx = demos.length - 1;
     const lastTime = new Date(vs[vs.length - 1].createdAt || 0).getTime();
-    return { pid, title, hasFinal, color: colorFor(title), cover: rep.cover || '', demos, currentDemoIdx: idx, lastTime };
+    return { pid, title, hasFinal, color: colorFor(title), cover: rep.cover || '', lines: rep.lines || [], demos, currentDemoIdx: idx, lastTime };
   }).sort((a, b) => b.lastTime - a.lastTime);
 
   // 통계
@@ -13476,9 +13478,15 @@ function renderArtistHome(artistName) {
   const sortedDesc = myTracks.slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   const latest = sortedDesc.find(t => t.isDemo) || sortedDesc[0] || null;
 
-  const coverTile = (cls, color, cover, title) => {
-    if (cover) return `<div class="mh-cover ${cls}" style="background:${color}"><img src="${esc(cover)}" alt=""></div>`;
-    return `<div class="mh-cover ${cls}" style="background:${color}"><span class="mh-hand ln">${esc((title || '').slice(0, 4))}</span></div>`;
+  // 데모 기본 커버('Coming Soon' 노란 포스트잇, fill #FFF59D)는 도형에 쓴 글(lines)로 대체 — 발견 도형처럼.
+  const _isCSCover = (c) => typeof c === 'string' && (c.indexOf('FFF59D') >= 0 || /Coming\s*Soon/i.test(c));
+  const coverTile = (cls, color, cover, title, lines) => {
+    if (cover && !_isCSCover(cover)) return `<div class="mh-cover ${cls}" style="background:${color}"><img src="${esc(cover)}" alt=""></div>`;
+    const _ln = (Array.isArray(lines) ? lines : []).map(l => (l || '').trim()).filter(Boolean).slice(0, 3);
+    const inner = _ln.length
+      ? `<span class="mh-cover-lines">${_ln.map(l => esc(l)).join('<br>')}</span>`
+      : `<span class="mh-hand ln">${esc((title || '').slice(0, 4))}</span>`;
+    return `<div class="mh-cover ${cls}" style="background:${color}">${inner}</div>`;
   };
 
   // === 최신 활성 데모 위젯 ===
@@ -13486,7 +13494,8 @@ function renderArtistHome(artistName) {
   if (latest) {
     const lt = cleanTitle(latest.title);
     const lc = colorFor(lt);
-    const lLabel = latest.versionLabel || (latest.isDemo ? 'DEMO' : 'MASTER');
+    const _dmL = /^demo\s*(\d+)$/i.exec((latest.version || '').trim()) || /demo\s*(\d+)/i.exec((latest.versionLabel || '').trim());
+    const lLabel = _dmL ? _t('데모 ' + _dmL[1], 'Demo ' + _dmL[1]) : (latest.isDemo ? _t('데모', 'Demo') : 'MASTER');
     latestHtml = `
       <div class="mh-sec">
         <div class="mh-sec-head">
@@ -13494,7 +13503,7 @@ function renderArtistHome(artistName) {
         </div>
         <div class="mh-latest mh-glass">
           <div class="meta">
-            ${coverTile('big', lc, latest.cover, lt)}
+            ${coverTile('big', lc, latest.cover, lt, latest.lines)}
             <div style="min-width:0;">
               <div style="display:flex;align-items:center;gap:6px;">
                 <span class="mh-chip-demo">${esc(lLabel)}</span>
@@ -13539,7 +13548,7 @@ function renderArtistHome(artistName) {
         <div class="mh-track mh-glass">
           <div class="mh-track-head">
             <div class="mh-track-open" onclick="navigateTo('album:'+encodeURIComponent('${String(tr.pid).replace(/'/g,"\\'")}'))" title="${_t('앨범 열기 · 데모 관리/삭제','Open album · manage/delete demos')}">
-              ${coverTile('', tr.color, tr.cover, tr.title)}
+              ${coverTile('', tr.color, tr.cover, tr.title, tr.lines)}
               <div style="flex:1;min-width:0;">
                 <div style="display:flex;align-items:center;gap:6px;">
                   <span class="mh-state" style="background:${stBg};color:${stCol};border-color:${stBd};">${stateLabel}</span>
