@@ -955,6 +955,13 @@ function _buildStarfield(seedPrefix, dotCount, sparkleCount) {
 
 // Native back/forward handler — re-render the view encoded in the new URL
 window.addEventListener('popstate', (e) => {
+  // 즐겨찾기 폴더 안에서 네이티브 뒤로가기(오른쪽 스와이프) → 페이지(탭)를 떠나지 말고 폴더만 나가기.
+  // (폴더 진입이 history 엔트리를 쌓으므로, 그 엔트리가 pop 되면 여기서 폴더 나가기를 처리. 안 하면
+  //  스와이프가 이전 탭 Tags 로 새어나감.)
+  if (window.__universeFolderId && typeof window.exitFolderToUniverse === 'function') {
+    window.exitFolderToUniverse();
+    return;
+  }
   const route = (e.state && e.state.route) || _hashToRoute(location.hash) || 'shapes';
   _routerInPopstate = true;
   try { navigateTo(route); }
@@ -1021,6 +1028,8 @@ function _updateBackButton(route) {
 window.goBack = function () {
   // 0) 내 우주 안에서 폴더를 보는 중이면 → 먼저 전체 내 우주로
   if (window.__universeFolderId) {
+    // enter 때 쌓은 history 엔트리가 있으면 pop → popstate 가 폴더 나가기 처리(스와이프와 동일 경로/상태일치).
+    if (window.__universeFolderHistoryPushed) { try { history.back(); return; } catch (_) {} }
     if (typeof window.exitFolderToUniverse === 'function') window.exitFolderToUniverse();
     return;
   }
@@ -8168,9 +8177,14 @@ function _floatingFolderHtml(it, pos) {
 // Liked tracks (masters + demos) + bookmarked post-its, all
 // floating in the same shapes-universe canvas. Drag to rearrange.
 // ============================================================
-window.renderUniverse = async function () {
+window.renderUniverse = async function (force) {
   const db = window.DB.get();
   if (!db.currentUser) { navigateTo('auth'); return; }
+
+  // 폴더 진입/나가기 애니메이션 중엔 백그라운드 콜백(북마크 fetch 등)의 재렌더를 막는다.
+  // (진입 시작~완료 사이 __universeFolderId 가 아직 null 이라 기존 가드를 통과해 애니를 wipe →
+  //  '한번 움직이다 멈추고 툭툭' 끊기던 원인.) 의도된 렌더(exitFolderToUniverse)는 force=true.
+  if (window.__universeFolderEntering && !force) return;
 
   // 폴더 안을 보는 중이면(내 우주를 벗어나지 않고 그 자리에서) 폴더 우주를 그린다.
   if (window.__universeFolderId) { _renderFolderUniverse(window.__universeFolderId); return; }
@@ -15525,7 +15539,8 @@ window.exitFolderToUniverse = function() {
   const uni = document.querySelector('.shapes-universe.my-universe');
   if (!uni) {
     window.__universeFolderId = null;
-    if (typeof window.renderUniverse === 'function') window.renderUniverse();
+    window.__universeFolderHistoryPushed = false;
+    if (typeof window.renderUniverse === 'function') window.renderUniverse(true);
     return;
   }
 
@@ -15537,7 +15552,8 @@ window.exitFolderToUniverse = function() {
 
   // 2) 폴더 모드 해제 후 renderUniverse 호출 — 일반 우주 아이템들이 innerHTML 로 들어옴
   window.__universeFolderId = null;
-  if (typeof window.renderUniverse === 'function') window.renderUniverse();
+  window.__universeFolderHistoryPushed = false;
+  if (typeof window.renderUniverse === 'function') window.renderUniverse(true);   // 나가기 애니 중이라 force
 
   // 3) 새로 그려진 .shapes-universe 에 접근. async 라도 첫 await 안 거치는 path 라
   //    innerHTML 은 이미 동기 적용됨 (universeLoadedOnce 인 케이스).
@@ -15600,6 +15616,14 @@ window.enterFolderWithAnim = function(folderId, anchorEl) {
   // 한창 움직이던 도형들이 wipe 되어 '왼쪽 위에서 내려오는' 모션이 안 보임.
   // 진입 시작 순간부터 가드 켜고, 완료 후 끄기.
   window.__universeFolderEntering = true;
+  // history 엔트리 push → 네이티브 뒤로가기(오른쪽 스와이프)가 이전 탭으로 새지 않고 폴더만 나가게.
+  // (popstate 핸들러가 __universeFolderId 보고 exitFolderToUniverse 처리.)
+  try {
+    if (typeof history !== 'undefined' && history.pushState) {
+      history.pushState({ route: 'universe', folder: folderId }, '', location.hash || '#/universe');
+      window.__universeFolderHistoryPushed = true;
+    }
+  } catch (_) {}
   // 폴더 줄(상단 고정)은 .shapes-universe 캔버스 바깥 형제라 진입 애니에 안 딸려감 →
   // 폴더에 들어가면 폴더들도 같이 사라지도록 페이드아웃 후 제거(나갈 때 renderUniverse 가 새로 그림).
   const _frow = document.querySelector('.universe-folder-row');
@@ -15637,33 +15661,30 @@ window.enterFolderWithAnim = function(folderId, anchorEl) {
   //    animation:none 으로 끊으면 도형이 identity 위치로 튕긴 뒤 슬라이드해서
   //    움직임이 부자연스러움. 현재 transform 을 캡처해 그대로 박은 뒤 (reflow)
   //    목적지로 transition → 끊김 없이 자연스럽게 이어짐.
-  uni.querySelectorAll('.floating-shape').forEach(el => {
-    if (el === _enteringFolderEl) {
-      // 클릭한 폴더는 그 자리에서 살짝 부풀며 페이드아웃
-      const _cs = getComputedStyle(el);
-      const _cur = _cs.transform;
-      el.style.animation = 'none';
-      if (_cur && _cur !== 'none') el.style.transform = _cur;
-      void el.offsetWidth;   // force reflow
-      el.style.transition = 'opacity 0.45s ease, transform 0.45s cubic-bezier(0.22, 0.9, 0.3, 1)';
-      el.style.transform = (_cur && _cur !== 'none' ? _cur + ' ' : '') + 'scale(1.06)';
-      el.style.opacity = '0';
-      el.style.pointerEvents = 'none';
-      return;
-    }
-    // 현재 floatDrift 가 그리던 transform 을 캡처 → 그 위치에서 자연스럽게 이어감
-    const cs = getComputedStyle(el);
-    const currentT = cs.transform;
+  //    ⚡ 도형마다 getComputedStyle + offsetWidth(강제 reflow)를 하면 N번 동기 리플로우라
+  //    모바일에서 '툭툭' 끊김 → 읽기 일괄 → 시작상태 쓰기 일괄 → reflow 1회 → 목적지 쓰기 일괄로 배치.
+  const _outShapes = Array.prototype.slice.call(uni.querySelectorAll('.floating-shape'));
+  const _outCur = _outShapes.map(el => {              // (a) 읽기 일괄 — 리플로우 한 번으로 끝
+    const t = getComputedStyle(el).transform;
+    return (t && t !== 'none') ? t : '';
+  });
+  _outShapes.forEach((el, i) => {                     // (b) 시작 상태 쓰기 — 현재 위치에 박기(점프 방지)
     el.style.animation = 'none';
     el.style.willChange = 'transform, opacity';
     el.style.transformOrigin = 'center';
-    if (currentT && currentT !== 'none') {
-      el.style.transform = currentT;   // 그 자리에 박음 (점프 방지)
+    if (_outCur[i]) el.style.transform = _outCur[i];
+  });
+  void uni.offsetWidth;                               // (c) 강제 reflow 1회 — 시작 상태 commit
+  _outShapes.forEach((el, i) => {                     // (d) 목적지로 transition 쓰기 일괄
+    if (el === _enteringFolderEl) {
+      // 클릭한 폴더는 그 자리에서 살짝 부풀며 페이드아웃 (시각적 anchor)
+      el.style.transition = 'opacity 0.45s ease, transform 0.45s cubic-bezier(0.22, 0.9, 0.3, 1)';
+      el.style.transform = (_outCur[i] ? _outCur[i] + ' ' : '') + 'scale(1.06)';
+    } else {
+      // 오른쪽 아래로 미끄러지며 사라짐 — incoming 과 동일 톤(ease-out)
+      el.style.transition = 'transform 0.7s cubic-bezier(0.22, 0.9, 0.3, 1), opacity 0.55s ease';
+      el.style.transform = 'translate(42vw, 38vh) scale(0.3)';
     }
-    void el.offsetWidth;   // 강제 reflow 로 시작 상태 고정
-    // 부드러운 ease-out (cubic-bezier 0.22, 0.9, 0.3, 1) — incoming 과 동일 톤
-    el.style.transition = 'transform 0.7s cubic-bezier(0.22, 0.9, 0.3, 1), opacity 0.55s ease';
-    el.style.transform = 'translate(42vw, 38vh) scale(0.3)';
     el.style.opacity = '0';
     el.style.pointerEvents = 'none';
   });
