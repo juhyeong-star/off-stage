@@ -12629,6 +12629,8 @@ window.deleteMyTrack = async function(trackId, trackTitle) {
       db.tracks = db.tracks.filter(t => t.id !== trackId);
       window.DB.save(db);
     }
+    // __tracks(별도 캐시)에도 남아있으면 발견/즐겨찾기 등에서 되살아나므로 같이 제거.
+    if (Array.isArray(window.__tracks)) window.__tracks = window.__tracks.filter(t => t && t.id !== trackId);
     showToast(_t('삭제 완료', 'Deleted'));
     // Re-render current view. Artist page needs the artist name to
     // re-render, so we re-trigger the router by re-navigating to the
@@ -12649,6 +12651,23 @@ window.deleteMyTrack = async function(trackId, trackTitle) {
     }
     else if (currentView === 'shapes' && typeof renderShapes === 'function') renderShapes();
     else if (currentView === 'profile' && typeof renderProfile === 'function') renderProfile();
+    else if (currentView === 'album') {
+      // 앨범 페이지에서 데모 삭제 → 즉시 다시 그려 사라지게(예전엔 album 케이스가 없어 새로고침해야 사라졌음).
+      try {
+        const h = window.location.hash || '';
+        const m = h.match(/#\/album:([^/?]+)/);
+        const pid = m ? decodeURIComponent(m[1]) : null;
+        const dbNow = window.DB.get();
+        const remain = pid ? (dbNow.tracks || []).filter(t => t && (t.projectId || ('proj_' + t.id)) === pid) : [];
+        if (pid && remain.length && typeof window.renderAlbum === 'function') {
+          window.renderAlbum(pid);   // 남은 버전으로 앨범 다시 그림
+        } else if (typeof window.goBack === 'function') {
+          window.goBack();           // 마지막 버전까지 지웠으면 뒤로
+        } else {
+          navigateTo('my-artist');
+        }
+      } catch (e) { console.warn('[deleteMyTrack] re-render album', e); }
+    }
   } catch (e) {
     alert('삭제 실패: ' + (e.message || e));
   }
