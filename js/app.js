@@ -13332,6 +13332,8 @@ function _mhStyle() {
 .mh-play:active{transform:scale(.94);}
 .mh-track{border-radius:28px;padding:14px;border:1px solid rgba(255,255,255,.05);margin-bottom:11px;}
 .mh-track-head{display:flex;align-items:center;gap:12px;}
+.mh-track-open{display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer;}
+.mh-track-open:active{opacity:.7;}
 .mh-state{font-size:8px;font-weight:800;padding:1px 6px;border-radius:6px;border:1px solid;white-space:nowrap;}
 .mh-track-title{font-size:12px;font-weight:900;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .mh-track-note{font-size:10px;color:rgba(255,255,255,.5);margin:4px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -13517,13 +13519,15 @@ function renderArtistHome(artistName) {
       return `
         <div class="mh-track mh-glass">
           <div class="mh-track-head">
-            ${coverTile('', tr.color, tr.cover, tr.title)}
-            <div style="flex:1;min-width:0;">
-              <div style="display:flex;align-items:center;gap:6px;">
-                <span class="mh-state" style="background:${stBg};color:${stCol};border-color:${stBd};">${stateLabel}</span>
-                <h3 class="mh-track-title">${esc(tr.title)}</h3>
+            <div class="mh-track-open" onclick="navigateTo('album:'+encodeURIComponent('${String(tr.pid).replace(/'/g,"\\'")}'))" title="${_t('앨범 열기 · 데모 관리/삭제','Open album · manage/delete demos')}">
+              ${coverTile('', tr.color, tr.cover, tr.title)}
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span class="mh-state" style="background:${stBg};color:${stCol};border-color:${stBd};">${stateLabel}</span>
+                  <h3 class="mh-track-title">${esc(tr.title)}</h3>
+                </div>
+                <p class="mh-track-note"><strong style="color:${tr.color};">${esc(cur.verLabel)} ${_t('에디션','edit')}</strong>${cur.desc ? ' · ' + esc(cur.desc) : ''}</p>
               </div>
-              <p class="mh-track-note"><strong style="color:${tr.color};">${esc(cur.verLabel)} ${_t('에디션','edit')}</strong>${cur.desc ? ' · ' + esc(cur.desc) : ''}</p>
             </div>
             <button class="mh-pbtn" onclick="playTrack('${cur.id}')" aria-label="play"><i class="ri-play-fill"></i></button>
           </div>
