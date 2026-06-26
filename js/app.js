@@ -5798,6 +5798,49 @@ const SHAPE_REMAP = { triangle: 'circle', star: 'circle', diamond: 'hexagon', pa
 // 테스트 팔레트 그대로 — 비비드 네온(핑크/시안/퍼플/주황/라임/레드핑크/틸/바이올렛/옐로/블루). 사용자 요청.
 const SHAPE_COLORS = ['#FF2EA0', '#00E5FF', '#B14BFF', '#FF9100', '#76FF03', '#FF4D6D', '#2EE6D6', '#9D4EDD', '#FFD166', '#4D9DFF'];
 
+// ── 장르 → 고정 색 (업로드 시 선택) ───────────────────────────────────────
+// 도형/플레이어/커버 색을 장르로 통일(같은 장르 = 같은 색). 장르는 tags 첫 칸에 저장되되
+// 도형 글(lines)에는 안 들어감(genre 제외). 장르 없는(기존) 곡은 곡 id 해시 색으로 폴백.
+const GENRES = [
+  { key: '발라드',  en: 'Ballad',   color: '#7C9CFF' },
+  { key: '댄스',    en: 'Dance',    color: '#36E0C8' },
+  { key: '힙합',    en: 'Hip-hop',  color: '#FF6B6B' },
+  { key: 'R&B',     en: 'R&B',      color: '#B06BFF' },
+  { key: '록',      en: 'Rock',     color: '#FF4D6D' },
+  { key: '인디',    en: 'Indie',    color: '#9DE05A' },
+  { key: '시티팝',  en: 'City Pop', color: '#FF9F45' },
+  { key: '재즈',    en: 'Jazz',     color: '#FFC94D' },
+  { key: 'EDM',     en: 'EDM',      color: '#00E5FF' },
+  { key: '트로트',  en: 'Trot',     color: '#FF7AC6' },
+  { key: '포크',    en: 'Folk',     color: '#8BD17C' },
+  { key: 'K-팝',    en: 'K-Pop',    color: '#5AA9FF' },
+];
+window.GENRES = GENRES;
+function _findGenre(s) {
+  if (!s) return null;
+  const v = String(s).trim().toLowerCase();
+  return GENRES.find(G => G.key.toLowerCase() === v || G.en.toLowerCase() === v) || null;
+}
+window._isGenreTag = function (t) { return !!_findGenre(t); };
+// 트랙의 장르 객체({key,en,color}) — track.genre 또는 태그 중 장르 매칭. 없으면 null.
+function genreOfTrack(track) {
+  if (!track) return null;
+  let g = _findGenre(track.genre);
+  if (g) return g;
+  const tags = Array.isArray(track.tags) ? track.tags : [];
+  for (let i = 0; i < tags.length; i++) { g = _findGenre(tags[i]); if (g) return g; }
+  return null;
+}
+window.genreOfTrack = genreOfTrack;
+// 트랙 색 — 장르 색 우선, 없으면 곡 id 해시(기존 동작). 도형·플레이어·커버 공통.
+function genreColorOf(track) {
+  const g = genreOfTrack(track);
+  if (g) return g.color;
+  const id = (track && track.id) || '';
+  return SHAPE_COLORS[(_hashSeed('shape-col:' + id) >>> 0) % SHAPE_COLORS.length];
+}
+window.genreColorOf = genreColorOf;
+
 function renderHome() {
   const db = window.DB.get();
   // Main exposure: master + pinned demo only
@@ -7297,8 +7340,8 @@ function renderShapes() {
     const { track, idx, pass } = entry;
     // 발견 도형 = 전부 동그라미(사용자 요청, 테스트와 동일). 기존 혼합 모양/리맵 대신 circle 고정.
     let shape = 'circle';
-    // 저장된 shapeColor 무시 → 스크린샷 팔레트에서만 (트랙 id 시드로 안정적). 사용자 요청.
-    const color = SHAPE_COLORS[(_hashSeed('shape-col:' + track.id) >>> 0) % SHAPE_COLORS.length];
+    // 색 = 장르 색(있으면) / 없으면 트랙 id 해시(기존). genreColorOf 공통.
+    const color = genreColorOf(track);
     const lines = track.lines || [track.title, track.artist, '클릭해서 들어봐!'];
     const safeLines = lines.map(l => (l || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
 
@@ -9087,6 +9130,13 @@ window.uwTagsPreview = function (raw) {
     if (e) e.textContent = tags[i] ? ('#' + tags[i]) : '';
   });
 };
+// 업로드 장르 선택 → 색 스와치 미리보기.
+window.uwGenrePreview = function (key) {
+  var sw = document.getElementById('up-genre-swatch');
+  if (!sw) return;
+  var g = (typeof _findGenre === 'function') ? _findGenre(key) : null;
+  sw.style.background = g ? g.color : '#333';
+};
 
 function renderUpload() {
   const db = window.DB.get();
@@ -9260,9 +9310,20 @@ function renderUpload() {
           <div class="form-note">${_i18n('가사를 적으면 노래와 함께 우리들의 벽에 자동 게시됩니다. 발매(마스터)는 가사가 필수예요.', 'Lyrics auto-post to the wall with your track; required for releases (masters).')}</div>
         </div>
         <div class="form-group">
+          <label><i class="ri-disc-line" style="color:var(--brand-color);"></i> ${_i18n('장르', 'Genre')} <span style="color:var(--text-secondary); font-weight:normal; font-size:12px;">${_i18n('(곡 색이 정해져요)', '(sets your color)')}</span></label>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <select class="form-control" id="up-genre" onchange="window.uwGenrePreview && uwGenrePreview(this.value)" style="flex:1;">
+              <option value="">${_i18n('장르 선택 (선택 안 함)', 'Pick a genre (optional)')}</option>
+              ${GENRES.map(G => `<option value="${G.key}">${_i18n(G.key, G.en)}</option>`).join('')}
+            </select>
+            <span id="up-genre-swatch" style="width:30px; height:30px; border-radius:50%; flex:0 0 auto; background:#333; border:2px solid rgba(255,255,255,.15);"></span>
+          </div>
+          <div class="form-note">${_i18n('도형·플레이어·커버 색이 장르 색으로 떠요. 안 골라도 돼요(곡별 색).', 'Shape, player & cover color follow the genre. Optional.')}</div>
+        </div>
+        <div class="form-group">
           <label><i class="ri-hashtag" style="color:var(--brand-color);"></i> ${_i18n('태그', 'Tags')} <span style="color:#ff6b6b;">${_i18n('(필수)', '(required)')}</span></label>
           <input type="text" class="form-control" id="up-tags" placeholder="${_t('예: #1982년 느낌 #funky #고2 기타과 음악', 'e.g. #1982 vibe #funky #11thGradeGuitar')}" oninput="window.uwTagsPreview && uwTagsPreview(this.value)" required>
-          <div class="form-note">${_i18n('장르·무드·학년·연도 등 자유롭게. #은 자동으로 붙어요.', 'Genre, mood, year, etc. — # is auto-added.')}</div>
+          <div class="form-note">${_i18n('무드·학년·연도 등 자유롭게(도형에 떠요). #은 자동으로 붙어요. 장르는 위에서 선택.', 'Mood, year, etc. (shown on the shape). # auto-added. Pick genre above.')}</div>
         </div>
 
         <!-- Distribution metadata — shown only when uploading a master -->
@@ -9601,10 +9662,15 @@ function renderUpload() {
       // 예: '#1982년 느낌 #funky' → ['1982년 느낌', 'funky']
       //     'rock, lofi'           → ['rock', 'lofi']
       //     '#rock,lofi #emo'      → ['rock', 'lofi', 'emo']
-      const tags = tagsRaw
+      const messageTags = tagsRaw
         .split(/[#,]/)                    // # 또는 , 로 split
         .map(s => s.trim())               // 공백 정리
         .filter(Boolean);                 // 빈 토큰 제외
+      // 장르(드롭다운) — 태그 맨 앞에 저장(색·알고리즘용). 도형 글(lines)에는 안 들어감.
+      const genreVal = (document.getElementById('up-genre')?.value || '').trim();
+      const tags = genreVal
+        ? [genreVal].concat(messageTags.filter(t => t.toLowerCase() !== genreVal.toLowerCase()))
+        : messageTags;
       const description = document.getElementById('up-description').value;
       const lyrics = (document.getElementById('up-lyrics')?.value || '').trim();
       const line1 = (document.getElementById('up-line1') || {}).value || '';
@@ -9688,7 +9754,8 @@ function renderUpload() {
           tags,
           shape: shapeEl ? shapeEl.value : 'circle',
           shapeColor: colorEl ? colorEl.value : '#FF4081',
-          lines: tags.slice(0, 3).map(_hashLine),   // 도형 낙서 입력 제거 → 태그 앞 3개가 발견 도형에 표시 (태그 통합)
+          lines: messageTags.slice(0, 3).map(_hashLine),   // 도형 글 = 메시지 태그 앞 3개(장르 제외)
+          genre: genreVal || undefined,   // 로컬 편의(저장은 tags[0]). 색·알고리즘은 genreOfTrack 이 tags 로도 해석
           // Distribution metadata (admin ZIP uses these). Empty for demos.
           distArtist,
           releaseDate,
@@ -13459,7 +13526,7 @@ function renderArtistHome(artistName) {
     let idx = window.__mhState[pid];
     if (idx == null || idx >= demos.length || idx < 0) idx = demos.length - 1;
     const lastTime = new Date(vs[vs.length - 1].createdAt || 0).getTime();
-    return { pid, title, hasFinal, color: colorFor(title), cover: rep.cover || '', lines: rep.lines || [], demos, currentDemoIdx: idx, lastTime };
+    return { pid, title, hasFinal, color: genreColorOf(rep), cover: rep.cover || '', lines: rep.lines || [], demos, currentDemoIdx: idx, lastTime };
   }).sort((a, b) => b.lastTime - a.lastTime);
 
   // 통계
@@ -13493,7 +13560,7 @@ function renderArtistHome(artistName) {
   let latestHtml = '';
   if (latest) {
     const lt = cleanTitle(latest.title);
-    const lc = colorFor(lt);
+    const lc = genreColorOf(latest);
     const _dmL = /^demo\s*(\d+)$/i.exec((latest.version || '').trim()) || /demo\s*(\d+)/i.exec((latest.versionLabel || '').trim());
     const lLabel = _dmL ? _t('데모 ' + _dmL[1], 'Demo ' + _dmL[1]) : (latest.isDemo ? _t('데모', 'Demo') : 'MASTER');
     latestHtml = `
@@ -15860,9 +15927,9 @@ window.playTrack = function (trackId, source) {
 
   globalPlayer.classList.add('active');
 
-  // 커버 이미지 대신 '곡 색 디스크'로 통일 (Coming Soon 등 대체 — 사용자 요청).
-  // 색은 발견 도형과 동일 규칙(트랙 id 해시 → SHAPE_COLORS). --player-color 로 CSS 가 디스크/펄스에 사용.
-  const _discColor = SHAPE_COLORS[(_hashSeed('disc:' + track.id) >>> 0) % SHAPE_COLORS.length];
+  // 커버 이미지 대신 '곡 색 디스크'로 통일 (Coming Soon 등 대체).
+  // 색 = 장르 색(있으면) / 없으면 트랙 id 해시 — 발견 도형과 동일(genreColorOf). --player-color 로 디스크/펄스.
+  const _discColor = genreColorOf(track);
   globalPlayer.style.setProperty('--player-color', _discColor);
   const _coverEl = document.getElementById('player-cover');
   _coverEl.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';   // 1x1 투명 → CSS 배경(디스크)만 보이게
