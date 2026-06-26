@@ -3557,7 +3557,8 @@ window.translatePost = async function (id, btn) {
 // 더보기 메뉴 — 내 글이면 삭제, 아니면 공유
 window._threadPostMenu = function (id, isMine) {
   if (isMine) {
-    if (confirm('이 글을 삭제할까요?') && typeof deleteWallNote === 'function') deleteWallNote(id);
+    // 삭제 확인은 deleteWallNote 안에서 1회만(이중 confirm 제거).
+    if (typeof deleteWallNote === 'function') deleteWallNote(id);
   } else {
     _threadShare(id);
   }
@@ -5267,7 +5268,7 @@ window.clearAllUniverseNotes = async function () {
 };
 
 window.deleteWallNote = async function(noteId) {
-  if (!confirm('이 포스트잇을 지울까요?')) return;
+  if (!confirm(_t('이 글을 삭제할까요?', 'Delete this post?'))) return;
   try {
     if (window.Walls) {
       await window.Walls.delete(noteId);
