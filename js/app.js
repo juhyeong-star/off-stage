@@ -13343,6 +13343,10 @@ function _mhStyle() {
 .mh-node-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;transition:all .25s;}
 .mh-node-date{font-size:8px;margin-top:4px;transition:color .2s;}
 .mh-node-bar{flex:1;height:1.5px;background:rgba(255,255,255,.1);margin:-12px 4px 0;}
+.mh-node-add .mh-add-dot{background:rgba(167,139,250,.08);border:1.5px dashed rgba(167,139,250,.55);color:#a78bfa;}
+.mh-node-add .mh-add-dot i{font-size:13px;}
+.mh-node-add:hover .mh-add-dot{background:rgba(167,139,250,.2);border-color:#a78bfa;box-shadow:0 0 10px rgba(167,139,250,.4);}
+.mh-node-add .mh-node-date{color:rgba(167,139,250,.75)!important;}
 .mh-empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:48px 0;}
 @media(min-width:769px){.mh-page{max-width:520px;margin:0 auto;}}
 </style>`;
@@ -13500,6 +13504,17 @@ function renderArtistHome(artistName) {
           + `<div class="mh-node-dot" style="background:${on ? tr.color : 'rgba(255,255,255,.15)'};color:${on ? '#000' : 'rgba(255,255,255,.7)'};box-shadow:${on ? '0 0 10px ' + tr.color : 'none'};">${d.label}</div>`
           + `<span class="mh-node-date" style="color:${on ? '#fff' : 'rgba(255,255,255,.4)'};">${d.date}</span></div>`;
       }).join('<div class="mh-node-bar"></div>');
+      // 본인 페이지면 마지막에 '+' 노드(D{다음번호}) — 그 곡의 다음 데모 올리기. 미발매(데모 단계)일 때만.
+      // 보는 사람에겐 안 보임(지금처럼 D1·D2만).
+      let addNode = '';
+      if (isSelf && !tr.hasFinal) {
+        const _dnums = tr.demos.filter(d => !d.isFinal).map(d => { const mm = /^D(\d+)$/.exec(d.label); return mm ? parseInt(mm[1], 10) : 0; });
+        const nextNum = (_dnums.length ? Math.max(..._dnums) : 0) + 1;
+        addNode = '<div class="mh-node-bar"></div>'
+          + `<div class="mh-node mh-node-add" onclick="event.stopPropagation(); quickUploadDemoToProject('${esc(tr.pid)}')" title="${_t('다음 데모 올리기','Upload next demo')}">`
+          + '<div class="mh-node-dot mh-add-dot"><i class="ri-add-line"></i></div>'
+          + `<span class="mh-node-date">D${nextNum}</span></div>`;
+      }
       return `
         <div class="mh-track mh-glass">
           <div class="mh-track-head">
@@ -13513,7 +13528,7 @@ function renderArtistHome(artistName) {
             </div>
             <button class="mh-pbtn" onclick="playTrack('${cur.id}')" aria-label="play"><i class="ri-play-fill"></i></button>
           </div>
-          <div class="mh-nodes">${nodes}</div>
+          <div class="mh-nodes">${nodes}${addNode}</div>
         </div>`;
     }).join('');
     histHtml = `
