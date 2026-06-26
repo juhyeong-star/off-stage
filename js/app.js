@@ -15544,77 +15544,29 @@ window.exitFolderToUniverse = function() {
     return;
   }
 
-  // 가드 — 백그라운드 refresh 가 한창 움직이는 도형들을 wipe 못 하게
+  // 단일 크로스페이드 — 폴더 내용 페이드아웃 → 전체 우주 렌더 → 페이드인. (들어갈 때와 같은 모션 하나.)
   window.__universeFolderEntering = true;
-
-  // 1) 현재 폴더 안 아이템들의 HTML 을 스냅샷 — 뒤에 outgoing 으로 띄울 용도
-  const folderItemsSnapshot = uni.innerHTML;
-
-  // 2) 폴더 모드 해제 후 renderUniverse 호출 — 일반 우주 아이템들이 innerHTML 로 들어옴
-  window.__universeFolderId = null;
-  window.__universeFolderHistoryPushed = false;
-  if (typeof window.renderUniverse === 'function') window.renderUniverse(true);   // 나가기 애니 중이라 force
-
-  // 3) 새로 그려진 .shapes-universe 에 접근. async 라도 첫 await 안 거치는 path 라
-  //    innerHTML 은 이미 동기 적용됨 (universeLoadedOnce 인 케이스).
-  const newUni = document.querySelector('.shapes-universe.my-universe');
-  if (!newUni) {
-    window.__universeFolderEntering = false;
-    return;
-  }
-
-  // 4) 폴더 아이템들을 outgoing 레이어로 부활시켜 위에 띄움 (왼쪽 위로 사라질 것)
-  const outgoing = document.createElement('div');
-  outgoing.className = 'univ-outgoing';
-  outgoing.style.cssText = 'position:absolute; inset:0; pointer-events:none; z-index:2; transition:transform 0.62s cubic-bezier(0.22,0.9,0.3,1), opacity 0.55s ease;';
-  outgoing.innerHTML = folderItemsSnapshot;
-  newUni.appendChild(outgoing);
-
-  // 5) 새 우주 아이템들을 오른쪽 아래에 숨겨두기 (애니 시작 위치)
-  const newItems = Array.from(newUni.querySelectorAll(':scope > .floating-shape'));
-  newItems.forEach(el => {
-    el.classList.add('drag-paused');   // 떠다니는 애니 일시정지
-    el.style.transition = 'none';
-    el.style.transformOrigin = 'center';
-    el.style.transform = 'translate(42vw, 38vh) scale(0.3)';
-    el.style.opacity = '0';
-    el.style.pointerEvents = 'none';
-  });
-
-  // 6) 한두 프레임 뒤 양쪽 동시 트리거
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    // outgoing(폴더 안에 있던 애들) → 왼쪽 위로 사라짐
-    outgoing.style.transform = 'translate(-42vw, -38vh) scale(0.3)';
-    outgoing.style.opacity = '0';
-    // incoming(밖에 있던 우주 아이템들) → 오른쪽 아래에서 제자리로
-    newItems.forEach(el => {
-      el.style.transition = 'transform 0.62s cubic-bezier(0.22,0.9,0.3,1), opacity 0.55s ease';
-      el.style.transform = '';
-      el.style.opacity = '';
-    });
-  }));
-
-  // 7) 끝나면 outgoing 레이어 제거 + 새 아이템들 떠다니는 애니 복원
+  uni.style.transition = 'opacity 0.18s ease';
+  uni.style.opacity = '0';
   setTimeout(() => {
-    if (outgoing.parentElement) outgoing.remove();
-    newItems.forEach(el => {
-      el.classList.remove('drag-paused');
-      el.style.transition = '';
-      el.style.transform = '';
-      el.style.opacity = '';
-      el.style.pointerEvents = '';
-    });
+    window.__universeFolderId = null;
+    window.__universeFolderHistoryPushed = false;
+    if (typeof window.renderUniverse === 'function') window.renderUniverse(true);
+    const nu = document.querySelector('.shapes-universe.my-universe');
+    if (nu) {
+      nu.style.opacity = '0';
+      nu.style.transition = 'opacity 0.24s ease';
+      requestAnimationFrame(() => requestAnimationFrame(() => { nu.style.opacity = '1'; }));
+    }
     window.__universeFolderEntering = false;
-  }, 640);
+  }, 180);
 };
 
-// 폴더 진입 — 내 우주를 '벗어나지 않고' 그 자리에서 옆 우주로 패닝.
-// 같은 별 하늘 위에서: 원래 애들은 오른쪽 아래로 미끄러져 사라지고,
-// 폴더(옆동네) 애들이 왼쪽 위에서 날아온다. 끝나면 헤더만 바꿔 폴더 모드로(페이지 이동 X).
+// 폴더 진입 — 페이지 이동 없이 그 자리에서 폴더 모드로. 모션은 '단일 크로스페이드'(페이드 하나).
+// (예전엔 방향성 팬: 원래 애들 슬라이드 아웃 + 폴더 애들 위에서 날아옴 → floatDrift 와 겹쳐 어색 →
+//  사용자 요청대로 페이드 하나로 통일.)
 window.enterFolderWithAnim = function(folderId, anchorEl) {
-  // ⚠️ 진입 애니메이션 도중에 백그라운드 refresh 가 renderUniverse 를 다시 부르면
-  // 한창 움직이던 도형들이 wipe 되어 '왼쪽 위에서 내려오는' 모션이 안 보임.
-  // 진입 시작 순간부터 가드 켜고, 완료 후 끄기.
+  // ⚠️ 진입 페이드 도중 백그라운드 refresh 의 renderUniverse 재렌더를 막는 가드(완료 후 끔).
   window.__universeFolderEntering = true;
   // history 엔트리 push → 네이티브 뒤로가기(오른쪽 스와이프)가 이전 탭으로 새지 않고 폴더만 나가게.
   // (popstate 핸들러가 __universeFolderId 보고 exitFolderToUniverse 처리.)
@@ -15627,92 +15579,30 @@ window.enterFolderWithAnim = function(folderId, anchorEl) {
   // 폴더 줄(상단 고정)은 .shapes-universe 캔버스 바깥 형제라 진입 애니에 안 딸려감 →
   // 폴더에 들어가면 폴더들도 같이 사라지도록 페이드아웃 후 제거(나갈 때 renderUniverse 가 새로 그림).
   const _frow = document.querySelector('.universe-folder-row');
-  if (_frow) { _frow.style.transition = 'opacity 0.3s ease'; _frow.style.opacity = '0'; setTimeout(() => { try { _frow.remove(); } catch (_) {} }, 320); }
+  if (_frow) { _frow.style.transition = 'opacity 0.18s ease'; _frow.style.opacity = '0'; }
   const uni = document.querySelector('.shapes-universe.my-universe');
   const built = (typeof _folderItemsHtml === 'function') ? _folderItemsHtml(folderId) : null;
-  // 클릭한 폴더 요소 — 인자가 없으면 DOM 에서 찾기
-  const _enteringFolderEl = anchorEl || (uni && uni.querySelector('[data-folder-id="' + folderId + '"]'));
   if (!uni || !built || !built.html) {
     window.__universeFolderId = folderId;
     window.__universeFolderEntering = false;
-    if (typeof window.renderUniverse === 'function') window.renderUniverse();
+    if (typeof window.renderUniverse === 'function') window.renderUniverse(true);
     return;
   }
 
-  // 헤더는 아이템 패닝과 '겹쳐서' 부드럽게 크로스페이드 (뚝딱 바뀌는 것 방지)
-  const _db = window.DB.get();
-  const _pl = (_db.playlists || []).find(p => p.id === folderId)
-        || (Array.isArray(window.__playlists) ? window.__playlists.find(p => p.id === folderId) : null);
-  const _title = _shEsc((_pl && _pl.title) || '폴더');
-  const head = document.getElementById('universe-head');
-  if (head) {
-    head.style.transition = 'opacity 0.22s ease';
-    head.style.opacity = '0';
-    setTimeout(() => {
-      head.style.textAlign = 'center';
-      head.innerHTML = _folderHeadHtml(folderId, built, _title);
-      requestAnimationFrame(() => { head.style.opacity = '1'; });
-    }, 220);
-  }
-
-  // 1) 원래 우주 애들 → 오른쪽 아래로 미끄러지며 사라짐.
-  //    단, 클릭한 폴더 본인은 그대로 두고 페이드아웃만 (시각적 anchor).
-  //    ⚠️ 떠다니는 floatDrift 가 매 프레임 transform 을 바꾸는 중이라, 그냥
-  //    animation:none 으로 끊으면 도형이 identity 위치로 튕긴 뒤 슬라이드해서
-  //    움직임이 부자연스러움. 현재 transform 을 캡처해 그대로 박은 뒤 (reflow)
-  //    목적지로 transition → 끊김 없이 자연스럽게 이어짐.
-  //    ⚡ 도형마다 getComputedStyle + offsetWidth(강제 reflow)를 하면 N번 동기 리플로우라
-  //    모바일에서 '툭툭' 끊김 → 읽기 일괄 → 시작상태 쓰기 일괄 → reflow 1회 → 목적지 쓰기 일괄로 배치.
-  const _outShapes = Array.prototype.slice.call(uni.querySelectorAll('.floating-shape'));
-  const _outCur = _outShapes.map(el => {              // (a) 읽기 일괄 — 리플로우 한 번으로 끝
-    const t = getComputedStyle(el).transform;
-    return (t && t !== 'none') ? t : '';
-  });
-  _outShapes.forEach((el, i) => {                     // (b) 시작 상태 쓰기 — 현재 위치에 박기(점프 방지)
-    el.style.animation = 'none';
-    el.style.willChange = 'transform, opacity';
-    el.style.transformOrigin = 'center';
-    if (_outCur[i]) el.style.transform = _outCur[i];
-  });
-  void uni.offsetWidth;                               // (c) 강제 reflow 1회 — 시작 상태 commit
-  _outShapes.forEach((el, i) => {                     // (d) 목적지로 transition 쓰기 일괄
-    if (el === _enteringFolderEl) {
-      // 클릭한 폴더는 그 자리에서 살짝 부풀며 페이드아웃 (시각적 anchor)
-      el.style.transition = 'opacity 0.45s ease, transform 0.45s cubic-bezier(0.22, 0.9, 0.3, 1)';
-      el.style.transform = (_outCur[i] ? _outCur[i] + ' ' : '') + 'scale(1.06)';
-    } else {
-      // 오른쪽 아래로 미끄러지며 사라짐 — incoming 과 동일 톤(ease-out)
-      el.style.transition = 'transform 0.7s cubic-bezier(0.22, 0.9, 0.3, 1), opacity 0.55s ease';
-      el.style.transform = 'translate(42vw, 38vh) scale(0.3)';
-    }
-    el.style.opacity = '0';
-    el.style.pointerEvents = 'none';
-  });
-
-  // 2) 옆동네(폴더) 애들 → 왼쪽 위에서 중앙으로 한 덩어리로 날아옴 (동시에)
-  const incoming = document.createElement('div');
-  incoming.className = 'univ-incoming';
-  incoming.style.cssText = 'position:absolute; inset:0; pointer-events:none; transform:translate(-42vw,-38vh) scale(0.34); opacity:0; transition:transform 0.62s cubic-bezier(0.22,0.9,0.3,1), opacity 0.55s ease;';
-  incoming.innerHTML = built.html;
-  uni.appendChild(incoming);
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    incoming.style.transform = 'none';
-    incoming.style.opacity = '1';
-  }));
-
-  // 3) 애니 끝나면 — 페이지 이동 없이 그 자리에서 폴더 모드로 전환(아이템 정리만)
+  // 단일 크로스페이드 — 현재 우주 페이드아웃 → 폴더 우주 렌더(_renderFolderUniverse, 헤더 포함) → 페이드인.
+  uni.style.transition = 'opacity 0.18s ease';
+  uni.style.opacity = '0';
   setTimeout(() => {
     window.__universeFolderId = folderId;
-    window.__universeFolderEntering = false;   // 가드 해제
-    // 빠져나간 원래 애들 제거 (incoming 은 유지)
-    Array.from(uni.children).forEach(ch => {
-      if (ch !== incoming && ch.classList && ch.classList.contains('floating-shape')) ch.remove();
-    });
-    incoming.style.pointerEvents = '';  // 폴더 애들 클릭 가능하게
-    uni.style.height = built.height + 'px';
-    // 폴더 안 아이템 드래그 이동 가능하게 (탭은 인라인 onclick=쇼츠)
-    if (typeof initShapeDrag === 'function') initShapeDrag();
-  }, 640);
+    if (typeof _renderFolderUniverse === 'function') _renderFolderUniverse(folderId);
+    const nu = document.querySelector('.shapes-universe.my-universe');
+    if (nu) {
+      nu.style.opacity = '0';
+      nu.style.transition = 'opacity 0.24s ease';
+      requestAnimationFrame(() => requestAnimationFrame(() => { nu.style.opacity = '1'; }));
+    }
+    window.__universeFolderEntering = false;
+  }, 180);
 };
 
 window.createAndAddPlaylist = async function() {

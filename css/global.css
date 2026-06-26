@@ -806,6 +806,10 @@ body.is-universe-route .shapes-universe.my-universe {
    를 가지지 않거나 투명해야 함. universe 라우트일 때 body 배경 검정으로 (별 layer
    와 같은 검정) → 매끄럽게 이어짐, 콘텐츠는 그 위에. */
 body.is-universe-route { background: #000; }
+/* 당겨서 새로고침(pull-to-refresh)·세로 오버스크롤 바운스 차단 — SPA라 새로고침 불필요.
+   즐겨찾기(내 우주)는 문서(html/body)가 스크롤돼서 '스와이프 시 위가 내려오던' 바운스가 여기서 났음.
+   (발견은 fixed 컨테이너에 이미 overscroll:contain 있음 — 무영향.) */
+html, body { overscroll-behavior-y: contain; }
 body.is-universe-route #app-content,
 body.is-universe-route #universe-head {
   position: relative;
