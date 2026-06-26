@@ -5841,6 +5841,69 @@ function genreColorOf(track) {
 }
 window.genreColorOf = genreColorOf;
 
+// ── 추천 알고리즘 (콘텐츠 기반 + 팔로우 부스트, 백엔드 ML 없음) ──────────────
+// 내 취향(응원·팔로우한 장르/태그/아티스트)으로 '모을 데모'를 점수화해 정렬.
+// '모을 카드'·추천 섹션·자동재생에 재사용. allTracks=후보풀, cheers=내 응원(track_id 포함), followed=[{name}].
+window.recommendDemos = function (allTracks, cheers, followed, opts) {
+  allTracks = Array.isArray(allTracks) ? allTracks : [];
+  cheers = Array.isArray(cheers) ? cheers : [];
+  followed = Array.isArray(followed) ? followed : [];
+  opts = opts || {};
+  const limit = opts.limit || 6;
+  const myName = opts.myName || null;
+  const cheeredIds = new Set(cheers.map(c => c && c.track_id).filter(Boolean));
+  const followedNames = new Set(followed.map(a => a && a.name).filter(Boolean));
+
+  // 1) 취향 프로필 — 응원한 곡의 장르/태그/아티스트 가중치
+  const genreW = {}, tagW = {}, artistW = {};
+  const bump = (o, k, w) => { if (k != null && k !== '') o[k] = (o[k] || 0) + w; };
+  cheers.forEach(c => {
+    const t = allTracks.find(x => x && x.id === c.track_id);
+    if (!t) { bump(artistW, c && c.artist_name, 1); return; }
+    const g = genreOfTrack(t);
+    if (g) bump(genreW, g.key, 3);
+    (Array.isArray(t.tags) ? t.tags : []).forEach(tag => bump(tagW, tag, 1));
+    bump(artistW, t.artist, 2);
+  });
+  followedNames.forEach(n => bump(artistW, n, 2));
+  const hasTaste = !!(Object.keys(genreW).length || Object.keys(tagW).length || Object.keys(artistW).length);
+
+  // 발매(마스터) 있는 프로젝트 제외 — '키울 데모'가 아니므로.
+  const finalProjects = new Set(allTracks.filter(t => t && !t.isDemo).map(t => t.projectId || ('proj_' + t.id)));
+
+  // 2) 후보 = 미발매 데모 · 내 곡 아님 · 이미 응원 안 함 · 프로젝트당 1개
+  const seen = {};
+  const candidates = allTracks.filter(t => {
+    if (!t || !t.isDemo) return false;
+    const pid = t.projectId || ('proj_' + t.id);
+    if (finalProjects.has(pid)) return false;
+    if (myName && t.artist === myName) return false;
+    if (cheeredIds.has(t.id)) return false;
+    if (seen[pid]) return false; seen[pid] = 1;
+    return true;
+  });
+
+  // 3) 점수 — 장르>아티스트>태그 + 팔로우/최신 부스트
+  const now = (typeof Date !== 'undefined' && Date.now) ? Date.now() : 0;
+  const scored = candidates.map(t => {
+    let s = 0;
+    const g = genreOfTrack(t);
+    if (g && genreW[g.key]) s += genreW[g.key] * 4;
+    (Array.isArray(t.tags) ? t.tags : []).forEach(tag => { if (tagW[tag]) s += tagW[tag] * 2; });
+    if (t.artist && artistW[t.artist]) s += artistW[t.artist] * 3;
+    if (followedNames.has(t.artist)) s += 5;
+    if (now) { const age = (now - new Date(t.createdAt || 0).getTime()) / 86400000; if (age >= 0 && age < 30) s += (30 - age) / 30 * 2; }
+    s += (_hashSeed('rec:' + (t.id || '')) % 100) / 1000;   // 결정적 타이브레이크
+    return { t, s };
+  });
+  scored.sort((a, b) => b.s - a.s);
+
+  // 취향 전무(신규 유저)면 최신 데모 폴백
+  let picks = hasTaste ? scored.map(x => x.t)
+    : candidates.slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  return picks.slice(0, limit);
+};
+
 function renderHome() {
   const db = window.DB.get();
   // Main exposure: master + pinned demo only
@@ -10310,20 +10373,26 @@ async function _renderProfileImpl() {
       return `<div class="ma-artist" onclick="navigateTo('artist:${encodeURIComponent(nm)}')"><img class="ma-aav" src="${maEsc(av)}" alt=""><div class="ma-an">${maEsc(nm)}</div></div>`;
     }).join('') : `<div class="ma-empty">${_t('관심 아티스트를 팔로우해보세요','Follow artists you like')}</div>`;
 
-    // 🔥 내 아티스트의 새 데모 (팔로우한 아티스트의 최근 데모 — 응원 시작점, 휑한 페이지 채움)
-    const followedNameSet = new Set(followedArtists.map(a => a && a.name).filter(Boolean));
+    // 🔥 모을 카드 = 취향 기반 추천 (응원·팔로우한 장르/태그/아티스트 점수화). 폴백=팔로우 아티스트 데모.
     const cheeredTrackIds = new Set(mySentCheers.map(c => c && c.track_id).filter(Boolean));
-    const newSeen = {};
-    const newDemos = allTracks
-      .filter(t => t && t.isDemo && followedNameSet.has(t.artist))
-      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-      .filter(t => { const pid = t.projectId || ('proj_' + t.id); if (newSeen[pid]) return false; newSeen[pid] = 1; return true; })
-      .slice(0, 6);
+    let newDemos = [];
+    try {
+      newDemos = window.recommendDemos(allTracks, mySentCheers, followedArtists, { limit: 6, myName: (maMe && maMe.name) || null });
+    } catch (e) { console.warn('[profile] recommend', e); }
+    if (!newDemos.length) {
+      const followedNameSet = new Set(followedArtists.map(a => a && a.name).filter(Boolean));
+      const newSeen = {};
+      newDemos = allTracks
+        .filter(t => t && t.isDemo && followedNameSet.has(t.artist))
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+        .filter(t => { const pid = t.projectId || ('proj_' + t.id); if (newSeen[pid]) return false; newSeen[pid] = 1; return true; })
+        .slice(0, 6);
+    }
     const collectCards = newDemos.map(t => {
       const ti = maTitle(t.title, t.artist);
       const p = maProjOf(t);
       const already = cheeredTrackIds.has(t.id);
-      return `<div class="ma-card" style="--cc:${maColor(ti)}" onclick="navigateTo('song:${t.id}')">
+      return `<div class="ma-card" style="--cc:${genreColorOf(t)}" onclick="navigateTo('song:${t.id}')">
         <div class="ma-card-in"><div class="ma-card-art"><span class="ma-card-orb"></span></div>
         <div class="ma-card-n">${maEsc(ti)}</div><div class="ma-card-s" style="color:${already ? '#9DE0B4' : '#FB6F92'}">${already ? '🌱 ' + _t('응원 중','Cheering') : '💗 ' + _t('응원','Cheer')}</div></div>
       </div>`;
@@ -10393,7 +10462,7 @@ async function _renderProfileImpl() {
           <div class="ma-grid">${binderCards}</div>
         </div>
         ${collectCards ? `<div class="ma-sec">
-          <div class="ma-sec-t"><i class="ri-add-circle-fill" style="color:#FB6F92"></i> ${_t('모을 카드','Cards to collect')}</div>
+          <div class="ma-sec-t"><i class="ri-add-circle-fill" style="color:#FB6F92"></i> ${_t('모을 카드','Cards to collect')} <span class="ct">✨ ${_t('취향 추천','For you')}</span></div>
           <div class="ma-grid">${collectCards}</div>
         </div>` : ''}
         <div class="ma-sec">
