@@ -9097,7 +9097,11 @@ window.uwUpGo = function (step) {
 window.uwUpBack = function () { window.uwUpGo(window.__uwFormBack || 'kiosk'); };
 window.uwUpPick = function (what) {
   var click = function (sel) { var el = document.querySelector('#uploadWizard ' + sel); if (el) el.click(); };
-  if (what === 'release') { click('[data-version-type="master"]'); window.__uwFormBack = 'kiosk'; window.uwUpGo('form'); }
+  if (what === 'release') {
+    // 발매는 아직 런칭 전 — 막고 '준비 중' 안내. (지금은 데모만)
+    if (typeof showToast === 'function') showToast(_t('발매는 아직 준비 중이에요 🛠️ 지금은 데모만 올릴 수 있어요', 'Release is coming soon — demos only for now'));
+    return;
+  }
   else if (what === 'demo') { click('[data-version-type="demo"]'); window.uwUpGo('dchoice'); }
   else if (what === 'new') { click('[data-proj-choice="new"]'); window.__uwFormBack = 'dchoice'; window.uwUpGo('form'); }
   else if (what === 'existing') { click('[data-proj-choice="existing"]'); window.__uwFormBack = 'dchoice'; window.uwUpGo('form'); }
@@ -9201,7 +9205,7 @@ function renderUpload() {
         <h1 style="text-align:center;margin:8px 0 2px;">${_i18n('무엇을 올릴까요?','What are you uploading?')}</h1>
         <p style="text-align:center;color:var(--text-secondary);font-size:13px;margin:0;">${_i18n('탭해서 선택하세요','Tap to choose')}</p>
         <div class="uw-kgrid">
-          <button type="button" class="uw-kbtn uw-krel" onclick="uwUpPick('release')"><span class="uw-knum">1</span><span class="uw-kic"><i class="ri-album-line"></i></span><span class="uw-kt">${_i18n('발매','Release')}</span><span class="uw-ken">RELEASE</span><span class="uw-kd">${_i18n('완성된 곡<br>자세히','Finished<br>full details')}</span></button>
+          <button type="button" class="uw-kbtn uw-krel uw-soon" onclick="uwUpPick('release')" style="opacity:.5; position:relative;"><span class="uw-knum">1</span><span class="uw-kic"><i class="ri-album-line"></i></span><span class="uw-kt">${_i18n('발매','Release')}</span><span class="uw-ken">RELEASE</span><span class="uw-kd">${_i18n('준비 중<br>곧 열려요','Coming soon')}</span><span style="position:absolute; top:8px; right:8px; background:#FFC94D; color:#06140C; font-size:9px; font-weight:900; padding:3px 8px; border-radius:999px; letter-spacing:.02em;">${_i18n('준비 중','SOON')}</span></button>
           <button type="button" class="uw-kbtn uw-kdemo" onclick="uwUpPick('demo')"><span class="uw-knum">2</span><span class="uw-kic"><i class="ri-mic-2-line"></i></span><span class="uw-kt">${_i18n('데모','Demo')}</span><span class="uw-ken">DEMO</span><span class="uw-kd">${_i18n('작업 중인 곡<br>가볍게','Work in progress<br>quick')}</span></button>
         </div>
       </div>
@@ -9619,6 +9623,12 @@ function renderUpload() {
       // Determine upload type from new two-tier state
       const state = getUploadState();
       const isFinal = state.isFinal;
+      // 발매(마스터)는 아직 런칭 전 — 어떤 경로로 와도 차단(데모만 허용).
+      if (isFinal) {
+        if (typeof showToast === 'function') showToast(_t('발매는 아직 준비 중이에요 🛠️ 지금은 데모만 올릴 수 있어요', 'Release is coming soon — demos only for now'));
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '동의하고 업로드 완료하기'; }
+        return;
+      }
       const versionLabel = (verLabelInput.value || '').trim() || (isFinal ? 'Final' : 'Demo 1');
 
       // master_solo  → no project context, brand new projectId
