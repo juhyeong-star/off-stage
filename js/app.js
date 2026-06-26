@@ -7190,10 +7190,11 @@ function renderShapes() {
   // 트랙 목록이 바뀌었을 때만 다시 그려서 무한루프 방지.
   if (window.Tracks && window.Tracks.refreshInto && !window.__shapesRefreshing) {
     window.__shapesRefreshing = true;
-    const beforeIds = (db.tracks || []).map(t => t && t.id).join('|');
+    // 정렬해서 비교 → 순서만 바뀐 경우(서버가 같은 곡을 다른 순서로 반환)엔 재렌더 안 함(불필요한 끊김 방지).
+    const beforeIds = (db.tracks || []).map(t => t && t.id).sort().join('|');
     window.Tracks.refreshInto(window.DB.get())
       .then(() => {
-        const afterIds = (window.DB.get().tracks || []).map(t => t && t.id).join('|');
+        const afterIds = (window.DB.get().tracks || []).map(t => t && t.id).sort().join('|');
         if (currentView === 'shapes' && afterIds !== beforeIds) renderShapes();
       })
       .catch(e => console.warn('[shapes] bg refresh', e))
@@ -7443,7 +7444,16 @@ window.__shapesPhys = window.__shapesPhys || { raf: 0, items: [] };
 function stopShapesPhysics() {
   const P = window.__shapesPhys;
   if (P.raf) { cancelAnimationFrame(P.raf); P.raf = 0; }
-  if (P.items) P.items.forEach(b => { try { delete b.el.__phys; b.el.classList.remove('phys-shape'); } catch (_) {} });
+  // 곡 id별 마지막 위치/속도를 저장 → 배경 새로고침으로 renderShapes 가 다시 그려도
+  // 도형이 씨드 시작점으로 '툭' 되돌아가지 않고 이어서 떠다니게(startShapesPhysics 가 복원).
+  window.__shapePos = window.__shapePos || {};
+  if (P.items) P.items.forEach(b => {
+    try {
+      const k = b.el && b.el.dataset && b.el.dataset.trackId;
+      if (k) window.__shapePos[k] = { x: b.x, y: b.y, vx: b.vx, vy: b.vy };
+      delete b.el.__phys; b.el.classList.remove('phys-shape');
+    } catch (_) {}
+  });
   P.items = [];
 }
 window.stopShapesPhysics = stopShapesPhysics;
@@ -7466,20 +7476,31 @@ function startShapesPhysics(field, viewport) {
   const cellW = fieldW0 / cols;
   function _h(n) { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); }  // 결정적 0~1
   const BASE = 0.9;                                        // 기본 드리프트 속도(테스트처럼 계속 떠다님)
+  window.__shapePos = window.__shapePos || {};
   const items = els.map((el, idx) => {
     const sc = parseFloat((el.style.getPropertyValue('--scale') || '1')) || 1;
     el.style.animation = 'none';                           // floatDrift 끔 — 물리가 위치를 몲
     el.style.transition = 'none';
     const w = el.offsetWidth * sc, h = el.offsetHeight * sc;
     const col = idx % cols, row = Math.floor(idx / cols);
-    const x = col * cellW + 4 + _h(idx * 2 + 1) * Math.max(4, cellW - w - 8);
-    const y = row * cellH + 4 + _h(idx * 2 + 3) * Math.max(4, cellH - h - 8);
+    let x = col * cellW + 4 + _h(idx * 2 + 1) * Math.max(4, cellW - w - 8);
+    let y = row * cellH + 4 + _h(idx * 2 + 3) * Math.max(4, cellH - h - 8);
+    const ang = _h(idx + 7) * Math.PI * 2;                 // 결정적 방향
+    let vx = Math.cos(ang) * BASE, vy = Math.sin(ang) * BASE;
+    // 재렌더(배경 새로고침 등) 시 같은 곡의 직전 위치/속도를 복원 → 씨드 시작점으로 '툭' 리셋 방지.
+    // 새 곡(캐시 없음)만 씨드 위치에서 시작. 화면 밖 좌표는 필드 안으로 클램프.
+    const _pk = el.dataset && el.dataset.trackId;
+    const _pc = _pk && window.__shapePos[_pk];
+    if (_pc) {
+      x = Math.max(0, Math.min(_pc.x, Math.max(0, fieldW0 - w)));
+      y = Math.max(0, Math.min(_pc.y, Math.max(0, fieldH - h)));
+      if (typeof _pc.vx === 'number') { vx = _pc.vx; vy = _pc.vy; }
+    }
     // 위치를 transform(translate3d)으로 — GPU 합성이라 left/top 리플로우/리페인트 회피(모바일 끊김 해결).
     el.style.left = '0'; el.style.top = '0';
     el.style.willChange = 'transform';
     el.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)' + (sc !== 1 ? ' scale(' + sc + ')' : '');
-    const ang = _h(idx + 7) * Math.PI * 2;                 // 결정적 방향
-    const item = { el, x, y, w, h, sc, r: Math.max(w, h) / 2, vx: Math.cos(ang) * BASE, vy: Math.sin(ang) * BASE };
+    const item = { el, x, y, w, h, sc, r: Math.max(w, h) / 2, vx: vx, vy: vy };
     el.__phys = item;
     // 위치가 transform(translate3d)에 있으므로 hover/pressing 의 scale !important 가
     // translate 를 지워 좌상단으로 튀게 함 → 이 마커로 CSS에서 그 규칙을 제외(:not(.phys-shape)).
