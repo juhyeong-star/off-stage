@@ -10256,7 +10256,7 @@ async function _renderProfileImpl() {
       + (sinceLabel ? ` · ${_t('덕질','Fan since')} ${sinceLabel}${_t('부터','')}` : '');
 
     appContent.innerHTML = `<style id="ma-style">
-.ma-page{position:relative;min-height:100%;padding:46px 0 calc(var(--player-height,60px) + env(safe-area-inset-bottom) + 28px);background:#0B0B12;color:#F4F4F7;font-family:'Pretendard',sans-serif;overflow-x:hidden;}
+.ma-page{position:relative;min-height:100vh;min-height:100dvh;padding:46px 0 calc(var(--player-height,60px) + env(safe-area-inset-bottom) + 28px);background:#0B0B12;color:#F4F4F7;font-family:'Pretendard',sans-serif;overflow-x:hidden;}
 .ma-page *{box-sizing:border-box;}
 .ma-inner{padding:0 18px;max-width:440px;margin:0 auto;}
 .ma-head{display:flex;align-items:center;gap:13px;padding:6px 2px 4px;}
@@ -10298,8 +10298,7 @@ async function _renderProfileImpl() {
 .ma-card-s{font-size:10px;font-weight:800;color:var(--cc);margin-top:2px;}
 .ma-card.holo .ma-card-s{color:#FFC94D;}
 @media (prefers-reduced-motion:reduce){.ma-card-foil{animation:none;}}
-.ma-artists{display:flex;gap:14px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
-.ma-artists::-webkit-scrollbar{display:none;}
+.ma-artists{display:flex;flex-wrap:wrap;gap:16px 12px;padding-bottom:4px;}
 .ma-artist{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;flex:0 0 auto;width:68px;}
 .ma-aav{width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.1);}
 .ma-an{font-size:11.5px;font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68px;}
