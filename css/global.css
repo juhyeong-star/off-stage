@@ -873,23 +873,27 @@ body.is-shapes-route .page-intro {
   backface-visibility: hidden;
 }
 .floating-shape:hover {
-  transform: scale(1.15) !important;
   filter: brightness(1.2) drop-shadow(0 0 24px currentColor);
   z-index: 20;
 }
+/* hover 확대는 비-물리 도형(즐겨찾기·벽 등, 위치가 left/top)만.
+   발견 물리 도형(.phys-shape)은 위치가 transform(translate3d)에 있어, scale !important 가
+   translate 를 지워 좌상단(0,0)으로 튐 → hover 깜빡임. 그래서 제외. */
+.floating-shape:hover:not(.phys-shape) { transform: scale(1.15) !important; }
 .floating-shape.dragging {
-  transform: scale(1.12) !important;
+  transform: scale(1.12) !important;   /* 드래그 중엔 위치가 left/top 이라 안전 */
   filter: brightness(1.3) drop-shadow(0 0 30px currentColor);
   z-index: 50 !important;
   cursor: grabbing;
 }
 /* 누른 직후 — 살짝 작아지며 '집었다' 시각 피드백. 드래그 시작 직전. */
 .floating-shape.pressing {
-  transform: scale(0.92) !important;
   filter: brightness(0.92);
   transition: transform 0.14s cubic-bezier(0.4, 0, 0.6, 1), filter 0.14s ease;
   z-index: 30;
 }
+/* pressing 축소도 비-물리 도형만 (물리 도형은 같은 이유로 좌상단 튐 방지). */
+.floating-shape.pressing:not(.phys-shape) { transform: scale(0.92) !important; }
 /* 드래그 중엔 floatDrift 일시정지 — class 로 일시정지하면 pointerUp 에서 클래스만
    빼면 원래 inline animation 이 살아남. style.animation='none' 으로 덮어쓰면
    원본을 잃어버려서 둥둥 떠다니는 모션이 사라짐. */

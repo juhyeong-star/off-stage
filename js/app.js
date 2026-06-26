@@ -7443,7 +7443,7 @@ window.__shapesPhys = window.__shapesPhys || { raf: 0, items: [] };
 function stopShapesPhysics() {
   const P = window.__shapesPhys;
   if (P.raf) { cancelAnimationFrame(P.raf); P.raf = 0; }
-  if (P.items) P.items.forEach(b => { try { delete b.el.__phys; } catch (_) {} });
+  if (P.items) P.items.forEach(b => { try { delete b.el.__phys; b.el.classList.remove('phys-shape'); } catch (_) {} });
   P.items = [];
 }
 window.stopShapesPhysics = stopShapesPhysics;
@@ -7481,6 +7481,9 @@ function startShapesPhysics(field, viewport) {
     const ang = _h(idx + 7) * Math.PI * 2;                 // 결정적 방향
     const item = { el, x, y, w, h, sc, r: Math.max(w, h) / 2, vx: Math.cos(ang) * BASE, vy: Math.sin(ang) * BASE };
     el.__phys = item;
+    // 위치가 transform(translate3d)에 있으므로 hover/pressing 의 scale !important 가
+    // translate 를 지워 좌상단으로 튀게 함 → 이 마커로 CSS에서 그 규칙을 제외(:not(.phys-shape)).
+    el.classList.add('phys-shape');
     return item;
   });
   P.items = items;
