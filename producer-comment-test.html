@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>댓글로 프로듀싱 테스트</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: #0B0B12; color: #F4F4F7; font-family: 'Pretendard', sans-serif; padding: 20px 16px 60px; max-width: 460px; margin: 0 auto; }
+  .hint { font-size: 12px; color: rgba(255,255,255,.42); text-align: center; margin-bottom: 16px; line-height: 1.5; }
+
+  /* 데모 헤더 */
+  .demo { display: flex; align-items: center; gap: 12px; padding: 13px; border-radius: 18px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); }
+  .demo-orb { width: 50px; height: 50px; border-radius: 14px; flex: 0 0 auto; background: radial-gradient(circle at 38% 32%, #FFE0B8, #FF9F45 60%); box-shadow: 0 0 16px rgba(255,159,69,.4); }
+  .demo-mid { flex: 1; min-width: 0; }
+  .demo-badge { font-size: 9.5px; font-weight: 900; color: #06140C; background: #FF9F45; padding: 2px 8px; border-radius: 6px; }
+  .demo-t { font-size: 15px; font-weight: 900; margin-top: 4px; }
+  .demo-by { font-size: 11px; color: rgba(255,255,255,.45); }
+  .demo-play { width: 40px; height: 40px; border-radius: 50%; border: none; background: #FF9F45; color: #06140C; font-size: 19px; flex: 0 0 auto; }
+
+  /* 데모 크레딧 — 이번 데모를 만든 프로듀서들 */
+  .made { margin: 11px 0 0; background: linear-gradient(120deg, rgba(255,201,77,.1), transparent), #15151E; border: 1px solid rgba(255,201,77,.22); border-radius: 14px; padding: 11px 13px; font-size: 11.5px; line-height: 1.5; color: #FFE39A; }
+  .made b { color: #FFC94D; }
+
+  /* 프로듀싱 섹션 */
+  .ph { display: flex; align-items: baseline; gap: 7px; margin: 24px 2px 4px; }
+  .ph-t { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+  .ph-t i { color: #FFC94D; }
+  .ph-n { font-size: 11px; color: #8B8B9A; margin-left: auto; }
+  .ph-s { font-size: 11.5px; color: rgba(255,255,255,.5); margin: 0 2px 14px; line-height: 1.5; }
+
+  /* 입력 */
+  .pin { display: flex; gap: 8px; margin-bottom: 16px; }
+  .pin input { flex: 1; background: #15151E; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 11px 13px; color: #fff; font-family: inherit; font-size: 12.5px; }
+  .pin input::placeholder { color: rgba(255,255,255,.35); }
+  .pin button { border: none; border-radius: 12px; background: #FFC94D; color: #06140C; font-weight: 800; font-size: 12.5px; padding: 0 15px; font-family: inherit; }
+
+  /* 프로듀싱 의견(댓글) */
+  .cm { display: flex; gap: 10px; padding: 12px; border-radius: 14px; background: #14141C; border: 1px solid rgba(255,255,255,.05); margin-bottom: 9px; }
+  .cm.applied { border-color: rgba(255,201,77,.4); background: linear-gradient(120deg, rgba(255,201,77,.06), transparent), #14141C; }
+  .cm-av { width: 32px; height: 32px; border-radius: 50%; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #06140C; }
+  .cm-body { flex: 1; min-width: 0; }
+  .cm-top { display: flex; align-items: center; gap: 6px; }
+  .cm-nm { font-size: 12px; font-weight: 800; }
+  .cm-prod { font-size: 9px; font-weight: 900; color: #FFC94D; background: rgba(255,201,77,.13); padding: 2px 7px; border-radius: 999px; display: inline-flex; align-items: center; gap: 3px; }
+  .cm-txt { font-size: 12.5px; line-height: 1.5; color: rgba(255,255,255,.85); margin: 5px 0 7px; }
+  .cm-foot { display: flex; align-items: center; gap: 13px; }
+  .cm-up { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,.5); }
+  .cm-up.on { color: #FB6F92; }
+  .cm-applied-tag { font-size: 10px; font-weight: 800; color: #FFC94D; display: inline-flex; align-items: center; gap: 4px; }
+  .cm-mine { font-size: 9px; font-weight: 800; color: #9DE0B4; }
+
+  .explain { margin-top: 24px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 16px; padding: 15px; }
+  .explain h3 { font-size: 12.5px; font-weight: 800; margin-bottom: 9px; color: #FFC94D; }
+  .explain p { font-size: 11.5px; color: rgba(255,255,255,.62); line-height: 1.7; }
+  .explain b { color: #fff; }
+</style>
+</head>
+<body>
+  <div class="hint">🎬 컨셉 테스트 — "프로듀싱 = 그 데모에 의견 남기기". 데모 하나당 프로듀싱 한 판.</div>
+
+  <div class="demo">
+    <div class="demo-orb"></div>
+    <div class="demo-mid">
+      <span class="demo-badge">데모 2</span>
+      <div class="demo-t">Plastic days</div>
+      <div class="demo-by">츠ㄴ</div>
+    </div>
+    <button class="demo-play"><i class="ri-play-fill"></i></button>
+  </div>
+
+  <div class="made">🎬 <b>이번 데모(D2)</b>는 <b>서연</b>님 외 2명의 프로듀싱 의견으로 완성됐어요.</div>
+
+  <div class="ph">
+    <div class="ph-t"><i class="ri-movie-2-line"></i> 같이 프로듀싱</div>
+    <div class="ph-n">의견 4</div>
+  </div>
+  <div class="ph-s">이 데모를 어떻게 발전시킬지 의견을 남겨주세요. 아티스트가 <b style="color:#FFC94D">반영하면 당신이 이 곡의 프로듀서</b>가 돼요 🎬</div>
+
+  <div class="pin">
+    <input placeholder="프로듀싱 의견 남기기… (예: 후렴 더 키워주세요)">
+    <button>보내기</button>
+  </div>
+
+  <!-- 반영된 의견 = 프로듀서 -->
+  <div class="cm applied">
+    <div class="cm-av" style="background:#FB6F92">서</div>
+    <div class="cm-body">
+      <div class="cm-top"><span class="cm-nm">서연</span><span class="cm-prod"><i class="ri-movie-2-fill"></i> 프로듀서</span></div>
+      <div class="cm-txt">후렴 들어가기 전에 한 박자 비우면 훨씬 임팩트 있을 것 같아요!</div>
+      <div class="cm-foot"><span class="cm-up on"><i class="ri-fire-fill"></i> 12</span><span class="cm-applied-tag"><i class="ri-check-double-line"></i> 데모 3에 반영됨</span></div>
+    </div>
+  </div>
+
+  <div class="cm">
+    <div class="cm-av" style="background:#36C977">민</div>
+    <div class="cm-body">
+      <div class="cm-top"><span class="cm-nm">민지</span></div>
+      <div class="cm-txt">808 베이스 살짝만 더 키워주세요 🔊</div>
+      <div class="cm-foot"><span class="cm-up"><i class="ri-fire-line"></i> 8</span></div>
+    </div>
+  </div>
+
+  <div class="cm">
+    <div class="cm-av" style="background:#7C9CFF">준</div>
+    <div class="cm-body">
+      <div class="cm-top"><span class="cm-nm">준호</span></div>
+      <div class="cm-txt">2절은 반박자 당겨서 들어가면 어떨까요?</div>
+      <div class="cm-foot"><span class="cm-up"><i class="ri-fire-line"></i> 5</span></div>
+    </div>
+  </div>
+
+  <div class="cm">
+    <div class="cm-av" style="background:#FFC94D">김</div>
+    <div class="cm-body">
+      <div class="cm-top"><span class="cm-nm">김주형</span><span class="cm-mine">나</span></div>
+      <div class="cm-txt">브릿지에 보컬 코러스 쌓으면 풍성할 것 같아요</div>
+      <div class="cm-foot"><span class="cm-up"><i class="ri-fire-line"></i> 3</span></div>
+    </div>
+  </div>
+
+  <div class="explain">
+    <h3>🎬 어떻게 프로듀서가 되나요?</h3>
+    <p>① 데모를 듣고 <b>프로듀싱 의견</b>을 남겨요 ("이렇게 바꿔봐요").<br>
+       ② 다른 사람들이 좋은 의견에 <b>🔥(불) 추천</b>을 눌러요.<br>
+       ③ 아티스트가 의견을 <b>반영해서 다음 데모</b>를 만들면,<br>
+       ④ 그 의견 낸 사람은 <b style="color:#FFC94D">그 곡의 프로듀서</b>로 크레딧! 곡이 발매돼도 남아요.</p>
+  </div>
+</body>
+</html>
