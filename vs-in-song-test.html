@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>프로듀싱 — 곡 상세에 넣은 테스트</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: #07070d; color: #F4F4F7; font-family: 'Pretendard', sans-serif; max-width: 460px; margin: 0 auto; }
+  .testbar { background: #1a1530; border-bottom: 1px solid rgba(167,139,250,.3); color: #C9C4F5; font-size: 11px; font-weight: 800; text-align: center; padding: 7px; letter-spacing: .02em; }
+  .wrap { padding: 16px 16px 60px; }
+  .back { width: 38px; height: 38px; border-radius: 50%; background: #17171F; border: 1px solid rgba(255,255,255,.1); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 19px; margin-bottom: 10px; }
+
+  /* 곡 상세 헤더 (실제 곡 상세와 동일 톤) */
+  .sd-cover { width: 100%; height: 150px; border-radius: 22px; display: flex; align-items: center; justify-content: center; background: radial-gradient(120% 100% at 50% 28%, rgba(255,159,69,.4), #0c0c14 62%); }
+  .sd-orb { width: 64px; height: 64px; border-radius: 50%; background: radial-gradient(circle at 38% 32%, #FFE0B8, #FF9F45 60%); box-shadow: 0 0 26px rgba(255,159,69,.55); display: flex; align-items: center; justify-content: center; color: #06140C; font-size: 26px; }
+  .sd-who { font-size: 12px; color: rgba(255,255,255,.5); margin: 14px 0 0; }
+  .sd-ti { font-size: 22px; font-weight: 900; }
+  .sd-stg { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .sd-stg .now { font-size: 10px; font-weight: 900; color: #06140C; background: #FF9F45; padding: 3px 9px; border-radius: 6px; }
+  .sd-stg .left { font-size: 11px; color: rgba(255,255,255,.5); }
+
+  /* 진화 기록 (작게) */
+  .sd-sec-t { font-size: 12px; font-weight: 800; color: rgba(255,255,255,.5); margin: 22px 2px 10px; display: flex; align-items: center; gap: 6px; }
+  .sd-tl { display: flex; align-items: center; justify-content: space-between; padding: 0 6px; }
+  .sd-node { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .sd-dot { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+  .sd-dot.done { background: linear-gradient(135deg, #7DF7AE, #36C977); color: #06140C; }
+  .sd-dot.now { background: #0b0b11; border: 2px solid #FF9F45; color: #FF9F45; }
+  .sd-dot.lock { background: rgba(255,255,255,.05); border: 1.5px dashed rgba(255,255,255,.2); color: rgba(255,255,255,.4); }
+  .sd-nl { font-size: 8px; color: rgba(255,255,255,.45); }
+  .sd-bar { flex: 1; height: 2px; background: rgba(255,255,255,.1); margin: -16px 4px 0; }
+  .sd-bar.fill { background: #36C977; }
+
+  /* ===== 🎬 프로듀싱 라운드 (진화 기록 바로 아래 새로 들어감) ===== */
+  .round { background: linear-gradient(125deg, rgba(139,124,246,.14), rgba(251,111,146,.1)), #15151E; border: 1px solid rgba(139,124,246,.3); border-radius: 18px; padding: 14px 15px; margin-top: 24px; position: relative; }
+  .round-flag { position: absolute; top: -9px; left: 14px; font-size: 9px; font-weight: 900; color: #06140C; background: #C9C4F5; padding: 3px 9px; border-radius: 999px; }
+  .round-q { font-size: 16px; font-weight: 900; margin: 6px 2px 2px; }
+  .round-meta { display: flex; gap: 13px; margin: 6px 2px 0; font-size: 10.5px; color: rgba(255,255,255,.5); font-weight: 600; }
+  .round-meta b { color: #fff; }
+  .sub { font-size: 10px; font-weight: 800; color: #C9C4F5; margin: 10px 2px 8px; display: inline-flex; align-items: center; gap: 4px; }
+
+  .vs { display: flex; align-items: stretch; position: relative; }
+  .vs-card { flex: 1; min-width: 0; border-radius: 15px; padding: 12px 10px; text-align: center; border: 1.5px solid rgba(255,255,255,.1); cursor: pointer; }
+  .vs-a { background: rgba(139,124,246,.07); margin-right: 17px; } .vs-b { background: rgba(251,111,146,.07); margin-left: 17px; }
+  .vs-card.mine { border-color: #FFC94D; } .vs-card.win { border-color: #36C977; }
+  .vs-tag { font-size: 9px; font-weight: 900; } .vs-a .vs-tag { color: #C9C4F5; } .vs-b .vs-tag { color: #FBA8C0; }
+  .vs-play { width: 40px; height: 40px; border-radius: 50%; border: none; color: #06140C; font-size: 19px; margin: 7px auto 6px; display: flex; align-items: center; justify-content: center; }
+  .vs-a .vs-play { background: #8B7CF6; } .vs-b .vs-play { background: #FB6F92; }
+  .vs-n { font-size: 12.5px; font-weight: 800; }
+  .vs-state { margin-top: 8px; font-size: 11.5px; font-weight: 800; color: rgba(255,255,255,.4); }
+  .vs-card.mine .vs-state { color: #FFC94D; }
+  .vs-num { margin-top: 6px; font-size: 15px; font-weight: 900; } .vs-pct { font-size: 10.5px; font-weight: 800; color: rgba(255,255,255,.5); }
+  .vs-mid { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 32px; height: 32px; border-radius: 50%; background: #14101f; border: 1.5px solid rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; z-index: 2; }
+
+  .banner { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; border-radius: 11px; padding: 9px 11px; margin-top: 12px; line-height: 1.4; color: rgba(255,255,255,.6); background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); }
+  .banner.win { color: #FFE39A; background: linear-gradient(120deg, rgba(255,201,77,.15), rgba(251,111,146,.1)); border-color: rgba(255,201,77,.35); }
+  .reveal { display: none; width: 100%; margin-top: 10px; border: none; border-radius: 12px; padding: 11px; font-family: inherit; font-size: 12.5px; font-weight: 800; color: #06140C; background: #C9C4F5; cursor: pointer; }
+  .reveal.show { display: block; }
+  .out { display: none; text-align: center; font-size: 13px; font-weight: 900; padding: 12px; border-radius: 12px; margin-top: 10px; }
+  .out.hit { display: block; color: #06140C; background: linear-gradient(120deg, #FFE9A8, #FFC94D); }
+  .out.miss { display: block; color: #FBA8C0; background: rgba(251,111,146,.12); border: 1px solid rgba(251,111,146,.3); }
+
+  .cmh { font-size: 12.5px; font-weight: 800; display: flex; align-items: center; gap: 5px; margin: 16px 2px 4px; }
+  .cmh i { color: #C9C4F5; } .cmh .ct { font-size: 10.5px; color: #8B8B9A; font-weight: 600; margin-left: auto; }
+  .cms { font-size: 10.5px; color: rgba(255,255,255,.5); margin: 0 2px 11px; line-height: 1.5; } .cms b { color: #FFC94D; }
+  .cm { display: flex; align-items: flex-start; gap: 10px; padding: 10px; border-radius: 12px; background: #14141C; border: 1px solid rgba(255,255,255,.05); margin-bottom: 7px; }
+  .cm.win { border-color: #36C977; background: linear-gradient(120deg, rgba(54,201,119,.08), transparent), #14141C; }
+  .cm-av { width: 32px; height: 32px; border-radius: 50%; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #06140C; }
+  .cm-mid { flex: 1; min-width: 0; } .cm-nm { font-size: 11px; font-weight: 800; }
+  .cm-best { font-size: 8.5px; font-weight: 900; color: #FB6F92; margin-left: 4px; } .cm-win { font-size: 8.5px; font-weight: 900; color: #36C977; margin-left: 4px; }
+  .cm-txt { font-size: 12.5px; font-weight: 600; margin-top: 2px; line-height: 1.4; color: rgba(255,255,255,.9); }
+  .cm-like { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 1px; cursor: pointer; min-width: 48px; }
+  .cm-like-c { font-size: 11.5px; font-weight: 800; color: rgba(255,255,255,.6); display: inline-flex; align-items: center; gap: 3px; } .cm-like-c i { font-size: 15px; color: rgba(255,255,255,.4); }
+  .cm-like.on .cm-like-c, .cm-like.on .cm-like-c i { color: #FB6F92; }
+  .cm-like-p { font-size: 9.5px; font-weight: 800; color: rgba(255,255,255,.4); }
+  .pin { display: flex; gap: 8px; margin-top: 11px; } .pin input { flex: 1; background: #15151E; border: 1px solid rgba(255,255,255,.1); border-radius: 11px; padding: 10px 12px; color: #fff; font-family: inherit; font-size: 12px; } .pin button { border: none; border-radius: 11px; background: #C9C4F5; color: #06140C; font-weight: 800; font-size: 12px; padding: 0 14px; font-family: inherit; }
+
+  /* 아래 기존 곡 상세 섹션 (응원/이야기) — 맥락용 */
+  .sd-supp { display: flex; align-items: center; gap: 9px; margin-top: 24px; }
+  .sd-avs span { display: inline-flex; width: 24px; height: 24px; border-radius: 50%; margin-left: -7px; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; color: #06140C; border: 1.5px solid #07070d; }
+  .sd-cnt { font-size: 12px; color: rgba(255,255,255,.7); } .sd-cnt b { color: #fff; }
+  .sd-cheer { width: 100%; margin-top: 12px; border: none; border-radius: 16px; padding: 14px; font-family: inherit; font-size: 14px; font-weight: 800; color: #fff; background: linear-gradient(135deg, #FB6F92, #f43f5e); }
+  .sd-story { margin-top: 22px; } .sd-story .lab { font-size: 12px; font-weight: 800; color: rgba(255,255,255,.5); margin-bottom: 7px; } .sd-story p { font-size: 13px; line-height: 1.6; color: rgba(255,255,255,.8); }
+</style>
+</head>
+<body>
+  <div class="testbar">🧪 테스트 — 곡 상세 페이지에 '프로듀싱 라운드'를 넣으면 이런 모습 (실앱 미적용)</div>
+  <div class="wrap">
+    <div class="back"><i class="ri-arrow-left-s-line"></i></div>
+
+    <div class="sd-cover"><div class="sd-orb"><i class="ri-play-fill"></i></div></div>
+    <div class="sd-who">츠ㄴ</div>
+    <div class="sd-ti">Plastic days</div>
+    <div class="sd-stg"><span class="now">데모 2</span><span class="left">마스터까지 1단계</span></div>
+
+    <div class="sd-sec-t"><i class="ri-git-commit-line"></i> 진화 기록</div>
+    <div class="sd-tl">
+      <div class="sd-node"><div class="sd-dot done"><i class="ri-check-line"></i></div><div class="sd-nl">데모 1</div></div>
+      <div class="sd-bar fill"></div>
+      <div class="sd-node"><div class="sd-dot now"><i></i></div><div class="sd-nl" style="color:#FF9F45">데모 2 · 지금</div></div>
+      <div class="sd-bar"></div>
+      <div class="sd-node"><div class="sd-dot lock"><i class="ri-lock-2-line"></i></div><div class="sd-nl">마스터</div></div>
+    </div>
+
+    <!-- ⬇⬇⬇ 새로 들어가는 자리: 진화 기록 바로 아래 ⬇⬇⬇ -->
+    <div class="round">
+      <span class="round-flag">🎬 프로듀싱 라운드 · 진행 중</span>
+      <div class="round-q">데모 3, 어떤 후렴으로?</div>
+      <div class="round-meta"><span>⏳ <b>2일</b> 남음</span><span>🗳️ <b>1,204</b></span></div>
+      <div class="sub"><i class="ri-eye-off-line" id="subeye"></i> <span id="subtxt">제작자 본투표 · 결과 비공개</span></div>
+
+      <div class="vs">
+        <div class="vs-card vs-a" id="cardA" onclick="pick('a')"><div class="vs-tag">A 안</div><button class="vs-play" onclick="event.stopPropagation()"><i class="ri-play-fill"></i></button><div class="vs-n">몽환적인 신스</div><div class="abc" id="abcA"></div></div>
+        <div class="vs-mid">VS</div>
+        <div class="vs-card vs-b" id="cardB" onclick="pick('b')"><div class="vs-tag">B 안</div><button class="vs-play" onclick="event.stopPropagation()"><i class="ri-play-fill"></i></button><div class="vs-n">펑키한 기타</div><div class="abc" id="abcB"></div></div>
+      </div>
+      <div class="banner" id="banner"></div>
+      <div id="rev"></div>
+
+      <div class="cmh"><i class="ri-chat-3-line"></i> 댓글 <span class="ct" id="cmcount"></span></div>
+      <div class="cms">"이렇게 어때요?" 댓글은 <b>좋아요·%가 다 보여요</b>. 마감 때 좋아요 1등 댓글 vs A·B 비교 — 1등 고른 사람 = 프로듀서!</div>
+      <div id="cmlist"></div>
+      <div class="pin" id="pinwrap"><input id="cmInput" placeholder="댓글 남기기…"><button onclick="addCm()">등록</button></div>
+    </div>
+    <!-- ⬆⬆⬆ 여기까지 새 섹션 ⬆⬆⬆ -->
+
+    <div class="sd-supp">
+      <div class="sd-avs"><span style="background:#7C6FF0">서</span><span style="background:#FB6F92">민</span><span style="background:#36C977">지</span></div>
+      <span class="sd-cnt"><b>37</b>명이 이 곡을 키우는 중</span>
+    </div>
+    <button class="sd-cheer"><i class="ri-heart-3-fill"></i> 응원하기</button>
+
+    <div class="sd-story"><div class="lab">이 곡 이야기</div><p>새벽에 만든 곡이에요. 데모마다 같이 만들어가요 🙏</p></div>
+  </div>
+
+<script>
+  var A = { v: 312 }, B = { v: 311 };
+  var cm = [
+    { id: 'c_seo', nm: '서연', av: '#FB6F92', label: '후렴 전에 한 박자 비우고 808 떨구기', v: 320 },
+    { id: 'c_jun', nm: '준호', av: '#7C9CFF', label: '신스랑 기타 둘 다 섞으면 어때요?', v: 76 },
+    { id: 'c_min', nm: '민지', av: '#36C977', label: '템포 살짝만 올려주세요', v: 54 }
+  ];
+  var myPick = null, revealed = false;
+  function topCm() { return cm.slice().sort(function (a, b) { return b.v - a.v; })[0]; }
+  function render() {
+    var tc = topCm(), totalCm = cm.reduce(function (s, c) { return s + c.v; }, 0) || 1;
+    var winner = null, pa = 0, pb = 0;
+    if (revealed) { var ab = (A.v + B.v) || 1; pa = Math.round(A.v / ab * 100); pb = 100 - pa; winner = [{ k: 'a', v: A.v }, { k: 'b', v: B.v }, { k: tc.id, v: tc.v }].sort(function (x, y) { return y.v - x.v; })[0].k; }
+    function abc(key, val, pct) { return revealed ? ('<div class="vs-num">' + val.toLocaleString() + '표</div><div class="vs-pct">' + pct + '%</div>') : ('<div class="vs-state' + (myPick === key ? ' mine' : '') + '">' + (myPick === key ? '<i class="ri-check-line"></i> 내 표' : '<i class="ri-lock-2-line"></i> ?') + '</div>'); }
+    document.getElementById('abcA').innerHTML = abc('a', A.v, pa);
+    document.getElementById('abcB').innerHTML = abc('b', B.v, pb);
+    document.getElementById('cardA').className = 'vs-card vs-a' + (myPick === 'a' ? ' mine' : '') + (revealed && winner === 'a' ? ' win' : '');
+    document.getElementById('cardB').className = 'vs-card vs-b' + (myPick === 'b' ? ' mine' : '') + (revealed && winner === 'b' ? ' win' : '');
+    document.getElementById('subeye').className = revealed ? 'ri-eye-line' : 'ri-eye-off-line';
+    document.getElementById('subtxt').textContent = revealed ? '마감 · 결과 공개' : '제작자 본투표 · 결과 비공개';
+
+    var bn = document.getElementById('banner');
+    if (revealed) { var wl = winner === 'a' ? 'A안' : winner === 'b' ? 'B안' : (tc.nm + ' 댓글'); bn.className = 'banner win'; bn.innerHTML = '<i class="ri-trophy-line"></i> 🏆 <b>' + wl + '</b> 1등! 이대로 데모 3 제작 (A ' + A.v + ' · B ' + B.v + ' · 댓글1등 ' + tc.v + ')'; }
+    else { bn.className = 'banner'; bn.innerHTML = '<i class="ri-information-line"></i> A·B 표는 가려져 있어요 — 귀로 듣고 한 쪽에. 더 좋은 댓글엔 좋아요!'; }
+    document.getElementById('rev').innerHTML = revealed
+      ? '<div class="out ' + (myPick === winner ? 'hit">🎉 적중! 당신은 이제 <b>이 곡의 프로듀서</b>예요 🎬' : 'miss">아쉽! 다음 라운드(데모 4)에 다시 🔥') + '</div>'
+      : (myPick ? '<button class="reveal show" onclick="reveal()"><i class="ri-lock-unlock-line"></i> (테스트) 마감하고 결과 공개</button>' : '');
+
+    document.getElementById('cmcount').textContent = cm.length;
+    document.getElementById('pinwrap').style.display = revealed ? 'none' : 'flex';
+    var sorted = cm.slice().sort(function (a, b) { return b.v - a.v; });
+    document.getElementById('cmlist').innerHTML = sorted.map(function (c, i) {
+      var pct = Math.round(c.v / totalCm * 100), isWin = revealed && winner === c.id && c.id === tc.id, best = (i === 0);
+      return '<div class="cm' + (isWin ? ' win' : '') + '"><span class="cm-av" style="background:' + c.av + '">' + c.nm.charAt(0) + '</span>'
+        + '<div class="cm-mid"><div class="cm-nm">' + c.nm + (c.nm === '김주형' ? ' · 나' : '') + (best ? '<span class="cm-best">❤️ 좋아요 1등</span>' : '') + (isWin ? '<span class="cm-win">🏆 1등 채택</span>' : '') + '</div><div class="cm-txt">' + c.label + '</div></div>'
+        + '<div class="cm-like' + (myPick === c.id ? ' on' : '') + '" onclick="pick(\'' + c.id + '\')"><div class="cm-like-c"><i class="ri-heart-3-' + (myPick === c.id ? 'fill' : 'line') + '"></i> ' + c.v.toLocaleString() + '</div><div class="cm-like-p">' + pct + '%</div></div></div>';
+    }).join('');
+  }
+  function findAny(id) { if (id === 'a') return A; if (id === 'b') return B; return cm.find(function (c) { return c.id === id; }); }
+  function pick(id) { if (revealed) return; var t = findAny(id); if (myPick === id) { t.v--; myPick = null; render(); return; } if (myPick) { var p = findAny(myPick); if (p) p.v--; } t.v++; myPick = id; render(); }
+  function reveal() { if (!myPick || revealed) return; revealed = true; render(); }
+  function addCm() { if (revealed) return; var el = document.getElementById('cmInput'), v = (el.value || '').trim(); if (!v) return; cm.push({ id: 'me', nm: '김주형', av: '#FFC94D', label: v, v: 1 }); el.value = ''; render(); }
+  render();
+</script>
+</body>
+</html>
