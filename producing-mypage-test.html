@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>프로듀싱 — 마이페이지 데모 노드 펼침/접힘</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: #07070d; color: #F4F4F7; font-family: 'Pretendard', sans-serif; max-width: 460px; margin: 0 auto; }
+  .testbar { background: #1a1530; border-bottom: 1px solid rgba(167,139,250,.3); color: #C9C4F5; font-size: 11px; font-weight: 800; text-align: center; padding: 7px; }
+  .wrap { padding: 16px; }
+  .sec-t { font-size: 12px; font-weight: 700; color: rgba(255,255,255,.42); display: flex; align-items: center; gap: 5px; margin: 4px 2px 11px; }
+  .sec-t i { color: #a78bfa; }
+
+  .mh-track { border-radius: 24px; padding: 14px; border: 1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.025); }
+  .mh-head { display: flex; align-items: center; gap: 12px; }
+  .mh-cover { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #9DE05A; }
+  .mh-cover-lines { font-size: 7.5px; line-height: 1.22; font-weight: 800; color: rgba(0,0,0,.82); text-align: center; }
+  .mh-mid { flex: 1; min-width: 0; }
+  .mh-state { font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 6px; background: rgba(255,255,255,.05); color: rgba(255,255,255,.6); border: 1px solid rgba(255,255,255,.1); }
+  .mh-title { font-size: 13px; font-weight: 900; margin-left: 6px; }
+  .mh-note { font-size: 10px; color: rgba(255,255,255,.5); margin: 4px 0 0; }
+  .mh-pbtn { width: 38px; height: 38px; border-radius: 50%; border: none; background: #36C977; color: #06140C; font-size: 18px; flex-shrink: 0; }
+
+  .mh-nodes { margin-top: 11px; padding: 11px 8px 0; border-top: 1px solid rgba(255,255,255,.06); display: flex; align-items: center; justify-content: space-between; }
+  .mh-node { display: flex; flex-direction: column; align-items: center; cursor: pointer; flex-shrink: 0; }
+  .mh-node-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; transition: all .2s; position: relative; }
+  .mh-node-date { font-size: 8px; margin-top: 4px; transition: color .2s; }
+  .mh-node-bar { flex: 1; height: 1.5px; background: rgba(255,255,255,.1); margin: -12px 6px 0; }
+  .mh-node-add .mh-node-dot { background: rgba(167,139,250,.08); border: 1.5px dashed rgba(167,139,250,.55); color: #a78bfa; }
+  .mh-node-caret { position: absolute; bottom: -3px; right: -3px; width: 12px; height: 12px; border-radius: 50%; background: #a78bfa; color: #06140C; font-size: 9px; display: flex; align-items: center; justify-content: center; }
+
+  /* 펼쳐지는 패널 */
+  .panel { max-height: 0; overflow: hidden; transition: max-height .34s cubic-bezier(.4,0,.2,1), opacity .25s, margin .25s; opacity: 0; margin-top: 0; }
+  .panel.open { max-height: 1400px; opacity: 1; margin-top: 12px; }
+  .panel-in { border-radius: 16px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); padding: 13px; }
+  .panel-top { display: flex; align-items: center; margin-bottom: 10px; }
+  .panel-flag { font-size: 9.5px; font-weight: 900; color: #06140C; background: #C9C4F5; padding: 3px 9px; border-radius: 999px; }
+  .panel-close { margin-left: auto; width: 28px; height: 28px; border-radius: 50%; border: none; background: rgba(255,255,255,.06); color: rgba(255,255,255,.6); font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+  /* 결과(지난 데모) */
+  .res { font-size: 12.5px; line-height: 1.6; color: rgba(255,255,255,.8); } .res b { color: #FFC94D; }
+  .res-prod { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 11px; color: #FFE39A; }
+
+  /* 활성 라운드 (현재 데모) */
+  .rq { font-size: 15px; font-weight: 900; margin: 0 0 3px; }
+  .rmeta { display: flex; gap: 12px; font-size: 10px; color: rgba(255,255,255,.5); font-weight: 600; } .rmeta b { color: #fff; }
+  .rsub { font-size: 10px; font-weight: 800; color: #C9C4F5; margin: 8px 0; display: inline-flex; gap: 4px; align-items: center; }
+  .vs { display: flex; position: relative; }
+  .vs-card { flex: 1; min-width: 0; border-radius: 13px; padding: 11px 9px; text-align: center; border: 1.5px solid rgba(255,255,255,.1); cursor: pointer; }
+  .vs-a { background: rgba(139,124,246,.07); margin-right: 16px; } .vs-b { background: rgba(251,111,146,.07); margin-left: 16px; }
+  .vs-card.mine { border-color: #FFC94D; } .vs-card.win { border-color: #36C977; }
+  .vs-tag { font-size: 8.5px; font-weight: 900; } .vs-a .vs-tag { color: #C9C4F5; } .vs-b .vs-tag { color: #FBA8C0; }
+  .vs-play { width: 36px; height: 36px; border-radius: 50%; border: none; color: #06140C; font-size: 17px; margin: 6px auto 5px; display: flex; align-items: center; justify-content: center; }
+  .vs-a .vs-play { background: #8B7CF6; } .vs-b .vs-play { background: #FB6F92; }
+  .vs-n { font-size: 12px; font-weight: 800; }
+  .vs-state { margin-top: 6px; font-size: 11px; font-weight: 800; color: rgba(255,255,255,.4); } .vs-card.mine .vs-state { color: #FFC94D; }
+  .vs-num { margin-top: 5px; font-size: 14px; font-weight: 900; } .vs-pct { font-size: 10px; font-weight: 800; color: rgba(255,255,255,.5); }
+  .vs-mid { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 30px; height: 30px; border-radius: 50%; background: #131019; border: 1.5px solid rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; z-index: 2; }
+  .banner { font-size: 10.5px; font-weight: 700; border-radius: 11px; padding: 9px 10px; margin-top: 11px; line-height: 1.4; color: rgba(255,255,255,.6); background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); }
+  .banner.win { color: #FFE39A; background: rgba(255,201,77,.12); border-color: rgba(255,201,77,.35); }
+  .revb { display: none; width: 100%; margin-top: 9px; border: none; border-radius: 11px; padding: 10px; font-family: inherit; font-size: 12px; font-weight: 800; color: #06140C; background: #C9C4F5; cursor: pointer; } .revb.show { display: block; }
+  .out { display: none; text-align: center; font-size: 12.5px; font-weight: 900; padding: 11px; border-radius: 11px; margin-top: 9px; } .out.hit { display: block; color: #06140C; background: linear-gradient(120deg,#FFE9A8,#FFC94D); } .out.miss { display: block; color: #FBA8C0; background: rgba(251,111,146,.12); }
+  .cmh { font-size: 12px; font-weight: 800; display: flex; gap: 5px; align-items: center; margin: 15px 0 9px; } .cmh i { color: #C9C4F5; } .cmh .ct { margin-left: auto; font-size: 10px; color: #8B8B9A; }
+  .cm { display: flex; gap: 9px; padding: 9px; border-radius: 11px; background: #14141C; border: 1px solid rgba(255,255,255,.05); margin-bottom: 7px; align-items: flex-start; }
+  .cm.win { border-color: #36C977; }
+  .cm-av { width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #06140C; }
+  .cm-mid { flex: 1; min-width: 0; } .cm-nm { font-size: 10.5px; font-weight: 800; } .cm-best { font-size: 8px; font-weight: 900; color: #FB6F92; margin-left: 3px; } .cm-w { font-size: 8px; font-weight: 900; color: #36C977; margin-left: 3px; }
+  .cm-txt { font-size: 12px; font-weight: 600; margin-top: 2px; line-height: 1.35; color: rgba(255,255,255,.9); }
+  .cm-like { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; min-width: 46px; cursor: pointer; }
+  .cm-like-c { font-size: 11px; font-weight: 800; color: rgba(255,255,255,.6); display: inline-flex; gap: 3px; align-items: center; } .cm-like-c i { font-size: 14px; color: rgba(255,255,255,.4); } .cm-like.on .cm-like-c, .cm-like.on .cm-like-c i { color: #FB6F92; }
+  .cm-like-p { font-size: 9px; font-weight: 800; color: rgba(255,255,255,.4); }
+  .pin { display: flex; gap: 7px; margin-top: 9px; } .pin input { flex: 1; background: #15151E; border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 9px 11px; color: #fff; font-family: inherit; font-size: 11.5px; } .pin button { border: none; border-radius: 10px; background: #C9C4F5; color: #06140C; font-weight: 800; font-size: 11.5px; padding: 0 13px; }
+  .tip { font-size: 11px; color: rgba(255,255,255,.5); line-height: 1.6; margin-top: 18px; padding: 0 2px; } .tip b { color: #a78bfa; }
+</style>
+</head>
+<body>
+  <div class="testbar">🧪 테스트 — 데모 노드를 탭하면 그 데모의 프로듀싱이 열려요 (평소 숨김 · 데모마다)</div>
+  <div class="wrap">
+    <div class="sec-t"><i class="ri-music-2-line"></i> 음악 히스토리 (1)</div>
+    <div class="mh-track">
+      <div class="mh-head">
+        <div class="mh-cover"><span class="mh-cover-lines">#편곡이 달라서<br>#투표좀 해줘<br>#데모1 vs 2</span></div>
+        <div class="mh-mid"><div><span class="mh-state">미발매</span><span class="mh-title">Plastic days</span></div><div class="mh-note"><b style="color:#9DE05A">데모 2 에디션</b> · 노드를 눌러보세요 ⬇</div></div>
+        <button class="mh-pbtn"><i class="ri-play-fill"></i></button>
+      </div>
+      <div class="mh-nodes" id="nodes"></div>
+      <div class="panel" id="panel"><div class="panel-in" id="panelIn"></div></div>
+    </div>
+    <div class="tip">💡 <b>접는 법</b>: ① 같은 노드 다시 탭 ② 패널 우상단 ✕ ③ 다른 노드 탭(자동 전환). 데모마다 따로 열려요.</div>
+  </div>
+
+<script>
+  var DEMOS = [
+    { n: 1, date: '2026.06.15', color: '#7DF7AE', done: true,
+      result: { won: '한 박자 비우기', a: 'A 신스', b: 'B 기타', prod: 312 } },
+    { n: 2, date: '2026.06.28', color: '#FF9F45', now: true,
+      round: { A: { v: 312 }, B: { v: 311 }, cm: [
+        { id: 'c_seo', nm: '서연', av: '#FB6F92', label: '후렴 전에 한 박자 비우고 808 떨구기', v: 320 },
+        { id: 'c_jun', nm: '준호', av: '#7C9CFF', label: '신스랑 기타 둘 다 섞으면 어때요?', v: 76 },
+        { id: 'c_min', nm: '민지', av: '#36C977', label: '템포 살짝만 올려주세요', v: 54 }
+      ], myPick: null, revealed: false } }
+  ];
+  var openIdx = -1;
+
+  function renderNodes() {
+    var h = '';
+    DEMOS.forEach(function (d, i) {
+      var on = (openIdx === i);
+      if (i > 0) h += '<div class="mh-node-bar"></div>';
+      h += '<div class="mh-node" onclick="toggle(' + i + ')"><div class="mh-node-dot" style="background:' + (on ? d.color : 'rgba(255,255,255,.15)') + ';color:' + (on ? '#06140C' : 'rgba(255,255,255,.7)') + ';box-shadow:' + (on ? '0 0 10px ' + d.color : 'none') + '">D' + d.n
+        + '<span class="mh-node-caret"><i class="ri-arrow-' + (on ? 'up' : 'down') + '-s-line"></i></span></div>'
+        + '<div class="mh-node-date" style="color:' + (on ? '#fff' : 'rgba(255,255,255,.4)') + '">' + d.date + '</div></div>';
+    });
+    h += '<div class="mh-node-bar"></div><div class="mh-node mh-node-add"><div class="mh-node-dot"><i class="ri-add-line"></i></div><div class="mh-node-date" style="color:rgba(167,139,250,.75)">D3</div></div>';
+    document.getElementById('nodes').innerHTML = h;
+  }
+
+  function toggle(i) {
+    if (openIdx === i) { openIdx = -1; document.getElementById('panel').classList.remove('open'); renderNodes(); return; }
+    openIdx = i; document.getElementById('panelIn').innerHTML = panelHtml(i);
+    document.getElementById('panel').classList.add('open'); renderNodes();
+  }
+  function closePanel() { openIdx = -1; document.getElementById('panel').classList.remove('open'); renderNodes(); }
+
+  function panelHtml(i) {
+    var d = DEMOS[i];
+    var top = '<div class="panel-top"><span class="panel-flag">' + (d.now ? '🎬 데모 ' + (d.n + 1) + ' 프로듀싱 · 진행 중' : '🎬 데모 ' + d.n + ' 프로듀싱 · 결과') + '</span><button class="panel-close" onclick="closePanel()"><i class="ri-close-line"></i></button></div>';
+    if (d.result) {
+      return top + '<div class="res">데모 ' + d.n + ' 만들 때 투표: <b>' + d.result.won + '</b> 안이 이겼어요. (' + d.result.a + ' vs ' + d.result.b + ')<br>그 안으로 데모 ' + (d.n + 1) + '이 만들어졌어요.</div>'
+        + '<div class="res-prod"><i class="ri-movie-2-fill"></i> 이 결정에 함께한 프로듀서 <b style="color:#FFC94D">&nbsp;' + d.result.prod + '명</b></div>';
+    }
+    return top + activeRoundHtml(d.round, d.n + 1);
+  }
+
+  function activeRoundHtml(R, nextN) {
+    var tc = R.cm.slice().sort(function (a, b) { return b.v - a.v; })[0], total = R.cm.reduce(function (s, c) { return s + c.v; }, 0) || 1;
+    var winner = null, pa = 0, pb = 0;
+    if (R.revealed) { var ab = (R.A.v + R.B.v) || 1; pa = Math.round(R.A.v / ab * 100); pb = 100 - pa; winner = [{ k: 'a', v: R.A.v }, { k: 'b', v: R.B.v }, { k: tc.id, v: tc.v }].sort(function (x, y) { return y.v - x.v; })[0].k; }
+    function abc(key, val, pct) { return R.revealed ? '<div class="vs-num">' + val.toLocaleString() + '표</div><div class="vs-pct">' + pct + '%</div>' : '<div class="vs-state' + (R.myPick === key ? ' mine' : '') + '">' + (R.myPick === key ? '<i class="ri-check-line"></i> 내 표' : '<i class="ri-lock-2-line"></i> ?') + '</div>'; }
+    var cms = R.cm.slice().sort(function (a, b) { return b.v - a.v; }).map(function (c, i) {
+      var pct = Math.round(c.v / total * 100), isW = R.revealed && winner === c.id && c.id === tc.id, best = (i === 0);
+      return '<div class="cm' + (isW ? ' win' : '') + '"><span class="cm-av" style="background:' + c.av + '">' + c.nm.charAt(0) + '</span><div class="cm-mid"><div class="cm-nm">' + c.nm + (best ? '<span class="cm-best">❤️1등</span>' : '') + (isW ? '<span class="cm-w">🏆채택</span>' : '') + '</div><div class="cm-txt">' + c.label + '</div></div><div class="cm-like' + (R.myPick === c.id ? ' on' : '') + '" onclick="rpick(\'' + c.id + '\')"><div class="cm-like-c"><i class="ri-heart-3-' + (R.myPick === c.id ? 'fill' : 'line') + '"></i> ' + c.v + '</div><div class="cm-like-p">' + pct + '%</div></div></div>';
+    }).join('');
+    var bn = R.revealed ? '<div class="banner win"><i class="ri-trophy-line"></i> 🏆 ' + (winner === 'a' ? 'A안' : winner === 'b' ? 'B안' : tc.nm + ' 댓글') + ' 1등! 이대로 데모 ' + nextN + ' 제작 (A ' + R.A.v + '·B ' + R.B.v + '·댓글 ' + tc.v + ')</div>'
+      : '<div class="banner"><i class="ri-information-line"></i> A·B 표는 가려져 있어요 — 귀로 듣고 한 쪽에!</div>';
+    var rev = R.revealed ? '<div class="out ' + (R.myPick === winner ? 'hit">🎉 적중! 이 곡의 프로듀서예요 🎬' : 'miss">아쉽! 다음 라운드에 다시 🔥') + '</div>'
+      : (R.myPick ? '<button class="revb show" onclick="rreveal()"><i class="ri-lock-unlock-line"></i> (테스트) 마감하고 공개</button>' : '');
+    return '<div class="rq">데모 ' + nextN + ', 어떤 후렴으로?</div><div class="rmeta"><span>⏳ <b>2일</b> 남음</span><span>🗳️ <b>1,204</b></span></div>'
+      + '<div class="rsub"><i class="ri-eye-' + (R.revealed ? '' : 'off-') + 'line"></i> 제작자 본투표 · ' + (R.revealed ? '공개' : '비공개') + '</div>'
+      + '<div class="vs"><div class="vs-card vs-a' + (R.myPick === 'a' ? ' mine' : '') + (R.revealed && winner === 'a' ? ' win' : '') + '" onclick="rpick(\'a\')"><div class="vs-tag">A안</div><button class="vs-play" onclick="event.stopPropagation()"><i class="ri-play-fill"></i></button><div class="vs-n">몽환 신스</div>' + abc('a', R.A.v, pa) + '</div><div class="vs-mid">VS</div><div class="vs-card vs-b' + (R.myPick === 'b' ? ' mine' : '') + (R.revealed && winner === 'b' ? ' win' : '') + '" onclick="rpick(\'b\')"><div class="vs-tag">B안</div><button class="vs-play" onclick="event.stopPropagation()"><i class="ri-play-fill"></i></button><div class="vs-n">펑키 기타</div>' + abc('b', R.B.v, pb) + '</div></div>'
+      + bn + rev
+      + '<div class="cmh"><i class="ri-chat-3-line"></i> 댓글 <span class="ct">' + R.cm.length + '</span></div>' + cms
+      + (R.revealed ? '' : '<div class="pin"><input id="rin" placeholder="댓글 남기기…"><button onclick="raddcm()">등록</button></div>');
+  }
+
+  function curR() { return DEMOS[openIdx] && DEMOS[openIdx].round; }
+  function findA(R, id) { if (id === 'a') return R.A; if (id === 'b') return R.B; return R.cm.find(function (c) { return c.id === id; }); }
+  function refresh() { document.getElementById('panelIn').innerHTML = panelHtml(openIdx); }
+  function rpick(id) { var R = curR(); if (!R || R.revealed) return; var t = findA(R, id); if (R.myPick === id) { t.v--; R.myPick = null; refresh(); return; } if (R.myPick) { var p = findA(R, R.myPick); if (p) p.v--; } t.v++; R.myPick = id; refresh(); }
+  function rreveal() { var R = curR(); if (!R || !R.myPick || R.revealed) return; R.revealed = true; refresh(); }
+  function raddcm() { var R = curR(); if (!R || R.revealed) return; var el = document.getElementById('rin'), v = (el.value || '').trim(); if (!v) return; R.cm.push({ id: 'me', nm: '김주형', av: '#FFC94D', label: v, v: 1 }); refresh(); }
+
+  renderNodes();
+</script>
+</body>
+</html>
