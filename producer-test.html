@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>청취자 → 프로듀서 테스트</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: #0B0B12; color: #F4F4F7; font-family: 'Pretendard', sans-serif; padding: 20px 16px 60px; max-width: 460px; margin: 0 auto; }
+  .hint { font-size: 12px; color: rgba(255,255,255,.42); text-align: center; margin-bottom: 16px; line-height: 1.5; }
+
+  /* 헤더 — 프로듀서 정체성 */
+  .head { display: flex; align-items: center; gap: 13px; }
+  .head-av { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,201,77,.5); }
+  .head-nm { font-size: 18px; font-weight: 800; }
+  .head-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; color: #FFC94D; background: rgba(255,201,77,.12); border: 1px solid rgba(255,201,77,.3); padding: 2px 9px; border-radius: 999px; margin-top: 4px; }
+  .head-sub { font-size: 11.5px; color: #9DE0B4; margin-top: 5px; font-weight: 600; }
+
+  /* 프로듀서 레벨 바 */
+  .lvl { margin: 16px 0 6px; background: linear-gradient(120deg, rgba(255,201,77,.12), rgba(251,111,146,.08)), #15151E; border: 1px solid rgba(255,201,77,.22); border-radius: 16px; padding: 13px 15px; }
+  .lvl-top { display: flex; justify-content: space-between; align-items: baseline; }
+  .lvl-t { font-size: 12.5px; font-weight: 800; }
+  .lvl-n { font-size: 10.5px; color: rgba(255,255,255,.5); }
+  .lvl-bar { height: 7px; border-radius: 7px; background: rgba(255,255,255,.08); overflow: hidden; margin-top: 9px; }
+  .lvl-bar i { display: block; height: 100%; border-radius: 7px; background: linear-gradient(90deg, #FFC94D, #FB6F92); }
+  .lvl-foot { font-size: 10.5px; color: #FFE39A; margin-top: 8px; }
+
+  .sec { margin-top: 24px; }
+  .sec-t { font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 7px; margin: 0 2px 11px; }
+  .sec-t .ct { font-size: 11px; font-weight: 600; color: #8B8B9A; margin-left: auto; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 11px; }
+
+  /* 프로듀싱한 곡 — 골드 홀로 카드(성취) */
+  .pcard { border-radius: 14px; padding: 3px; background: linear-gradient(150deg, #FFE9A8, #FFC94D 45%, #B98A1F); position: relative; }
+  .pcard-in { background: linear-gradient(180deg, #15140E, #0E0D0A); border-radius: 11px; padding: 9px; position: relative; overflow: hidden; }
+  .pcard-art { height: 58px; border-radius: 9px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; background: radial-gradient(120% 100% at 50% 25%, rgba(255,201,77,.35), #0c0c10 60%); }
+  .pcard-orb { width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 38% 32%, #fff, #FFC94D 60%); box-shadow: 0 0 14px rgba(255,201,77,.6); }
+  .pcard-foil { position: absolute; inset: 0; mix-blend-mode: color-dodge; opacity: .45; background: repeating-linear-gradient(108deg, rgba(255,40,140,.6), rgba(255,196,0,.55) 8%, rgba(40,255,170,.55) 16%, rgba(40,170,255,.6) 24%, rgba(180,40,255,.6) 32%); background-size: 220% 220%; animation: foil 7s linear infinite; }
+  @keyframes foil { 0%{background-position:0 0} 100%{background-position:220% 220%} }
+  .pcard-n { font-size: 11.5px; font-weight: 800; margin-top: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pcard-by { font-size: 9.5px; color: rgba(255,255,255,.45); margin-top: 1px; }
+  .pcard-cr { font-size: 9.5px; font-weight: 800; color: #FFC94D; margin-top: 6px; display: flex; align-items: center; gap: 3px; }
+
+  /* 키우는 중 — 진행형 */
+  .gcard { display: flex; gap: 11px; align-items: center; padding: 11px; border-radius: 14px; background: #15151E; border: 1px solid rgba(255,255,255,.06); margin-bottom: 9px; }
+  .gcard-orb { width: 42px; height: 42px; border-radius: 12px; flex: 0 0 auto; background: radial-gradient(circle at 38% 32%, color-mix(in srgb, var(--c) 60%, #fff), var(--c) 60%); box-shadow: 0 0 14px color-mix(in srgb, var(--c) 45%, transparent); }
+  .gcard-mid { flex: 1; min-width: 0; }
+  .gcard-n { font-size: 13.5px; font-weight: 800; }
+  .gcard-by { font-size: 10.5px; color: rgba(255,255,255,.45); }
+  .gcard-bar { height: 4px; border-radius: 4px; background: rgba(255,255,255,.08); margin-top: 7px; overflow: hidden; }
+  .gcard-bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #8B7CF6, #FB6F92); }
+  .gcard-st { font-size: 10px; font-weight: 700; color: #9DE0B4; margin-top: 6px; }
+  .gcard-stage { flex: 0 0 auto; text-align: right; font-size: 10px; font-weight: 800; color: #C9C4F5; }
+  .gcard-stage span { color: #5A5A6C; font-weight: 600; }
+
+  .explain { margin-top: 22px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 16px; padding: 15px; }
+  .explain h3 { font-size: 12.5px; font-weight: 800; margin-bottom: 10px; color: #FFC94D; }
+  .flow { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+  .flow-step { flex: 1; text-align: center; }
+  .flow-ic { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; margin: 0 auto 6px; }
+  .flow-l { font-size: 10px; font-weight: 700; line-height: 1.3; }
+  .flow-arrow { color: rgba(255,255,255,.25); font-size: 16px; flex: 0 0 auto; }
+  .explain p { font-size: 11.5px; color: rgba(255,255,255,.6); line-height: 1.65; margin-top: 13px; }
+
+  /* 곡 상세 — 프로듀서 크레딧 미니 */
+  .credit { margin-top: 14px; background: #15151E; border: 1px solid rgba(255,255,255,.06); border-radius: 16px; padding: 14px; }
+  .credit-h { font-size: 12px; font-weight: 800; color: #FFC94D; display: flex; align-items: center; gap: 6px; }
+  .credit-s { font-size: 10.5px; color: rgba(255,255,255,.45); margin: 3px 0 11px; }
+  .credit-row { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+  .credit-av { width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #06140C; }
+  .credit-nm { font-size: 12px; font-weight: 700; flex: 1; }
+  .credit-tag { font-size: 9.5px; font-weight: 800; color: #FFC94D; background: rgba(255,201,77,.12); padding: 2px 8px; border-radius: 999px; }
+  .credit-me { border: 1px dashed rgba(255,201,77,.4); border-radius: 11px; padding: 9px 11px; font-size: 11px; font-weight: 700; color: #FFE39A; text-align: center; margin-top: 4px; }
+</style>
+</head>
+<body>
+  <div class="hint">🎬 컨셉 테스트 — "청취자가 데모를 키우면(응원) → 발매되면 그 곡의 프로듀서가 된다" (결제 없이, 크레딧으로)</div>
+
+  <!-- 내 계정 헤더 = 프로듀서 정체성 -->
+  <div class="head">
+    <img class="head-av" src="https://i.pravatar.cc/120?u=jh" alt="">
+    <div>
+      <div class="head-nm">김주형</div>
+      <div class="head-badge"><i class="ri-movie-2-line"></i> 프로듀서 · 크레딧 2</div>
+      <div class="head-sub">🌱 데모 3곡 키우는 중 · 덕질 2026.06부터</div>
+    </div>
+  </div>
+
+  <div class="lvl">
+    <div class="lvl-top"><span class="lvl-t">🎬 프로듀서 레벨 2</span><span class="lvl-n">발매 2 · 다음까지 1곡</span></div>
+    <div class="lvl-bar"><i style="width:66%"></i></div>
+    <div class="lvl-foot">키운 데모가 발매될 때마다 프로듀서 크레딧 +1, 레벨이 올라요</div>
+  </div>
+
+  <!-- 성취: 내가 프로듀싱한 곡 (발매됨) -->
+  <div class="sec">
+    <div class="sec-t"><i class="ri-movie-2-fill" style="color:#FFC94D"></i> 내가 프로듀싱한 곡 <span class="ct">발매 완료</span></div>
+    <div class="grid">
+      <div class="pcard"><div class="pcard-in">
+        <div class="pcard-art"><span class="pcard-orb"></span><span class="pcard-foil"></span></div>
+        <div class="pcard-n">밤하늘</div><div class="pcard-by">장영찬</div>
+        <div class="pcard-cr"><i class="ri-seedling-line"></i> 데모 2부터 키움 · 프로듀서</div>
+      </div></div>
+      <div class="pcard"><div class="pcard-in">
+        <div class="pcard-art"><span class="pcard-orb"></span><span class="pcard-foil"></span></div>
+        <div class="pcard-n">Plastic days</div><div class="pcard-by">츠ㄴ</div>
+        <div class="pcard-cr"><i class="ri-seedling-line"></i> 데모 1부터 키움 · 프로듀서</div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- 진행형: 키우는 중 (발매되면 프로듀서) -->
+  <div class="sec">
+    <div class="sec-t"><i class="ri-seedling-fill" style="color:#9DE0B4"></i> 키우는 중 <span class="ct">발매되면 프로듀서 🎬</span></div>
+    <div class="gcard" style="--c:#FF9F45">
+      <div class="gcard-orb"></div>
+      <div class="gcard-mid">
+        <div class="gcard-n">A-HA DEMO</div><div class="gcard-by">DJ KARLIN</div>
+        <div class="gcard-bar"><i style="width:75%"></i></div>
+        <div class="gcard-st">🔥 마스터까지 한 걸음 — 발매되면 프로듀서!</div>
+      </div>
+      <div class="gcard-stage">데모 2<br><span>/ 마스터</span></div>
+    </div>
+    <div class="gcard" style="--c:#FB6F92">
+      <div class="gcard-orb"></div>
+      <div class="gcard-mid">
+        <div class="gcard-n">감기콜록콜록!?</div><div class="gcard-by">감기걸린 쿠추</div>
+        <div class="gcard-bar"><i style="width:35%"></i></div>
+        <div class="gcard-st">🌱 이제 막 자라기 시작했어요</div>
+      </div>
+      <div class="gcard-stage">데모 1<br><span>/ 마스터</span></div>
+    </div>
+  </div>
+
+  <!-- 어떻게 프로듀서가 되나 -->
+  <div class="explain">
+    <h3>🎬 어떻게 프로듀서가 되나요?</h3>
+    <div class="flow">
+      <div class="flow-step"><div class="flow-ic" style="background:rgba(72,224,139,.15);color:#48E08B"><i class="ri-seedling-line"></i></div><div class="flow-l">데모 키우기<br>(응원)</div></div>
+      <div class="flow-arrow"><i class="ri-arrow-right-line"></i></div>
+      <div class="flow-step"><div class="flow-ic" style="background:rgba(139,124,246,.15);color:#8B7CF6"><i class="ri-loader-2-line"></i></div><div class="flow-l">데모 발전<br>D1→D2→…</div></div>
+      <div class="flow-arrow"><i class="ri-arrow-right-line"></i></div>
+      <div class="flow-step"><div class="flow-ic" style="background:rgba(255,201,77,.15);color:#FFC94D"><i class="ri-movie-2-line"></i></div><div class="flow-l">발매 →<br>프로듀서!</div></div>
+    </div>
+    <p>마음에 드는 <b>데모를 키우면</b>(응원하면), 아티스트가 그 곡을 발전시켜 <b>발매(마스터)</b> 할 때 — 데모 때부터 함께한 당신은 <b style="color:#FFC94D">그 곡의 프로듀서</b>로 크레딧을 받아요. 빨리·오래 키울수록 더 인정받고요. 돈이 아니라 <b>함께 만든 기록</b>이에요.</p>
+  </div>
+
+  <!-- 곡 상세에 들어갈 '프로듀서 크레딧' -->
+  <div class="hint" style="margin-top:26px; margin-bottom:10px;">↓ 발매된 곡(앨범) 페이지엔 이렇게 '프로듀서 크레딧'이 떠요</div>
+  <div class="credit">
+    <div class="credit-h"><i class="ri-movie-2-fill"></i> 프로듀서 크레딧</div>
+    <div class="credit-s">데모 때부터 이 곡을 키운 사람들 · 12명</div>
+    <div class="credit-row"><div class="credit-av" style="background:#7C9CFF">김</div><div class="credit-nm">김주형</div><span class="credit-tag">데모 2부터</span></div>
+    <div class="credit-row"><div class="credit-av" style="background:#FB6F92">서</div><div class="credit-nm">서연</div><span class="credit-tag">데모 1부터</span></div>
+    <div class="credit-row"><div class="credit-av" style="background:#36C977">민</div><div class="credit-nm">민지</div><span class="credit-tag">데모 3부터</span></div>
+    <div class="credit-me">🎬 당신도 이 곡의 프로듀서예요 (데모 2부터 키움)</div>
+  </div>
+</body>
+</html>
