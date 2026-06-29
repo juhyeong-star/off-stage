@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>데모 펼치기 테스트</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: #07070d; color: #F4F4F7; font-family: 'Pretendard', sans-serif; padding: 22px 16px 60px; max-width: 460px; margin: 0 auto; }
+  .hint { font-size: 12px; color: rgba(255,255,255,.4); text-align: center; margin-bottom: 18px; }
+  .sec-title { font-size: 12px; font-weight: 700; color: rgba(255,255,255,.42); display: flex; align-items: center; gap: 5px; margin: 0 2px 11px; }
+  .sec-title i { color: #a78bfa; }
+
+  .mh-track { border-radius: 24px; padding: 14px; border: 1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.025); margin-bottom: 14px; }
+  .mh-track-head { display: flex; align-items: center; gap: 12px; }
+  .mh-cover { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; overflow: hidden; }
+  .mh-cover-lines { font-size: 7.5px; line-height: 1.22; font-weight: 800; color: rgba(0,0,0,.82); text-align: center; padding: 3px; }
+  .mh-track-mid { flex: 1; min-width: 0; }
+  .mh-state { font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 6px; background: rgba(255,255,255,.05); color: rgba(255,255,255,.6); border: 1px solid rgba(255,255,255,.1); }
+  .mh-track-title { font-size: 13px; font-weight: 900; margin-left: 6px; }
+  .mh-track-note { font-size: 10px; color: rgba(255,255,255,.5); margin: 4px 0 0; }
+  .mh-pbtn { width: 38px; height: 38px; border-radius: 50%; border: none; background: #36C977; color: #06140C; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; }
+
+  .mh-nodes { margin-top: 11px; padding: 11px 8px 0; border-top: 1px solid rgba(255,255,255,.06); display: flex; align-items: center; justify-content: space-between; }
+  .mh-node { display: flex; flex-direction: column; align-items: center; cursor: pointer; flex-shrink: 0; }
+  .mh-node-dot { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8.5px; font-weight: 800; transition: all .2s; }
+  .mh-node-date { font-size: 8px; margin-top: 4px; transition: color .2s; }
+  .mh-node-bar { flex: 1; height: 1.5px; background: rgba(255,255,255,.1); margin: -12px 6px 0; }
+  .mh-node-add .mh-node-dot { background: rgba(167,139,250,.08); border: 1.5px dashed rgba(167,139,250,.55); color: #a78bfa; }
+
+  /* 펼쳐지는 패널 — 데모에 쓴 글 */
+  .mh-demo-panel { max-height: 0; overflow: hidden; transition: max-height .32s cubic-bezier(.4,0,.2,1), opacity .25s ease, margin .25s ease; opacity: 0; margin-top: 0; }
+  .mh-demo-panel.open { max-height: 420px; opacity: 1; margin-top: 12px; }
+  .mh-demo-inner { border-radius: 16px; padding: 14px; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.07); }
+  .mh-demo-h { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+  .mh-demo-badge { font-size: 9.5px; font-weight: 900; padding: 3px 9px; border-radius: 999px; color: #06140C; }
+  .mh-demo-when { font-size: 10px; color: rgba(255,255,255,.4); }
+  .mh-demo-when i { font-size: 11px; vertical-align: -1px; }
+  .mh-demo-label { font-size: 10px; font-weight: 800; color: rgba(255,255,255,.45); margin: 12px 0 5px; display: flex; align-items: center; gap: 5px; }
+  .mh-demo-text { font-size: 12.5px; line-height: 1.65; color: rgba(255,255,255,.82); white-space: pre-wrap; }
+  .mh-demo-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+  .mh-demo-tag { font-size: 10px; color: rgba(255,255,255,.6); background: rgba(255,255,255,.05); padding: 4px 11px; border-radius: 999px; }
+  .mh-demo-play { margin-top: 13px; width: 100%; border: none; border-radius: 12px; padding: 11px; font-family: inherit; font-size: 12.5px; font-weight: 800; color: #06140C; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; }
+</style>
+</head>
+<body>
+  <div class="hint">⬇ 데모 노드(D1 / D2)를 눌러보세요 — 아래로 펼쳐지며 그 데모에 쓴 글이 나와요</div>
+
+  <div class="sec-title"><i class="ri-music-2-line"></i> 음악 히스토리 (1)</div>
+
+  <div class="mh-track">
+    <div class="mh-track-head">
+      <div class="mh-cover" id="cover" style="background:#FF9F45;">
+        <span class="mh-cover-lines">#편곡이 달라서<br>#투표좀 해줘<br>#데모1 vs 2</span>
+      </div>
+      <div class="mh-track-mid">
+        <div><span class="mh-state">미발매</span><span class="mh-track-title">Plastic days</span></div>
+        <div class="mh-track-note" id="track-note"><b style="color:#FF9F45;">데모 2 에디션</b> · 편곡 갈아엎음</div>
+      </div>
+      <button class="mh-pbtn" onclick="alert('재생 (테스트)')"><i class="ri-play-fill"></i></button>
+    </div>
+
+    <div class="mh-nodes" id="nodes"></div>
+
+    <div class="mh-demo-panel" id="panel"><div class="mh-demo-inner" id="panel-inner"></div></div>
+  </div>
+
+  <div class="sec-title" style="margin-top:22px;"><i class="ri-information-line"></i> 이렇게 동작해요</div>
+  <div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.7;padding:0 2px;">
+    · 데모 노드를 누르면 <b>그 노드만 색이 차고</b>, 아래로 패널이 펼쳐져요.<br>
+    · 패널엔 <b>데모 버전·날짜 + 그 데모에 쓴 글(설명) + 태그 + 재생</b> 버튼.<br>
+    · 같은 노드를 다시 누르면 접히고, 다른 노드를 누르면 그 데모로 바뀌어요.
+  </div>
+
+<script>
+  var DEMOS = [
+    { n: 1, date: '2026.06.15', color: '#7C9CFF', edit: 'Demo 1',
+      text: '새벽 3시에 멜로디만 흥얼거리면서 잡은 첫 스케치예요.\n아직 드럼·베이스 없이 코드 진행이랑 가이드 보컬만 있어요. 방향이 맞는지 모르겠어서… 들어보고 느낌 알려주세요 🙏',
+      tags: ['첫 스케치', '새벽', '가이드보컬'] },
+    { n: 2, date: '2026.06.28', color: '#FF9F45', edit: 'Demo 2',
+      text: '편곡을 갈아엎었어요! 벌스를 새로 쓰고 후렴 멜로디도 살짝 바꿨어요. 드럼·베이스도 입혔고요.\n데모1이랑 편곡이 많이 달라서 투표 좀 — 1 vs 2 중에 뭐가 더 좋아요?',
+      tags: ['편곡이 달라서', '투표좀 해줘', '데모1 vs 2'] }
+  ];
+  var openIdx = -1;
+
+  function renderNodes() {
+    var html = '';
+    DEMOS.forEach(function (d, i) {
+      var on = (i === openIdx);
+      if (i > 0) html += '<div class="mh-node-bar"></div>';
+      html += '<div class="mh-node" onclick="toggle(' + i + ')">'
+        + '<div class="mh-node-dot" style="background:' + (on ? d.color : 'rgba(255,255,255,.15)') + ';color:' + (on ? '#06140C' : 'rgba(255,255,255,.7)') + ';box-shadow:' + (on ? '0 0 10px ' + d.color : 'none') + '">D' + d.n + '</div>'
+        + '<div class="mh-node-date" style="color:' + (on ? '#fff' : 'rgba(255,255,255,.4)') + '">' + d.date + '</div></div>';
+    });
+    html += '<div class="mh-node-bar"></div>'
+      + '<div class="mh-node mh-node-add" onclick="alert(\'다음 데모 올리기 (테스트)\')">'
+      + '<div class="mh-node-dot"><i class="ri-add-line"></i></div>'
+      + '<div class="mh-node-date" style="color:rgba(167,139,250,.75)">D3</div></div>';
+    document.getElementById('nodes').innerHTML = html;
+  }
+
+  function toggle(i) {
+    var panel = document.getElementById('panel');
+    if (openIdx === i) { openIdx = -1; panel.classList.remove('open'); renderNodes(); return; }
+    openIdx = i;
+    var d = DEMOS[i];
+    document.getElementById('panel-inner').innerHTML =
+        '<div class="mh-demo-h">'
+      + '<span class="mh-demo-badge" style="background:' + d.color + '">데모 ' + d.n + '</span>'
+      + '<span class="mh-demo-when"><i class="ri-calendar-line"></i> ' + d.date + ' 올림</span></div>'
+      + '<div class="mh-demo-label"><i class="ri-quill-pen-line"></i> 이 데모에 쓴 글</div>'
+      + '<div class="mh-demo-text">' + d.text.replace(/</g,'&lt;') + '</div>'
+      + '<div class="mh-demo-tags">' + d.tags.map(function (t) { return '<span class="mh-demo-tag">#' + t + '</span>'; }).join('') + '</div>'
+      + '<button class="mh-demo-play" style="background:' + d.color + '" onclick="alert(\'데모 ' + d.n + ' 재생 (테스트)\')"><i class="ri-play-fill"></i> 데모 ' + d.n + ' 들어보기</button>';
+    panel.classList.add('open');
+    renderNodes();
+  }
+
+  renderNodes();
+</script>
+</body>
+</html>
