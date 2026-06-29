@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>프로듀싱 투표 배틀 테스트</title>
+<title>프로듀싱 투표 배틀 (블라인드)</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
 <style>
@@ -11,38 +11,46 @@
   body { background: #0B0B12; color: #F4F4F7; font-family: 'Pretendard', sans-serif; padding: 18px 16px 60px; max-width: 460px; margin: 0 auto; }
   .hint { font-size: 12px; color: rgba(255,255,255,.42); text-align: center; margin-bottom: 14px; line-height: 1.5; }
 
-  /* 라운드 헤더 */
   .round { background: linear-gradient(125deg, rgba(139,124,246,.14), rgba(251,111,146,.1)), #15151E; border: 1px solid rgba(139,124,246,.28); border-radius: 18px; padding: 14px 15px; }
   .round-top { display: flex; align-items: center; gap: 8px; }
   .round-badge { font-size: 9.5px; font-weight: 900; color: #06140C; background: #C9C4F5; padding: 3px 8px; border-radius: 6px; }
   .round-t { font-size: 14px; font-weight: 900; }
   .round-meta { display: flex; gap: 14px; margin-top: 10px; font-size: 11px; color: rgba(255,255,255,.55); font-weight: 600; }
   .round-meta b { color: #fff; }
-  .round-q { font-size: 16px; font-weight: 900; margin: 14px 2px 4px; }
+  .blindtag { font-size: 10px; font-weight: 800; color: #C9C4F5; background: rgba(139,124,246,.16); padding: 3px 9px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px; margin: 12px 0 0; }
+  .round-q { font-size: 16px; font-weight: 900; margin: 10px 2px 4px; }
 
-  /* 투표 옵션 */
-  .opt { position: relative; border-radius: 16px; overflow: hidden; border: 1.5px solid rgba(255,255,255,.08); margin-bottom: 11px; cursor: pointer; transition: border-color .2s; }
+  .opt { position: relative; border-radius: 16px; overflow: hidden; border: 1.5px solid rgba(255,255,255,.1); margin-bottom: 11px; cursor: pointer; transition: border-color .2s, transform .1s; }
+  .opt:active { transform: scale(.99); }
   .opt.mine { border-color: #FFC94D; }
-  .opt-fill { position: absolute; inset: 0; width: 0%; transition: width .6s cubic-bezier(.3,.9,.3,1); z-index: 0; }
+  .opt.win { border-color: #36C977; }
+  .opt-fill { position: absolute; inset: 0; width: 0%; transition: width .7s cubic-bezier(.3,.9,.3,1); z-index: 0; }
   .opt-a .opt-fill { background: linear-gradient(90deg, rgba(139,124,246,.4), rgba(139,124,246,.12)); }
   .opt-b .opt-fill { background: linear-gradient(90deg, rgba(251,111,146,.4), rgba(251,111,146,.12)); }
-  .opt-row { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; padding: 13px 14px; }
-  .opt-play { width: 40px; height: 40px; border-radius: 50%; border: none; flex: 0 0 auto; color: #06140C; font-size: 19px; display: flex; align-items: center; justify-content: center; }
+  .opt-row { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; padding: 14px; }
+  .opt-play { width: 42px; height: 42px; border-radius: 50%; border: none; flex: 0 0 auto; color: #06140C; font-size: 20px; display: flex; align-items: center; justify-content: center; }
   .opt-a .opt-play { background: #8B7CF6; }
   .opt-b .opt-play { background: #FB6F92; }
   .opt-mid { flex: 1; min-width: 0; }
   .opt-tag { font-size: 9.5px; font-weight: 900; letter-spacing: .04em; }
   .opt-a .opt-tag { color: #C9C4F5; }
   .opt-b .opt-tag { color: #FBA8C0; }
-  .opt-n { font-size: 14px; font-weight: 800; margin-top: 1px; }
-  .opt-pct { font-size: 18px; font-weight: 900; flex: 0 0 auto; }
-  .opt-vote { font-size: 10.5px; font-weight: 800; color: rgba(255,255,255,.4); margin-top: 2px; }
+  .opt-n { font-size: 14.5px; font-weight: 800; margin-top: 1px; }
+  .opt-right { flex: 0 0 auto; text-align: right; }
+  .opt-q { font-size: 22px; font-weight: 900; color: rgba(255,255,255,.25); }
+  .opt-pct { font-size: 20px; font-weight: 900; display: none; }
   .opt-you { display: none; font-size: 9px; font-weight: 900; color: #FFC94D; background: rgba(255,201,77,.14); padding: 2px 7px; border-radius: 999px; }
   .opt.mine .opt-you { display: inline-block; }
+  .opt-winbadge { display: none; font-size: 9px; font-weight: 900; color: #06140C; background: #36C977; padding: 2px 7px; border-radius: 999px; }
+  .opt.win .opt-winbadge { display: inline-block; }
 
-  .stake { text-align: center; font-size: 12px; font-weight: 700; color: #FFE39A; background: rgba(255,201,77,.08); border: 1px dashed rgba(255,201,77,.3); border-radius: 12px; padding: 10px; margin: 4px 0 0; }
+  .stake { text-align: center; font-size: 12px; font-weight: 700; color: #FFE39A; background: rgba(255,201,77,.08); border: 1px dashed rgba(255,201,77,.3); border-radius: 12px; padding: 11px; margin: 4px 0 0; line-height: 1.5; }
+  .reveal-btn { display: none; width: 100%; margin-top: 11px; border: none; border-radius: 13px; padding: 12px; font-family: inherit; font-size: 13px; font-weight: 800; color: #06140C; background: #C9C4F5; cursor: pointer; }
+  .reveal-btn.show { display: block; }
+  .outcome { display: none; text-align: center; font-size: 14px; font-weight: 900; padding: 13px; border-radius: 13px; margin-top: 11px; }
+  .outcome.hit { display: block; color: #06140C; background: linear-gradient(120deg, #FFE9A8, #FFC94D); }
+  .outcome.miss { display: block; color: #FBA8C0; background: rgba(251,111,146,.12); border: 1px solid rgba(251,111,146,.3); }
 
-  /* 지난 라운드 (데모 빌드 히스토리) */
   .past { margin-top: 22px; }
   .past-t { font-size: 12px; font-weight: 800; color: rgba(255,255,255,.5); margin: 0 2px 9px; }
   .past-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #14141C; border: 1px solid rgba(255,255,255,.05); border-radius: 12px; margin-bottom: 8px; font-size: 11.5px; }
@@ -51,7 +59,6 @@
   .past-txt b { color: #fff; }
   .past-won { font-size: 9.5px; font-weight: 800; color: #9DE0B4; flex: 0 0 auto; }
 
-  /* 프로듀서 랭킹 */
   .rank { margin-top: 22px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 16px; padding: 14px; }
   .rank-t { font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 11px; }
   .rank-t i { color: #FFC94D; }
@@ -67,11 +74,12 @@
 </style>
 </head>
 <body>
-  <div class="hint">🎬 컨셉 테스트 — "프로듀싱 = 데모의 다음 방향을 투표로 정하는 게임". 옵션을 탭해 투표해보세요.</div>
+  <div class="hint">🎬 ① 투표 배틀 (블라인드) — A/B 미리듣고 한 쪽에 투표. <b>%는 안 보여요</b> → 마감 때 공개. 맞히면 프로듀서!</div>
 
   <div class="round">
     <div class="round-top"><span class="round-badge">라운드 3</span><span class="round-t">데모 3 만드는 중 · Plastic days</span></div>
-    <div class="round-meta"><span>⏳ <b>2일</b> 남음</span><span>🗳️ <b>1,204명</b> 참여</span><span>🎬 <b>츠ㄴ</b></span></div>
+    <div class="round-meta"><span>⏳ <b>2일</b> 남음</span><span>🗳️ <b>1,204명</b> 투표</span><span>🎬 <b>츠ㄴ</b></span></div>
+    <span class="blindtag" id="blindtag"><i class="ri-eye-off-line"></i> 결과 비공개 · 마감 때 공개</span>
     <div class="round-q">후렴 편곡, 어디로 갈까요?</div>
 
     <div class="opt opt-a" id="optA" onclick="vote('A')">
@@ -79,11 +87,10 @@
       <div class="opt-row">
         <button class="opt-play" onclick="event.stopPropagation()"><i class="ri-play-fill"></i></button>
         <div class="opt-mid">
-          <div class="opt-tag">A안 · 신스 리드 <span class="opt-you">내 표</span></div>
+          <div class="opt-tag">A안 · 신스 리드 <span class="opt-you">내 표</span> <span class="opt-winbadge">WIN</span></div>
           <div class="opt-n">몽환적인 신스</div>
-          <div class="opt-vote" id="voteA">694표</div>
         </div>
-        <div class="opt-pct" id="pctA">58%</div>
+        <div class="opt-right"><span class="opt-q" id="qA"><i class="ri-question-line"></i></span><span class="opt-pct" id="pctA">58%</span></div>
       </div>
     </div>
 
@@ -92,63 +99,63 @@
       <div class="opt-row">
         <button class="opt-play" onclick="event.stopPropagation()"><i class="ri-play-fill"></i></button>
         <div class="opt-mid">
-          <div class="opt-tag">B안 · 기타 리프 <span class="opt-you">내 표</span></div>
+          <div class="opt-tag">B안 · 기타 리프 <span class="opt-you">내 표</span> <span class="opt-winbadge">WIN</span></div>
           <div class="opt-n">펑키한 기타</div>
-          <div class="opt-vote" id="voteB">510표</div>
         </div>
-        <div class="opt-pct" id="pctB">42%</div>
+        <div class="opt-right"><span class="opt-q" id="qB"><i class="ri-question-line"></i></span><span class="opt-pct" id="pctB">42%</span></div>
       </div>
     </div>
 
-    <div class="stake" id="stake">👆 한 쪽에 투표하세요 — <b>이긴 편곡으로 데모 3이 만들어지고, 이긴 쪽에 투표한 사람은 이 곡의 프로듀서</b>가 돼요 🎬</div>
+    <div class="stake" id="stake">👆 미리듣고 <b>믿는 쪽에 한 표</b> — 마감 때 이긴 편곡으로 데모 3이 만들어지고, <b>이긴 쪽을 맞힌 사람은 이 곡의 프로듀서</b>가 돼요 🎬</div>
+    <button class="reveal-btn" id="revealBtn" onclick="reveal()"><i class="ri-lock-unlock-line"></i> (테스트) 마감하고 결과 공개</button>
+    <div class="outcome" id="outcome"></div>
   </div>
 
-  <!-- 데모가 투표로 만들어진 기록 -->
   <div class="past">
     <div class="past-t"><i class="ri-history-line"></i> 이 곡이 만들어진 기록</div>
-    <div class="past-row"><span class="past-step">D1→D2</span><div class="past-txt"><b>"한 박자 비우기"</b> vs 그대로 → 비우기 승</div><span class="past-won">프로듀서 312</span></div>
+    <div class="past-row"><span class="past-step">D1→D2</span><div class="past-txt"><b>"한 박자 비우기"</b> 승 (62%)</div><span class="past-won">프로듀서 312</span></div>
     <div class="past-row"><span class="past-step">D2→D3</span><div class="past-txt"><b>진행 중</b> · 신스 vs 기타</div><span class="past-won" style="color:#C9C4F5">투표 중</span></div>
   </div>
 
-  <!-- 프로듀서 랭킹 (이 곡) -->
   <div class="rank">
-    <div class="rank-t"><i class="ri-trophy-line"></i> 이 곡 프로듀서 랭킹</div>
-    <div class="rank-row"><span class="rank-no" style="color:#FFC94D">1</span><span class="rank-av" style="background:#FB6F92">서</span><span class="rank-nm">서연</span><span class="rank-sc">3 라운드 적중</span></div>
-    <div class="rank-row"><span class="rank-no" style="color:#C9C4F5">2</span><span class="rank-av" style="background:#36C977">민</span><span class="rank-nm">민지</span><span class="rank-sc">2 라운드</span></div>
-    <div class="rank-row"><span class="rank-no" style="color:#E0A77C">3</span><span class="rank-av" style="background:#7C9CFF">준</span><span class="rank-nm">준호</span><span class="rank-sc">2 라운드</span></div>
-    <div class="rank-row rank-me"><span class="rank-no">14</span><span class="rank-av" style="background:#FFC94D">김</span><span class="rank-nm">김주형 <span style="font-size:9px;color:#9DE0B4;font-weight:800">나</span></span><span class="rank-sc" id="myscore">0 라운드</span></div>
+    <div class="rank-t"><i class="ri-trophy-line"></i> 이 곡 프로듀서 랭킹 <span style="font-size:10px;color:#8B8B9A;font-weight:600;margin-left:auto">적중 횟수순</span></div>
+    <div class="rank-row"><span class="rank-no" style="color:#FFC94D">1</span><span class="rank-av" style="background:#FB6F92">서</span><span class="rank-nm">서연</span><span class="rank-sc">3 적중 · 족집게</span></div>
+    <div class="rank-row"><span class="rank-no" style="color:#C9C4F5">2</span><span class="rank-av" style="background:#36C977">민</span><span class="rank-nm">민지</span><span class="rank-sc">2 적중</span></div>
+    <div class="rank-row"><span class="rank-no" style="color:#E0A77C">3</span><span class="rank-av" style="background:#7C9CFF">준</span><span class="rank-nm">준호</span><span class="rank-sc">2 적중</span></div>
+    <div class="rank-row rank-me"><span class="rank-no">14</span><span class="rank-av" style="background:#FFC94D">김</span><span class="rank-nm">김주형 <span style="font-size:9px;color:#9DE0B4;font-weight:800">나</span></span><span class="rank-sc" id="myscore">0 적중</span></div>
   </div>
 
   <div class="explain">
-    🎬 <b>데모가 진화할 때마다(D1→D2→D3) 새 투표 라운드</b>가 열려요. 청취자가 곡의 방향을 직접 정하고, 이긴 쪽에 선 사람은 그 곡의 <b>프로듀서</b>로 기록돼요. 많이 적중할수록 랭킹 ↑. 곡이 발매돼도 프로듀서 크레딧은 남아요.
+    🎬 <b>%를 숨겨서</b> 묻어가기가 안 돼요 — 진짜 귀로 듣고 골라야 해요. 데모가 진화할 때마다(D1→D2→D3) 새 라운드가 열리고, 이긴 쪽을 <b>맞힌 사람만 프로듀서</b>로 기록돼요. 많이 적중할수록 랭킹 ↑ (<b>족집게</b> 칭호). 발매돼도 크레딧은 남아요.
   </div>
 
 <script>
-  var votes = { A: 694, B: 510 }, mine = null;
-  function render() {
-    var total = votes.A + votes.B;
-    var pa = Math.round(votes.A / total * 100), pb = 100 - pa;
-    document.getElementById('pctA').textContent = pa + '%';
-    document.getElementById('pctB').textContent = pb + '%';
-    document.getElementById('fillA').style.width = pa + '%';
-    document.getElementById('fillB').style.width = pb + '%';
-    document.getElementById('voteA').textContent = votes.A.toLocaleString() + '표';
-    document.getElementById('voteB').textContent = votes.B.toLocaleString() + '표';
-    document.getElementById('optA').classList.toggle('mine', mine === 'A');
-    document.getElementById('optB').classList.toggle('mine', mine === 'B');
-  }
+  var result = { A: 58, B: 42 }, mine = null, revealed = false;
   function vote(side) {
-    if (mine === side) return;
-    if (mine) votes[mine]--;
-    mine = side; votes[side]++;
-    var win = votes.A >= votes.B ? 'A' : 'B';
-    document.getElementById('stake').innerHTML = (mine === win)
-      ? '🎬 <b>당신은 ' + mine + '안에 투표!</b> 지금 이기고 있어요 — 이대로면 <b>이 곡의 프로듀서</b>가 돼요!'
-      : '🎬 <b>당신은 ' + mine + '안에 투표!</b> 지금은 지고 있어요 — 친구 불러서 뒤집어요 🔥';
-    document.getElementById('myscore').textContent = '이번 라운드 참여 중';
-    render();
+    if (revealed || mine === side) return;
+    mine = side;
+    document.getElementById('optA').classList.toggle('mine', side === 'A');
+    document.getElementById('optB').classList.toggle('mine', side === 'B');
+    document.getElementById('stake').innerHTML = '✅ <b>' + side + '안</b>에 투표 완료! 결과는 <b>마감 때 공개</b>돼요 — 맞히면 프로듀서 🎬';
+    document.getElementById('revealBtn').classList.add('show');
   }
-  render();
+  function reveal() {
+    if (!mine || revealed) return;
+    revealed = true;
+    var win = result.A >= result.B ? 'A' : 'B';
+    document.getElementById('blindtag').innerHTML = '<i class="ri-eye-line"></i> 마감 · 결과 공개';
+    ['A','B'].forEach(function (s) {
+      document.getElementById('q' + s).style.display = 'none';
+      document.getElementById('pct' + s).style.display = 'block';
+      document.getElementById('pct' + s).textContent = result[s] + '%';
+      document.getElementById('fill' + s).style.width = result[s] + '%';
+    });
+    document.getElementById('opt' + win).classList.add('win');
+    document.getElementById('revealBtn').classList.remove('show');
+    var o = document.getElementById('outcome');
+    if (mine === win) { o.className = 'outcome hit'; o.innerHTML = '🎉 적중! 당신은 이제 <b>이 곡의 프로듀서</b>예요 🎬'; document.getElementById('myscore').textContent = '1 적중'; }
+    else { o.className = 'outcome miss'; o.innerHTML = '아쉽! ' + win + '안이 이겼어요. 다음 라운드(데모 4)에 다시 도전 🔥'; }
+  }
 </script>
 </body>
 </html>

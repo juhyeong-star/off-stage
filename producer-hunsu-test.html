@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>댓글 훈수 테스트</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: #0B0B12; color: #F4F4F7; font-family: 'Pretendard', sans-serif; padding: 18px 16px 60px; max-width: 460px; margin: 0 auto; }
+  .hint { font-size: 12px; color: rgba(255,255,255,.42); text-align: center; margin-bottom: 14px; line-height: 1.5; }
+
+  .demo { display: flex; align-items: center; gap: 12px; padding: 13px; border-radius: 18px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); }
+  .demo-orb { width: 48px; height: 48px; border-radius: 14px; flex: 0 0 auto; background: radial-gradient(circle at 38% 32%, #FFE0B8, #FF9F45 60%); box-shadow: 0 0 16px rgba(255,159,69,.4); }
+  .demo-mid { flex: 1; }
+  .demo-badge { font-size: 9.5px; font-weight: 900; color: #06140C; background: #FF9F45; padding: 2px 8px; border-radius: 6px; }
+  .demo-t { font-size: 15px; font-weight: 900; margin-top: 4px; }
+  .demo-by { font-size: 11px; color: rgba(255,255,255,.45); }
+  .demo-play { width: 40px; height: 40px; border-radius: 50%; border: none; background: #FF9F45; color: #06140C; font-size: 19px; flex: 0 0 auto; }
+
+  .sh-h { display: flex; align-items: baseline; gap: 7px; margin: 22px 2px 4px; }
+  .sh-t { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+  .sh-t i { color: #FFC94D; }
+  .sh-s { font-size: 11.5px; color: rgba(255,255,255,.5); margin: 0 2px 13px; line-height: 1.5; }
+
+  /* 빠른 훈수 칩 */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .chip { font-family: inherit; font-size: 12px; font-weight: 700; color: #E8E6F5; background: #1A1A24; border: 1px solid rgba(255,255,255,.1); border-radius: 999px; padding: 8px 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: transform .1s; }
+  .chip:active { transform: scale(.95); }
+  .chip.mine { background: rgba(255,201,77,.16); border-color: #FFC94D; color: #FFE39A; }
+  .chip b { font-weight: 800; color: #8B8B9A; }
+  .chip.mine b { color: #FFC94D; }
+
+  /* 다들 바라는 것 — 집계 막대 */
+  .agg { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 14px; padding: 13px; margin-top: 12px; }
+  .agg-t { font-size: 11px; font-weight: 800; color: rgba(255,255,255,.5); margin-bottom: 10px; }
+  .agg-row { margin-bottom: 9px; }
+  .agg-row:last-child { margin-bottom: 0; }
+  .agg-lbl { display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 700; margin-bottom: 4px; }
+  .agg-lbl span:last-child { color: #FFC94D; }
+  .agg-bar { height: 6px; border-radius: 6px; background: rgba(255,255,255,.07); overflow: hidden; }
+  .agg-bar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #8B7CF6, #FB6F92); transition: width .5s; }
+
+  /* 자유 훈수 */
+  .pin { display: flex; gap: 8px; margin: 16px 0; }
+  .pin input { flex: 1; background: #15151E; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 11px 13px; color: #fff; font-family: inherit; font-size: 12.5px; }
+  .pin input::placeholder { color: rgba(255,255,255,.35); }
+  .pin button { border: none; border-radius: 12px; background: #FFC94D; color: #06140C; font-weight: 800; font-size: 12.5px; padding: 0 14px; font-family: inherit; }
+
+  .cm { display: flex; gap: 10px; padding: 12px; border-radius: 14px; background: #14141C; border: 1px solid rgba(255,255,255,.05); margin-bottom: 9px; }
+  .cm.adopted { border-color: rgba(255,201,77,.4); background: linear-gradient(120deg, rgba(255,201,77,.06), transparent), #14141C; }
+  .cm-av { width: 32px; height: 32px; border-radius: 50%; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #06140C; }
+  .cm-body { flex: 1; min-width: 0; }
+  .cm-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .cm-nm { font-size: 12px; font-weight: 800; }
+  .cm-title { font-size: 9px; font-weight: 900; color: #FFC94D; background: rgba(255,201,77,.13); padding: 2px 7px; border-radius: 999px; }
+  .cm-txt { font-size: 12.5px; line-height: 1.5; color: rgba(255,255,255,.85); margin: 5px 0 7px; }
+  .cm-foot { display: flex; align-items: center; gap: 13px; }
+  .cm-up { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,.5); cursor: pointer; }
+  .cm-up.on { color: #FB6F92; }
+  .cm-adopt { font-size: 10px; font-weight: 800; color: #FFC94D; display: inline-flex; align-items: center; gap: 4px; }
+
+  .rank { margin-top: 22px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 16px; padding: 14px; }
+  .rank-t { font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 11px; }
+  .rank-t i { color: #FFC94D; }
+  .rank-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+  .rank-no { width: 20px; font-size: 13px; font-weight: 900; text-align: center; flex: 0 0 auto; }
+  .rank-av { width: 28px; height: 28px; border-radius: 50%; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #06140C; }
+  .rank-nm { flex: 1; font-size: 12.5px; font-weight: 700; }
+  .rank-sc { font-size: 11px; font-weight: 800; color: #FFC94D; }
+  .rank-me { border-top: 1px dashed rgba(255,255,255,.1); margin-top: 4px; padding-top: 9px; }
+
+  .explain { margin-top: 22px; font-size: 11.5px; color: rgba(255,255,255,.6); line-height: 1.7; padding: 0 2px; }
+  .explain b { color: #FFC94D; }
+</style>
+</head>
+<body>
+  <div class="hint">🎬 ② 댓글 훈수 — 그냥 댓글이 아니라 <b>탭으로 훈수 두기</b> + 집계 + 채택되면 명훈수/프로듀서</div>
+
+  <div class="demo">
+    <div class="demo-orb"></div>
+    <div class="demo-mid"><span class="demo-badge">데모 2</span><div class="demo-t">Plastic days</div><div class="demo-by">츠ㄴ</div></div>
+    <button class="demo-play"><i class="ri-play-fill"></i></button>
+  </div>
+
+  <div class="sh-h"><div class="sh-t"><i class="ri-chat-quote-line"></i> 훈수 두기</div></div>
+  <div class="sh-s">이 데모 어떻게 발전시킬까요? <b>탭 한 번으로 훈수</b>하거나 직접 남겨요. 아티스트가 <b style="color:#FFC94D">채택하면 명훈수</b> + 그 곡 프로듀서 🎬</div>
+
+  <div class="chips" id="chips"></div>
+
+  <div class="agg">
+    <div class="agg-t">🔥 다들 바라는 것 TOP</div>
+    <div id="agg"></div>
+  </div>
+
+  <div class="pin">
+    <input placeholder="직접 훈수 두기… (예: 후렴 전에 한 박자 비워요)">
+    <button>두기</button>
+  </div>
+
+  <div class="cm adopted">
+    <div class="cm-av" style="background:#FB6F92">서</div>
+    <div class="cm-body">
+      <div class="cm-top"><span class="cm-nm">서연</span><span class="cm-title">👑 명훈수 · 프로듀서</span></div>
+      <div class="cm-txt">후렴 들어가기 전에 한 박자 비우면 훨씬 터질 거예요!</div>
+      <div class="cm-foot"><span class="cm-up on"><i class="ri-fire-fill"></i> 31</span><span class="cm-adopt"><i class="ri-check-double-line"></i> 데모 3에 채택됨</span></div>
+    </div>
+  </div>
+
+  <div class="cm">
+    <div class="cm-av" style="background:#36C977">민</div>
+    <div class="cm-body">
+      <div class="cm-top"><span class="cm-nm">민지</span></div>
+      <div class="cm-txt">아웃트로를 길게 빼서 여운 남겨주세요</div>
+      <div class="cm-foot"><span class="cm-up" onclick="up(this)"><i class="ri-fire-line"></i> <span>12</span></span></div>
+    </div>
+  </div>
+
+  <div class="rank">
+    <div class="rank-t"><i class="ri-trophy-line"></i> 이 곡 훈수왕 <span style="font-size:10px;color:#8B8B9A;font-weight:600;margin-left:auto">채택 횟수순</span></div>
+    <div class="rank-row"><span class="rank-no" style="color:#FFC94D">1</span><span class="rank-av" style="background:#FB6F92">서</span><span class="rank-nm">서연</span><span class="rank-sc">채택 4 · 👑 훈수왕</span></div>
+    <div class="rank-row"><span class="rank-no" style="color:#C9C4F5">2</span><span class="rank-av" style="background:#7C9CFF">준</span><span class="rank-nm">준호</span><span class="rank-sc">채택 2</span></div>
+    <div class="rank-row rank-me"><span class="rank-no">9</span><span class="rank-av" style="background:#FFC94D">김</span><span class="rank-nm">김주형 <span style="font-size:9px;color:#9DE0B4;font-weight:800">나</span></span><span class="rank-sc" id="myscore">채택 0</span></div>
+  </div>
+
+  <div class="explain">
+    🎬 <b>탭 한 번이면 훈수 완료</b> — 글 안 써도 돼요. 같은 걸 바라는 사람이 모이면 "다들 드럼을 원해요" 처럼 집계돼서 아티스트가 한눈에 봐요. 좋은 훈수는 🔥로 올라가고, <b>아티스트가 채택하면 명훈수 + 프로듀서</b>. 채택 많으면 <b>훈수왕 👑</b>.
+  </div>
+
+<script>
+  var HUNSU = [
+    { k: '드럼 세게', emo: '🥁', n: 124 }, { k: '코러스 쌓기', emo: '🎤', n: 98 },
+    { k: '템포 업', emo: '⏩', n: 76 }, { k: '베이스 ↑', emo: '🔊', n: 61 },
+    { k: '벌스 줄이기', emo: '✂️', n: 43 }, { k: '신스 추가', emo: '🎹', n: 39 }
+  ];
+  var myChip = null;
+  function renderChips() {
+    document.getElementById('chips').innerHTML = HUNSU.map(function (h, i) {
+      return '<button class="chip' + (myChip === i ? ' mine' : '') + '" onclick="tapChip(' + i + ')">' + h.emo + ' ' + h.k + ' <b>' + h.n + '</b></button>';
+    }).join('');
+  }
+  function renderAgg() {
+    var sorted = HUNSU.slice().sort(function (a, b) { return b.n - a.n; }).slice(0, 4);
+    var max = sorted[0].n;
+    document.getElementById('agg').innerHTML = sorted.map(function (h) {
+      return '<div class="agg-row"><div class="agg-lbl"><span>' + h.emo + ' ' + h.k + '</span><span>' + h.n + '명</span></div>'
+        + '<div class="agg-bar"><i style="width:' + Math.round(h.n / max * 100) + '%"></i></div></div>';
+    }).join('');
+  }
+  function tapChip(i) {
+    if (myChip === i) { HUNSU[i].n--; myChip = null; }
+    else { if (myChip !== null) HUNSU[myChip].n--; HUNSU[i].n++; myChip = i; }
+    renderChips(); renderAgg();
+  }
+  function up(el) {
+    var s = el.querySelector('span'); var on = el.classList.toggle('on');
+    s.textContent = parseInt(s.textContent) + (on ? 1 : -1);
+    el.querySelector('i').className = on ? 'ri-fire-fill' : 'ri-fire-line';
+  }
+  renderChips(); renderAgg();
+</script>
+</body>
+</html>
