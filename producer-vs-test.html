@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>프로듀싱 VS (제작자안 + 댓글 경쟁)</title>
+<title>프로듀싱 VS (제작자 A/B + 댓글 도전)</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
 <style>
@@ -17,110 +17,148 @@
   .round-t { font-size: 14px; font-weight: 900; }
   .round-meta { display: flex; gap: 14px; margin-top: 10px; font-size: 11px; color: rgba(255,255,255,.55); font-weight: 600; }
   .round-meta b { color: #fff; }
-  .round-q { font-size: 16px; font-weight: 900; margin: 12px 2px 0; }
+  .round-q { font-size: 16px; font-weight: 900; margin: 12px 2px 4px; }
+  .sub { font-size: 10.5px; font-weight: 800; color: #C9C4F5; margin: 0 2px 9px; }
 
-  .banner { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; border-radius: 12px; padding: 11px 12px; margin: 12px 0 4px; line-height: 1.4; }
+  /* 제작자 A vs B — 맨 위 큰 대결 */
+  .vs { display: flex; align-items: stretch; gap: 0; position: relative; }
+  .vs-card { flex: 1; min-width: 0; border-radius: 16px; padding: 13px 11px; text-align: center; border: 1.5px solid rgba(255,255,255,.1); transition: border-color .2s, transform .1s; cursor: pointer; }
+  .vs-card:active { transform: scale(.98); }
+  .vs-a { background: rgba(139,124,246,.07); margin-right: 18px; }
+  .vs-b { background: rgba(251,111,146,.07); margin-left: 18px; }
+  .vs-card.lead { border-color: #FFC94D; }
+  .vs-card.mine-v { box-shadow: inset 0 0 0 1.5px #FFC94D; }
+  .vs-tag { font-size: 9.5px; font-weight: 900; letter-spacing: .04em; }
+  .vs-a .vs-tag { color: #C9C4F5; } .vs-b .vs-tag { color: #FBA8C0; }
+  .vs-play { width: 44px; height: 44px; border-radius: 50%; border: none; color: #06140C; font-size: 21px; margin: 8px auto 7px; display: flex; align-items: center; justify-content: center; }
+  .vs-a .vs-play { background: #8B7CF6; } .vs-b .vs-play { background: #FB6F92; }
+  .vs-n { font-size: 13px; font-weight: 800; }
+  .vs-vote { margin-top: 9px; display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 800; color: rgba(255,255,255,.5); }
+  .vs-vote.on { color: #FB6F92; }
+  .vs-mid { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 34px; height: 34px; border-radius: 50%; background: #0B0B12; border: 1.5px solid rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: #fff; z-index: 2; }
+
+  .banner { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; border-radius: 12px; padding: 11px 12px; margin-top: 13px; line-height: 1.4; }
   .banner.cmwin { color: #FFE39A; background: linear-gradient(120deg, rgba(255,201,77,.15), rgba(251,111,146,.1)); border: 1px solid rgba(255,201,77,.35); }
   .banner.artwin { color: #C9C4F5; background: rgba(139,124,246,.1); border: 1px solid rgba(139,124,246,.28); }
 
-  .lead-t { font-size: 11px; font-weight: 800; color: rgba(255,255,255,.45); margin: 14px 2px 9px; display: flex; }
-  .lead-t span { margin-left: auto; }
-
-  .ct { display: flex; align-items: center; gap: 11px; padding: 12px; border-radius: 14px; background: #14141C; border: 1px solid rgba(255,255,255,.06); margin-bottom: 9px; transition: border-color .2s; }
-  .ct.first { border-color: #FFC94D; background: linear-gradient(120deg, rgba(255,201,77,.07), transparent), #14141C; }
-  .ct.mine-v { box-shadow: inset 3px 0 0 #FFC94D; }
-  .ct-rank { width: 18px; font-size: 14px; font-weight: 900; text-align: center; flex: 0 0 auto; color: rgba(255,255,255,.4); }
-  .ct.first .ct-rank { color: #FFC94D; }
-  .ct-play { width: 36px; height: 36px; border-radius: 50%; border: none; flex: 0 0 auto; font-size: 17px; display: flex; align-items: center; justify-content: center; }
-  .ct-av { width: 36px; height: 36px; border-radius: 50%; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: #06140C; }
+  /* 청취자 도전 */
+  .ch-h { font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 6px; margin: 22px 2px 4px; }
+  .ch-h i { color: #9DE0B4; }
+  .ch-s { font-size: 11px; color: rgba(255,255,255,.5); margin: 0 2px 12px; line-height: 1.5; }
+  .ct { display: flex; align-items: center; gap: 11px; padding: 11px; border-radius: 13px; background: #14141C; border: 1px solid rgba(255,255,255,.06); margin-bottom: 8px; }
+  .ct.lead { border-color: #FFC94D; background: linear-gradient(120deg, rgba(255,201,77,.07), transparent), #14141C; }
+  .ct-av { width: 34px; height: 34px; border-radius: 50%; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: #06140C; }
   .ct-mid { flex: 1; min-width: 0; }
-  .ct-who { font-size: 9.5px; font-weight: 900; display: inline-flex; align-items: center; gap: 3px; }
-  .ct-who.art { color: #C9C4F5; }
-  .ct-who.lis { color: #9DE0B4; }
-  .ct-label { font-size: 13px; font-weight: 700; margin-top: 1px; line-height: 1.35; }
-  .ct-myb { font-size: 8.5px; font-weight: 900; color: #FFC94D; background: rgba(255,201,77,.14); padding: 1px 6px; border-radius: 999px; margin-left: 5px; }
-  .ct-vote { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; min-width: 46px; }
-  .ct-vote i { font-size: 17px; color: rgba(255,255,255,.4); transition: color .15s, transform .1s; }
-  .ct-vote.on i { color: #FB6F92; transform: scale(1.15); }
+  .ct-nm { font-size: 9.5px; font-weight: 900; color: #9DE0B4; }
+  .ct-label { font-size: 12.5px; font-weight: 700; margin-top: 1px; line-height: 1.35; }
+  .ct-crown { font-size: 9px; font-weight: 900; color: #FFC94D; }
+  .ct-myb { font-size: 8.5px; font-weight: 900; color: #FFC94D; background: rgba(255,201,77,.14); padding: 1px 6px; border-radius: 999px; margin-left: 4px; }
+  .ct-vote { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 1px; cursor: pointer; min-width: 44px; }
+  .ct-vote i { font-size: 16px; color: rgba(255,255,255,.4); }
+  .ct-vote.on i { color: #FB6F92; }
   .ct-vn { font-size: 12px; font-weight: 800; }
 
-  .pin { display: flex; gap: 8px; margin: 13px 0 0; }
+  .pin { display: flex; gap: 8px; margin-top: 12px; }
   .pin input { flex: 1; background: #15151E; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 11px 13px; color: #fff; font-family: inherit; font-size: 12.5px; }
   .pin input::placeholder { color: rgba(255,255,255,.35); }
   .pin button { border: none; border-radius: 12px; background: #36C977; color: #06140C; font-weight: 800; font-size: 12.5px; padding: 0 14px; font-family: inherit; }
-
-  .stake { text-align: center; font-size: 11.5px; font-weight: 700; color: #FFE39A; margin-top: 13px; line-height: 1.55; padding: 0 4px; }
-  .stake b { color: #FFC94D; }
 
   .explain { margin-top: 22px; font-size: 11.5px; color: rgba(255,255,255,.6); line-height: 1.7; padding: 0 2px; }
   .explain b { color: #FFC94D; }
 </style>
 </head>
 <body>
-  <div class="hint">🎬 ③ 제작자 A vs B <b>+ 청취자 댓글</b>이 다 같이 경쟁 — 추천 = 투표. <b>댓글이 1위면 댓글대로!</b> (추천 눌러보세요)</div>
+  <div class="hint">🎬 제작자가 <b>A vs B</b> 올리고(위), 청취자 <b>댓글도 도전</b>(아래) — 추천 = 투표. 댓글이 A·B를 이기면 댓글대로!</div>
 
   <div class="round">
     <div class="round-top"><span class="round-badge">라운드 3</span><span class="round-t">데모 3 만드는 중 · Plastic days</span></div>
     <div class="round-meta"><span>⏳ <b>2일</b> 남음</span><span>🗳️ <b>1,204명</b></span><span>🎬 <b>츠ㄴ</b></span></div>
     <div class="round-q">후렴 편곡, 어디로 갈까요?</div>
+    <div class="sub">🎬 제작자가 낸 두 안 — 미리듣고 한 표</div>
+
+    <div class="vs">
+      <div class="vs-card vs-a" id="cardA" onclick="voteFor('a')">
+        <div class="vs-tag">A 안</div>
+        <button class="vs-play" onclick="event.stopPropagation()"><i class="ri-play-fill"></i></button>
+        <div class="vs-n">몽환적인 신스</div>
+        <div class="vs-vote" id="voteA"><i class="ri-fire-line"></i> <span>312</span></div>
+      </div>
+      <div class="vs-mid">VS</div>
+      <div class="vs-card vs-b" id="cardB" onclick="voteFor('b')">
+        <div class="vs-tag">B 안</div>
+        <button class="vs-play" onclick="event.stopPropagation()"><i class="ri-play-fill"></i></button>
+        <div class="vs-n">펑키한 기타</div>
+        <div class="vs-vote" id="voteB"><i class="ri-fire-line"></i> <span>311</span></div>
+      </div>
+    </div>
 
     <div id="banner"></div>
-    <div class="lead-t">현재 순위 <span>추천 = 투표</span></div>
-    <div id="list"></div>
+  </div>
 
-    <div class="pin">
-      <input id="ideaInput" placeholder="내 편곡 아이디어 내기… (댓글도 경쟁에 참여!)">
-      <button onclick="addIdea()">내기</button>
-    </div>
-    <div class="stake">🎬 마감 때 <b>1위 안으로 데모 3</b>이 만들어져요. 1위에 추천한 사람 = <b>프로듀서</b>, 내 아이디어가 1위면 = <b>메인 프로듀서</b>!</div>
+  <div class="ch-h"><i class="ri-sword-line"></i> 청취자 도전</div>
+  <div class="ch-s">"이렇게 해보면?" 댓글로 도전하세요. <b style="color:#FFC94D">도전 1위가 A·B보다 표 많으면 — 그 댓글대로 만들어져요</b> 🎬</div>
+  <div id="chlist"></div>
+  <div class="pin">
+    <input id="ideaInput" placeholder="내 편곡 아이디어로 도전… (예: 드럼 빼고 어쿠스틱)">
+    <button onclick="addIdea()">도전</button>
   </div>
 
   <div class="explain">
-    🎬 제작자가 <b>A·B 두 안</b>을 올리지만, 청취자가 낸 <b>댓글 아이디어도 같은 무대</b>에서 추천(투표)을 받아요. 만약 <b>댓글이 A·B를 이기면 — 그 댓글대로 데모가 만들어져요.</b> 청취자가 제작자를 이길 수 있는 거죠. 데모가 진화할 때마다(D1→D2→D3) 새 VS 라운드.
+    🎬 제작자의 <b>A·B</b>가 메인 대결이지만, 청취자 댓글도 같은 표를 받아요. <b>댓글 도전 1위가 A·B를 다 이기면 — 그 댓글대로 데모가 만들어지고, 낸 사람은 메인 프로듀서!</b> 1위(A·B든 댓글이든)에 추천한 사람들도 프로듀서로 기록돼요. 데모가 진화할 때마다(D1→D2→D3) 새 라운드.
   </div>
 
 <script>
-  var items = [
-    { id: 'c_seo', who: 'lis', nm: '서연', av: '#FB6F92', label: '후렴 전에 한 박자 비우고 808 떨구기', votes: 342, mine: false },
-    { id: 'a', who: 'art', label: 'A안 · 몽환적인 신스 리드', votes: 312, mine: false, audio: true },
-    { id: 'b', who: 'art', label: 'B안 · 펑키한 기타 리프', votes: 311, mine: false, audio: true },
-    { id: 'c_jun', who: 'lis', nm: '준호', av: '#7C9CFF', label: '신스랑 기타 둘 다 섞어요', votes: 76, mine: false },
-    { id: 'c_min', who: 'lis', nm: '민지', av: '#36C977', label: '템포 살짝만 업', votes: 54, mine: false }
+  var A = { id: 'a', v: 312, mine: false }, B = { id: 'b', v: 311, mine: false };
+  var ch = [
+    { id: 'c_seo', nm: '서연', av: '#FB6F92', label: '후렴 전에 한 박자 비우고 808 떨구기', v: 320, mine: false },
+    { id: 'c_jun', nm: '준호', av: '#7C9CFF', label: '신스랑 기타 둘 다 섞어요', v: 76, mine: false },
+    { id: 'c_min', nm: '민지', av: '#36C977', label: '템포 살짝만 업', v: 54, mine: false }
   ];
   var myVote = null;
 
+  function leader() {
+    var top = ch.slice().sort(function (a, b) { return b.v - a.v; })[0];
+    var all = [{ id: 'a', v: A.v, t: 'art', n: 'A안' }, { id: 'b', v: B.v, t: 'art', n: 'B안' }, { id: top.id, v: top.v, t: 'lis', n: top.nm }];
+    return all.sort(function (a, b) { return b.v - a.v; })[0];
+  }
   function render() {
-    items.sort(function (a, b) { return b.votes - a.votes; });
-    var first = items[0];
-    var b = document.getElementById('banner');
-    if (first.who === 'lis') b.innerHTML = '<div class="banner cmwin"><i class="ri-fire-fill"></i> 💥 <b>' + first.nm + '</b>님 댓글이 1위! 이대로면 <b>댓글대로</b> 데모 3이 만들어져요</div>';
-    else b.innerHTML = '<div class="banner artwin"><i class="ri-disc-line"></i> 지금은 제작자 <b>' + (first.id === 'a' ? 'A안' : 'B안') + '</b>이 1위 — 댓글로 뒤집어보세요!</div>';
+    document.querySelector('#voteA span').textContent = A.v.toLocaleString();
+    document.querySelector('#voteB span').textContent = B.v.toLocaleString();
+    document.getElementById('voteA').className = 'vs-vote' + (A.mine ? ' on' : '');
+    document.getElementById('voteB').className = 'vs-vote' + (B.mine ? ' on' : '');
+    document.querySelector('#voteA i').className = A.mine ? 'ri-fire-fill' : 'ri-fire-line';
+    document.querySelector('#voteB i').className = B.mine ? 'ri-fire-fill' : 'ri-fire-line';
+    var L = leader();
+    document.getElementById('cardA').className = 'vs-card vs-a' + (L.id === 'a' ? ' lead' : '') + (A.mine ? ' mine-v' : '');
+    document.getElementById('cardB').className = 'vs-card vs-b' + (L.id === 'b' ? ' lead' : '') + (B.mine ? ' mine-v' : '');
 
-    document.getElementById('list').innerHTML = items.map(function (it, i) {
-      var left = (it.who === 'art')
-        ? '<button class="ct-play" style="background:' + (it.id === 'a' ? '#8B7CF6' : '#FB6F92') + ';color:#06140C" onclick="event.stopPropagation()"><i class="ri-play-fill"></i></button>'
-        : '<span class="ct-av" style="background:' + it.av + '">' + it.nm.charAt(0) + '</span>';
-      var who = (it.who === 'art')
-        ? '<span class="ct-who art"><i class="ri-movie-2-fill"></i> 제작자</span>'
-        : '<span class="ct-who lis"><i class="ri-user-3-fill"></i> ' + it.nm + (it.nm === '김주형' ? ' · 나' : '') + '</span>';
-      return '<div class="ct' + (i === 0 ? ' first' : '') + (it.mine ? ' mine-v' : '') + '">'
-        + '<span class="ct-rank">' + (i + 1) + '</span>' + left
-        + '<div class="ct-mid">' + who + '<div class="ct-label">' + it.label + (it.mine ? '<span class="ct-myb">내 표</span>' : '') + '</div></div>'
-        + '<div class="ct-vote' + (it.mine ? ' on' : '') + '" onclick="voteFor(\'' + it.id + '\')"><i class="ri-fire-' + (it.mine ? 'fill' : 'line') + '"></i><span class="ct-vn">' + it.votes.toLocaleString() + '</span></div>'
+    var bn = document.getElementById('banner');
+    if (L.t === 'lis') bn.innerHTML = '<div class="banner cmwin"><i class="ri-fire-fill"></i> 💥 <b>' + L.n + '</b>님 댓글이 A·B를 다 이기는 중! 이대로면 <b>댓글대로</b> 만들어져요</div>';
+    else bn.innerHTML = '<div class="banner artwin"><i class="ri-disc-line"></i> 지금은 제작자 <b>' + L.n + '</b>이 1위 — 댓글로 뒤집어보세요!</div>';
+
+    var sorted = ch.slice().sort(function (a, b) { return b.v - a.v; });
+    document.getElementById('chlist').innerHTML = sorted.map(function (c, i) {
+      var leadCh = (i === 0 && L.t === 'lis' && L.id === c.id);
+      return '<div class="ct' + (leadCh ? ' lead' : '') + '">'
+        + '<span class="ct-av" style="background:' + c.av + '">' + c.nm.charAt(0) + '</span>'
+        + '<div class="ct-mid"><div class="ct-nm">' + c.nm + (c.nm === '김주형' ? ' · 나' : '') + (leadCh ? ' <span class="ct-crown">👑 도전 1위 · A·B 추월!</span>' : '') + '</div>'
+        + '<div class="ct-label">' + c.label + (c.mine ? '<span class="ct-myb">내 표</span>' : '') + '</div></div>'
+        + '<div class="ct-vote' + (c.mine ? ' on' : '') + '" onclick="voteFor(\'' + c.id + '\')"><i class="ri-fire-' + (c.mine ? 'fill' : 'line') + '"></i><span class="ct-vn">' + c.v.toLocaleString() + '</span></div>'
         + '</div>';
     }).join('');
   }
+  function findAny(id) { if (id === 'a') return A; if (id === 'b') return B; return ch.find(function (c) { return c.id === id; }); }
   function voteFor(id) {
-    if (myVote === id) { var c = items.find(x => x.id === id); c.votes--; c.mine = false; myVote = null; render(); return; }
-    if (myVote) { var p = items.find(x => x.id === myVote); if (p) { p.votes--; p.mine = false; } }
-    var t = items.find(x => x.id === id); t.votes++; t.mine = true; myVote = id;
-    render();
+    var t = findAny(id);
+    if (myVote === id) { t.v--; t.mine = false; myVote = null; render(); return; }
+    if (myVote) { var p = findAny(myVote); if (p) { p.v--; p.mine = false; } }
+    t.v++; t.mine = true; myVote = id; render();
   }
   function addIdea() {
     var v = (document.getElementById('ideaInput').value || '').trim();
     if (!v) return;
-    items.push({ id: 'me', who: 'lis', nm: '김주형', av: '#FFC94D', label: v, votes: 1, mine: true });
-    if (myVote) { var p = items.find(x => x.id === myVote); if (p && p.id !== 'me') { p.votes--; p.mine = false; } }
+    if (myVote) { var p = findAny(myVote); if (p) { p.v--; p.mine = false; } }
+    ch.push({ id: 'me', nm: '김주형', av: '#FFC94D', label: v, v: 1, mine: true });
     myVote = 'me';
     document.getElementById('ideaInput').value = '';
     render();
