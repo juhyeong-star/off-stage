@@ -6093,7 +6093,7 @@ function _textOn(hex) {
   if (!/^[0-9a-fA-F]{6}$/.test(c)) return '#111';
   const n = parseInt(c, 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
   const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return lum < 0.56 ? '#fff' : '#111';
+  return lum < 0.42 ? '#fff' : '#111';   // 왠만하면 검정 — 정말 어두운 색만 흰 글씨
 }
 window._textOn = _textOn;
 

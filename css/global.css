@@ -19167,7 +19167,7 @@ body.is-shapes-route .page-intro { font-size: 18px !important; font-weight: 700 
 .shapes-universe .floating-shape .shape-text {
   font-family: 'Pretendard', 'Inter', sans-serif !important;
   font-weight: 800;
-  font-size: 12px !important;   /* 10 → 12 (사용자 요청 +2px, 모바일) */
+  font-size: 14px !important;   /* 10 → 12 → 14 (사용자 요청 +2px씩 누적, 모바일 기준) */
   line-height: 1.25 !important;
 }
 /* 발견 도형 글자 더 두껍게 (사용자 요청) — Pretendard는 400만 로드라 weight만으론 한계 → text-stroke로 글리프 굵기 ↑. 발견 전용(즐겨찾기 손글씨 제외) */
@@ -19498,8 +19498,8 @@ body.is-universe-route .my-universe {
 @media (min-width: 769px) {
   /* 주절주절 = 인스타처럼 가운데 좁은 컬럼 (full-width 방지) */
   #feed-reels { left: 50%; right: auto; transform: translateX(-50%); width: 470px; max-width: 94vw; border-left: 1px solid rgba(255,255,255,0.06); border-right: 1px solid rgba(255,255,255,0.06); }
-  /* 발견 도형 글자 PC = 15px (사용자 요청 누적 +5: 처음 +3 → 13, 이번 +2 → 15) — 발견 전용 */
-  body.is-shapes-route .shapes-universe .floating-shape .shape-text { font-size: 15px !important; }
+  /* 발견 도형 글자 PC = 17px (사용자 요청 누적 +7: +3→13, +2→15, +2→17) — 발견 전용 */
+  body.is-shapes-route .shapes-universe .floating-shape .shape-text { font-size: 17px !important; }
   /* 발견 도형 필드 — 부제 멘트 삭제했으니 제목 바로 아래부터 (공간 확보) */
   body.is-shapes-route .shapes-universe { top: 46px; }
   /* 즐겨찾기(universe) — 콘텐츠를 헤더(off-stage 워드마크) 아래로 내려 겹침 방지 (PC) */
