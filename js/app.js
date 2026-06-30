@@ -3661,9 +3661,8 @@ async function renderProducingBoard(){
     + '<div class="pb-seg"><b class="'+(window.__pbSeg==='open'?'on':'')+'" onclick="pbSeg(\'open\')">🔥 진행 중</b><b class="'+(window.__pbSeg==='closed'?'on':'')+'" onclick="pbSeg(\'closed\')">🏁 마감</b></div>'
     + '<div class="pb-feed" id="pb-feed"><div class="pb-loading">불러오는 중…</div></div>'
     + '<button class="pb-fab" onclick="pbOpenCreate()" aria-label="투표 라운드 만들기"><i class="ri-add-line"></i></button>'
-    + '<div class="pb-sheet-back" id="pb-sheet-back" onclick="pbCloseSheet()"></div>'
-    + '<div class="pb-sheet" id="pb-sheet"></div>'
     + '</div>';
+  _pbEnsureSheet();   // 시트는 body 에 한 번만(보드 재렌더에 안 휩쓸리게 + 뷰포트 기준 fixed)
   _pbLoadFeed();
 }
 window.renderProducingBoard = renderProducingBoard;
@@ -3753,8 +3752,7 @@ window.pbOpenSheet = async function(rid){
     + '<div class="pb-sh-hint">💡 하트 1등 댓글이 <b>제안 배틀(C안)</b>에 올라가요</div>'
     + '<div class="pb-sh-list" id="pb-sh-list"><div class="pb-noc" style="text-align:center;padding:30px">불러오는 중…</div></div>'
     + '<div class="pb-sh-add"><input id="pb-newcmt" placeholder="'+_t('의견 남기기…','Add your idea…')+'" maxlength="500"><button onclick="pbAddComment()">'+_t('게시','Post')+'</button></div>';
-  document.getElementById('pb-sheet-back').classList.add('on');
-  sheet.classList.add('on');
+  _pbShowSheet();
   if (!r.__detail) { await _pbFillCard(r); }
   _pbRenderSheet(r);
 };
@@ -3765,6 +3763,25 @@ function _pbRenderSheet(r){
   var h = document.getElementById('pb-sh-h'); if (h) h.firstChild.textContent = '댓글 '+d.comments.length+' ';
   var list = document.getElementById('pb-sh-list');
   if (list) list.innerHTML = sorted.length ? sorted.map(function(c,i){return _pbCmtRow(r,c,d,i===0);}).join('') : '<div class="pb-noc" style="text-align:center;padding:30px">첫 의견을 남겨보세요!</div>';
+}
+// 시트/백드롭을 document.body 에 한 번만 생성(보드 재렌더 시 안 사라지게). 이미 있으면 그대로 둠.
+function _pbEnsureSheet(){
+  if(!document.getElementById('pb-sheet-back')){
+    var b=document.createElement('div'); b.id='pb-sheet-back'; b.className='pb-sheet-back';
+    b.setAttribute('onclick','pbCloseSheet()'); document.body.appendChild(b);
+  }
+  if(!document.getElementById('pb-sheet')){
+    var s=document.createElement('div'); s.id='pb-sheet'; s.className='pb-sheet'; document.body.appendChild(s);
+  }
+}
+// 시트 열기 — 내용(innerHTML) 넣은 뒤 '다음 프레임'에 .on 을 붙여야 슬라이드업 transition 이 제대로 발동.
+// (같은 프레임에 붙이면 동적 높이 + 미발동으로 시트가 translateY(100%) 닫힘 위치에 멈춰 화면 밖에 머무름 — 사용자 보고 버그.)
+function _pbShowSheet(){
+  var sheet=document.getElementById('pb-sheet'), back=document.getElementById('pb-sheet-back');
+  if(!sheet) return;
+  if(back) back.classList.add('on');
+  void sheet.offsetHeight;            // 직전 상태(닫힘) 커밋 → .on 추가 시 슬라이드업 transition 발동
+  sheet.classList.add('on');
 }
 window.pbCloseSheet = function(){ document.getElementById('pb-sheet-back').classList.remove('on'); var s=document.getElementById('pb-sheet'); if(s)s.classList.remove('on'); window.__pbSheetRound=null; };
 window.pbAddComment = async function(){
@@ -3798,8 +3815,7 @@ window.pbOpenCreate = function(){
     + '<div class="pb-flab">마감</div><div class="pb-days"><button type="button" class="pb-day" data-day="1" onclick="pbPickDay(this)">1일</button><button type="button" class="pb-day on" data-day="3" onclick="pbPickDay(this)">3일</button><button type="button" class="pb-day" data-day="7" onclick="pbPickDay(this)">7일</button></div>'
     + '</div>'
     + '<div class="pb-form-foot"><button class="pb-open" onclick="pbCreate(this)"><i class="ri-rocket-2-line"></i> 라운드 열기</button></div>';
-  document.getElementById('pb-sheet-back').classList.add('on');
-  sheet.classList.add('on');
+  _pbShowSheet();
 };
 window.pbFillTopic = function(i){ var t=(window.__pbTopics||[])[i]; if(!t)return; document.getElementById('pb-c-q').value=t[1]; document.getElementById('pb-c-a').value=t[2]; document.getElementById('pb-c-b').value=t[3]; };
 window.pbPickDay = function(el){ el.parentNode.querySelectorAll('.pb-day').forEach(function(c){c.classList.remove('on');}); el.classList.add('on'); };
