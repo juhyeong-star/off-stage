@@ -99,8 +99,14 @@
   .res-row > * { position: relative; z-index: 1; }
   .res-tag { font-size: 9px; font-weight: 900; padding: 2px 7px; border-radius: 6px; color: #fff; flex-shrink: 0; } .res-tag.a { background: #8B7CF6; } .res-tag.b { background: #FB6F92; } .res-tag.c { background: #5B8DEF; }
   .res-name { flex: 1; font-size: 13px; font-weight: 700; } .res-name small { display: block; font-size: 10px; font-weight: 600; color: rgba(255,255,255,.45); }
-  .res-num { font-size: 13px; font-weight: 900; } .res-pct { font-size: 10px; color: rgba(255,255,255,.5); }
+  .res-figs { text-align: left; min-width: 48px; flex-shrink: 0; } .res-num { font-size: 13px; font-weight: 900; } .res-pct { font-size: 10px; color: rgba(255,255,255,.5); }
   .res-crown { font-size: 15px; }
+  .res-cmt-h { font-size: 12px; font-weight: 800; margin: 16px 0 9px; display: flex; align-items: center; gap: 6px; color: rgba(255,255,255,.8); }
+  .res-cmt { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 11px; background: rgba(255,255,255,.025); border: 1px solid rgba(255,255,255,.05); margin-bottom: 7px; }
+  .res-cmt.won { border-color: rgba(255,209,102,.45); background: rgba(255,209,102,.07); }
+  .res-cmt-av { width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; }
+  .res-cmt-b { flex: 1; min-width: 0; text-align: left; } .res-cmt-u { font-size: 10px; font-weight: 700; color: rgba(255,255,255,.55); display: block; } .res-cmt-t { font-size: 12.5px; font-weight: 600; }
+  .res-cmt-like { flex-shrink: 0; display: flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 800; color: #FB6F92; }
   .res-out { text-align: center; margin: 14px 0; padding: 13px; border-radius: 14px; background: linear-gradient(135deg, rgba(255,209,102,.14), rgba(251,111,146,.1)); border: 1px solid rgba(255,209,102,.3); }
   .res-out .big { font-size: 15px; font-weight: 900; color: #FFD166; } .res-out .small { font-size: 11px; color: rgba(255,255,255,.7); margin-top: 3px; }
   .prod-h { font-size: 12px; font-weight: 800; margin: 16px 0 9px; display: flex; align-items: center; gap: 6px; } .prod-h i { color: #FFD166; }
@@ -245,16 +251,27 @@
       return '<div class="res-row' + (win ? ' win' : '') + '"><div class="res-bar" style="width:' + pct + '%"></div>'
         + '<span class="res-tag ' + it.tag + '">' + (it.tag === 'c' ? 'C' : it.tag.toUpperCase()) + '</span>'
         + '<div class="res-name">' + esc(it.name) + '<small>' + it.sub + '</small></div>'
-        + (win ? '<span class="res-crown">👑</span>' : '') + '<div style="text-align:right"><div class="res-num">' + it.v + '</div><div class="res-pct">' + pct + '%</div></div></div>';
+        + (win ? '<span class="res-crown">👑</span>' : '') + '<div class="res-figs"><div class="res-num">' + it.v + '</div><div class="res-pct">' + pct + '%</div></div></div>';
     }).join('');
     var iWon = r.myToken && (winner.id ? winner.id === r.myToken : winner.tag === r.myToken);
     var prods = [ { u: '서연', c: '#8B7CF6' }, { u: '지호', c: '#36C977' }, { u: '민', c: '#FF9F45' } ];
     var pills = (iWon ? '<div class="prod-pill prod-me"><div class="prod-av" style="background:#06140C">나</div><span class="prod-name">나 🎉</span></div>' : '')
       + prods.map(function (p) { return '<div class="prod-pill"><div class="prod-av" style="background:' + p.c + '">' + p.u[0] + '</div><span class="prod-name">' + p.u + '</span></div>'; }).join('') + '<div class="prod-pill" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)"><span class="prod-name" style="color:rgba(255,255,255,.6)">+128명</span></div>';
+    // 결과 화면에도 댓글을 조금(상위 2개)만 보여줌 — 투표 화면의 댓글창은 사라지므로.
+    var cmtThread = (r.comments && r.comments.length)
+      ? '<div class="res-cmt-h">💬 댓글 ' + r.comments.length + '</div>'
+        + r.comments.slice().sort(function (a, b) { return b.likes - a.likes; }).slice(0, 2).map(function (c) {
+            var won = winner.id === c.id;
+            return '<div class="res-cmt' + (won ? ' won' : '') + '"><div class="res-cmt-av" style="background:' + c.c + '">' + c.u[0] + '</div>'
+              + '<div class="res-cmt-b"><span class="res-cmt-u">' + c.u + (won ? ' · 👑 채택' : '') + '</span><span class="res-cmt-t">' + esc(c.t) + '</span></div>'
+              + '<div class="res-cmt-like"><i class="ri-heart-3-fill"></i> ' + c.likes + '</div></div>';
+          }).join('')
+      : '';
     return '<div class="panel-top"><span class="panel-flag done">🎬 ' + openNode + ' 결과 공개</span>' + close + '</div>'
       + '<div class="res-q">' + esc(r.q) + '</div>'
       + rows
       + '<div class="res-out"><div class="big">👑 ' + esc(winner.name) + '</div><div class="small">' + (winner.tag === 'c' ? '댓글이 이겼어요! 다음 데모는 이 의견대로 🎬' : '이걸로 다음 데모 갑니다 🎬') + '</div></div>'
+      + cmtThread
       + '<div class="prod-h"><i class="ri-medal-line"></i> 이번 데모의 프로듀서 ' + (iWon ? '— 나도 포함!' : '(이긴 쪽에 표 준 사람)') + '</div><div class="prod-list">' + pills + '</div>'
       + (view === 'artist' ? '<button class="ghost" style="margin-top:16px" onclick="alert(\'데모 3 만들기 (테스트) — 이긴 안 반영\')">✍️ 이 결과로 데모 3 만들기</button>' : '');
   }
