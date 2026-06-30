@@ -3638,8 +3638,8 @@ function _pbStyle(){
   .pb-fab{position:fixed;right:18px;bottom:calc(var(--player-height,60px) + env(safe-area-inset-bottom) + 18px);width:54px;height:54px;border-radius:50%;border:none;background:linear-gradient(135deg,#a855f7,#d946b8);color:#fff;font-size:26px;box-shadow:0 8px 24px rgba(168,85,247,.5);cursor:pointer;z-index:40;display:flex;align-items:center;justify-content:center;}
   .pb-sheet-back{position:fixed;inset:0;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .25s;z-index:2000;} .pb-sheet-back.on{opacity:1;pointer-events:auto;}
   .pb-sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;max-height:82vh;background:#100d18;border-radius:22px 22px 0 0;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:2001;display:flex;flex-direction:column;} .pb-sheet.on{transform:translateY(0);}
-  .pb-grab{width:38px;height:4px;border-radius:999px;background:rgba(255,255,255,.25);margin:9px auto 4px;}
-  .pb-sh-h{text-align:center;font-size:13px;font-weight:800;padding:6px 0 10px;border-bottom:1px solid rgba(255,255,255,.07);position:relative;} .pb-sh-h .x{position:absolute;right:14px;top:3px;font-size:20px;color:rgba(255,255,255,.6);cursor:pointer;}
+  .pb-grab{width:44px;height:5px;border-radius:999px;background:rgba(255,255,255,.3);margin:10px auto 6px;touch-action:none;cursor:grab;}
+  .pb-sh-h{text-align:center;font-size:13px;font-weight:800;padding:6px 0 10px;border-bottom:1px solid rgba(255,255,255,.07);position:relative;touch-action:none;} .pb-sh-h .x{position:absolute;right:14px;top:3px;font-size:20px;color:rgba(255,255,255,.6);cursor:pointer;touch-action:auto;}
   .pb-sh-hint{font-size:10.5px;color:#fb6f92;text-align:center;padding:8px;background:rgba(251,111,146,.08);border-radius:10px;margin:8px 14px 4px;}
   .pb-sh-list{flex:1;overflow-y:auto;padding:6px 14px;}
   .pb-sh-add{display:flex;gap:9px;align-items:center;padding:10px 12px calc(10px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.07);} .pb-sh-add input{flex:1;background:#1b1726;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:11px 15px;color:#fff;font-family:inherit;font-size:13px;} .pb-sh-add button{border:none;background:none;color:#8b7cf6;font-weight:800;font-size:14px;cursor:pointer;}
@@ -3781,6 +3781,43 @@ function _pbEnsureSheet(){
   if(!document.getElementById('pb-sheet')){
     var s=document.createElement('div'); s.id='pb-sheet'; s.className='pb-sheet'; document.body.appendChild(s);
   }
+  _pbAttachSwipe(document.getElementById('pb-sheet'));
+}
+// 바텀시트 스와이프-투-디스미스: 손잡이/헤더를 아래로 끌면 따라 내려가고, 일정 이상이면 닫힘(아니면 제자리 복귀).
+// 손잡이(.pb-grab)·헤더(.pb-sh-h)에서만 시작 → 폼 스크롤/입력과 충돌 없음. 닫기 X(.x)는 제외.
+function _pbAttachSwipe(sheet){
+  if(!sheet || sheet.__pbSwipe) return; sheet.__pbSwipe = true;
+  var startY=0, lastY=0, dragging=false, h=1, pid=null;
+  function fromHandle(t){ return !!(t && t.closest && (t.closest('.pb-grab') || (t.closest('.pb-sh-h') && !t.closest('.x')))); }
+  function onDown(e){
+    if(!fromHandle(e.target)) return;
+    dragging=true; pid=e.pointerId; startY=e.clientY; lastY=startY;
+    h = sheet.getBoundingClientRect().height || 1;
+    sheet.style.transition='none';
+    try{ sheet.setPointerCapture(pid); }catch(_){}
+  }
+  function onMove(e){
+    if(!dragging) return;
+    lastY=e.clientY; var dy=Math.max(0,lastY-startY);
+    sheet.style.transform='translateY('+dy+'px)';
+  }
+  function end(){
+    if(!dragging) return; dragging=false;
+    var dy=Math.max(0,lastY-startY);
+    sheet.style.transition='transform .25s cubic-bezier(.4,0,.2,1)';
+    if(dy > Math.min(150, h*0.28)){
+      sheet.style.transform='translateY(100%)';
+      var back=document.getElementById('pb-sheet-back'); if(back) back.classList.remove('on');
+      setTimeout(function(){ if(typeof pbCloseSheet==='function') pbCloseSheet(); sheet.style.transition=''; sheet.style.transform=''; }, 240);
+    } else {
+      sheet.style.transform='translateY(0)';
+      setTimeout(function(){ sheet.style.transition=''; sheet.style.transform=''; }, 240);
+    }
+  }
+  sheet.addEventListener('pointerdown', onDown);
+  sheet.addEventListener('pointermove', onMove);
+  sheet.addEventListener('pointerup', end);
+  sheet.addEventListener('pointercancel', end);
 }
 // 시트 열기 — 내용(innerHTML) 넣은 뒤 '다음 프레임'에 .on 을 붙여야 슬라이드업 transition 이 제대로 발동.
 // (같은 프레임에 붙이면 동적 높이 + 미발동으로 시트가 translateY(100%) 닫힘 위치에 멈춰 화면 밖에 머무름 — 사용자 보고 버그.)
