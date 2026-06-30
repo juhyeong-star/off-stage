@@ -3601,7 +3601,8 @@ function _pbStyle(){
   var st=document.createElement('style'); st.id='pb-style';
   st.textContent = `
   .pb-page{min-height:100%;background:#07060d;color:#F4F4F7;padding-bottom:calc(var(--player-height,60px) + env(safe-area-inset-bottom) + 30px);}
-  .pb-top{display:flex;align-items:center;padding:14px 16px 6px;} .pb-top-t{font-size:20px;font-weight:900;}
+  .pb-top{display:flex;align-items:center;gap:10px;padding:14px 16px 6px;} .pb-top-t{font-size:20px;font-weight:900;}
+  .pb-top-new{margin-left:auto;border:none;background:linear-gradient(135deg,#a855f7,#d946b8);color:#fff;font-family:inherit;font-weight:800;font-size:12.5px;padding:8px 14px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;box-shadow:0 4px 14px rgba(168,85,247,.4);}
   .pb-seg{display:flex;gap:6px;background:#14111f;border-radius:12px;padding:4px;margin:8px 14px 16px;}
   .pb-seg b{flex:1;text-align:center;padding:9px;border-radius:9px;font-size:12.5px;font-weight:800;color:rgba(255,255,255,.5);cursor:pointer;} .pb-seg b.on{background:#2a2440;color:#fff;}
   .pb-loading,.pb-empty{text-align:center;color:rgba(255,255,255,.5);font-size:13px;padding:50px 20px;line-height:1.7;}
@@ -3656,10 +3657,10 @@ async function renderProducingBoard(){
   var logged = !!(window.__currentUser && window.__currentUser.id);
   app.innerHTML =
     '<div class="pb-page">'
-    + '<div class="pb-top"><span class="pb-top-t">🎬 프로듀싱</span></div>'
+    + '<div class="pb-top"><span class="pb-top-t">🎬 프로듀싱</span><button class="pb-top-new" onclick="pbOpenCreate()"><i class="ri-add-line"></i> 투표 만들기</button></div>'
     + '<div class="pb-seg"><b class="'+(window.__pbSeg==='open'?'on':'')+'" onclick="pbSeg(\'open\')">🔥 진행 중</b><b class="'+(window.__pbSeg==='closed'?'on':'')+'" onclick="pbSeg(\'closed\')">🏁 마감</b></div>'
     + '<div class="pb-feed" id="pb-feed"><div class="pb-loading">불러오는 중…</div></div>'
-    + (logged ? '<button class="pb-fab" onclick="pbOpenCreate()" aria-label="라운드 만들기"><i class="ri-add-line"></i></button>' : '')
+    + '<button class="pb-fab" onclick="pbOpenCreate()" aria-label="투표 라운드 만들기"><i class="ri-add-line"></i></button>'
     + '<div class="pb-sheet-back" id="pb-sheet-back" onclick="pbCloseSheet()"></div>'
     + '<div class="pb-sheet" id="pb-sheet"></div>'
     + '</div>';
