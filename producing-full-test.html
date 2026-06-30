@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>프로듀싱 — 전체 흐름(통합)</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: #07070d; color: #F4F4F7; font-family: 'Pretendard', sans-serif; max-width: 460px; margin: 0 auto; padding-bottom: 40px; }
+  .testbar { background: #1a1530; border-bottom: 1px solid rgba(167,139,250,.3); color: #C9C4F5; font-size: 11px; font-weight: 800; text-align: center; padding: 7px; line-height: 1.4; }
+  .wrap { padding: 14px; }
+
+  /* 뷰 토글 */
+  .toggle-view { display: flex; gap: 6px; background: #14141C; border-radius: 12px; padding: 4px; margin-bottom: 8px; position: sticky; top: 6px; z-index: 5; }
+  .tv { flex: 1; text-align: center; padding: 9px; border-radius: 9px; font-size: 12px; font-weight: 800; cursor: pointer; color: rgba(255,255,255,.5); }
+  .tv.on { background: #2a2438; color: #fff; }
+  .vhint { font-size: 10.5px; color: rgba(255,255,255,.4); text-align: center; margin-bottom: 14px; }
+
+  .sec-t { font-size: 12px; font-weight: 700; color: rgba(255,255,255,.42); display: flex; align-items: center; gap: 5px; margin: 4px 2px 10px; } .sec-t i { color: #a78bfa; }
+
+  /* 마이페이지 음악 카드 */
+  .mh-track { border-radius: 24px; padding: 14px; border: 1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.025); }
+  .mh-head { display: flex; align-items: center; gap: 12px; }
+  .mh-cover { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #9DE05A; }
+  .mh-cover-lines { font-size: 7.5px; line-height: 1.22; font-weight: 800; color: rgba(0,0,0,.82); text-align: center; }
+  .mh-mid { flex: 1; min-width: 0; } .mh-state { font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 6px; background: rgba(255,255,255,.05); color: rgba(255,255,255,.6); border: 1px solid rgba(255,255,255,.1); } .mh-title { font-size: 13px; font-weight: 900; margin-left: 6px; } .mh-note { font-size: 10px; color: rgba(255,255,255,.5); margin: 4px 0 0; }
+  .mh-pbtn { width: 38px; height: 38px; border-radius: 50%; border: none; background: #36C977; color: #06140C; font-size: 18px; flex-shrink: 0; }
+  .mh-nodes { margin-top: 11px; padding: 11px 8px 0; border-top: 1px solid rgba(255,255,255,.06); display: flex; align-items: center; justify-content: space-between; }
+  .mh-node { display: flex; flex-direction: column; align-items: center; cursor: pointer; flex-shrink: 0; }
+  .mh-node-dot { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; position: relative; transition: all .2s; }
+  .mh-node-date { font-size: 8px; margin-top: 4px; }
+  .mh-node-bar { flex: 1; height: 1.5px; background: rgba(255,255,255,.1); margin: -12px 6px 0; }
+  .mh-node-add .mh-node-dot { background: rgba(167,139,250,.08); border: 1.5px dashed rgba(167,139,250,.55); color: #a78bfa; }
+  .mh-node-live { position: absolute; top: -2px; right: -2px; width: 9px; height: 9px; border-radius: 50%; background: #FB6F92; border: 2px solid #07070d; }
+  .mh-node-done { position: absolute; top: -2px; right: -2px; width: 11px; height: 11px; border-radius: 50%; background: #36C977; border: 2px solid #07070d; display: flex; align-items: center; justify-content: center; font-size: 7px; color: #06140C; }
+
+  /* 패널 */
+  .panel { max-height: 0; overflow: hidden; transition: max-height .4s cubic-bezier(.4,0,.2,1), opacity .28s, margin .28s; opacity: 0; }
+  .panel.open { max-height: 1600px; opacity: 1; margin-top: 12px; }
+  .panel-in { border-radius: 16px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); padding: 14px; }
+  .panel-top { display: flex; align-items: center; margin-bottom: 12px; }
+  .panel-flag { font-size: 9.5px; font-weight: 900; color: #06140C; background: #C9C4F5; padding: 3px 9px; border-radius: 999px; }
+  .panel-flag.live { background: #FB6F92; color: #fff; } .panel-flag.done { background: #36C977; color: #06140C; }
+  .panel-close { margin-left: auto; width: 28px; height: 28px; border-radius: 50%; border: none; background: rgba(255,255,255,.06); color: rgba(255,255,255,.6); font-size: 15px; cursor: pointer; }
+
+  /* 빈 상태(아티스트, 라운드 없음) */
+  .empty { text-align: center; padding: 6px 4px 2px; }
+  .empty-ic { font-size: 30px; } .empty-t { font-size: 13px; font-weight: 800; margin: 8px 0 3px; } .empty-s { font-size: 11px; color: rgba(255,255,255,.5); line-height: 1.5; margin-bottom: 14px; }
+  .cta { width: 100%; border: none; border-radius: 13px; padding: 13px; font-family: inherit; font-size: 13.5px; font-weight: 800; color: #06140C; background: linear-gradient(135deg, #C9C4F5, #8B7CF6); cursor: pointer; }
+  .none-lis { text-align: center; padding: 18px 4px; font-size: 12px; color: rgba(255,255,255,.45); }
+
+  /* 만들기 폼 */
+  .topics { display: flex; flex-wrap: wrap; gap: 7px; margin: 2px 0 12px; }
+  .topic { font-family: inherit; font-size: 11.5px; font-weight: 700; color: #E8E6F5; background: #1A1A24; border: 1px solid rgba(255,255,255,.1); border-radius: 999px; padding: 6px 11px; cursor: pointer; } .topic.on { background: rgba(201,196,245,.18); border-color: #C9C4F5; color: #fff; }
+  .lab { font-size: 11px; font-weight: 800; color: rgba(255,255,255,.65); margin: 12px 0 6px; }
+  .inp { width: 100%; background: #15151E; border: 1px solid rgba(255,255,255,.12); border-radius: 11px; padding: 10px 12px; color: #fff; font-family: inherit; font-size: 12.5px; } .inp::placeholder { color: rgba(255,255,255,.32); }
+  .ab2 { display: flex; gap: 8px; margin-top: 8px; } .ab2 .inp { flex: 1; }
+  .chips { display: flex; gap: 8px; margin-top: 6px; } .chip { flex: 1; text-align: center; border: 1px solid rgba(255,255,255,.12); background: #15151E; color: rgba(255,255,255,.7); border-radius: 10px; padding: 9px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; } .chip.on { background: rgba(201,196,245,.16); border-color: #C9C4F5; color: #fff; }
+
+  /* 투표(청취자, live) */
+  .q-title { font-size: 14.5px; font-weight: 900; text-align: center; margin-bottom: 3px; }
+  .q-sub { font-size: 10.5px; color: rgba(255,255,255,.45); text-align: center; margin-bottom: 14px; }
+  .vs { display: flex; gap: 9px; align-items: stretch; margin-bottom: 7px; }
+  .vs-card { flex: 1; border-radius: 15px; padding: 16px 10px; text-align: center; cursor: pointer; border: 2px solid transparent; transition: all .18s; position: relative; }
+  .vs-card.a { background: rgba(139,124,246,.1); } .vs-card.b { background: rgba(251,111,146,.1); }
+  .vs-card.a.on { border-color: #8B7CF6; background: rgba(139,124,246,.22); } .vs-card.b.on { border-color: #FB6F92; background: rgba(251,111,146,.22); }
+  .vs-badge { font-size: 10px; font-weight: 900; color: #fff; padding: 2px 9px; border-radius: 999px; display: inline-block; margin-bottom: 8px; } .vs-card.a .vs-badge { background: #8B7CF6; } .vs-card.b .vs-badge { background: #FB6F92; }
+  .vs-name { font-size: 14px; font-weight: 800; }
+  .vs-mine { position: absolute; top: 8px; right: 8px; font-size: 9px; font-weight: 900; color: #06140C; background: #fff; padding: 2px 7px; border-radius: 999px; display: none; } .vs-card.on .vs-mine { display: block; }
+  .vs-mid { display: flex; align-items: center; font-size: 12px; font-weight: 900; color: rgba(255,255,255,.4); }
+  .blind { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 10.5px; color: rgba(255,255,255,.4); margin: 10px 0 16px; } .blind i { color: #C9C4F5; }
+
+  .cmt-h { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; margin-bottom: 4px; } .cmt-h .hint { margin-left: auto; font-size: 9.5px; font-weight: 600; color: #FB6F92; }
+  .cmt-sub { font-size: 10px; color: rgba(255,255,255,.4); margin-bottom: 10px; }
+  .cmt { display: flex; gap: 9px; padding: 10px; border-radius: 12px; background: rgba(255,255,255,.025); border: 1px solid rgba(255,255,255,.05); margin-bottom: 8px; align-items: center; }
+  .cmt.on { border-color: rgba(251,111,146,.5); background: rgba(251,111,146,.07); }
+  .cmt-av { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #fff; }
+  .cmt-body { flex: 1; min-width: 0; } .cmt-u { font-size: 10.5px; font-weight: 700; color: rgba(255,255,255,.6); } .cmt-t { font-size: 12.5px; font-weight: 600; margin-top: 1px; }
+  .cmt-like { display: flex; flex-direction: column; align-items: center; gap: 1px; cursor: pointer; flex-shrink: 0; padding: 2px 4px; }
+  .cmt-like i { font-size: 17px; color: rgba(255,255,255,.4); } .cmt.on .cmt-like i, .cmt-like.liked i { color: #FB6F92; }
+  .cmt-like b { font-size: 10px; font-weight: 800; }
+  .cmt-add { display: flex; gap: 7px; margin-top: 4px; } .cmt-add .inp { flex: 1; } .cmt-add button { border: none; border-radius: 11px; background: #2a2438; color: #C9C4F5; font-weight: 800; padding: 0 13px; font-family: inherit; cursor: pointer; }
+  .done-banner { text-align: center; font-size: 11.5px; font-weight: 700; color: #9DE0B4; background: rgba(157,224,180,.1); border: 1px solid rgba(157,224,180,.25); border-radius: 11px; padding: 10px; margin-top: 12px; }
+
+  /* 진행 중(아티스트) */
+  .live-a { text-align: center; padding: 4px; }
+  .live-a .vs { margin-top: 10px; } .live-a .vs-card { cursor: default; }
+  .live-stat { display: flex; justify-content: center; gap: 16px; margin: 12px 0; font-size: 11px; color: rgba(255,255,255,.55); font-weight: 600; } .live-stat b { color: #fff; }
+  .reveal-btn { width: 100%; border: none; border-radius: 12px; padding: 12px; font-family: inherit; font-size: 13px; font-weight: 800; color: #fff; background: linear-gradient(135deg, #FB6F92, #C9456E); cursor: pointer; }
+  .ghost { width: 100%; border: 1px solid rgba(255,255,255,.15); background: transparent; color: rgba(255,255,255,.7); border-radius: 11px; padding: 10px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; margin-top: 9px; }
+
+  /* 결과(공개) */
+  .res-q { font-size: 13px; font-weight: 800; text-align: center; margin-bottom: 12px; color: rgba(255,255,255,.85); }
+  .res-row { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-radius: 13px; margin-bottom: 8px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); position: relative; overflow: hidden; }
+  .res-row.win { border-color: rgba(255,209,102,.55); background: rgba(255,209,102,.08); }
+  .res-bar { position: absolute; left: 0; top: 0; bottom: 0; background: rgba(255,255,255,.05); z-index: 0; } .res-row.win .res-bar { background: rgba(255,209,102,.13); }
+  .res-row > * { position: relative; z-index: 1; }
+  .res-tag { font-size: 9px; font-weight: 900; padding: 2px 7px; border-radius: 6px; color: #fff; flex-shrink: 0; } .res-tag.a { background: #8B7CF6; } .res-tag.b { background: #FB6F92; } .res-tag.c { background: #5B8DEF; }
+  .res-name { flex: 1; font-size: 13px; font-weight: 700; } .res-name small { display: block; font-size: 10px; font-weight: 600; color: rgba(255,255,255,.45); }
+  .res-num { font-size: 13px; font-weight: 900; } .res-pct { font-size: 10px; color: rgba(255,255,255,.5); }
+  .res-crown { font-size: 15px; }
+  .res-out { text-align: center; margin: 14px 0; padding: 13px; border-radius: 14px; background: linear-gradient(135deg, rgba(255,209,102,.14), rgba(251,111,146,.1)); border: 1px solid rgba(255,209,102,.3); }
+  .res-out .big { font-size: 15px; font-weight: 900; color: #FFD166; } .res-out .small { font-size: 11px; color: rgba(255,255,255,.7); margin-top: 3px; }
+  .prod-h { font-size: 12px; font-weight: 800; margin: 16px 0 9px; display: flex; align-items: center; gap: 6px; } .prod-h i { color: #FFD166; }
+  .prod-list { display: flex; flex-wrap: wrap; gap: 7px; }
+  .prod-pill { display: flex; align-items: center; gap: 6px; background: rgba(255,209,102,.1); border: 1px solid rgba(255,209,102,.25); border-radius: 999px; padding: 5px 11px 5px 5px; }
+  .prod-av { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: #fff; } .prod-name { font-size: 11px; font-weight: 700; }
+  .prod-me { background: linear-gradient(135deg, #FFD166, #FF9F45); color: #06140C; border: none; } .prod-me .prod-name { color: #06140C; font-weight: 900; }
+
+  .tip { font-size: 11px; color: rgba(255,255,255,.5); line-height: 1.65; margin-top: 18px; padding: 0 2px; } .tip b { color: #a78bfa; }
+</style>
+</head>
+<body>
+  <div class="testbar">🧪 통합 테스트 — 만들기 → 투표(블라인드 A/B + 댓글 추천) → 공개 → 프로듀서. 위 토글로 아티스트/청취자 전환</div>
+  <div class="wrap">
+    <div class="toggle-view"><div class="tv on" id="tvA" onclick="setView('artist')">👤 아티스트 (나)</div><div class="tv" id="tvL" onclick="setView('listener')">🎧 청취자</div></div>
+    <div class="vhint" id="vhint">내 데모 노드를 눌러보세요. D1=지난 라운드(공개됨), D2=이번 라운드</div>
+
+    <div class="sec-t"><i class="ri-music-2-line"></i> 음악 히스토리</div>
+    <div class="mh-track">
+      <div class="mh-head">
+        <div class="mh-cover"><span class="mh-cover-lines">#편곡이 고민<br>#투표 좀<br>#데모 진화중</span></div>
+        <div class="mh-mid"><div><span class="mh-state">미발매</span><span class="mh-title">Plastic days</span></div><div class="mh-note">데모 노드(D1·D2)를 눌러보세요 ⬇</div></div>
+        <button class="mh-pbtn"><i class="ri-play-fill"></i></button>
+      </div>
+      <div class="mh-nodes" id="nodes"></div>
+      <div class="panel" id="panel"><div class="panel-in" id="panelIn"></div></div>
+    </div>
+
+    <div class="tip">💡 <b>한 흐름 요약</b> — 아티스트가 D2 노드에서 <b>라운드 만들기</b> → 청취자는 같은 노드에서 <b>A·B 블라인드 투표 + 댓글 추천</b>(한 사람 한 표) → 아티스트가 <b>공개</b> → 표·추천 다 까고 <b>이긴 쪽으로 다음 데모</b>, 맞힌 사람은 <b>🎬 프로듀서</b>. (D1은 이미 끝난 예시 — 댓글이 이겨서 댓글대로 간 경우)</div>
+  </div>
+
+<script>
+  var view = 'artist';        // artist | listener
+  var openNode = null;        // 'D1' | 'D2'
+  var rounds = {
+    D1: { status: 'revealed', q: '후렴, 어떻게 갈까?',
+          a: { name: '몽환 신스', v: 182 }, b: { name: '펑키 기타', v: 241 },
+          comments: [ { id: 'c1', u: '서연', t: '1절 신스 → 2절 기타로 터뜨리자', likes: 305, c: '#8B7CF6' }, { id: 'c2', u: '도윤', t: '드럼만 더 키우면 됨', likes: 70, c: '#36C977' } ],
+          myToken: 'c1' },   // 나는 c1(댓글)에 표 → 그게 이김 → 프로듀서
+    D2: { status: 'none', q: '', a: { name: '', v: 0 }, b: { name: '', v: 0 }, comments: [], myToken: null }
+  };
+  var palette = ['#8B7CF6','#FB6F92','#36C977','#5B8DEF','#FF9F45'];
+
+  function setView(v) { view = v; document.getElementById('tvA').classList.toggle('on', v==='artist'); document.getElementById('tvL').classList.toggle('on', v==='listener'); document.getElementById('vhint').textContent = v==='artist' ? '내가(아티스트) 볼 때 — D2에서 라운드를 만들고, 진행 중엔 공개 버튼' : '청취자가 볼 때 — D2에서 A·B 블라인드 투표 + 댓글 추천'; if (openNode) renderPanel(); renderNodes(); }
+
+  function renderNodes() {
+    var n = '';
+    [['D1','06.15'],['D2','06.28']].forEach(function (d, i) {
+      var id = d[0], r = rounds[id], open = (openNode === id);
+      var badge = '';
+      if (r.status === 'revealed') badge = '<span class="mh-node-done"><i class="ri-check-line"></i></span>';
+      else if (r.status === 'live') badge = '<span class="mh-node-live"></span>';
+      var bg = open ? '#FF9F45' : 'rgba(255,255,255,.15)', col = open ? '#06140C' : 'rgba(255,255,255,.7)';
+      if (i > 0) n += '<div class="mh-node-bar"></div>';
+      n += '<div class="mh-node" onclick="tapNode(\'' + id + '\')"><div class="mh-node-dot" style="background:' + bg + ';color:' + col + '">' + id + badge + '</div><div class="mh-node-date" style="color:' + (open ? '#fff' : 'rgba(255,255,255,.4)') + '">' + d[1] + '</div></div>';
+    });
+    if (view === 'artist') n += '<div class="mh-node-bar"></div><div class="mh-node mh-node-add" onclick="alert(\'데모 3 업로드 (테스트)\')"><div class="mh-node-dot"><i class="ri-add-line"></i></div><div class="mh-node-date" style="color:rgba(167,139,250,.75)">D3</div></div>';
+    document.getElementById('nodes').innerHTML = n;
+  }
+
+  function tapNode(id) { if (openNode === id) { openNode = null; document.getElementById('panel').classList.remove('open'); renderNodes(); return; } openNode = id; renderPanel(); document.getElementById('panel').classList.add('open'); renderNodes(); }
+  function closeP() { openNode = null; document.getElementById('panel').classList.remove('open'); renderNodes(); }
+  function renderPanel() { document.getElementById('panelIn').innerHTML = panelHtml(rounds[openNode]); }
+
+  function panelHtml(r) {
+    var close = '<button class="panel-close" onclick="closeP()"><i class="ri-close-line"></i></button>';
+    if (r.status === 'none') {
+      if (view === 'artist') return '<div class="panel-top"><span class="panel-flag">🎬 내 데모 · ' + openNode + '</span>' + close + '</div>'
+        + '<div class="empty"><div class="empty-ic">🎬</div><div class="empty-t">아직 프로듀싱 라운드가 없어요</div><div class="empty-s">다음 데모 방향을 청취자에게 물어볼까요?<br>A·B 두 안만 정하면 시작!</div><button class="cta" onclick="goForm()"><i class="ri-rocket-2-line"></i> 프로듀싱 라운드 만들기</button></div>';
+      return '<div class="panel-top"><span class="panel-flag">🎬 ' + openNode + '</span>' + close + '</div><div class="none-lis">아직 이 데모엔 프로듀싱 라운드가 없어요.<br>아티스트가 열면 여기서 투표할 수 있어요!</div>';
+    }
+    if (r.status === 'form') return '<div class="panel-top"><span class="panel-flag">🎬 라운드 만들기</span>' + close + '</div>'
+      + '<div class="topics" id="topics"></div>'
+      + '<div class="lab">뭘 정할까요?</div><input class="inp" id="fq" placeholder="예: 후렴 편곡 / MV 의상 / 곡 제목…">'
+      + '<div class="lab">두 안 (음원·사진은 선택)</div><div class="ab2"><input class="inp" id="fa" placeholder="A안"><input class="inp" id="fb" placeholder="B안"></div>'
+      + '<div class="lab">마감</div><div class="chips"><button class="chip" onclick="pickChip(this)">1일</button><button class="chip on" onclick="pickChip(this)">3일</button><button class="chip" onclick="pickChip(this)">7일</button></div>'
+      + '<button class="cta" style="margin-top:16px" onclick="openRound()"><i class="ri-rocket-2-line"></i> 라운드 열기</button>';
+    if (r.status === 'live') return view === 'artist' ? liveArtist(r) : voteListener(r);
+    return resultHtml(r);   // revealed
+  }
+
+  /* 만들기 */
+  var TOPICS = [ { k:'🎵 편곡', q:'후렴 편곡, 어디로?', a:'몽환 신스', b:'펑키 기타' }, { k:'👕 MV 의상', q:'MV에 뭐 입을까?', a:'사복', b:'교복' }, { k:'✍️ 제목', q:'곡 제목 뭐로?', a:'Plastic days', b:'유리도시' }, { k:'🎬 MV 장소', q:'MV 어디서 찍을까?', a:'옥상', b:'노래방' }, { k:'💡 직접', q:'', a:'', b:'' } ];
+  function goForm() { rounds[openNode].status = 'form'; renderPanel(); fillTopics(); }
+  function fillTopics() { var el = document.getElementById('topics'); if (!el) return; el.innerHTML = TOPICS.map(function (t, i) { return '<button class="topic" onclick="pickTopic(' + i + ',this)">' + t.k + '</button>'; }).join(''); }
+  function pickTopic(i, el) { document.querySelectorAll('.topic').forEach(function (c) { c.classList.remove('on'); }); el.classList.add('on'); var t = TOPICS[i]; document.getElementById('fq').value = t.q; document.getElementById('fa').value = t.a; document.getElementById('fb').value = t.b; }
+  function pickChip(el) { document.querySelectorAll('.chip').forEach(function (c) { c.classList.remove('on'); }); el.classList.add('on'); }
+  function openRound() {
+    var r = rounds[openNode];
+    r.q = document.getElementById('fq').value || '후렴, 어디로?';
+    r.a = { name: document.getElementById('fa').value || '몽환 신스', v: 156 };
+    r.b = { name: document.getElementById('fb').value || '펑키 기타', v: 142 };
+    r.comments = [ { id: 'c1', u: '서연', t: '1절은 A, 2절은 B 섞는 건?', likes: 203, c: '#8B7CF6' }, { id: 'c2', u: '도윤', t: '둘 다 말고 어쿠스틱으로', likes: 61, c: '#36C977' } ];
+    r.myToken = null; r.status = 'live';
+    renderPanel(); renderNodes();
+  }
+
+  /* 진행 중 — 아티스트 */
+  function liveArtist(r) {
+    var close = '<button class="panel-close" onclick="closeP()"><i class="ri-close-line"></i></button>';
+    var total = r.a.v + r.b.v + r.comments.reduce(function (s, c) { return s + c.likes; }, 0);
+    return '<div class="panel-top"><span class="panel-flag live">🎬 진행 중 · 투표 중</span>' + close + '</div>'
+      + '<div class="live-a"><div class="q-title">' + esc(r.q) + '</div><div class="q-sub">표는 지금 안 보여요 (블라인드 · 마감 때 공개)</div>'
+      + '<div class="vs"><div class="vs-card a"><span class="vs-badge">A</span><div class="vs-name">' + esc(r.a.name) + '</div></div><div class="vs-mid">VS</div><div class="vs-card b"><span class="vs-badge">B</span><div class="vs-name">' + esc(r.b.name) + '</div></div></div>'
+      + '<div class="live-stat"><span>⏳ <b>3일</b> 남음</span><span>🙋 <b>' + total + '</b>명 참여</span><span>💬 <b>' + r.comments.length + '</b></span></div>'
+      + '<button class="reveal-btn" onclick="doReveal()"><i class="ri-lock-unlock-line"></i> 지금 공개하기 (마감)</button>'
+      + '<button class="ghost" onclick="setView(\'listener\')">🎧 청취자 화면으로 보기</button></div>';
+  }
+  function doReveal() { rounds[openNode].status = 'revealed'; renderPanel(); renderNodes(); }
+
+  /* 투표 — 청취자 */
+  function voteListener(r) {
+    var close = '<button class="panel-close" onclick="closeP()"><i class="ri-close-line"></i></button>';
+    var cm = r.comments.map(function (c) {
+      var on = r.myToken === c.id;
+      return '<div class="cmt' + (on ? ' on' : '') + '"><div class="cmt-av" style="background:' + c.c + '">' + c.u[0] + '</div><div class="cmt-body"><div class="cmt-u">' + c.u + '</div><div class="cmt-t">' + esc(c.t) + '</div></div><div class="cmt-like" onclick="putToken(\'' + c.id + '\')"><i class="' + (on ? 'ri-heart-3-fill' : 'ri-heart-3-line') + '"></i><b>' + c.likes + '</b></div></div>';
+    }).join('');
+    var banner = r.myToken ? '<div class="done-banner"><i class="ri-check-double-line"></i> 참여 완료! 한 표는 한 곳에만 — 결과는 마감 때 공개돼요</div>' : '';
+    return '<div class="panel-top"><span class="panel-flag live">🎬 ' + openNode + ' 프로듀싱 · 투표</span>' + close + '</div>'
+      + '<div class="q-title">' + esc(r.q) + '</div><div class="q-sub">A·B 중 하나 고르거나, 아래 댓글에 추천(❤️) — 한 표만!</div>'
+      + '<div class="vs"><div class="vs-card a' + (r.myToken === 'a' ? ' on' : '') + '" onclick="putToken(\'a\')"><span class="vs-mine">내 선택</span><span class="vs-badge">A</span><div class="vs-name">' + esc(r.a.name) + '</div></div><div class="vs-mid">VS</div><div class="vs-card b' + (r.myToken === 'b' ? ' on' : '') + '" onclick="putToken(\'b\')"><span class="vs-mine">내 선택</span><span class="vs-badge">B</span><div class="vs-name">' + esc(r.b.name) + '</div></div></div>'
+      + '<div class="blind"><i class="ri-eye-off-line"></i> A·B 표는 가려져 있어요</div>'
+      + '<div class="cmt-h">💬 다른 의견<span class="hint">추천 많으면 이걸로 간다!</span></div><div class="cmt-sub">A·B 말고 더 좋은 생각? 댓글에 ❤️ 주면 표가 돼요 (보여요)</div>'
+      + cm
+      + '<div class="cmt-add"><input class="inp" id="newCmt" placeholder="내 의견 추가…"><button onclick="addCmt()">올리기</button></div>'
+      + banner;
+  }
+  function putToken(id) { var r = rounds[openNode]; if (r.myToken === id) { r.myToken = null; } else { r.myToken = id; } renderPanel(); }
+  function addCmt() { var v = (document.getElementById('newCmt').value || '').trim(); if (!v) return; var r = rounds[openNode]; var id = 'u' + (r.comments.length + 1); r.comments.push({ id: id, u: '나', t: v, likes: 1, c: palette[r.comments.length % palette.length] }); r.myToken = id; renderPanel(); }
+
+  /* 결과 — 공개 */
+  function resultHtml(r) {
+    var close = '<button class="panel-close" onclick="closeP()"><i class="ri-close-line"></i></button>';
+    var items = [ { tag: 'a', name: r.a.name, sub: 'A안', v: r.a.v }, { tag: 'b', name: r.b.name, sub: 'B안', v: r.b.v } ]
+      .concat(r.comments.map(function (c) { return { tag: 'c', name: c.t, sub: '💬 ' + c.u + ' 댓글', v: c.likes, id: c.id }; }));
+    var total = items.reduce(function (s, it) { return s + it.v; }, 0) || 1;
+    var max = Math.max.apply(null, items.map(function (it) { return it.v; }));
+    items.sort(function (x, y) { return y.v - x.v; });
+    var winner = items[0];
+    var rows = items.map(function (it) {
+      var win = it.v === max, pct = Math.round(it.v / total * 100);
+      return '<div class="res-row' + (win ? ' win' : '') + '"><div class="res-bar" style="width:' + pct + '%"></div>'
+        + '<span class="res-tag ' + it.tag + '">' + (it.tag === 'c' ? 'C' : it.tag.toUpperCase()) + '</span>'
+        + '<div class="res-name">' + esc(it.name) + '<small>' + it.sub + '</small></div>'
+        + (win ? '<span class="res-crown">👑</span>' : '') + '<div style="text-align:right"><div class="res-num">' + it.v + '</div><div class="res-pct">' + pct + '%</div></div></div>';
+    }).join('');
+    var iWon = r.myToken && (winner.id ? winner.id === r.myToken : winner.tag === r.myToken);
+    var prods = [ { u: '서연', c: '#8B7CF6' }, { u: '지호', c: '#36C977' }, { u: '민', c: '#FF9F45' } ];
+    var pills = (iWon ? '<div class="prod-pill prod-me"><div class="prod-av" style="background:#06140C">나</div><span class="prod-name">나 🎉</span></div>' : '')
+      + prods.map(function (p) { return '<div class="prod-pill"><div class="prod-av" style="background:' + p.c + '">' + p.u[0] + '</div><span class="prod-name">' + p.u + '</span></div>'; }).join('') + '<div class="prod-pill" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)"><span class="prod-name" style="color:rgba(255,255,255,.6)">+128명</span></div>';
+    return '<div class="panel-top"><span class="panel-flag done">🎬 ' + openNode + ' 결과 공개</span>' + close + '</div>'
+      + '<div class="res-q">' + esc(r.q) + '</div>'
+      + rows
+      + '<div class="res-out"><div class="big">👑 ' + esc(winner.name) + '</div><div class="small">' + (winner.tag === 'c' ? '댓글이 이겼어요! 다음 데모는 이 의견대로 🎬' : '이걸로 다음 데모 갑니다 🎬') + '</div></div>'
+      + '<div class="prod-h"><i class="ri-medal-line"></i> 이번 데모의 프로듀서 ' + (iWon ? '— 나도 포함!' : '(이긴 쪽에 표 준 사람)') + '</div><div class="prod-list">' + pills + '</div>'
+      + (view === 'artist' ? '<button class="ghost" style="margin-top:16px" onclick="alert(\'데모 3 만들기 (테스트) — 이긴 안 반영\')">✍️ 이 결과로 데모 3 만들기</button>' : '');
+  }
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  renderNodes();
+</script>
+</body>
+</html>
