@@ -3642,8 +3642,9 @@ function _pbStyle(){
   .pb-sh-hint{font-size:10.5px;color:#fb6f92;text-align:center;padding:8px;background:rgba(251,111,146,.08);border-radius:10px;margin:8px 14px 4px;}
   .pb-sh-list{flex:1;overflow-y:auto;padding:6px 14px;}
   .pb-sh-add{display:flex;gap:9px;align-items:center;padding:10px 12px calc(10px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.07);} .pb-sh-add input{flex:1;background:#1b1726;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:11px 15px;color:#fff;font-family:inherit;font-size:13px;} .pb-sh-add button{border:none;background:none;color:#8b7cf6;font-weight:800;font-size:14px;cursor:pointer;}
-  .pb-form{padding:4px 16px 16px;overflow-y:auto;} .pb-flab{font-size:11.5px;font-weight:800;color:rgba(255,255,255,.65);margin:14px 0 6px;} .pb-form input,.pb-form select{width:100%;background:#1b1726;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:11px 13px;color:#fff;font-family:inherit;font-size:13px;} .pb-ab{display:flex;gap:8px;} .pb-days{display:flex;gap:8px;} .pb-day{flex:1;text-align:center;border:1px solid rgba(255,255,255,.12);background:#1b1726;color:rgba(255,255,255,.7);border-radius:11px;padding:10px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;} .pb-day.on{background:rgba(201,196,245,.16);border-color:#C9C4F5;color:#fff;}
-  .pb-open{width:100%;border:none;border-radius:13px;padding:13px;margin-top:18px;font-family:inherit;font-size:14px;font-weight:800;color:#06140C;background:linear-gradient(135deg,#C9C4F5,#8B7CF6);cursor:pointer;}
+  .pb-form{padding:4px 16px 14px;overflow-y:auto;flex:1;min-height:0;} .pb-flab{font-size:11.5px;font-weight:800;color:rgba(255,255,255,.65);margin:14px 0 6px;} .pb-form input,.pb-form select{width:100%;background:#1b1726;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:11px 13px;color:#fff;font-family:inherit;font-size:13px;} .pb-ab{display:flex;gap:8px;} .pb-days{display:flex;gap:8px;} .pb-day{flex:1;text-align:center;border:1px solid rgba(255,255,255,.12);background:#1b1726;color:rgba(255,255,255,.7);border-radius:11px;padding:10px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;} .pb-day.on{background:rgba(201,196,245,.16);border-color:#C9C4F5;color:#fff;}
+  .pb-form-foot{padding:10px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.07);background:#100d18;}
+  .pb-open{width:100%;border:none;border-radius:13px;padding:14px;font-family:inherit;font-size:14px;font-weight:800;color:#06140C;background:linear-gradient(135deg,#C9C4F5,#8B7CF6);cursor:pointer;}
   `;
   document.head.appendChild(st);
 }
@@ -3794,8 +3795,8 @@ window.pbOpenCreate = function(){
     + '<div class="pb-flab">뭘 정할까요?</div><input id="pb-c-q" maxlength="200" placeholder="예: 후렴 편곡 / 무대 의상…">'
     + '<div class="pb-flab">두 안 (A · B) — 글자만 적으면 간단 투표</div><div class="pb-ab"><input id="pb-c-a" maxlength="60" placeholder="A안"><input id="pb-c-b" maxlength="60" placeholder="B안"></div>'
     + '<div class="pb-flab">마감</div><div class="pb-days"><button type="button" class="pb-day" data-day="1" onclick="pbPickDay(this)">1일</button><button type="button" class="pb-day on" data-day="3" onclick="pbPickDay(this)">3일</button><button type="button" class="pb-day" data-day="7" onclick="pbPickDay(this)">7일</button></div>'
-    + '<button class="pb-open" onclick="pbCreate(this)"><i class="ri-rocket-2-line"></i> 라운드 열기</button>'
-    + '</div>';
+    + '</div>'
+    + '<div class="pb-form-foot"><button class="pb-open" onclick="pbCreate(this)"><i class="ri-rocket-2-line"></i> 라운드 열기</button></div>';
   document.getElementById('pb-sheet-back').classList.add('on');
   sheet.classList.add('on');
 };
