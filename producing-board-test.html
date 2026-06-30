@@ -41,8 +41,8 @@
   .opt-play { width: 52px; height: 52px; border-radius: 50%; margin: 10px auto 9px; display: flex; align-items: center; justify-content: center; font-size: 23px; }
   .opt.a .opt-play { background: #22d3ee; color: #06222b; box-shadow: 0 0 20px rgba(34,211,238,.5); }
   .opt.b .opt-play { background: #fb498a; color: #3b0a1e; box-shadow: 0 0 20px rgba(251,73,138,.5); }
-  .opt-emoji { font-size: 44px; margin: 14px 0 10px; }
-  .opt-name { font-size: 13.5px; font-weight: 800; } .opt-name.big { font-size: 16px; padding-bottom: 6px; }
+  .opt.simple { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 118px; }
+  .opt-name { font-size: 13.5px; font-weight: 800; } .opt-name.big { font-size: 19px; font-weight: 900; margin-top: 8px; }
   .opt-wave { display: flex; align-items: center; gap: 9px; margin-top: 11px; background: rgba(0,0,0,.3); border-radius: 10px; padding: 7px 9px; }
   .opt-wave i { font-size: 14px; opacity: .85; } .opt-wave .wf { flex: 1; height: 15px; background: repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 4px); opacity: .5; border-radius: 2px; }
   .opt.a .opt-wave { color: #22d3ee; } .opt.b .opt-wave { color: #fb6f92; }
@@ -112,7 +112,7 @@
       ], myVote:null },
     { id:'r2', g:'g2', face:'🎛️', tag:'편곡 · 간단투표', song:'Plastic Days', ver:'(다음 데모)', sub:'서실음 3학년 · THUNDER',
       q:'2절에 뭐 더 넣을까?',
-      options:[{key:'a',name:'드럼 추가',emoji:'🥁',audio:false,v:140},{key:'b',name:'기타 추가',emoji:'🎸',audio:false,v:121}],
+      options:[{key:'a',name:'드럼 추가',audio:false,v:140},{key:'b',name:'기타 추가',audio:false,v:121}],
       comments:[
         {id:'e1',u:'지호',t:'드럼 들어가면 후반 떡상',likes:48,c:'#fb6f92'},
         {id:'e2',u:'민',t:'기타 솔로 한 번만 더 ㅠ',likes:39,c:'#22d3ee'},
@@ -120,7 +120,7 @@
       ], myVote:null },
     { id:'r3', g:'g3', face:'🎤', tag:'공연 · 간단투표', song:'졸업 공연', ver:'', sub:'서실음 3학년 · THUNDER',
       q:'무대 의상 뭐 입을까?',
-      options:[{key:'a',name:'빨간 옷',emoji:'🔴',audio:false,v:88},{key:'b',name:'파란 옷',emoji:'🔵',audio:false,v:102}],
+      options:[{key:'a',name:'빨간 옷',audio:false,v:88},{key:'b',name:'파란 옷',audio:false,v:102}],
       comments:[
         {id:'d1',u:'지호',t:'빨간 옷이 조명 받으면 미쳤을듯',likes:54,c:'#fb6f92'},
         {id:'d2',u:'서연',t:'반반! 상의 빨강 하의 파랑 ㄱ',likes:61,c:'#22d3ee'},
@@ -137,8 +137,8 @@
     var on = r.myVote===o.key;
     var inner = o.audio
       ? '<div class="opt-play"><i class="ri-play-fill"></i></div><div class="opt-name">'+esc(o.name)+'</div><div class="opt-wave"><i class="ri-play-mini-fill"></i><span class="wf"></span></div>'
-      : '<div class="opt-emoji">'+(o.emoji||'👕')+'</div><div class="opt-name big">'+esc(o.name)+'</div>';
-    return '<div class="opt '+o.key+(on?' on':'')+'" onclick="vote(\''+r.id+'\',\''+o.key+'\')"><div class="opt-badge">'+o.key.toUpperCase()+'안</div>'+inner+'</div>';
+      : '<div class="opt-name big">'+esc(o.name)+'</div>';
+    return '<div class="opt '+o.key+(o.audio?'':' simple')+(on?' on':'')+'" onclick="vote(\''+r.id+'\',\''+o.key+'\')"><div class="opt-badge">'+o.key.toUpperCase()+'안</div>'+inner+'</div>';
   }
   function pctHtml(r){
     if(blind) return '<div class="blindbar"><i class="ri-eye-off-line"></i> 투표 중이라 결과는 가려져 있어요 · 마감 후 공개</div>';
