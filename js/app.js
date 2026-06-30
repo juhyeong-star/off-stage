@@ -522,7 +522,7 @@ window.startTutorial = function () {
     { sel: '#artist-bio-line, .artist-bio-inline', title: _t2('자기소개','Your bio'),
       body: _t2('"자신을 소개해보아요"를 눌러 한 줄 소개를 적어보세요. 팬들에게 보이는 첫인상이에요.','Tap “Introduce yourself” to write a short bio — the first thing fans see.') },
     { sel: '.atl-album-add, .atl-album, .atl-hero', title: _t2('음악 · 데모','Music & demos'),
-      body: _t2('올린 곡은 여기 앨범으로 쌓여요. 카드를 누르면 그 곡의 데모 모음(앨범) 페이지로 가요.','Your tracks stack up here as albums. Tap a card to open that song’s demo collection.') },
+      body: _t2('올린 곡은 여기 쌓여요. 카드를 누르면 그 곡 페이지로 가요.','Your tracks stack up here. Tap a card to open that song’s page.') },
     { sel: '.artist-settings-gear', title: _t2('프로필 수정','Edit profile'),
       body: _t2('더 자세한 설정 — 프로필 사진·자기소개·SNS 링크는 오른쪽 위 톱니바퀴(⚙)에서.','For more — edit your photo, bio and social links from the gear (top-right).') }
   ] : [];
@@ -3455,7 +3455,7 @@ function _threadPostHtml(p) {
         <div class="thread-song-card" onclick="playTrack('${p.track.id}','wall')">
           <img class="thread-song-cover" src="${p.track.cover}" alt="">
           <div class="thread-song-info">
-            <div class="thread-song-title" style="cursor:pointer;" onclick="event.stopPropagation(); navigateTo('album:${_trackAlbumPid}')" title="${_t('앨범 보기', 'View album')}">${esc(p.track.title)}</div>
+            <div class="thread-song-title">${esc(p.track.title)}</div>
             <div class="thread-song-artist">${esc(p.track.artist)}</div>
           </div>
           <button class="thread-song-play" onclick="event.stopPropagation(); playTrack('${p.track.id}','wall')" aria-label="재생"><i class="ri-play-fill"></i></button>
@@ -9914,7 +9914,7 @@ function _afterUploadPrompt(track, artistName) {
 
   const close = () => { ov.classList.remove('show'); setTimeout(() => ov.remove(), 200); };
 
-  ov.querySelector('.upload-done-write').onclick = () => { close(); goAlbum(); };
+  ov.querySelector('.upload-done-write').onclick = () => { close(); navigateTo('song:' + encodeURIComponent(track.id || '')); };
   ov.querySelector('.upload-done-later').onclick = () => { close(); goArtist(); };
   ov.onclick = (e) => { if (e.target === ov) { close(); goArtist(); } };
 }
@@ -12832,6 +12832,7 @@ window.deleteMyTrack = async function(trackId, trackTitle) {
     }
     else if (currentView === 'shapes' && typeof renderShapes === 'function') renderShapes();
     else if (currentView === 'profile' && typeof renderProfile === 'function') renderProfile();
+    else if (currentView === 'myhome' && typeof renderMyHome === 'function') renderMyHome();   // 마이페이지(데모 노드)에서 삭제 → 즉시 다시 그림
     else if (currentView === 'album') {
       // 앨범 페이지에서 데모 삭제 → 즉시 다시 그려 사라지게(예전엔 album 케이스가 없어 새로고침해야 사라졌음).
       try {
@@ -13551,6 +13552,11 @@ function _mhStyle() {
 .mh-node-add .mh-add-dot i{font-size:13px;}
 .mh-node-add:hover .mh-add-dot{background:rgba(167,139,250,.2);border-color:#a78bfa;box-shadow:0 0 10px rgba(167,139,250,.4);}
 .mh-node-add .mh-node-date{color:rgba(167,139,250,.75)!important;}
+.mh-manage{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:11px;border-top:1px dashed rgba(255,255,255,.07);}
+.mh-manage-label{flex:1;min-width:0;font-size:10.5px;color:rgba(255,255,255,.42);display:flex;align-items:center;gap:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mh-manage-label i{color:#6ee7b7;font-size:12px;}
+.mh-node-del{flex-shrink:0;display:inline-flex;align-items:center;gap:4px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#f87171;border-radius:9px;padding:5px 11px;font-size:10.5px;font-weight:700;font-family:inherit;cursor:pointer;transition:background .15s;}
+.mh-node-del:active{background:rgba(239,68,68,.22);}
 .mh-empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:48px 0;}
 @media(min-width:769px){.mh-page{max-width:520px;margin:0 auto;}}
 </style>`;
@@ -13726,10 +13732,18 @@ function renderArtistHome(artistName) {
           + '<div class="mh-node-dot mh-add-dot"><i class="ri-add-line"></i></div>'
           + `<span class="mh-node-date">D${nextNum}</span></div>`;
       }
+      // 본인 페이지: 선택된 데모 관리(삭제). 예전엔 앨범 페이지에서 삭제했지만, 앨범 입구를 숨기면서 노드 쪽으로 옮김.
+      // 노드를 탭하면 그 데모가 선택(재생)되고 아래 줄의 삭제 버튼이 그 데모를 가리킴.
+      const manageHtml = isSelf
+        ? `<div class="mh-manage">
+             <span class="mh-manage-label"><i class="ri-checkbox-circle-line"></i> ${esc(cur.verLabel)} ${_t('선택됨','selected')}</span>
+             <button class="mh-node-del" onclick="event.stopPropagation(); deleteMyTrack('${cur.id}','${(tr.title || '').replace(/'/g, "\\'")} ${esc(cur.verLabel)}')" title="${_t('이 데모 삭제','Delete this demo')}"><i class="ri-delete-bin-line"></i> ${_t('이 데모 삭제','Delete demo')}</button>
+           </div>`
+        : '';
       return `
         <div class="mh-track mh-glass">
           <div class="mh-track-head">
-            <div class="mh-track-open" onclick="navigateTo('album:'+encodeURIComponent('${String(tr.pid).replace(/'/g,"\\'")}'))" title="${_t('앨범 열기 · 데모 관리/삭제','Open album · manage/delete demos')}">
+            <div class="mh-track-open" onclick="playTrack('${cur.id}')" title="${_t('재생','Play')}">
               ${coverTile('', tr.color, tr.cover, tr.title, tr.lines)}
               <div style="flex:1;min-width:0;">
                 <div style="display:flex;align-items:center;gap:6px;">
@@ -13742,6 +13756,7 @@ function renderArtistHome(artistName) {
             <button class="mh-pbtn" onclick="playTrack('${cur.id}')" aria-label="play"><i class="ri-play-fill"></i></button>
           </div>
           <div class="mh-nodes">${nodes}${addNode}</div>
+          ${manageHtml}
         </div>`;
     }).join('');
     histHtml = `
@@ -14144,7 +14159,7 @@ function renderArtistProfile(artistName) {
               <div class="atl-section-head" style="margin-top:18px;">
                 <div class="atl-section-title"><i class="ri-fire-fill" style="color:#ff6b6b;"></i> ${_i18n('최신 데모', 'Latest demo')}</div>
               </div>
-              <div class="atl-hero reveal" onclick="navigateTo('album:'+encodeURIComponent('${(latestTrack.projectId || ('proj_' + latestTrack.id)).replace(/'/g, "\\'")}'))">
+              <div class="atl-hero reveal" onclick="navigateTo('song:'+encodeURIComponent('${String(latestTrack.id).replace(/'/g, "\\'")}'))">
                 <img class="atl-hero-cover" src="${latestTrack.cover || ''}" alt="">
                 <div class="atl-hero-info">
                   <span class="atl-hero-badge">${_esc(latestTrack.versionLabel || (latestTrack.isDemo ? 'DEMO' : 'MASTER'))}</span>
@@ -14165,7 +14180,7 @@ function renderArtistProfile(artistName) {
               </div>
               <div class="atl-albums reveal">
                 ${albumCards.map(a => `
-                  <div class="atl-album" onclick="navigateTo('album:'+encodeURIComponent('${a.pid.replace(/'/g, "\\'")}'))">
+                  <div class="atl-album" onclick="navigateTo('song:'+encodeURIComponent('${String(a.id).replace(/'/g, "\\'")}'))">
                     <img class="atl-album-cover" src="${a.cover}" alt="" loading="lazy">
                     <div class="atl-album-title">${_esc(a.title)}</div>
                     <div class="atl-album-meta">${_esc(a.meta)}</div>
