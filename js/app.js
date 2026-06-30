@@ -3644,8 +3644,16 @@ function _pbStyle(){
   .pb-sh-list{flex:1;overflow-y:auto;padding:6px 14px;}
   .pb-sh-add{display:flex;gap:9px;align-items:center;padding:10px 12px calc(10px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.07);} .pb-sh-add input{flex:1;background:#1b1726;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:11px 15px;color:#fff;font-family:inherit;font-size:13px;} .pb-sh-add button{border:none;background:none;color:#8b7cf6;font-weight:800;font-size:14px;cursor:pointer;}
   .pb-form{padding:4px 16px 14px;overflow-y:auto;flex:1;min-height:0;} .pb-flab{font-size:11.5px;font-weight:800;color:rgba(255,255,255,.65);margin:14px 0 6px;} .pb-form input,.pb-form select{width:100%;background:#1b1726;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:11px 13px;color:#fff;font-family:inherit;font-size:13px;} .pb-ab{display:flex;gap:8px;} .pb-days{display:flex;gap:8px;} .pb-day{flex:1;text-align:center;border:1px solid rgba(255,255,255,.12);background:#1b1726;color:rgba(255,255,255,.7);border-radius:11px;padding:10px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;} .pb-day.on{background:rgba(201,196,245,.16);border-color:#C9C4F5;color:#fff;}
+  .pb-opt-edit{display:flex;gap:8px;align-items:center;margin-bottom:8px;} .pb-opt-edit input{flex:1;}
+  .pb-opt-key{flex:0 0 28px;width:28px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:9px;font-weight:900;font-size:13px;color:#fff;} .pb-opt-key.a{background:linear-gradient(135deg,#8B7CF6,#6d5ef0);} .pb-opt-key.b{background:linear-gradient(135deg,#fb6f92,#f0567f);}
+  .pb-attach{flex:0 0 auto;width:42px;height:42px;border:1px solid rgba(255,255,255,.14);background:#1b1726;color:#C9C4F5;border-radius:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;} .pb-attach.pb-att-has{background:rgba(110,224,159,.16);border-color:#6ee09f;color:#6ee09f;} .pb-attach.pb-att-busy{color:rgba(255,255,255,.5);} .pb-spin{display:inline-block;animation:pbspin .7s linear infinite;} @keyframes pbspin{to{transform:rotate(360deg);}}
   .pb-form-foot{padding:10px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.07);background:#100d18;}
   .pb-open{width:100%;border:none;border-radius:13px;padding:14px;font-family:inherit;font-size:14px;font-weight:800;color:#06140C;background:linear-gradient(135deg,#C9C4F5,#8B7CF6);cursor:pointer;}
+  /* 데스크탑: 가운데 컬럼으로 좁혀 좌상단 워드마크/가이드 버튼과 안 겹치게 + 위로 여백 */
+  @media (min-width:769px){
+    .pb-top,.pb-seg,.pb-feed{max-width:560px;margin-left:auto !important;margin-right:auto !important;}
+    .pb-top{padding-top:58px;}
+  }
   `;
   document.head.appendChild(st);
 }
@@ -3803,6 +3811,7 @@ window.pbOpenCreate = function(){
   var opts = mine.map(function(t){ var ti=(t.title||'곡').replace(/\s*\(Demo.*\)$/i,''); return '<option value="'+pbEsc(t.id)+'" data-pid="'+pbEsc(t.projectId||('proj_'+t.id))+'">'+pbEsc(ti)+' · '+pbEsc(t.versionLabel||'')+'</option>'; }).join('');
   var topics = [['🎵 편곡','2절에 뭐 더 넣을까?','드럼 추가','기타 추가'],['👕 의상','무대 의상 뭐 입을까?','빨간 옷','파란 옷'],['✍️ 제목','곡 제목 뭐로?','',''],['💡 직접','','','']];
   window.__pbTopics = topics;
+  window.__pbAudio = { a: null, b: null };   // 옵션별 첨부 음원 URL(이번 폼 리셋)
   var chips = topics.map(function(t,i){ return '<button type="button" class="pb-day" style="flex:0 0 auto" onclick="pbFillTopic('+i+')">'+t[0]+'</button>'; }).join('');
   var sheet = document.getElementById('pb-sheet');
   window.__pbSheetRound = null;
@@ -3811,7 +3820,9 @@ window.pbOpenCreate = function(){
     + '<div class="pb-flab">어떤 곡/데모?</div><select id="pb-c-track">'+opts+'</select>'
     + '<div class="pb-flab">빠른 주제 (누르면 자동 채움)</div><div class="pb-days" style="flex-wrap:wrap">'+chips+'</div>'
     + '<div class="pb-flab">뭘 정할까요?</div><input id="pb-c-q" maxlength="200" placeholder="예: 후렴 편곡 / 무대 의상…">'
-    + '<div class="pb-flab">두 안 (A · B) — 글자만 적으면 간단 투표</div><div class="pb-ab"><input id="pb-c-a" maxlength="60" placeholder="A안"><input id="pb-c-b" maxlength="60" placeholder="B안"></div>'
+    + '<div class="pb-flab">두 안 (A · B) — 글자만 적으면 간단 투표 · 음원/흥얼거림 올리면 들어보고 투표</div>'
+    + '<div class="pb-opt-edit"><span class="pb-opt-key a">A</span><input id="pb-c-a" maxlength="60" placeholder="A안 이름 (예: 몽환 신스)"><button type="button" class="pb-attach" id="pb-att-a" onclick="pbPickAudio(\'a\')" title="음원/흥얼거림 첨부"><i class="ri-music-2-line"></i></button><input type="file" id="pb-file-a" accept="audio/*" style="display:none" onchange="pbAudioPicked(\'a\',this)"></div>'
+    + '<div class="pb-opt-edit"><span class="pb-opt-key b">B</span><input id="pb-c-b" maxlength="60" placeholder="B안 이름 (예: 펑키 기타)"><button type="button" class="pb-attach" id="pb-att-b" onclick="pbPickAudio(\'b\')" title="음원/흥얼거림 첨부"><i class="ri-music-2-line"></i></button><input type="file" id="pb-file-b" accept="audio/*" style="display:none" onchange="pbAudioPicked(\'b\',this)"></div>'
     + '<div class="pb-flab">마감</div><div class="pb-days"><button type="button" class="pb-day" data-day="1" onclick="pbPickDay(this)">1일</button><button type="button" class="pb-day on" data-day="3" onclick="pbPickDay(this)">3일</button><button type="button" class="pb-day" data-day="7" onclick="pbPickDay(this)">7일</button></div>'
     + '</div>'
     + '<div class="pb-form-foot"><button class="pb-open" onclick="pbCreate(this)"><i class="ri-rocket-2-line"></i> 라운드 열기</button></div>';
@@ -3819,6 +3830,24 @@ window.pbOpenCreate = function(){
 };
 window.pbFillTopic = function(i){ var t=(window.__pbTopics||[])[i]; if(!t)return; document.getElementById('pb-c-q').value=t[1]; document.getElementById('pb-c-a').value=t[2]; document.getElementById('pb-c-b').value=t[3]; };
 window.pbPickDay = function(el){ el.parentNode.querySelectorAll('.pb-day').forEach(function(c){c.classList.remove('on');}); el.classList.add('on'); };
+// A·B 옵션별 음원/흥얼거림 첨부 — 파일 고르면 즉시 업로드, 버튼에 상태 표시
+window.pbPickAudio = function(key){ var f=document.getElementById('pb-file-'+key); if(f) f.click(); };
+window.pbAudioPicked = async function(key, input){
+  var file = input && input.files && input.files[0]; if(!file) return;
+  if (!window.Tracks || !window.Tracks.uploadFile){ alert(_t('업로드 모듈 없음','Upload unavailable')); return; }
+  var btn = document.getElementById('pb-att-'+key);
+  if (btn){ btn.classList.add('pb-att-busy'); btn.classList.remove('pb-att-has'); btn.innerHTML='<i class="ri-loader-4-line pb-spin"></i>'; }
+  try {
+    var url = await window.Tracks.uploadFile(file, 'audio');
+    window.__pbAudio = window.__pbAudio || {a:null,b:null};
+    window.__pbAudio[key] = url;
+    if (btn){ btn.classList.remove('pb-att-busy'); btn.classList.add('pb-att-has'); btn.innerHTML='<i class="ri-checkbox-circle-fill"></i>'; btn.title=_t('첨부됨: ','Attached: ')+(file.name||''); }
+  } catch(e){
+    console.warn('[pb] audio upload', e);
+    alert(_t('음원 업로드 실패: ','Audio upload failed: ')+(e.message||e));
+    if (btn){ btn.classList.remove('pb-att-busy'); btn.innerHTML='<i class="ri-music-2-line"></i>'; }
+  }
+};
 window.pbCreate = async function(btn){
   var sel = document.getElementById('pb-c-track'); var opt = sel.options[sel.selectedIndex];
   var trackId = sel.value, projectId = opt ? opt.getAttribute('data-pid') : ('proj_'+trackId);
@@ -3829,7 +3858,10 @@ window.pbCreate = async function(btn){
   var dayBtn = document.querySelector('.pb-form .pb-day.on[data-day]'); var days = dayBtn?parseInt(dayBtn.dataset.day,10):3;
   btn.disabled = true; var old = btn.innerHTML; btn.innerHTML = '...';
   try {
-    await window.Producing.create({ projectId: projectId, trackId: trackId, question: q||_t('다음 데모, 어디로?','Where next?'), candidates: [{key:'a',name:a},{key:'b',name:b}], closesAt: new Date(Date.now()+days*86400000).toISOString() });
+    var au = window.__pbAudio || {a:null,b:null};
+    var candA = { key:'a', name:a }; if (au.a) candA.audio = au.a;
+    var candB = { key:'b', name:b }; if (au.b) candB.audio = au.b;
+    await window.Producing.create({ projectId: projectId, trackId: trackId, question: q||_t('다음 데모, 어디로?','Where next?'), candidates: [candA, candB], closesAt: new Date(Date.now()+days*86400000).toISOString() });
     if (typeof showToast==='function') showToast(_t('라운드가 열렸어요! 🎬','Round opened! 🎬'));
     window.__pbSeg = 'open'; pbCloseSheet(); renderProducingBoard();
   } catch(e){ alert(_t('실패: ','Failed: ')+(e.message||e)); btn.disabled=false; btn.innerHTML=old; }
