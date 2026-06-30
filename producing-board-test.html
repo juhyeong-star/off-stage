@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>프로듀싱 투표 게시판 — 테스트</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: #07060d; color: #F4F4F7; font-family: 'Pretendard', sans-serif; max-width: 440px; margin: 0 auto; padding-bottom: 30px; }
+  .testbar { background: #1a1530; border-bottom: 1px solid rgba(167,139,250,.3); color: #C9C4F5; font-size: 11px; font-weight: 800; text-align: center; padding: 7px; line-height: 1.4; }
+
+  .top { display: flex; align-items: center; gap: 10px; padding: 12px 14px; position: sticky; top: 0; background: rgba(7,6,13,.82); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); z-index: 20; }
+  .top i { font-size: 22px; } .top-t { font-size: 15px; font-weight: 800; } .top-sp { margin-left: auto; }
+  .seg { display: flex; gap: 6px; background: #14111f; border-radius: 12px; padding: 4px; margin: 8px 14px 14px; }
+  .seg b { flex: 1; text-align: center; padding: 8px; border-radius: 9px; font-size: 12.5px; font-weight: 800; color: rgba(255,255,255,.5); cursor: pointer; }
+  .seg b.on { background: #2a2440; color: #fff; }
+
+  .card { margin: 0 14px 30px; }
+  .cover { position: relative; height: 180px; border-radius: 20px; overflow: hidden; background: linear-gradient(150deg, #6d28d9, #db2777 70%, #7c3aed); display: flex; align-items: flex-end; }
+  .cover::after { content: ''; position: absolute; inset: 0; background: radial-gradient(120% 90% at 50% 0%, rgba(217,70,180,.35), transparent), linear-gradient(to top, rgba(7,6,13,.82), transparent 55%); }
+  .cover-face { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-size: 64px; opacity: .92; filter: drop-shadow(0 0 18px rgba(236,72,153,.6)); }
+  .song { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; padding: 14px; width: 100%; }
+  .song-ic { width: 40px; height: 40px; border-radius: 11px; background: linear-gradient(135deg,#c9c4f5,#8b7cf6); display: flex; align-items: center; justify-content: center; font-size: 19px; color: #1a1030; flex-shrink: 0; }
+  .song-t { font-size: 16px; font-weight: 900; } .song-s { font-size: 11px; color: rgba(255,255,255,.55); }
+
+  .q { text-align: center; font-size: 13px; font-weight: 800; color: rgba(255,255,255,.8); margin: 16px 0 12px; }
+  .vs { display: flex; align-items: stretch; gap: 0; }
+  .opt { flex: 1; border-radius: 18px; padding: 16px 12px 14px; text-align: center; position: relative; cursor: pointer; border: 1.5px solid transparent; transition: all .18s; }
+  .opt.a { background: radial-gradient(120% 100% at 50% 0%, rgba(34,211,238,.22), rgba(34,211,238,.06)); border-color: rgba(34,211,238,.5); box-shadow: 0 0 22px rgba(34,211,238,.18) inset; }
+  .opt.b { background: radial-gradient(120% 100% at 50% 0%, rgba(251,73,138,.22), rgba(251,73,138,.06)); border-color: rgba(251,73,138,.5); box-shadow: 0 0 22px rgba(251,73,138,.18) inset; }
+  .opt.on { transform: translateY(-2px); }
+  .opt.a.on { border-color: #22d3ee; box-shadow: 0 0 26px rgba(34,211,238,.4); }
+  .opt.b.on { border-color: #fb498a; box-shadow: 0 0 26px rgba(251,73,138,.4); }
+  .opt-badge { font-size: 12px; font-weight: 900; } .opt.a .opt-badge { color: #22d3ee; } .opt.b .opt-badge { color: #fb6f92; }
+  .opt-play { width: 54px; height: 54px; border-radius: 50%; margin: 10px auto 9px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+  .opt.a .opt-play { background: #22d3ee; color: #06222b; box-shadow: 0 0 20px rgba(34,211,238,.5); }
+  .opt.b .opt-play { background: #fb498a; color: #3b0a1e; box-shadow: 0 0 20px rgba(251,73,138,.5); }
+  .opt-name { font-size: 13.5px; font-weight: 800; }
+  .opt-wave { display: flex; align-items: center; gap: 9px; margin-top: 11px; background: rgba(0,0,0,.3); border-radius: 10px; padding: 7px 9px; }
+  .opt-wave i { font-size: 14px; opacity: .85; } .opt-wave .wf { flex: 1; height: 16px; background: repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 4px); opacity: .5; border-radius: 2px; }
+  .opt.a .opt-wave { color: #22d3ee; } .opt.b .opt-wave { color: #fb6f92; }
+  .vsmid { display: flex; align-items: center; padding: 0 6px; font-size: 13px; font-weight: 900; color: rgba(255,255,255,.45); }
+
+  .pct-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .pct { flex: 1; } .pct-bar { height: 8px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; } .pct-bar > span { display: block; height: 100%; border-radius: 999px; transition: width .5s; }
+  .pct.a .pct-bar > span { background: #22d3ee; } .pct.b .pct-bar > span { background: #fb498a; }
+  .pct-n { font-size: 13px; font-weight: 900; margin-top: 5px; } .pct.a .pct-n { color: #22d3ee; text-align: left; } .pct.b .pct-n { color: #fb6f92; text-align: right; }
+  .blindbar { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 14px; font-size: 11.5px; font-weight: 700; color: rgba(255,255,255,.5); background: rgba(255,255,255,.04); border: 1px dashed rgba(255,255,255,.14); border-radius: 12px; padding: 11px; }
+  .blindbar i { color: #C9C4F5; }
+
+  .voices { margin-top: 22px; }
+  .voices-h { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 900; margin-bottom: 4px; } .voices-h i { color: #fb6f92; }
+  .voices-s { font-size: 10.5px; color: rgba(255,255,255,.45); margin-bottom: 12px; }
+  .cmt { display: flex; gap: 10px; padding: 10px 2px; align-items: flex-start; cursor: pointer; }
+  .cmt-av { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #fff; }
+  .cmt-b { flex: 1; min-width: 0; } .cmt-u { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.6); } .cmt-u .top1 { color: #FFD166; font-size: 9px; font-weight: 900; margin-left: 5px; background: rgba(255,209,102,.14); padding: 1px 6px; border-radius: 999px; }
+  .cmt-t { font-size: 13px; margin-top: 1px; line-height: 1.4; }
+  .cmt-like { display: flex; flex-direction: column; align-items: center; gap: 1px; flex-shrink: 0; cursor: pointer; }
+  .cmt-like i { font-size: 18px; color: rgba(255,255,255,.4); } .cmt-like.on i { color: #fb6f92; } .cmt-like b { font-size: 10px; font-weight: 800; }
+  .cmt-pct { font-size: 9.5px; color: rgba(255,255,255,.4); }
+  .more { text-align: center; font-size: 12px; font-weight: 700; color: rgba(255,255,255,.5); padding: 10px; cursor: pointer; }
+
+  .vote-cta { width: 100%; border: none; border-radius: 14px; padding: 14px; margin-top: 12px; font-family: inherit; font-size: 14px; font-weight: 800; color: #fff; background: linear-gradient(135deg, #a855f7, #d946b8); box-shadow: 0 6px 22px rgba(168,85,247,.4); cursor: pointer; }
+
+  /* 인스타식 댓글 바텀시트 */
+  .sheet-back { position: fixed; inset: 0; background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 60; }
+  .sheet-back.on { opacity: 1; pointer-events: auto; }
+  .sheet { position: fixed; left: 0; right: 0; bottom: 0; max-width: 440px; margin: 0 auto; height: 76vh; background: #100d18; border-radius: 22px 22px 0 0; transform: translateY(100%); transition: transform .3s cubic-bezier(.4,0,.2,1); z-index: 61; display: flex; flex-direction: column; }
+  .sheet.on { transform: translateY(0); }
+  .sheet-grab { width: 38px; height: 4px; border-radius: 999px; background: rgba(255,255,255,.25); margin: 9px auto 4px; }
+  .sheet-h { text-align: center; font-size: 13px; font-weight: 800; padding: 6px 0 10px; border-bottom: 1px solid rgba(255,255,255,.07); position: relative; }
+  .sheet-h .x { position: absolute; right: 14px; top: 4px; font-size: 20px; color: rgba(255,255,255,.6); cursor: pointer; }
+  .sheet-list { flex: 1; overflow-y: auto; padding: 6px 14px; }
+  .sheet-hint { font-size: 10.5px; color: #fb6f92; text-align: center; padding: 8px; background: rgba(251,111,146,.08); border-radius: 10px; margin: 8px 0 4px; }
+  .sheet-add { display: flex; gap: 9px; align-items: center; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(255,255,255,.07); }
+  .sheet-add input { flex: 1; background: #1b1726; border: 1px solid rgba(255,255,255,.1); border-radius: 999px; padding: 11px 15px; color: #fff; font-family: inherit; font-size: 13px; }
+  .sheet-add button { border: none; background: none; color: #8b7cf6; font-weight: 800; font-size: 14px; cursor: pointer; }
+</style>
+</head>
+<body>
+  <div class="testbar">🧪 테스트 — 주절주절 자리에 들어갈 프로듀싱 투표 게시판 · 댓글 누르면 인스타식 전체창</div>
+
+  <div class="top"><i class="ri-arrow-left-line"></i><span class="top-t">투표 게시판</span><i class="ri-search-line top-sp"></i></div>
+  <div class="seg"><b class="on" onclick="setSeg(this,'live')">🔥 진행 중</b><b onclick="setSeg(this,'done')">🏁 마감</b></div>
+
+  <div class="card" id="card">
+    <div class="cover">
+      <div class="cover-face">👩‍🎤</div>
+      <div class="song"><div class="song-ic"><i class="ri-disc-line"></i></div><div><div class="song-t">Plastic Days <span style="font-size:12px;color:rgba(255,255,255,.55)">(v2.1)</span></div><div class="song-s">서실음 3학년 · THUNDER</div></div></div>
+    </div>
+
+    <div class="q">후렴, 어떤 버전으로 갈까요?</div>
+    <div class="vs">
+      <div class="opt a" id="optA" onclick="vote('a')"><div class="opt-badge">A안</div><div class="opt-play"><i class="ri-play-fill"></i></div><div class="opt-name">몽환 신스 버전</div><div class="opt-wave"><i class="ri-play-mini-fill"></i><span class="wf"></span></div></div>
+      <div class="vsmid">VS</div>
+      <div class="opt b" id="optB" onclick="vote('b')"><div class="opt-badge">B안</div><div class="opt-play"><i class="ri-play-fill"></i></div><div class="opt-name">펑키 기타 버전</div><div class="opt-wave"><i class="ri-play-mini-fill"></i><span class="wf"></span></div></div>
+    </div>
+
+    <div id="pctWrap"></div>
+
+    <div class="voices">
+      <div class="voices-h"><i class="ri-chat-heart-fill"></i> 우리의 목소리 <span style="margin-left:auto;font-size:11px;color:rgba(255,255,255,.45);font-weight:600">54</span></div>
+      <div class="voices-s">A·B 말고 다른 의견? 하트 1등 댓글은 <b style="color:#FFD166">제안 배틀(C안)</b>로 합류해요!</div>
+      <div id="cmtPreview"></div>
+      <div class="more" onclick="openSheet()">댓글 54개 모두 보기 ▾</div>
+    </div>
+
+    <button class="vote-cta" onclick="openSheet()"><i class="ri-quill-pen-line"></i> 이 데모에 의견 투지하기</button>
+  </div>
+
+  <!-- 댓글 바텀시트 -->
+  <div class="sheet-back" id="sheetBack" onclick="closeSheet()"></div>
+  <div class="sheet" id="sheet">
+    <div class="sheet-grab"></div>
+    <div class="sheet-h">댓글 54<span class="x" onclick="closeSheet()"><i class="ri-close-line"></i></span></div>
+    <div class="sheet-hint">💡 하트 1등 댓글이 <b>제안 배틀(C안)</b>에 올라가요</div>
+    <div class="sheet-list" id="sheetList"></div>
+    <div class="sheet-add"><input id="newCmt" placeholder="의견 남기기…" maxlength="500"><button onclick="addCmt()">게시</button></div>
+  </div>
+
+<script>
+  var blind = true;               // 투표 중 = 블라인드
+  var myVote = null;              // 'a' | 'b' | 댓글id
+  var A = { name: '몽환 신스 버전', v: 312 }, B = { name: '펑키 기타 버전', v: 235 };
+  var comments = [
+    { id: 'c1', u: '사현', t: 'A안이 훨씬 칼답! 후렴 킬 베이스 취기좀', likes: 330, c: '#fb6f92', top: true },
+    { id: 'c2', u: '존모', t: '신낭염 기타 좀 솎오면 이떼요?', likes: 76, c: '#22d3ee' },
+    { id: 'c3', u: '민', t: 'B안 살리되 드럼만 더 단단하게', likes: 54, c: '#FFD166' },
+    { id: 'c4', u: '하루', t: '둘 다 좋아서 못 고르겠다 진짜', likes: 41, c: '#8b7cf6' },
+    { id: 'c5', u: '도윤', t: '2절만 A, 1절은 B 어때', likes: 33, c: '#36C977' }
+  ];
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+  function setSeg(el, mode){ document.querySelectorAll('.seg b').forEach(function(b){b.classList.remove('on');}); el.classList.add('on'); blind = (mode==='live'); myVote=null; document.getElementById('optA').classList.remove('on'); document.getElementById('optB').classList.remove('on'); render(); }
+
+  function render(){
+    var total = A.v + B.v + comments.reduce(function(s,c){return s+c.likes;},0);
+    var ap = Math.round(A.v/(A.v+B.v)*100), bp = 100-ap;
+    // 퍼센트/블라인드
+    document.getElementById('pctWrap').innerHTML = blind
+      ? '<div class="blindbar"><i class="ri-eye-off-line"></i> 투표 중이라 결과는 가려져 있어요 · 마감 후 공개</div>'
+      : '<div class="pct-row"><div class="pct a"><div class="pct-bar"><span style="width:'+ap+'%"></span></div><div class="pct-n">'+ap+'%</div></div><div class="pct b"><div class="pct-bar"><span style="width:'+bp+'%;margin-left:auto"></span></div><div class="pct-n">'+bp+'%</div></div></div>';
+    // 댓글 미리보기(상위 3)
+    var top3 = comments.slice().sort(function(a,b){return b.likes-a.likes;}).slice(0,3);
+    document.getElementById('cmtPreview').innerHTML = top3.map(function(c){ return cmtRow(c, total, false); }).join('');
+    // 시트 전체
+    var sorted = comments.slice().sort(function(a,b){return b.likes-a.likes;});
+    document.getElementById('sheetList').innerHTML = sorted.map(function(c,i){ c.top = (i===0); return cmtRow(c, total, true); }).join('');
+  }
+  function cmtRow(c, total, full){
+    var on = myVote===c.id;
+    var pct = Math.round(c.likes/total*100);
+    return '<div class="cmt"><div class="cmt-av" style="background:'+c.c+'">'+esc(c.u[0])+'</div>'
+      + '<div class="cmt-b"><div class="cmt-u">'+esc(c.u)+(c.top?'<span class="top1">🏆 배틀 합류</span>':'')+'</div><div class="cmt-t">'+esc(c.t)+'</div></div>'
+      + '<div class="cmt-like'+(on?' on':'')+'" onclick="event.stopPropagation(); likeCmt(\''+c.id+'\')"><i class="'+(on?'ri-heart-3-fill':'ri-heart-3-line')+'"></i><b>'+c.likes+'</b>'+(!blind&&full?'<span class="cmt-pct">'+pct+'%</span>':'')+'</div></div>';
+  }
+  function vote(side){
+    if(myVote===side){ myVote=null; } else { if(myVote&&myVote!=='a'&&myVote!=='b'){ var pc=comments.find(function(x){return x.id===myVote;}); if(pc)pc.likes--; } myVote=side; }
+    document.getElementById('optA').classList.toggle('on', myVote==='a');
+    document.getElementById('optB').classList.toggle('on', myVote==='b');
+    render();
+  }
+  function likeCmt(id){
+    var c = comments.find(function(x){return x.id===id;}); if(!c) return;
+    if(myVote===id){ c.likes--; myVote=null; }
+    else { if(myVote==='a'){} else if(myVote==='b'){} else if(myVote){ var pc=comments.find(function(x){return x.id===myVote;}); if(pc)pc.likes--; } c.likes++; myVote=id; document.getElementById('optA').classList.remove('on'); document.getElementById('optB').classList.remove('on'); }
+    render();
+  }
+  function addCmt(){ var v=(document.getElementById('newCmt').value||'').trim(); if(!v)return; var id='u'+(comments.length+1); comments.push({id:id,u:'나',t:v,likes:1,c:'#a78bfa'}); document.getElementById('newCmt').value=''; myVote=id; render(); document.getElementById('sheetList').scrollTop=0; }
+  function openSheet(){ document.getElementById('sheetBack').classList.add('on'); document.getElementById('sheet').classList.add('on'); }
+  function closeSheet(){ document.getElementById('sheetBack').classList.remove('on'); document.getElementById('sheet').classList.remove('on'); }
+
+  render();
+</script>
+</body>
+</html>
