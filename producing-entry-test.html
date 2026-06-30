@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>프로듀싱 — 만들기 버튼 위치</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: #07070d; color: #F4F4F7; font-family: 'Pretendard', sans-serif; max-width: 460px; margin: 0 auto; }
+  .testbar { background: #1a1530; border-bottom: 1px solid rgba(167,139,250,.3); color: #C9C4F5; font-size: 11px; font-weight: 800; text-align: center; padding: 7px; line-height: 1.4; }
+  .wrap { padding: 16px; }
+  .toggle-view { display: flex; gap: 6px; background: #14141C; border-radius: 11px; padding: 4px; margin-bottom: 14px; }
+  .tv { flex: 1; text-align: center; padding: 8px; border-radius: 8px; font-size: 11.5px; font-weight: 800; cursor: pointer; color: rgba(255,255,255,.5); }
+  .tv.on { background: #2a2438; color: #fff; }
+  .sec-t { font-size: 12px; font-weight: 700; color: rgba(255,255,255,.42); display: flex; align-items: center; gap: 5px; margin: 4px 2px 11px; } .sec-t i { color: #a78bfa; }
+
+  .mh-track { border-radius: 24px; padding: 14px; border: 1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.025); }
+  .mh-head { display: flex; align-items: center; gap: 12px; }
+  .mh-cover { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #9DE05A; }
+  .mh-cover-lines { font-size: 7.5px; line-height: 1.22; font-weight: 800; color: rgba(0,0,0,.82); text-align: center; }
+  .mh-mid { flex: 1; min-width: 0; } .mh-state { font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 6px; background: rgba(255,255,255,.05); color: rgba(255,255,255,.6); border: 1px solid rgba(255,255,255,.1); } .mh-title { font-size: 13px; font-weight: 900; margin-left: 6px; } .mh-note { font-size: 10px; color: rgba(255,255,255,.5); margin: 4px 0 0; }
+  .mh-pbtn { width: 38px; height: 38px; border-radius: 50%; border: none; background: #36C977; color: #06140C; font-size: 18px; flex-shrink: 0; }
+  .mh-nodes { margin-top: 11px; padding: 11px 8px 0; border-top: 1px solid rgba(255,255,255,.06); display: flex; align-items: center; justify-content: space-between; }
+  .mh-node { display: flex; flex-direction: column; align-items: center; cursor: pointer; flex-shrink: 0; }
+  .mh-node-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; position: relative; transition: all .2s; }
+  .mh-node-date { font-size: 8px; margin-top: 4px; }
+  .mh-node-bar { flex: 1; height: 1.5px; background: rgba(255,255,255,.1); margin: -12px 6px 0; }
+  .mh-node-add .mh-node-dot { background: rgba(167,139,250,.08); border: 1.5px dashed rgba(167,139,250,.55); color: #a78bfa; }
+  .mh-node-live { position: absolute; top: -2px; right: -2px; width: 9px; height: 9px; border-radius: 50%; background: #FB6F92; border: 2px solid #07070d; }
+
+  .panel { max-height: 0; overflow: hidden; transition: max-height .34s cubic-bezier(.4,0,.2,1), opacity .25s, margin .25s; opacity: 0; }
+  .panel.open { max-height: 900px; opacity: 1; margin-top: 12px; }
+  .panel-in { border-radius: 16px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); padding: 14px; }
+  .panel-top { display: flex; align-items: center; margin-bottom: 10px; }
+  .panel-flag { font-size: 9.5px; font-weight: 900; color: #06140C; background: #C9C4F5; padding: 3px 9px; border-radius: 999px; }
+  .panel-close { margin-left: auto; width: 28px; height: 28px; border-radius: 50%; border: none; background: rgba(255,255,255,.06); color: rgba(255,255,255,.6); font-size: 15px; cursor: pointer; }
+
+  /* 빈 상태 → 만들기 버튼 (★ 여기가 만들기 버튼 위치) */
+  .empty { text-align: center; padding: 6px 4px 2px; }
+  .empty-ic { font-size: 30px; }
+  .empty-t { font-size: 13px; font-weight: 800; margin: 8px 0 3px; }
+  .empty-s { font-size: 11px; color: rgba(255,255,255,.5); line-height: 1.5; margin-bottom: 14px; }
+  .make-btn { width: 100%; border: none; border-radius: 13px; padding: 13px; font-family: inherit; font-size: 13.5px; font-weight: 800; color: #06140C; background: linear-gradient(135deg, #C9C4F5, #8B7CF6); cursor: pointer; }
+
+  /* 만들기 폼(컴팩트) */
+  .topics { display: flex; flex-wrap: wrap; gap: 7px; margin: 4px 0 10px; }
+  .topic { font-size: 11.5px; font-weight: 700; color: #E8E6F5; background: #1A1A24; border: 1px solid rgba(255,255,255,.1); border-radius: 999px; padding: 6px 11px; cursor: pointer; } .topic.on { background: rgba(201,196,245,.18); border-color: #C9C4F5; color: #fff; }
+  .lab { font-size: 11px; font-weight: 800; color: rgba(255,255,255,.65); margin: 12px 0 6px; }
+  .inp { width: 100%; background: #15151E; border: 1px solid rgba(255,255,255,.12); border-radius: 11px; padding: 10px 12px; color: #fff; font-family: inherit; font-size: 12.5px; } .inp::placeholder { color: rgba(255,255,255,.32); }
+  .ab { display: flex; gap: 8px; margin-top: 8px; } .ab .inp { flex: 1; }
+  .open-btn { width: 100%; border: none; border-radius: 12px; padding: 12px; font-family: inherit; font-size: 13px; font-weight: 800; color: #06140C; background: linear-gradient(135deg, #C9C4F5, #8B7CF6); cursor: pointer; margin-top: 14px; }
+
+  /* 진행 중 상태 */
+  .live { text-align: center; padding: 4px; }
+  .live-ic { font-size: 28px; } .live-t { font-size: 14px; font-weight: 900; margin: 7px 0 3px; color: #9DE0B4; } .live-s { font-size: 11.5px; color: rgba(255,255,255,.6); line-height: 1.5; }
+  .live-stat { display: flex; justify-content: center; gap: 16px; margin: 12px 0; font-size: 11px; color: rgba(255,255,255,.55); font-weight: 600; } .live-stat b { color: #fff; }
+  .ghost { width: 100%; border: 1px solid rgba(255,255,255,.15); background: transparent; color: rgba(255,255,255,.7); border-radius: 11px; padding: 10px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+
+  .tip { font-size: 11px; color: rgba(255,255,255,.5); line-height: 1.65; margin-top: 18px; padding: 0 2px; } .tip b { color: #a78bfa; }
+</style>
+</head>
+<body>
+  <div class="testbar">🧪 테스트 — '라운드 만들기' 버튼이 어디 있나: 내 데모 노드 탭 → 빈 상태면 만들기 버튼</div>
+  <div class="wrap">
+    <div class="toggle-view"><div class="tv on" id="tvMe" onclick="setView('me')">👤 내가 볼 때 (아티스트)</div><div class="tv" id="tvLis" onclick="setView('lis')">🎧 청취자가 볼 때</div></div>
+
+    <div class="sec-t"><i class="ri-music-2-line"></i> 음악 히스토리 (1)</div>
+    <div class="mh-track">
+      <div class="mh-head">
+        <div class="mh-cover"><span class="mh-cover-lines">#편곡이 달라서<br>#투표좀 해줘<br>#데모1 vs 2</span></div>
+        <div class="mh-mid"><div><span class="mh-state">미발매</span><span class="mh-title">Plastic days</span></div><div class="mh-note">데모 노드(D2)를 눌러보세요 ⬇</div></div>
+        <button class="mh-pbtn"><i class="ri-play-fill"></i></button>
+      </div>
+      <div class="mh-nodes" id="nodes"></div>
+      <div class="panel" id="panel"><div class="panel-in" id="panelIn"></div></div>
+    </div>
+
+    <div class="tip">💡 <b>만들기 버튼 위치</b> = 내 데모 노드를 탭했을 때(라운드 없으면) 뜨는 <b>"🎬 라운드 만들기"</b>. 청취자가 같은 노드를 탭하면 투표 화면. (보조: 데모 업로드 끝나면 "라운드 열까요?" 한 번 더 물어봐도 OK)</div>
+  </div>
+
+<script>
+  var view = 'me';     // me | lis
+  var state = 'empty'; // empty(아티스트, 라운드없음) | form | live
+  var open = false;
+
+  function setView(v) { view = v; state = (v === 'lis') ? 'live' : 'empty'; document.getElementById('tvMe').classList.toggle('on', v === 'me'); document.getElementById('tvLis').classList.toggle('on', v === 'lis'); open = false; document.getElementById('panel').classList.remove('open'); renderNodes(); }
+  function renderNodes() {
+    var live = (state === 'live' || view === 'lis');
+    document.getElementById('nodes').innerHTML =
+      '<div class="mh-node"><div class="mh-node-dot" style="background:rgba(255,255,255,.15);color:rgba(255,255,255,.7)">D1</div><div class="mh-node-date" style="color:rgba(255,255,255,.4)">06.15</div></div>'
+      + '<div class="mh-node-bar"></div>'
+      + '<div class="mh-node" onclick="toggle()"><div class="mh-node-dot" style="background:' + (open ? '#FF9F45' : 'rgba(255,255,255,.15)') + ';color:' + (open ? '#06140C' : 'rgba(255,255,255,.7)') + '">D2' + (live ? '<span class="mh-node-live"></span>' : '') + '</div><div class="mh-node-date" style="color:' + (open ? '#fff' : 'rgba(255,255,255,.4)') + '">06.28</div></div>'
+      + '<div class="mh-node-bar"></div>'
+      + '<div class="mh-node mh-node-add"><div class="mh-node-dot"><i class="ri-add-line"></i></div><div class="mh-node-date" style="color:rgba(167,139,250,.75)">D3</div></div>';
+  }
+  function toggle() { if (open) { open = false; document.getElementById('panel').classList.remove('open'); renderNodes(); return; } open = true; document.getElementById('panelIn').innerHTML = panelHtml(); document.getElementById('panel').classList.add('open'); renderNodes(); }
+  function closeP() { open = false; document.getElementById('panel').classList.remove('open'); renderNodes(); }
+
+  function panelHtml() {
+    var close = '<button class="panel-close" onclick="closeP()"><i class="ri-close-line"></i></button>';
+    if (view === 'lis') return '<div class="panel-top"><span class="panel-flag">🎬 데모 3 프로듀싱 · 투표</span>' + close + '</div><div style="text-align:center;padding:14px 4px;color:rgba(255,255,255,.7);font-size:12.5px;line-height:1.6">청취자는 여기서 <b style="color:#fff">A·B 블라인드 투표 + 댓글 좋아요</b>를 해요.<br><span style="font-size:11px;color:rgba(255,255,255,.45)">(앞서 본 투표 화면)</span></div>';
+    if (state === 'empty') return '<div class="panel-top"><span class="panel-flag">🎬 내 데모</span>' + close + '</div>'
+      + '<div class="empty"><div class="empty-ic">🎬</div><div class="empty-t">아직 프로듀싱 라운드가 없어요</div><div class="empty-s">다음 데모(데모 3) 방향을 청취자에게 물어볼까요?<br>A·B 두 안만 올리면 시작!</div><button class="make-btn" onclick="state=\'form\';document.getElementById(\'panelIn\').innerHTML=panelHtml()"><i class="ri-rocket-2-line"></i> 프로듀싱 라운드 만들기</button></div>';
+    if (state === 'form') return '<div class="panel-top"><span class="panel-flag">🎬 라운드 만들기</span>' + close + '</div>'
+      + '<div class="topics"><button class="topic" onclick="fillT(this,\'후렴 편곡, 어디로?\',\'몽환 신스\',\'펑키 기타\')">🎵 편곡</button><button class="topic" onclick="fillT(this,\'MV에 뭐 입을까?\',\'사복\',\'교복\')">👕 MV 의상</button><button class="topic" onclick="fillT(this,\'곡 제목 뭐로?\',\'Plastic days\',\'유리도시\')">✍️ 제목</button><button class="topic" onclick="fillT(this,\'\',\'\',\'\')">💡 직접</button></div>'
+      + '<div class="lab">뭘 정할까요?</div><input class="inp" id="fq" placeholder="예: 후렴 편곡 / MV 의상…">'
+      + '<div class="lab">두 안 (음원·사진은 선택)</div><div class="ab"><input class="inp" id="fa" placeholder="A안"><input class="inp" id="fb" placeholder="B안"></div>'
+      + '<button class="open-btn" onclick="state=\'live\';document.getElementById(\'panelIn\').innerHTML=panelHtml();renderNodes()"><i class="ri-rocket-2-line"></i> 라운드 열기</button>';
+    return '<div class="panel-top"><span class="panel-flag">🎬 프로듀싱 · 진행 중</span>' + close + '</div>'
+      + '<div class="live"><div class="live-ic">✅</div><div class="live-t">라운드 열렸어요!</div><div class="live-s">청취자들이 다음 데모를 투표 중이에요.</div><div class="live-stat"><span>⏳ <b>3일</b> 남음</span><span>🗳️ <b>0</b> 투표</span></div><button class="ghost" onclick="view=\'lis\';setView(\'lis\');setTimeout(toggle,50)">🎧 청취자 화면 미리보기</button></div>';
+  }
+  function fillT(el, q, a, b) { document.querySelectorAll('.topic').forEach(function (c) { c.classList.remove('on'); }); el.classList.add('on'); document.getElementById('fq').value = q; document.getElementById('fa').value = a; document.getElementById('fb').value = b; }
+
+  renderNodes();
+</script>
+</body>
+</html>
