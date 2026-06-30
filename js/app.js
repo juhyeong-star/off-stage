@@ -7722,9 +7722,9 @@ function renderShapes() {
     const _drift = _isNarrow ? 7 : 9;      // 제자리 둥둥 — 부드러운 진폭(겹침 방지)
     const dx = ((((seed >>> 22) % (_drift * 2))) - _drift);
     const dy = ((((seed >>> 26) % (_drift * 2))) - _drift);
-    // 크기 = 등록 크기 + 인기도(♥*3+재생). 발견 촘촘하게: 도형 살짝 축소(데스크톱 와이드에서 한 줄에 더 들어가게).
+    // 크기 = 등록 크기 + 인기도(♥*3+재생). 발견 크기 배율(사용자: +40% → 0.72·0.9 에서 ×1.4).
     const _pop = ((track.likes || 0) * 3) + (track.plays || 0);
-    const _shrink = _isNarrow ? 0.9 : 0.72;
+    const _shrink = _isNarrow ? 1.26 : 1.01;
     const _popScale = (_shrink * (1 + (_isNarrow ? 0.18 : 0.35) * Math.min(1, _pop / _maxPop))).toFixed(3);
     const _newestStyle = _newest ? ' z-index:30;' : '';     // 최신은 앞으로 (#6)
 
@@ -7949,7 +7949,7 @@ function startShapesPhysics(field, viewport) {
   // (이전엔 cellH≈vvh*3/7 ≈ 428px 로 너무 성겨서 분리가 더 조일 게 없었음 → 띄엄띄엄)
   const cols = Math.max(1, Math.min(4, Math.round(fieldW0 / 240)));
   const rows = Math.max(1, Math.ceil(els.length / cols));
-  const cellH = 195;                                      // 촘촘한 행 간격(분리가 겹침만 풀어줌, 과밀 방지)
+  const cellH = 270;                                      // 행 간격(도형 +40%에 맞춰 확대, 분리가 겹침 정리)
   const fieldH = Math.max(vvh, rows * cellH);
   field.style.height = fieldH + 'px';
   const cellW = fieldW0 / cols;
