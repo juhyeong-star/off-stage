@@ -3608,13 +3608,13 @@ function _pbStyle(){
   .pb-loading,.pb-empty{text-align:center;color:rgba(255,255,255,.5);font-size:13px;padding:50px 20px;line-height:1.7;}
   .pb-empty b{display:block;font-size:15px;color:#fff;margin-bottom:6px;}
   .pb-card{margin:0 14px 30px;}
-  .pb-cover{position:relative;height:170px;border-radius:20px;overflow:hidden;display:flex;align-items:flex-end;background:#181225;}
+  .pb-cover{position:relative;height:286px;border-radius:20px;overflow:hidden;display:flex;align-items:flex-end;background:#181225;}
   .pb-cover-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;} .pb-cover-grad{position:absolute;inset:0;}
-  .pb-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(7,6,13,.85),transparent 55%);}
-  .pb-cover-tags{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-start;gap:1px;padding:15px 18px 0;pointer-events:none;z-index:0;}
+  .pb-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(7,6,13,.92),rgba(7,6,13,.1) 42%,transparent 62%);}
+  .pb-cover-tags{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:0 20px 40px;pointer-events:none;z-index:0;}
   .pb-cover-tags span{font-size:27px;font-weight:900;line-height:1.08;color:rgba(255,255,255,.96);letter-spacing:-.5px;text-shadow:0 2px 10px rgba(0,0,0,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
   .pb-del{position:absolute;top:10px;right:10px;z-index:3;width:34px;height:34px;border:none;border-radius:50%;background:rgba(7,6,13,.55);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);} .pb-del:hover{background:rgba(220,40,80,.9);}
-  .pb-song{position:relative;z-index:1;padding:14px;} .pb-song-t{font-size:16px;font-weight:900;} .pb-song-s{font-size:11px;color:rgba(255,255,255,.6);}
+  .pb-song{position:relative;z-index:1;display:flex;align-items:center;gap:11px;padding:14px;width:100%;} .pb-song-ic{width:42px;height:42px;border-radius:11px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;color:#1a1030;background:linear-gradient(135deg,#c9c4f5,#8b7cf6);} .pb-song-ic img{width:100%;height:100%;object-fit:cover;} .pb-song-t{font-size:17px;font-weight:900;} .pb-song-s{font-size:11px;color:rgba(255,255,255,.6);}
   .pb-q{text-align:center;font-size:13.5px;font-weight:800;color:rgba(255,255,255,.82);margin:16px 0 12px;}
   .pb-vs{display:flex;align-items:stretch;}
   .pb-opt{flex:1;border-radius:18px;padding:15px 12px 14px;text-align:center;position:relative;cursor:pointer;border:1.5px solid transparent;transition:all .18s;}
@@ -3627,15 +3627,15 @@ function _pbStyle(){
   .pb-play{width:52px;height:52px;border-radius:50%;margin:10px auto 9px;display:flex;align-items:center;justify-content:center;font-size:23px;}
   .pb-opt.a .pb-play{background:#22d3ee;color:#06222b;box-shadow:0 0 20px rgba(34,211,238,.5);} .pb-opt.b .pb-play{background:#fb498a;color:#3b0a1e;box-shadow:0 0 20px rgba(251,73,138,.5);}
   .pb-name{font-size:13.5px;font-weight:800;} .pb-name.big{font-size:19px;font-weight:900;margin-top:8px;}
-  .pb-wave{margin-top:11px;background:rgba(0,0,0,.3);border-radius:10px;padding:9px;} .pb-wave .wf{display:block;height:15px;background:repeating-linear-gradient(90deg,currentColor 0 2px,transparent 2px 4px);opacity:.5;border-radius:2px;} .pb-opt.a .pb-wave{color:#22d3ee;} .pb-opt.b .pb-wave{color:#fb6f92;}
+  .pb-wave{display:flex;align-items:center;gap:9px;margin-top:11px;background:rgba(0,0,0,.3);border-radius:10px;padding:7px 9px;} .pb-wave i{font-size:14px;opacity:.85;} .pb-wave .wf{flex:1;height:15px;background:repeating-linear-gradient(90deg,currentColor 0 2px,transparent 2px 4px);opacity:.5;border-radius:2px;} .pb-opt.a .pb-wave{color:#22d3ee;} .pb-opt.b .pb-wave{color:#fb6f92;}
   .pb-vsmid{display:flex;align-items:center;padding:0 6px;font-size:13px;font-weight:900;color:rgba(255,255,255,.45);}
   .pb-pct{min-height:8px;}
   .pb-blind{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:14px;font-size:11.5px;font-weight:700;color:rgba(255,255,255,.5);background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.14);border-radius:12px;padding:11px;} .pb-blind i{color:#C9C4F5;}
   .pb-pct-row{display:flex;align-items:center;gap:10px;margin-top:12px;} .pb-pct-c{flex:1;} .pb-bar{height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;} .pb-bar>span{display:block;height:100%;border-radius:999px;} .pb-pct-c.a .pb-bar>span{background:#22d3ee;} .pb-pct-c.b .pb-bar>span{background:#fb498a;} .pb-pn{font-size:13px;font-weight:900;margin-top:5px;} .pb-pct-c.a .pb-pn{color:#22d3ee;} .pb-pct-c.b .pb-pn{color:#fb6f92;text-align:right;}
-  .pb-voices{margin-top:20px;} .pb-voices-h{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:900;margin-bottom:10px;} .pb-voices-h i{color:#fb6f92;} .pb-voices-h span{margin-left:auto;font-size:11px;color:rgba(255,255,255,.45);font-weight:600;}
+  .pb-voices{margin-top:20px;} .pb-voices-h{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:900;margin-bottom:4px;} .pb-voices-h i{color:#fb6f92;} .pb-voices-h span{margin-left:auto;font-size:11px;color:rgba(255,255,255,.45);font-weight:600;} .pb-voices-s{font-size:10.5px;color:rgba(255,255,255,.45);margin-bottom:10px;line-height:1.4;} .pb-voices-s b{color:#FFD166;}
   .pb-cmt{display:flex;gap:10px;padding:9px 2px;align-items:flex-start;} .pb-cav{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;}
   .pb-cbd{flex:1;min-width:0;} .pb-cu{font-size:11px;font-weight:700;color:rgba(255,255,255,.6);} .pb-top1{color:#FFD166;font-size:9px;font-weight:900;margin-left:5px;background:rgba(255,209,102,.14);padding:1px 6px;border-radius:999px;} .pb-ct{font-size:13px;margin-top:1px;line-height:1.4;word-break:break-word;}
-  .pb-clike{display:flex;flex-direction:column;align-items:center;gap:1px;flex-shrink:0;cursor:pointer;} .pb-clike i{font-size:18px;color:rgba(255,255,255,.4);} .pb-clike.on i{color:#fb6f92;} .pb-clike b{font-size:10px;font-weight:800;}
+  .pb-clike{display:flex;flex-direction:column;align-items:center;gap:1px;flex-shrink:0;cursor:pointer;} .pb-clike i{font-size:18px;color:rgba(255,255,255,.4);} .pb-clike.on i{color:#fb6f92;} .pb-clike b{font-size:10px;font-weight:800;} .pb-cpct{font-size:9.5px;color:rgba(255,255,255,.4);}
   .pb-noc{font-size:12px;color:rgba(255,255,255,.4);padding:4px 2px;} .pb-more{text-align:center;font-size:12px;font-weight:700;color:rgba(255,255,255,.5);padding:9px;cursor:pointer;}
   .pb-cta{width:100%;border:none;border-radius:14px;padding:13px;margin-top:11px;font-family:inherit;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(135deg,#a855f7,#d946b8);box-shadow:0 6px 22px rgba(168,85,247,.38);cursor:pointer;}
   .pb-fab{position:fixed;right:18px;bottom:calc(var(--player-height,60px) + env(safe-area-inset-bottom) + 18px);width:54px;height:54px;border-radius:50%;border:none;background:linear-gradient(135deg,#a855f7,#d946b8);color:#fff;font-size:26px;box-shadow:0 8px 24px rgba(168,85,247,.5);cursor:pointer;z-index:40;display:flex;align-items:center;justify-content:center;}
@@ -3696,7 +3696,7 @@ function _pbEmptyHtml(t, s){ return '<div class="pb-empty"><b>'+pbEsc(t)+'</b>'+
 function _pbOpt(r, o){
   if (!o) return '';
   var inner = o.audio
-    ? '<div class="pb-play" onclick="event.stopPropagation(); pbPlay(\''+pbEsc(o.audio)+'\')"><i class="ri-play-fill"></i></div><div class="pb-name">'+pbEsc(o.name)+'</div><div class="pb-wave"><span class="wf"></span></div>'
+    ? '<div class="pb-play" onclick="event.stopPropagation(); pbPlay(\''+pbEsc(o.audio)+'\')"><i class="ri-play-fill"></i></div><div class="pb-name">'+pbEsc(o.name)+'</div><div class="pb-wave"><i class="ri-play-mini-fill"></i><span class="wf"></span></div>'
     : '<div class="pb-name big">'+pbEsc(o.name)+'</div>';
   return '<div class="pb-opt '+o.key+(o.audio?'':' simple')+'" onclick="pbVote(\''+r.id+'\',\''+o.key+'\')"><div class="pb-badge">'+o.key.toUpperCase()+'안</div>'+inner+'</div>';
 }
@@ -3712,26 +3712,29 @@ function _pbCardShell(r){
   var title = (tr && tr.title) ? tr.title.replace(/\s*\(Demo.*\)$/i,'') : (r.song_title || '곡');
   var artist = r.artist_name || (tr && tr.artist) || '';
   var cands = r.candidates || [];
-  // 앨범 커버 = 발견 도형처럼 곡 태그를 #해시태그 3줄로(실사진 대신). 태그 없을 때만 커버이미지/그라데이션.
+  // 앨범 커버 = 실제 커버 이미지 우선(스크린샷처럼 큰 히어로). 없으면 곡 태그 #해시태그, 그것도 없으면 그라데이션.
   var tags = (tr && Array.isArray(tr.tags) && tr.tags.length) ? tr.tags.slice(0,3) : [];
   var grad = '<div class="pb-cover-grad" style="background:'+_pbCoverGrad(r.track_id||r.id)+'"></div>';
   var coverHtml;
-  if (tags.length){
-    coverHtml = grad + '<div class="pb-cover-tags">'+tags.map(function(tg){ return '<span>#'+pbEsc(String(tg).replace(/^#/,''))+'</span>'; }).join('')+'</div>';
-  } else if (cover){
+  if (cover){
     coverHtml = '<img class="pb-cover-img" src="'+pbEsc(cover)+'" alt="">';
+  } else if (tags.length){
+    coverHtml = grad + '<div class="pb-cover-tags">'+tags.map(function(tg){ return '<span>#'+pbEsc(String(tg).replace(/^#/,''))+'</span>'; }).join('')+'</div>';
   } else {
     coverHtml = grad;
   }
+  // 곡 행 썸네일 = 작은 커버 이미지(있으면) 또는 디스크 아이콘.
+  var songIc = cover ? '<div class="pb-song-ic"><img src="'+pbEsc(cover)+'" alt=""></div>' : '<div class="pb-song-ic"><i class="ri-disc-line"></i></div>';
   // 삭제 버튼 — 라운드 작성자 본인에게만.
   var mine = !!(window.__currentUser && window.__currentUser.id && r.artist_id === window.__currentUser.id);
   var delBtn = mine ? '<button class="pb-del" onclick="event.stopPropagation(); pbDeleteRound(\''+r.id+'\')" title="라운드 삭제"><i class="ri-delete-bin-6-line"></i></button>' : '';
   return '<div class="pb-card" id="pb-card-'+r.id+'" data-rid="'+r.id+'">'
-    + '<div class="pb-cover">'+coverHtml+delBtn+'<div class="pb-song"><div class="pb-song-t">'+pbEsc(title)+'</div><div class="pb-song-s">'+pbEsc(artist)+'</div></div></div>'
+    + '<div class="pb-cover">'+coverHtml+delBtn+'<div class="pb-song">'+songIc+'<div><div class="pb-song-t">'+pbEsc(title)+'</div><div class="pb-song-s">'+pbEsc(artist)+'</div></div></div></div>'
     + '<div class="pb-q">'+pbEsc(r.question)+'</div>'
     + '<div class="pb-vs">'+_pbOpt(r,cands[0])+'<div class="pb-vsmid">VS</div>'+_pbOpt(r,cands[1])+'</div>'
     + '<div class="pb-pct" id="pb-pct-'+r.id+'">'+(r.status==='open'?'<div class="pb-blind"><i class="ri-eye-off-line"></i> 투표 중 · 결과는 마감 후 공개</div>':'')+'</div>'
     + '<div class="pb-voices"><div class="pb-voices-h"><i class="ri-chat-heart-fill"></i> 우리의 목소리 <span id="pb-cc-'+r.id+'"></span></div>'
+    + '<div class="pb-voices-s">A·B 말고 다른 의견? 하트 1등은 <b>제안 배틀(C안)</b>로 합류!</div>'
     + '<div class="pb-cmt-prev" id="pb-prev-'+r.id+'"></div>'
     + '<div class="pb-more" onclick="pbOpenSheet(\''+r.id+'\')">댓글 모두 보기 ▾</div></div>'
     + '<button class="pb-cta" onclick="pbOpenSheet(\''+r.id+'\')"><i class="ri-quill-pen-line"></i> 이 데모에 의견 투지하기</button>'
@@ -3750,9 +3753,15 @@ window.pbDeleteRound = async function(rid){
 };
 function _pbCmtRow(r, c, d, isTop){
   var likes = d.tally[c.id]||0, on = r.__myChoice===c.id, nm = c.user_name || '익명';
+  // 마감(공개) 후엔 전체 참여(투표+하트) 대비 이 댓글의 비중 % 표시 (스크린샷처럼).
+  var pctHtml = '';
+  if (r.status === 'closed'){
+    var total = 0; for (var k in d.tally){ if (Object.prototype.hasOwnProperty.call(d.tally,k)) total += (d.tally[k]||0); }
+    pctHtml = '<span class="pb-cpct">'+(total ? Math.round(likes/total*100) : 0)+'%</span>';
+  }
   return '<div class="pb-cmt"><div class="pb-cav" style="background:'+_pcColor(nm)+'">'+pbEsc(nm.charAt(0))+'</div>'
     + '<div class="pb-cbd"><div class="pb-cu">'+pbEsc(nm)+(isTop?'<span class="pb-top1">🏆 배틀 합류</span>':'')+'</div><div class="pb-ct">'+pbEsc(c.body)+'</div></div>'
-    + '<div class="pb-clike'+(on?' on':'')+'" onclick="event.stopPropagation(); pbLikeComment(\''+r.id+'\',\''+c.id+'\')"><i class="'+(on?'ri-heart-3-fill':'ri-heart-3-line')+'"></i><b>'+likes+'</b></div></div>';
+    + '<div class="pb-clike'+(on?' on':'')+'" onclick="event.stopPropagation(); pbLikeComment(\''+r.id+'\',\''+c.id+'\')"><i class="'+(on?'ri-heart-3-fill':'ri-heart-3-line')+'"></i><b>'+likes+'</b>'+pctHtml+'</div></div>';
 }
 function _pbPctHtml(r, d){
   var cands = r.candidates||[]; var a = d.tally[(cands[0]||{}).key]||0, b = d.tally[(cands[1]||{}).key]||0;
@@ -3883,7 +3892,7 @@ window.pbOpenCreate = function(){
   var opts = mine.map(function(t){ var ti=(t.title||'곡').replace(/\s*\(Demo.*\)$/i,''); return '<option value="'+pbEsc(t.id)+'" data-pid="'+pbEsc(t.projectId||('proj_'+t.id))+'">'+pbEsc(ti)+' · '+pbEsc(t.versionLabel||'')+'</option>'; }).join('');
   var topics = [['🎵 편곡','2절에 뭐 더 넣을까?','드럼 추가','기타 추가'],['👕 의상','무대 의상 뭐 입을까?','빨간 옷','파란 옷'],['✍️ 제목','곡 제목 뭐로?','',''],['💡 직접','','','']];
   window.__pbTopics = topics;
-  window.__pbAudio = { a: null, b: null };   // 옵션별 첨부 음원 URL(이번 폼 리셋)
+  window.__pbFormAudio = { a: null, b: null };   // 옵션별 첨부 음원 URL(이번 폼 리셋) — 플레이어 __pbAudio 와 충돌 방지 별도 변수
   var chips = topics.map(function(t,i){ return '<button type="button" class="pb-day" style="flex:0 0 auto" onclick="pbFillTopic('+i+')">'+t[0]+'</button>'; }).join('');
   var sheet = document.getElementById('pb-sheet');
   window.__pbSheetRound = null;
@@ -3911,8 +3920,8 @@ window.pbAudioPicked = async function(key, input){
   if (btn){ btn.classList.add('pb-att-busy'); btn.classList.remove('pb-att-has'); btn.innerHTML='<i class="ri-loader-4-line pb-spin"></i>'; }
   try {
     var url = await window.Tracks.uploadFile(file, 'audio');
-    window.__pbAudio = window.__pbAudio || {a:null,b:null};
-    window.__pbAudio[key] = url;
+    window.__pbFormAudio = window.__pbFormAudio || {a:null,b:null};
+    window.__pbFormAudio[key] = url;
     if (btn){ btn.classList.remove('pb-att-busy'); btn.classList.add('pb-att-has'); btn.innerHTML='<i class="ri-checkbox-circle-fill"></i>'; btn.title=_t('첨부됨: ','Attached: ')+(file.name||''); }
   } catch(e){
     console.warn('[pb] audio upload', e);
@@ -3930,7 +3939,7 @@ window.pbCreate = async function(btn){
   var dayBtn = document.querySelector('.pb-form .pb-day.on[data-day]'); var days = dayBtn?parseInt(dayBtn.dataset.day,10):3;
   btn.disabled = true; var old = btn.innerHTML; btn.innerHTML = '...';
   try {
-    var au = window.__pbAudio || {a:null,b:null};
+    var au = window.__pbFormAudio || {a:null,b:null};
     var candA = { key:'a', name:a }; if (au.a) candA.audio = au.a;
     var candB = { key:'b', name:b }; if (au.b) candB.audio = au.b;
     await window.Producing.create({ projectId: projectId, trackId: trackId, question: q||_t('다음 데모, 어디로?','Where next?'), candidates: [candA, candB], closesAt: new Date(Date.now()+days*86400000).toISOString() });
