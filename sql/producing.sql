@@ -55,9 +55,10 @@ create policy "pr_rounds_read"   on public.producing_rounds   for select using (
 create policy "pr_comments_read" on public.producing_comments for select using (true);
 create policy "pr_votes_read"    on public.producing_votes    for select using (true);
 
--- 라운드 생성/마감: 본인(아티스트)만
+-- 라운드 생성/마감/삭제: 본인(아티스트)만
 create policy "pr_rounds_insert" on public.producing_rounds for insert with check (auth.uid() = artist_id);
 create policy "pr_rounds_update" on public.producing_rounds for update using (auth.uid() = artist_id);
+create policy "pr_rounds_delete" on public.producing_rounds for delete using (auth.uid() = artist_id);
 
 -- 댓글 작성: 로그인 본인
 create policy "pr_comments_insert" on public.producing_comments for insert with check (auth.uid() = user_id);

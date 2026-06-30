@@ -2177,6 +2177,19 @@
       const { data, error } = await window.supabase.from('producing_rounds').update({ status: 'closed' }).eq('id', roundId).select().single();
       if (error) throw error;
       return data;
+    },
+
+    // 라운드 삭제 (작성자 본인만) — 댓글·투표는 on delete cascade 로 함께 삭제.
+    // RLS DELETE 정책(pr_rounds_delete) 미적용 시 0행 삭제되므로 그 경우 명확히 에러를 던진다.
+    async delete(roundId) {
+      if (!window.supabase) throw new Error('연결이 필요해요');
+      const { data: { user } } = await window.supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요해요');
+      const { data, error } = await window.supabase.from('producing_rounds')
+        .delete().eq('id', roundId).eq('artist_id', user.id).select();
+      if (error) throw error;
+      if (!data || !data.length) throw new Error('삭제 권한이 없거나 라운드를 찾을 수 없어요 (Supabase에 pr_rounds_delete 정책을 실행했는지 확인)');
+      return true;
     }
   };
 

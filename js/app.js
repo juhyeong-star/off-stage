@@ -3613,6 +3613,7 @@ function _pbStyle(){
   .pb-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(7,6,13,.85),transparent 55%);}
   .pb-cover-tags{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-start;gap:1px;padding:15px 18px 0;pointer-events:none;z-index:0;}
   .pb-cover-tags span{font-size:27px;font-weight:900;line-height:1.08;color:rgba(255,255,255,.96);letter-spacing:-.5px;text-shadow:0 2px 10px rgba(0,0,0,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+  .pb-del{position:absolute;top:10px;right:10px;z-index:3;width:34px;height:34px;border:none;border-radius:50%;background:rgba(7,6,13,.55);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);} .pb-del:hover{background:rgba(220,40,80,.9);}
   .pb-song{position:relative;z-index:1;padding:14px;} .pb-song-t{font-size:16px;font-weight:900;} .pb-song-s{font-size:11px;color:rgba(255,255,255,.6);}
   .pb-q{text-align:center;font-size:13.5px;font-weight:800;color:rgba(255,255,255,.82);margin:16px 0 12px;}
   .pb-vs{display:flex;align-items:stretch;}
@@ -3722,8 +3723,11 @@ function _pbCardShell(r){
   } else {
     coverHtml = grad;
   }
+  // 삭제 버튼 — 라운드 작성자 본인에게만.
+  var mine = !!(window.__currentUser && window.__currentUser.id && r.artist_id === window.__currentUser.id);
+  var delBtn = mine ? '<button class="pb-del" onclick="event.stopPropagation(); pbDeleteRound(\''+r.id+'\')" title="라운드 삭제"><i class="ri-delete-bin-6-line"></i></button>' : '';
   return '<div class="pb-card" id="pb-card-'+r.id+'" data-rid="'+r.id+'">'
-    + '<div class="pb-cover">'+coverHtml+'<div class="pb-song"><div class="pb-song-t">'+pbEsc(title)+'</div><div class="pb-song-s">'+pbEsc(artist)+'</div></div></div>'
+    + '<div class="pb-cover">'+coverHtml+delBtn+'<div class="pb-song"><div class="pb-song-t">'+pbEsc(title)+'</div><div class="pb-song-s">'+pbEsc(artist)+'</div></div></div>'
     + '<div class="pb-q">'+pbEsc(r.question)+'</div>'
     + '<div class="pb-vs">'+_pbOpt(r,cands[0])+'<div class="pb-vsmid">VS</div>'+_pbOpt(r,cands[1])+'</div>'
     + '<div class="pb-pct" id="pb-pct-'+r.id+'">'+(r.status==='open'?'<div class="pb-blind"><i class="ri-eye-off-line"></i> 투표 중 · 결과는 마감 후 공개</div>':'')+'</div>'
@@ -3733,6 +3737,17 @@ function _pbCardShell(r){
     + '<button class="pb-cta" onclick="pbOpenSheet(\''+r.id+'\')"><i class="ri-quill-pen-line"></i> 이 데모에 의견 투지하기</button>'
     + '</div>';
 }
+// 라운드 삭제 (작성자 본인). 댓글·투표는 DB cascade 로 함께 삭제.
+window.pbDeleteRound = async function(rid){
+  if (!window.confirm(_t('이 라운드를 삭제할까요? 댓글·투표도 함께 사라져요.','Delete this round? Comments and votes will be removed too.'))) return;
+  try {
+    await window.Producing.delete(rid);
+    if (typeof showToast==='function') showToast(_t('삭제했어요','Deleted'));
+    var card = document.getElementById('pb-card-'+rid); if (card) card.remove();
+    var feed = document.getElementById('pb-feed');
+    if (feed && !feed.querySelector('.pb-card')) renderProducingBoard();   // 비면 빈 상태로
+  } catch(e){ alert(_t('삭제 실패: ','Delete failed: ')+(e.message||e)); }
+};
 function _pbCmtRow(r, c, d, isTop){
   var likes = d.tally[c.id]||0, on = r.__myChoice===c.id, nm = c.user_name || '익명';
   return '<div class="pb-cmt"><div class="pb-cav" style="background:'+_pcColor(nm)+'">'+pbEsc(nm.charAt(0))+'</div>'
