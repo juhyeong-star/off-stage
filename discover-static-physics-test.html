@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>발견 — 정지+던지기 물리 테스트</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; background: #000; font-family: 'Pretendard', sans-serif; }
+  body { display: flex; flex-direction: column; max-width: 460px; margin: 0 auto; position: relative; }
+  .testbar { position: absolute; top: 0; left: 0; right: 0; z-index: 100; background: rgba(26,21,48,.82); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(167,139,250,.3); color: #C9C4F5; font-size: 10.5px; font-weight: 800; text-align: center; padding: 6px 8px; line-height: 1.4; }
+  #stage { position: absolute; inset: 0; overflow: hidden; touch-action: none; }
+  .hint { position: absolute; left: 0; right: 0; bottom: 14px; z-index: 100; text-align: center; color: rgba(255,255,255,.5); font-size: 11px; font-weight: 600; pointer-events: none; }
+  .resetb { position: absolute; right: 12px; bottom: 38px; z-index: 100; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); color: #fff; font-family: inherit; font-size: 11px; font-weight: 700; padding: 7px 12px; border-radius: 999px; cursor: pointer; }
+
+  .shape { position: absolute; top: 0; left: 0; will-change: transform; cursor: grab; user-select: none; -webkit-user-select: none; display: flex; align-items: center; justify-content: center; text-align: center; }
+  .shape.grab { cursor: grabbing; }
+  .shape.held { z-index: 60; }
+  .s-long { font-size: 11px; font-weight: 800; line-height: 1.55; letter-spacing: -.2px; }
+  .s-short { font-size: 11.5px; font-weight: 800; letter-spacing: -.2px; }
+  .papers > i { position: absolute; border-radius: 4px; background: #fdfdfd; border: 1px solid #c9c9c9; }
+</style>
+</head>
+<body>
+  <div class="testbar">🧪 발견 물리 테스트 — 평소엔 정지·안 겹침 / 끌어서 던지면 벽·서로 튕김</div>
+  <div id="stage"></div>
+  <button class="resetb" onclick="placeAndRelax(true)">↺ 다시 배치</button>
+  <div class="hint">도형을 끌어서 던져보세요 — 손을 떼면 튕기다가 다시 멈춰요</div>
+
+<script>
+  // ── 도형 정의 ─────────────────────────────────────────────
+  // kind: 'long' = 장르/작가/제목 정보 카드, 'short' = 짧은 글/장식
+  // fx,fy = 화면 비율 기준 초기 위치(겹침은 자동 정리)
+  var DEFS = [
+    // 긴 글(정보 카드)
+    { type:'rrect',    color:'#F5A623', fx:.70, fy:.13, w:150, h:96,  rot:4,   kind:'long', text:['장르 : ROCK','작가 : THUNDER','제목 : 랩퍼의 꿈'], tcol:'#5A3700' },
+    { type:'burst',    color:'#E84BC9', fx:.27, fy:.24, w:158, h:140, rot:-6,  kind:'long', text:['장르 : R&B','작가 : LUNA','제목 : 새벽 세 시'], tcol:'#fff' },
+    { type:'triangle', color:'#3E7BFF', fx:.70, fy:.38, w:150, h:124, rot:6,   kind:'long', text:['장르 : POP','작가 : MINJU','제목 : 여름의 끝'], tcol:'#fff' },
+    { type:'rrect',    color:'#E84BC9', fx:.86, fy:.56, w:150, h:96,  rot:-7,  kind:'long', text:['장르 : HIPHOP','작가 : DDO','제목 : 교실'], tcol:'#4B1528' },
+    { type:'triangle', color:'#8B3DEF', fx:.30, fy:.73, w:150, h:124, rot:-4,  kind:'long', text:['장르 : BALLAD','작가 : HARU','제목 : 안녕'], tcol:'#fff' },
+    // 짧은 글 / 장식
+    { type:'ellipse',  color:'#F2D43B', fx:.18, fy:.07, w:80,  h:54,  rot:0,   kind:'short', text:['#락'], tcol:'#5A4D00' },
+    { type:'star',     color:'#2EE6C0', fx:.50, fy:.10, w:44,  h:44,  rot:0,   kind:'short', text:[''], tcol:'#fff' },
+    { type:'blob',     color:'#9FE3F0', fx:.83, fy:.27, w:48,  h:34,  rot:0,   kind:'short', text:[''], tcol:'#fff' },
+    { type:'papers',   color:'#fff',    fx:.19, fy:.43, w:84,  h:94,  rot:0,   kind:'short', text:[''], tcol:'#333' },
+    { type:'notes',    color:'#F5862B', fx:.49, fy:.49, w:60,  h:54,  rot:0,   kind:'short', text:['♪♪'], tcol:'#F5862B' },
+    { type:'circle',   color:'#8DE021', fx:.33, fy:.55, w:108, h:108, rot:0,   kind:'short', text:['#청춘'], tcol:'#1E4A00' },
+    { type:'ellipse',  color:'#F2F2F2', fx:.55, fy:.64, w:56,  h:36,  rot:0,   kind:'short', text:[''], tcol:'#333' },
+    { type:'blob',     color:'#3EC8E0', fx:.62, fy:.74, w:42,  h:30,  rot:0,   kind:'short', text:[''], tcol:'#fff' },
+    { type:'burst',    color:'#F23B3B', fx:.74, fy:.85, w:96,  h:90,  rot:8,   kind:'short', text:['#HOT'], tcol:'#fff' },
+    { type:'rrect',    color:'#F2D43B', fx:.28, fy:.92, w:92,  h:52,  rot:0,   kind:'short', text:['#데모'], tcol:'#5A4D00' },
+    { type:'confetti', color:'#FF7A3D', fx:.90, fy:.40, w:20,  h:20,  rot:20,  kind:'short', text:[''], tcol:'#fff' },
+    { type:'confetti', color:'#6FE04A', fx:.10, fy:.62, w:18,  h:18,  rot:40,  kind:'short', text:[''], tcol:'#fff' },
+    { type:'confetti', color:'#5B8DEF', fx:.88, fy:.70, w:18,  h:18,  rot:10,  kind:'short', text:[''], tcol:'#fff' }
+  ];
+
+  var STAR = 'polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)';
+  var BURST = 'polygon(50% 0%,57% 17%,72% 6%,69% 25%,88% 19%,78% 35%,98% 35%,82% 50%,98% 65%,78% 65%,88% 81%,69% 75%,72% 94%,57% 83%,50% 100%,43% 83%,28% 94%,31% 75%,12% 81%,22% 65%,2% 65%,18% 50%,2% 35%,22% 35%,12% 19%,31% 25%,28% 6%,43% 17%)';
+  var TRI = 'polygon(50% 4%,4% 96%,96% 96%)';
+
+  var stage = document.getElementById('stage');
+  var W = 0, H = 0, shapes = [];
+
+  function buildShapeEl(d) {
+    var el = document.createElement('div');
+    el.className = 'shape';
+    el.style.width = d.w + 'px';
+    el.style.height = d.h + 'px';
+    var inner = '';
+    if (d.type === 'circle' || d.type === 'ellipse') { el.style.background = d.color; el.style.borderRadius = '50%'; }
+    else if (d.type === 'rrect') { el.style.background = d.color; el.style.borderRadius = '16px'; }
+    else if (d.type === 'blob') { el.style.background = d.color; el.style.borderRadius = '60% 40% 55% 45% / 58% 52% 48% 42%'; }
+    else if (d.type === 'star') { el.style.background = d.color; el.style.clipPath = STAR; el.style.webkitClipPath = STAR; }
+    else if (d.type === 'burst') { el.style.background = d.color; el.style.clipPath = BURST; el.style.webkitClipPath = BURST; }
+    else if (d.type === 'triangle') { el.style.background = d.color; el.style.clipPath = TRI; el.style.webkitClipPath = TRI; el.style.alignItems = 'flex-end'; el.style.paddingBottom = '14px'; }
+    else if (d.type === 'confetti') { el.style.background = d.color; el.style.borderRadius = '3px'; }
+    else if (d.type === 'notes') { el.style.color = d.color; el.style.fontSize = '40px'; el.style.fontWeight = '900'; }
+    else if (d.type === 'papers') {
+      inner = '<i style="width:78px;height:88px;left:6px;top:0;transform:rotate(-7deg);"></i>'
+            + '<i style="width:78px;height:88px;left:3px;top:4px;transform:rotate(4deg);"></i>'
+            + '<i style="width:78px;height:88px;left:0;top:6px;transform:rotate(-1deg);"></i>';
+      el.classList.add('papers');
+    }
+    var txt = (d.text || []).filter(Boolean).join('<br>');
+    if (txt && d.type !== 'notes') inner += '<span class="' + (d.kind === 'long' ? 's-long' : 's-short') + '" style="color:' + d.tcol + ';position:relative;z-index:2;pointer-events:none;">' + txt + '</span>';
+    else if (d.type === 'notes') inner = txt;
+    el.innerHTML = inner;
+    return el;
+  }
+
+  function collExt(d) {
+    // 충돌용 반쪽 크기(AABB). 글 카드(rrect/papers)는 거의 꽉 차게=안 겹침,
+    // 삼각/별은 살짝 줄이고, 원·장식은 더 줄여 가깝게 붙게.
+    var f = 0.72;
+    if (d.type === 'rrect' || d.type === 'papers') f = 0.94;
+    else if (d.type === 'triangle' || d.type === 'burst') f = 0.80;
+    return { hw: d.w * 0.5 * f, hh: d.h * 0.5 * f };
+  }
+
+  function init() {
+    stage.innerHTML = '';
+    shapes = [];
+    var r = stage.getBoundingClientRect();
+    W = r.width; H = r.height;
+    DEFS.forEach(function (d) {
+      var el = buildShapeEl(d);
+      stage.appendChild(el);
+      var ce = collExt(d);
+      var s = { d: d, el: el, x: 0, y: 0, vx: 0, vy: 0, w: d.w, h: d.h, hw: d.w / 2, hh: d.h / 2, chw: ce.hw, chh: ce.hh, rot: d.rot, held: false };
+      el.__s = s;
+      shapes.push(s);
+    });
+    placeAndRelax(false);
+  }
+
+  function placeAndRelax(reset) {
+    var r = stage.getBoundingClientRect();
+    W = r.width; H = r.height;
+    shapes.forEach(function (s) { s.x = s.d.fx * W; s.y = s.d.fy * H; s.vx = 0; s.vy = 0; });
+    for (var it = 0; it < 160; it++) {
+      for (var i = 0; i < shapes.length; i++) {
+        for (var j = i + 1; j < shapes.length; j++) separate(shapes[i], shapes[j], true);
+      }
+      shapes.forEach(clampWalls);
+    }
+    render();
+  }
+
+  // AABB 분리. moveBoth=true 면 위치만 양쪽으로 밀어 겹침 제거(배치용),
+  // false 면 물리(속도 반응 포함, held 처리)
+  function separate(a, b, posOnly) {
+    var dx = b.x - a.x, dy = b.y - a.y;
+    var ox = (a.chw + b.chw) - Math.abs(dx);
+    var oy = (a.chh + b.chh) - Math.abs(dy);
+    if (ox <= 0.3 || oy <= 0.3) return;
+    var nx = 0, ny = 0, ov = 0;
+    if (ox < oy) { nx = dx < 0 ? -1 : 1; ov = ox; } else { ny = dy < 0 ? -1 : 1; ov = oy; }
+    if (posOnly) {
+      a.x -= nx * ov / 2; a.y -= ny * ov / 2;
+      b.x += nx * ov / 2; b.y += ny * ov / 2;
+      return;
+    }
+    // 위치 보정
+    if (a.held && !b.held) { b.x += nx * ov; b.y += ny * ov; }
+    else if (b.held && !a.held) { a.x -= nx * ov; a.y -= ny * ov; }
+    else if (!a.held && !b.held) { a.x -= nx * ov / 2; a.y -= ny * ov / 2; b.x += nx * ov / 2; b.y += ny * ov / 2; }
+    // 속도 반응(법선 방향) — 다가올 때만
+    var rvx = b.vx - a.vx, rvy = b.vy - a.vy;
+    var vn = rvx * nx + rvy * ny;
+    if (vn < -0.05) {
+      var e = 0.55;
+      if (a.held || b.held) {
+        var free = a.held ? b : a, held = a.held ? a : b;
+        var fvn = free.vx * nx + free.vy * ny, hvn = held.vx * nx + held.vy * ny;
+        var dv = (hvn - e * (fvn - hvn)) - fvn;
+        free.vx += dv * nx; free.vy += dv * ny;
+      } else {
+        var imp = -(1 + e) * vn / 2;
+        a.vx -= imp * nx; a.vy -= imp * ny;
+        b.vx += imp * nx; b.vy += imp * ny;
+      }
+    }
+  }
+
+  function clampWalls(s) {
+    if (s.x < s.hw) { s.x = s.hw; if (s.vx < 0) s.vx = -s.vx * WALL; }
+    if (s.x > W - s.hw) { s.x = W - s.hw; if (s.vx > 0) s.vx = -s.vx * WALL; }
+    if (s.y < s.hh) { s.y = s.hh; if (s.vy < 0) s.vy = -s.vy * WALL; }
+    if (s.y > H - s.hh) { s.y = H - s.hh; if (s.vy > 0) s.vy = -s.vy * WALL; }
+  }
+
+  var FRICTION = 0.93, WALL = 0.7, REST = 0.13, EPS = 0.04;
+
+  function tick() {
+    for (var k = 0; k < shapes.length; k++) {
+      var s = shapes[k];
+      if (s.held) continue;
+      if (Math.abs(s.vx) > EPS || Math.abs(s.vy) > EPS) {
+        s.x += s.vx; s.y += s.vy;
+        s.vx *= FRICTION; s.vy *= FRICTION;
+        clampWalls(s);
+        if (Math.hypot(s.vx, s.vy) < REST) { s.vx = 0; s.vy = 0; }
+      }
+    }
+    for (var it = 0; it < 3; it++) {
+      for (var i = 0; i < shapes.length; i++)
+        for (var j = i + 1; j < shapes.length; j++) separate(shapes[i], shapes[j], false);
+    }
+    shapes.forEach(clampWalls);
+    render();
+    requestAnimationFrame(tick);
+  }
+
+  function render() {
+    for (var k = 0; k < shapes.length; k++) {
+      var s = shapes[k];
+      s.el.style.transform = 'translate3d(' + (s.x - s.hw) + 'px,' + (s.y - s.hh) + 'px,0) rotate(' + s.rot + 'deg)';
+    }
+  }
+
+  // ── 드래그 / 던지기 ──────────────────────────────────────
+  var held = null, grabOff = { x: 0, y: 0 }, lastPt = { x: 0, y: 0 };
+  function pt(e) { var r = stage.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+
+  stage.addEventListener('pointerdown', function (e) {
+    var el = e.target.closest('.shape'); if (!el) return;
+    var s = el.__s; held = s; s.held = true; s.vx = 0; s.vy = 0;
+    el.classList.add('held', 'grab');
+    var p = pt(e); grabOff.x = p.x - s.x; grabOff.y = p.y - s.y; lastPt = p;
+    try { el.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  stage.addEventListener('pointermove', function (e) {
+    if (!held) return;
+    var p = pt(e);
+    var dx = p.x - lastPt.x, dy = p.y - lastPt.y;
+    held.vx = 0.55 * held.vx + 0.45 * dx;
+    held.vy = 0.55 * held.vy + 0.45 * dy;
+    lastPt = p;
+    held.x = p.x - grabOff.x; held.y = p.y - grabOff.y;
+  });
+  function release() {
+    if (!held) return;
+    held.el.classList.remove('held', 'grab');
+    held.held = false;
+    var sp = Math.hypot(held.vx, held.vy), max = 42;
+    if (sp > max) { held.vx *= max / sp; held.vy *= max / sp; }
+    held = null;
+  }
+  stage.addEventListener('pointerup', release);
+  stage.addEventListener('pointercancel', release);
+
+  window.addEventListener('resize', function () { placeAndRelax(true); });
+  init();
+  requestAnimationFrame(tick);
+</script>
+</body>
+</html>
