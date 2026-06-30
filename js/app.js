@@ -7448,8 +7448,9 @@ function renderShapes() {
 
   shapeEntries.forEach((entry, si) => {
     const { track, idx, pass } = entry;
-    // 발견 도형 = 전부 동그라미(사용자 요청, 테스트와 동일). 기존 혼합 모양/리맵 대신 circle 고정.
-    let shape = 'circle';
+    // 발견 도형 = 곡 id 해시로 다양화(테스트 스타일: 원·카드·타원·와이드·알약 믹스). 전부 배경형이라 글자/대비색 OK.
+    const _SHAPE_SET = ['circle', 'rect', 'oval', 'wide', 'circle', 'pill', 'rect', 'circle'];
+    let shape = _SHAPE_SET[(_hashSeed('shape-type:' + (track.id || '')) >>> 0) % _SHAPE_SET.length];
     // 색 = 장르 색(있으면) / 없으면 트랙 id 해시(기존). genreColorOf 공통.
     const color = genreColorOf(track);
     const lines = track.lines || [track.title, track.artist, '클릭해서 들어봐!'];

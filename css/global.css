@@ -1611,8 +1611,8 @@ body:has(#shape-shorts-overlay) .deco-shape {
 /* Shape types — original sizes (slight uniform bump) */
 .shape-circle { border-radius: 50%; width: 265px; height: 265px; }
 .shape-oval { border-radius: 50%; width: 305px; height: 200px; }
-.shape-rect { border-radius: 6px; width: 285px; height: 210px; }
-.shape-wide { border-radius: 10px; width: 330px; height: 188px; }   /* 직사각형 */
+.shape-rect { border-radius: 26px; width: 285px; height: 210px; }
+.shape-wide { border-radius: 26px; width: 330px; height: 188px; }   /* 둥근 카드 */
 .shape-pill { border-radius: 999px; width: 320px; height: 158px; }  /* 알약 */
 .shape-triangle {
   width: 0; height: 0;
