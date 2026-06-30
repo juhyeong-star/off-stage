@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>프로듀싱 — 라운드 만들기(아티스트 입력)</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: #07070d; color: #F4F4F7; font-family: 'Pretendard', sans-serif; max-width: 460px; margin: 0 auto; }
+  .testbar { background: #1a1530; border-bottom: 1px solid rgba(167,139,250,.3); color: #C9C4F5; font-size: 11px; font-weight: 800; text-align: center; padding: 7px; line-height: 1.4; }
+  .wrap { padding: 16px; }
+
+  /* 아티스트가 자기 데모 노드를 탭한 상태(맥락) */
+  .ctx { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 14px; padding: 11px 13px; margin-bottom: 14px; }
+  .ctx-dot { width: 30px; height: 30px; border-radius: 50%; background: #FF9F45; color: #06140C; font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ctx-t { font-size: 12.5px; font-weight: 800; } .ctx-s { font-size: 10.5px; color: rgba(255,255,255,.5); }
+  .ctx-me { margin-left: auto; font-size: 9px; font-weight: 900; color: #9DE0B4; background: rgba(157,224,180,.12); padding: 3px 8px; border-radius: 999px; }
+
+  .form { background: linear-gradient(125deg, rgba(139,124,246,.1), rgba(251,111,146,.06)), #15151E; border: 1px solid rgba(139,124,246,.28); border-radius: 18px; padding: 16px; }
+  .form-h { font-size: 16px; font-weight: 900; }
+  .form-sub { font-size: 11.5px; color: rgba(255,255,255,.55); margin: 4px 0 16px; line-height: 1.5; }
+
+  .lab { font-size: 11.5px; font-weight: 800; color: rgba(255,255,255,.7); margin: 0 0 6px; display: flex; align-items: center; gap: 5px; }
+  .grp { margin-bottom: 16px; }
+  .inp { width: 100%; background: #15151E; border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 11px 13px; color: #fff; font-family: inherit; font-size: 13px; }
+  .inp::placeholder { color: rgba(255,255,255,.32); }
+
+  /* A안 / B안 박스 */
+  .opt { border-radius: 14px; padding: 12px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,.1); }
+  .opt.a { background: rgba(139,124,246,.06); } .opt.b { background: rgba(251,111,146,.06); }
+  .opt-top { display: flex; align-items: center; gap: 7px; margin-bottom: 9px; }
+  .opt-badge { font-size: 9.5px; font-weight: 900; padding: 2px 8px; border-radius: 6px; }
+  .opt.a .opt-badge { background: #8B7CF6; color: #fff; } .opt.b .opt-badge { background: #FB6F92; color: #fff; }
+  .opt-name { flex: 1; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,.15); padding: 4px 2px; color: #fff; font-family: inherit; font-size: 13px; font-weight: 700; }
+  .opt-name::placeholder { color: rgba(255,255,255,.3); font-weight: 400; }
+  .audio { display: flex; align-items: center; gap: 9px; background: #121019; border: 1px dashed rgba(255,255,255,.18); border-radius: 11px; padding: 10px 12px; cursor: pointer; }
+  .audio.has { border-style: solid; border-color: rgba(54,201,119,.4); }
+  .audio i { font-size: 18px; color: #C9C4F5; } .audio.has i { color: #36C977; }
+  .audio-t { font-size: 12px; font-weight: 700; flex: 1; } .audio-t.ph { color: rgba(255,255,255,.45); font-weight: 500; }
+  .audio-x { font-size: 16px; color: rgba(255,255,255,.4); }
+
+  .addopt { width: 100%; border: 1px dashed rgba(255,255,255,.2); background: transparent; color: rgba(255,255,255,.55); border-radius: 12px; padding: 10px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; margin-bottom: 16px; }
+
+  .chips { display: flex; gap: 8px; } .chip { flex: 1; text-align: center; border: 1px solid rgba(255,255,255,.12); background: #15151E; color: rgba(255,255,255,.7); border-radius: 11px; padding: 10px; font-family: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; } .chip.on { background: rgba(201,196,245,.16); border-color: #C9C4F5; color: #fff; }
+
+  .toggle-row { display: flex; align-items: center; gap: 10px; margin: 16px 0; }
+  .toggle-row .tt { flex: 1; } .toggle-row .tt b { font-size: 12.5px; font-weight: 700; display: block; } .toggle-row .tt span { font-size: 10.5px; color: rgba(255,255,255,.45); }
+  .sw { width: 44px; height: 26px; border-radius: 999px; background: rgba(255,255,255,.15); position: relative; cursor: pointer; flex-shrink: 0; transition: background .2s; } .sw.on { background: #36C977; }
+  .sw i { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left .2s; } .sw.on i { left: 21px; }
+
+  .open-btn { width: 100%; border: none; border-radius: 14px; padding: 14px; font-family: inherit; font-size: 14px; font-weight: 800; color: #06140C; background: linear-gradient(135deg, #C9C4F5, #8B7CF6); cursor: pointer; margin-top: 6px; }
+  .hintline { font-size: 11px; color: rgba(255,255,255,.45); text-align: center; margin-top: 11px; line-height: 1.5; }
+</style>
+</head>
+<body>
+  <div class="testbar">🧪 테스트 — 아티스트가 <b>자기 데모 노드</b>를 탭하면 뜨는 '라운드 만들기' 입력 칸 (청취자는 투표 화면)</div>
+  <div class="wrap">
+    <div class="ctx"><div class="ctx-dot">D2</div><div><div class="ctx-t">Plastic days · 데모 2</div><div class="ctx-s">내 데모</div></div><span class="ctx-me">내 곡</span></div>
+
+    <div class="form">
+      <div class="form-h">🎬 데모 3 프로듀싱 라운드 만들기</div>
+      <div class="form-sub">청취자가 투표로 다음 데모(데모 3) 방향을 정해줘요. A·B 두 안을 올리면 시작!</div>
+
+      <div class="grp">
+        <div class="lab"><i class="ri-question-line"></i> 무엇을 정할까요?</div>
+        <input class="inp" placeholder="예: 후렴 편곡, 어디로 갈까요?">
+      </div>
+
+      <div class="opt a">
+        <div class="opt-top"><span class="opt-badge">A 안</span><input class="opt-name" placeholder="이 안의 이름 (예: 몽환적인 신스)"></div>
+        <div class="audio" id="audA" onclick="attach('A')"><i class="ri-music-2-line"></i><span class="audio-t ph" id="audAt">🎵 A안 음원 올리기 (이 부분만 짧게)</span></div>
+      </div>
+      <div class="opt b">
+        <div class="opt-top"><span class="opt-badge">B 안</span><input class="opt-name" placeholder="이 안의 이름 (예: 펑키한 기타)"></div>
+        <div class="audio" id="audB" onclick="attach('B')"><i class="ri-music-2-line"></i><span class="audio-t ph" id="audBt">🎵 B안 음원 올리기</span></div>
+      </div>
+      <button class="addopt" onclick="this.outerHTML='<div class=\'opt\' style=\'background:rgba(54,201,119,.06)\'><div class=\'opt-top\'><span class=\'opt-badge\' style=\'background:#36C977;color:#06140C\'>C 안</span><input class=\'opt-name\' placeholder=\'이 안의 이름\'></div><div class=\'audio\'><i class=\'ri-music-2-line\'></i><span class=\'audio-t ph\'>🎵 C안 음원 올리기</span></div></div>'"><i class="ri-add-line"></i> 안 더 추가 (C, D…)</button>
+
+      <div class="grp">
+        <div class="lab"><i class="ri-time-line"></i> 마감</div>
+        <div class="chips"><button class="chip" onclick="pickChip(this)">1일</button><button class="chip on" onclick="pickChip(this)">3일</button><button class="chip" onclick="pickChip(this)">7일</button></div>
+      </div>
+
+      <div class="toggle-row"><div class="tt"><b>청취자 댓글 제안도 받기</b><span>댓글이 A·B보다 좋아요 많으면 댓글대로</span></div><div class="sw on" id="sw" onclick="this.classList.toggle('on')"><i></i></div></div>
+
+      <button class="open-btn" onclick="alert('라운드 열기 (테스트)')"><i class="ri-rocket-2-line"></i> 프로듀싱 라운드 열기</button>
+      <div class="hintline">열면 청취자들에게 투표가 시작돼요. A·B 표는 마감 때 공개돼요.</div>
+    </div>
+  </div>
+
+<script>
+  function attach(k) {
+    var box = document.getElementById('aud' + k), t = document.getElementById('aud' + k + 't');
+    if (box.classList.contains('has')) { box.classList.remove('has'); t.className = 'audio-t ph'; t.textContent = '🎵 ' + k + '안 음원 올리기'; box.querySelector('.audio-x') && box.querySelector('.audio-x').remove(); return; }
+    box.classList.add('has'); t.className = 'audio-t'; t.textContent = (k === 'A' ? 'a-synth-hook.mp3' : 'b-guitar-riff.mp3') + ' · 0:18';
+    if (!box.querySelector('.audio-x')) { var x = document.createElement('i'); x.className = 'ri-close-line audio-x'; box.appendChild(x); }
+  }
+  function pickChip(el) { document.querySelectorAll('.chip').forEach(function (c) { c.classList.remove('on'); }); el.classList.add('on'); }
+</script>
+</body>
+</html>
