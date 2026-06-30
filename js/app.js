@@ -3818,8 +3818,11 @@ window.pbCreate = async function(btn){
   } catch(e){ alert(_t('실패: ','Failed: ')+(e.message||e)); btn.disabled=false; btn.innerHTML=old; }
 };
 
-// 주절주절 = 스레드 피드 (라이브). 라우트 'wall' 이 이 함수를 호출. (프로듀싱 게시판으로 교체됨 — 보존/롤백용)
+// 주절주절 = 스레드 피드 (라이브). → 프로듀싱 게시판으로 교체됨. 옛 코드는 아래 보존(롤백: 이 위임 한 줄만 지우면 됨).
+// 중요: 실시간 구독·새로고침·댓글 핸들러 등 곳곳에서 renderWall() 을 직접 부르므로, 여기서 보드로 위임해야
+//       보드가 옛 주절주절로 덮어써지지 않는다(사용자 보고 버그).
 async function renderWall() {
+  if (typeof renderProducingBoard === 'function') return renderProducingBoard();
   const appContent = document.getElementById('app-content');
   if (!appContent) return;
   const db = window.DB.get();
