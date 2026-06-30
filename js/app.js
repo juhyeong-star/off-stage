@@ -7587,11 +7587,11 @@ function renderShapes() {
   if (_scroll) { _scroll.scrollLeft = 0; _scroll.scrollTop = 0; }
 
   initShapeDrag();
-  // 발견 = 제자리에서 둥둥(floatDrift) + 안겹침 1회 정리. 이동/튕김 물리는 제거(사용자 요청).
+  // 발견 = 제자리에서 둥둥(작은 진폭) + 부딪히면 옆으로(연속 분리). 이동/튕김 없음.
   try {
     stopShapesPhysics();
-    if (!_jacketMode && _field) _relaxNoOverlap(_field, _scroll);
-  } catch (e) { console.warn('[shapes] relax', e); }
+    if (!_jacketMode && _scroll && _field) startShapesPhysics(_field, _scroll);
+  } catch (e) { console.warn('[shapes] physics', e); }
   // initDiceDrag() removed — dice is now fixed-position above upload-fab.
 }
 // supabase.js 등 외부 스크립트에서 window.renderShapes() 로 호출 가능하게 명시 노출.
@@ -7691,35 +7691,27 @@ function startShapesPhysics(field, viewport) {
   field.style.height = fieldH + 'px';
   const cellW = fieldW0 / cols;
   function _h(n) { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); }  // 결정적 0~1
-  const BASE = 0.55;                                       // 우주에 둥둥 — 느린 드리프트(계속 떠다님)
   window.__shapePos = window.__shapePos || {};
   const items = els.map((el, idx) => {
     const sc = parseFloat((el.style.getPropertyValue('--scale') || '1')) || 1;
-    el.style.animation = 'none';                           // floatDrift 끔 — 물리가 위치를 몲
+    el.style.animation = 'none';                           // floatDrift 끔 — 물리가 제자리 둥둥+분리를 transform 으로 몲
     el.style.transition = 'none';
     const w = el.offsetWidth * sc, h = el.offsetHeight * sc;
     const col = idx % cols, row = Math.floor(idx / cols);
+    // 앵커(제자리) = 씨드 격자. 같은 곡 직전 위치 있으면 복원(재렌더 '툭' 방지).
     let x = col * cellW + 4 + _h(idx * 2 + 1) * Math.max(4, cellW - w - 8);
     let y = row * cellH + 4 + _h(idx * 2 + 3) * Math.max(4, cellH - h - 8);
-    const ang = _h(idx + 7) * Math.PI * 2;                 // 결정적 방향
-    let vx = Math.cos(ang) * BASE, vy = Math.sin(ang) * BASE;
-    // 재렌더(배경 새로고침 등) 시 같은 곡의 직전 위치/속도를 복원 → 씨드 시작점으로 '툭' 리셋 방지.
-    // 새 곡(캐시 없음)만 씨드 위치에서 시작. 화면 밖 좌표는 필드 안으로 클램프.
     const _pk = el.dataset && el.dataset.trackId;
     const _pc = _pk && window.__shapePos[_pk];
-    if (_pc) {
-      x = Math.max(0, Math.min(_pc.x, Math.max(0, fieldW0 - w)));
-      y = Math.max(0, Math.min(_pc.y, Math.max(0, fieldH - h)));
-      if (typeof _pc.vx === 'number') { vx = _pc.vx; vy = _pc.vy; }
-    }
-    // 위치를 transform(translate3d)으로 — GPU 합성이라 left/top 리플로우/리페인트 회피(모바일 끊김 해결).
+    if (_pc) { x = _pc.x; y = _pc.y; }
     el.style.left = '0'; el.style.top = '0';
     el.style.willChange = 'transform';
     el.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)' + (sc !== 1 ? ' scale(' + sc + ')' : '');
-    const item = { el, x, y, w, h, sc, r: Math.max(w, h) / 2, vx: vx, vy: vy };
+    // x,y = 제자리 앵커(분리/드래그가 옮김). ph/amp = 작은 제자리 둥둥.
+    // 클립 도형(별·폭발별·삼각형)은 bbox가 실제보다 커서 반경을 줄여 덜 띄엄띄엄하게(안 겹침은 유지).
+    const _clip = /shape-(burst|tri|star|diamond|hexagon|parallelogram)/.test(el.className);
+    const item = { el, x, y, w, h, sc, r: Math.max(w, h) / 2 * (_clip ? 0.76 : 0.98), ph: _h(idx + 11) * 6.283, amp: 2.5 + _h(idx + 5) * 3 };
     el.__phys = item;
-    // 위치가 transform(translate3d)에 있으므로 hover/pressing 의 scale !important 가
-    // translate 를 지워 좌상단으로 튀게 함 → 이 마커로 CSS에서 그 규칙을 제외(:not(.phys-shape)).
     el.classList.add('phys-shape');
     return item;
   });
@@ -7728,40 +7720,50 @@ function startShapesPhysics(field, viewport) {
   // 매 프레임 강제 리플로우(레이아웃 thrash)가 일어나 '던질 때 끊김'의 주범. 캐시해서 제거.
   const BW0 = field.clientWidth || fieldW0;
   const BH0 = fieldH;
+  // 초기 강하게 분리 → 빠르게 안 겹치게 정착(가로 정체 시 세로로 펼침). 필드는 그만큼 아래로.
+  for (let _it = 0; _it < 240; _it++) _shapeSeparate(items, BW0);
+  let _fieldH = BH0;
+  items.forEach((b) => { if (b.y + b.h + 40 > _fieldH) _fieldH = b.y + b.h + 40; });
+  field.style.height = _fieldH + 'px';
+  let frame = 0;
   function step() {
     const its = P.items, n = its.length;
     if (!n) return;
-    const BW = BW0, BH = BH0;
+    // 부딪히면 옆으로 — 연속 분리(매 프레임, 튕김/이동 없이 위치만 밀어 비켜감). 안정 위해 2회.
+    _shapeSeparate(its, BW0); _shapeSeparate(its, BW0);
+    frame++;
+    let maxY = BH0;
     for (let i = 0; i < n; i++) {
       const b = its[i];
       if (b.el.classList.contains('dragging')) continue;
-      b.x += b.vx; b.y += b.vy;                            // 자유 드리프트
-      if (b.x <= 0) { b.x = 0; b.vx = Math.abs(b.vx); }    // 벽 튕김(반사)
-      else if (b.x + b.w >= BW) { b.x = BW - b.w; b.vx = -Math.abs(b.vx); }
-      if (b.y <= 0) { b.y = 0; b.vy = Math.abs(b.vy); }
-      else if (b.y + b.h >= BH) { b.y = BH - b.h; b.vy = -Math.abs(b.vy); }
-      const sp = Math.hypot(b.vx, b.vy);                   // 계속 떠다니게 속도 유지(던진 건 감속)
-      if (sp > BASE * 1.5) { b.vx *= 0.99; b.vy *= 0.99; }
-      else if (sp < BASE * 0.55) { const a = (sp < 0.01) ? (_h(i + 2) * 6.283) : Math.atan2(b.vy, b.vx); b.vx = Math.cos(a) * BASE; b.vy = Math.sin(a) * BASE; }
+      if (b.x < 0) b.x = 0; else if (b.x + b.w > BW0) b.x = Math.max(0, BW0 - b.w);
+      if (b.y < 0) b.y = 0;
+      if (b.y + b.h > maxY) maxY = b.y + b.h;
+      const bx = Math.sin(frame * 0.012 + b.ph) * b.amp;   // 제자리 둥둥(작은 진폭)
+      const by = Math.cos(frame * 0.010 + b.ph * 1.3) * b.amp;
+      b.el.style.transform = 'translate3d(' + (b.x + bx) + 'px,' + (b.y + by) + 'px,0)' + (b.sc && b.sc !== 1 ? ' scale(' + b.sc + ')' : '');
     }
-    // 안 겹치게만 — 부드러운 위치 분리(튕김/속도 교환 없음). 둥둥 떠다니다 서로 살짝 밀어내며 비켜감.
-    for (let i = 0; i < n; i++) {
-      const a = its[i]; if (a.el.classList.contains('dragging')) continue;
-      for (let j = i + 1; j < n; j++) {
-        const c = its[j]; if (c.el.classList.contains('dragging')) continue;
-        const acx = a.x + a.w / 2, acy = a.y + a.h / 2, ccx = c.x + c.w / 2, ccy = c.y + c.h / 2;
-        let dx = ccx - acx, dy = ccy - acy; const dist = Math.hypot(dx, dy) || 0.01;
-        const min = (a.r + c.r) * 1.02;                   // 닿으면 살짝 여백 두고 분리
-        if (dist < min) {
-          const ov = (min - dist) / 2, nx = dx / dist, ny = dy / dist;
-          a.x -= nx * ov; a.y -= ny * ov; c.x += nx * ov; c.y += ny * ov;   // 위치만 밀어 분리(튕김 X)
-        }
-      }
-    }
-    for (let i = 0; i < n; i++) { const b = its[i]; if (b.el.classList.contains('dragging')) continue; b.el.style.transform = 'translate3d(' + b.x + 'px,' + b.y + 'px,0)' + (b.sc && b.sc !== 1 ? ' scale(' + b.sc + ')' : ''); }
+    if (maxY + 40 > _fieldH) { _fieldH = maxY + 40; field.style.height = _fieldH + 'px'; }  // 늘기만(스크롤 점프 방지)
     P.raf = requestAnimationFrame(step);
   }
   P.raf = requestAnimationFrame(step);
+}
+// 부딪히면 옆으로 — 위치만 밀어 분리(튕김/속도 없음). 가로로만 겹치면 세로로도 벌려 정체 해소.
+function _shapeSeparate(items, BW) {
+  for (let i = 0; i < items.length; i++) {
+    const a = items[i]; if (a.el.classList.contains('dragging')) continue;
+    for (let j = i + 1; j < items.length; j++) {
+      const c = items[j]; if (c.el.classList.contains('dragging')) continue;
+      const acx = a.x + a.w / 2, acy = a.y + a.h / 2, ccx = c.x + c.w / 2, ccy = c.y + c.h / 2;
+      let dx = ccx - acx, dy = ccy - acy; const dist = Math.hypot(dx, dy) || 0.01;
+      const min = (a.r + c.r) + 8;     // 반경(클립 보정 반영) + 작은 여백
+      if (dist < min) {
+        const ov = (min - dist) / 2; let nx = dx / dist, ny = dy / dist;
+        if (Math.abs(ny) < 0.25) { ny = (acy <= ccy ? 1 : -1) * 0.5; const nm = Math.hypot(nx, ny) || 1; nx /= nm; ny /= nm; }
+        a.x -= nx * ov; a.y -= ny * ov; c.x += nx * ov; c.y += ny * ov;
+      }
+    }
+  }
 }
 window.startShapesPhysics = startShapesPhysics;
 
