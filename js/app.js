@@ -7448,8 +7448,8 @@ function renderShapes() {
 
   shapeEntries.forEach((entry, si) => {
     const { track, idx, pass } = entry;
-    // 발견 도형 = 곡 id 해시로 다양화(테스트 스타일: 원·카드·타원·와이드·알약 믹스). 전부 배경형이라 글자/대비색 OK.
-    const _SHAPE_SET = ['circle', 'rect', 'oval', 'wide', 'circle', 'pill', 'rect', 'circle'];
+    // 발견 도형 = 곡 id 해시로 빈티지(Memphis) 다양화 — 폭발별·삼각형·별(뾰족) + 원·카드·타원·와이드(둥근).
+    const _SHAPE_SET = ['burst', 'tri', 'circle', 'rect', 'star', 'burst', 'tri', 'oval', 'circle', 'rect', 'wide', 'star'];
     let shape = _SHAPE_SET[(_hashSeed('shape-type:' + (track.id || '')) >>> 0) % _SHAPE_SET.length];
     // 색 = 장르 색(있으면) / 없으면 트랙 id 해시(기존). genreColorOf 공통.
     const color = genreColorOf(track);
