@@ -13460,6 +13460,244 @@ window.mhSelectDemo = function (pid, idx, trackId, ev) {
   try { renderArtistHome(window.__currentArtistName); } catch (e) { console.warn('[myhome] reselect', e); }
 };
 
+// ════════ 프로듀싱 = 데모 진화 라운드 투표 (마이페이지 데모 노드 패널) ════════
+// 선택된 데모 아래에 패널: 본인&라운드없음→만들기 / 진행중→(본인)공개·(청취자)투표 / 마감→결과.
+// 백엔드 window.Producing (supabase.js). 테이블 없으면 fetch가 빈값→슬롯 비움(graceful).
+var PC_TOPICS = [
+  ['🎵 편곡', '후렴 편곡, 어디로?', '몽환 신스', '펑키 기타'],
+  ['👕 MV 의상', 'MV에 뭐 입을까?', '사복', '교복'],
+  ['✍️ 제목', '곡 제목 뭐로?', '', ''],
+  ['🎬 MV 장소', 'MV 어디서 찍을까?', '옥상', '노래방'],
+  ['💡 직접', '', '', '']
+];
+function pcEsc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function _pcColor(seed) { var pal = ['#8B7CF6', '#FB6F92', '#36C977', '#5B8DEF', '#FF9F45', '#2EE6C0']; var h = 0, s = String(seed || 'x'); for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return pal[h % pal.length]; }
+
+function _pcStyle() {
+  if (document.getElementById('pc-style')) return;
+  var st = document.createElement('style'); st.id = 'pc-style';
+  st.textContent = `
+  .pc-slot:empty{display:none;}
+  .pc-box{margin-top:12px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);padding:14px;color:#fff;}
+  .pc-flag{display:inline-block;font-size:9.5px;font-weight:900;color:#06140C;background:#C9C4F5;padding:3px 9px;border-radius:999px;margin-bottom:11px;}
+  .pc-flag.live{background:#FB6F92;color:#fff;} .pc-flag.done{background:#36C977;color:#06140C;}
+  .pc-empty{text-align:center;padding:4px 2px;} .pc-empty-ic{font-size:28px;} .pc-empty-t{font-size:13px;font-weight:800;margin:7px 0 3px;} .pc-empty-s{font-size:11px;color:rgba(255,255,255,.5);line-height:1.5;margin-bottom:13px;}
+  .pc-cta,.pc-open{width:100%;border:none;border-radius:12px;padding:12px;font-family:inherit;font-size:13px;font-weight:800;color:#06140C;background:linear-gradient(135deg,#C9C4F5,#8B7CF6);cursor:pointer;}
+  .pc-topics{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;} .pc-topic{font-family:inherit;font-size:11.5px;font-weight:700;color:#E8E6F5;background:#1A1A24;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:6px 11px;cursor:pointer;} .pc-topic.on{background:rgba(201,196,245,.18);border-color:#C9C4F5;color:#fff;}
+  .pc-lab{font-size:11px;font-weight:800;color:rgba(255,255,255,.65);margin:12px 0 6px;}
+  .pc-box input{width:100%;background:#15151E;border:1px solid rgba(255,255,255,.12);border-radius:11px;padding:10px 12px;color:#fff;font-family:inherit;font-size:12.5px;} .pc-box input::placeholder{color:rgba(255,255,255,.32);}
+  .pc-ab{display:flex;gap:8px;} .pc-c-slot:not(:empty){margin-top:8px;}
+  .pc-addc{width:100%;margin-top:9px;border:1px dashed rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.55);border-radius:11px;padding:9px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;}
+  .pc-days{display:flex;gap:8px;} .pc-day{flex:1;border:1px solid rgba(255,255,255,.12);background:#15151E;color:rgba(255,255,255,.7);border-radius:10px;padding:9px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;} .pc-day.on{background:rgba(201,196,245,.16);border-color:#C9C4F5;color:#fff;}
+  .pc-form-btns{display:flex;gap:8px;margin-top:16px;} .pc-ghost{flex:0 0 90px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.7);border-radius:12px;padding:12px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;} .pc-form-btns .pc-open{flex:1;}
+  .pc-q{font-size:14.5px;font-weight:900;text-align:center;margin-bottom:3px;} .pc-qsub{font-size:10.5px;color:rgba(255,255,255,.45);text-align:center;margin-bottom:14px;}
+  .pc-vs{display:flex;gap:9px;align-items:stretch;margin-bottom:7px;} .pc-card{flex:1;border-radius:15px;padding:15px 9px;text-align:center;cursor:pointer;border:2px solid transparent;transition:all .18s;position:relative;} .pc-card.a{background:rgba(139,124,246,.12);} .pc-card.b{background:rgba(251,111,146,.12);} .pc-card.c{background:rgba(54,201,119,.12);}
+  .pc-card.a.on{border-color:#8B7CF6;background:rgba(139,124,246,.24);} .pc-card.b.on{border-color:#FB6F92;background:rgba(251,111,146,.24);} .pc-card.c.on{border-color:#36C977;background:rgba(54,201,119,.24);}
+  .pc-badge{font-size:10px;font-weight:900;color:#fff;padding:2px 9px;border-radius:999px;display:inline-block;margin-bottom:7px;} .pc-card.a .pc-badge{background:#8B7CF6;} .pc-card.b .pc-badge{background:#FB6F92;} .pc-card.c .pc-badge{background:#36C977;color:#06140C;}
+  .pc-name{font-size:13.5px;font-weight:800;word-break:break-word;} .pc-mine{position:absolute;top:7px;right:7px;font-size:9px;font-weight:900;color:#06140C;background:#fff;padding:2px 7px;border-radius:999px;}
+  .pc-vs-mid{display:flex;align-items:center;font-size:12px;font-weight:900;color:rgba(255,255,255,.4);}
+  .pc-blind{display:flex;align-items:center;justify-content:center;gap:5px;font-size:10.5px;color:rgba(255,255,255,.4);margin:10px 0 15px;} .pc-blind i{color:#C9C4F5;}
+  .pc-cmt-h{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;margin:14px 0 4px;color:rgba(255,255,255,.8);} .pc-cmt-hint{margin-left:auto;font-size:9.5px;font-weight:700;color:#FB6F92;}
+  .pc-cmt{display:flex;gap:9px;padding:9px 10px;border-radius:12px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.05);margin-bottom:7px;align-items:center;} .pc-cmt.on{border-color:rgba(251,111,146,.5);background:rgba(251,111,146,.07);} .pc-cmt.won{border-color:rgba(255,209,102,.45);background:rgba(255,209,102,.07);}
+  .pc-cmt-av{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;}
+  .pc-cmt-b{flex:1;min-width:0;text-align:left;} .pc-cmt-u{font-size:10px;font-weight:700;color:rgba(255,255,255,.55);} .pc-cmt-t{font-size:12.5px;font-weight:600;margin-top:1px;word-break:break-word;}
+  .pc-cmt-like{display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;flex-shrink:0;padding:2px 4px;} .pc-cmt-like i{font-size:17px;color:rgba(255,255,255,.4);} .pc-cmt.on .pc-cmt-like i,.pc-cmt-like.liked i{color:#FB6F92;} .pc-cmt-like b{font-size:10px;font-weight:800;}
+  .pc-cmt-add{display:flex;gap:7px;margin-top:5px;} .pc-cmt-add input{flex:1;} .pc-cmt-add button{flex:0 0 auto;border:none;border-radius:11px;background:#2a2438;color:#C9C4F5;font-weight:800;padding:0 14px;font-family:inherit;font-size:12px;cursor:pointer;}
+  .pc-banner{text-align:center;font-size:11.5px;font-weight:700;color:#9DE0B4;background:rgba(157,224,180,.1);border:1px solid rgba(157,224,180,.25);border-radius:11px;padding:10px;margin-top:12px;}
+  .pc-stat{text-align:center;font-size:11.5px;color:rgba(255,255,255,.6);margin:12px 0;} .pc-stat b{color:#fff;}
+  .pc-reveal{width:100%;border:none;border-radius:12px;padding:12px;font-family:inherit;font-size:13px;font-weight:800;color:#fff;background:linear-gradient(135deg,#FB6F92,#C9456E);cursor:pointer;}
+  .pc-row{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:13px;margin-bottom:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);position:relative;overflow:hidden;} .pc-row.win{border-color:rgba(255,209,102,.55);background:rgba(255,209,102,.08);}
+  .pc-bar{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,.05);z-index:0;} .pc-row.win .pc-bar{background:rgba(255,209,102,.13);} .pc-row>*{position:relative;z-index:1;}
+  .pc-rtag{font-size:9px;font-weight:900;padding:2px 7px;border-radius:6px;color:#fff;flex-shrink:0;} .pc-rtag.a{background:#8B7CF6;} .pc-rtag.b{background:#FB6F92;} .pc-rtag.c{background:#5B8DEF;}
+  .pc-rname{flex:1;font-size:13px;font-weight:700;min-width:0;word-break:break-word;} .pc-rname small{display:block;font-size:10px;font-weight:600;color:rgba(255,255,255,.45);}
+  .pc-figs{text-align:left;min-width:48px;flex-shrink:0;} .pc-num{font-size:13px;font-weight:900;} .pc-pct{font-size:10px;color:rgba(255,255,255,.5);} .pc-crown{font-size:15px;}
+  .pc-out{text-align:center;margin:14px 0;padding:13px;border-radius:14px;background:linear-gradient(135deg,rgba(255,209,102,.14),rgba(251,111,146,.1));border:1px solid rgba(255,209,102,.3);} .pc-out-big{font-size:15px;font-weight:900;color:#FFD166;} .pc-out-s{font-size:11px;color:rgba(255,255,255,.7);margin-top:3px;}
+  .pc-prod-h{font-size:12px;font-weight:800;margin:16px 0 9px;display:flex;align-items:center;gap:6px;} .pc-prod-h i{color:#FFD166;}
+  .pc-prod{display:flex;flex-wrap:wrap;gap:7px;} .pc-pill{display:flex;align-items:center;gap:6px;background:rgba(255,209,102,.1);border:1px solid rgba(255,209,102,.25);border-radius:999px;padding:5px 11px 5px 5px;font-size:11px;font-weight:700;} .pc-pill-av{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0;}
+  .pc-pill-me{background:linear-gradient(135deg,#FFD166,#FF9F45);color:#06140C;border:none;} .pc-pill-more{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.6);padding:5px 11px;}
+  `;
+  document.head.appendChild(st);
+}
+
+// 카드에 렌더된 빈 .pc-slot 들을 채움 (renderArtistHome 직후 호출)
+window._pcRenderAll = function () {
+  if (!window.Producing) return;
+  _pcStyle();
+  document.querySelectorAll('.pc-slot').forEach(function (slot) {
+    _pcRenderSlot(slot, slot.dataset.pid, slot.dataset.track, slot.dataset.self === '1');
+  });
+};
+function _pcRefreshSlot(slot) { if (slot) _pcRenderSlot(slot, slot.dataset.pid, slot.dataset.track, slot.dataset.self === '1'); }
+
+async function _pcRenderSlot(slot, pid, trackId, isSelf) {
+  if (!slot || !window.Producing) return;
+  try {
+    var rounds = await window.Producing.fetchForProject(pid);
+    if (rounds === null) { slot.innerHTML = ''; return; }   // 기능 비활성(테이블 없음 등) → 슬롯 비움
+    var mine = rounds.filter(function (r) { return String(r.track_id) === String(trackId); });
+    var round = mine.length ? mine[mine.length - 1] : null;
+    if (!round) { slot.innerHTML = isSelf ? _pcCreateCta(pid, trackId) : ''; return; }
+    var detail = await window.Producing.fetchDetail(round.id);
+    slot.innerHTML = _pcPanel(round, detail, isSelf);
+  } catch (e) { console.warn('[pc] renderSlot', e); slot.innerHTML = ''; }
+}
+
+function _pcCreateCta(pid, trackId) {
+  return '<div class="pc-box pc-empty">'
+    + '<div class="pc-empty-ic">🎬</div>'
+    + '<div class="pc-empty-t">' + _t('프로듀싱 라운드 만들기', 'Start a producing round') + '</div>'
+    + '<div class="pc-empty-s">' + _t('다음 데모 방향을 청취자 투표로 정해요. A·B 두 안만 정하면 시작!', 'Let listeners vote on your next demo — just set A and B.') + '</div>'
+    + '<button class="pc-cta" onclick="pcOpenForm(this,\'' + pcEsc(pid) + '\',\'' + pcEsc(trackId) + '\')"><i class="ri-rocket-2-line"></i> ' + _t('라운드 만들기', 'Create round') + '</button>'
+    + '</div>';
+}
+
+function _pcForm(pid, trackId) {
+  var chips = PC_TOPICS.map(function (t, i) { return '<button type="button" class="pc-topic" onclick="pcFillTopic(this,' + i + ')">' + t[0] + '</button>'; }).join('');
+  return '<div class="pc-box">'
+    + '<div class="pc-flag">🎬 ' + _t('라운드 만들기', 'Create round') + '</div>'
+    + '<div class="pc-topics">' + chips + '</div>'
+    + '<div class="pc-lab">' + _t('뭘 정할까요?', 'What to decide?') + '</div><input class="pc-q-in" maxlength="200" placeholder="' + _t('예: 후렴 편곡 / MV 의상…', 'e.g. hook arrangement / outfit…') + '">'
+    + '<div class="pc-lab">' + _t('두 안 (A · B)', 'Two options (A · B)') + '</div><div class="pc-ab"><input class="pc-a-in" maxlength="80" placeholder="A"><input class="pc-b-in" maxlength="80" placeholder="B"></div>'
+    + '<div class="pc-c-slot"></div><button type="button" class="pc-addc" onclick="pcAddC(this)"><i class="ri-add-line"></i> ' + _t('안 하나 더 (C)', 'Add option C') + '</button>'
+    + '<div class="pc-lab">' + _t('마감', 'Closes in') + '</div><div class="pc-days"><button type="button" class="pc-day" data-day="1" onclick="pcPickDay(this)">' + _t('1일', '1d') + '</button><button type="button" class="pc-day on" data-day="3" onclick="pcPickDay(this)">' + _t('3일', '3d') + '</button><button type="button" class="pc-day" data-day="7" onclick="pcPickDay(this)">' + _t('7일', '7d') + '</button></div>'
+    + '<div class="pc-form-btns"><button type="button" class="pc-ghost" onclick="pcCancelForm(this,\'' + pcEsc(pid) + '\',\'' + pcEsc(trackId) + '\')">' + _t('취소', 'Cancel') + '</button><button type="button" class="pc-open" onclick="pcCreate(this,\'' + pcEsc(pid) + '\',\'' + pcEsc(trackId) + '\')"><i class="ri-rocket-2-line"></i> ' + _t('라운드 열기', 'Open round') + '</button></div>'
+    + '</div>';
+}
+
+function _pcCardHtml(key, name, on, roundId, clickable) {
+  return '<div class="pc-card ' + key + (on ? ' on' : '') + '"' + (clickable ? ' onclick="pcVote(this,\'' + roundId + '\',\'' + key + '\')"' : '') + '>'
+    + (on ? '<span class="pc-mine">' + _t('내 선택', 'Mine') + '</span>' : '')
+    + '<span class="pc-badge">' + key.toUpperCase() + '</span><div class="pc-name">' + pcEsc(name) + '</div></div>';
+}
+
+function _pcPanel(round, detail, isSelf) {
+  if (round.status === 'closed') return _pcResult(round, detail);
+  return isSelf ? _pcArtistLive(round, detail) : _pcVote(round, detail);
+}
+
+function _pcVote(round, detail) {
+  var cands = round.candidates || [], my = detail.myChoice;
+  var vs = '<div class="pc-vs">';
+  cands.slice(0, 2).forEach(function (c, i) { if (i === 1) vs += '<div class="pc-vs-mid">VS</div>'; vs += _pcCardHtml(c.key, c.name, my === c.key, round.id, true); });
+  vs += '</div>';
+  if (cands[2]) vs += '<div class="pc-vs" style="margin-top:9px;">' + _pcCardHtml(cands[2].key, cands[2].name, my === cands[2].key, round.id, true) + '</div>';
+  var comments = (detail.comments || []).map(function (c) {
+    var likes = detail.tally[c.id] || 0, on = my === c.id, nm = c.user_name || _t('익명', 'Anon');
+    return '<div class="pc-cmt' + (on ? ' on' : '') + '"><div class="pc-cmt-av" style="background:' + _pcColor(nm) + '">' + pcEsc(nm.charAt(0)) + '</div>'
+      + '<div class="pc-cmt-b"><div class="pc-cmt-u">' + pcEsc(nm) + '</div><div class="pc-cmt-t">' + pcEsc(c.body) + '</div></div>'
+      + '<div class="pc-cmt-like" onclick="pcVote(this,\'' + round.id + '\',\'' + c.id + '\')"><i class="' + (on ? 'ri-heart-3-fill' : 'ri-heart-3-line') + '"></i><b>' + likes + '</b></div></div>';
+  }).join('');
+  var banner = my ? '<div class="pc-banner"><i class="ri-check-double-line"></i> ' + _t('참여 완료! 한 표는 한 곳에만 — 결과는 마감 때 공개', 'Voted! One token only — results at close') + '</div>' : '';
+  return '<div class="pc-box">'
+    + '<div class="pc-flag live">🎬 ' + _t('프로듀싱 · 투표', 'Producing · Vote') + '</div>'
+    + '<div class="pc-q">' + pcEsc(round.question) + '</div>'
+    + '<div class="pc-qsub">' + _t('A·B 중 하나 고르거나, 댓글에 추천(❤️) — 한 표만!', 'Pick A/B or back a comment — one token!') + '</div>'
+    + vs
+    + '<div class="pc-blind"><i class="ri-eye-off-line"></i> ' + _t('A·B 표는 가려져 있어요', 'A/B votes are hidden') + '</div>'
+    + '<div class="pc-cmt-h">💬 ' + _t('다른 의견', 'Other ideas') + '<span class="pc-cmt-hint">' + _t('추천 많으면 이걸로!', 'Most-backed wins!') + '</span></div>'
+    + comments
+    + '<div class="pc-cmt-add"><input class="pc-newcmt" maxlength="300" placeholder="' + _t('내 의견 추가…', 'Add your idea…') + '"><button onclick="pcAddComment(this,\'' + round.id + '\')">' + _t('올리기', 'Post') + '</button></div>'
+    + banner + '</div>';
+}
+
+function _pcArtistLive(round, detail) {
+  var cands = round.candidates || [], a = cands[0] || {}, b = cands[1] || {};
+  return '<div class="pc-box">'
+    + '<div class="pc-flag live">🎬 ' + _t('진행 중 · 투표 중', 'Live · Voting') + '</div>'
+    + '<div class="pc-q">' + pcEsc(round.question) + '</div>'
+    + '<div class="pc-qsub">' + _t('표는 지금 안 보여요 (블라인드 · 마감 때 공개)', 'Votes hidden until you reveal') + '</div>'
+    + '<div class="pc-vs"><div class="pc-card a"><span class="pc-badge">A</span><div class="pc-name">' + pcEsc(a.name || 'A') + '</div></div><div class="pc-vs-mid">VS</div><div class="pc-card b"><span class="pc-badge">B</span><div class="pc-name">' + pcEsc(b.name || 'B') + '</div></div></div>'
+    + '<div class="pc-stat">🙋 <b>' + (detail.total || 0) + '</b> ' + _t('참여', 'votes') + ' · 💬 <b>' + (detail.comments.length) + '</b></div>'
+    + '<button class="pc-reveal" onclick="pcClose(this,\'' + round.id + '\')"><i class="ri-lock-unlock-line"></i> ' + _t('지금 공개하기 (마감)', 'Reveal now (close)') + '</button>'
+    + '</div>';
+}
+
+function _pcResult(round, detail) {
+  var cands = round.candidates || [];
+  var items = cands.map(function (c) { return { key: c.key, name: c.name, sub: c.key.toUpperCase() + _t('안', ''), v: detail.tally[c.key] || 0, isC: false }; });
+  (detail.comments || []).forEach(function (c) { items.push({ key: c.id, name: c.body, sub: '💬 ' + (c.user_name || _t('익명', 'Anon')), v: detail.tally[c.id] || 0, isC: true }); });
+  var total = items.reduce(function (s, it) { return s + it.v; }, 0) || 1;
+  var max = items.reduce(function (m, it) { return Math.max(m, it.v); }, 0);
+  items.sort(function (x, y) { return y.v - x.v; });
+  var winner = items[0] || { name: '-', v: 0, key: null, isC: false };
+  var rows = items.map(function (it) {
+    var win = it.v === max && max > 0, pct = Math.round(it.v / total * 100);
+    return '<div class="pc-row' + (win ? ' win' : '') + '"><div class="pc-bar" style="width:' + pct + '%"></div>'
+      + '<span class="pc-rtag ' + (it.isC ? 'c' : it.key) + '">' + (it.isC ? 'C' : it.key.toUpperCase()) + '</span>'
+      + '<div class="pc-rname">' + pcEsc(it.name) + '<small>' + pcEsc(it.sub) + '</small></div>'
+      + (win ? '<span class="pc-crown">👑</span>' : '') + '<div class="pc-figs"><div class="pc-num">' + it.v + '</div><div class="pc-pct">' + pct + '%</div></div></div>';
+  }).join('');
+  var winKey = winner.key, myId = (window.__currentUser && window.__currentUser.id) || null;
+  var iWon = detail.myChoice != null && String(detail.myChoice) === String(winKey) && max > 0;
+  var prods = (detail.votes || []).filter(function (v) { return String(v.choice) === String(winKey) && v.user_id !== myId; });
+  var meBadge = iWon ? '<div class="pc-pill pc-pill-me"><div class="pc-pill-av" style="background:#06140C">' + _t('나', 'Me') + '</div><span>' + _t('나 🎉', 'Me 🎉') + '</span></div>' : '';
+  var pills = prods.slice(0, 6).map(function (v) { var nm = v.user_name || _t('익명', 'Anon'); return '<div class="pc-pill"><div class="pc-pill-av" style="background:' + _pcColor(nm) + '">' + pcEsc(nm.charAt(0)) + '</div><span>' + pcEsc(nm) + '</span></div>'; }).join('');
+  var more = prods.length > 6 ? '<div class="pc-pill pc-pill-more">+' + (prods.length - 6) + '</div>' : '';
+  var prodEmpty = (!meBadge && !pills) ? '<span style="font-size:11px;color:rgba(255,255,255,.4);">' + _t('아직 없어요', 'None yet') + '</span>' : '';
+  var cmtThread = (detail.comments && detail.comments.length)
+    ? '<div class="pc-cmt-h">💬 ' + _t('댓글', 'Comments') + ' ' + detail.comments.length + '</div>'
+      + detail.comments.slice().sort(function (a, b) { return (detail.tally[b.id] || 0) - (detail.tally[a.id] || 0); }).slice(0, 2).map(function (c) {
+          var won = String(winKey) === String(c.id), nm = c.user_name || _t('익명', 'Anon');
+          return '<div class="pc-cmt' + (won ? ' won' : '') + '"><div class="pc-cmt-av" style="background:' + _pcColor(nm) + '">' + pcEsc(nm.charAt(0)) + '</div><div class="pc-cmt-b"><div class="pc-cmt-u">' + pcEsc(nm) + (won ? ' · 👑' : '') + '</div><div class="pc-cmt-t">' + pcEsc(c.body) + '</div></div><div class="pc-cmt-like liked"><i class="ri-heart-3-fill"></i><b>' + (detail.tally[c.id] || 0) + '</b></div></div>';
+        }).join('')
+    : '';
+  return '<div class="pc-box">'
+    + '<div class="pc-flag done">🎬 ' + _t('결과 공개', 'Results') + '</div>'
+    + '<div class="pc-q">' + pcEsc(round.question) + '</div>'
+    + rows
+    + (max > 0 ? '<div class="pc-out"><div class="pc-out-big">👑 ' + pcEsc(winner.name) + '</div><div class="pc-out-s">' + (winner.isC ? _t('댓글이 이겼어요! 다음 데모는 이 의견대로 🎬', 'A comment won! Next demo follows it 🎬') : _t('이걸로 다음 데모 갑니다 🎬', 'This goes to the next demo 🎬')) + '</div></div>' : '<div class="pc-stat">' + _t('아직 표가 없어요', 'No votes yet') + '</div>')
+    + cmtThread
+    + '<div class="pc-prod-h"><i class="ri-medal-line"></i> ' + _t('이번 데모의 프로듀서', 'Producers') + (iWon ? _t(' — 나도 포함!', ' — incl. me!') : '') + '</div><div class="pc-prod">' + meBadge + pills + more + prodEmpty + '</div>'
+    + '</div>';
+}
+
+window.pcOpenForm = function (el, pid, trackId) { var slot = el.closest('.pc-slot'); if (slot) slot.innerHTML = _pcForm(pid, trackId); };
+window.pcCancelForm = function (el, pid, trackId) { var slot = el.closest('.pc-slot'); if (slot) slot.innerHTML = _pcCreateCta(pid, trackId); };
+window.pcFillTopic = function (el, i) { var slot = el.closest('.pc-slot'), t = PC_TOPICS[i]; if (!slot || !t) return; slot.querySelectorAll('.pc-topic').forEach(function (c) { c.classList.remove('on'); }); el.classList.add('on'); slot.querySelector('.pc-q-in').value = t[1]; slot.querySelector('.pc-a-in').value = t[2]; slot.querySelector('.pc-b-in').value = t[3]; };
+window.pcPickDay = function (el) { var slot = el.closest('.pc-slot'); slot.querySelectorAll('.pc-day').forEach(function (c) { c.classList.remove('on'); }); el.classList.add('on'); };
+window.pcAddC = function (el) { var slot = el.closest('.pc-slot'); slot.querySelector('.pc-c-slot').innerHTML = '<input class="pc-c-in" maxlength="80" placeholder="C (' + _t('선택', 'optional') + ')">'; el.style.display = 'none'; };
+
+window.pcCreate = async function (el, pid, trackId) {
+  var slot = el.closest('.pc-slot'); if (!slot) return;
+  if (!window.__currentUser || !window.__currentUser.id) { alert(_t('로그인이 필요해요', 'Login required')); return; }
+  var q = (slot.querySelector('.pc-q-in').value || '').trim();
+  var a = (slot.querySelector('.pc-a-in').value || '').trim();
+  var b = (slot.querySelector('.pc-b-in').value || '').trim();
+  if (!a || !b) { alert(_t('A·B 두 안을 적어주세요', 'Enter both A and B')); return; }
+  var cEl = slot.querySelector('.pc-c-in'), cVal = cEl ? (cEl.value || '').trim() : '';
+  var dayBtn = slot.querySelector('.pc-day.on'), days = dayBtn ? parseInt(dayBtn.dataset.day, 10) : 3;
+  var candidates = [{ key: 'a', name: a }, { key: 'b', name: b }]; if (cVal) candidates.push({ key: 'c', name: cVal });
+  el.disabled = true; var old = el.innerHTML; el.innerHTML = '...';
+  try {
+    await window.Producing.create({ projectId: pid, trackId: trackId, question: q || _t('다음 데모, 어디로?', 'Where next?'), candidates: candidates, closesAt: new Date(Date.now() + days * 86400000).toISOString() });
+    if (typeof showToast === 'function') showToast(_t('라운드가 열렸어요! 🎬', 'Round opened! 🎬'));
+    _pcRefreshSlot(slot);
+  } catch (e) { alert(_t('실패: ', 'Failed: ') + (e.message || e)); el.disabled = false; el.innerHTML = old; }
+};
+
+window.pcVote = async function (el, roundId, choice) {
+  var slot = el.closest('.pc-slot'); if (!slot) return;
+  if (!window.__currentUser || !window.__currentUser.id) { alert(_t('로그인하면 투표할 수 있어요', 'Log in to vote')); return; }
+  try { await window.Producing.vote(roundId, choice); _pcRefreshSlot(slot); }
+  catch (e) { alert(_t('실패: ', 'Failed: ') + (e.message || e)); }
+};
+
+window.pcAddComment = async function (el, roundId) {
+  var slot = el.closest('.pc-slot'); if (!slot) return;
+  var inp = slot.querySelector('.pc-newcmt'), v = (inp.value || '').trim(); if (!v) return;
+  if (!window.__currentUser || !window.__currentUser.id) { alert(_t('로그인하면 댓글을 달 수 있어요', 'Log in to comment')); return; }
+  el.disabled = true;
+  try { var c = await window.Producing.addComment(roundId, v); try { await window.Producing.vote(roundId, c.id); } catch (_) {} _pcRefreshSlot(slot); }
+  catch (e) { alert(_t('실패: ', 'Failed: ') + (e.message || e)); el.disabled = false; }
+};
+
+window.pcClose = async function (el, roundId) {
+  if (!confirm(_t('지금 공개할까요? 마감하면 투표가 닫혀요.', 'Reveal now? Voting will close.'))) return;
+  var slot = el.closest('.pc-slot'); el.disabled = true;
+  try { await window.Producing.close(roundId); _pcRefreshSlot(slot); }
+  catch (e) { alert(_t('실패: ', 'Failed: ') + (e.message || e)); el.disabled = false; }
+};
+
 function _mhStyle() {
   return `<style id="mh-style">
 .mh-page{position:relative;min-height:100%;padding:56px 0 calc(var(--player-height,60px) + env(safe-area-inset-bottom) + 28px);background:radial-gradient(circle at 50% 8%,#170b3b 0%,#050213 58%,#03000d 100%);color:#fff;font-family:'Pretendard',sans-serif;overflow-x:hidden;}
@@ -13757,6 +13995,7 @@ function renderArtistHome(artistName) {
           </div>
           <div class="mh-nodes">${nodes}${addNode}</div>
           ${manageHtml}
+          <div class="pc-slot" data-pid="${esc(tr.pid)}" data-track="${esc(cur.id)}" data-self="${isSelf ? '1' : '0'}"></div>
         </div>`;
     }).join('');
     histHtml = `
@@ -13822,6 +14061,8 @@ function renderArtistHome(artistName) {
     </div>`;
 
   window.__currentArtistName = artistName;
+  // 데모 노드 아래 프로듀싱 패널을 비동기로 채움(테이블 없으면 graceful 무시)
+  setTimeout(function () { try { window._pcRenderAll && window._pcRenderAll(); } catch (e) { console.warn('[pc] renderAll', e); } }, 0);
 }
 
 function renderArtistProfile(artistName) {

@@ -2085,6 +2085,91 @@
     }
   };
 
+  // ── Producing — 데모 진화 라운드 투표 (A/B 블라인드 + 댓글 추천, 한 사람 한 표) ──
+  // 테이블(producing_rounds/_comments/_votes)이 없으면 fetch가 빈 결과를 돌려 기능이
+  // 자동으로 숨겨짐(graceful). sql/producing.sql 실행 후 활성화됨.
+  window.Producing = {
+    // 한 프로젝트(곡)의 라운드들 — 각 데모 노드가 track_id 로 자기 라운드를 찾음
+    async fetchForProject(projectId) {
+      // null = 기능 비활성(테이블 없음/연결 X) → UI 완전 숨김. []  = 라운드 없음(본인은 만들기 CTA).
+      if (!window.supabase || !projectId) return null;
+      const { data, error } = await window.supabase
+        .from('producing_rounds').select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: true });
+      if (error) { console.warn('[Producing] fetchForProject', error.message); return null; }
+      return data || [];
+    },
+
+    // 한 라운드의 댓글 + 투표 집계(+내 선택). 테이블 없으면 빈 결과.
+    async fetchDetail(roundId) {
+      const empty = { comments: [], tally: {}, total: 0, myChoice: null, votes: [] };
+      if (!window.supabase || !roundId) return empty;
+      let myId = null;
+      try { const { data: { user } } = await window.supabase.auth.getUser(); myId = user ? user.id : null; } catch (_) {}
+      const [cRes, vRes] = await Promise.all([
+        window.supabase.from('producing_comments').select('id,user_id,user_name,body,created_at').eq('round_id', roundId).order('created_at', { ascending: true }),
+        window.supabase.from('producing_votes').select('user_id,user_name,choice').eq('round_id', roundId)
+      ]);
+      if (cRes.error) { console.warn('[Producing] fetchDetail', cRes.error.message); return empty; }
+      const votes = vRes.data || [];
+      const tally = {}; let total = 0; let myChoice = null;
+      votes.forEach(function (v) { tally[v.choice] = (tally[v.choice] || 0) + 1; total++; if (myId && v.user_id === myId) myChoice = v.choice; });
+      return { comments: cRes.data || [], tally: tally, total: total, myChoice: myChoice, votes: votes };
+    },
+
+    // 라운드 만들기 (아티스트). candidates = [{key:'a',name},{key:'b',name},...]
+    async create(opts) {
+      if (!window.supabase) throw new Error('연결이 필요해요');
+      const { data: { user } } = await window.supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요해요');
+      if (typeof window.ensureProfileRow === 'function') { try { await window.ensureProfileRow(); } catch (_) {} }
+      const payload = {
+        project_id: opts.projectId,
+        track_id: opts.trackId || null,
+        artist_id: user.id,
+        artist_name: (window.__currentUser && window.__currentUser.name) || null,
+        question: (opts.question || '').slice(0, 200),
+        candidates: opts.candidates || [],
+        status: 'open',
+        closes_at: opts.closesAt || null
+      };
+      const { data, error } = await window.supabase.from('producing_rounds').insert(payload).select().single();
+      if (error) throw error;
+      return data;
+    },
+
+    async addComment(roundId, body) {
+      if (!window.supabase) throw new Error('연결이 필요해요');
+      const { data: { user } } = await window.supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요해요');
+      if (typeof window.ensureProfileRow === 'function') { try { await window.ensureProfileRow(); } catch (_) {} }
+      const payload = { round_id: roundId, user_id: user.id, user_name: (window.__currentUser && window.__currentUser.name) || null, body: (body || '').slice(0, 300) };
+      const { data, error } = await window.supabase.from('producing_comments').insert(payload).select().single();
+      if (error) throw error;
+      return data;
+    },
+
+    // 한 표(토큰): A/B/댓글 한 곳. 이미 던졌으면 그 표를 옮김(upsert).
+    async vote(roundId, choice) {
+      if (!window.supabase) throw new Error('연결이 필요해요');
+      const { data: { user } } = await window.supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요해요');
+      const payload = { round_id: roundId, user_id: user.id, user_name: (window.__currentUser && window.__currentUser.name) || null, choice: String(choice) };
+      const { data, error } = await window.supabase.from('producing_votes').upsert(payload, { onConflict: 'round_id,user_id' }).select().single();
+      if (error) throw error;
+      return data;
+    },
+
+    // 마감/공개 (아티스트)
+    async close(roundId) {
+      if (!window.supabase) throw new Error('연결이 필요해요');
+      const { data, error } = await window.supabase.from('producing_rounds').update({ status: 'closed' }).eq('id', roundId).select().single();
+      if (error) throw error;
+      return data;
+    }
+  };
+
   // ── DM — 1:1 메시지 (Supabase-backed) ────────────────────────────────
   window.DM = {
     // Resolve an artist name to their profile id (needed when opening DM by
