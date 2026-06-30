@@ -17,8 +17,8 @@
   .shape { position: absolute; top: 0; left: 0; will-change: transform; cursor: grab; user-select: none; -webkit-user-select: none; display: flex; align-items: center; justify-content: center; text-align: center; }
   .shape.grab { cursor: grabbing; }
   .shape.held { z-index: 60; }
-  .s-long { font-size: 11px; font-weight: 800; line-height: 1.55; letter-spacing: -.2px; }
-  .s-short { font-size: 11.5px; font-weight: 800; letter-spacing: -.2px; }
+  .s-long { font-size: 13px; font-weight: 800; line-height: 1.55; letter-spacing: -.2px; }
+  .s-short { font-size: 13.5px; font-weight: 800; letter-spacing: -.2px; }
   .papers > i { position: absolute; border-radius: 4px; background: #fdfdfd; border: 1px solid #c9c9c9; }
 </style>
 </head>
@@ -34,11 +34,11 @@
   // fx,fy = 화면 비율 기준 초기 위치(겹침은 자동 정리)
   var DEFS = [
     // 긴 글(정보 카드)
-    { type:'rrect',    color:'#F5A623', fx:.70, fy:.13, w:150, h:96,  rot:4,   kind:'long', text:['장르 : ROCK','작가 : THUNDER','제목 : 랩퍼의 꿈'], tcol:'#5A3700' },
-    { type:'burst',    color:'#E84BC9', fx:.27, fy:.24, w:158, h:140, rot:-6,  kind:'long', text:['장르 : R&B','작가 : LUNA','제목 : 새벽 세 시'], tcol:'#fff' },
-    { type:'triangle', color:'#3E7BFF', fx:.70, fy:.38, w:150, h:124, rot:6,   kind:'long', text:['장르 : POP','작가 : MINJU','제목 : 여름의 끝'], tcol:'#fff' },
-    { type:'rrect',    color:'#E84BC9', fx:.86, fy:.56, w:150, h:96,  rot:-7,  kind:'long', text:['장르 : HIPHOP','작가 : DDO','제목 : 교실'], tcol:'#4B1528' },
-    { type:'triangle', color:'#8B3DEF', fx:.30, fy:.73, w:150, h:124, rot:-4,  kind:'long', text:['장르 : BALLAD','작가 : HARU','제목 : 안녕'], tcol:'#fff' },
+    { type:'rrect',    color:'#F5A623', fx:.70, fy:.13, w:150, h:96,  rot:4,   kind:'long', text:['#청춘로큰롤','#질주하는','#밴드사운드'], tcol:'#5A3700' },
+    { type:'burst',    color:'#E84BC9', fx:.27, fy:.24, w:158, h:140, rot:-6,  kind:'long', text:['#새벽세시','#나른한알앤비','#취향저격'], tcol:'#fff' },
+    { type:'triangle', color:'#3E7BFF', fx:.70, fy:.38, w:150, h:124, rot:6,   kind:'long', text:['#여름의끝','#청량팝','#설렘주의'], tcol:'#fff' },
+    { type:'rrect',    color:'#E84BC9', fx:.86, fy:.56, w:150, h:96,  rot:-7,  kind:'long', text:['#교실힙합','#찐친소환','#붐뱁'], tcol:'#4B1528' },
+    { type:'triangle', color:'#8B3DEF', fx:.30, fy:.73, w:150, h:124, rot:-4,  kind:'long', text:['#밤편지','#먹먹한발라드','#감성충전'], tcol:'#fff' },
     // 짧은 글 / 장식
     { type:'ellipse',  color:'#F2D43B', fx:.18, fy:.07, w:80,  h:54,  rot:0,   kind:'short', text:['#락'], tcol:'#5A4D00' },
     { type:'star',     color:'#2EE6C0', fx:.50, fy:.10, w:44,  h:44,  rot:0,   kind:'short', text:[''], tcol:'#fff' },
