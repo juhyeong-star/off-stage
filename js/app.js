@@ -7487,7 +7487,7 @@ function renderShapes() {
     const rot = _newest ? 0 : ((((seed >>> 10) % 140) - 70) / 10);
     const dur = 10 + ((seed >>> 18) % 18);
     // 떠다니는 진폭: 모바일은 좁아서 ±10, PC는 ±25 (겹침 방지)
-    const _drift = _isNarrow ? 10 : 25;
+    const _drift = _isNarrow ? 7 : 9;      // 제자리 둥둥 — 부드러운 진폭(겹침 방지)
     const dx = ((((seed >>> 22) % (_drift * 2))) - _drift);
     const dy = ((((seed >>> 26) % (_drift * 2))) - _drift);
     // 크기 = 등록 크기 고정 + 인기도(♥*3+재생)에 따라 (모바일 +18%, PC +35%) (#3, #4)
@@ -7577,7 +7577,7 @@ function renderShapes() {
     if (_field) _declumpShapes(_field, {
       H: _fieldH,                          // 폭은 declump 가 실제 필드(100%) 폭을 재서 사용 → 가로 넘침 0
       pinnedFn: el => el.dataset.pinned === '1',
-      slack: _isNarrow ? 0.14 : 0.18,
+      slack: _isNarrow ? 0.04 : 0.05,      // 거의 안 겹치게(살짝만 여유 — 제자리 둥둥이라 이동 충돌 없음)
       rand: _mulberry32((_hashSeed(_viewerSeed + ':scatter') >>> 0) || 1)
     });
   } catch (e) { console.warn('[shapes] declump', e); }
@@ -7586,11 +7586,11 @@ function renderShapes() {
   if (_scroll) { _scroll.scrollLeft = 0; _scroll.scrollTop = 0; }
 
   initShapeDrag();
-  // 발견(도형) 물리 — shape 모드에서만 드리프트+벽튕김+충돌+던지기. 자켓 모드는 정적 유지.
+  // 발견 = 제자리에서 둥둥(floatDrift) + 안겹침 1회 정리. 이동/튕김 물리는 제거(사용자 요청).
   try {
     stopShapesPhysics();
-    if (!_jacketMode && _scroll && _field) startShapesPhysics(_field, _scroll);
-  } catch (e) { console.warn('[shapes] physics start', e); }
+    if (!_jacketMode && _field) _relaxNoOverlap(_field, _scroll);
+  } catch (e) { console.warn('[shapes] relax', e); }
   // initDiceDrag() removed — dice is now fixed-position above upload-fab.
 }
 // supabase.js 등 외부 스크립트에서 window.renderShapes() 로 호출 가능하게 명시 노출.
@@ -7620,6 +7620,58 @@ function stopShapesPhysics() {
   P.items = [];
 }
 window.stopShapesPhysics = stopShapesPhysics;
+
+// 제자리 둥둥(floatDrift) + 안겹침 — 이동 물리 대신 '1회 정리'로 도형을 서로 안 겹치게 배치.
+// 위치만 left/top 으로 쓰고 transform(floatDrift 부유)은 건드리지 않아 제자리 부유가 유지됨.
+// 겹치면 필드 아래로 늘려 세로로 펼침(발견=세로 스크롤 피드). data-pinned(최신/드래그)은 고정.
+function _relaxNoOverlap(field, viewport) {
+  if (!field) return;
+  const els = Array.prototype.slice.call(field.querySelectorAll('.floating-shape'));
+  if (els.length < 2) return;
+  const fieldW = field.clientWidth || (viewport && viewport.clientWidth) || window.innerWidth;
+  const vvh = (viewport && viewport.clientHeight) || window.innerHeight || 600;
+  const BOB = 20;   // floatDrift 진폭 여유(둘 다 흔들려도 안 겹치게)
+  const items = els.map(function (el) {
+    const sc = parseFloat(el.style.getPropertyValue('--scale') || '1') || 1;
+    const w = el.offsetWidth * sc, h = el.offsetHeight * sc;
+    return {
+      el: el, w: w, h: h, r: Math.max(w, h) / 2,
+      x: (parseFloat(el.style.left) || 0) / 100 * fieldW,
+      y: parseFloat(el.style.top) || 0,
+      pin: el.dataset.pinned === '1'
+    };
+  });
+  for (let it = 0; it < 300; it++) {
+    for (let i = 0; i < items.length; i++) {
+      const a = items[i];
+      for (let j = i + 1; j < items.length; j++) {
+        const c = items[j];
+        if (a.pin && c.pin) continue;
+        const acx = a.x + a.w / 2, acy = a.y + a.h / 2, ccx = c.x + c.w / 2, ccy = c.y + c.h / 2;
+        let dx = ccx - acx, dy = ccy - acy; const dist = Math.hypot(dx, dy) || 0.01;
+        const min = (a.r + c.r) + BOB;
+        if (dist < min) {
+          const ov = min - dist; let nx = dx / dist, ny = dy / dist;
+          // 거의 같은 높이로 가로로만 밀리면(가로 정체) 세로로도 벌려 줌 — 위는 위로/아래는 아래로(필드 확장)
+          if (Math.abs(ny) < 0.3) { ny = (acy <= ccy ? 1 : -1) * 0.65; const nm = Math.hypot(nx, ny) || 1; nx /= nm; ny /= nm; }
+          if (a.pin) { c.x += nx * ov; c.y += ny * ov; }
+          else if (c.pin) { a.x -= nx * ov; a.y -= ny * ov; }
+          else { a.x -= nx * ov / 2; a.y -= ny * ov / 2; c.x += nx * ov / 2; c.y += ny * ov / 2; }
+        }
+      }
+    }
+    for (let k = 0; k < items.length; k++) {
+      const b = items[k]; if (b.pin) continue;
+      if (b.x < 0) b.x = 0; else if (b.x + b.w > fieldW) b.x = Math.max(0, fieldW - b.w);
+      if (b.y < 0) b.y = 0;     // 아래로는 자유(필드 확장)
+    }
+  }
+  let maxY = vvh;
+  items.forEach(function (b) { maxY = Math.max(maxY, b.y + b.h + 24); });
+  field.style.height = maxY + 'px';
+  items.forEach(function (b) { b.el.style.left = (b.x / fieldW * 100) + '%'; b.el.style.top = b.y + 'px'; });
+}
+window._relaxNoOverlap = _relaxNoOverlap;
 
 function startShapesPhysics(field, viewport) {
   if (!field) return;
