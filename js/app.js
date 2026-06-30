@@ -3611,6 +3611,8 @@ function _pbStyle(){
   .pb-cover{position:relative;height:170px;border-radius:20px;overflow:hidden;display:flex;align-items:flex-end;background:#181225;}
   .pb-cover-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;} .pb-cover-grad{position:absolute;inset:0;}
   .pb-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(7,6,13,.85),transparent 55%);}
+  .pb-cover-tags{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-start;gap:1px;padding:15px 18px 0;pointer-events:none;z-index:0;}
+  .pb-cover-tags span{font-size:27px;font-weight:900;line-height:1.08;color:rgba(255,255,255,.96);letter-spacing:-.5px;text-shadow:0 2px 10px rgba(0,0,0,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
   .pb-song{position:relative;z-index:1;padding:14px;} .pb-song-t{font-size:16px;font-weight:900;} .pb-song-s{font-size:11px;color:rgba(255,255,255,.6);}
   .pb-q{text-align:center;font-size:13.5px;font-weight:800;color:rgba(255,255,255,.82);margin:16px 0 12px;}
   .pb-vs{display:flex;align-items:stretch;}
@@ -3661,6 +3663,8 @@ function _pbStyle(){
 async function renderProducingBoard(){
   currentView = 'wall';
   var app = document.getElementById('app-content'); if (!app) return;
+  // 방어: 이전 모달이 body/html 에 남긴 스크롤 잠금(overflow:hidden) 해제 — 보드에서 휠 스크롤 안 먹던 케이스 대비.
+  try { document.body.style.overflow=''; document.documentElement.style.overflow=''; } catch(_){}
   _pbStyle();
   var logged = !!(window.__currentUser && window.__currentUser.id);
   app.innerHTML =
@@ -3695,13 +3699,29 @@ function _pbOpt(r, o){
     : '<div class="pb-name big">'+pbEsc(o.name)+'</div>';
   return '<div class="pb-opt '+o.key+(o.audio?'':' simple')+'" onclick="pbVote(\''+r.id+'\',\''+o.key+'\')"><div class="pb-badge">'+o.key.toUpperCase()+'안</div>'+inner+'</div>';
 }
+// 커버용 그라데이션 — 트랙 id 해시로 색상 변주(발견의 다채로움), 단 흰 해시태그 대비 위해 어둡게 유지.
+function _pbCoverGrad(seed){
+  var s=String(seed||''), h=0; for(var i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))>>>0; }
+  var a=h%360, b=(a+38)%360, c=(a+320)%360;
+  return 'linear-gradient(150deg, hsl('+a+',60%,32%), hsl('+b+',66%,23%) 72%, hsl('+c+',54%,29%))';
+}
 function _pbCardShell(r){
   var tr = _pbTrack(r.track_id);
   var cover = (tr && tr.cover) ? tr.cover : '';
   var title = (tr && tr.title) ? tr.title.replace(/\s*\(Demo.*\)$/i,'') : (r.song_title || '곡');
   var artist = r.artist_name || (tr && tr.artist) || '';
   var cands = r.candidates || [];
-  var coverHtml = cover ? '<img class="pb-cover-img" src="'+pbEsc(cover)+'" alt="">' : '<div class="pb-cover-grad" style="background:linear-gradient(150deg,#6d28d9,#db2777 70%,#7c3aed)"></div>';
+  // 앨범 커버 = 발견 도형처럼 곡 태그를 #해시태그 3줄로(실사진 대신). 태그 없을 때만 커버이미지/그라데이션.
+  var tags = (tr && Array.isArray(tr.tags) && tr.tags.length) ? tr.tags.slice(0,3) : [];
+  var grad = '<div class="pb-cover-grad" style="background:'+_pbCoverGrad(r.track_id||r.id)+'"></div>';
+  var coverHtml;
+  if (tags.length){
+    coverHtml = grad + '<div class="pb-cover-tags">'+tags.map(function(tg){ return '<span>#'+pbEsc(String(tg).replace(/^#/,''))+'</span>'; }).join('')+'</div>';
+  } else if (cover){
+    coverHtml = '<img class="pb-cover-img" src="'+pbEsc(cover)+'" alt="">';
+  } else {
+    coverHtml = grad;
+  }
   return '<div class="pb-card" id="pb-card-'+r.id+'" data-rid="'+r.id+'">'
     + '<div class="pb-cover">'+coverHtml+'<div class="pb-song"><div class="pb-song-t">'+pbEsc(title)+'</div><div class="pb-song-s">'+pbEsc(artist)+'</div></div></div>'
     + '<div class="pb-q">'+pbEsc(r.question)+'</div>'
