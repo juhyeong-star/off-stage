@@ -1723,7 +1723,7 @@ function navigateTo(route) {
         break;
       }
       case 'tags': renderTags(); break;
-      case 'wall': renderWall(); break;
+      case 'wall': (typeof renderProducingBoard === 'function' ? renderProducingBoard() : renderWall()); break;
       case 'events': renderEvents(); break;
       case 'auth': renderAuth(); break;
       // Pseudo-route: jump to the current user's own /artist:<name> page
@@ -3586,7 +3586,238 @@ window._threadPostMenu = function (id, isMine) {
     _threadShare(id);
   }
 };
-// 주절주절 = 스레드 피드 (라이브). 라우트 'wall' 이 이 함수를 호출.
+// ════════════ 프로듀싱 게시판 — 주절주절('wall') 자리 (데모 진화 라운드 투표 피드) ════════════
+// 백엔드 window.Producing (producing_rounds/_comments/_votes). 곡 제목·커버는 트랙 캐시에서 조회.
+// candidates[].audio 있으면 재생 버튼(음원 버전), 없으면 글자만(드럼/기타·의상 등 간단 투표).
+window.__pbSeg = window.__pbSeg || 'open';
+window.__pbRounds = window.__pbRounds || [];
+function pbEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function _pbTrack(id){ var a=(window.__tracks&&window.__tracks.length)?window.__tracks:((window.DB&&window.DB.get().tracks)||[]); return a.find(function(t){return t&&String(t.id)===String(id);})||null; }
+function _pbFindRound(id){ return (window.__pbRounds||[]).find(function(r){return String(r.id)===String(id);})||null; }
+function _pbTotal(r,d){ var s=0; (r.candidates||[]).forEach(function(o){s+=d.tally[o.key]||0;}); (d.comments||[]).forEach(function(c){s+=d.tally[c.id]||0;}); return s||1; }
+
+function _pbStyle(){
+  if (document.getElementById('pb-style')) return;
+  var st=document.createElement('style'); st.id='pb-style';
+  st.textContent = `
+  .pb-page{min-height:100%;background:#07060d;color:#F4F4F7;padding-bottom:calc(var(--player-height,60px) + env(safe-area-inset-bottom) + 30px);}
+  .pb-top{display:flex;align-items:center;padding:14px 16px 6px;} .pb-top-t{font-size:20px;font-weight:900;}
+  .pb-seg{display:flex;gap:6px;background:#14111f;border-radius:12px;padding:4px;margin:8px 14px 16px;}
+  .pb-seg b{flex:1;text-align:center;padding:9px;border-radius:9px;font-size:12.5px;font-weight:800;color:rgba(255,255,255,.5);cursor:pointer;} .pb-seg b.on{background:#2a2440;color:#fff;}
+  .pb-loading,.pb-empty{text-align:center;color:rgba(255,255,255,.5);font-size:13px;padding:50px 20px;line-height:1.7;}
+  .pb-empty b{display:block;font-size:15px;color:#fff;margin-bottom:6px;}
+  .pb-card{margin:0 14px 30px;}
+  .pb-cover{position:relative;height:170px;border-radius:20px;overflow:hidden;display:flex;align-items:flex-end;background:#181225;}
+  .pb-cover-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;} .pb-cover-grad{position:absolute;inset:0;}
+  .pb-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(7,6,13,.85),transparent 55%);}
+  .pb-song{position:relative;z-index:1;padding:14px;} .pb-song-t{font-size:16px;font-weight:900;} .pb-song-s{font-size:11px;color:rgba(255,255,255,.6);}
+  .pb-q{text-align:center;font-size:13.5px;font-weight:800;color:rgba(255,255,255,.82);margin:16px 0 12px;}
+  .pb-vs{display:flex;align-items:stretch;}
+  .pb-opt{flex:1;border-radius:18px;padding:15px 12px 14px;text-align:center;position:relative;cursor:pointer;border:1.5px solid transparent;transition:all .18s;}
+  .pb-opt.a{background:radial-gradient(120% 100% at 50% 0%,rgba(34,211,238,.22),rgba(34,211,238,.06));border-color:rgba(34,211,238,.5);}
+  .pb-opt.b{background:radial-gradient(120% 100% at 50% 0%,rgba(251,73,138,.22),rgba(251,73,138,.06));border-color:rgba(251,73,138,.5);}
+  .pb-opt.c{background:radial-gradient(120% 100% at 50% 0%,rgba(255,209,102,.2),rgba(255,209,102,.05));border-color:rgba(255,209,102,.5);}
+  .pb-opt.simple{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:118px;}
+  .pb-opt.on{transform:translateY(-2px);} .pb-opt.a.on{border-color:#22d3ee;box-shadow:0 0 26px rgba(34,211,238,.4);} .pb-opt.b.on{border-color:#fb498a;box-shadow:0 0 26px rgba(251,73,138,.4);} .pb-opt.c.on{border-color:#FFD166;box-shadow:0 0 26px rgba(255,209,102,.35);}
+  .pb-badge{font-size:12px;font-weight:900;} .pb-opt.a .pb-badge{color:#22d3ee;} .pb-opt.b .pb-badge{color:#fb6f92;} .pb-opt.c .pb-badge{color:#FFD166;}
+  .pb-play{width:52px;height:52px;border-radius:50%;margin:10px auto 9px;display:flex;align-items:center;justify-content:center;font-size:23px;}
+  .pb-opt.a .pb-play{background:#22d3ee;color:#06222b;box-shadow:0 0 20px rgba(34,211,238,.5);} .pb-opt.b .pb-play{background:#fb498a;color:#3b0a1e;box-shadow:0 0 20px rgba(251,73,138,.5);}
+  .pb-name{font-size:13.5px;font-weight:800;} .pb-name.big{font-size:19px;font-weight:900;margin-top:8px;}
+  .pb-wave{margin-top:11px;background:rgba(0,0,0,.3);border-radius:10px;padding:9px;} .pb-wave .wf{display:block;height:15px;background:repeating-linear-gradient(90deg,currentColor 0 2px,transparent 2px 4px);opacity:.5;border-radius:2px;} .pb-opt.a .pb-wave{color:#22d3ee;} .pb-opt.b .pb-wave{color:#fb6f92;}
+  .pb-vsmid{display:flex;align-items:center;padding:0 6px;font-size:13px;font-weight:900;color:rgba(255,255,255,.45);}
+  .pb-pct{min-height:8px;}
+  .pb-blind{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:14px;font-size:11.5px;font-weight:700;color:rgba(255,255,255,.5);background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.14);border-radius:12px;padding:11px;} .pb-blind i{color:#C9C4F5;}
+  .pb-pct-row{display:flex;align-items:center;gap:10px;margin-top:12px;} .pb-pct-c{flex:1;} .pb-bar{height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;} .pb-bar>span{display:block;height:100%;border-radius:999px;} .pb-pct-c.a .pb-bar>span{background:#22d3ee;} .pb-pct-c.b .pb-bar>span{background:#fb498a;} .pb-pn{font-size:13px;font-weight:900;margin-top:5px;} .pb-pct-c.a .pb-pn{color:#22d3ee;} .pb-pct-c.b .pb-pn{color:#fb6f92;text-align:right;}
+  .pb-voices{margin-top:20px;} .pb-voices-h{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:900;margin-bottom:10px;} .pb-voices-h i{color:#fb6f92;} .pb-voices-h span{margin-left:auto;font-size:11px;color:rgba(255,255,255,.45);font-weight:600;}
+  .pb-cmt{display:flex;gap:10px;padding:9px 2px;align-items:flex-start;} .pb-cav{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;}
+  .pb-cbd{flex:1;min-width:0;} .pb-cu{font-size:11px;font-weight:700;color:rgba(255,255,255,.6);} .pb-top1{color:#FFD166;font-size:9px;font-weight:900;margin-left:5px;background:rgba(255,209,102,.14);padding:1px 6px;border-radius:999px;} .pb-ct{font-size:13px;margin-top:1px;line-height:1.4;word-break:break-word;}
+  .pb-clike{display:flex;flex-direction:column;align-items:center;gap:1px;flex-shrink:0;cursor:pointer;} .pb-clike i{font-size:18px;color:rgba(255,255,255,.4);} .pb-clike.on i{color:#fb6f92;} .pb-clike b{font-size:10px;font-weight:800;}
+  .pb-noc{font-size:12px;color:rgba(255,255,255,.4);padding:4px 2px;} .pb-more{text-align:center;font-size:12px;font-weight:700;color:rgba(255,255,255,.5);padding:9px;cursor:pointer;}
+  .pb-cta{width:100%;border:none;border-radius:14px;padding:13px;margin-top:11px;font-family:inherit;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(135deg,#a855f7,#d946b8);box-shadow:0 6px 22px rgba(168,85,247,.38);cursor:pointer;}
+  .pb-fab{position:fixed;right:18px;bottom:calc(var(--player-height,60px) + env(safe-area-inset-bottom) + 18px);width:54px;height:54px;border-radius:50%;border:none;background:linear-gradient(135deg,#a855f7,#d946b8);color:#fff;font-size:26px;box-shadow:0 8px 24px rgba(168,85,247,.5);cursor:pointer;z-index:40;display:flex;align-items:center;justify-content:center;}
+  .pb-sheet-back{position:fixed;inset:0;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .25s;z-index:60;} .pb-sheet-back.on{opacity:1;pointer-events:auto;}
+  .pb-sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;max-height:82vh;background:#100d18;border-radius:22px 22px 0 0;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:61;display:flex;flex-direction:column;} .pb-sheet.on{transform:translateY(0);}
+  .pb-grab{width:38px;height:4px;border-radius:999px;background:rgba(255,255,255,.25);margin:9px auto 4px;}
+  .pb-sh-h{text-align:center;font-size:13px;font-weight:800;padding:6px 0 10px;border-bottom:1px solid rgba(255,255,255,.07);position:relative;} .pb-sh-h .x{position:absolute;right:14px;top:3px;font-size:20px;color:rgba(255,255,255,.6);cursor:pointer;}
+  .pb-sh-hint{font-size:10.5px;color:#fb6f92;text-align:center;padding:8px;background:rgba(251,111,146,.08);border-radius:10px;margin:8px 14px 4px;}
+  .pb-sh-list{flex:1;overflow-y:auto;padding:6px 14px;}
+  .pb-sh-add{display:flex;gap:9px;align-items:center;padding:10px 12px calc(10px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.07);} .pb-sh-add input{flex:1;background:#1b1726;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:11px 15px;color:#fff;font-family:inherit;font-size:13px;} .pb-sh-add button{border:none;background:none;color:#8b7cf6;font-weight:800;font-size:14px;cursor:pointer;}
+  .pb-form{padding:4px 16px 16px;overflow-y:auto;} .pb-flab{font-size:11.5px;font-weight:800;color:rgba(255,255,255,.65);margin:14px 0 6px;} .pb-form input,.pb-form select{width:100%;background:#1b1726;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:11px 13px;color:#fff;font-family:inherit;font-size:13px;} .pb-ab{display:flex;gap:8px;} .pb-days{display:flex;gap:8px;} .pb-day{flex:1;text-align:center;border:1px solid rgba(255,255,255,.12);background:#1b1726;color:rgba(255,255,255,.7);border-radius:11px;padding:10px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;} .pb-day.on{background:rgba(201,196,245,.16);border-color:#C9C4F5;color:#fff;}
+  .pb-open{width:100%;border:none;border-radius:13px;padding:13px;margin-top:18px;font-family:inherit;font-size:14px;font-weight:800;color:#06140C;background:linear-gradient(135deg,#C9C4F5,#8B7CF6);cursor:pointer;}
+  `;
+  document.head.appendChild(st);
+}
+
+async function renderProducingBoard(){
+  currentView = 'wall';
+  var app = document.getElementById('app-content'); if (!app) return;
+  _pbStyle();
+  var logged = !!(window.__currentUser && window.__currentUser.id);
+  app.innerHTML =
+    '<div class="pb-page">'
+    + '<div class="pb-top"><span class="pb-top-t">🎬 프로듀싱</span></div>'
+    + '<div class="pb-seg"><b class="'+(window.__pbSeg==='open'?'on':'')+'" onclick="pbSeg(\'open\')">🔥 진행 중</b><b class="'+(window.__pbSeg==='closed'?'on':'')+'" onclick="pbSeg(\'closed\')">🏁 마감</b></div>'
+    + '<div class="pb-feed" id="pb-feed"><div class="pb-loading">불러오는 중…</div></div>'
+    + (logged ? '<button class="pb-fab" onclick="pbOpenCreate()" aria-label="라운드 만들기"><i class="ri-add-line"></i></button>' : '')
+    + '<div class="pb-sheet-back" id="pb-sheet-back" onclick="pbCloseSheet()"></div>'
+    + '<div class="pb-sheet" id="pb-sheet"></div>'
+    + '</div>';
+  _pbLoadFeed();
+}
+window.renderProducingBoard = renderProducingBoard;
+
+async function _pbLoadFeed(){
+  var feed = document.getElementById('pb-feed'); if (!feed) return;
+  if (!window.Producing) { feed.innerHTML = _pbEmptyHtml('아직 준비 중이에요'); return; }
+  var rounds = await window.Producing.fetchBoard(window.__pbSeg);
+  if (!document.getElementById('pb-feed')) return;
+  if (rounds === null) { feed.innerHTML = _pbEmptyHtml('프로듀싱 기능 준비 중', '곧 열려요!'); return; }
+  window.__pbRounds = rounds;
+  if (!rounds.length) { feed.innerHTML = _pbEmptyHtml(window.__pbSeg==='open'?'진행 중인 라운드가 없어요':'마감된 라운드가 없어요', (window.__currentUser&&window.__currentUser.id)?'+ 버튼으로 첫 라운드를 열어보세요':'곧 투표가 열려요'); return; }
+  feed.innerHTML = rounds.map(_pbCardShell).join('');
+  rounds.forEach(function(r){ _pbFillCard(r); });
+}
+function _pbEmptyHtml(t, s){ return '<div class="pb-empty"><b>'+pbEsc(t)+'</b>'+(s?pbEsc(s):'')+'</div>'; }
+
+function _pbOpt(r, o){
+  if (!o) return '';
+  var inner = o.audio
+    ? '<div class="pb-play" onclick="event.stopPropagation(); pbPlay(\''+pbEsc(o.audio)+'\')"><i class="ri-play-fill"></i></div><div class="pb-name">'+pbEsc(o.name)+'</div><div class="pb-wave"><span class="wf"></span></div>'
+    : '<div class="pb-name big">'+pbEsc(o.name)+'</div>';
+  return '<div class="pb-opt '+o.key+(o.audio?'':' simple')+'" onclick="pbVote(\''+r.id+'\',\''+o.key+'\')"><div class="pb-badge">'+o.key.toUpperCase()+'안</div>'+inner+'</div>';
+}
+function _pbCardShell(r){
+  var tr = _pbTrack(r.track_id);
+  var cover = (tr && tr.cover) ? tr.cover : '';
+  var title = (tr && tr.title) ? tr.title.replace(/\s*\(Demo.*\)$/i,'') : (r.song_title || '곡');
+  var artist = r.artist_name || (tr && tr.artist) || '';
+  var cands = r.candidates || [];
+  var coverHtml = cover ? '<img class="pb-cover-img" src="'+pbEsc(cover)+'" alt="">' : '<div class="pb-cover-grad" style="background:linear-gradient(150deg,#6d28d9,#db2777 70%,#7c3aed)"></div>';
+  return '<div class="pb-card" id="pb-card-'+r.id+'" data-rid="'+r.id+'">'
+    + '<div class="pb-cover">'+coverHtml+'<div class="pb-song"><div class="pb-song-t">'+pbEsc(title)+'</div><div class="pb-song-s">'+pbEsc(artist)+'</div></div></div>'
+    + '<div class="pb-q">'+pbEsc(r.question)+'</div>'
+    + '<div class="pb-vs">'+_pbOpt(r,cands[0])+'<div class="pb-vsmid">VS</div>'+_pbOpt(r,cands[1])+'</div>'
+    + '<div class="pb-pct" id="pb-pct-'+r.id+'">'+(r.status==='open'?'<div class="pb-blind"><i class="ri-eye-off-line"></i> 투표 중 · 결과는 마감 후 공개</div>':'')+'</div>'
+    + '<div class="pb-voices"><div class="pb-voices-h"><i class="ri-chat-heart-fill"></i> 우리의 목소리 <span id="pb-cc-'+r.id+'"></span></div>'
+    + '<div class="pb-cmt-prev" id="pb-prev-'+r.id+'"></div>'
+    + '<div class="pb-more" onclick="pbOpenSheet(\''+r.id+'\')">댓글 모두 보기 ▾</div></div>'
+    + '<button class="pb-cta" onclick="pbOpenSheet(\''+r.id+'\')"><i class="ri-quill-pen-line"></i> 이 데모에 의견 투지하기</button>'
+    + '</div>';
+}
+function _pbCmtRow(r, c, d, isTop){
+  var likes = d.tally[c.id]||0, on = r.__myChoice===c.id, nm = c.user_name || '익명';
+  return '<div class="pb-cmt"><div class="pb-cav" style="background:'+_pcColor(nm)+'">'+pbEsc(nm.charAt(0))+'</div>'
+    + '<div class="pb-cbd"><div class="pb-cu">'+pbEsc(nm)+(isTop?'<span class="pb-top1">🏆 배틀 합류</span>':'')+'</div><div class="pb-ct">'+pbEsc(c.body)+'</div></div>'
+    + '<div class="pb-clike'+(on?' on':'')+'" onclick="event.stopPropagation(); pbLikeComment(\''+r.id+'\',\''+c.id+'\')"><i class="'+(on?'ri-heart-3-fill':'ri-heart-3-line')+'"></i><b>'+likes+'</b></div></div>';
+}
+function _pbPctHtml(r, d){
+  var cands = r.candidates||[]; var a = d.tally[(cands[0]||{}).key]||0, b = d.tally[(cands[1]||{}).key]||0;
+  var sum = a+b||1, ap = Math.round(a/sum*100), bp = 100-ap;
+  return '<div class="pb-pct-row"><div class="pb-pct-c a"><div class="pb-bar"><span style="width:'+ap+'%"></span></div><div class="pb-pn">'+ap+'%</div></div><div class="pb-pct-c b"><div class="pb-bar"><span style="width:'+bp+'%;margin-left:auto"></span></div><div class="pb-pn">'+bp+'%</div></div></div>';
+}
+async function _pbFillCard(r){
+  if (!window.Producing) return;
+  var d = await window.Producing.fetchDetail(r.id);
+  r.__detail = d; r.__myChoice = d.myChoice;
+  var card = document.getElementById('pb-card-'+r.id); if (!card) return;
+  var cc = document.getElementById('pb-cc-'+r.id); if (cc) cc.textContent = d.comments.length;
+  var sorted = d.comments.slice().sort(function(a,b){return (d.tally[b.id]||0)-(d.tally[a.id]||0);});
+  var prev = document.getElementById('pb-prev-'+r.id);
+  if (prev) prev.innerHTML = sorted.length ? sorted.slice(0,3).map(function(c,i){return _pbCmtRow(r,c,d,i===0);}).join('') : '<div class="pb-noc">A·B 말고 다른 의견 있으면 남겨주세요! 하트 1등은 배틀(C안)로 합류해요.</div>';
+  var pctEl = document.getElementById('pb-pct-'+r.id);
+  if (pctEl && r.status==='closed') pctEl.innerHTML = _pbPctHtml(r, d);
+  card.querySelectorAll('.pb-opt').forEach(function(el){ el.classList.remove('on'); });
+  if (d.myChoice==='a'||d.myChoice==='b'||d.myChoice==='c'){ var o=card.querySelector('.pb-opt.'+d.myChoice); if(o)o.classList.add('on'); }
+}
+
+window.pbSeg = function(mode){ window.__pbSeg = mode; renderProducingBoard(); };
+window.pbPlay = function(url){ try{ if(window.__pbAudio){window.__pbAudio.pause();} window.__pbAudio = new Audio(url); window.__pbAudio.play(); }catch(e){} };
+window.pbVote = async function(rid, choice){
+  if (!window.__currentUser || !window.__currentUser.id){ alert(_t('로그인하면 투표할 수 있어요','Log in to vote')); return; }
+  var r = _pbFindRound(rid); if (r && r.status!=='open'){ return; }
+  try { await window.Producing.vote(rid, choice); if (r) await _pbFillCard(r); }
+  catch(e){ alert(_t('실패: ','Failed: ')+(e.message||e)); }
+};
+window.pbLikeComment = async function(rid, cid){
+  if (!window.__currentUser || !window.__currentUser.id){ alert(_t('로그인하면 추천할 수 있어요','Log in to vote')); return; }
+  try { await window.Producing.vote(rid, cid); var r=_pbFindRound(rid); if(r){ await _pbFillCard(r); if (window.__pbSheetRound===rid) _pbRenderSheet(r); } }
+  catch(e){ alert(_t('실패: ','Failed: ')+(e.message||e)); }
+};
+window.pbOpenSheet = async function(rid){
+  var r = _pbFindRound(rid); if (!r) return;
+  window.__pbSheetRound = rid;
+  var sheet = document.getElementById('pb-sheet');
+  sheet.innerHTML = '<div class="pb-grab"></div><div class="pb-sh-h" id="pb-sh-h">댓글<span class="x" onclick="pbCloseSheet()"><i class="ri-close-line"></i></span></div>'
+    + '<div class="pb-sh-hint">💡 하트 1등 댓글이 <b>제안 배틀(C안)</b>에 올라가요</div>'
+    + '<div class="pb-sh-list" id="pb-sh-list"><div class="pb-noc" style="text-align:center;padding:30px">불러오는 중…</div></div>'
+    + '<div class="pb-sh-add"><input id="pb-newcmt" placeholder="'+_t('의견 남기기…','Add your idea…')+'" maxlength="500"><button onclick="pbAddComment()">'+_t('게시','Post')+'</button></div>';
+  document.getElementById('pb-sheet-back').classList.add('on');
+  sheet.classList.add('on');
+  if (!r.__detail) { await _pbFillCard(r); }
+  _pbRenderSheet(r);
+};
+function _pbRenderSheet(r){
+  if (window.__pbSheetRound !== r.id) return;
+  var d = r.__detail || { comments:[], tally:{} };
+  var sorted = d.comments.slice().sort(function(a,b){return (d.tally[b.id]||0)-(d.tally[a.id]||0);});
+  var h = document.getElementById('pb-sh-h'); if (h) h.firstChild.textContent = '댓글 '+d.comments.length+' ';
+  var list = document.getElementById('pb-sh-list');
+  if (list) list.innerHTML = sorted.length ? sorted.map(function(c,i){return _pbCmtRow(r,c,d,i===0);}).join('') : '<div class="pb-noc" style="text-align:center;padding:30px">첫 의견을 남겨보세요!</div>';
+}
+window.pbCloseSheet = function(){ document.getElementById('pb-sheet-back').classList.remove('on'); var s=document.getElementById('pb-sheet'); if(s)s.classList.remove('on'); window.__pbSheetRound=null; };
+window.pbAddComment = async function(){
+  var rid = window.__pbSheetRound; var r = _pbFindRound(rid); if (!r) return;
+  if (!window.__currentUser || !window.__currentUser.id){ alert(_t('로그인하면 댓글을 달 수 있어요','Log in to comment')); return; }
+  var inp = document.getElementById('pb-newcmt'); var v=(inp.value||'').trim(); if(!v) return;
+  inp.disabled = true;
+  try { var c = await window.Producing.addComment(rid, v); try{ await window.Producing.vote(rid, c.id); }catch(_){} inp.value=''; inp.disabled=false; await _pbFillCard(r); _pbRenderSheet(r); var l=document.getElementById('pb-sh-list'); if(l)l.scrollTop=0; }
+  catch(e){ alert(_t('실패: ','Failed: ')+(e.message||e)); inp.disabled=false; }
+};
+
+// ── 라운드 만들기 (보드 + 버튼) ──
+window.pbOpenCreate = function(){
+  if (!window.__currentUser || !window.__currentUser.id){ alert(_t('로그인이 필요해요','Login required')); navigateTo('auth'); return; }
+  var me = window.__currentUser;
+  var db = window.DB.get();
+  var mine = (db.tracks||[]).filter(function(t){ return t && (t.artist===me.name || (me.id && t.artistId===me.id)); });
+  if (!mine.length){ alert(_t('먼저 곡(데모)을 올려야 라운드를 만들 수 있어요','Upload a demo first')); return; }
+  var opts = mine.map(function(t){ var ti=(t.title||'곡').replace(/\s*\(Demo.*\)$/i,''); return '<option value="'+pbEsc(t.id)+'" data-pid="'+pbEsc(t.projectId||('proj_'+t.id))+'">'+pbEsc(ti)+' · '+pbEsc(t.versionLabel||'')+'</option>'; }).join('');
+  var topics = [['🎵 편곡','2절에 뭐 더 넣을까?','드럼 추가','기타 추가'],['👕 의상','무대 의상 뭐 입을까?','빨간 옷','파란 옷'],['✍️ 제목','곡 제목 뭐로?','',''],['💡 직접','','','']];
+  window.__pbTopics = topics;
+  var chips = topics.map(function(t,i){ return '<button type="button" class="pb-day" style="flex:0 0 auto" onclick="pbFillTopic('+i+')">'+t[0]+'</button>'; }).join('');
+  var sheet = document.getElementById('pb-sheet');
+  window.__pbSheetRound = null;
+  sheet.innerHTML = '<div class="pb-grab"></div><div class="pb-sh-h">🎬 프로듀싱 라운드 만들기<span class="x" onclick="pbCloseSheet()"><i class="ri-close-line"></i></span></div>'
+    + '<div class="pb-form">'
+    + '<div class="pb-flab">어떤 곡/데모?</div><select id="pb-c-track">'+opts+'</select>'
+    + '<div class="pb-flab">빠른 주제 (누르면 자동 채움)</div><div class="pb-days" style="flex-wrap:wrap">'+chips+'</div>'
+    + '<div class="pb-flab">뭘 정할까요?</div><input id="pb-c-q" maxlength="200" placeholder="예: 후렴 편곡 / 무대 의상…">'
+    + '<div class="pb-flab">두 안 (A · B) — 글자만 적으면 간단 투표</div><div class="pb-ab"><input id="pb-c-a" maxlength="60" placeholder="A안"><input id="pb-c-b" maxlength="60" placeholder="B안"></div>'
+    + '<div class="pb-flab">마감</div><div class="pb-days"><button type="button" class="pb-day" data-day="1" onclick="pbPickDay(this)">1일</button><button type="button" class="pb-day on" data-day="3" onclick="pbPickDay(this)">3일</button><button type="button" class="pb-day" data-day="7" onclick="pbPickDay(this)">7일</button></div>'
+    + '<button class="pb-open" onclick="pbCreate(this)"><i class="ri-rocket-2-line"></i> 라운드 열기</button>'
+    + '</div>';
+  document.getElementById('pb-sheet-back').classList.add('on');
+  sheet.classList.add('on');
+};
+window.pbFillTopic = function(i){ var t=(window.__pbTopics||[])[i]; if(!t)return; document.getElementById('pb-c-q').value=t[1]; document.getElementById('pb-c-a').value=t[2]; document.getElementById('pb-c-b').value=t[3]; };
+window.pbPickDay = function(el){ el.parentNode.querySelectorAll('.pb-day').forEach(function(c){c.classList.remove('on');}); el.classList.add('on'); };
+window.pbCreate = async function(btn){
+  var sel = document.getElementById('pb-c-track'); var opt = sel.options[sel.selectedIndex];
+  var trackId = sel.value, projectId = opt ? opt.getAttribute('data-pid') : ('proj_'+trackId);
+  var q = (document.getElementById('pb-c-q').value||'').trim();
+  var a = (document.getElementById('pb-c-a').value||'').trim();
+  var b = (document.getElementById('pb-c-b').value||'').trim();
+  if (!a || !b){ alert(_t('A·B 두 안을 적어주세요','Enter A and B')); return; }
+  var dayBtn = document.querySelector('.pb-form .pb-day.on[data-day]'); var days = dayBtn?parseInt(dayBtn.dataset.day,10):3;
+  btn.disabled = true; var old = btn.innerHTML; btn.innerHTML = '...';
+  try {
+    await window.Producing.create({ projectId: projectId, trackId: trackId, question: q||_t('다음 데모, 어디로?','Where next?'), candidates: [{key:'a',name:a},{key:'b',name:b}], closesAt: new Date(Date.now()+days*86400000).toISOString() });
+    if (typeof showToast==='function') showToast(_t('라운드가 열렸어요! 🎬','Round opened! 🎬'));
+    window.__pbSeg = 'open'; pbCloseSheet(); renderProducingBoard();
+  } catch(e){ alert(_t('실패: ','Failed: ')+(e.message||e)); btn.disabled=false; btn.innerHTML=old; }
+};
+
+// 주절주절 = 스레드 피드 (라이브). 라우트 'wall' 이 이 함수를 호출. (프로듀싱 게시판으로 교체됨 — 보존/롤백용)
 async function renderWall() {
   const appContent = document.getElementById('app-content');
   if (!appContent) return;

@@ -2101,6 +2101,16 @@
       return data || [];
     },
 
+    // 게시판 피드 — 진행중/마감 라운드 전부(최신순). status 생략 시 전체.
+    async fetchBoard(status) {
+      if (!window.supabase) return null;
+      let q = window.supabase.from('producing_rounds').select('*').order('created_at', { ascending: false }).limit(80);
+      if (status) q = q.eq('status', status);
+      const { data, error } = await q;
+      if (error) { console.warn('[Producing] fetchBoard', error.message); return null; }
+      return data || [];
+    },
+
     // 한 라운드의 댓글 + 투표 집계(+내 선택). 테이블 없으면 빈 결과.
     async fetchDetail(roundId) {
       const empty = { comments: [], tally: {}, total: 0, myChoice: null, votes: [] };

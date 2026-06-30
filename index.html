@@ -47,7 +47,7 @@
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=905">
+  <link rel="stylesheet" href="css/global.css?v=906">
 </head>
 <body>
 
@@ -57,7 +57,7 @@
     <div class="beta-wordmark beta-wordmark-menu" role="button" tabindex="0" aria-label="off-stage — 발견으로" onclick="window.navigateTo && window.navigateTo('shapes')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); window.navigateTo && window.navigateTo('shapes');}"><span class="bw-name">off-stage</span><span class="bw-tag">BETA</span></div>
     <nav class="sidebar-links">
       <a href="#" data-route="shapes" class="active" aria-label="발견"><i class="ri-triangle-fill"></i> <span class="nav-label"><span data-i18n-ko>발견</span><span data-i18n-en>Discover</span></span></a>
-      <a href="#" data-route="wall" aria-label="주절주절"><i class="ri-sticky-note-fill"></i> <span class="nav-label"><span data-i18n-ko>주절주절</span><span data-i18n-en>blah blah</span></span></a>
+      <a href="#" data-route="wall" aria-label="프로듀싱"><i class="ri-movie-2-fill"></i> <span class="nav-label"><span data-i18n-ko>프로듀싱</span><span data-i18n-en>Producing</span></span></a>
       <a href="#" data-route="tags" aria-label="TAG"><i class="ri-hashtag"></i> <span class="nav-label">Tags</span></a>
       <a href="#" data-route="universe" aria-label="즐겨찾기"><span class="mini-planet" aria-hidden="true"><span class="mp-ring mp-ring-back"></span><span class="mp-sphere"></span><span class="mp-ring mp-ring-front"></span></span> <span class="nav-label"><span data-i18n-ko>즐겨찾기</span><span data-i18n-en>Favorites</span></span></a>
       <a href="#" data-route="my-artist" class="sidebar-artist-link"><i class="ri-mic-fill"></i> <span data-i18n-ko>MY Page</span><span data-i18n-en>MY Page</span></a>
@@ -153,8 +153,8 @@
     <a href="#" class="mobile-tab" data-route="shapes" aria-label="발견" onclick="event.preventDefault(); navigateTo('shapes');">
       <i class="ri-triangle-line"></i><span class="mobile-tab-label"><span data-i18n-ko>발견</span><span data-i18n-en>Discover</span></span>
     </a>
-    <a href="#" class="mobile-tab" data-route="wall" aria-label="주절주절" onclick="event.preventDefault(); navigateTo('wall');">
-      <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="mobile-tab-label"><span data-i18n-ko>주절주절</span><span data-i18n-en>blah blah</span></span>
+    <a href="#" class="mobile-tab" data-route="wall" aria-label="프로듀싱" onclick="event.preventDefault(); navigateTo('wall');">
+      <svg class="tab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span class="mobile-tab-label"><span data-i18n-ko>프로듀싱</span><span data-i18n-en>Producing</span></span>
     </a>
     <a href="#" class="mobile-tab" data-route="tags" aria-label="TAG" onclick="event.preventDefault(); navigateTo('tags');">
       <i class="ri-hashtag"></i><span class="mobile-tab-label">Tags</span>
@@ -271,12 +271,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=905"></script>
-  <script defer src="js/data.js?v=905"></script>
-  <script defer src="js/supabase.js?v=905"></script>
-  <script defer src="js/analytics.js?v=905"></script>
-  <script defer src="js/distribute.js?v=905"></script>
-  <script defer src="js/app.js?v=905"></script>
-  <script defer src="js/polaroid.js?v=905"></script>
+  <script defer src="js/supabase-init.js?v=906"></script>
+  <script defer src="js/data.js?v=906"></script>
+  <script defer src="js/supabase.js?v=906"></script>
+  <script defer src="js/analytics.js?v=906"></script>
+  <script defer src="js/distribute.js?v=906"></script>
+  <script defer src="js/app.js?v=906"></script>
+  <script defer src="js/polaroid.js?v=906"></script>
 </body>
 </html>
