@@ -7491,9 +7491,10 @@ function renderShapes() {
     const _drift = _isNarrow ? 7 : 9;      // 제자리 둥둥 — 부드러운 진폭(겹침 방지)
     const dx = ((((seed >>> 22) % (_drift * 2))) - _drift);
     const dy = ((((seed >>> 26) % (_drift * 2))) - _drift);
-    // 크기 = 등록 크기 고정 + 인기도(♥*3+재생)에 따라 (모바일 +18%, PC +35%) (#3, #4)
+    // 크기 = 등록 크기 + 인기도(♥*3+재생). 발견 촘촘하게: 도형 살짝 축소(데스크톱 와이드에서 한 줄에 더 들어가게).
     const _pop = ((track.likes || 0) * 3) + (track.plays || 0);
-    const _popScale = (1 + (_isNarrow ? 0.18 : 0.35) * Math.min(1, _pop / _maxPop)).toFixed(3);
+    const _shrink = _isNarrow ? 0.9 : 0.72;
+    const _popScale = (_shrink * (1 + (_isNarrow ? 0.18 : 0.35) * Math.min(1, _pop / _maxPop))).toFixed(3);
     const _newestStyle = _newest ? ' z-index:30;' : '';     // 최신은 앞으로 (#6)
 
     if (_jacketMode) {
@@ -7713,9 +7714,11 @@ function startShapesPhysics(field, viewport) {
   // 한 화면에 ~8개(3열). 씨드 결정적 배치 → 재진입해도 동일(랜덤 초기화 없음).
   const fieldW0 = field.clientWidth || (viewport && viewport.clientWidth) || window.innerWidth;
   const vvh = (viewport && viewport.clientHeight) || window.innerHeight || 600;
-  const PER = 7, cols = 3;   // 한 화면에 ~7개(사용자 요청)
+  // 촘촘한 씨드 격자 — 도형 크기에 맞춰 빽빽하게 깔고, 연속 분리가 안 겹치게 마무리한다.
+  // (이전엔 cellH≈vvh*3/7 ≈ 428px 로 너무 성겨서 분리가 더 조일 게 없었음 → 띄엄띄엄)
+  const cols = Math.max(1, Math.min(4, Math.round(fieldW0 / 240)));
   const rows = Math.max(1, Math.ceil(els.length / cols));
-  const cellH = Math.max(60, vvh / (PER / cols));         // 화면당 PER개가 되도록 행 높이
+  const cellH = 195;                                      // 촘촘한 행 간격(분리가 겹침만 풀어줌, 과밀 방지)
   const fieldH = Math.max(vvh, rows * cellH);
   field.style.height = fieldH + 'px';
   const cellW = fieldW0 / cols;
@@ -7739,7 +7742,7 @@ function startShapesPhysics(field, viewport) {
     // x,y = 제자리 앵커(분리/드래그가 옮김). ph/amp = 작은 제자리 둥둥.
     // 클립 도형(별·폭발별·삼각형)은 bbox가 실제보다 커서 반경을 줄여 덜 띄엄띄엄하게(안 겹침은 유지).
     const _clip = /shape-(burst|tri|star|diamond|hexagon|parallelogram)/.test(el.className);
-    const item = { el, x, y, w, h, sc, r: Math.max(w, h) / 2 * (_clip ? 0.76 : 0.98), ph: _h(idx + 11) * 6.283, amp: 2.5 + _h(idx + 5) * 3 };
+    const item = { el, x, y, w, h, sc, r: Math.max(w, h) / 2 * (_clip ? 0.6 : 0.95), ph: _h(idx + 11) * 6.283, amp: 1.5 + _h(idx + 5) * 2.5 };
     el.__phys = item;
     el.classList.add('phys-shape');
     return item;
@@ -7749,8 +7752,8 @@ function startShapesPhysics(field, viewport) {
   // 매 프레임 강제 리플로우(레이아웃 thrash)가 일어나 '던질 때 끊김'의 주범. 캐시해서 제거.
   const BW0 = field.clientWidth || fieldW0;
   const BH0 = fieldH;
-  // 초기 강하게 분리 → 빠르게 안 겹치게 정착(가로 정체 시 세로로 펼침). 필드는 그만큼 아래로.
-  for (let _it = 0; _it < 240; _it++) _shapeSeparate(items, BW0);
+  // 초기 강하게 분리 → 빠르게 안 겹치게 정착(가로 정체 시 세로로 펼침). 촘촘한 씨드라 반복 넉넉히.
+  for (let _it = 0; _it < 360; _it++) _shapeSeparate(items, BW0);
   let _fieldH = BH0;
   items.forEach((b) => { if (b.y + b.h + 40 > _fieldH) _fieldH = b.y + b.h + 40; });
   field.style.height = _fieldH + 'px';
@@ -7785,7 +7788,7 @@ function _shapeSeparate(items, BW) {
       const c = items[j]; if (c.el.classList.contains('dragging')) continue;
       const acx = a.x + a.w / 2, acy = a.y + a.h / 2, ccx = c.x + c.w / 2, ccy = c.y + c.h / 2;
       let dx = ccx - acx, dy = ccy - acy; const dist = Math.hypot(dx, dy) || 0.01;
-      const min = (a.r + c.r) + 8;     // 반경(클립 보정 반영) + 작은 여백
+      const min = (a.r + c.r) + 9;     // 반경(클립 보정) + bob(둥둥) 진폭만큼 여백 → 흔들려도 안 닿음
       if (dist < min) {
         const ov = (min - dist) / 2; let nx = dx / dist, ny = dy / dist;
         if (Math.abs(ny) < 0.25) { ny = (acy <= ccy ? 1 : -1) * 0.5; const nm = Math.hypot(nx, ny) || 1; nx /= nm; ny /= nm; }
