@@ -11,3 +11,4 @@ node_modules/
 .idea/
 .vscode/
 *.swp
+preview-server-windows.js
