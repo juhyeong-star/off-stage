@@ -1703,6 +1703,17 @@ body:has(#shape-shorts-overlay) .deco-shape {
   filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
 }
 
+/* 빈티지(Memphis) 장식 — 색종이·반짝이·음표·종이뭉치. 곡 아님, 도형 뒤, 탭 통과. */
+.vtg-deco { position: absolute; z-index: 0; pointer-events: none; will-change: transform; }
+.vtg-spark { color: rgba(255,255,255,0.72); font-weight: 400; line-height: 1; }
+.vtg-note { color: #F5862B; font-weight: 900; font-size: 32px; line-height: 1; text-shadow: 0 0 10px rgba(245,134,43,0.45); }
+.vtg-papers { width: 56px; height: 62px; }
+.vtg-papers i { position: absolute; width: 48px; height: 56px; background: #fcfcfc; border: 1px solid #cfcfcf; border-radius: 4px; }
+.vtg-papers i:nth-child(1) { left: 7px; top: 0; transform: rotate(-9deg); }
+.vtg-papers i:nth-child(2) { left: 3px; top: 3px; transform: rotate(6deg); }
+.vtg-papers i:nth-child(3) { left: 0; top: 6px; transform: rotate(-2deg); }
+@media (max-width: 600px) { .vtg-note { font-size: 24px; } .vtg-papers { width: 40px; height: 46px; } .vtg-papers i { width: 34px; height: 40px; } }
+
 /* Float animation */
 @keyframes floatDrift {
   0%   { transform: translate(0, 0) rotate(var(--rot)) scale(var(--scale, 1)); }

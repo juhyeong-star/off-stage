@@ -7554,13 +7554,42 @@ function renderShapes() {
     </div>
   `;
 
+  // 빈티지(Memphis) 장식 — 곡 아닌 순수 장식(색종이·음표·종이뭉치·반짝이). 도형 뒤(z=0), floatDrift 제자리 부유.
+  // top 을 %로 줘서 물리가 필드를 늘려도 전체 높이에 고르게 퍼지게.
+  let vintageDecoHtml = '';
+  try {
+    const _vr = _mulberry32((_hashSeed(_viewerSeed + ':vintage') >>> 0) || 7);
+    const _cc = ['#FF2EA0', '#00E5FF', '#FFD166', '#76FF03', '#B14BFF', '#FF6B6B', '#2EE6D6'];
+    for (let i = 0; i < 52; i++) {
+      const x = (_vr() * 95 + 2).toFixed(1), y = (_vr() * 97 + 1).toFixed(1), sz = 7 + Math.floor(_vr() * 15);
+      const col = _cc[Math.floor(_vr() * _cc.length)], dur = 8 + Math.floor(_vr() * 10);
+      const css = _vr() < 0.4
+        ? `width:0;height:0;border-left:${(sz / 2).toFixed(0)}px solid transparent;border-right:${(sz / 2).toFixed(0)}px solid transparent;border-bottom:${sz}px solid ${col};`
+        : `width:${sz}px;height:${sz}px;background:${col};border-radius:${_vr() < 0.5 ? '50%' : '2px'};`;
+      vintageDecoHtml += `<div class="vtg-deco" style="left:${x}%;top:${y}%;${css}animation:floatDrift ${dur}s ease-in-out infinite;--dx:${(_vr() * 16 - 8).toFixed(0)}px;--dy:${(_vr() * 16 - 8).toFixed(0)}px;--rot:${Math.floor(_vr() * 360)}deg;"></div>`;
+    }
+    for (let i = 0; i < 16; i++) {
+      const x = (_vr() * 94 + 3).toFixed(1), y = (_vr() * 96 + 2).toFixed(1), sz = 10 + Math.floor(_vr() * 9), dur = 7 + Math.floor(_vr() * 8);
+      vintageDecoHtml += `<div class="vtg-deco vtg-spark" style="left:${x}%;top:${y}%;font-size:${sz}px;animation:floatDrift ${dur}s ease-in-out infinite;--dx:6px;--dy:-6px;--rot:0deg;">✦</div>`;
+    }
+    for (let i = 0; i < 7; i++) {
+      const x = (_vr() * 86 + 5).toFixed(1), y = (_vr() * 92 + 3).toFixed(1), dur = 9 + Math.floor(_vr() * 7);
+      vintageDecoHtml += `<div class="vtg-deco vtg-note" style="left:${x}%;top:${y}%;animation:floatDrift ${dur}s ease-in-out infinite;--dx:8px;--dy:-8px;--rot:${(_vr() * 30 - 15).toFixed(0)}deg;">♪♪</div>`;
+    }
+    for (let i = 0; i < 5; i++) {
+      const x = (_vr() * 76 + 9).toFixed(1), y = (_vr() * 88 + 4).toFixed(1), dur = 11 + Math.floor(_vr() * 6);
+      vintageDecoHtml += `<div class="vtg-deco vtg-papers" style="left:${x}%;top:${y}%;animation:floatDrift ${dur}s ease-in-out infinite;--dx:5px;--dy:-5px;--rot:${(_vr() * 16 - 8).toFixed(0)}deg;"><i></i><i></i><i></i></div>`;
+    }
+  } catch (e) { console.warn('[shapes] vintage deco', e); }
+
   // .shapes-universe = 뷰포트 크기 스크롤 창, .universe-field = 그보다 큰 2D 필드(사방으로 큼)
   appContent.innerHTML = `
     <div class="page-intro">${_i18n('우주 탐색 피드', 'Explore the Universe')}</div>
-    <div class="shapes-subtitle">${_i18n('탭=재생 · 끌어서 휙 던지기 · 벽에서 팅김', 'Tap = play · Drag = throw · Bounce off walls')}</div>
+    <div class="shapes-subtitle">${_i18n('탭=재생 · 끌어서 옮기기 · 제자리에 둥둥', 'Tap = play · Drag to move · Floating in place')}</div>
     <div class="shapes-universe" id="shapes-scroll">
       <div class="universe-field" style="width:100%; height:${_fieldH}px;">
         ${decoHtml}
+        ${vintageDecoHtml}
         ${shapesHtml}
       </div>
     </div>
