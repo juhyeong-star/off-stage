@@ -8019,7 +8019,7 @@ function _shapeSeparate(items, BW) {
       const c = items[j]; if (c.el.classList.contains('dragging')) continue;
       const acx = a.x + a.w / 2, acy = a.y + a.h / 2, ccx = c.x + c.w / 2, ccy = c.y + c.h / 2;
       let dx = ccx - acx, dy = ccy - acy; const dist = Math.hypot(dx, dy) || 0.01;
-      const min = (a.r + c.r) + 9;     // 반경(클립 보정) + bob(둥둥) 진폭만큼 여백 → 흔들려도 안 닿음
+      const min = (a.r + c.r) + 26;    // 반경 + 여백(사용자: 좀 더 덜 겹치게 범위 확대) → 사이 간격 넉넉
       if (dist < min) {
         const ov = (min - dist) / 2; let nx = dx / dist, ny = dy / dist;
         if (Math.abs(ny) < 0.25) { ny = (acy <= ccy ? 1 : -1) * 0.5; const nm = Math.hypot(nx, ny) || 1; nx /= nm; ny /= nm; }
