@@ -5855,6 +5855,17 @@ function genreColorOf(track) {
 }
 window.genreColorOf = genreColorOf;
 
+// 도형 배경색 대비 글자색 — 어두운 색이면 흰 글씨, 밝으면 검정(상대휘도).
+function _textOn(hex) {
+  let c = String(hex || '').trim().replace(/^#/, '');
+  if (c.length === 3) c = c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
+  if (!/^[0-9a-fA-F]{6}$/.test(c)) return '#111';
+  const n = parseInt(c, 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum < 0.56 ? '#fff' : '#111';
+}
+window._textOn = _textOn;
+
 // ── 추천 알고리즘 (콘텐츠 기반 + 팔로우 부스트, 백엔드 ML 없음) ──────────────
 // 내 취향(응원·팔로우한 장르/태그/아티스트)으로 '모을 데모'를 점수화해 정렬.
 // '모을 카드'·추천 섹션·자동재생에 재사용. allTracks=후보풀, cheers=내 응원(track_id 포함), followed=[{name}].
@@ -7503,7 +7514,7 @@ function renderShapes() {
       const isTriangle = shape === 'triangle';
       const bgStyle = isTriangle
         ? `border-bottom-color: ${color}; color: ${color}; --shape-bg: ${color};`
-        : `background: ${color}; --shape-bg: ${color};`;
+        : `background: ${color}; color: ${_textOn(color)}; --shape-bg: ${color};`;
       shapesHtml += `
       <div class="floating-shape shape-${shape}${_newest ? ' is-newest' : ''}" data-track-id="${track.id}" data-pass="${pass}"${_pinned ? ' data-pinned="1"' : ''} data-artist="${encodeURIComponent(track.artist || '')}"
            style="${bgStyle} left:${xBase}%; top:${yPx}px;${_newestStyle} animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg; --scale:${_popScale};">
@@ -7587,7 +7598,7 @@ function renderShapes() {
 window.renderShapes = renderShapes;
 
 // ============================================================
-// 발견(도형) 물리 — 드리프트 + 벽 튕김 + 충돌 + 끌어서 던지기(flick).
+// 발견(도형) 물리 — 둥둥 드리프트 + 벽 가둠 + 안겹침 분리(도형끼리 튕김 없음) + 끌어서 던지기(flick).
 // shape 모드에서만 동작(각 도형 el.__phys 부착). universe(즐겨찾기)는
 // __phys 가 안 붙으므로 기존 floatDrift/드래그 그대로 유지된다.
 // 탭1=재생 / 탭2=아티스트 페이지 는 initShapeDrag 의 탭 로직이 처리.
@@ -7627,7 +7638,7 @@ function startShapesPhysics(field, viewport) {
   field.style.height = fieldH + 'px';
   const cellW = fieldW0 / cols;
   function _h(n) { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); }  // 결정적 0~1
-  const BASE = 0.9;                                        // 기본 드리프트 속도(테스트처럼 계속 떠다님)
+  const BASE = 0.55;                                       // 우주에 둥둥 — 느린 드리프트(계속 떠다님)
   window.__shapePos = window.__shapePos || {};
   const items = els.map((el, idx) => {
     const sc = parseFloat((el.style.getPropertyValue('--scale') || '1')) || 1;
@@ -7680,20 +7691,17 @@ function startShapesPhysics(field, viewport) {
       if (sp > BASE * 1.5) { b.vx *= 0.99; b.vy *= 0.99; }
       else if (sp < BASE * 0.55) { const a = (sp < 0.01) ? (_h(i + 2) * 6.283) : Math.atan2(b.vy, b.vx); b.vx = Math.cos(a) * BASE; b.vy = Math.sin(a) * BASE; }
     }
-    // 서로 부딪히면 튕김 — 분리 + 법선 방향 속도 교환(탄성)
+    // 안 겹치게만 — 부드러운 위치 분리(튕김/속도 교환 없음). 둥둥 떠다니다 서로 살짝 밀어내며 비켜감.
     for (let i = 0; i < n; i++) {
       const a = its[i]; if (a.el.classList.contains('dragging')) continue;
       for (let j = i + 1; j < n; j++) {
         const c = its[j]; if (c.el.classList.contains('dragging')) continue;
         const acx = a.x + a.w / 2, acy = a.y + a.h / 2, ccx = c.x + c.w / 2, ccy = c.y + c.h / 2;
         let dx = ccx - acx, dy = ccy - acy; const dist = Math.hypot(dx, dy) || 0.01;
-        const min = (a.r + c.r) * 0.9;
+        const min = (a.r + c.r) * 1.02;                   // 닿으면 살짝 여백 두고 분리
         if (dist < min) {
           const ov = (min - dist) / 2, nx = dx / dist, ny = dy / dist;
-          a.x -= nx * ov; a.y -= ny * ov; c.x += nx * ov; c.y += ny * ov;
-          const avn = a.vx * nx + a.vy * ny, cvn = c.vx * nx + c.vy * ny, diff = cvn - avn;
-          a.vx += diff * nx; a.vy += diff * ny;
-          c.vx -= diff * nx; c.vy -= diff * ny;
+          a.x -= nx * ov; a.y -= ny * ov; c.x += nx * ov; c.y += ny * ov;   // 위치만 밀어 분리(튕김 X)
         }
       }
     }
