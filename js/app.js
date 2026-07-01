@@ -8070,38 +8070,47 @@ function renderDiscoverPattern(tracks){
   app.innerHTML = '<div class="dp-scroll" id="dp-scroll"></div>'
     + '<div class="upload-fab" onclick="navigateTo(\'upload\')" title="음악 업로드"><i class="ri-add-line"></i></div>';
   var scroll = document.getElementById('dp-scroll'), ti=0, built=false;
-  function songDim(el,s){ var te=el.querySelector('.dp-s-text'); te.style.fontSize='12px'; te.style.whiteSpace='nowrap'; var cap=Math.max(1,s.w*s.fit); var scale=Math.max(.74,Math.min(1.3,te.offsetWidth/cap)); return {w:Math.round(s.w*scale),h:Math.round(s.h*scale)}; }
+  // 곡 도형: 태그 길이에 맞춰 스케일(mul=화면폭 배율 반영). 글자=12*mul
+  function songDim(el,s,mul){ var te=el.querySelector('.dp-s-text'); te.style.fontSize=(12*mul)+'px'; te.style.whiteSpace='nowrap'; var cap=Math.max(1,s.w*mul*s.fit); var scale=Math.max(.74,Math.min(1.3,te.offsetWidth/cap)); return {w:Math.round(s.w*mul*scale),h:Math.round(s.h*mul*scale)}; }
   function build(){
     if (built || !document.getElementById('dp-scroll')) return; built=true;
-    // 스크롤 높이 = 실제 가용 영역(상단 오프셋~플레이어 위) → 한 판이 딱 보이고 하단이 플레이어에 안 묻힘
+    // 스크롤 높이 = 실제 가용 영역(상단 오프셋~플레이어 위)
     try {
       var _pl=document.getElementById('global-player'); var _ph=(_pl&&_pl.offsetHeight)?_pl.offsetHeight+8:66;
       var _av=window.innerHeight - Math.max(0, scroll.getBoundingClientRect().top) - _ph;
       scroll.style.height = Math.max(420, _av) + 'px';
     } catch(_){}
+    // 화면 폭 대응: 넓을수록 열(tile) 늘려 곡 더 채움 + 도형/글자 배율(mul) 키움
+    var BW0=scroll.clientWidth||360;
+    var tiles=Math.max(1, Math.min(4, Math.round(BW0/640)));
+    var mul=Math.max(1, Math.min(1.7, (BW0/tiles)/400));
+    var bandCount=Math.max(3, Math.min(16, Math.ceil((tracks.length||18)/(6*tiles))));
     for (var bi=0; bi<bandCount; bi++){
       var band=document.createElement('div'); band.className='dp-band'; scroll.appendChild(band);
-      var BW=band.clientWidth||360, BH=band.clientHeight||700;
-      TPL.forEach(function(s){
-        var el=document.createElement('div');
-        el.className='dp-slot'+(s.info?' info':'')+(s.cls==='stack'?' dp-stack':'')+(s.cls==='tri'?' dp-tri-wrap':'');
-        var inner = mkShape(s.cls,s.color,s.glyph), track=null;
-        if (s.info){ track = tracks.length ? tracks[ti % tracks.length] : null; ti++; var tg = track?tagsOf(track):['off','stage','music']; inner+='<div class="dp-s-text">#'+dpEsc(tg[0]||'뮤직')+(tg[1]?'<br>#'+dpEsc(tg[1]):'')+(tg[2]?'<br>#'+dpEsc(tg[2]):'')+'</div>'; }
-        el.innerHTML=inner; band.appendChild(el);
-        if (s.info && track){ el.setAttribute('onclick', "if(window.playTrack)playTrack('"+dpEsc(track.id)+"','universe')"); el.setAttribute('title', dpEsc((track.title||'')+' — '+(track.artist||''))); }
-        var W=s.w, H=s.h;
-        if (s.info){
-          var dim=songDim(el,s); W=dim.w; H=dim.h;
-          el.style.setProperty('--w',W+'px'); el.style.setProperty('--h',H+'px');
-          var te=el.querySelector('.dp-s-text'), mw=W*s.fit, mh=H*s.fitH, fs=12, g=0;
-          while((te.offsetWidth>mw||te.offsetHeight>mh)&&fs>7.5&&g++<20){ fs-=0.5; te.style.fontSize=fs+'px'; }
-        } else { el.style.setProperty('--w',W+'px'); el.style.setProperty('--h',H+'px'); }
-        el.style.setProperty('--rot',((s.rot||0)+(Math.random()-0.5)*14)+'deg');
-        var sz=Math.max(W,H), hw=(sz/2)/BW*100, hh=(sz/2)/BH*100;
-        var nx=Math.max(hw+2, Math.min(98-hw, s.x+(Math.random()-0.5)*5));
-        var ny=Math.max(hh+3, Math.min(90-hh, s.y+(Math.random()-0.5)*4));
-        el.style.left=nx+'%'; el.style.top=ny+'%';
-      });
+      var BW=band.clientWidth||BW0, BH=band.clientHeight||700;
+      for (var tt=0; tt<tiles; tt++){ (function(tile){
+        TPL.forEach(function(s){
+          var el=document.createElement('div');
+          el.className='dp-slot'+(s.info?' info':'')+(s.cls==='stack'?' dp-stack':'')+(s.cls==='tri'?' dp-tri-wrap':'');
+          var inner = mkShape(s.cls,s.color,s.glyph), track=null;
+          if (s.info){ track = tracks.length ? tracks[ti % tracks.length] : null; ti++; var tg = track?tagsOf(track):['off','stage','music']; inner+='<div class="dp-s-text">#'+dpEsc(tg[0]||'뮤직')+(tg[1]?'<br>#'+dpEsc(tg[1]):'')+(tg[2]?'<br>#'+dpEsc(tg[2]):'')+'</div>'; }
+          el.innerHTML=inner; band.appendChild(el);
+          if (s.info && track){ el.setAttribute('onclick', "if(window.playTrack)playTrack('"+dpEsc(track.id)+"','universe')"); el.setAttribute('title', dpEsc((track.title||'')+' — '+(track.artist||''))); }
+          var W=s.w*mul, H=s.h*mul;
+          if (s.info){
+            var dim=songDim(el,s,mul); W=dim.w; H=dim.h;
+            el.style.setProperty('--w',W+'px'); el.style.setProperty('--h',H+'px');
+            var te=el.querySelector('.dp-s-text'), mw=W*s.fit, mh=H*s.fitH, fs=parseFloat(te.style.fontSize)||(12*mul), g=0;
+            while((te.offsetWidth>mw||te.offsetHeight>mh)&&fs>7.5&&g++<24){ fs-=0.5; te.style.fontSize=fs+'px'; }
+          } else { el.style.setProperty('--w',W+'px'); el.style.setProperty('--h',H+'px'); }
+          el.style.setProperty('--rot',((s.rot||0)+(Math.random()-0.5)*14)+'deg');
+          var baseX=(tile + s.x/100)/tiles*100;   // 컴포지션을 각 열(tile)에 배치
+          var sz=Math.max(W,H), hw=(sz/2)/BW*100, hh=(sz/2)/BH*100;
+          var nx=Math.max(hw+1, Math.min(99-hw, baseX+(Math.random()-0.5)*5/tiles));
+          var ny=Math.max(hh+3, Math.min(90-hh, s.y+(Math.random()-0.5)*4));
+          el.style.left=nx+'%'; el.style.top=ny+'%';
+        });
+      })(tt); }
     }
   }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(build);
