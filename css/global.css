@@ -7526,8 +7526,21 @@ html, body { max-width: 100%; }
 .mobile-tab:active {
   transform: scale(0.94);
 }
+/* 가운데 + = 음원 올리기 (스크린샷처럼 핑크 라운드 스퀘어, 눈에 띄게) */
+.mobile-tab-plus { flex: 0 0 auto; padding: 4px 12px; background: rgba(255,255,255,0.025); }
+.mobile-tab-plus .mtp-fab {
+  width: 46px; height: 46px; border-radius: 15px;
+  background: linear-gradient(135deg, #FB5EA8, #F0468C);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; box-shadow: 0 5px 16px rgba(240,70,140,0.5);
+  transition: transform 0.12s;
+}
+.mobile-tab-plus .mtp-fab i { font-size: 27px !important; color: #fff; line-height: 1; }
+.mobile-tab-plus:active .mtp-fab { transform: scale(0.9); }
+.mobile-tab-plus.is-active { background: rgba(255,255,255,0.025); }   /* 활성 배경 안 바뀌게(항상 fab만) */
 @media (max-width: 768px) {
   .mobile-tab-bar { display: flex; }
+  .upload-fab { display: none !important; }   /* 가운데 + 가 대체 */
   .hamburger-btn { display: none !important; }
   /* Tab bar 가 위로 갔으니 padding-top 으로 컨텐츠 내림 + player 위한 padding-bottom 만 */
   body {
