@@ -8080,37 +8080,60 @@ function renderDiscoverPattern(tracks){
       var _av=window.innerHeight - Math.max(0, scroll.getBoundingClientRect().top) - _ph;
       scroll.style.height = Math.max(420, _av) + 'px';
     } catch(_){}
-    // 화면 폭 대응: 넓을수록 열(tile) 늘려 곡 더 채움 + 도형/글자 배율(mul) 키움
+    // 좁으면(모바일) 손으로 짠 조판 그대로, 넓으면(PC) 화면 전체에 하나로 흩뿌림(반복 없음)+크게
     var BW0=scroll.clientWidth||360;
-    var tiles=Math.max(1, Math.min(4, Math.round(BW0/640)));
-    var mul=Math.max(1, Math.min(1.7, (BW0/tiles)/400));
-    var bandCount=Math.max(3, Math.min(16, Math.ceil((tracks.length||18)/(6*tiles))));
+    var wide = BW0>=620;
+    var mul = wide ? Math.max(1.1, Math.min(1.55, BW0/1050)) : 1;
+    var SH = parseInt(scroll.style.height,10) || (scroll.clientHeight||600);
+    var songsPer = wide ? Math.max(9, Math.min(15, Math.round(BW0*SH/80000))) : 6;
+    var bandCount = Math.max(3, Math.min(16, Math.ceil((tracks.length||18)/songsPer)));
+    var INFOCOL=['#E24A9C','#7FB2EC','#86CE34','#B49BEE','#F06CA8','#FF8A6E','#26C6C6','#FFB03A'];
+    var SONGSH=[{cls:'burst',fit:.5,fitH:.46,w:150,h:150},{cls:'circle',fit:.68,fitH:.62,w:132,h:132},{cls:'tri',fit:.56,fitH:.34,w:152,h:130}];
+    var DECOR=[{cls:'spark',w:44,color:'#26C6C6'},{cls:'tri',w:58,color:'#7FB2EC'},{cls:'burst',w:52,color:'#FFD24A'},{cls:'notes',w:36,color:'#E24A9C',glyph:'♪'},{cls:'stack',w:68,color:'#F4F1E8'},{cls:'spark',w:40,color:'#F06CA8'},{cls:'tri',w:56,color:'#86CE34'},{cls:'notes',w:34,color:'#26C6C6',glyph:'♫'},{cls:'ellipse',w:56,color:'#FFD24A'},{cls:'burst',w:50,color:'#B49BEE'},{cls:'square',w:46,color:'#3E6FD9'},{cls:'spark',w:38,color:'#FF8A6E'}];
+    function _songText(tk){ var tg=tk?tagsOf(tk):['off','stage','music']; return '<div class="dp-s-text">#'+dpEsc(tg[0]||'뮤직')+(tg[1]?'<br>#'+dpEsc(tg[1]):'')+(tg[2]?'<br>#'+dpEsc(tg[2]):'')+'</div>'; }
+    function _fitFont(el,fit,fitH,W,H,m){ var te=el.querySelector('.dp-s-text'); var mw=W*fit,mh=H*fitH,fs=parseFloat(te.style.fontSize)||(12*m),g=0; while((te.offsetWidth>mw||te.offsetHeight>mh)&&fs>7.5&&g++<24){fs-=0.5;te.style.fontSize=fs+'px';} }
+    function _freePlace(items,W,H){ var out=[]; items.forEach(function(it){ var best={x:W/2,y:H/2},bm=-1e9,r=it.r,pad=it.pad; for(var t=0;t<90;t++){ var x=r+8+Math.random()*Math.max(1,W-2*r-16), y=r+8+Math.random()*Math.max(1,H-2*r-16), m=1e9; for(var j=0;j<out.length;j++){var d=Math.hypot(x-out[j].x,y-out[j].y)-(r+out[j].r); if(d<m)m=d;} if(m>=pad){best={x:x,y:y};break;} if(m>bm){bm=m;best={x:x,y:y};} } it.x=best.x; it.y=best.y; out.push({x:best.x,y:best.y,r:r}); }); }
     for (var bi=0; bi<bandCount; bi++){
       var band=document.createElement('div'); band.className='dp-band'; scroll.appendChild(band);
-      var BW=band.clientWidth||BW0, BH=band.clientHeight||700;
-      for (var tt=0; tt<tiles; tt++){ (function(tile){
+      var BW=band.clientWidth||BW0, BH=band.clientHeight||SH;
+      if (!wide){
         TPL.forEach(function(s){
           var el=document.createElement('div');
           el.className='dp-slot'+(s.info?' info':'')+(s.cls==='stack'?' dp-stack':'')+(s.cls==='tri'?' dp-tri-wrap':'');
-          var inner = mkShape(s.cls,s.color,s.glyph), track=null;
-          if (s.info){ track = tracks.length ? tracks[ti % tracks.length] : null; ti++; var tg = track?tagsOf(track):['off','stage','music']; inner+='<div class="dp-s-text">#'+dpEsc(tg[0]||'뮤직')+(tg[1]?'<br>#'+dpEsc(tg[1]):'')+(tg[2]?'<br>#'+dpEsc(tg[2]):'')+'</div>'; }
+          var inner=mkShape(s.cls,s.color,s.glyph), track=null;
+          if(s.info){ track=tracks.length?tracks[ti%tracks.length]:null; ti++; inner+=_songText(track); }
           el.innerHTML=inner; band.appendChild(el);
-          if (s.info && track){ el.setAttribute('onclick', "if(window.playTrack)playTrack('"+dpEsc(track.id)+"','universe')"); el.setAttribute('title', dpEsc((track.title||'')+' — '+(track.artist||''))); }
-          var W=s.w*mul, H=s.h*mul;
-          if (s.info){
-            var dim=songDim(el,s,mul); W=dim.w; H=dim.h;
-            el.style.setProperty('--w',W+'px'); el.style.setProperty('--h',H+'px');
-            var te=el.querySelector('.dp-s-text'), mw=W*s.fit, mh=H*s.fitH, fs=parseFloat(te.style.fontSize)||(12*mul), g=0;
-            while((te.offsetWidth>mw||te.offsetHeight>mh)&&fs>7.5&&g++<24){ fs-=0.5; te.style.fontSize=fs+'px'; }
-          } else { el.style.setProperty('--w',W+'px'); el.style.setProperty('--h',H+'px'); }
+          if(s.info&&track){ el.setAttribute('onclick',"if(window.playTrack)playTrack('"+dpEsc(track.id)+"','universe')"); el.setAttribute('title',dpEsc((track.title||'')+' — '+(track.artist||''))); }
+          var W=s.w,H=s.h;
+          if(s.info){ var dim=songDim(el,s,1); W=dim.w; H=dim.h; el.style.setProperty('--w',W+'px'); el.style.setProperty('--h',H+'px'); _fitFont(el,s.fit,s.fitH,W,H,1); }
+          else { el.style.setProperty('--w',W+'px'); el.style.setProperty('--h',H+'px'); }
           el.style.setProperty('--rot',((s.rot||0)+(Math.random()-0.5)*14)+'deg');
-          var baseX=(tile + s.x/100)/tiles*100;   // 컴포지션을 각 열(tile)에 배치
-          var sz=Math.max(W,H), hw=(sz/2)/BW*100, hh=(sz/2)/BH*100;
-          var nx=Math.max(hw+1, Math.min(99-hw, baseX+(Math.random()-0.5)*5/tiles));
-          var ny=Math.max(hh+3, Math.min(90-hh, s.y+(Math.random()-0.5)*4));
-          el.style.left=nx+'%'; el.style.top=ny+'%';
+          var sz=Math.max(W,H),hw=(sz/2)/BW*100,hh=(sz/2)/BH*100;
+          el.style.left=Math.max(hw+2,Math.min(98-hw,s.x+(Math.random()-0.5)*5))+'%';
+          el.style.top=Math.max(hh+3,Math.min(90-hh,s.y+(Math.random()-0.5)*4))+'%';
         });
-      })(tt); }
+      } else {
+        var items=[];
+        for (var si=0; si<songsPer; si++){
+          var track=tracks.length?tracks[ti%tracks.length]:null; ti++;
+          var st=SONGSH[si%SONGSH.length];
+          var el=document.createElement('div'); el.className='dp-slot info'+(st.cls==='tri'?' dp-tri-wrap':'');
+          el.innerHTML=mkShape(st.cls,INFOCOL[si%INFOCOL.length])+_songText(track); band.appendChild(el);
+          if(track){ el.setAttribute('onclick',"if(window.playTrack)playTrack('"+dpEsc(track.id)+"','universe')"); el.setAttribute('title',dpEsc((track.title||'')+' — '+(track.artist||''))); }
+          var dim=songDim(el,st,mul); el.style.setProperty('--w',dim.w+'px'); el.style.setProperty('--h',dim.h+'px'); _fitFont(el,st.fit,st.fitH,dim.w,dim.h,mul);
+          el.style.setProperty('--rot',((Math.random()-0.5)*16)+'deg');
+          items.push({el:el, r:Math.max(dim.w,dim.h)/2, pad:14});
+        }
+        for (var di=0; di<Math.round(songsPer*1.5); di++){
+          var dc=DECOR[di%DECOR.length];
+          var e2=document.createElement('div'); e2.className='dp-slot'+(dc.cls==='stack'?' dp-stack':'');
+          var w=Math.round(dc.w*mul); e2.style.setProperty('--w',w+'px'); e2.style.setProperty('--h',w+'px'); e2.style.setProperty('--rot',((Math.random()-0.5)*18)+'deg');
+          e2.innerHTML=mkShape(dc.cls,dc.color,dc.glyph); band.appendChild(e2);
+          items.push({el:e2, r:w/2, pad:6});
+        }
+        _freePlace(items, BW, BH);
+        items.forEach(function(it){ it.el.style.left=(it.x/BW*100)+'%'; it.el.style.top=(it.y/BH*100)+'%'; });
+      }
     }
   }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(build);
