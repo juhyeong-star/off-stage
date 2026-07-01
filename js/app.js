@@ -7758,6 +7758,9 @@ function renderShapes() {
       return a.id < b.id ? 1 : a.id > b.id ? -1 : 0;
     });
 
+  // 발견 = 패턴 디자인(테스트 이식, 실제 곡). 롤백: 이 한 블록만 지우면 아래 옛 별필드로 복귀.
+  if (typeof renderDiscoverPattern === 'function') { try { renderDiscoverPattern(tracks); return; } catch (e) { console.warn('[discover-pattern]', e); } }
+
   // Starfield background — replaces the old "조잡한" floating shapes with
   // a real twinkling night sky. Positions are seeded so the sky is the same
   // across reloads.
@@ -7991,6 +7994,120 @@ function renderShapes() {
 // supabase.js 등 외부 스크립트에서 window.renderShapes() 로 호출 가능하게 명시 노출.
 // (비-모듈 스크립트에선 function 선언만으로도 window 에 매달리지만, 모든 환경 안전하게)
 window.renderShapes = renderShapes;
+
+// ============================================================
+// 발견 · 패턴 디자인 (discover-pattern-test.html 이식). 실제 곡 태그로 구동, 탭=재생.
+// 샘플 멤피스 배치(20도형/판, 곡 6개) + 판마다 살짝 흔들림 + 곡 도형은 해시태그 길이에 맞춰 auto-grow.
+// renderShapes 가 트랙 계산 후 이리로 위임. 롤백: renderShapes 의 위임 한 줄만 지우면 옛 별필드로.
+// ============================================================
+function dpEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function _dpStyle(){
+  if (document.getElementById('dp-style')) return;
+  var st=document.createElement('style'); st.id='dp-style';
+  st.textContent = `
+  .dp-scroll{position:relative;height:100vh;height:100dvh;overflow-y:auto;background:#000;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+  .dp-scroll::-webkit-scrollbar{display:none;}
+  .dp-band{position:relative;height:100%;}
+  .dp-slot{position:absolute;transform:translate(-50%,-50%) rotate(var(--rot,0deg));width:var(--w);height:var(--h);display:flex;align-items:center;justify-content:center;z-index:1;}
+  .dp-slot.info{z-index:5;cursor:pointer;}
+  .dp-shape{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 4px 11px rgba(0,0,0,.5));}
+  .dp-burst{clip-path:polygon(50% 0%,61% 26%,87% 13%,74% 39%,100% 47%,79% 62%,90% 90%,61% 75%,50% 100%,39% 75%,10% 90%,21% 62%,0% 47%,26% 39%,13% 13%,39% 26%);}
+  .dp-tri{clip-path:polygon(50% 3%,3% 97%,97% 97%);}
+  .dp-spark{clip-path:polygon(50% 0%,58% 42%,100% 50%,58% 58%,50% 100%,42% 58%,0% 50%,42% 42%);}
+  .dp-circle,.dp-ellipse{border-radius:50%;}
+  .dp-square{border-radius:6px;}
+  .dp-stack .dp-shape{background:none;filter:none;}
+  .dp-stack .p{position:absolute;background:#F4F1E8;border:1.5px solid #cfc7b2;border-radius:3px;width:74%;height:74%;box-shadow:0 3px 8px rgba(0,0,0,.45);}
+  .dp-stack .p:nth-child(1){left:0;top:0;transform:rotate(-8deg);}
+  .dp-stack .p:nth-child(2){left:14%;top:12%;transform:rotate(4deg);}
+  .dp-stack .p:nth-child(3){left:26%;top:24%;transform:rotate(-3deg);}
+  .dp-notes{font-size:var(--w);line-height:1;font-weight:900;filter:drop-shadow(0 3px 7px rgba(0,0,0,.5));}
+  .dp-s-text{position:relative;z-index:2;text-align:center;font-weight:800;line-height:1.5;letter-spacing:-.2px;pointer-events:none;white-space:nowrap;color:#1b1522;}
+  .dp-tri-wrap .dp-s-text{transform:translateY(28%);}
+  `;
+  document.head.appendChild(st);
+}
+function renderDiscoverPattern(tracks){
+  currentView = 'shapes';
+  var app = document.getElementById('app-content'); if (!app) return;
+  try { if (typeof stopShapesPhysics==='function') stopShapesPhysics(); } catch(_){}
+  _dpStyle();
+  tracks = (tracks||[]).filter(Boolean);
+  // 곡 → 해시태그 3개(태그 우선, 없으면 아티스트/제목으로 보충)
+  function tagsOf(t){
+    var a = (t && Array.isArray(t.tags)) ? t.tags.filter(Boolean).map(String).slice(0,3) : [];
+    if (!a.length && t){ var ti=(t.title||'곡').replace(/\s*\(.*\)$/,''); a=[t.artist||'off-stage', ti]; }
+    return a.slice(0,3);
+  }
+  // 샘플 멤피스 배치(곡=info 밝은 도형: 버스트·원·삼각형)
+  var TPL = [
+    {id:'s1', x:13,y:7,  w:58,h:38, cls:'ellipse', color:'#FFD24A'},
+    {id:'s2', x:60,y:10, w:40,h:40, cls:'spark',   color:'#26C6C6'},
+    {id:'s3', x:33,y:24, w:178,h:178, cls:'burst', color:'#E24A9C', info:1, fit:.5,  fitH:.46},
+    {id:'s4', x:77,y:33, w:150,h:130, cls:'tri',   color:'#7FB2EC', info:1, fit:.56, fitH:.34},
+    {id:'s5', x:17,y:45, w:78,h:78, cls:'stack',   color:'#F4F1E8'},
+    {id:'s6', x:37,y:49, w:38,h:34, cls:'notes',   color:'#E24A9C', glyph:'♪'},
+    {id:'s7', x:43,y:57, w:138,h:138, cls:'circle', color:'#86CE34', info:1, fit:.68, fitH:.62},
+    {id:'s8', x:81,y:64, w:162,h:142, cls:'tri',   color:'#B49BEE', info:1, fit:.56, fitH:.34},
+    {id:'s9', x:22,y:74, w:138,h:138, cls:'burst', color:'#F06CA8', info:1, fit:.5,  fitH:.46},
+    {id:'s10',x:75,y:83, w:152,h:152, cls:'burst', color:'#FF8A6E', info:1, fit:.5,  fitH:.46},
+    {id:'s11',x:25,y:93, w:52,h:52, cls:'square',  color:'#FFD24A'},
+    {id:'s13',x:89,y:20, w:30,h:30, cls:'spark',   color:'#E24A9C'},
+    {id:'s14',x:61,y:76, w:34,h:34, cls:'notes',   color:'#26C6C6', glyph:'♫'},
+    {id:'a1', x:47,y:9,  w:46,h:46, cls:'burst',   color:'#FFD24A'},
+    {id:'a2', x:10,y:31, w:40,h:40, cls:'spark',   color:'#E24A9C'},
+    {id:'a3', x:91,y:46, w:50,h:44, cls:'tri',     color:'#26C6C6'},
+    {id:'a4', x:58,y:45, w:32,h:32, cls:'notes',   color:'#86CE34', glyph:'♪'},
+    {id:'a5', x:10,y:63, w:46,h:46, cls:'burst',   color:'#3E6FD9'},
+    {id:'a6', x:52,y:89, w:42,h:42, cls:'spark',   color:'#F06CA8'}
+  ];
+  function mkShape(cls,color,glyph){
+    if (cls==='stack') return '<div class="dp-shape"><div class="p"></div><div class="p"></div><div class="p"></div></div>';
+    if (cls==='notes') return '<div class="dp-notes" style="color:'+color+'">'+glyph+'</div>';
+    return '<div class="dp-shape dp-'+cls+'" style="background:'+color+'"></div>';
+  }
+  var perBand=6, bandCount = tracks.length ? Math.min(16, Math.max(3, Math.ceil(tracks.length/perBand))) : 3;
+  app.innerHTML = '<div class="dp-scroll" id="dp-scroll"></div>'
+    + '<div class="upload-fab" onclick="navigateTo(\'upload\')" title="음악 업로드"><i class="ri-add-line"></i></div>';
+  var scroll = document.getElementById('dp-scroll'), ti=0, built=false;
+  function songDim(el,s){ var te=el.querySelector('.dp-s-text'); te.style.fontSize='12px'; te.style.whiteSpace='nowrap'; var cap=Math.max(1,s.w*s.fit); var scale=Math.max(.74,Math.min(1.3,te.offsetWidth/cap)); return {w:Math.round(s.w*scale),h:Math.round(s.h*scale)}; }
+  function build(){
+    if (built || !document.getElementById('dp-scroll')) return; built=true;
+    // 스크롤 높이 = 실제 가용 영역(상단 오프셋~플레이어 위) → 한 판이 딱 보이고 하단이 플레이어에 안 묻힘
+    try {
+      var _pl=document.getElementById('global-player'); var _ph=(_pl&&_pl.offsetHeight)?_pl.offsetHeight+8:66;
+      var _av=window.innerHeight - Math.max(0, scroll.getBoundingClientRect().top) - _ph;
+      scroll.style.height = Math.max(420, _av) + 'px';
+    } catch(_){}
+    for (var bi=0; bi<bandCount; bi++){
+      var band=document.createElement('div'); band.className='dp-band'; scroll.appendChild(band);
+      var BW=band.clientWidth||360, BH=band.clientHeight||700;
+      TPL.forEach(function(s){
+        var el=document.createElement('div');
+        el.className='dp-slot'+(s.info?' info':'')+(s.cls==='stack'?' dp-stack':'')+(s.cls==='tri'?' dp-tri-wrap':'');
+        var inner = mkShape(s.cls,s.color,s.glyph), track=null;
+        if (s.info){ track = tracks.length ? tracks[ti % tracks.length] : null; ti++; var tg = track?tagsOf(track):['off','stage','music']; inner+='<div class="dp-s-text">#'+dpEsc(tg[0]||'뮤직')+(tg[1]?'<br>#'+dpEsc(tg[1]):'')+(tg[2]?'<br>#'+dpEsc(tg[2]):'')+'</div>'; }
+        el.innerHTML=inner; band.appendChild(el);
+        if (s.info && track){ el.setAttribute('onclick', "if(window.playTrack)playTrack('"+dpEsc(track.id)+"','universe')"); el.setAttribute('title', dpEsc((track.title||'')+' — '+(track.artist||''))); }
+        var W=s.w, H=s.h;
+        if (s.info){
+          var dim=songDim(el,s); W=dim.w; H=dim.h;
+          el.style.setProperty('--w',W+'px'); el.style.setProperty('--h',H+'px');
+          var te=el.querySelector('.dp-s-text'), mw=W*s.fit, mh=H*s.fitH, fs=12, g=0;
+          while((te.offsetWidth>mw||te.offsetHeight>mh)&&fs>7.5&&g++<20){ fs-=0.5; te.style.fontSize=fs+'px'; }
+        } else { el.style.setProperty('--w',W+'px'); el.style.setProperty('--h',H+'px'); }
+        el.style.setProperty('--rot',((s.rot||0)+(Math.random()-0.5)*14)+'deg');
+        var sz=Math.max(W,H), hw=(sz/2)/BW*100, hh=(sz/2)/BH*100;
+        var nx=Math.max(hw+2, Math.min(98-hw, s.x+(Math.random()-0.5)*5));
+        var ny=Math.max(hh+3, Math.min(90-hh, s.y+(Math.random()-0.5)*4));
+        el.style.left=nx+'%'; el.style.top=ny+'%';
+      });
+    }
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(build);
+  setTimeout(build, 350);
+}
+window.renderDiscoverPattern = renderDiscoverPattern;
 
 // ============================================================
 // 발견(도형) 물리 — 둥둥 드리프트 + 벽 가둠 + 안겹침 분리(도형끼리 튕김 없음) + 끌어서 던지기(flick).
