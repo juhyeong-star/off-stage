@@ -3734,7 +3734,7 @@ function _pbCardShell(r){
     + '<div class="pb-cover">'+coverHtml+delBtn+'<div class="pb-song">'+songIc+'<div><div class="pb-song-t">'+pbEsc(title)+'</div><div class="pb-song-s">'+pbEsc(artist)+'</div></div></div></div>'
     + '<div class="pb-q">'+pbEsc(r.question)+'</div>'
     + '<div class="pb-vs">'+_pbOpt(r,cands[0])+'<div class="pb-vsmid">VS</div>'+_pbOpt(r,cands[1])+'</div>'
-    + '<div class="pb-pct" id="pb-pct-'+r.id+'">'+(r.status==='open'?'<div class="pb-blind"><i class="ri-eye-off-line"></i> 투표 중 · 결과는 마감 후 공개</div>':'')+'</div>'
+    + '<div class="pb-pct" id="pb-pct-'+r.id+'"></div>'
     + '<div class="pb-voices"><div class="pb-voices-h"><i class="ri-chat-heart-fill"></i> 우리의 목소리 <span id="pb-cc-'+r.id+'"></span></div>'
     + '<div class="pb-voices-s">A·B 말고 다른 의견? 하트 1등은 <b>제안 배틀(C안)</b>로 합류!</div>'
     + '<div class="pb-cmt-prev" id="pb-prev-'+r.id+'"></div>'
@@ -3755,12 +3755,9 @@ window.pbDeleteRound = async function(rid){
 };
 function _pbCmtRow(r, c, d, isTop){
   var likes = d.tally[c.id]||0, on = r.__myChoice===c.id, nm = c.user_name || '익명';
-  // 마감(공개) 후엔 전체 참여(투표+하트) 대비 이 댓글의 비중 % 표시 (스크린샷처럼).
-  var pctHtml = '';
-  if (r.status === 'closed'){
-    var total = 0; for (var k in d.tally){ if (Object.prototype.hasOwnProperty.call(d.tally,k)) total += (d.tally[k]||0); }
-    pctHtml = '<span class="pb-cpct">'+(total ? Math.round(likes/total*100) : 0)+'%</span>';
-  }
+  // 전체 참여(투표+하트) 대비 이 댓글의 비중 % — 항상 공개(사용자 요청).
+  var total = 0; for (var k in d.tally){ if (Object.prototype.hasOwnProperty.call(d.tally,k)) total += (d.tally[k]||0); }
+  var pctHtml = '<span class="pb-cpct">'+(total ? Math.round(likes/total*100) : 0)+'%</span>';
   return '<div class="pb-cmt"><div class="pb-cav" style="background:'+_pcColor(nm)+'">'+pbEsc(nm.charAt(0))+'</div>'
     + '<div class="pb-cbd"><div class="pb-cu">'+pbEsc(nm)+(isTop?'<span class="pb-top1">🏆 배틀 합류</span>':'')+'</div><div class="pb-ct">'+pbEsc(c.body)+'</div></div>'
     + '<div class="pb-clike'+(on?' on':'')+'" onclick="event.stopPropagation(); pbLikeComment(\''+r.id+'\',\''+c.id+'\')"><i class="'+(on?'ri-heart-3-fill':'ri-heart-3-line')+'"></i><b>'+likes+'</b>'+pctHtml+'</div></div>';
@@ -3780,7 +3777,7 @@ async function _pbFillCard(r){
   var prev = document.getElementById('pb-prev-'+r.id);
   if (prev) prev.innerHTML = sorted.length ? sorted.slice(0,3).map(function(c,i){return _pbCmtRow(r,c,d,i===0);}).join('') : '<div class="pb-noc">A·B 말고 다른 의견 있으면 남겨주세요! 하트 1등은 배틀(C안)로 합류해요.</div>';
   var pctEl = document.getElementById('pb-pct-'+r.id);
-  if (pctEl && r.status==='closed') pctEl.innerHTML = _pbPctHtml(r, d);
+  if (pctEl) pctEl.innerHTML = _pbPctHtml(r, d);   // 항상 퍼센트 공개(블라인드 해제)
   card.querySelectorAll('.pb-opt').forEach(function(el){ el.classList.remove('on'); });
   if (d.myChoice==='a'||d.myChoice==='b'||d.myChoice==='c'){ var o=card.querySelector('.pb-opt.'+d.myChoice); if(o)o.classList.add('on'); }
 }
