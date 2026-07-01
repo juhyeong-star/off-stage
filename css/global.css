@@ -570,6 +570,10 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* overflow-x:hidden 은 html 에만 — body 에 두면 규칙상 body.overflow-y 가 auto 로 계산돼
+   body 가 스크롤 컨테이너가 되고, 브라우저에 따라 스크롤 주체가 html↔body 로 꼬여
+   "콘텐츠 위에선 휠이 안 먹는" PC 버그가 남(사용자 보고). html 이 유일한 세로 스크롤러가 되게. */
+html { overflow-x: hidden; }
 body {
   background-color: var(--bg-color);
   color: var(--text-primary);
@@ -577,7 +581,6 @@ body {
   font-size: 16.5px;  /* small bump from browser default 16px — affects elements without explicit size */
   -webkit-font-smoothing: antialiased;
   padding-bottom: var(--player-height);
-  overflow-x: hidden;
 }
 
 a { color: var(--text-primary); text-decoration: none; }
@@ -5834,8 +5837,11 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   .note-detail-postit { font-size: 19px; }
 }
 
-/* Global horizontal overflow safety */
-html, body { overflow-x: hidden; max-width: 100%; }
+/* Global horizontal overflow safety — overflow-x:hidden 은 html 에만!
+   body 에 걸면 body.overflow-y 가 auto 로 계산돼 body 가 스크롤 컨테이너가 되고
+   PC 에서 스크롤 주체가 html↔body 로 꼬여 "콘텐츠 위 휠 안 먹음" 버그가 남(사용자 보고). */
+html { overflow-x: hidden; }
+html, body { max-width: 100%; }
 .artist-canvas, .shapes-universe, .wall-board, .sub-page { max-width: 100%; }
 .project-versions { padding: 8px 12px 12px; }
 .version-row {
