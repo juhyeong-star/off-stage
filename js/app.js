@@ -9082,6 +9082,7 @@ window.renderUniverse = async function (force) {
   // 별 배경은 #app-content 밖의 영구 레이어로 → innerHTML 재설정에 안 영향받음.
   // _ensurePersistentStarfield() 가 body 에 한 번만 생성, 페이지 .is-universe 클래스로 보이기 토글.
   _ensurePersistentStarfield();
+  if (typeof _dpStyle === 'function') _dpStyle();   // 발견 dp- 도형 스타일(즐겨찾기 곡 도형도 동일하게)
   document.body.classList.add('is-universe-route');
   // 본문 안엔 별 자리 비워 둠 (호환성 차원에서 .universe-starfield 빈 div 만)
   const decoHtml = '';
@@ -9121,19 +9122,18 @@ window.renderUniverse = async function (force) {
       itemsHtml += _floatingFolderHtml(it, { xBase, yPx, rot, dur, dx, dy });
     } else if (it.kind === 'track') {
       const t = it.t;
-      let shape = t.shape || (typeof SHAPE_TYPES !== 'undefined' ? SHAPE_TYPES[i % SHAPE_TYPES.length] : 'circle');
-      if (typeof SHAPE_REMAP !== 'undefined' && SHAPE_REMAP[shape]) shape = SHAPE_REMAP[shape];
-      const color = t.shapeColor || (typeof SHAPE_COLORS !== 'undefined' ? SHAPE_COLORS[i % SHAPE_COLORS.length] : '#FF9800');
-      const isTri = shape === 'triangle';
-      const bgStyle = isTri
-        ? `border-bottom-color:${color}; color:${color}; --shape-bg:${color};`
-        : `background:${color}; --shape-bg:${color};`;
-      const lines = t.lines || [t.title || '', t.artist || '', '클릭해서 들어봐!'];
-      const safeLines = lines.map(l => (l||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+      // 발견(새 패턴)과 통일 — dp- 도형/레트로색/해시태그. .floating-shape 는 유지(드래그/위치/드리프트).
+      const _DPC = ['#E24A9C','#7FB2EC','#86CE34','#B49BEE','#F06CA8','#FF8A6E','#26C6C6','#FFB03A'];
+      const _DPS = ['burst','circle','tri'];
+      const _dc = _DPS[i % _DPS.length], _dcol = _DPC[i % _DPC.length];
+      const _tags = (Array.isArray(t.tags) && t.tags.length) ? t.tags.slice(0,3)
+                  : [t.title || '곡', t.artist || ''].filter(Boolean).slice(0,3);
+      const _tagHtml = _tags.map(tg => '#' + String(tg).replace(/^#/, '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')).join('<br>');
       itemsHtml += `
-        <div class="floating-shape shape-${shape}" data-track-id="${t.id}" data-artist="${encodeURIComponent(t.artist || '')}"
-             style="${bgStyle} left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;">
-          <div class="shape-text">${safeLines.join('\n')}</div>
+        <div class="floating-shape dp-univ${_dc==='tri' ? ' dp-tri-wrap' : ''}" data-track-id="${t.id}" data-artist="${encodeURIComponent(t.artist || '')}"
+             style="left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;">
+          <div class="dp-shape dp-${_dc}" style="background:${_dcol}"></div>
+          <div class="dp-s-text">${_tagHtml}</div>
         </div>
       `;
     } else {
