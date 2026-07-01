@@ -3608,8 +3608,8 @@ function _pbStyle(){
   .pb-loading,.pb-empty{text-align:center;color:rgba(255,255,255,.5);font-size:13px;padding:50px 20px;line-height:1.7;}
   .pb-empty b{display:block;font-size:15px;color:#fff;margin-bottom:6px;}
   .pb-card{margin:0 14px 30px;}
-  .pb-cover{position:relative;height:286px;border-radius:20px;overflow:hidden;display:flex;align-items:flex-end;background:#181225;}
-  .pb-cover-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;} .pb-cover-grad{position:absolute;inset:0;}
+  .pb-cover{position:relative;height:150px;border-radius:20px;overflow:hidden;display:flex;align-items:flex-end;background:#181225;}
+  .pb-cover-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;} .pb-cover-grad{position:absolute;inset:0;}
   .pb-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(7,6,13,.92),rgba(7,6,13,.1) 42%,transparent 62%);}
   .pb-cover-tags{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:0 20px 40px;pointer-events:none;z-index:0;}
   .pb-cover-tags span{font-size:27px;font-weight:900;line-height:1.08;color:rgba(255,255,255,.96);letter-spacing:-.5px;text-shadow:0 2px 10px rgba(0,0,0,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
@@ -3617,17 +3617,17 @@ function _pbStyle(){
   .pb-song{position:relative;z-index:1;display:flex;align-items:center;gap:11px;padding:14px;width:100%;} .pb-song-ic{width:42px;height:42px;border-radius:11px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;color:#1a1030;background:linear-gradient(135deg,#c9c4f5,#8b7cf6);} .pb-song-ic img{width:100%;height:100%;object-fit:cover;} .pb-song-t{font-size:17px;font-weight:900;} .pb-song-s{font-size:11px;color:rgba(255,255,255,.6);}
   .pb-q{text-align:center;font-size:13.5px;font-weight:800;color:rgba(255,255,255,.82);margin:16px 0 12px;}
   .pb-vs{display:flex;align-items:stretch;}
-  .pb-opt{flex:1;border-radius:18px;padding:15px 12px 14px;text-align:center;position:relative;cursor:pointer;border:1.5px solid transparent;transition:all .18s;}
+  .pb-opt{flex:1;border-radius:18px;padding:13px 11px 12px;text-align:center;position:relative;cursor:pointer;border:1.5px solid transparent;transition:all .18s;}
   .pb-opt.a{background:radial-gradient(120% 100% at 50% 0%,rgba(34,211,238,.22),rgba(34,211,238,.06));border-color:rgba(34,211,238,.5);}
   .pb-opt.b{background:radial-gradient(120% 100% at 50% 0%,rgba(251,73,138,.22),rgba(251,73,138,.06));border-color:rgba(251,73,138,.5);}
   .pb-opt.c{background:radial-gradient(120% 100% at 50% 0%,rgba(255,209,102,.2),rgba(255,209,102,.05));border-color:rgba(255,209,102,.5);}
   .pb-opt.simple{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:118px;}
   .pb-opt.on{transform:translateY(-2px);} .pb-opt.a.on{border-color:#22d3ee;box-shadow:0 0 26px rgba(34,211,238,.4);} .pb-opt.b.on{border-color:#fb498a;box-shadow:0 0 26px rgba(251,73,138,.4);} .pb-opt.c.on{border-color:#FFD166;box-shadow:0 0 26px rgba(255,209,102,.35);}
   .pb-badge{font-size:12px;font-weight:900;} .pb-opt.a .pb-badge{color:#22d3ee;} .pb-opt.b .pb-badge{color:#fb6f92;} .pb-opt.c .pb-badge{color:#FFD166;}
-  .pb-play{width:52px;height:52px;border-radius:50%;margin:10px auto 9px;display:flex;align-items:center;justify-content:center;font-size:23px;}
+  .pb-play{width:56px;height:56px;border-radius:50%;margin:8px auto 8px;display:flex;align-items:center;justify-content:center;font-size:25px;}
   .pb-opt.a .pb-play{background:#22d3ee;color:#06222b;box-shadow:0 0 20px rgba(34,211,238,.5);} .pb-opt.b .pb-play{background:#fb498a;color:#3b0a1e;box-shadow:0 0 20px rgba(251,73,138,.5);}
   .pb-name{font-size:13.5px;font-weight:800;} .pb-name.big{font-size:19px;font-weight:900;margin-top:8px;}
-  .pb-wave{display:flex;align-items:center;gap:9px;margin-top:11px;background:rgba(0,0,0,.3);border-radius:10px;padding:7px 9px;} .pb-wave i{font-size:14px;opacity:.85;} .pb-wave .wf{flex:1;height:15px;background:repeating-linear-gradient(90deg,currentColor 0 2px,transparent 2px 4px);opacity:.5;border-radius:2px;} .pb-opt.a .pb-wave{color:#22d3ee;} .pb-opt.b .pb-wave{color:#fb6f92;}
+  .pb-wave{display:flex;align-items:center;gap:9px;margin-top:9px;background:rgba(0,0,0,.3);border-radius:10px;padding:7px 9px;} .pb-wave i{font-size:14px;opacity:.85;} .pb-wave .wf{flex:1;height:15px;background:repeating-linear-gradient(90deg,currentColor 0 2px,transparent 2px 4px);opacity:.5;border-radius:2px;} .pb-opt.a .pb-wave{color:#22d3ee;} .pb-opt.b .pb-wave{color:#fb6f92;}
   .pb-vsmid{display:flex;align-items:center;padding:0 6px;font-size:13px;font-weight:900;color:rgba(255,255,255,.45);}
   .pb-pct{min-height:8px;}
   .pb-blind{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:14px;font-size:11.5px;font-weight:700;color:rgba(255,255,255,.5);background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.14);border-radius:12px;padding:11px;} .pb-blind i{color:#C9C4F5;}
@@ -3712,12 +3712,14 @@ function _pbCardShell(r){
   var title = (tr && tr.title) ? tr.title.replace(/\s*\(Demo.*\)$/i,'') : (r.song_title || '곡');
   var artist = r.artist_name || (tr && tr.artist) || '';
   var cands = r.candidates || [];
-  // 앨범 커버 = 실제 커버 이미지 우선(스크린샷처럼 큰 히어로). 없으면 곡 태그 #해시태그, 그것도 없으면 그라데이션.
+  // 맨 위 = 아티스트 프로필 사진 우선(작게). 없으면 곡 커버, 그것도 없으면 #태그/그라데이션.
+  // 구글 아바타(=s96-c)는 흐려서 고해상도(=s400-c)로 요청.
+  var hero = (tr && tr.artistAvatar) ? String(tr.artistAvatar).replace(/=s\d+-c/, '=s400-c') : cover;
   var tags = (tr && Array.isArray(tr.tags) && tr.tags.length) ? tr.tags.slice(0,3) : [];
   var grad = '<div class="pb-cover-grad" style="background:'+_pbCoverGrad(r.track_id||r.id)+'"></div>';
   var coverHtml;
-  if (cover){
-    coverHtml = '<img class="pb-cover-img" src="'+pbEsc(cover)+'" alt="">';
+  if (hero){
+    coverHtml = '<img class="pb-cover-img" src="'+pbEsc(hero)+'" alt="">';
   } else if (tags.length){
     coverHtml = grad + '<div class="pb-cover-tags">'+tags.map(function(tg){ return '<span>#'+pbEsc(String(tg).replace(/^#/,''))+'</span>'; }).join('')+'</div>';
   } else {
