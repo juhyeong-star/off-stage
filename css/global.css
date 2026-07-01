@@ -12095,6 +12095,19 @@ body {
   .progress-bar-track { height: 6px; }
   .progress-bar-wrap:hover .progress-bar-track { height: 6px; }
 }
+/* 스크러버 썸(스포티파이식) — 호버/드래그 시 채움 끝에 흰 점. 드래그가 스크롤로 안 먹게 touch-action:none */
+.progress-bar-wrap, #player-fs .pfs-track { touch-action: none; cursor: pointer; }
+.progress-bar-wrap .progress-fill::after,
+#player-fs .pfs-track .pfs-fill::after {
+  content: ''; position: absolute; right: -6px; top: 50%; transform: translateY(-50%);
+  width: 13px; height: 13px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.55); opacity: 0; transition: opacity 0.15s; pointer-events: none;
+}
+.progress-bar-wrap:hover .progress-fill::after,
+.progress-bar-wrap.seeking .progress-fill::after,
+#player-fs .pfs-track:hover .pfs-fill::after,
+#player-fs .pfs-track.seeking .pfs-fill::after { opacity: 1; }
+.progress-bar-wrap.seeking .progress-fill, #player-fs .pfs-track.seeking .pfs-fill { transition: none; }
 
 /* --- M4: 명시적 expand 트리거 (영역 클릭 비활성, 화살표 버튼만) --- */
 .player-expand-btn {

@@ -3735,11 +3735,8 @@ function _pbCardShell(r){
     + '<div class="pb-q">'+pbEsc(r.question)+'</div>'
     + '<div class="pb-vs">'+_pbOpt(r,cands[0])+'<div class="pb-vsmid">VS</div>'+_pbOpt(r,cands[1])+'</div>'
     + '<div class="pb-pct" id="pb-pct-'+r.id+'"></div>'
-    + '<div class="pb-voices"><div class="pb-voices-h"><i class="ri-chat-heart-fill"></i> 우리의 목소리 <span id="pb-cc-'+r.id+'"></span></div>'
-    + '<div class="pb-voices-s">A·B 말고 다른 의견? 하트 1등은 <b>제안 배틀(C안)</b>로 합류!</div>'
-    + '<div class="pb-cmt-prev" id="pb-prev-'+r.id+'"></div>'
-    + '<div class="pb-more" onclick="pbOpenSheet(\''+r.id+'\')">댓글 모두 보기 ▾</div></div>'
-    + '<button class="pb-cta" onclick="pbOpenSheet(\''+r.id+'\')"><i class="ri-quill-pen-line"></i> 이 데모에 의견 투지하기</button>'
+    + '<div class="pb-voices"><div class="pb-cmt-prev" id="pb-prev-'+r.id+'"></div></div>'
+    + '<button class="pb-cta" onclick="pbOpenSheet(\''+r.id+'\')"><i class="ri-chat-3-line"></i> 의견 <b id="pb-cc-'+r.id+'">0</b> · 남기기</button>'
     + '</div>';
 }
 // 라운드 삭제 (작성자 본인). 댓글·투표는 DB cascade 로 함께 삭제.
@@ -3775,7 +3772,7 @@ async function _pbFillCard(r){
   var cc = document.getElementById('pb-cc-'+r.id); if (cc) cc.textContent = d.comments.length;
   var sorted = d.comments.slice().sort(function(a,b){return (d.tally[b.id]||0)-(d.tally[a.id]||0);});
   var prev = document.getElementById('pb-prev-'+r.id);
-  if (prev) prev.innerHTML = sorted.length ? sorted.slice(0,3).map(function(c,i){return _pbCmtRow(r,c,d,i===0);}).join('') : '<div class="pb-noc">A·B 말고 다른 의견 있으면 남겨주세요! 하트 1등은 배틀(C안)로 합류해요.</div>';
+  if (prev) prev.innerHTML = sorted.length ? sorted.slice(0,2).map(function(c,i){return _pbCmtRow(r,c,d,i===0);}).join('') : '<div class="pb-noc">첫 의견을 남겨보세요 · 하트 1등은 C안 합류</div>';
   var pctEl = document.getElementById('pb-pct-'+r.id);
   if (pctEl) pctEl.innerHTML = _pbPctHtml(r, d);   // 항상 퍼센트 공개(블라인드 해제)
   card.querySelectorAll('.pb-opt').forEach(function(el){ el.classList.remove('on'); });
@@ -17016,6 +17013,7 @@ function togglePlay() {
 }
 
 function updateProgress() {
+  if (window.__seeking) return;   // 드래그(스크럽) 중엔 스크러버가 직접 미리보기 — 덮어쓰기 방지
   const { duration, currentTime } = audioElement;
   const progressPercent = (currentTime / duration) * 100;
 
@@ -17039,16 +17037,20 @@ function formatTime(seconds) {
   return `${min}:${sec < 10 ? '0' : ''}${sec}`;
 }
 
-document.getElementById('progress-bar').addEventListener('click', (e) => {
-  // Use bounding rect so clicks on the inner track or transparent hit-area
-  // both seek correctly (the outer wrap pads the hit area for fingers).
-  const rect = e.currentTarget.getBoundingClientRect();
-  const clickX = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-  const duration = audioElement.duration;
-  if (duration && rect.width > 0) {
-    audioElement.currentTime = (clickX / rect.width) * duration;
-  }
-});
+// 시크바 = 스포티파이식 드래그 스크러버 (터치/마우스). 탭·드래그 모두 시크. 미니바 + 풀스크린 둘 다.
+function _attachSeek(barEl){
+  if (!barEl || barEl.__seek) return; barEl.__seek = true;
+  var fill = barEl.querySelector('.progress-fill, .pfs-fill');
+  function fracAt(cx){ var r=barEl.getBoundingClientRect(); return r.width>0 ? Math.max(0, Math.min(1, (cx-r.left)/r.width)) : 0; }
+  function preview(f){ if(fill) fill.style.width=(f*100)+'%'; var d=audioElement.duration; if(d&&isFinite(d)){ var t=formatTime(f*d); var a=document.getElementById('time-current'); if(a)a.innerText=t; var b=document.getElementById('pfs-cur'); if(b)b.innerText=t; } }
+  var down=false;
+  barEl.addEventListener('pointerdown', function(e){ if(e.button&&e.button!==0) return; down=true; window.__seeking=true; barEl.classList.add('seeking'); preview(fracAt(e.clientX)); e.preventDefault(); });
+  window.addEventListener('pointermove', function(e){ if(down) preview(fracAt(e.clientX)); });
+  window.addEventListener('pointerup', function(e){ if(!down) return; down=false; barEl.classList.remove('seeking'); var f=fracAt(e.clientX); preview(f); var d=audioElement.duration; if(d&&isFinite(d)) audioElement.currentTime=f*d; window.__seeking=false; });
+  window.addEventListener('pointercancel', function(){ if(!down) return; down=false; barEl.classList.remove('seeking'); window.__seeking=false; });
+}
+_attachSeek(document.getElementById('progress-bar'));
+_attachSeek(document.querySelector('#player-fs .pfs-track'));
 
 // Boot
 window.onload = init;

@@ -47,7 +47,7 @@
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=932">
+  <link rel="stylesheet" href="css/global.css?v=934">
 </head>
 <body>
 
@@ -249,9 +249,7 @@
       <div class="pfs-controls">
         <button class="pfs-side" type="button" aria-label="셔플" onclick="window.toggleShuffle && window.toggleShuffle()"><i class="ri-shuffle-line"></i></button>
         <button class="pfs-skip" type="button" aria-label="이전 곡" onclick="window._pfsPrev && window._pfsPrev()"><i class="ri-skip-back-fill"></i></button>
-        <button class="pfs-seek" type="button" aria-label="15초 뒤로" title="15초 뒤로" onclick="window.playerSeek && window.playerSeek(-15)"><i class="ri-arrow-go-back-line"></i><b>15</b></button>
         <button class="pfs-play" id="pfs-play" type="button" aria-label="재생/일시정지" onclick="window._pfsTogglePlay && window._pfsTogglePlay()"><i class="ri-play-fill"></i></button>
-        <button class="pfs-seek" type="button" aria-label="15초 앞으로" title="15초 앞으로" onclick="window.playerSeek && window.playerSeek(15)"><i class="ri-arrow-go-forward-line"></i><b>15</b></button>
         <button class="pfs-skip" type="button" aria-label="다음 곡" onclick="window._pfsNext && window._pfsNext()"><i class="ri-skip-forward-fill"></i></button>
         <button class="pfs-side" type="button" aria-label="반복" onclick="event.stopPropagation()"><i class="ri-repeat-2-line"></i></button>
       </div>
@@ -271,12 +269,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=932"></script>
-  <script defer src="js/data.js?v=932"></script>
-  <script defer src="js/supabase.js?v=932"></script>
-  <script defer src="js/analytics.js?v=932"></script>
-  <script defer src="js/distribute.js?v=932"></script>
-  <script defer src="js/app.js?v=932"></script>
-  <script defer src="js/polaroid.js?v=932"></script>
+  <script defer src="js/supabase-init.js?v=934"></script>
+  <script defer src="js/data.js?v=934"></script>
+  <script defer src="js/supabase.js?v=934"></script>
+  <script defer src="js/analytics.js?v=934"></script>
+  <script defer src="js/distribute.js?v=934"></script>
+  <script defer src="js/app.js?v=934"></script>
+  <script defer src="js/polaroid.js?v=934"></script>
 </body>
 </html>
