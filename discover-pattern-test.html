@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>발견 · 패턴 유지 테스트</title>
+<title>발견 · 세로 패턴 유지 테스트</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -11,173 +11,134 @@
   .note{max-width:440px;font-size:11.5px;line-height:1.6;color:#c9b8ff;background:#1c1630;border:1px solid rgba(167,139,250,.35);border-radius:12px;padding:9px 12px;margin:0 12px 12px;text-align:center;}
   .note b{color:#fff;}
 
-  /* 폰 프레임 */
   .phone{position:relative;width:min(430px,94vw);aspect-ratio:9/18.2;border-radius:38px;background:#000;border:2px solid #26222f;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6);}
-  .canvas{position:absolute;inset:0;background:#000;overflow:hidden;}
+  /* 세로 스크롤 컨테이너 — 아래로 쭉 내림 */
+  .scroll{position:absolute;inset:0;overflow-y:auto;scroll-snap-type:y proximity;scrollbar-width:none;background:#000;}
+  .scroll::-webkit-scrollbar{display:none;}
 
-  /* 슬롯: 고정 좌표. 페이지마다 .on/.off 만 토글 → 패턴(별자리)은 유지, 셀만 켜졌다 꺼졌다 */
-  .slot{position:absolute;transform:translate(-50%,-50%) scale(1) rotate(var(--rot,0deg));
+  /* 한 화면(=곡). 슬롯 좌표는 섹션마다 동일 → 패턴(별자리)이 계속 유지됨 */
+  .section{position:relative;height:100%;scroll-snap-align:start;border-bottom:1px dashed rgba(255,255,255,.05);}
+
+  .slot{position:absolute;transform:translate(-50%,-50%) rotate(var(--rot,0deg));
         width:var(--w);height:var(--h);opacity:1;
-        transition:opacity .55s cubic-bezier(.4,0,.2,1),transform .6s cubic-bezier(.34,1.56,.64,1);
-        display:flex;align-items:center;justify-content:center;will-change:transform,opacity;}
-  .slot.off{opacity:0;transform:translate(-50%,-50%) scale(.35) rotate(calc(var(--rot,0deg) + 40deg));pointer-events:none;}
-  .shape{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 3px 10px rgba(0,0,0,.5));}
+        transition:opacity .5s cubic-bezier(.4,0,.2,1),transform .55s cubic-bezier(.34,1.56,.64,1);
+        display:flex;align-items:center;justify-content:center;}
+  .slot.off{opacity:0;transform:translate(-50%,-50%) scale(.35) rotate(calc(var(--rot,0deg) + 35deg));pointer-events:none;}
+  /* 처음 화면에 들어올 때 살짝 떠오르는 리빌 */
+  .section:not(.inview) .slot:not(.off){opacity:0;transform:translate(-50%,-50%) scale(.7) rotate(var(--rot,0deg));}
 
+  .shape{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 3px 10px rgba(0,0,0,.5));}
   .burst{clip-path:polygon(50% 0%,60% 25%,85% 15%,75% 40%,100% 50%,75% 60%,85% 85%,60% 75%,50% 100%,40% 75%,15% 85%,25% 60%,0% 50%,25% 40%,15% 15%,40% 25%);}
   .tri{clip-path:polygon(50% 2%,2% 98%,98% 98%);}
   .spark{clip-path:polygon(50% 0%,58% 42%,100% 50%,58% 58%,50% 100%,42% 58%,0% 50%,42% 42%);}
-  .circle{border-radius:50%;}
-  .ellipse{border-radius:50%;}
+  .circle,.ellipse{border-radius:50%;}
   .square{border-radius:6px;}
   .semi{border-radius:999px 999px 0 0;}
-
-  /* 종이 더미(흰 사각형 스택) */
   .stack .shape{background:none;filter:none;}
   .stack .p{position:absolute;background:#fff;border:1.5px solid #d7d7d7;border-radius:3px;width:74%;height:74%;box-shadow:0 3px 8px rgba(0,0,0,.4);}
   .stack .p:nth-child(1){left:0;top:0;transform:rotate(-8deg);}
   .stack .p:nth-child(2){left:14%;top:12%;transform:rotate(4deg);}
   .stack .p:nth-child(3){left:26%;top:24%;transform:rotate(-3deg);}
+  .notes{font-size:var(--w);line-height:1;font-weight:900;}
 
-  .notes{font-size:calc(var(--w));line-height:1;font-weight:900;}
+  .s-text{position:relative;z-index:2;text-align:center;font-weight:800;line-height:1.5;letter-spacing:-.2px;padding:0 6px;pointer-events:none;white-space:nowrap;}
+  .tri-wrap .s-text{transform:translateY(24%);}
 
-  /* 정보 카드 텍스트(장르/작곡가/제목) */
-  .s-text{position:relative;z-index:2;text-align:center;font-weight:800;line-height:1.5;letter-spacing:-.2px;
-          padding:0 6px;pointer-events:none;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.12);}
-  .tri-wrap .s-text{transform:translateY(24%);}  /* 삼각형은 아래쪽으로 */
+  /* 곡 라벨(각 섹션 하단) */
+  .sec-label{position:absolute;left:16px;bottom:20px;z-index:4;pointer-events:none;}
+  .sec-label .t{font-size:15px;font-weight:900;text-shadow:0 2px 8px #000;}
+  .sec-label .s{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px;}
+  .sec-num{position:absolute;right:16px;bottom:20px;z-index:4;font-size:11px;font-weight:800;color:rgba(255,255,255,.4);}
 
-  /* 격자 보기: 켜지든 꺼지든 모든 슬롯 자리를 흐리게 표시 → '패턴이 유지된다'가 눈에 보임 */
-  .canvas.grid .slot.off{opacity:.14;transform:translate(-50%,-50%) scale(.82) rotate(var(--rot,0deg));}
-  .canvas.grid .slot::after{content:'';position:absolute;inset:-8px;border:1px dashed rgba(255,255,255,.18);border-radius:14px;}
+  /* 격자 보기: 꺼진 자리도 흐리게 → 섹션마다 같은 별자리인 게 보임 */
+  .scroll.grid .slot.off{opacity:.13;transform:translate(-50%,-50%) scale(.8) rotate(var(--rot,0deg));}
+  .scroll.grid .slot::after{content:'';position:absolute;inset:-7px;border:1px dashed rgba(255,255,255,.16);border-radius:12px;}
 
-  /* 페이지 라벨 */
-  .plabel{position:absolute;left:0;right:0;bottom:14px;text-align:center;z-index:5;pointer-events:none;}
-  .plabel .t{font-size:15px;font-weight:900;text-shadow:0 2px 8px #000;}
-  .plabel .s{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px;}
+  .scrollhint{position:absolute;left:0;right:0;bottom:10px;text-align:center;font-size:11px;color:rgba(255,255,255,.35);z-index:6;pointer-events:none;animation:bob 1.6s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
 
-  /* 컨트롤 */
-  .ctrl{display:flex;align-items:center;gap:14px;margin-top:16px;}
-  .ctrl button{border:none;background:#221c33;color:#fff;font-family:inherit;font-weight:800;font-size:14px;
-               width:46px;height:46px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-  .ctrl button:active{transform:scale(.92);}
-  .dots{display:flex;gap:7px;}
-  .dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.25);transition:all .3s;cursor:pointer;}
-  .dots i.on{background:#a78bfa;width:22px;border-radius:999px;}
-  .toggles{display:flex;gap:10px;margin-top:14px;}
-  .toggles button{border:1px solid rgba(255,255,255,.16);background:transparent;color:rgba(255,255,255,.8);
-                  font-family:inherit;font-size:12px;font-weight:700;padding:9px 15px;border-radius:999px;cursor:pointer;}
+  .toggles{display:flex;gap:10px;margin-top:16px;}
+  .toggles button{border:1px solid rgba(255,255,255,.16);background:transparent;color:rgba(255,255,255,.8);font-family:inherit;font-size:12px;font-weight:700;padding:9px 15px;border-radius:999px;cursor:pointer;}
   .toggles button.on{background:#a78bfa;border-color:#a78bfa;color:#160f28;}
   .hint{font-size:11px;color:rgba(255,255,255,.4);margin-top:12px;text-align:center;max-width:400px;line-height:1.5;}
 </style>
 </head>
 <body>
-  <div class="note">🧪 <b>발견 · 패턴 유지</b> — 도형 자리(별자리)는 페이지마다 <b>고정</b>. 페이지를 넘기면 같은 자리에서 셀만 <b>켜졌다/꺼졌다</b>. 어떤 곡은 빈 칸을 채우고, 어떤 칸은 다음 곡에선 비어요.</div>
+  <div class="note">🧪 <b>발견 · 세로 스크롤 + 패턴 유지</b> — 아래로 내리면 곡이 바뀌는데, 도형 자리(별자리)는 <b>화면마다 그대로</b>. 같은 자리에서 셀만 <b>켜졌다/꺼졌다</b> 해요.</div>
 
   <div class="phone">
-    <div class="canvas" id="canvas"></div>
-    <div class="plabel"><div class="t" id="plT"></div><div class="s" id="plS"></div></div>
+    <div class="scroll" id="scroll"></div>
+    <div class="scrollhint" id="hint">↓ 스크롤로 아래로</div>
   </div>
 
-  <div class="ctrl">
-    <button onclick="go(-1)">‹</button>
-    <div class="dots" id="dots"></div>
-    <button onclick="go(1)">›</button>
-  </div>
   <div class="toggles">
     <button id="btnGrid" onclick="toggleGrid()">▦ 격자(패턴) 보기</button>
-    <button id="btnAuto" onclick="toggleAuto()">▶ 자동 넘김</button>
   </div>
-  <div class="hint">👆 좌우 스와이프 / ‹ › / 점 · <b>격자 보기</b>를 켜면 꺼진 자리도 흐리게 보여서 "패턴이 유지된다"가 한눈에 보여요.</div>
+  <div class="hint"><b>격자 보기</b>를 켜고 아래로 쭉 내려보세요 — 섹션(곡)이 바뀌어도 <b>같은 별자리</b>가 유지되고, 채워진 칸만 달라지는 게 보여요.</div>
 
 <script>
-  // ── 고정 슬롯(별자리) : 위치·모양·색은 절대 안 변함 ────────────────
-  var SLOTS = [
+  // ── 슬롯 템플릿(별자리) : 모든 섹션이 이 좌표를 그대로 씀 = 패턴 유지 ──
+  var TPL = [
     {id:'s1', x:13,y:8,  w:60,h:40, cls:'ellipse', color:'#FFD84D', tc:'#111', rot:-6},
-    {id:'s2', x:85,y:8,  w:30,h:30, cls:'circle',  color:'#4ADE80', tc:'#0a2914', rot:0},
-    {id:'s3', x:60,y:11, w:36,h:36, cls:'spark',   color:'#22D3EE', tc:'#052a30', rot:0},
-    {id:'s4', x:33,y:24, w:170,h:170, cls:'burst', color:'#EC4899', tc:'#160510', rot:-8, info:1},
-    {id:'s5', x:75,y:35, w:132,h:120, cls:'tri',   color:'#3B82F6', tc:'#fff', rot:0, info:1},
-    {id:'s6', x:17,y:45, w:80,h:80, cls:'stack',   color:'#fff',    tc:'#111', rot:0},
-    {id:'s7', x:42,y:57, w:122,h:122, cls:'circle',color:'#7EE00F', tc:'#12300a', rot:0},
-    {id:'s8', x:80,y:65, w:150,h:150, cls:'tri',   color:'#8B5CF6', tc:'#fff', rot:14, info:1},
-    {id:'s9', x:23,y:75, w:120,h:120, cls:'burst', color:'#F472B6', tc:'#180712', rot:-6, info:1},
-    {id:'s10',x:74,y:85, w:132,h:132, cls:'burst', color:'#EF4444', tc:'#fff', rot:8},
-    {id:'s11',x:25,y:95, w:56,h:56, cls:'square',  color:'#FDE047', tc:'#111', rot:0},
-    {id:'s12',x:93,y:90, w:56,h:34, cls:'semi',    color:'#FB923C', tc:'#111', rot:0},
-    {id:'s13',x:52,y:33, w:11,h:11, cls:'circle',  color:'#fff',    tc:'#111', rot:0},
-    {id:'s14',x:90,y:47, w:9,h:9,   cls:'circle',  color:'#fff',    tc:'#111', rot:0},
-    {id:'s15',x:8, y:61, w:13,h:13, cls:'circle',  color:'#22D3EE', tc:'#111', rot:0},
-    {id:'s16',x:35,y:50, w:44,h:34, cls:'notes',   color:'#F472B6', tc:'#111', rot:0, glyph:'♫'},
-    {id:'s17',x:63,y:73, w:11,h:11, cls:'circle',  color:'#F472B6', tc:'#111', rot:0},
-    {id:'s18',x:91,y:22, w:9,h:9,   cls:'circle',  color:'#FDE047', tc:'#111', rot:0}
+    {id:'s2', x:85,y:8,  w:30,h:30, cls:'circle',  color:'#4ADE80', tc:'#0a2914'},
+    {id:'s3', x:60,y:11, w:36,h:36, cls:'spark',   color:'#22D3EE', tc:'#052a30'},
+    {id:'s4', x:33,y:24, w:168,h:168, cls:'burst', color:'#EC4899', tc:'#160510', rot:-8, info:1},
+    {id:'s5', x:75,y:34, w:130,h:118, cls:'tri',   color:'#3B82F6', tc:'#fff', info:1},
+    {id:'s6', x:17,y:45, w:78,h:78, cls:'stack',   color:'#fff',    tc:'#111'},
+    {id:'s7', x:42,y:56, w:120,h:120, cls:'circle',color:'#7EE00F', tc:'#12300a'},
+    {id:'s8', x:80,y:64, w:148,h:148, cls:'tri',   color:'#8B5CF6', tc:'#fff', rot:14, info:1},
+    {id:'s9', x:23,y:74, w:118,h:118, cls:'burst', color:'#F472B6', tc:'#180712', rot:-6, info:1},
+    {id:'s10',x:74,y:85, w:130,h:130, cls:'burst', color:'#EF4444', tc:'#fff', rot:8},
+    {id:'s11',x:25,y:94, w:56,h:56, cls:'square',  color:'#FDE047', tc:'#111'},
+    {id:'s12',x:93,y:90, w:56,h:34, cls:'semi',    color:'#FB923C', tc:'#111'},
+    {id:'s13',x:52,y:33, w:11,h:11, cls:'circle',  color:'#fff'},
+    {id:'s14',x:90,y:47, w:9,h:9,   cls:'circle',  color:'#fff'},
+    {id:'s15',x:8, y:61, w:13,h:13, cls:'circle',  color:'#22D3EE'},
+    {id:'s16',x:35,y:50, w:44,h:34, cls:'notes',   color:'#F472B6', glyph:'♫'},
+    {id:'s17',x:63,y:73, w:11,h:11, cls:'circle',  color:'#F472B6'},
+    {id:'s18',x:91,y:22, w:9,h:9,   cls:'circle',  color:'#FDE047'}
   ];
 
-  // ── 페이지(곡) : active=켜지는 슬롯, info=이 곡 정보를 보여줄 슬롯 ──
-  var PAGES = [
+  // ── 섹션(곡) : 아래로 스크롤하며 지나감. active=켜지는 칸, info=곡정보 표시 칸 ──
+  var SECTIONS = [
     {g:'ROCK',    c:'THUNDER', t:'랩퍼의 꿈',  active:['s1','s3','s4','s5','s6','s7','s8','s9','s10','s11','s13','s16','s18'], info:['s4','s5','s8','s9']},
     {g:'CITYPOP', c:'LUNA',    t:'새벽 두 시',  active:['s2','s3','s4','s6','s7','s8','s10','s12','s14','s15','s17'],          info:['s4','s8']},
     {g:'BALLAD',  c:'RIO',     t:'여름의 끝',   active:['s1','s2','s5','s7','s9','s10','s11','s13','s14','s16'],               info:['s5','s9']},
-    {g:'HIPHOP',  c:'ZICO',    t:'교실 탈출',   active:['s3','s4','s6','s8','s9','s10','s11','s12','s15','s17','s18'],         info:['s4','s8','s9']}
+    {g:'HIPHOP',  c:'ZICO',    t:'교실 탈출',   active:['s3','s4','s6','s8','s9','s10','s11','s12','s15','s17','s18'],         info:['s4','s8','s9']},
+    {g:'R&B',     c:'MINA',    t:'보라빛 밤',   active:['s1','s2','s4','s5','s7','s8','s10','s13','s16','s18'],                info:['s5','s8']}
   ];
 
-  var canvas = document.getElementById('canvas');
-  var cur = 0, autoT = null;
+  var scroll = document.getElementById('scroll');
 
-  // 슬롯 DOM 1회 생성
-  SLOTS.forEach(function(s){
-    var el = document.createElement('div');
-    el.className = 'slot' + (s.cls==='stack'?' stack':'') + (s.cls==='tri'?' tri-wrap':'');
-    el.id = 'slot-'+s.id;
-    el.style.left = s.x+'%'; el.style.top = s.y+'%';
-    el.style.setProperty('--w', s.w+'px'); el.style.setProperty('--h', s.h+'px');
-    el.style.setProperty('--rot', (s.rot||0)+'deg');
-    var inner = '';
-    if (s.cls==='stack'){ inner = '<div class="shape"><div class="p"></div><div class="p"></div><div class="p"></div></div>'; }
-    else if (s.cls==='notes'){ inner = '<div class="notes" style="color:'+s.color+'">'+s.glyph+'</div>'; }
-    else { inner = '<div class="shape '+s.cls+'" style="background:'+s.color+'"></div>'; }
-    if (s.info){ inner += '<div class="s-text" id="txt-'+s.id+'" style="color:'+s.tc+';font-size:'+(s.w>140?12:10.5)+'px"></div>'; }
-    el.innerHTML = inner;
-    canvas.appendChild(el);
+  SECTIONS.forEach(function(sec, si){
+    var act={}; sec.active.forEach(function(id){act[id]=1;});
+    var inf={}; sec.info.forEach(function(id){inf[id]=1;});
+    var sc = document.createElement('div'); sc.className='section';
+    TPL.forEach(function(s){
+      var el=document.createElement('div');
+      el.className='slot'+(s.cls==='stack'?' stack':'')+(s.cls==='tri'?' tri-wrap':'')+(act[s.id]?'':' off');
+      el.style.left=s.x+'%'; el.style.top=s.y+'%';
+      el.style.setProperty('--w',s.w+'px'); el.style.setProperty('--h',s.h+'px'); el.style.setProperty('--rot',(s.rot||0)+'deg');
+      var inner='';
+      if(s.cls==='stack') inner='<div class="shape"><div class="p"></div><div class="p"></div><div class="p"></div></div>';
+      else if(s.cls==='notes') inner='<div class="notes" style="color:'+s.color+'">'+s.glyph+'</div>';
+      else inner='<div class="shape '+s.cls+'" style="background:'+s.color+'"></div>';
+      if(s.info && inf[s.id]) inner+='<div class="s-text" style="color:'+s.tc+';font-size:'+(s.w>140?12:10.5)+'px">장르 : '+sec.g+'<br>작곡가 : '+sec.c+'<br>제목 : '+sec.t+'</div>';
+      el.innerHTML=inner;
+      sc.appendChild(el);
+    });
+    sc.insertAdjacentHTML('beforeend','<div class="sec-label"><div class="t">'+sec.t+'</div><div class="s">'+sec.g+' · '+sec.c+'</div></div><div class="sec-num">'+(si+1)+' / '+SECTIONS.length+'</div>');
+    scroll.appendChild(sc);
   });
 
-  // 점 생성
-  var dotsEl = document.getElementById('dots');
-  PAGES.forEach(function(_,i){ var d=document.createElement('i'); d.onclick=function(){show(i);}; dotsEl.appendChild(d); });
+  // 스크롤 진입 시 리빌 + 첫 섹션 즉시 표시
+  var io = new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('inview'); }); }, {root:scroll, threshold:.25});
+  document.querySelectorAll('.section').forEach(function(s){ io.observe(s); });
+  document.querySelector('.section').classList.add('inview');
+  scroll.addEventListener('scroll', function(){ var h=document.getElementById('hint'); if(scroll.scrollTop>40) h.style.opacity='0'; }, {passive:true});
 
-  function render(){
-    var pg = PAGES[cur];
-    var act = {}; pg.active.forEach(function(id){act[id]=1;});
-    var inf = {}; pg.info.forEach(function(id){inf[id]=1;});
-    SLOTS.forEach(function(s){
-      var el = document.getElementById('slot-'+s.id);
-      el.classList.toggle('off', !act[s.id]);
-      if (s.info){
-        var tx = document.getElementById('txt-'+s.id);
-        tx.innerHTML = inf[s.id] ? ('장르 : '+pg.g+'<br>작곡가 : '+pg.c+'<br>제목 : '+pg.t) : '';
-      }
-    });
-    document.getElementById('plT').textContent = pg.t;
-    document.getElementById('plS').textContent = pg.g + ' · ' + pg.c;
-    Array.prototype.forEach.call(dotsEl.children, function(d,i){ d.classList.toggle('on', i===cur); });
-  }
-  function show(i){ cur = (i+PAGES.length)%PAGES.length; render(); }
-  function go(d){ show(cur+d); }
-  window.go = go; window.show = show;
-
-  function toggleGrid(){ canvas.classList.toggle('grid'); document.getElementById('btnGrid').classList.toggle('on'); }
-  function toggleAuto(){
-    var b=document.getElementById('btnAuto');
-    if (autoT){ clearInterval(autoT); autoT=null; b.classList.remove('on'); b.textContent='▶ 자동 넘김'; }
-    else { autoT=setInterval(function(){go(1);},2600); b.classList.add('on'); b.textContent='⏸ 멈춤'; }
-  }
-  window.toggleGrid=toggleGrid; window.toggleAuto=toggleAuto;
-
-  // 스와이프
-  var sx=0, sdown=false;
-  canvas.addEventListener('pointerdown', function(e){ sdown=true; sx=e.clientX; });
-  window.addEventListener('pointerup', function(e){ if(!sdown)return; sdown=false; var dx=e.clientX-sx; if(Math.abs(dx)>45) go(dx<0?1:-1); });
-  window.addEventListener('keydown', function(e){ if(e.key==='ArrowRight')go(1); else if(e.key==='ArrowLeft')go(-1); });
-
-  render();
+  function toggleGrid(){ scroll.classList.toggle('grid'); document.getElementById('btnGrid').classList.toggle('on'); }
+  window.toggleGrid=toggleGrid;
 </script>
 </body>
 </html>
