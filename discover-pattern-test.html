@@ -33,6 +33,7 @@
   .stack .p:nth-child(3){left:26%;top:24%;transform:rotate(-3deg);}
   .notes{font-size:var(--w);line-height:1;font-weight:900;}
   .s-text{position:relative;z-index:2;text-align:center;font-weight:800;line-height:1.5;letter-spacing:-.2px;pointer-events:none;white-space:nowrap;}
+  .tri-wrap .s-text{transform:translateY(28%);}  /* 삼각형은 글자를 넓은 아래쪽으로 */
 
   .scrollhint{position:absolute;left:0;right:0;bottom:12px;text-align:center;font-size:11px;color:rgba(255,255,255,.4);z-index:8;pointer-events:none;transition:opacity .4s;animation:bob 1.6s ease-in-out infinite;}
   @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
@@ -56,11 +57,11 @@
     {id:'s1', x:13,y:7,  w:58,h:38, cls:'ellipse', color:'#FFD24A'},
     {id:'s2', x:60,y:10, w:40,h:40, cls:'spark',   color:'#26C6C6'},
     {id:'s3', x:33,y:24, w:158,h:158, cls:'burst', color:'#E24A9C', info:1, fit:.5,  fitH:.46},
-    {id:'s4', x:77,y:33, w:126,h:108, cls:'tri',   color:'#3E6FD9'},
+    {id:'s4', x:77,y:33, w:130,h:112, cls:'tri',   color:'#7FB2EC', info:1, fit:.56, fitH:.34},
     {id:'s5', x:17,y:45, w:78,h:78, cls:'stack',   color:'#F4F1E8'},
     {id:'s6', x:37,y:49, w:38,h:34, cls:'notes',   color:'#E24A9C', glyph:'♪'},
     {id:'s7', x:43,y:57, w:120,h:120, cls:'circle', color:'#86CE34', info:1, fit:.68, fitH:.62},
-    {id:'s8', x:81,y:64, w:138,h:120, cls:'tri',   color:'#8257E5', rot:8},
+    {id:'s8', x:81,y:64, w:142,h:124, cls:'tri',   color:'#B49BEE', info:1, fit:.56, fitH:.34},
     {id:'s9', x:22,y:74, w:120,h:120, cls:'burst', color:'#F06CA8', info:1, fit:.5,  fitH:.46},
     {id:'s10',x:75,y:84, w:128,h:128, cls:'burst', color:'#E8433F'},
     {id:'s11',x:25,y:93, w:52,h:52, cls:'square',  color:'#FFD24A'},
@@ -90,7 +91,7 @@
     var BW=band.clientWidth||340, BH=band.clientHeight||688;
     TPL.forEach(function(s){
       var el=document.createElement('div');
-      el.className='slot'+(s.info?' info':'')+(s.cls==='stack'?' stack':'');
+      el.className='slot'+(s.info?' info':'')+(s.cls==='stack'?' stack':'')+(s.cls==='tri'?' tri-wrap':'');
       // 판마다 살짝만 흔들기(위치 ±2.5%, 각도 ±7°), 프레임 밖 안 나가게 클램프
       var sz=Math.max(s.w,s.h), hw=(sz/2)/BW*100, hh=(sz/2)/BH*100;
       var nx=Math.max(hw+1, Math.min(99-hw, s.x+(Math.random()-0.5)*5));
