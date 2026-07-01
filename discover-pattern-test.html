@@ -3,40 +3,34 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>발견 · 빈티지 패턴</title>
+<title>발견 · 레트로 패턴</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-  body{background:#0d0b10;color:#F4F4F7;font-family:'Pretendard',sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:14px 0 40px;}
+  body{background:#0c0b10;color:#F4F4F7;font-family:'Pretendard',sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:14px 0 40px;}
   .note{max-width:440px;font-size:11.5px;line-height:1.6;color:#c9b8ff;background:#1a1626;border:1px solid rgba(167,139,250,.3);border-radius:12px;padding:9px 12px;margin:0 12px 12px;text-align:center;}
   .note b{color:#fff;}
 
-  .phone{position:relative;width:min(430px,94vw);aspect-ratio:9/18.2;border-radius:38px;background:#08070b;border:2px solid #221e2b;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6);}
-  .scroll{position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;background:#08070b;}
+  .phone{position:relative;width:min(430px,94vw);aspect-ratio:9/18.2;border-radius:38px;background:#050409;border:2px solid #221e2b;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6);}
+  .scroll{position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;background:#050409;}
   .scroll::-webkit-scrollbar{display:none;}
-  /* 은은한 빈티지 바탕(따뜻한 크림 비네트) */
-  .scroll::before{content:'';position:fixed;inset:0;pointer-events:none;background:radial-gradient(120% 80% at 50% 0%,rgba(233,178,74,.05),transparent 55%);z-index:0;}
 
   .band{position:relative;height:100%;}
 
   .slot{position:absolute;transform:translate(-50%,-50%) rotate(var(--rot,0deg));
         width:var(--w);height:var(--h);display:flex;align-items:center;justify-content:center;}
-  .shape{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 4px 12px rgba(0,0,0,.45));}
+  .shape{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 4px 11px rgba(0,0,0,.5));}
   .burst{clip-path:polygon(50% 0%,60% 25%,85% 15%,75% 40%,100% 50%,75% 60%,85% 85%,60% 75%,50% 100%,40% 75%,15% 85%,25% 60%,0% 50%,25% 40%,15% 15%,40% 25%);}
   .tri{clip-path:polygon(50% 2%,2% 98%,98% 98%);}
   .spark{clip-path:polygon(50% 0%,58% 42%,100% 50%,58% 58%,50% 100%,42% 58%,0% 50%,42% 42%);}
-  .circle,.ellipse{border-radius:50%;}
+  .circle{border-radius:50%;}
+  .ellipse{border-radius:50%;}
   .square{border-radius:7px;}
   .semi{border-radius:999px 999px 0 0;}
-  .stack .shape{background:none;filter:none;}
-  .stack .p{position:absolute;background:#EDE3CE;border:1.5px solid #c9bda0;border-radius:3px;width:74%;height:74%;box-shadow:0 3px 8px rgba(0,0,0,.4);}
-  .stack .p:nth-child(1){left:0;top:0;transform:rotate(-8deg);}
-  .stack .p:nth-child(2){left:14%;top:12%;transform:rotate(4deg);}
-  .stack .p:nth-child(3){left:26%;top:24%;transform:rotate(-3deg);}
-  .notes{font-size:var(--w);line-height:1;font-weight:900;}
+  .notes{font-size:var(--w);line-height:1;font-weight:900;filter:drop-shadow(0 3px 8px rgba(0,0,0,.5));}
 
-  /* 정보 텍스트: 항상 어두운 글씨(흰색 없음). 폰트는 고정, 도형이 글에 맞춰 커짐(auto-grow) */
-  .s-text{position:relative;z-index:2;text-align:center;font-weight:800;line-height:1.4;letter-spacing:-.3px;pointer-events:none;}
+  /* 글 넣는 도형은 원형 → 안 잘림. 글씨는 항상 어두운색(흰색 없음). 도형이 글에 맞춰 커짐 */
+  .s-text{position:relative;z-index:2;text-align:center;font-weight:800;line-height:1.5;letter-spacing:-.2px;pointer-events:none;white-space:nowrap;}
 
   .scrollhint{position:absolute;left:0;right:0;bottom:12px;text-align:center;font-size:11px;color:rgba(255,255,255,.4);z-index:6;pointer-events:none;transition:opacity .4s;animation:bob 1.6s ease-in-out infinite;}
   @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
@@ -45,49 +39,48 @@
 </style>
 </head>
 <body>
-  <div class="note">🧪 <b>발견 · 빈티지 패턴</b> — 우리 톤에 맞춘 빈티지 색, 흰 글씨 없음. 도형 별자리는 쭉 이어지고, <b>글이 있는 도형은 글 길이에 맞춰 자동으로 커져요</b>.</div>
+  <div class="note">🧪 <b>발견 · 레트로 패턴</b> — 쨍한 레트로 단색, 흰 글씨 없음. 해시태그는 <b>원형 도형</b>에(안 잘림), 태그가 길면 도형이 커져요. 빈 곳엔 도형·음표(♫)로 채움.</div>
 
   <div class="phone">
     <div class="scroll" id="scroll"></div>
     <div class="scrollhint" id="hint">↓ 쭉 내려보세요</div>
   </div>
-  <div class="hint">긴 제목이면 <b>도형이 그만큼 커지고</b>, 짧으면 작아져요 — 글자는 항상 읽기 좋은 크기 그대로.</div>
+  <div class="hint">글 있는 <b>원형 도형</b>은 안 잘리고, 태그 길이에 맞춰 커져요. 그 사이사이를 별·삼각형·음표가 채워서 꽉 찬 느낌.</div>
 
 <script>
-  // ── 슬롯 템플릿 : 빈티지 톤. 정보 도형(info)은 밝은 색 → 어두운 글씨 대비 ──
-  var INK = '#2c2233';   // 어두운 자주(빈티지 잉크) — 모든 글씨 색
+  var INK = '#211a29';   // 어두운 잉크(흰색 대신)
+  // ── 슬롯 : 글 넣는 건 circle(info), 나머진 장식. 쨍한 레트로 단색 ──
   var TPL = [
-    {id:'s1', x:15,y:9,  w:54,h:34, cls:'ellipse', color:'#E3B24A'},
-    {id:'s2', x:87,y:9,  w:26,h:26, cls:'circle',  color:'#7FC29C'},
-    {id:'s3', x:64,y:14, w:32,h:32, cls:'spark',   color:'#63B7BC'},
-    {id:'s4', x:31,y:26, w:120,h:120, cls:'burst', color:'#E79BB0', info:1, fit:.6,  fitH:.52},
-    {id:'s5', x:73,y:31, w:110,h:110, cls:'circle', color:'#A9B8E8', info:1, fit:.66, fitH:.6},
-    {id:'s6', x:18,y:47, w:70,h:70, cls:'stack',   color:'#EDE3CE'},
-    {id:'s7', x:45,y:53, w:82,h:82, cls:'circle',  color:'#B7A2DE'},
-    {id:'s8', x:73,y:70, w:120,h:120, cls:'burst', color:'#ECC77C', info:1, fit:.6,  fitH:.52},
-    {id:'s16',x:33,y:45, w:36,h:28, cls:'notes',   color:'#E79BB0', glyph:'♫'},
-    {id:'s9', x:27,y:74, w:110,h:110, cls:'circle', color:'#93CFB0', info:1, fit:.66, fitH:.6},
-    {id:'s10',x:70,y:90, w:74,h:64, cls:'tri',     color:'#D9744F'},
-    {id:'s11',x:47,y:90, w:44,h:44, cls:'square',  color:'#E3B24A'},
-    {id:'s12',x:91,y:52, w:46,h:28, cls:'semi',    color:'#EDA271'}
+    // 정보(해시태그) — 원형만, 밝은색 + 어두운 글씨
+    {id:'i1', x:30,y:23, w:100,h:100, cls:'circle', color:'#FF80BC', info:1, fit:.7, fitH:.64},
+    {id:'i2', x:72,y:34, w:100,h:100, cls:'circle', color:'#45DCD8', info:1, fit:.7, fitH:.64},
+    {id:'i3', x:28,y:71, w:100,h:100, cls:'circle', color:'#B7E85A', info:1, fit:.7, fitH:.64},
+    {id:'i4', x:73,y:65, w:100,h:100, cls:'circle', color:'#FFD453', info:1, fit:.7, fitH:.64},
+    // 장식 도형 — 빈 곳 채우기
+    {id:'d1', x:13,y:8,  w:56,h:36, cls:'ellipse',  color:'#FFC01F'},
+    {id:'d2', x:50,y:10, w:38,h:38, cls:'spark',    color:'#12C6D6'},
+    {id:'d3', x:88,y:11, w:60,h:60, cls:'burst',    color:'#FA4DA0'},
+    {id:'d5', x:13,y:45, w:66,h:66, cls:'tri',      color:'#9A4FF0'},
+    {id:'d7', x:50,y:49, w:44,h:44, cls:'spark',    color:'#FFC01F'},
+    {id:'d8', x:90,y:51, w:80,h:80, cls:'tri',      color:'#FF9A2E'},
+    {id:'d9', x:50,y:80, w:78,h:78, cls:'burst',    color:'#9A4FF0'},
+    {id:'d10',x:88,y:82, w:52,h:30, cls:'semi',     color:'#FF6038'},
+    {id:'d11',x:13,y:89, w:46,h:46, cls:'square',   color:'#3D97F5'},
+    {id:'d13',x:90,y:90, w:44,h:44, cls:'spark',    color:'#B7E85A'},
+    // 음표(♫ ♪) 이모티콘 느낌 — 빈 곳 채우기
+    {id:'n1', x:50,y:29, w:34,h:34, cls:'notes',    color:'#FF6038', glyph:'♫'},
+    {id:'n2', x:90,y:30, w:30,h:30, cls:'notes',    color:'#45DCD8', glyph:'♪'},
+    {id:'n3', x:11,y:61, w:32,h:32, cls:'notes',    color:'#FA4DA0', glyph:'♫'},
+    {id:'n4', x:49,y:92, w:30,h:30, cls:'notes',    color:'#B7E85A', glyph:'♪'}
   ];
 
-  // ── 곡들 : 길이 제각각 → 도형이 글에 맞춰 커짐 ──
+  // ── 곡 = 해시태그 3개. 길이 제각각 → 원형이 커짐 ──
   var TRACKS = [
-    {g:'ROCK',   c:'THUNDER', t:'랩퍼의 꿈'},
-    {g:'CITYPOP',c:'LUNA',    t:'밤'},
-    {g:'HIPHOP', c:'ZICO',    t:'교실 탈출'},
-    {g:'BALLAD', c:'RIO',     t:'여름의 끝자락에서'},
-    {g:'R&B',    c:'MINA',    t:'보라빛 밤'},
-    {g:'POP',    c:'SORA',    t:'첫사랑'},
-    {g:'JAZZ',   c:'도현',     t:'재즈바'},
-    {g:'INDIE',  c:'DAWN',    t:'새벽 세 시의 편지'},
-    {g:'TROT',   c:'봉선',     t:'막걸리 한 잔'},
-    {g:'EDM',    c:'NEON',    t:'드랍'},
-    {g:'FOLK',   c:'가을',     t:'낙엽'},
-    {g:'K-POP',  c:'ARA',     t:'너에게 닿기를'},
-    {g:'LOFI',   c:'chill',   t:'비'},
-    {g:'SOUL',   c:'재이',     t:'끝나지 않은 노래'}
+    ['락','천둥','랩퍼의꿈'],   ['시티팝','새벽','드라이브'], ['힙합','교실','탈출'],
+    ['발라드','여름','끝자락'], ['알앤비','보라빛','밤'],    ['팝','첫사랑','설렘'],
+    ['재즈','도현','재즈바'],   ['인디','새벽세시','편지'],  ['트로트','막걸리','한잔'],
+    ['EDM','네온','드랍'],     ['포크','가을','낙엽'],      ['케이팝','너에게','닿기를'],
+    ['로파이','비','빗소리'],   ['소울','재이','끝나지않은노래']
   ];
 
   var scroll = document.getElementById('scroll');
@@ -98,34 +91,31 @@
     var band = document.createElement('div'); band.className='band';
     TPL.forEach(function(s){
       var el=document.createElement('div');
-      el.className='slot'+(s.cls==='stack'?' stack':'')+(s.cls==='tri'?' tri-wrap':'');
+      el.className='slot';
       el.style.left=s.x+'%'; el.style.top=s.y+'%';
       el.style.setProperty('--w',s.w+'px'); el.style.setProperty('--h',s.h+'px'); el.style.setProperty('--rot',(s.rot||0)+'deg');
       var inner='';
-      if(s.cls==='stack') inner='<div class="shape"><div class="p"></div><div class="p"></div><div class="p"></div></div>';
-      else if(s.cls==='notes') inner='<div class="notes" style="color:'+s.color+'">'+s.glyph+'</div>';
+      if(s.cls==='notes') inner='<div class="notes" style="color:'+s.color+'">'+s.glyph+'</div>';
       else inner='<div class="shape '+s.cls+'" style="background:'+s.color+'"></div>';
       if(s.info){
         var tk = TRACKS[ti % TRACKS.length]; ti++;
-        inner+='<div class="s-text" style="color:'+INK+'">장르 : '+tk.g+'<br>작곡가 : '+tk.c+'<br>제목 : '+tk.t+'</div>';
+        inner+='<div class="s-text" style="color:'+INK+'">#'+tk[0]+'<br>#'+tk[1]+'<br>#'+tk[2]+'</div>';
       }
       el.innerHTML=inner;
-      if(s.info){ var te=el.querySelector('.s-text'); te.__slot=el; te.__fit=s.fit||.6; te.__fitH=s.fitH||.52; te.__min=Math.max(s.w,s.h); infoEls.push(te); }
+      if(s.info){ var te=el.querySelector('.s-text'); te.__slot=el; te.__fit=s.fit||.7; te.__fitH=s.fitH||.64; te.__min=Math.max(s.w,s.h); infoEls.push(te); }
       band.appendChild(el);
     });
     scroll.appendChild(band);
   }
 
-  // ── 도형을 글에 맞춰 키움: 글자는 고정 크기, 도형이 텍스트를 감싸도록 커짐 ──
+  // ── 원형이 해시태그에 맞춰 커짐(글씨 고정, 안 잘림) ──
   function growAll(){
     infoEls.forEach(function(te){
-      te.style.fontSize='11px';
-      te.style.whiteSpace='nowrap'; te.style.width='auto';
-      if(te.offsetWidth > 104){ te.style.whiteSpace='normal'; te.style.width='104px'; }  // 아주 길면만 줄바꿈
+      te.style.fontSize='11.5px'; te.style.whiteSpace='nowrap'; te.style.width='auto';
       var tw=te.offsetWidth, th=te.offsetHeight;
-      var side=Math.round(Math.max(te.__min, Math.min(178, Math.max(tw/te.__fit, th/te.__fitH))));
-      te.__slot.style.setProperty('--w', side+'px');
-      te.__slot.style.setProperty('--h', side+'px');
+      var d=Math.round(Math.max(te.__min, Math.min(150, Math.max(tw/te.__fit, th/te.__fitH))));
+      te.__slot.style.setProperty('--w', d+'px');
+      te.__slot.style.setProperty('--h', d+'px');
     });
   }
   growAll();
