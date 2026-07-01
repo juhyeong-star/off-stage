@@ -48,7 +48,7 @@
     <div class="scroll" id="scroll"></div>
     <div class="scrollhint" id="hint">↓ 쭉 내려보세요</div>
   </div>
-  <div class="hint">샘플 구성 그대로 — 스타버스트·삼각형·종이더미·음표. 판마다 위치가 조금씩만 달라져요.</div>
+  <div class="hint">곡 도형은 <b>해시태그가 길면 커지고 짧으면 작아져요</b>(자동). 판마다 위치도 살짝씩 달라짐.</div>
 
 <script>
   var INK='#1b1522';
@@ -78,49 +78,55 @@
 
   var TRACKS=[
     ['락','천둥','랩퍼의꿈'],['시티팝','새벽','드라이브'],['힙합','교실','탈출'],['발라드','여름','끝자락'],
-    ['알앤비','보라빛','밤'],['팝','첫사랑','설렘'],['재즈','도현','재즈바'],['인디','새벽','편지'],
-    ['트로트','막걸리','한잔'],['EDM','네온','드랍'],['포크','가을','낙엽'],['케이팝','너에게','닿기를'],
-    ['로파이','비','빗소리'],['소울','재이','노래']
+    ['알앤비','보라빛','밤'],['팝','첫사랑','설렘'],['재즈','도현','재즈바'],['인디','새벽감성','새벽세시의편지'],
+    ['트로트','막걸리','한잔'],['EDM','네온','드랍'],['포크','가을','낙엽'],['케이팝','너에게','닿기를바라며'],
+    ['로파이','비','빗소리'],['소울','재이','끝나지않은노래']
   ];
 
-  var scroll=document.getElementById('scroll'), infoEls=[], BANDS=6, ti=0;
+  var scroll=document.getElementById('scroll'), BANDS=6, ti=0, built=false;
 
-  for (var bi=0; bi<BANDS; bi++){
-    var band=document.createElement('div'); band.className='band'; scroll.appendChild(band);
-    var BW=band.clientWidth||340, BH=band.clientHeight||688;
-    TPL.forEach(function(s){
-      var el=document.createElement('div');
-      el.className='slot'+(s.info?' info':'')+(s.cls==='stack'?' stack':'')+(s.cls==='tri'?' tri-wrap':'');
-      // 판마다 살짝만 흔들기(위치 ±2.5%, 각도 ±7°), 프레임 밖 안 나가게 클램프
-      var sz=Math.max(s.w,s.h), hw=(sz/2)/BW*100, hh=(sz/2)/BH*100;
-      var nx=Math.max(hw+1, Math.min(99-hw, s.x+(Math.random()-0.5)*5));
-      var ny=Math.max(hh+1, Math.min(99-hh, s.y+(Math.random()-0.5)*4));
-      el.style.left=nx+'%'; el.style.top=ny+'%';
-      el.style.setProperty('--w',s.w+'px'); el.style.setProperty('--h',s.h+'px'); el.style.setProperty('--rot',((s.rot||0)+(Math.random()-0.5)*14)+'deg');
-      var inner='';
-      if(s.cls==='stack') inner='<div class="shape"><div class="p"></div><div class="p"></div><div class="p"></div></div>';
-      else if(s.cls==='notes') inner='<div class="notes" style="color:'+s.color+'">'+s.glyph+'</div>';
-      else inner='<div class="shape '+s.cls+'" style="background:'+s.color+'"></div>';
-      if(s.info){
-        var tk=TRACKS[ti % TRACKS.length]; ti++;
-        inner+='<div class="s-text" style="color:'+INK+'">#'+tk[0]+'<br>#'+tk[1]+'<br>#'+tk[2]+'</div>';
-      }
-      el.innerHTML=inner;
-      if(s.info){ var te=el.querySelector('.s-text'); infoEls.push({te:te, maxW:s.w*s.fit, maxH:s.h*s.fitH}); }
-      band.appendChild(el);
-    });
+  // 곡 도형을 해시태그 길이에 맞춰 비율 스케일: 길면 커지고 짧으면 작아짐(글자는 12px 고정)
+  function songDim(el,s){
+    var te=el.querySelector('.s-text'); te.style.fontSize='12px'; te.style.whiteSpace='nowrap';
+    var cap=Math.max(1, s.w*s.fit);                 // 이 도형이 기본 크기에서 담는 글자 폭
+    var scale=Math.max(0.74, Math.min(1.30, te.offsetWidth/cap));
+    return { w:Math.round(s.w*scale), h:Math.round(s.h*scale) };
   }
-
-  // 해시태그가 도형 중앙 안에 들어오게 폰트 자동 축소(안 잘림)
-  function fitAll(){
-    infoEls.forEach(function(o){
-      var fs=13, g=0; o.te.style.fontSize=fs+'px';
-      while((o.te.offsetWidth>o.maxW || o.te.offsetHeight>o.maxH) && fs>7 && g++<40){ fs-=0.5; o.te.style.fontSize=fs+'px'; }
-    });
+  function buildAll(){
+    if(built) return; built=true;
+    for (var bi=0; bi<BANDS; bi++){
+      var band=document.createElement('div'); band.className='band'; scroll.appendChild(band);
+      var BW=band.clientWidth||340, BH=band.clientHeight||688;
+      TPL.forEach(function(s){
+        var el=document.createElement('div');
+        el.className='slot'+(s.info?' info':'')+(s.cls==='stack'?' stack':'')+(s.cls==='tri'?' tri-wrap':'');
+        var inner='';
+        if(s.cls==='stack') inner='<div class="shape"><div class="p"></div><div class="p"></div><div class="p"></div></div>';
+        else if(s.cls==='notes') inner='<div class="notes" style="color:'+s.color+'">'+s.glyph+'</div>';
+        else inner='<div class="shape '+s.cls+'" style="background:'+s.color+'"></div>';
+        if(s.info){ var tk=TRACKS[ti % TRACKS.length]; ti++; inner+='<div class="s-text" style="color:'+INK+'">#'+tk[0]+'<br>#'+tk[1]+'<br>#'+tk[2]+'</div>'; }
+        el.innerHTML=inner; band.appendChild(el);
+        var W=s.w, H=s.h;
+        if(s.info){
+          var dim=songDim(el,s); W=dim.w; H=dim.h;
+          el.style.setProperty('--w',W+'px'); el.style.setProperty('--h',H+'px');
+          // 안전: 혹시 넘치면 폰트만 살짝 축소
+          var te=el.querySelector('.s-text'), mw=W*s.fit, mh=H*s.fitH, fs=12, g=0;
+          while((te.offsetWidth>mw||te.offsetHeight>mh)&&fs>7.5&&g++<20){ fs-=0.5; te.style.fontSize=fs+'px'; }
+        } else {
+          el.style.setProperty('--w',W+'px'); el.style.setProperty('--h',H+'px');
+        }
+        el.style.setProperty('--rot',((s.rot||0)+(Math.random()-0.5)*14)+'deg');
+        // 위치: 판마다 살짝 흔들기 + 실제 크기 기준 프레임 클램프
+        var sz=Math.max(W,H), hw=(sz/2)/BW*100, hh=(sz/2)/BH*100;
+        var nx=Math.max(hw+1, Math.min(99-hw, s.x+(Math.random()-0.5)*5));
+        var ny=Math.max(hh+1, Math.min(99-hh, s.y+(Math.random()-0.5)*4));
+        el.style.left=nx+'%'; el.style.top=ny+'%';
+      });
+    }
   }
-  fitAll();
-  if(document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
-  window.addEventListener('load', fitAll);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(buildAll);
+  setTimeout(buildAll, 650);
 
   scroll.addEventListener('scroll', function(){ var h=document.getElementById('hint'); if(scroll.scrollTop>40) h.style.opacity='0'; }, {passive:true});
 </script>
