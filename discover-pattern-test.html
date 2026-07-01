@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>발견 · 빽빽 레트로 패턴</title>
+<title>발견 · 배경패턴 + 자유배치</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -16,19 +16,23 @@
   .scroll::-webkit-scrollbar{display:none;}
 
   .band{position:relative;height:100%;}
+  /* 뒷배경: 은은한 고정 패턴(판마다 동일) */
+  .bg{position:absolute;inset:0;opacity:.17;}
+  /* 앞: 자유 배치(판마다 위치 다름) */
+  .fg{position:absolute;inset:0;}
 
   .slot{position:absolute;transform:translate(-50%,-50%) rotate(var(--rot,0deg));
-        width:var(--w);height:var(--h);display:flex;align-items:center;justify-content:center;z-index:1;}
-  .slot.info{z-index:5;}   /* 글 있는 원형은 위로 → 빽빽해도 글씨 안 가림 */
-  .slot.note{z-index:3;}
-  .shape{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5));}
+        width:var(--w);height:var(--h);display:flex;align-items:center;justify-content:center;z-index:2;}
+  .fg .slot.info{z-index:5;}
+  .shape{position:absolute;inset:0;width:100%;height:100%;}
+  .fg .shape{filter:drop-shadow(0 4px 10px rgba(0,0,0,.5));}
   .burst{clip-path:polygon(50% 0%,60% 25%,85% 15%,75% 40%,100% 50%,75% 60%,85% 85%,60% 75%,50% 100%,40% 75%,15% 85%,25% 60%,0% 50%,25% 40%,15% 15%,40% 25%);}
   .tri{clip-path:polygon(50% 2%,2% 98%,98% 98%);}
   .spark{clip-path:polygon(50% 0%,58% 42%,100% 50%,58% 58%,50% 100%,42% 58%,0% 50%,42% 42%);}
-  .circle,.ellipse{border-radius:50%;}
-  .square{border-radius:7px;}
-  .semi{border-radius:999px 999px 0 0;}
-  .notes{font-size:var(--w);line-height:1;font-weight:900;filter:drop-shadow(0 3px 7px rgba(0,0,0,.5));}
+  .circle{border-radius:50%;}
+  .square{border-radius:5px;}
+  .notes{font-size:var(--w);line-height:1;font-weight:900;}
+  .fg .notes{filter:drop-shadow(0 3px 7px rgba(0,0,0,.5));}
   .s-text{position:relative;z-index:2;text-align:center;font-weight:800;line-height:1.45;letter-spacing:-.2px;pointer-events:none;white-space:nowrap;}
 
   .scrollhint{position:absolute;left:0;right:0;bottom:12px;text-align:center;font-size:11px;color:rgba(255,255,255,.4);z-index:8;pointer-events:none;transition:opacity .4s;animation:bob 1.6s ease-in-out infinite;}
@@ -38,95 +42,93 @@
 </style>
 </head>
 <body>
-  <div class="note">🧪 <b>발견 · 빽빽 레트로</b> — 판당 도형 ~26개로 꽉 채움. 해시태그는 원형(안 잘림)+글에 맞춰 커짐, 사이사이 별·삼각형·음표(♫)로 빽빽하게.</div>
+  <div class="note">🧪 <b>발견 · 배경패턴 + 자유배치</b> — 뒷배경은 <b>일정 패턴(유지)</b>, 앞의 해시태그·큰 도형은 <b>매 화면 자유롭게</b> 배치돼 반복 느낌 없이 이어져요.</div>
 
   <div class="phone">
     <div class="scroll" id="scroll"></div>
     <div class="scrollhint" id="hint">↓ 쭉 내려보세요</div>
   </div>
-  <div class="hint">쭉 내려도 같은 <b>빽빽한 별자리</b>가 이어지고, 도형마다 다른 곡(해시태그)이에요.</div>
+  <div class="hint">배경 별자리는 그대로인데 <b>앞 도형은 판마다 왼쪽·오른쪽 자유롭게</b> — 같은 패턴 반복 아님. 안 겹치게 자동 배치.</div>
 
 <script>
-  var INK = '#211a29';
-  // ── 빽빽 배치 : info(원형·해시태그) 8개 + 장식/음표 18개 = 26 ──
-  var TPL = [
-    {id:'i1', x:27,y:16, w:100,h:100, cls:'circle', color:'#FF80BC', info:1, fit:.72, fitH:.66},
-    {id:'i2', x:69,y:15, w:100,h:100, cls:'circle', color:'#45DCD8', info:1, fit:.72, fitH:.66},
-    {id:'i3', x:33,y:33, w:100,h:100, cls:'circle', color:'#B7E85A', info:1, fit:.72, fitH:.66},
-    {id:'i4', x:72,y:36, w:100,h:100, cls:'circle', color:'#FFD453', info:1, fit:.72, fitH:.66},
-    {id:'i5', x:50,y:49, w:100,h:100, cls:'circle', color:'#FF9A6E', info:1, fit:.72, fitH:.66},
-    {id:'i6', x:25,y:65, w:100,h:100, cls:'circle', color:'#9A8CF0', info:1, fit:.72, fitH:.66},
-    {id:'i7', x:75,y:66, w:100,h:100, cls:'circle', color:'#45DCD8', info:1, fit:.72, fitH:.66},
-    {id:'i8', x:49,y:83, w:100,h:100, cls:'circle', color:'#FF80BC', info:1, fit:.72, fitH:.66},
+  var INK='#211a29';
+  var INFOCOL=['#FF80BC','#45DCD8','#B7E85A','#FFD453','#FF9A6E','#9A8CF0','#5CC7F0'];
+  var FGDECOR=[
+    {cls:'burst',w:58,color:'#9A4FF0'},{cls:'tri',w:60,color:'#FF9A2E'},{cls:'spark',w:46,color:'#12C6D6'},
+    {cls:'burst',w:54,color:'#FA4DA0'},{cls:'notes',w:34,color:'#FF6038',glyph:'♫'},{cls:'tri',w:56,color:'#3D97F5'},
+    {cls:'notes',w:32,color:'#B7E85A',glyph:'♪'},{cls:'spark',w:42,color:'#FFD453'}
+  ];
+  // 뒷배경 고정 패턴(deterministic → 판마다 동일)
+  var BGCOL=['#FF80BC','#45DCD8','#B7E85A','#FFD453','#9A8CF0','#FF9A6E'];
+  var BGSH=['spark','circle','tri','square'];
+  var BG=[]; (function(){ var xs=[15,38,62,85], ys=[9,23,37,51,65,79,92], k=0;
+    ys.forEach(function(y,r){ xs.forEach(function(x){ BG.push({x:x+(r%2?4:-3), y:y, w:16+(k*5)%12, cls:BGSH[k%4], color:BGCOL[k%6], rot:(k*41)%50-25}); k++; }); }); })();
 
-    {id:'d1', x:11,y:8,  w:62,h:40, cls:'ellipse', color:'#FFC01F'},
-    {id:'d2', x:48,y:7,  w:44,h:44, cls:'spark',   color:'#12C6D6'},
-    {id:'d3', x:89,y:9,  w:62,h:62, cls:'burst',   color:'#9A4FF0'},
-    {id:'d15',x:50,y:14, w:52,h:52, cls:'burst',   color:'#FF6038'},
-    {id:'d4', x:11,y:25, w:62,h:62, cls:'tri',     color:'#FF9A2E'},
-    {id:'d5', x:90,y:26, w:46,h:46, cls:'spark',   color:'#B7E85A'},
-    {id:'d6', x:11,y:45, w:60,h:60, cls:'burst',   color:'#FA4DA0'},
-    {id:'d17',x:88,y:38, w:42,h:42, cls:'spark',   color:'#FFD453'},
-    {id:'d7', x:90,y:50, w:56,h:56, cls:'tri',     color:'#3D97F5'},
-    {id:'d8', x:12,y:62, w:62,h:62, cls:'square',  color:'#F2E7CC'},
-    {id:'d9', x:50,y:64, w:62,h:62, cls:'tri',     color:'#12C6D6'},
-    {id:'d10',x:90,y:65, w:58,h:58, cls:'burst',   color:'#FFC01F'},
-    {id:'d11',x:12,y:80, w:60,h:60, cls:'burst',   color:'#9A4FF0'},
-    {id:'d12',x:75,y:84, w:60,h:60, cls:'tri',     color:'#FA4DA0'},
-    {id:'d13',x:91,y:91, w:54,h:34, cls:'semi',    color:'#FF6038'},
-    {id:'d14',x:24,y:92, w:52,h:52, cls:'square',  color:'#3D97F5'},
-
-    {id:'n1', x:50,y:29, w:34,h:34, cls:'notes',   color:'#FA4DA0', glyph:'♫'},
-    {id:'n2', x:90,y:81, w:36,h:36, cls:'notes',   color:'#45DCD8', glyph:'♪'},
-    {id:'n3', x:62,y:92, w:38,h:38, cls:'notes',   color:'#B7E85A', glyph:'♫'},
-    {id:'n4', x:37,y:47, w:32,h:32, cls:'notes',   color:'#FFC01F', glyph:'♪'}
+  var TRACKS=[
+    ['락','천둥','랩퍼의꿈'],['시티팝','새벽','드라이브'],['힙합','교실','탈출'],['발라드','여름','끝자락'],
+    ['알앤비','보라빛','밤'],['팝','첫사랑','설렘'],['재즈','도현','재즈바'],['인디','새벽세시','편지'],
+    ['트로트','막걸리','한잔'],['EDM','네온','드랍'],['포크','가을','낙엽'],['케이팝','너에게','닿기를'],
+    ['로파이','비','빗소리'],['소울','재이','노래']
   ];
 
-  var TRACKS = [
-    ['락','천둥','랩퍼의꿈'],   ['시티팝','새벽','드라이브'], ['힙합','교실','탈출'],
-    ['발라드','여름','끝자락'], ['알앤비','보라빛','밤'],    ['팝','첫사랑','설렘'],
-    ['재즈','도현','재즈바'],   ['인디','새벽세시','편지'],  ['트로트','막걸리','한잔'],
-    ['EDM','네온','드랍'],     ['포크','가을','낙엽'],      ['케이팝','너에게','닿기를'],
-    ['로파이','비','빗소리'],   ['소울','재이','노래']
-  ];
+  var scroll=document.getElementById('scroll'), BANDS=6, ti=0, built=false;
 
-  var scroll = document.getElementById('scroll');
-  var infoEls = [];
-  var BANDS = 6, ti = 0;
-
-  for (var bi=0; bi<BANDS; bi++){
-    var band = document.createElement('div'); band.className='band';
-    TPL.forEach(function(s){
-      var el=document.createElement('div');
-      el.className='slot'+(s.info?' info':'')+(s.cls==='notes'?' note':'');
-      el.style.left=s.x+'%'; el.style.top=s.y+'%';
-      el.style.setProperty('--w',s.w+'px'); el.style.setProperty('--h',s.h+'px'); el.style.setProperty('--rot',(s.rot||0)+'deg');
-      var inner='';
-      if(s.cls==='notes') inner='<div class="notes" style="color:'+s.color+'">'+s.glyph+'</div>';
-      else inner='<div class="shape '+s.cls+'" style="background:'+s.color+'"></div>';
-      if(s.info){
-        var tk = TRACKS[ti % TRACKS.length]; ti++;
-        inner+='<div class="s-text" style="color:'+INK+'">#'+tk[0]+'<br>#'+tk[1]+'<br>#'+tk[2]+'</div>';
+  function mkShape(cls,color,glyph){
+    if(cls==='notes') return '<div class="notes" style="color:'+color+'">'+glyph+'</div>';
+    return '<div class="shape '+cls+'" style="background:'+color+'"></div>';
+  }
+  // 자유 배치: 안 겹치게 랜덤(못 찾으면 겹침 최소 지점). 반지름 px.
+  function freePlace(items, W, H){
+    var out=[];
+    items.forEach(function(it){
+      var best=null, bestM=-1e9, r=it.r, pad=it.pad;
+      for(var t=0;t<90;t++){
+        var x=r+7+Math.random()*(W-2*r-14), y=r+7+Math.random()*(H-2*r-14), m=1e9;
+        for(var j=0;j<out.length;j++){ var d=Math.hypot(x-out[j].x,y-out[j].y)-(r+out[j].r); if(d<m)m=d; }
+        if(m>=pad){ best={x:x,y:y}; break; }
+        if(m>bestM){ bestM=m; best={x:x,y:y}; }
       }
-      el.innerHTML=inner;
-      if(s.info){ var te=el.querySelector('.s-text'); te.__slot=el; te.__fit=s.fit||.72; te.__fitH=s.fitH||.66; te.__min=Math.max(s.w,s.h); infoEls.push(te); }
-      band.appendChild(el);
+      it.x=best.x; it.y=best.y; out.push({x:best.x,y:best.y,r:r});
     });
-    scroll.appendChild(band);
   }
 
-  function growAll(){
-    infoEls.forEach(function(te){
-      te.style.fontSize='11px'; te.style.whiteSpace='nowrap'; te.style.width='auto';
-      var tw=te.offsetWidth, th=te.offsetHeight;
-      var d=Math.round(Math.max(te.__min, Math.min(150, Math.max(tw/te.__fit, th/te.__fitH))));
-      te.__slot.style.setProperty('--w', d+'px');
-      te.__slot.style.setProperty('--h', d+'px');
-    });
+  function buildAll(){
+    if(built) return; built=true;
+    for(var bi=0; bi<BANDS; bi++){
+      var band=document.createElement('div'); band.className='band'; scroll.appendChild(band);
+      // 뒷배경(고정 패턴)
+      var bg=document.createElement('div'); bg.className='bg';
+      BG.forEach(function(s){ var el=document.createElement('div'); el.className='slot'; el.style.left=s.x+'%'; el.style.top=s.y+'%'; el.style.setProperty('--w',s.w+'px'); el.style.setProperty('--h',s.w+'px'); el.style.setProperty('--rot',s.rot+'deg'); el.innerHTML=mkShape(s.cls,s.color); bg.appendChild(el); });
+      band.appendChild(bg);
+      // 앞(자유 배치)
+      var fg=document.createElement('div'); fg.className='fg'; band.appendChild(fg);
+      var W=band.clientWidth||360, H=band.clientHeight||728;
+      var items=[];
+      // 정보 원형 7개 — 해시태그, 글에 맞춰 크기
+      for(var k=0;k<7;k++){
+        var tk=TRACKS[ti % TRACKS.length]; ti++;
+        var el=document.createElement('div'); el.className='slot info';
+        el.innerHTML='<div class="shape circle" style="background:'+INFOCOL[k%INFOCOL.length]+'"></div><div class="s-text" style="color:'+INK+'">#'+tk[0]+'<br>#'+tk[1]+'<br>#'+tk[2]+'</div>';
+        fg.appendChild(el);
+        var te=el.querySelector('.s-text'); te.style.fontSize='11px'; te.style.whiteSpace='nowrap';
+        var d=Math.round(Math.max(86, Math.min(146, Math.max(te.offsetWidth/0.72, te.offsetHeight/0.66))));
+        el.style.setProperty('--w',d+'px'); el.style.setProperty('--h',d+'px'); el.style.setProperty('--rot',((k*53)%30-15)+'deg');
+        items.push({el:el, r:d/2, pad:12});
+      }
+      // 앞 장식 7개
+      for(var j=0;j<7;j++){
+        var dc=FGDECOR[(bi*3+j) % FGDECOR.length];
+        var e2=document.createElement('div'); e2.className='slot'; e2.style.setProperty('--w',dc.w+'px'); e2.style.setProperty('--h',dc.w+'px'); e2.style.setProperty('--rot',((j*67)%40-20)+'deg');
+        e2.innerHTML=mkShape(dc.cls,dc.color,dc.glyph);
+        fg.appendChild(e2);
+        items.push({el:e2, r:dc.w/2, pad:4});
+      }
+      freePlace(items, W, H);
+      items.forEach(function(it){ it.el.style.left=(it.x/W*100)+'%'; it.el.style.top=(it.y/H*100)+'%'; });
+    }
   }
-  growAll();
-  if(document.fonts && document.fonts.ready) document.fonts.ready.then(growAll);
-  window.addEventListener('load', growAll);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(buildAll);
+  setTimeout(buildAll, 650);
 
   scroll.addEventListener('scroll', function(){ var h=document.getElementById('hint'); if(scroll.scrollTop>40) h.style.opacity='0'; }, {passive:true});
 </script>
