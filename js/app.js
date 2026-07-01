@@ -7001,6 +7001,7 @@ function _folderItemsHtml(playlistId) {
   const colSpan = (cols === 2) ? 40 : (86 / cols);
   const maxX = (cols === 2) ? 52 : 90;
   const height = Math.max(820, Math.ceil(items.length / cols) * 280);
+  if (typeof _dpStyle === 'function') _dpStyle();   // 발견/즐겨찾기와 동일한 dp- 도형 CSS
   let html = '';
   items.forEach((it, i) => {
     const col = i % cols;
@@ -7018,16 +7019,19 @@ function _folderItemsHtml(playlistId) {
     const dy = (((seed >>> 20) % 50) - 25);
     if (it.kind === 'track') {
       const t = it.t;
-      let shape = t.shape || SHAPE_TYPES[i % SHAPE_TYPES.length];
-      if (SHAPE_REMAP[shape]) shape = SHAPE_REMAP[shape];
-      const color = t.shapeColor || SHAPE_COLORS[i % SHAPE_COLORS.length];
-      const lines = t.lines || [t.title || '', t.artist || '', '눌러서 쇼츠로'];
-      const safeLines = lines.map(l => (l || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+      // 발견/메인 즐겨찾기와 통일 — dp- 도형/레트로색/해시태그. 클릭은 폴더 쇼츠 유지.
+      const _DPC = ['#E24A9C','#7FB2EC','#86CE34','#B49BEE','#F06CA8','#FF8A6E','#26C6C6','#FFB03A'];
+      const _DPS = ['burst','circle','tri'];
+      const _dc = _DPS[i % _DPS.length], _dcol = _DPC[i % _DPC.length];
+      const _tags = (Array.isArray(t.tags) && t.tags.length) ? t.tags.slice(0,3)
+                  : [t.title || '곡', t.artist || ''].filter(Boolean).slice(0,3);
+      const _tagHtml = _tags.map(tg => '#' + String(tg).replace(/^#/, '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')).join('<br>');
       html += `
-        <div class="floating-shape shape-${shape}" data-track-id="${t.id}" data-folder-id="${playlistId}"
-             style="background:${color}; --shape-bg:${color}; left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;"
+        <div class="floating-shape dp-univ${_dc==='tri' ? ' dp-tri-wrap' : ''}" data-track-id="${t.id}" data-folder-id="${playlistId}"
+             style="left:${xBase}%; top:${yPx}px; animation: floatDrift ${dur}s ease-in-out infinite; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;"
              onclick="openFolderShorts('${playlistId}','${t.id}')">
-          <div class="shape-text">${safeLines.join('\n')}</div>
+          <div class="dp-shape dp-${_dc}" style="background:${_dcol}"></div>
+          <div class="dp-s-text">${_tagHtml}</div>
         </div>`;
     } else {
       const n = it.n;
@@ -7998,6 +8002,39 @@ window.renderShapes = renderShapes;
 // renderShapes 가 트랙 계산 후 이리로 위임. 롤백: renderShapes 의 위임 한 줄만 지우면 옛 별필드로.
 // ============================================================
 function dpEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+// 즐겨찾기/폴더의 dp-univ 도형은 고정 크기 → 긴 해시태그가 별/삼각 뾰족한 부분에서 잘림.
+// 렌더 후 도형별 안전영역에 맞게 폰트를 줄여 잘림 방지(원>삼각>별 순으로 여유). rAF 로 레이아웃 후 실행.
+function _fitDpUnivText(root){
+  var scope = root || document;
+  if (!scope.querySelectorAll) return;
+  var run = function(){
+    var els = scope.querySelectorAll('.dp-univ');
+    for (var k = 0; k < els.length; k++){
+      var wrap = els[k];
+      var txt = wrap.querySelector('.dp-s-text');
+      if (!txt) continue;
+      var shape = wrap.querySelector('.dp-shape');
+      var isBurst = shape && shape.classList.contains('dp-burst');
+      var isTri = wrap.classList.contains('dp-tri-wrap') || (shape && shape.classList.contains('dp-tri'));
+      var W = wrap.offsetWidth || 155;
+      var frac = isBurst ? 0.5 : (isTri ? 0.58 : 0.72);   // 별=가장 좁음, 삼각=중간, 원=넉넉
+      var safeW = W * frac;
+      var safeH = W * (isTri ? 0.42 : 0.70);
+      var fs = 13;
+      txt.style.fontSize = fs + 'px';
+      txt.style.lineHeight = '1.12';
+      var guard = 0;
+      // offsetWidth 접근이 강제 리플로우 → 동기 측정 가능(헤드리스 rAF 미발화 회피)
+      while (guard++ < 24 && (txt.scrollWidth > safeW || txt.scrollHeight > safeH) && fs > 6.5){
+        fs -= 0.5; txt.style.fontSize = fs + 'px';
+      }
+    }
+  };
+  run();   // 즉시(동기) — 이미 DOM 삽입 후라 레이아웃 가능
+  // 글꼴이 늦게 로드되면 폭이 바뀌므로 폰트 준비 후 한 번 더 맞춤
+  try { if (document.fonts && document.fonts.ready && document.fonts.ready.then) document.fonts.ready.then(run); } catch (_) {}
+  setTimeout(run, 80);
+}
 function _dpStyle(){
   if (document.getElementById('dp-style')) return;
   var st=document.createElement('style'); st.id='dp-style';
@@ -9175,6 +9212,8 @@ window.renderUniverse = async function (force) {
 
   // 폴더가 하나면 화면 가로 중앙으로 (사용자 요청). 여러 개면 그대로 둠.
   try { _centerUniverseFolder(); } catch (_) {}
+  // dp- 곡 도형 해시태그 잘림 방지(도형별 안전영역에 폰트 맞춤)
+  try { if (typeof _fitDpUnivText === 'function') _fitDpUnivText(appContent); } catch (_) {}
 };
 
 // 폴더 1개일 때: 폴더 + '새 폴더' 버튼을 가로 중앙에 나란히 (겹침 방지). 드래그하면 그 위치 저장돼 우선.
@@ -16621,6 +16660,7 @@ function _renderFolderUniverse(folderId) {
     </div>`;
   // 폴더 안 아이템도 드래그로 옮길 수 있게 (탭은 인라인 onclick=쇼츠가 처리)
   if (typeof initShapeDrag === 'function') initShapeDrag();
+  try { if (typeof _fitDpUnivText === 'function') _fitDpUnivText(appContent); } catch (_) {}
 }
 
 // 폴더에서 빠져나와 전체 내 우주로

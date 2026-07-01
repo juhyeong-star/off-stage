@@ -894,8 +894,9 @@ body.is-shapes-route .page-intro {
   cursor: grabbing;
 }
 /* 즐겨찾기 곡 도형 = 발견(dp-) 스타일. .floating-shape(드래그/위치) 안에 dp-shape 를 넣어 모양·색·해시태그 통일 */
-.floating-shape.dp-univ { width: 128px; height: 128px; padding: 0; color: #1b1522; }
-.floating-shape.dp-univ .dp-shape { filter: drop-shadow(0 4px 11px rgba(0,0,0,0.5)); }
+.floating-shape.dp-univ { width: 155px; height: 155px; padding: 0; color: #1b1522; box-shadow: none !important; }
+.floating-shape.dp-univ .dp-shape { filter: drop-shadow(0 4px 11px rgba(0,0,0,0.5)); }   /* 그림자는 clip-path 따라감(네모 아님) */
+.floating-shape.dp-univ .dp-s-text { font-family: 'Pretendard', sans-serif; white-space: nowrap; }   /* 발견과 동일 글꼴 */
 /* 누른 직후 — 살짝 작아지며 '집었다' 시각 피드백. 드래그 시작 직전. */
 .floating-shape.pressing {
   filter: brightness(0.92);
