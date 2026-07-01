@@ -79,19 +79,19 @@
 <script>
   // ── 슬롯 템플릿(별자리) : 모든 섹션이 이 좌표를 그대로 씀 = 패턴 유지 ──
   var TPL = [
-    {id:'s1', x:13,y:8,  w:60,h:40, cls:'ellipse', color:'#FFD84D', tc:'#111', rot:-6},
-    {id:'s2', x:85,y:8,  w:30,h:30, cls:'circle',  color:'#4ADE80', tc:'#0a2914'},
-    {id:'s3', x:60,y:11, w:36,h:36, cls:'spark',   color:'#22D3EE', tc:'#052a30'},
-    {id:'s4', x:33,y:24, w:168,h:168, cls:'burst', color:'#EC4899', tc:'#160510', rot:-8, info:1},
-    {id:'s5', x:75,y:34, w:130,h:118, cls:'tri',   color:'#3B82F6', tc:'#fff', info:1},
-    {id:'s6', x:17,y:45, w:78,h:78, cls:'stack',   color:'#fff',    tc:'#111'},
-    {id:'s7', x:42,y:56, w:120,h:120, cls:'circle',color:'#7EE00F', tc:'#12300a'},
-    {id:'s8', x:80,y:64, w:148,h:148, cls:'tri',   color:'#8B5CF6', tc:'#fff', rot:14, info:1},
-    {id:'s9', x:23,y:74, w:118,h:118, cls:'burst', color:'#F472B6', tc:'#180712', rot:-6, info:1},
-    {id:'s10',x:74,y:85, w:130,h:130, cls:'burst', color:'#EF4444', tc:'#fff', rot:8},
-    {id:'s11',x:25,y:94, w:56,h:56, cls:'square',  color:'#FDE047', tc:'#111'},
-    {id:'s12',x:93,y:90, w:56,h:34, cls:'semi',    color:'#FB923C', tc:'#111'},
-    {id:'s16',x:35,y:50, w:44,h:34, cls:'notes',   color:'#F472B6', glyph:'♫'}
+    {id:'s1', x:15,y:9,  w:54,h:34, cls:'ellipse', color:'#FFD84D', tc:'#111', rot:-6},
+    {id:'s2', x:87,y:9,  w:28,h:28, cls:'circle',  color:'#4ADE80', tc:'#0a2914'},
+    {id:'s3', x:64,y:14, w:32,h:32, cls:'spark',   color:'#22D3EE', tc:'#052a30'},
+    {id:'s4', x:31,y:27, w:150,h:150, cls:'burst', color:'#EC4899', tc:'#160510', rot:-8, info:1},
+    {id:'s5', x:74,y:35, w:116,h:104, cls:'tri',   color:'#3B82F6', tc:'#fff', info:1},
+    {id:'s6', x:19,y:47, w:70,h:70, cls:'stack',   color:'#fff',    tc:'#111'},
+    {id:'s7', x:45,y:55, w:106,h:106, cls:'circle',color:'#7EE00F', tc:'#12300a'},
+    {id:'s8', x:73,y:64, w:122,h:112, cls:'tri',   color:'#8B5CF6', tc:'#fff', rot:10, info:1},
+    {id:'s16',x:38,y:46, w:38,h:30, cls:'notes',   color:'#F472B6', glyph:'♫'},
+    {id:'s9', x:26,y:75, w:108,h:108, cls:'burst', color:'#F472B6', tc:'#180712', rot:-6, info:1},
+    {id:'s10',x:72,y:81, w:112,h:112, cls:'burst', color:'#EF4444', tc:'#fff', rot:8},
+    {id:'s11',x:53,y:87, w:48,h:48, cls:'square',  color:'#FDE047', tc:'#111', rot:-4},
+    {id:'s12',x:90,y:47, w:48,h:28, cls:'semi',    color:'#FB923C', tc:'#111'}
   ];
 
   // ── 섹션(곡) : 아래로 스크롤하며 지나감. active=켜지는 칸, info=곡정보 표시 칸 ──
