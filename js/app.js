@@ -539,7 +539,6 @@ window.startTutorial = function () {
     { route: 'shapes', sel: '.floating-shape[data-track-id]', title: _t2('발견 — 노래','Discover'), body: _t2('떠다니는 도형이 노래예요. 한 번 탭하면 바로 재생, 위로 스와이프하면 쇼츠처럼 다음 곡으로!','Each floating shape is a song. Tap to play, swipe up for the next one like shorts!') },
     { sel: '.mobile-tab-plus, .upload-fab', title: _t2('음원 올리기','Upload'), body: _t2('가운데 ⊕ 를 눌러 내 데모·곡을 올려요.','Tap the ⊕ in the middle to upload your demo or track.') },
     { route: 'wall', sel: '.sb-artist, .sb-seclabel', title: _t2('주절주절','Bla Bla'), body: _t2('작곡가별로 올라온 데모를 쭉 볼 수 있어요. 이름을 누르면 그 작곡가 페이지로 가요.','Browse demos grouped by composer. Tap a name to open their page.') },
-    { route: 'tags', sel: '.tag-chip', title: _t2('Tags','Tags'), body: _t2('기분·태그로 노래를 찾아봐요.','Find songs by mood and tags.') },
     favStep,
     ...artistSteps,
     { sel: '#global-player', title: _t2('플레이어','Player'), body: _t2('재생·담기·셔플은 여기. 제목을 누르면 아티스트로 가요.','Play, save, shuffle here. Tap the title for the artist.') }
