@@ -50,21 +50,33 @@ alter table public.producing_rounds   enable row level security;
 alter table public.producing_comments enable row level security;
 alter table public.producing_votes    enable row level security;
 
+-- (멱등: 여러 번 실행해도 안전하도록 각 정책 drop if exists 후 create)
 -- 읽기: 누구나(피드/결과 공개)
+drop policy if exists "pr_rounds_read"   on public.producing_rounds;
 create policy "pr_rounds_read"   on public.producing_rounds   for select using (true);
+drop policy if exists "pr_comments_read" on public.producing_comments;
 create policy "pr_comments_read" on public.producing_comments for select using (true);
+drop policy if exists "pr_votes_read"    on public.producing_votes;
 create policy "pr_votes_read"    on public.producing_votes    for select using (true);
 
 -- 라운드 생성/마감/삭제: 본인(아티스트)만
+drop policy if exists "pr_rounds_insert" on public.producing_rounds;
 create policy "pr_rounds_insert" on public.producing_rounds for insert with check (auth.uid() = artist_id);
+drop policy if exists "pr_rounds_update" on public.producing_rounds;
 create policy "pr_rounds_update" on public.producing_rounds for update using (auth.uid() = artist_id);
+drop policy if exists "pr_rounds_delete" on public.producing_rounds;
 create policy "pr_rounds_delete" on public.producing_rounds for delete using (auth.uid() = artist_id);
 
 -- 댓글 작성: 로그인 본인
+drop policy if exists "pr_comments_insert" on public.producing_comments;
 create policy "pr_comments_insert" on public.producing_comments for insert with check (auth.uid() = user_id);
+drop policy if exists "pr_comments_delete" on public.producing_comments;
 create policy "pr_comments_delete" on public.producing_comments for delete using (auth.uid() = user_id);
 
 -- 투표: 로그인 본인 (한 표 = 옮기면 update/삭제)
+drop policy if exists "pr_votes_insert" on public.producing_votes;
 create policy "pr_votes_insert" on public.producing_votes for insert with check (auth.uid() = user_id);
+drop policy if exists "pr_votes_update" on public.producing_votes;
 create policy "pr_votes_update" on public.producing_votes for update using (auth.uid() = user_id);
+drop policy if exists "pr_votes_delete" on public.producing_votes;
 create policy "pr_votes_delete" on public.producing_votes for delete using (auth.uid() = user_id);
