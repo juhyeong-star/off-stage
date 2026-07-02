@@ -19591,11 +19591,27 @@ body.is-shapes-route .shapes-subtitle { display: none !important; }
 /* 토성(랜덤재생 행성) 제거 — 사용자 요청 '필요 없음' */
 #random-dice, .planet-fab { display: none !important; }
 
-/* 플레이바 — 테스트의 깔끔한 룩: 다크바 + 둥근 아트 + 흰 디스크 재생 + 흐린 컨트롤 */
-#global-player { background: rgba(12, 9, 26, 0.95); }
-#global-player .player-cover { border-radius: 12px !important; border: 1px solid rgba(168, 132, 255, 0.22); }
-#global-player .control-btn { color: rgba(255, 255, 255, 0.6); }
-#global-player .control-btn.play-btn { color: #ffffff; }
+/* 하단 미니 플레이바 — 풀스크린과 같은 옛 MP3 감성: 하늘색 바디 + 초록 LCD 제목 + 노란 재생. */
+#global-player { background: linear-gradient(180deg,#4fd3ee 0%,#45CEEB 100%) !important; border-top: 2px solid rgba(15,46,58,.14); }
+#global-player .player-cover { border-radius: 10px !important; border: 2px solid rgba(15,46,58,.28) !important; }
+/* 제목/아티스트 = 미니 LCD (어두운 칩 + 초록 글씨) */
+#global-player .player-text { background: #0b2a22; border-radius: 9px; padding: 5px 11px; box-shadow: inset 0 2px 8px rgba(0,0,0,.5); }
+#global-player .player-title { color: #7dffb0 !important; text-shadow: 0 0 6px rgba(125,255,176,.45); font-weight: 800; }
+#global-player .player-artist { color: #57d9a4 !important; }
+#global-player .player-wave i { background: #7dffb0 !important; }
+/* 컨트롤 = 어두운 / 재생 = 노란 */
+#global-player .control-btn { color: #0f2e3a !important; }
+#global-player .control-btn.play-btn { color: #FFE800 !important; filter: drop-shadow(0 2px 2px rgba(15,46,58,.45)); }
+#global-player .control-btn:active { transform: scale(.9); }
+/* 진행바 */
+#global-player .progress-fill { background: #0f2e3a !important; }
+#global-player .progress-bar-track { background: rgba(15,46,58,.18) !important; }
+#global-player .time-text { color: #0f2e3a !important; opacity: .72; font-family: 'VT323','Pretendard',monospace; font-size: 14px; }
+/* 담기/공유/볼륨 = 어두운 */
+#global-player .player-collect-btn, #global-player .player-share-btn,
+#global-player .vol-btn, #global-player .vol-percent { color: #0f2e3a !important; }
+#global-player .vol-slider { accent-color: #0f2e3a; }
+#global-player .swipe-grabber { background: rgba(15,46,58,.3) !important; }
 /* 미니바(모바일) — 담기(저장/플레이리스트)·공유는 노출(사용자 요청). 셔플·볼륨만 숨김. */
 @media (max-width: 768px) {
   #global-player:not(.expanded) .shuffle-btn,
