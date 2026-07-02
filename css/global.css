@@ -19484,6 +19484,34 @@ body.is-universe-route .my-universe {
   border: none !important; object-fit: cover;
 }
 
+/* ═══ 풀스크린 플레이어 = 옛날 MP3 감성 (하늘색 바디 + 초록 LCD 화면 + 청키 버튼). 뒤에 와서 위 규칙 덮음 ═══ */
+#player-fs { background: linear-gradient(180deg,#45CEEB 0%,#37bcda 100%) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+#player-fs .pfs-nowplaying { color: #0f2e3a !important; font-family: 'VT323','Pretendard',monospace; font-size: 16px !important; letter-spacing: .18em; }
+#player-fs .pfs-icon-btn { background: rgba(255,255,255,.5) !important; color: #0f2e3a !important; border: 2px solid rgba(15,46,58,.28) !important; }
+#player-fs .pfs-circle { border: 5px solid rgba(255,255,255,.55); box-shadow: 0 12px 34px rgba(0,0,0,.22), inset 0 6px 20px rgba(255,255,255,.42); }
+#player-fs .pfs-tags p { color: #0b1f18 !important; }
+/* LCD 화면 — 제목/아티스트/가사 (초록 디지털 + 스캔라인) */
+#player-fs .pfs-lcd { width: 100%; max-width: 440px; margin: 0 auto; background: #0b2a22; border-radius: 14px; border: 3px solid #06231b; box-shadow: inset 0 3px 14px rgba(0,0,0,.6), 0 6px 18px rgba(0,0,0,.2); padding: 15px 18px; text-align: center; position: relative; overflow: hidden; }
+#player-fs .pfs-lcd::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0,0,0,.08) 3px 4px); pointer-events: none; }
+#player-fs .pfs-title { color: #7dffb0 !important; font-size: 22px !important; text-shadow: 0 0 8px rgba(125,255,176,.5); }
+#player-fs .pfs-artist { color: #4fd6a0 !important; margin-top: 5px !important; text-shadow: 0 0 6px rgba(79,214,160,.4); }
+#player-fs .pfs-lyrics { color: #c6ffe4; font-size: 14px; line-height: 1.55; margin-top: 12px; max-height: 118px; overflow-y: auto; white-space: pre-line; text-align: center; scrollbar-width: none; position: relative; z-index: 1; }
+#player-fs .pfs-lyrics::-webkit-scrollbar { display: none; }
+#player-fs .pfs-lyrics.empty { color: rgba(198,255,228,.42); }
+#player-fs .pfs-viz i { background: #0f2e3a !important; }
+#player-fs .pfs-track { background: rgba(15,46,58,.2) !important; height: 6px !important; }
+#player-fs .pfs-fill { background: #0f2e3a !important; }
+#player-fs .pfs-times { color: #0f2e3a !important; opacity: .72; font-family: 'VT323','Pretendard',monospace; font-size: 15px !important; }
+/* 청키 레트로 버튼 (눌리는 그림자) */
+#player-fs .pfs-controls { gap: 8px; align-items: center; }
+#player-fs .pfs-side { background: rgba(255,255,255,.55) !important; color: #0f2e3a !important; border: 2px solid rgba(15,46,58,.35) !important; border-radius: 12px !important; width: 46px; height: 46px; align-items: center; justify-content: center; padding: 0 !important; box-shadow: 0 3px 0 rgba(15,46,58,.32); }
+#player-fs .pfs-side:active { transform: translateY(2px); box-shadow: none; }
+#player-fs .pfs-seek { background: rgba(255,255,255,.55); color: #0f2e3a; border: 2px solid rgba(15,46,58,.35); border-radius: 12px; min-width: 54px; height: 46px; display: flex; align-items: center; justify-content: center; gap: 1px; font-weight: 900; font-size: 13px; cursor: pointer; box-shadow: 0 3px 0 rgba(15,46,58,.32); }
+#player-fs .pfs-seek i { font-size: 15px; }
+#player-fs .pfs-seek:active { transform: translateY(2px); box-shadow: none; }
+#player-fs .pfs-play { background: #FFE800 !important; color: #0f2e3a !important; border: 3px solid #0f2e3a !important; width: 66px !important; height: 66px !important; border-radius: 16px !important; box-shadow: 0 4px 0 #0f2e3a; }
+#player-fs .pfs-play:active { transform: translateY(3px); box-shadow: none; }
+
 /* ════════ 주절주절 피드 미디어 — 음원=곡 색 디스크+#태그 / 여러 사진=인스타 캐러셀 / 업로드 +는 왼쪽 위 ════════ */
 #feed-reels .feed-plus {
   position: absolute; top: 12px; left: 12px; z-index: 4;

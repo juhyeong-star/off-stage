@@ -2587,6 +2587,22 @@ window.syncPlayerFs = function () {
   if (t) t.innerText = (titleEl && titleEl.innerText) || '선택된 곡 없음';
   const a = document.getElementById('pfs-artist');
   if (a) a.innerText = window.__playerArtistName || '-';   // 원(#pfs-tags)이 도형 글을 보여주므로 서브는 아티스트
+  // 가사 — 현재 곡 track.lyrics 있으면 표시, 없으면 "가사 없음"
+  const lyEl = document.getElementById('pfs-lyrics');
+  if (lyEl) {
+    let ly = '';
+    try {
+      const cid = window.currentPlayingTrack;
+      if (cid) {
+        const _db = window.DB.get();
+        let tr = (_db.tracks || []).find(x => x && x.id === cid);
+        if (!tr && Array.isArray(window.__tracks)) tr = window.__tracks.find(x => x && x.id === cid);
+        ly = (tr && tr.lyrics) ? String(tr.lyrics).trim() : '';
+      }
+    } catch (_) {}
+    lyEl.textContent = ly || '가사 없음';
+    lyEl.classList.toggle('empty', !ly);
+  }
   // 원 안 #태그 — 미니에 채워둔 #player-tags span 복사.
   const src = document.getElementById('player-tags');
   const dst = document.getElementById('pfs-tags');
