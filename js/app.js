@@ -3858,9 +3858,9 @@ function renderPlaylist(){
   app.innerHTML='<div class="sb-page"><h1 class="sb-wordmark">슬로우 뮤직</h1>'
     +'<div class="sb-seclabel">플레이리스트</div>'
     +'<div class="sb-list">'
-      +'<div class="sb-group"><div class="sb-head">🕑 최근에 들은 노래</div><div class="sb-rows">'+rows(recent,'#7FB2EC')+'</div></div>'
-      +'<div class="sb-group"><div class="sb-head">💗 담은 노래</div><div class="sb-rows">'+rows(saved,'#F06CA8')+'</div></div>'
-      +'<div class="sb-group"><div class="sb-head">✨ 추천 노래</div><div class="sb-rows">'+rows(recIds,'#86CE34')+'</div></div>'
+      +'<div class="sb-group"><div class="sb-head">최근에 들은 노래</div><div class="sb-rows">'+rows(recent,'#7FB2EC')+'</div></div>'
+      +'<div class="sb-group"><div class="sb-head">담은 노래</div><div class="sb-rows">'+rows(saved,'#F06CA8')+'</div></div>'
+      +'<div class="sb-group"><div class="sb-head">추천 노래</div><div class="sb-rows">'+rows(recIds,'#86CE34')+'</div></div>'
     +'</div></div>';
 }
 window.renderPlaylist = renderPlaylist;
