@@ -14917,6 +14917,44 @@ window.playerSeek = function (delta) {
   try { if (typeof updateProgress === 'function') updateProgress(); } catch (_) {}
 };
 
+// ±10초 이동 — 키보드 방향키(←/→) + 모바일 화면 좌/우 더블탭. 재생 중일 때만, 인터랙티브 요소 위는 제외.
+(function () {
+  if (window.__seekGesturesWired) return; window.__seekGesturesWired = true;
+  function _playing() { var a = window.audioElement; return !!(a && a.duration && !isNaN(a.duration)); }
+  function _typing(el) { return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable); }
+  function _seekFlash(delta) {
+    try {
+      var f = document.getElementById('seek-flash');
+      if (!f) { f = document.createElement('div'); f.id = 'seek-flash'; document.body.appendChild(f); }
+      f.textContent = (delta < 0 ? '⟲ 10' : '10 ⟳');
+      f.className = 'show ' + (delta < 0 ? 'left' : 'right');
+      clearTimeout(window.__seekFlashT); window.__seekFlashT = setTimeout(function () { f.className = ''; }, 500);
+    } catch (_) {}
+  }
+  // 방향키
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    if (_typing(document.activeElement) || !_playing()) return;
+    e.preventDefault();
+    var d = (e.key === 'ArrowLeft') ? -10 : 10;
+    window.playerSeek(d); _seekFlash(d);
+  });
+  // 모바일 화면 좌/우 더블탭 (가운데 40~60% 는 오탭 방지로 무시)
+  var _lastT = 0, _lastX = 0;
+  var EXCL = 'button,a,input,textarea,select,[role="button"],.floating-shape,.sb-row,.ash-drow,.ash-box,.ash-card,.ash-fchip,.ash-tab,.dp-slot,.sshorts-overlay,.shorts-overlay,.mobile-tab-bar,.sidebar-nav,#global-player,#player-fs .pfs-controls,.comment-sheet,.ssh-card,.cheer-modal-card';
+  document.addEventListener('touchend', function (e) {
+    if (!_playing()) return;
+    var t = e.changedTouches && e.changedTouches[0]; if (!t) return;
+    if (e.target && e.target.closest && e.target.closest(EXCL)) { _lastT = 0; return; }
+    var now = Date.now(), x = t.clientX, w = window.innerWidth || 360;
+    if (now - _lastT < 320 && Math.abs(x - _lastX) < 90 && (x < w * 0.4 || x > w * 0.6)) {
+      var d = (x < w * 0.5) ? -10 : 10;
+      window.playerSeek(d); _seekFlash(d); _lastT = 0; return;
+    }
+    _lastT = now; _lastX = x;
+  }, { passive: true });
+})();
+
 // 아티스트 홈(데모 타임라인) — 내 페이지(my-artist)와 남의 아티스트 페이지(artist:) 공용.
 // isSelf 면 편집, 아니면 팔로우 버튼. 데이터는 db.tracks(해당 아티스트)에서 그대로.
 function renderArtistHome(artistName) {

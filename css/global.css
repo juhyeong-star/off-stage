@@ -19603,6 +19603,14 @@ body.is-shapes-route .shapes-subtitle { display: none !important; }
 #global-player .control-btn { color: #0f2e3a !important; }
 #global-player .control-btn.play-btn { color: #FFE800 !important; filter: drop-shadow(0 2px 2px rgba(15,46,58,.45)); }
 #global-player .control-btn:active { transform: scale(.9); }
+#global-player .seek-btn { display: inline-flex; align-items: center; gap: 1px; font-size: 20px; color: #0f2e3a !important; }
+#global-player .seek-btn i { font-size: 18px; }
+#global-player .seek-btn b { font-size: 11px; font-weight: 900; }
+/* ±10초 이동 피드백 (방향키/더블탭) */
+#seek-flash { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(.85); background: rgba(15,46,58,.92); color: #FFE800; font-family: 'Pretendard',sans-serif; font-weight: 900; font-size: 20px; letter-spacing: .02em; padding: 12px 22px; border-radius: 16px; z-index: 3500; opacity: 0; pointer-events: none; transition: opacity .14s, transform .14s; }
+#seek-flash.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+#seek-flash.left { left: 26%; }
+#seek-flash.right { left: 74%; }
 /* 진행바 */
 #global-player .progress-fill { background: #0f2e3a !important; }
 #global-player .progress-bar-track { background: rgba(15,46,58,.18) !important; }
