@@ -1741,12 +1741,14 @@ function navigateTo(route) {
         else navigateTo('auth');
         break;
       }
-      // 계정 프로필 (청취자 디자인) — 2026-06-25 재활성. studio 는 도형으로.
+      // 내 계정 페이지 제거(2026-07-02) — 프로필/내계정 클릭 시 마이페이지(상점형)로. renderProfile 은 보존(dead).
       case 'profile':
-      case 'me':
-        currentView = 'profile';
-        renderProfile();
+      case 'me': {
+        const _pu = window.__currentUser || (window.DB.get() && window.DB.get().currentUser);
+        if (_pu && _pu.name) { currentView = 'myhome'; renderMyHome(); }
+        else { navigateTo('auth'); }
         break;
+      }
       case 'studio':
         navigateTo('shapes');
         return;
@@ -3844,11 +3846,21 @@ function renderPlaylist(){
   var saved=[];
   try{ if(window.CollectedTracks&&window.CollectedTracks.all) saved=window.CollectedTracks.all().slice(); }catch(_){}
   if(db.currentUser&&Array.isArray(db.currentUser.likedTracks)) db.currentUser.likedTracks.forEach(function(id){ if(saved.indexOf(id)<0) saved.push(id); });
+  // 추천 노래 — 취향(응원·팔로우) 기반 미발매 데모 추천(없으면 최신 폴백). 이미 담은/내 곡 제외.
+  var recIds=[];
+  try{
+    if(typeof window.recommendDemos==='function'){
+      var recs=window.recommendDemos(all, [], (db.following||[]), {limit:8, myName:(db.currentUser&&db.currentUser.name)||null});
+      var skip={}; saved.forEach(function(id){skip[id]=1;});
+      recIds=(recs||[]).map(function(t){return t&&t.id;}).filter(function(id){return id&&!skip[id];});
+    }
+  }catch(_){}
   app.innerHTML='<div class="sb-page"><h1 class="sb-wordmark">슬로우 뮤직</h1>'
     +'<div class="sb-seclabel">플레이리스트</div>'
     +'<div class="sb-list">'
       +'<div class="sb-group"><div class="sb-head">🕑 최근에 들은 노래</div><div class="sb-rows">'+rows(recent,'#7FB2EC')+'</div></div>'
       +'<div class="sb-group"><div class="sb-head">💗 담은 노래</div><div class="sb-rows">'+rows(saved,'#F06CA8')+'</div></div>'
+      +'<div class="sb-group"><div class="sb-head">✨ 추천 노래</div><div class="sb-rows">'+rows(recIds,'#86CE34')+'</div></div>'
     +'</div></div>';
 }
 window.renderPlaylist = renderPlaylist;
@@ -14798,7 +14810,8 @@ function _mhStyle() {
 function renderMyHome() {
   const me = window.__currentUser || (window.DB.get() || {}).currentUser;
   if (!me || !me.name) { navigateTo('auth'); return; }
-  renderArtistHome(me.name);
+  // 내 페이지도 상점형으로 통일 (renderArtistProfile → renderArtistShop 위임)
+  renderArtistProfile(me.name);
 }
 
 // 팔로우 버튼 → toggleFollowArtist(id, name) (data-속성으로 안전 전달, JS 문자열 이스케이프 회피)
