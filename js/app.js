@@ -8217,9 +8217,10 @@ function renderDiscoverPattern(tracks){
   tracks = (tracks||[]).filter(Boolean);
   // 곡 → 해시태그 3개(태그 우선, 없으면 아티스트/제목으로 보충)
   function tagsOf(t){
-    var a = (t && Array.isArray(t.tags)) ? t.tags.filter(Boolean).map(String).slice(0,3) : [];
+    // 입력한 해시태그 전부 표시(예전 3개 상한 → 잘림). 폭주 방지로 8개까지만.
+    var a = (t && Array.isArray(t.tags)) ? t.tags.filter(Boolean).map(String).slice(0,8) : [];
     if (!a.length && t){ var ti=(t.title||'곡').replace(/\s*\(.*\)$/,''); a=[t.artist||'off-stage', ti]; }
-    return a.slice(0,3);
+    return a.slice(0,8);
   }
   // 샘플 멤피스 배치(곡=info 밝은 도형: 버스트·원·삼각형)
   var TPL = [
@@ -8294,7 +8295,7 @@ function renderDiscoverPattern(tracks){
     var INFOCOL=['#E24A9C','#7FB2EC','#86CE34','#B49BEE','#F06CA8','#FF8A6E','#26C6C6','#FFB03A'];
     var SONGSH=[{cls:'burst',fit:.5,fitH:.46,w:150,h:150},{cls:'circle',fit:.68,fitH:.62,w:132,h:132},{cls:'tri',fit:.68,fitH:.46,w:222,h:196}];
     var DECOR=[{cls:'spark',w:44,color:'#26C6C6'},{cls:'tri',w:58,color:'#7FB2EC'},{cls:'burst',w:52,color:'#FFD24A'},{cls:'notes',w:36,color:'#E24A9C',glyph:'♪'},{cls:'stack',w:68,color:'#F4F1E8'},{cls:'spark',w:40,color:'#F06CA8'},{cls:'tri',w:56,color:'#86CE34'},{cls:'notes',w:34,color:'#26C6C6',glyph:'♫'},{cls:'ellipse',w:56,color:'#FFD24A'},{cls:'burst',w:50,color:'#B49BEE'},{cls:'square',w:46,color:'#3E6FD9'},{cls:'spark',w:38,color:'#FF8A6E'}];
-    function _songText(tk){ var tg=tk?tagsOf(tk):['off','stage','music']; return '<div class="dp-s-text">#'+dpEsc(tg[0]||'뮤직')+(tg[1]?'<br>#'+dpEsc(tg[1]):'')+(tg[2]?'<br>#'+dpEsc(tg[2]):'')+'</div>'; }
+    function _songText(tk){ var tg=tk?tagsOf(tk):['off','stage','music']; if(!tg.length)tg=['뮤직']; return '<div class="dp-s-text" data-lines="'+tg.length+'">'+tg.map(function(x){return '#'+dpEsc(x);}).join('<br>')+'</div>'; }
     function _fitFont(el,fit,fitH,W,H,m){ var te=el.querySelector('.dp-s-text'); var mw=W*fit,mh=H*fitH,fs=parseFloat(te.style.fontSize)||(16*m),g=0; while((te.offsetWidth>mw||te.offsetHeight>mh)&&fs>8&&g++<26){fs-=0.5;te.style.fontSize=fs+'px';} }
     function _freePlace(items,W,H){ var out=[]; items.forEach(function(it){ var best={x:W/2,y:H/2},bm=-1e9,r=it.r,pad=it.pad; for(var t=0;t<90;t++){ var x=r+8+Math.random()*Math.max(1,W-2*r-16), y=r+8+Math.random()*Math.max(1,H-2*r-16), m=1e9; for(var j=0;j<out.length;j++){var d=Math.hypot(x-out[j].x,y-out[j].y)-(r+out[j].r); if(d<m)m=d;} if(m>=pad){best={x:x,y:y};break;} if(m>bm){bm=m;best={x:x,y:y};} } it.x=best.x; it.y=best.y; out.push({x:best.x,y:best.y,r:r}); }); }
     for (var bi=0; bi<bandCount; bi++){
