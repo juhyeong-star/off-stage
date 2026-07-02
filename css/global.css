@@ -19498,6 +19498,9 @@ body.is-universe-route .my-universe {
 #player-fs .pfs-lyrics { color: #c6ffe4; font-size: 14px; line-height: 1.55; margin-top: 12px; max-height: 118px; overflow-y: auto; white-space: pre-line; text-align: center; scrollbar-width: none; position: relative; z-index: 1; }
 #player-fs .pfs-lyrics::-webkit-scrollbar { display: none; }
 #player-fs .pfs-lyrics.empty { color: rgba(198,255,228,.42); }
+/* 가사 줄 싱크 — 활성 줄만 밝게 크게(딱딱 넘어가는 느낌), 나머지는 흐리게 */
+#player-fs .pfs-lyr-ln { opacity: .34; transition: opacity .25s ease, color .25s ease, transform .25s ease; padding: 3px 0; }
+#player-fs .pfs-lyr-ln.active { opacity: 1; color: #7dffb0; font-weight: 800; transform: scale(1.05); text-shadow: 0 0 12px rgba(125,255,176,.45); }
 #player-fs .pfs-viz i { background: #0f2e3a !important; }
 #player-fs .pfs-track { background: rgba(15,46,58,.2) !important; height: 6px !important; }
 #player-fs .pfs-fill { background: #0f2e3a !important; }
@@ -19642,9 +19645,12 @@ body.is-shapes-route .shapes-subtitle { display: none !important; }
   #global-player .player-wave { display: none; }
   #global-player .player-collect-btn { margin-left: auto; }
 }
-/* 미니바(모바일) — 담기(저장/플레이리스트)·공유는 노출(사용자 요청). 셔플·볼륨만 숨김. */
+/* 미니바(모바일) — 담기(저장/플레이리스트)·공유는 노출(사용자 요청). 셔플·볼륨·±10초 숨김. */
 @media (max-width: 768px) {
   #global-player:not(.expanded) .shuffle-btn,
+  #global-player:not(.expanded) .seek-btn,        /* ±10초 = 화면 좌우 더블탭으로 대체 → 미니바 공간 확보(LCD 안 뭉개지게) */
+  #global-player:not(.expanded) .control-btn[aria-label="이전 곡"],
+  #global-player:not(.expanded) .control-btn[aria-label="다음 곡"],  /* 이전/다음은 펼침(풀스크린)에서 — 미니바는 재생만 */
   #global-player:not(.expanded) .player-volume { display: none !important; }
   /* 위 화살표 대신 상단 작은 바(그래버) 노출 — 스와이프업 안내. */
   #global-player:not(.expanded) .swipe-grabber { display: block; top: 5px; width: 36px; height: 4px; }

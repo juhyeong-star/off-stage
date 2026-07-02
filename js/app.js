@@ -2599,10 +2599,21 @@ window.syncPlayerFs = function () {
       ly = (tr && tr.lyrics) ? String(tr.lyrics).trim() : '';
     }
   } catch (_) {}
-  ['pfs-lyrics', 'player-lyric'].forEach(function (id) {
-    var el = document.getElementById(id);
-    if (el) { el.textContent = ly || '가사 없음'; el.classList.toggle('empty', !ly); }
-  });
+  // 재생 위치에 맞춰 한 줄씩 활성화하려고 줄 단위로 저장·렌더 (_syncLyricLine 이 매 틱 갱신).
+  var _lyLines = ly ? ly.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean) : [];
+  window.__lyricLines = _lyLines;
+  window.__lyricActiveIdx = -1;
+  var _lyEsc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+  var _pfsLy = document.getElementById('pfs-lyrics');
+  if (_pfsLy) {
+    _pfsLy.classList.toggle('empty', !ly);
+    _pfsLy.innerHTML = _lyLines.length
+      ? _lyLines.map(function (ln, i) { return '<div class="pfs-lyr-ln" data-i="' + i + '">' + _lyEsc(ln) + '</div>'; }).join('')
+      : '가사 없음';
+  }
+  var _miniLy = document.getElementById('player-lyric');
+  if (_miniLy) { _miniLy.textContent = _lyLines.length ? _lyLines[0] : (ly || '가사 없음'); _miniLy.classList.toggle('empty', !ly); }
+  if (typeof _syncLyricLine === 'function') { try { _syncLyricLine(true); } catch (_) {} }
   // 원 안 #태그 — 미니에 채워둔 #player-tags span 복사.
   const src = document.getElementById('player-tags');
   const dst = document.getElementById('pfs-tags');
@@ -17651,7 +17662,37 @@ function updateProgress() {
     window.__playCounted = true;
     try { if (typeof _incPlay === 'function') _incPlay(window.currentPlayingTrack); } catch (_) {}
   }
+  // 가사 줄 싱크 — 재생 위치에 맞춰 한 줄씩 (미니 = 활성 줄, 풀스크린 = 하이라이트+스크롤)
+  try { if (typeof _syncLyricLine === 'function') _syncLyricLine(); } catch (_) {}
 }
+
+// 가사 줄 싱크 — LRC 타임스탬프가 없어 재생 위치 비율(currentTime/duration)로 줄을 균등 추정.
+// 완벽한 싱크는 아니지만 재생하며 한 줄씩 '딱딱' 넘어가는 느낌. 업로드에 타임스탬프 생기면 그걸로 교체.
+function _syncLyricLine(force) {
+  var lines = window.__lyricLines;
+  if (!lines || !lines.length) return;
+  var a = (typeof audioElement !== 'undefined' && audioElement) ? audioElement : document.getElementById('audio-element');
+  if (!a) return;
+  var dur = a.duration, cur = a.currentTime;
+  if (!dur || !isFinite(dur) || dur <= 0) return;
+  var idx = Math.floor((cur / dur) * lines.length);
+  if (idx < 0) idx = 0;
+  if (idx >= lines.length) idx = lines.length - 1;
+  if (!force && idx === window.__lyricActiveIdx) return;
+  window.__lyricActiveIdx = idx;
+  var mini = document.getElementById('player-lyric');
+  if (mini) mini.textContent = lines[idx];
+  var box = document.getElementById('pfs-lyrics');
+  if (box) {
+    var lns = box.querySelectorAll('.pfs-lyr-ln');
+    for (var i = 0; i < lns.length; i++) lns[i].classList.toggle('active', i === idx);
+    var act = lns[idx];
+    if (act && box.scrollHeight > box.clientHeight + 2) {
+      box.scrollTop = Math.max(0, act.offsetTop - box.clientHeight / 2 + act.offsetHeight / 2);
+    }
+  }
+}
+window._syncLyricLine = _syncLyricLine;
 
 function formatTime(seconds) {
   if (isNaN(seconds)) return "0:00";
