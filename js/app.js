@@ -3717,15 +3717,20 @@ function _slowStyle(){
   .sb-rows{display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
   .sb-row{display:inline-block;background:#fff;color:#111;font-family:'Pretendard',sans-serif;font-weight:700;font-size:15px;line-height:1.45;padding:6px 13px;border-radius:3px;border-left:4px solid #E24A9C;cursor:pointer;transition:box-shadow .15s,background .15s;max-width:100%;word-break:break-all;}
   .sb-num{display:inline-block;font-weight:900;margin-right:9px;}
-  .sb-row:hover{box-shadow:0 4px 13px rgba(0,0,0,.14);background:#f6f6f9;}
-  .sb-row:active{background:#ececef;}
+  .sb-row:hover{background:#E24A9C;color:#1b1522;box-shadow:0 4px 13px rgba(0,0,0,.2);animation:sbHue 3s linear infinite;}
+  .sb-row:active{opacity:.9;}
   .sb-empty{text-align:center;color:#0f0f14;font-weight:700;padding:52px 16px;opacity:.72;}
   .sb-plempty{color:#0f0f14;opacity:.55;font-weight:700;font-size:13px;padding:3px 4px;}
   /* 데모 행 + 담기(+) 버튼 */
-  .sb-rw{display:flex;align-items:center;gap:8px;max-width:100%;}
+  .sb-rw{display:flex;align-items:center;gap:8px;max-width:100%;flex-wrap:wrap;}
   .sb-add{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:rgba(15,15,20,.13);color:#0f0f14;font-size:19px;font-weight:900;line-height:1;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;transition:background .15s,transform .12s;padding:0 0 2px;}
   .sb-add:hover{background:rgba(15,15,20,.3);}
   .sb-add:active{transform:scale(.9);}
+  /* 조회수 · 담은 횟수 칩 (하늘색 배경 위 어두운 글씨) */
+  .sb-cnt{display:inline-flex;align-items:center;gap:2px;font-family:'Pretendard',sans-serif;font-size:12px;font-weight:800;color:#0b2733;opacity:.85;}
+  .sb-cnt i{font-size:13px;opacity:.8;}
+  /* 데모 행 hover — 색이 계속 바뀜(전기가오리처럼). hue-rotate 로 배경 색상 순환, 글씨는 어두워 유지. */
+  @keyframes sbHue{ from{filter:hue-rotate(0deg);} to{filter:hue-rotate(360deg);} }
   /* 앨범 전체 댓글 (흰 배경에 쌓임, 길면 잘리고 탭하면 펼침) */
   .sb-cmts{display:flex;flex-direction:column;gap:4px;margin:9px 0 0 6px;}
   .sb-cmt{font-family:'Pretendard',sans-serif;font-size:13px;line-height:1.42;color:#0c2733;background:rgba(255,255,255,.62);border-radius:8px;padding:5px 11px;cursor:pointer;max-width:600px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
@@ -3772,10 +3777,12 @@ function renderSlowBoard(){
     var g=groups[name], col=INFOCOL[gi%INFOCOL.length];
     // 오래된 데모부터(=데모 1) 위로 → 앞에 1,2,3 번호
     var demos=g.tracks.slice().sort(function(a,b){ return (Date.parse(a.createdAt||0)||0)-(Date.parse(b.createdAt||0)||0); });
+    var _pc=_playCounts(), _sc=_saveCounts();
     var rows=demos.map(function(t,di){
       var onc = t.id ? ' onclick="if(window.playTrack)playTrack(\''+esc(t.id)+'\',\'wall\')"' : '';
       var add = t.id ? '<button class="sb-add" onclick="event.stopPropagation();if(window._sbCollect)_sbCollect(\''+esc(t.id)+'\')" aria-label="플레이리스트에 담기">+</button>' : '';
-      return '<div class="sb-rw"><span class="sb-row" style="border-left-color:'+col+'"'+onc+'><b class="sb-num" style="color:'+col+'">'+(di+1)+'</b>'+tagsStr(t)+'</span>'+add+'</div>';
+      var cnt = t.id ? '<span class="sb-cnt" title="조회수(30초 이상 들으면 +1)"><i class="ri-play-mini-fill"></i>'+(_pc[t.id]||0)+'</span><span class="sb-cnt" title="담은 횟수"><i class="ri-bookmark-fill"></i>'+(_sc[t.id]||0)+'</span>' : '';
+      return '<div class="sb-rw"><span class="sb-row" style="border-left-color:'+col+'"'+onc+'><b class="sb-num" style="color:'+col+'">'+(di+1)+'</b>'+tagsStr(t)+'</span>'+cnt+add+'</div>';
     }).join('');
     var enc=encodeURIComponent(g.name);
     return '<div class="sb-group" style="animation-delay:'+(Math.min(gi,10)*0.05)+'s">'
@@ -3818,10 +3825,21 @@ window._sbAddComment=function(gi){
 // 최근에 들은 노래(재생 기록 localStorage) + 담은 노래(CollectedTracks). 주절주절 데모 행 스타일 재사용.
 function _recentPlays(){ try{ return JSON.parse(localStorage.getItem('offstage_recent')||'[]')||[]; }catch(_){ return []; } }
 function _pushRecent(id){ if(!id) return; try{ var a=_recentPlays().filter(function(x){return x!==id;}); a.unshift(id); localStorage.setItem('offstage_recent', JSON.stringify(a.slice(0,30))); }catch(_){} }
+// 조회수(30초↑ 재생) · 담은 횟수 — 현재 이 기기 localStorage 집계(서버 미동기, 나중에 테이블로).
+function _playCounts(){ try{ return JSON.parse(localStorage.getItem('offstage_plays')||'{}')||{}; }catch(_){ return {}; } }
+function _saveCounts(){ try{ return JSON.parse(localStorage.getItem('offstage_saves')||'{}')||{}; }catch(_){ return {}; } }
+function _incPlay(id){ if(!id) return; try{ var m=_playCounts(); m[id]=(m[id]||0)+1; localStorage.setItem('offstage_plays', JSON.stringify(m)); }catch(_){} }
+function _incSave(id){ if(!id) return; try{ var m=_saveCounts(); m[id]=(m[id]||0)+1; localStorage.setItem('offstage_saves', JSON.stringify(m)); }catch(_){} }
 window._sbCollect=function(trackId){
   if(!trackId) return;
   if(typeof isTrackLiked==='function' && isTrackLiked(trackId)){ if(typeof showToast==='function') showToast(_t('이미 담은 노래예요','Already saved')); return; }
-  if(typeof window.toggleTrackHeart==='function'){ window.toggleTrackHeart(trackId, null); if(typeof showToast==='function') showToast(_t('담은 노래에 추가 💗','Saved 💗')); }
+  if(typeof window.toggleTrackHeart==='function'){
+    window.toggleTrackHeart(trackId, null);
+    _incSave(trackId);   // 담은 횟수 +1
+    if(typeof showToast==='function') showToast(_t('담은 노래에 추가 💗','Saved 💗'));
+    // 주절주절 화면이면 카운트 갱신
+    try{ if(currentView==='wall' && typeof renderSlowBoard==='function') renderSlowBoard(); }catch(_){}
+  }
 };
 function renderPlaylist(){
   currentView='universe';
@@ -3905,7 +3923,8 @@ function _artistShopStyle(){
   .ash-box-title{font-family:'Black Han Sans','Pretendard',sans-serif;color:#fff;font-size:22px;line-height:1.05;margin-bottom:11px;text-shadow:0 2px 6px rgba(0,0,0,.28);}
   .ash-box-rows{display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
   .ash-drw{max-width:100%;}
-  .ash-drow{display:inline-block;background:#fff;color:#111;font-family:'Pretendard',sans-serif;font-weight:700;font-size:14px;line-height:1.42;padding:6px 12px;border-radius:6px;max-width:100%;word-break:break-all;}
+  .ash-drow{display:inline-block;background:#fff;color:#111;font-family:'Pretendard',sans-serif;font-weight:700;font-size:14px;line-height:1.42;padding:6px 12px;border-radius:6px;max-width:100%;word-break:break-all;cursor:pointer;transition:box-shadow .15s;}
+  .ash-drow:hover{background:#E24A9C;color:#1b1522;box-shadow:0 4px 13px rgba(0,0,0,.2);animation:sbHue 3s linear infinite;}
   .ash-dnum{display:inline-block;font-weight:900;margin-right:8px;color:var(--bx,#7FB2EC);}
   .ash-drow-empty{color:rgba(255,255,255,.9);font-weight:700;font-size:13px;}
   `;
@@ -17342,6 +17361,7 @@ window.playTrack = function (trackId, source) {
 
   currentPlayingTrack = track.id;
   window.currentPlayingTrack = currentPlayingTrack;
+  window.__playCounted = false;   // 새 곡 → 30초 조회수 카운트 재무장
   try { if (typeof _pushRecent === 'function') _pushRecent(track.id); } catch(_){}   // 플레이리스트 '최근 들은 노래'
 
   // 큐 갱신 — universe / shape / shapeshorts / folder 에서 시작하면 그 컨텍스트의 곡들을
@@ -17504,6 +17524,11 @@ function updateProgress() {
   if (_pf) _pf.style.width = `${progressPercent || 0}%`;
   const _pc = document.getElementById('pfs-cur'); if (_pc) _pc.innerText = formatTime(currentTime);
   const _pt = document.getElementById('pfs-tot'); if (_pt && duration) _pt.innerText = formatTime(duration);
+  // 조회수 — 30초 이상 들으면 이 재생 세션에 1회만 카운트
+  if (currentTime >= 30 && !window.__playCounted && window.currentPlayingTrack) {
+    window.__playCounted = true;
+    try { if (typeof _incPlay === 'function') _incPlay(window.currentPlayingTrack); } catch (_) {}
+  }
 }
 
 function formatTime(seconds) {
