@@ -8101,7 +8101,7 @@ function _dpStyle(){
   if (document.getElementById('dp-style')) return;
   var st=document.createElement('style'); st.id='dp-style';
   st.textContent = `
-  .dp-scroll{position:relative;height:100vh;height:100dvh;overflow-y:auto;background:#000;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+  .dp-scroll{position:relative;height:100vh;height:100dvh;overflow-y:auto;background:#45CEEB;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
   .dp-scroll::-webkit-scrollbar{display:none;}
   .dp-band{position:relative;height:100%;}
   .dp-slot{position:absolute;transform:translate(-50%,-50%) rotate(var(--rot,0deg));width:var(--w);height:var(--h);display:flex;align-items:center;justify-content:center;z-index:1;}
@@ -8120,6 +8120,14 @@ function _dpStyle(){
   .dp-notes{font-size:var(--w);line-height:1;font-weight:900;filter:drop-shadow(0 3px 7px rgba(0,0,0,.5));}
   .dp-s-text{position:relative;z-index:2;text-align:center;font-weight:800;line-height:1.5;letter-spacing:-.2px;pointer-events:none;white-space:nowrap;color:#1b1522;}
   .dp-tri-wrap .dp-s-text{transform:translateY(28%);}
+  /* ── 상단 히어로: 하늘색 배경 + 검은고딕 대형 워드마크 + 떨어지는 번개 (스크린샷 이식) ── */
+  .dp-hero{position:relative;width:100%;min-height:68vh;min-height:68dvh;overflow:hidden;padding:calc(env(safe-area-inset-top,0px) + 4px) 14px 0;pointer-events:none;}
+  .dp-wordmark{position:relative;z-index:2;font-family:'Black Han Sans','Pretendard',sans-serif;color:#FFE800;font-weight:400;line-height:.9;letter-spacing:-.5px;margin:0;font-size:clamp(60px,20vw,190px);text-shadow:0 6px 0 rgba(0,0,0,.06);}
+  .dp-hero-outline{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);width:min(78%,620px);height:auto;opacity:.55;z-index:0;}
+  .dp-hero-outline path{fill:none;stroke:rgba(255,255,255,.85);stroke-width:2.5;stroke-linejoin:round;}
+  .dp-fall-bolt{position:absolute;top:0;color:#FFE800;font-size:34px;line-height:1;z-index:1;filter:drop-shadow(0 3px 6px rgba(0,0,0,.12));will-change:transform;animation:dpFall linear infinite;}
+  @keyframes dpFall{0%{transform:translateY(-16vh) rotate(-6deg);opacity:0;}8%{opacity:1;}92%{opacity:1;}100%{transform:translateY(74vh) rotate(6deg);opacity:0;}}
+  @media (max-width:620px){ .dp-wordmark{font-size:clamp(48px,21vw,120px);} .dp-hero{min-height:60vh;min-height:60dvh;} }
   `;
   document.head.appendChild(st);
 }
@@ -8140,11 +8148,11 @@ function renderDiscoverPattern(tracks){
     {id:'s1', x:13,y:7,  w:58,h:38, cls:'ellipse', color:'#FFD24A'},
     {id:'s2', x:60,y:10, w:40,h:40, cls:'spark',   color:'#26C6C6'},
     {id:'s3', x:33,y:24, w:178,h:178, cls:'burst', color:'#E24A9C', info:1, fit:.5,  fitH:.46},
-    {id:'s4', x:77,y:33, w:150,h:130, cls:'tri',   color:'#7FB2EC', info:1, fit:.56, fitH:.34},
+    {id:'s4', x:77,y:33, w:170,h:150, cls:'tri',   color:'#7FB2EC', info:1, fit:.56, fitH:.34},
     {id:'s5', x:17,y:45, w:78,h:78, cls:'stack',   color:'#F4F1E8'},
     {id:'s6', x:37,y:49, w:38,h:34, cls:'notes',   color:'#E24A9C', glyph:'♪'},
     {id:'s7', x:43,y:57, w:138,h:138, cls:'circle', color:'#86CE34', info:1, fit:.68, fitH:.62},
-    {id:'s8', x:81,y:64, w:162,h:142, cls:'tri',   color:'#B49BEE', info:1, fit:.56, fitH:.34},
+    {id:'s8', x:81,y:64, w:184,h:162, cls:'tri',   color:'#B49BEE', info:1, fit:.56, fitH:.34},
     {id:'s9', x:22,y:74, w:138,h:138, cls:'burst', color:'#F06CA8', info:1, fit:.5,  fitH:.46},
     {id:'s10',x:75,y:83, w:152,h:152, cls:'burst', color:'#FF8A6E', info:1, fit:.5,  fitH:.46},
     {id:'s11',x:25,y:93, w:52,h:52, cls:'square',  color:'#FFD24A'},
@@ -8167,7 +8175,7 @@ function renderDiscoverPattern(tracks){
     + '<div class="upload-fab" onclick="navigateTo(\'upload\')" title="음악 업로드"><i class="ri-add-line"></i></div>';
   var scroll = document.getElementById('dp-scroll'), ti=0, built=false;
   // 곡 도형: 태그 길이에 맞춰 스케일(mul=화면폭 배율 반영). 글자=12*mul
-  function songDim(el,s,mul){ var te=el.querySelector('.dp-s-text'); te.style.fontSize=(12*mul)+'px'; te.style.whiteSpace='nowrap'; var cap=Math.max(1,s.w*mul*s.fit); var scale=Math.max(.74,Math.min(1.3,te.offsetWidth/cap)); return {w:Math.round(s.w*mul*scale),h:Math.round(s.h*mul*scale)}; }
+  function songDim(el,s,mul){ var te=el.querySelector('.dp-s-text'); te.style.fontSize=(14*mul)+'px'; te.style.whiteSpace='nowrap'; var cap=Math.max(1,s.w*mul*s.fit); var scale=Math.max(.74,Math.min(1.3,te.offsetWidth/cap)); return {w:Math.round(s.w*mul*scale),h:Math.round(s.h*mul*scale)}; }
   function build(){
     if (built || !document.getElementById('dp-scroll')) return; built=true;
     // 스크롤 높이 = 실제 가용 영역(상단 오프셋~플레이어 위)
@@ -8176,6 +8184,15 @@ function renderDiscoverPattern(tracks){
       var _av=window.innerHeight - Math.max(0, scroll.getBoundingClientRect().top) - _ph;
       scroll.style.height = Math.max(420, _av) + 'px';
     } catch(_){}
+    // 상단 히어로 — 스크린샷 이식: 하늘색 + 검은고딕 대형 노란 워드마크 "슬로우 뮤직" + 위→아래 떨어지는 번개
+    var _boltCfg=[[9,3.3,0],[31,4.2,0.7],[57,3.7,1.5],[80,4.5,0.3],[44,3.9,2.1]];
+    var _bolts=_boltCfg.map(function(b){return '<span class="dp-fall-bolt" style="left:'+b[0]+'%;animation-duration:'+b[1]+'s;animation-delay:'+b[2]+'s;"><i class="ri-flashlight-fill"></i></span>';}).join('');
+    scroll.insertAdjacentHTML('beforeend',
+      '<div class="dp-hero">'
+      + '<svg class="dp-hero-outline" viewBox="0 0 120 240" aria-hidden="true"><path d="M74 6 L30 116 L60 116 L46 234 L96 96 L64 96 Z"/></svg>'
+      + _bolts
+      + '<h1 class="dp-wordmark">슬로우 뮤직</h1>'
+      + '</div>');
     // 좁으면(모바일) 손으로 짠 조판 그대로, 넓으면(PC) 화면 전체에 하나로 흩뿌림(반복 없음)+크게
     var BW0=scroll.clientWidth||360;
     var wide = BW0>=620;
@@ -8184,10 +8201,10 @@ function renderDiscoverPattern(tracks){
     var songsPer = wide ? Math.max(9, Math.min(15, Math.round(BW0*SH/80000))) : 6;
     var bandCount = Math.max(3, Math.min(16, Math.ceil((tracks.length||18)/songsPer)));
     var INFOCOL=['#E24A9C','#7FB2EC','#86CE34','#B49BEE','#F06CA8','#FF8A6E','#26C6C6','#FFB03A'];
-    var SONGSH=[{cls:'burst',fit:.5,fitH:.46,w:150,h:150},{cls:'circle',fit:.68,fitH:.62,w:132,h:132},{cls:'tri',fit:.56,fitH:.34,w:152,h:130}];
+    var SONGSH=[{cls:'burst',fit:.5,fitH:.46,w:150,h:150},{cls:'circle',fit:.68,fitH:.62,w:132,h:132},{cls:'tri',fit:.56,fitH:.34,w:172,h:148}];
     var DECOR=[{cls:'spark',w:44,color:'#26C6C6'},{cls:'tri',w:58,color:'#7FB2EC'},{cls:'burst',w:52,color:'#FFD24A'},{cls:'notes',w:36,color:'#E24A9C',glyph:'♪'},{cls:'stack',w:68,color:'#F4F1E8'},{cls:'spark',w:40,color:'#F06CA8'},{cls:'tri',w:56,color:'#86CE34'},{cls:'notes',w:34,color:'#26C6C6',glyph:'♫'},{cls:'ellipse',w:56,color:'#FFD24A'},{cls:'burst',w:50,color:'#B49BEE'},{cls:'square',w:46,color:'#3E6FD9'},{cls:'spark',w:38,color:'#FF8A6E'}];
     function _songText(tk){ var tg=tk?tagsOf(tk):['off','stage','music']; return '<div class="dp-s-text">#'+dpEsc(tg[0]||'뮤직')+(tg[1]?'<br>#'+dpEsc(tg[1]):'')+(tg[2]?'<br>#'+dpEsc(tg[2]):'')+'</div>'; }
-    function _fitFont(el,fit,fitH,W,H,m){ var te=el.querySelector('.dp-s-text'); var mw=W*fit,mh=H*fitH,fs=parseFloat(te.style.fontSize)||(12*m),g=0; while((te.offsetWidth>mw||te.offsetHeight>mh)&&fs>7.5&&g++<24){fs-=0.5;te.style.fontSize=fs+'px';} }
+    function _fitFont(el,fit,fitH,W,H,m){ var te=el.querySelector('.dp-s-text'); var mw=W*fit,mh=H*fitH,fs=parseFloat(te.style.fontSize)||(14*m),g=0; while((te.offsetWidth>mw||te.offsetHeight>mh)&&fs>7.5&&g++<24){fs-=0.5;te.style.fontSize=fs+'px';} }
     function _freePlace(items,W,H){ var out=[]; items.forEach(function(it){ var best={x:W/2,y:H/2},bm=-1e9,r=it.r,pad=it.pad; for(var t=0;t<90;t++){ var x=r+8+Math.random()*Math.max(1,W-2*r-16), y=r+8+Math.random()*Math.max(1,H-2*r-16), m=1e9; for(var j=0;j<out.length;j++){var d=Math.hypot(x-out[j].x,y-out[j].y)-(r+out[j].r); if(d<m)m=d;} if(m>=pad){best={x:x,y:y};break;} if(m>bm){bm=m;best={x:x,y:y};} } it.x=best.x; it.y=best.y; out.push({x:best.x,y:best.y,r:r}); }); }
     for (var bi=0; bi<bandCount; bi++){
       var band=document.createElement('div'); band.className='dp-band'; scroll.appendChild(band);
