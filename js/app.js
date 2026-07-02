@@ -8122,14 +8122,16 @@ function _dpStyle(){
   .dp-s-text{position:relative;z-index:2;text-align:center;font-weight:800;line-height:1.5;letter-spacing:-.2px;pointer-events:none;white-space:nowrap;color:#1b1522;}
   .dp-tri-wrap .dp-s-text{transform:translateY(28%);}
   /* ── 상단 히어로: 하늘색 배경 + 검은고딕 대형 워드마크 + 떨어지는 번개 (스크린샷 이식) ── */
-  /* 히어로 = 상단 압축 헤더(워드마크만). 큰 빈 공간 없이 바로 아래 곡 도형과 한 화면에 합쳐짐. */
-  .dp-hero{position:relative;width:100%;padding:calc(env(safe-area-inset-top,0px) + 6px) 14px 2px;pointer-events:none;overflow:visible;}
-  .dp-wordmark{position:relative;z-index:2;font-family:'Black Han Sans','Pretendard',sans-serif;color:#FFE800;font-weight:400;line-height:.9;letter-spacing:-.5px;margin:0;font-size:clamp(52px,16vw,150px);text-shadow:0 5px 0 rgba(0,0,0,.06);}
-  /* 떨어지는 장식 도형(번개 대신) — 화면 위→아래로, 곡 도형 위(z-index 6)로 겹쳐 흘러 하나로 어우러짐. 곡 도형 아님(글자 없음). */
-  .dp-fall{position:absolute;top:0;z-index:6;width:var(--fw,32px);height:var(--fw,32px);will-change:transform;animation:dpFall linear infinite;}
+  /* 히어로 = 상단 압축 헤더(워드마크만, 가운데). 큰 빈 공간 없이 바로 아래 곡 도형과 한 화면에 합쳐짐. */
+  .dp-hero{position:relative;width:100%;padding:calc(env(safe-area-inset-top,0px) + 6px) 14px 2px;pointer-events:none;overflow:visible;text-align:center;}
+  .dp-wordmark{position:relative;z-index:2;font-family:'Black Han Sans','Pretendard',sans-serif;color:#FFE800;font-weight:400;line-height:.9;letter-spacing:-.5px;margin:0;font-size:clamp(52px,16vw,150px);text-shadow:0 5px 0 rgba(0,0,0,.06);text-align:center;}
+  /* 떨어지는 장식 도형(번개 대신) — 화면 고정 레이어라 스크롤해도 모든 위치에서 계속 떨어짐.
+     곡 도형 위(z-index 6)로 겹쳐 흘러 하나로 어우러짐. pointer-events:none 로 탭 방해 X. 상단탭/플레이어는 더 높은 z 라 안 가림. */
+  .dp-fall-layer{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:6;}
+  .dp-fall{position:absolute;top:0;width:var(--fw,32px);height:var(--fw,32px);will-change:transform;animation:dpFall linear infinite;}
   .dp-fall .dp-shape{filter:drop-shadow(0 3px 6px rgba(0,0,0,.14));}
   .dp-fall .dp-notes{font-size:var(--fw,32px);line-height:1;}
-  @keyframes dpFall{0%{transform:translateY(-18vh) rotate(-12deg);opacity:0;}8%{opacity:1;}90%{opacity:1;}100%{transform:translateY(80vh) rotate(200deg);opacity:0;}}
+  @keyframes dpFall{0%{transform:translateY(-16vh) rotate(-12deg);opacity:0;}7%{opacity:1;}90%{opacity:1;}100%{transform:translateY(112vh) rotate(220deg);opacity:0;}}
   @media (max-width:620px){ .dp-wordmark{font-size:clamp(46px,17vw,110px);} }
   `;
   document.head.appendChild(st);
@@ -8188,25 +8190,27 @@ function renderDiscoverPattern(tracks){
       scroll.style.height = Math.max(420, _av) + 'px';
     } catch(_){}
     // 상단 히어로 — 스크린샷 이식: 하늘색 + 검은고딕 대형 노란 워드마크 "슬로우 뮤직" + 위→아래 떨어지는 번개
-    // 떨어지는 장식 도형(번개 대신) — 곡(음원) 도형 아님(글자 없음). spark 은 다이아몬드로 교체됨.
+    // 워드마크 헤더(가운데) — 곡 도형과 한 화면.
+    scroll.insertAdjacentHTML('beforeend', '<div class="dp-hero"><h1 class="dp-wordmark">슬로우 뮤직</h1></div>');
+    // 떨어지는 장식 도형(번개 대신) — 화면 고정 레이어라 스크롤 어디서든 계속 떨어짐. 곡(음원) 도형 아님(글자 없음). spark=다이아.
     var _fallCfg=[
-      {c:'circle',col:'#FFD24A',w:30,left:9, dur:3.6,delay:0},
-      {c:'tri',   col:'#E24A9C',w:38,left:30,dur:4.4,delay:0.7},
-      {c:'square',col:'#26C6C6',w:26,left:56,dur:3.9,delay:1.5},
-      {c:'spark', col:'#B49BEE',w:32,left:80,dur:4.7,delay:0.3},
-      {c:'notes', col:'#FF8A6E',w:30,left:44,dur:4.1,delay:2.1},
-      {c:'circle',col:'#7FB2EC',w:22,left:69,dur:3.4,delay:1.1}
+      {c:'circle',col:'#FFD24A',w:30,left:7, dur:6.2,delay:0},
+      {c:'tri',   col:'#E24A9C',w:38,left:24,dur:7.4,delay:1.1},
+      {c:'square',col:'#26C6C6',w:26,left:41,dur:6.6,delay:2.3},
+      {c:'spark', col:'#B49BEE',w:32,left:58,dur:7.8,delay:0.6},
+      {c:'notes', col:'#FF8A6E',w:30,left:73,dur:6.9,delay:3.1},
+      {c:'circle',col:'#7FB2EC',w:22,left:88,dur:5.8,delay:1.8},
+      {c:'tri',   col:'#FFD24A',w:26,left:15,dur:7.1,delay:3.7},
+      {c:'square',col:'#F06CA8',w:22,left:50,dur:6.3,delay:4.4},
+      {c:'spark', col:'#86CE34',w:28,left:66,dur:7.6,delay:2.7},
+      {c:'circle',col:'#B49BEE',w:20,left:33,dur:5.9,delay:5.0}
     ];
     var _bolts=_fallCfg.map(function(b){
       var inner = (b.c==='notes') ? '<div class="dp-notes" style="color:'+b.col+'">♪</div>'
                                   : '<div class="dp-shape dp-'+b.c+'" style="background:'+b.col+'"></div>';
       return '<span class="dp-fall" style="left:'+b.left+'%;--fw:'+b.w+'px;animation-duration:'+b.dur+'s;animation-delay:'+b.delay+'s;">'+inner+'</span>';
     }).join('');
-    scroll.insertAdjacentHTML('beforeend',
-      '<div class="dp-hero">'
-      + _bolts
-      + '<h1 class="dp-wordmark">슬로우 뮤직</h1>'
-      + '</div>');
+    scroll.insertAdjacentHTML('beforeend', '<div class="dp-fall-layer">' + _bolts + '</div>');
     // 좁으면(모바일) 손으로 짠 조판 그대로, 넓으면(PC) 화면 전체에 하나로 흩뿌림(반복 없음)+크게
     var BW0=scroll.clientWidth||360;
     var wide = BW0>=620;
