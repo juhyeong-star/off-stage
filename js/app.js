@@ -3703,9 +3703,10 @@ function _slowStyle(){
   .sb-artist{cursor:pointer;font-weight:900;border-bottom:2px solid currentColor;padding-bottom:1px;}
   .sb-artist:active{opacity:.65;}
   .sb-rows{display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
-  .sb-row{display:inline-block;background:#fff;color:#111;font-family:'Pretendard',sans-serif;font-weight:700;font-size:15px;line-height:1.45;padding:6px 13px;border-radius:3px;border-left:4px solid #E24A9C;cursor:pointer;transition:transform .16s cubic-bezier(.22,1,.36,1),box-shadow .16s;max-width:100%;word-break:break-all;}
-  .sb-row:hover{transform:translateX(7px);box-shadow:0 5px 15px rgba(0,0,0,.16);}
-  .sb-row:active{transform:translateX(7px) scale(.98);}
+  .sb-row{display:inline-block;background:#fff;color:#111;font-family:'Pretendard',sans-serif;font-weight:700;font-size:15px;line-height:1.45;padding:6px 13px;border-radius:3px;border-left:4px solid #E24A9C;cursor:pointer;transition:box-shadow .15s,background .15s;max-width:100%;word-break:break-all;}
+  .sb-num{display:inline-block;font-weight:900;margin-right:9px;}
+  .sb-row:hover{box-shadow:0 4px 13px rgba(0,0,0,.14);background:#f6f6f9;}
+  .sb-row:active{background:#ececef;}
   .sb-empty{text-align:center;color:#0f0f14;font-weight:700;padding:52px 16px;opacity:.72;}
   @media(min-width:769px){ .sb-wordmark{font-size:clamp(72px,9vw,130px);} }
   `;
@@ -3740,10 +3741,11 @@ function renderSlowBoard(){
   var INFOCOL=['#E24A9C','#7FB2EC','#86CE34','#B49BEE','#F06CA8','#FF8A6E','#26C6C6','#FFB03A'];
   var listHtml = order.length ? order.map(function(name,gi){
     var g=groups[name], col=INFOCOL[gi%INFOCOL.length];
-    var demos=g.tracks.slice().sort(function(a,b){ return (Date.parse(b.createdAt||0)||0)-(Date.parse(a.createdAt||0)||0); });
-    var rows=demos.map(function(t){
+    // 오래된 데모부터(=데모 1) 위로 → 앞에 1,2,3 번호
+    var demos=g.tracks.slice().sort(function(a,b){ return (Date.parse(a.createdAt||0)||0)-(Date.parse(b.createdAt||0)||0); });
+    var rows=demos.map(function(t,di){
       var onc = t.id ? ' onclick="if(window.playTrack)playTrack(\''+esc(t.id)+'\',\'wall\')"' : '';
-      return '<div><span class="sb-row" style="border-left-color:'+col+'"'+onc+'>'+tagsStr(t)+'</span></div>';
+      return '<div><span class="sb-row" style="border-left-color:'+col+'"'+onc+'><b class="sb-num" style="color:'+col+'">'+(di+1)+'</b>'+tagsStr(t)+'</span></div>';
     }).join('');
     var enc=encodeURIComponent(g.name);
     return '<div class="sb-group" style="animation-delay:'+(Math.min(gi,10)*0.05)+'s">'
