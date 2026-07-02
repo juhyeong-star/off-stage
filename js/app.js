@@ -8526,9 +8526,8 @@ function renderDiscoverPattern(tracks){
     if (built || !document.getElementById('dp-scroll')) return; built=true;
     // 스크롤 높이 = 실제 가용 영역(상단 오프셋~플레이어 위)
     try {
-      // 배경(하늘색)이 플레이어 위까지 '딱' 붙게. 예전엔 (플레이어높이+8) 을 빼서 8px 검은 틈이 보였음.
-      // 플레이어(fixed)는 자체가 하늘색 → dp-scroll 이 플레이어 top 까지 채우면 화면 전체가 하늘색(검은 부분 0).
-      // body 에 플레이어용 padding-bottom 예약이 있어 여기서 더 늘리면 body 가 스크롤됨 → 플레이어 top 기준으로 정확히.
+      // dp-scroll(도형 영역)을 플레이어 top 까지 채워 검은 틈 없앰. 플레이어 자체가 하늘색이라 화면 전체 하늘색.
+      // (모바일은 예약패딩>실제 플레이어높이라 body 가 ~10px 살짝 스크롤될 수 있으나, 고정 플레이어가 하단을 덮어 안 보임.)
       var _pl=document.getElementById('global-player');
       var _plTop=_pl?_pl.getBoundingClientRect().top:(window.innerHeight-72);
       var _av=_plTop - Math.max(0, scroll.getBoundingClientRect().top);

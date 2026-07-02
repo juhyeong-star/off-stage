@@ -19630,11 +19630,15 @@ body.is-shapes-route .shapes-subtitle { display: none !important; }
 /* 미니 LCD 가사 줄 (초록, 1줄 클램프) */
 #global-player .player-lyric { color: #a9f5cf; font-size: 11px; line-height: 1.3; margin-top: 2px; max-width: 100%; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 #global-player .player-lyric.empty { color: rgba(169,245,207,.42); }
-/* 데스크탑 — 트랙정보 LCD 를 바 중앙에 가운데정렬 + 진행바는 상단 얇은 라인 (사용자 요청) */
+/* off-stage 워드마크(코너 브랜딩) 숨김 — 모바일(메뉴)·PC(플로팅) 둘 다 (사용자 요청). */
+.beta-wordmark { display: none !important; }
+/* 데스크탑 — LCD(제목/태그/가사) 가운데 위, 시간바는 그 아래 가운데(좌측 컨트롤~우측 담기 사이).
+   예전 상단 전체폭 진행바가 LCD와 겹쳐서 → 가사 아래로 내리고 바를 조금 높임(--player-height 96). */
 @media (min-width: 769px) {
-  #global-player .progress-container { position: absolute; top: 0; left: 0; right: 0; padding: 2px 18px 0; gap: 8px; }
-  #global-player .player-track-info { position: absolute; left: 50%; transform: translateX(-50%); width: auto; max-width: min(52%, 500px); justify-content: center; text-align: center; }
+  :root { --player-height: 96px; }
+  #global-player .player-track-info { position: absolute; left: 50%; transform: translateX(-50%); top: 10px; bottom: auto; width: auto; max-width: min(52%, 500px); justify-content: center; text-align: center; }
   #global-player .player-text { align-items: center; text-align: center; }
+  #global-player .progress-container { position: absolute; left: 50%; transform: translateX(-50%); top: auto; bottom: 11px; width: min(52%, 500px); padding: 0; gap: 8px; }
   #global-player .player-wave { display: none; }
   #global-player .player-collect-btn { margin-left: auto; }
 }
