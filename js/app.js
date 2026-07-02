@@ -8526,8 +8526,12 @@ function renderDiscoverPattern(tracks){
     if (built || !document.getElementById('dp-scroll')) return; built=true;
     // 스크롤 높이 = 실제 가용 영역(상단 오프셋~플레이어 위)
     try {
-      var _pl=document.getElementById('global-player'); var _ph=(_pl&&_pl.offsetHeight)?_pl.offsetHeight+8:66;
-      var _av=window.innerHeight - Math.max(0, scroll.getBoundingClientRect().top) - _ph;
+      // 배경(하늘색)이 플레이어 위까지 '딱' 붙게. 예전엔 (플레이어높이+8) 을 빼서 8px 검은 틈이 보였음.
+      // 플레이어(fixed)는 자체가 하늘색 → dp-scroll 이 플레이어 top 까지 채우면 화면 전체가 하늘색(검은 부분 0).
+      // body 에 플레이어용 padding-bottom 예약이 있어 여기서 더 늘리면 body 가 스크롤됨 → 플레이어 top 기준으로 정확히.
+      var _pl=document.getElementById('global-player');
+      var _plTop=_pl?_pl.getBoundingClientRect().top:(window.innerHeight-72);
+      var _av=_plTop - Math.max(0, scroll.getBoundingClientRect().top);
       scroll.style.height = Math.max(420, _av) + 'px';
     } catch(_){}
     // 상단 히어로 — 스크린샷 이식: 하늘색 + 검은고딕 대형 노란 워드마크 "슬로우 뮤직" + 위→아래 떨어지는 번개
@@ -17472,7 +17476,14 @@ window.playTrack = function (trackId, source) {
   const _cleanTitle = _stripCS(track.title), _cleanArtist = _stripCS(track.artist);
   const _linesText = _lines.join(' ');
   document.getElementById('player-title').innerText = _demoLabel || _cleanTitle || _t('데모', 'Demo');
-  document.getElementById('player-artist').innerText = _linesText || _cleanArtist || '';
+  document.getElementById('player-artist').innerText = _cleanArtist || '';   // 업로드한사람(작곡가)
+  // 미니 LCD 2줄 = #해시태그 전부(8개까지). 없으면 아티스트·제목으로 보충. (tagsOf 는 발견 스코프라 인라인 재현)
+  var _htEl = document.getElementById('player-hashtags');
+  if (_htEl) {
+    var _htg = (Array.isArray(track.tags) ? track.tags.filter(Boolean).map(String).slice(0, 8) : []);
+    if (!_htg.length) { var _htt = (_cleanTitle || '곡').replace(/\s*\(.*\)$/, ''); _htg = [_cleanArtist || 'off-stage', _htt].filter(Boolean); }
+    _htEl.textContent = _htg.map(function (x) { return '#' + x; }).join('');
+  }
   window.__playerArtistName = track.artist;   // 표시와 무관 — 제목/아티스트 클릭 시 이동 대상
   window.__nowPlayingId = track.id;            // 자동재생(라디오) 이 끝난 곡을 알기 위해
   if (typeof _updatePlayerCollectState === 'function') _updatePlayerCollectState();

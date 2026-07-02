@@ -19598,6 +19598,13 @@ body.is-shapes-route .shapes-subtitle { display: none !important; }
 #global-player .player-text { background: #0b2a22; border-radius: 9px; padding: 5px 11px; box-shadow: inset 0 2px 8px rgba(0,0,0,.5); }
 #global-player .player-title { color: #7dffb0 !important; text-shadow: 0 0 6px rgba(125,255,176,.45); font-weight: 800; }
 #global-player .player-artist { color: #57d9a4 !important; }
+/* LCD 1줄: 제목 + 업로드한사람(작곡가) 한 줄. 제목 길면 …, 업로더는 옆에 작게. */
+#global-player .player-nowline { display: flex; align-items: baseline; justify-content: center; gap: 6px; max-width: 100%; overflow: hidden; }
+#global-player .player-nowline .player-title { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#global-player .player-nowline .player-artist { flex: 0 0 auto; font-size: 11px; white-space: nowrap; }
+/* LCD 2줄: #해시태그 (밝은 초록, 1줄, 넘치면 …) */
+#global-player .player-hashline { color: #7dffb0; font-size: 10.5px; line-height: 1.3; margin-top: 1px; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; text-align: center; opacity: .92; }
+#global-player .player-hashline:empty { display: none; }
 #global-player .player-wave i { background: #7dffb0 !important; }
 /* 컨트롤 = 어두운 / 재생 = 노란 */
 #global-player .control-btn { color: #0f2e3a !important; }
