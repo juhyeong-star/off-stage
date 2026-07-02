@@ -3887,6 +3887,27 @@ function _artistShopStyle(){
   .ash-chip{font-size:11px;font-weight:900;padding:2px 8px;border-radius:20px;background:rgba(15,15,20,.09);color:#0f0f14;}
   .ash-chip.fin{background:#FFE800;}
   .ash-empty{text-align:center;color:#0f0f14;opacity:.62;font-weight:700;padding:44px 16px;}
+  /* 필터바(앨범 칩) */
+  .ash-filter{display:flex;gap:7px;max-width:900px;margin:0 auto 10px;padding:0 14px;overflow-x:auto;scrollbar-width:none;}
+  .ash-filter::-webkit-scrollbar{display:none;}
+  .ash-fchip{flex:0 0 auto;background:#fff;border:2px solid #0f0f14;border-radius:6px;padding:5px 13px;font-family:'Pretendard',sans-serif;font-weight:700;font-size:13px;color:#0f0f14;cursor:pointer;white-space:nowrap;}
+  .ash-fchip.on{background:#0f0f14;color:#fff;}
+  /* 밀도 토글 */
+  .ash-density{display:flex;gap:6px;justify-content:flex-end;max-width:900px;margin:0 auto 12px;padding:0 14px;}
+  .ash-den{display:flex;gap:2px;align-items:center;background:#fff;border:2px solid #0f0f14;border-radius:5px;padding:6px 7px;cursor:pointer;}
+  .ash-den.on{background:#0f0f14;}
+  .ash-den i{width:3px;height:14px;background:#0f0f14;display:block;border-radius:1px;}
+  .ash-den.on i{background:#fff;}
+  /* 큰 앨범 박스 — 안에 데모 해시태그 행 */
+  .ash-boxes{max-width:900px;margin:0 auto;padding:0 14px 30px;display:grid;gap:14px;}
+  .ash-box{border-radius:14px;padding:15px;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.16);transition:transform .15s,box-shadow .15s;min-height:150px;overflow:hidden;}
+  .ash-box:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,.22);}
+  .ash-box-title{font-family:'Black Han Sans','Pretendard',sans-serif;color:#fff;font-size:22px;line-height:1.05;margin-bottom:11px;text-shadow:0 2px 6px rgba(0,0,0,.28);}
+  .ash-box-rows{display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
+  .ash-drw{max-width:100%;}
+  .ash-drow{display:inline-block;background:#fff;color:#111;font-family:'Pretendard',sans-serif;font-weight:700;font-size:14px;line-height:1.42;padding:6px 12px;border-radius:6px;max-width:100%;word-break:break-all;}
+  .ash-dnum{display:inline-block;font-weight:900;margin-right:8px;color:var(--bx,#7FB2EC);}
+  .ash-drow-empty{color:rgba(255,255,255,.9);font-weight:700;font-size:13px;}
   `;
   document.head.appendChild(st);
 }
@@ -3910,9 +3931,14 @@ function renderArtistShop(artistName){
     var rep=vs.find(function(v){return !v.isDemo;})||vs[vs.length-1];
     var title=(rep.title||'무제').replace(/\s*\(.*\)$/,'');
     var col=(typeof genreColorOf==='function')?genreColorOf(rep):'#7FB2EC';
-    var chips=vs.slice(0,4).map(function(v,i){ var m=/^demo(\d+)$/.exec(v.version||''); var fin=(v.version==='final'&&!v.isDemo); return {label:fin?'★':(m?('D'+m[1]):('D'+(i+1))), fin:fin}; });
+    // 데모별 해시태그 행 (주절주절에 쓴 그대로) — 박스 안에 번호+#태그 나열
+    var demos=vs.slice(0,8).map(function(v,i){
+      var m=/^demo(\d+)$/.exec(v.version||''); var fin=(v.version==='final'&&!v.isDemo);
+      var tg=(Array.isArray(v.tags)?v.tags.filter(Boolean).map(String):[]);
+      return { num: fin?'★':(m?m[1]:String(i+1)), tags: tg.slice(0,8).map(function(x){return x.replace(/^#/,'');}), title:(v.title||'') };
+    });
     var last=new Date(vs[vs.length-1].createdAt||0).getTime();
-    return {pid:pid, title:title, cover:rep.cover||'', col:col, chips:chips, last:last};
+    return {pid:pid, title:title, cover:rep.cover||'', col:col, demos:demos, last:last};
   }).sort(function(a,b){return b.last-a.last;});
   var tab=window.__artistShopTab||'all';
   var body='';
@@ -3924,14 +3950,30 @@ function renderArtistShop(artistName){
   } else if(tab==='goods'){
     body = '<div class="ash-empty">굿즈는 준비 중이에요 🛍️</div>';
   } else {
-    body = albums.length ? '<div class="ash-cards">'+albums.map(function(al){
-      var isImg=/^https?:/.test(al.cover);
-      var cov = isImg ? "background-image:url('"+al.cover.replace(/'/g,'%27')+"')" : 'background:'+al.col;
-      return '<div class="ash-card" onclick="navigateTo(\'album:'+encodeURIComponent(al.pid)+'\')">'
-        +'<div class="ash-cover" style="'+cov+'">'+(isImg?'':esc(al.title.slice(0,2)))+'</div>'
-        +'<div class="ash-cbody"><div class="ash-ctitle">'+esc(al.title)+'</div>'
-        +'<div class="ash-chips">'+al.chips.map(function(c){return '<span class="ash-chip'+(c.fin?' fin':'')+'">'+c.label+'</span>';}).join('')+'</div></div></div>';
-    }).join('')+'</div>' : '<div class="ash-empty">아직 올린 앨범이 없어요</div>';
+    if(!albums.length){ body='<div class="ash-empty">아직 올린 앨범이 없어요</div>'; }
+    else {
+      var _enc=encodeURIComponent(artistName);
+      var cols=window.__ashCols||1;
+      var fil=window.__ashFilter||null;
+      var shown = fil ? albums.filter(function(a){return a.pid===fil;}) : albums;
+      if(fil && !shown.length){ shown=albums; fil=null; }
+      // 필터바(앨범 칩) — 스크린샷의 '빈틈없는 철학사' 자리
+      var filterBar='<div class="ash-filter"><button class="ash-fchip'+(!fil?' on':'')+'" onclick="window.__ashFilter=null;renderArtistShop(\''+_enc+'\')">전체</button>'
+        +albums.map(function(al){return '<button class="ash-fchip'+(fil===al.pid?' on':'')+'" onclick="window.__ashFilter=\''+al.pid+'\';renderArtistShop(\''+_enc+'\')">'+esc(al.title)+'</button>';}).join('')+'</div>';
+      // 밀도 토글 (1/2/3열) — 우측 상단 아이콘
+      var density='<div class="ash-density">'+[1,2,3].map(function(n){var ic=''; for(var k=0;k<n;k++)ic+='<i></i>'; return '<button class="ash-den'+(cols===n?' on':'')+'" onclick="window.__ashCols='+n+';renderArtistShop(\''+_enc+'\')" aria-label="'+n+'열">'+ic+'</button>';}).join('')+'</div>';
+      // 큰 박스들 — 각 박스 안에 데모 해시태그 행(주절주절 그대로)
+      var boxes='<div class="ash-boxes" style="grid-template-columns:repeat('+cols+',minmax(0,1fr));">'+shown.map(function(al){
+        var drows=al.demos.map(function(d){
+          var tstr=d.tags.length? d.tags.map(function(x){return '#'+esc(x);}).join('') : esc(d.title||'데모');
+          return '<div class="ash-drw"><span class="ash-drow"><b class="ash-dnum">'+esc(d.num)+'</b>'+tstr+'</span></div>';
+        }).join('') || '<div class="ash-drow-empty">데모 없음</div>';
+        return '<div class="ash-box" onclick="navigateTo(\'album:'+encodeURIComponent(al.pid)+'\')" style="--bx:'+al.col+';background:'+al.col+';">'
+          +'<div class="ash-box-title">'+esc(al.title)+'</div>'
+          +'<div class="ash-box-rows">'+drows+'</div></div>';
+      }).join('')+'</div>';
+      body = filterBar + density + boxes;
+    }
   }
   function tbtn(id,label){ return '<button class="ash-tab'+(tab===id?' on':'')+'" onclick="window.__artistShopTab=\''+id+'\';renderArtistShop(\''+encodeURIComponent(artistName)+'\')">'+label+'</button>'; }
   var act;
