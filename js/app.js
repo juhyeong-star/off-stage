@@ -17474,7 +17474,7 @@ window.playTrack = function (trackId, source) {
   const _cleanTitle = _stripCS(track.title), _cleanArtist = _stripCS(track.artist);
   const _linesText = _lines.join(' ');
   document.getElementById('player-title').innerText = _demoLabel || _cleanTitle || _t('데모', 'Demo');
-  document.getElementById('player-artist').innerText = _linesText || _cleanArtist || '';
+  document.getElementById('player-artist').innerText = _cleanArtist || '';   // 미니 LCD 서브 = 작곡가(아티스트명)
   window.__playerArtistName = track.artist;   // 표시와 무관 — 제목/아티스트 클릭 시 이동 대상
   window.__nowPlayingId = track.id;            // 자동재생(라디오) 이 끝난 곡을 알기 위해
   if (typeof _updatePlayerCollectState === 'function') _updatePlayerCollectState();
