@@ -2588,22 +2588,21 @@ window.syncPlayerFs = function () {
   if (t) t.innerText = (titleEl && titleEl.innerText) || '선택된 곡 없음';
   const a = document.getElementById('pfs-artist');
   if (a) a.innerText = window.__playerArtistName || '-';   // 원(#pfs-tags)이 도형 글을 보여주므로 서브는 아티스트
-  // 가사 — 현재 곡 track.lyrics 있으면 표시, 없으면 "가사 없음"
-  const lyEl = document.getElementById('pfs-lyrics');
-  if (lyEl) {
-    let ly = '';
-    try {
-      const cid = window.currentPlayingTrack;
-      if (cid) {
-        const _db = window.DB.get();
-        let tr = (_db.tracks || []).find(x => x && x.id === cid);
-        if (!tr && Array.isArray(window.__tracks)) tr = window.__tracks.find(x => x && x.id === cid);
-        ly = (tr && tr.lyrics) ? String(tr.lyrics).trim() : '';
-      }
-    } catch (_) {}
-    lyEl.textContent = ly || '가사 없음';
-    lyEl.classList.toggle('empty', !ly);
-  }
+  // 가사 — 현재 곡 track.lyrics 있으면 표시, 없으면 "가사 없음". 풀스크린 + 미니 둘 다.
+  let ly = '';
+  try {
+    const cid = window.currentPlayingTrack;
+    if (cid) {
+      const _db = window.DB.get();
+      let tr = (_db.tracks || []).find(x => x && x.id === cid);
+      if (!tr && Array.isArray(window.__tracks)) tr = window.__tracks.find(x => x && x.id === cid);
+      ly = (tr && tr.lyrics) ? String(tr.lyrics).trim() : '';
+    }
+  } catch (_) {}
+  ['pfs-lyrics', 'player-lyric'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) { el.textContent = ly || '가사 없음'; el.classList.toggle('empty', !ly); }
+  });
   // 원 안 #태그 — 미니에 채워둔 #player-tags span 복사.
   const src = document.getElementById('player-tags');
   const dst = document.getElementById('pfs-tags');
@@ -3717,7 +3716,7 @@ function _slowStyle(){
   .sb-rows{display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
   .sb-row{display:inline-block;background:#fff;color:#111;font-family:'Pretendard',sans-serif;font-weight:700;font-size:15px;line-height:1.45;padding:6px 13px;border-radius:3px;border-left:4px solid #E24A9C;cursor:pointer;transition:box-shadow .15s,background .15s;max-width:100%;word-break:break-all;}
   .sb-num{display:inline-block;font-weight:900;margin-right:9px;}
-  .sb-row:hover{background:#E24A9C;color:#1b1522;box-shadow:0 4px 13px rgba(0,0,0,.2);animation:sbHue 3s linear infinite;}
+  .sb-row:hover{box-shadow:0 4px 13px rgba(0,0,0,.2);}
   .sb-row:active{opacity:.9;}
   .sb-empty{text-align:center;color:#0f0f14;font-weight:700;padding:52px 16px;opacity:.72;}
   .sb-plempty{color:#0f0f14;opacity:.55;font-weight:700;font-size:13px;padding:3px 4px;}
@@ -3745,6 +3744,27 @@ function _slowStyle(){
   @media(min-width:769px){ .sb-wordmark{font-size:clamp(72px,9vw,130px);} }
   `;
   document.head.appendChild(st);
+  // 데모 행 hover — 마우스 올릴 때마다 팔레트에서 다음 색 하나를 딱 한 번 입힘(연속 애니 아님). 나가면 원래대로.
+  if (!window.__sbHoverWired) {
+    window.__sbHoverWired = true;
+    var _HC = ['#E24A9C','#7FB2EC','#86CE34','#B49BEE','#F06CA8','#FF8A6E','#26C6C6','#FFB03A','#FFD24A','#3E6FD9'];
+    document.addEventListener('mouseover', function(e){
+      var row = e.target && e.target.closest && e.target.closest('.sb-row, .ash-drow');
+      if (row && row !== window.__sbHoverEl) {
+        window.__sbHoverEl = row;
+        window.__sbHoverIdx = (window.__sbHoverIdx || 0) + 1;
+        row.style.background = _HC[window.__sbHoverIdx % _HC.length];
+        row.style.color = '#1b1522';
+      }
+    });
+    document.addEventListener('mouseout', function(e){
+      var row = e.target && e.target.closest && e.target.closest('.sb-row, .ash-drow');
+      if (row && (!e.relatedTarget || !row.contains(e.relatedTarget))) {
+        row.style.background = ''; row.style.color = '';
+        if (row === window.__sbHoverEl) window.__sbHoverEl = null;
+      }
+    });
+  }
 }
 function renderSlowBoard(){
   currentView = 'wall';
@@ -3924,7 +3944,7 @@ function _artistShopStyle(){
   .ash-box-rows{display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
   .ash-drw{max-width:100%;}
   .ash-drow{display:inline-block;background:#fff;color:#111;font-family:'Pretendard',sans-serif;font-weight:700;font-size:14px;line-height:1.42;padding:6px 12px;border-radius:6px;max-width:100%;word-break:break-all;cursor:pointer;transition:box-shadow .15s;}
-  .ash-drow:hover{background:#E24A9C;color:#1b1522;box-shadow:0 4px 13px rgba(0,0,0,.2);animation:sbHue 3s linear infinite;}
+  .ash-drow:hover{box-shadow:0 4px 13px rgba(0,0,0,.2);}
   .ash-dnum{display:inline-block;font-weight:900;margin-right:8px;color:var(--bx,#7FB2EC);}
   .ash-drow-empty{color:rgba(255,255,255,.9);font-weight:700;font-size:13px;}
   `;
