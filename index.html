@@ -51,7 +51,7 @@
   <!-- Remixicon — non-render-blocking -->
   <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"></noscript>
-  <link rel="stylesheet" href="css/global.css?v=965">
+  <link rel="stylesheet" href="css/global.css?v=966">
 </head>
 <body>
 
@@ -181,10 +181,15 @@
     <div class="player-controls">
       <button class="control-btn shuffle-btn" id="shuffle-btn" type="button" aria-label="랜덤 재생 (셔플)" title="랜덤 재생 (셔플)" onclick="event.stopPropagation(); window.toggleShuffle && window.toggleShuffle()"><i class="ri-shuffle-line"></i></button>
       <button class="control-btn" aria-label="이전 곡"><i class="ri-skip-back-fill"></i></button>
-      <button class="control-btn seek-btn" type="button" aria-label="10초 뒤로" title="10초 뒤로 (←)" onclick="event.stopPropagation(); window.playerSeek && window.playerSeek(-10)"><i class="ri-rewind-fill"></i><b>10</b></button>
+      <button class="control-btn seek-btn" type="button" aria-label="10초 뒤로" title="10초 뒤로 (←)" onclick="event.stopPropagation(); window.playerSeek && window.playerSeek(-10)"><i class="ri-arrow-go-back-line"></i><b>10</b></button>
       <button class="control-btn play-btn" id="player-play-btn" aria-label="재생/일시정지"><i class="ri-play-circle-fill"></i></button>
-      <button class="control-btn seek-btn" type="button" aria-label="10초 앞으로" title="10초 앞으로 (→)" onclick="event.stopPropagation(); window.playerSeek && window.playerSeek(10)"><b>10</b><i class="ri-speed-fill"></i></button>
+      <button class="control-btn seek-btn" type="button" aria-label="10초 앞으로" title="10초 앞으로 (→)" onclick="event.stopPropagation(); window.playerSeek && window.playerSeek(10)"><b>10</b><i class="ri-arrow-go-forward-line"></i></button>
       <button class="control-btn" aria-label="다음 곡"><i class="ri-skip-forward-fill"></i></button>
+    </div>
+    <div class="progress-container">
+      <span class="time-text" id="time-current">0:00</span>
+      <div class="progress-bar-wrap" id="progress-bar"><div class="progress-bar-track"><div class="progress-fill" id="progress-fill"></div></div></div>
+      <span class="time-text" id="time-total">0:00</span>
     </div>
     <div class="player-track-info">
       <div class="player-art">
@@ -192,15 +197,11 @@
         <div class="player-tags" id="player-tags" aria-hidden="true"></div>
         <span class="player-pulse" aria-hidden="true"></span>
       </div>
-      <div class="player-text">
-        <!-- LCD 화면: 제목·작곡가 / 가사 / 시간바 -->
-        <div class="player-nowline" onclick="window.playerArtOrExpand && window.playerArtOrExpand(event)" title="펼치기 / 아티스트" style="cursor:pointer;"><span class="player-title" id="player-title">선택된 곡 없음</span><span class="player-artist" id="player-artist">-</span></div>
+      <div class="player-text" onclick="window.playerArtOrExpand && window.playerArtOrExpand(event)" title="펼치기 / 아티스트" style="cursor:pointer;">
+        <div class="player-title" id="player-title">선택된 곡 없음</div>
+        <div class="player-artist" id="player-artist">-</div>
         <div class="player-lyric empty" id="player-lyric">가사 없음</div>
-        <div class="progress-container" onclick="event.stopPropagation()">
-          <span class="time-text" id="time-current">0:00</span>
-          <div class="progress-bar-wrap" id="progress-bar"><div class="progress-bar-track"><div class="progress-fill" id="progress-fill"></div></div></div>
-          <span class="time-text" id="time-total">0:00</span>
-        </div>
+        <div class="player-wave" id="player-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       </div>
     </div>
     <!-- 담기 — 현재 곡을 즐겨찾기에 모으기. 음향(볼륨) 옆에 배치 (사용자 요청). -->
@@ -278,12 +279,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <!-- Local scripts — defer preserves execution order and runs after DOM is parsed -->
-  <script defer src="js/supabase-init.js?v=965"></script>
-  <script defer src="js/data.js?v=965"></script>
-  <script defer src="js/supabase.js?v=965"></script>
-  <script defer src="js/analytics.js?v=965"></script>
-  <script defer src="js/distribute.js?v=965"></script>
-  <script defer src="js/app.js?v=965"></script>
-  <script defer src="js/polaroid.js?v=965"></script>
+  <script defer src="js/supabase-init.js?v=966"></script>
+  <script defer src="js/data.js?v=966"></script>
+  <script defer src="js/supabase.js?v=966"></script>
+  <script defer src="js/analytics.js?v=966"></script>
+  <script defer src="js/distribute.js?v=966"></script>
+  <script defer src="js/app.js?v=966"></script>
+  <script defer src="js/polaroid.js?v=966"></script>
 </body>
 </html>

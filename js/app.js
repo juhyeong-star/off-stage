@@ -3903,8 +3903,8 @@ function renderPlaylist(){
 }
 window.renderPlaylist = renderPlaylist;
 
-// ════════════ 아티스트 페이지 = 상점형 (전기가오리 shop 이식). 전체보기/도서/굿즈 탭 + 앨범 카드. ════════════
-// 슬로우뮤직 워드마크 + [작곡가명] 라벨 + 탭. 전체보기=앨범 카드(데모 1~4 칩), 도서=본인 게시판, 굿즈=준비중.
+// ════════════ 아티스트 페이지 = 상점형 (전기가오리 shop 이식). 전체보기/나의 게시판 탭 + 앨범 카드. ════════════
+// 슬로우뮤직 워드마크 + [작곡가명] 라벨 + 탭. 전체보기=앨범 카드(데모 1~4 칩), 나의 게시판=본인 게시판.
 window.__artistShopTab = window.__artistShopTab || 'all';
 function _artistShopStyle(){
   if(document.getElementById('ash-style')) return;
@@ -3986,8 +3986,6 @@ function renderArtistShop(artistName){
     body = notes.length ? '<div class="sb-list">'+notes.slice(0,50).map(function(n){
       return '<div class="sb-group"><div class="sb-rows"><div><span class="sb-row" style="border-left-color:#7FB2EC">'+esc(String(n.text||'').slice(0,140))+'</span></div></div></div>';
     }).join('')+'</div>' : '<div class="ash-empty">아직 게시글이 없어요</div>';
-  } else if(tab==='goods'){
-    body = '<div class="ash-empty">굿즈는 준비 중이에요 🛍️</div>';
   } else {
     if(!albums.length){ body='<div class="ash-empty">아직 올린 앨범이 없어요</div>'; }
     else {
@@ -4021,7 +4019,7 @@ function renderArtistShop(artistName){
   app.innerHTML='<div class="sb-page"><h1 class="sb-wordmark">슬로우 뮤직</h1>'
     +'<div class="sb-seclabel">'+esc(artistName)+'</div>'
     +act
-    +'<div class="ash-tabs">'+tbtn('all','전체보기')+tbtn('board','도서')+tbtn('goods','굿즈')+'</div>'
+    +'<div class="ash-tabs">'+tbtn('all','전체보기')+tbtn('board','나의 게시판')+'</div>'
     +body+'</div>';
 }
 window.renderArtistShop = renderArtistShop;
@@ -17474,7 +17472,7 @@ window.playTrack = function (trackId, source) {
   const _cleanTitle = _stripCS(track.title), _cleanArtist = _stripCS(track.artist);
   const _linesText = _lines.join(' ');
   document.getElementById('player-title').innerText = _demoLabel || _cleanTitle || _t('데모', 'Demo');
-  document.getElementById('player-artist').innerText = _cleanArtist || '';   // 미니 LCD 서브 = 작곡가(아티스트명)
+  document.getElementById('player-artist').innerText = _linesText || _cleanArtist || '';
   window.__playerArtistName = track.artist;   // 표시와 무관 — 제목/아티스트 클릭 시 이동 대상
   window.__nowPlayingId = track.id;            // 자동재생(라디오) 이 끝난 곡을 알기 위해
   if (typeof _updatePlayerCollectState === 'function') _updatePlayerCollectState();
