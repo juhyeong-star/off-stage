@@ -454,7 +454,7 @@ window.showOnboarding = function () {
     ['ri-triangle-line',    _t2('발견','Discover'),     _t2('노래를 도형으로 발견','Browse songs as shapes')],
     ['ri-chat-3-fill', _t2('주절주절','Bla Bla'), _t2('작곡가별 데모를 쭉 둘러봐요','Browse demos by composer')],
     ['ri-add-circle-fill',  _t2('올리기','Upload'),      _t2('가운데 + 로 내 음원 올리기','Tap + to upload your track')],
-    ['ri-bookmark-fill',    _t2('즐겨찾기','Favorites'), _t2('모은 곡과 폴더','Saved songs & folders')]
+    ['ri-play-list-fill',   _t2('플레이리스트','Playlist'), _t2('최근 들은·담은 노래','Recently played & saved')]
   ].map(([ic,t,d]) => `<div class="ob-menu-row"><span class="ob-menu-ic"><i class="${ic}"></i></span><div class="ob-menu-tx"><b>${t}</b><span>${d}</span></div></div>`).join('');
   const slide3 = `
     <div class="ob-slide">
@@ -524,15 +524,10 @@ window.startTutorial = function () {
   window.__tutAuthChecked = false;     // 체크 끝 — 다음 가이드 실행 때 또 확인하게 리셋
   const _t2 = (ko, en) => (typeof _t === 'function' ? _t(ko, en) : ko);
   const _loggedIn = !!((window.__currentUser) || (window.DB && window.DB.get && window.DB.get().currentUser));
-  // 즐겨찾기는 일반 "좋아한 음원만" 과 달라서 — 노래(도형)+포스트잇+폴더를 모으는 개념.
-  //   로그인 시: 실제 즐겨찾기(우주)로 들어가 자세히 설명. 비로그인: 메뉴만 강조 + 개념 안내.
-  const favStep = _loggedIn
-    ? { route: 'universe', sel: '#universe-head, .shapes-universe.my-universe', title: _t2('즐겨찾기','Favorites'),
-        body: _t2("여기는 '좋아한 노래'만 모으는 곳이 아니에요. 마음에 든 노래(도형)도, 수집한 포스트잇도 함께 모아 — 나만의 우주처럼 폴더로 정리해요.","Not just liked songs — collect songs (shapes) AND saved post-its here, and arrange them into folders, like your own universe.") }
-    : { route: 'shapes', sel: '.mobile-tab-bar [data-route="universe"], .sidebar-nav [data-route="universe"], .hamburger-btn', title: _t2('즐겨찾기','Favorites'),
-        // 데스크톱은 탭바/사이드바가 숨겨져 즐겨찾기 메뉴가 안 보임 → 햄버거(메뉴)를 fallback 으로
-        // (햄버거는 데스크톱 전용·모바일 숨김이라 모바일에선 즐겨찾기 탭이 잡힘). 안 그러면 이 단계 건너뜀.
-        body: _t2('좋아한 노래(도형)와 포스트잇을 모아 나만의 우주로 정리하는 곳이에요. 로그인하면 메뉴에서 들어가 써볼 수 있어요.','Collect liked songs (shapes) and post-its into your own universe. Sign in, then open it from the menu.') };
+  // 플레이리스트 — 최근 들은 노래 + 담은 노래(주절주절에서 +로 담은 곡).
+  const favStep = { route: 'universe', sel: '.sb-seclabel, .sb-head',
+        title: _t2('플레이리스트','Playlist'),
+        body: _t2('최근에 들은 노래와, 주절주절에서 + 로 담은 노래가 여기 모여요.','Your recently played songs and the ones you saved with + in Bla Bla live here.') };
   // 로그인 시: 내 아티스트 페이지로 들어가 소식(투명 + 카드)·프로필 수정을 자세히 안내.
   const artistSteps = _loggedIn ? [
     { route: 'my-artist', sel: '.mh-track, .mh-stats, .mh-name-row', title: _t2('MY 페이지','MY Page'),
@@ -3708,6 +3703,7 @@ function _slowStyle(){
   .sb-row:hover{box-shadow:0 4px 13px rgba(0,0,0,.14);background:#f6f6f9;}
   .sb-row:active{background:#ececef;}
   .sb-empty{text-align:center;color:#0f0f14;font-weight:700;padding:52px 16px;opacity:.72;}
+  .sb-plempty{color:#0f0f14;opacity:.55;font-weight:700;font-size:13px;padding:3px 4px;}
   /* 데모 행 + 담기(+) 버튼 */
   .sb-rw{display:flex;align-items:center;gap:8px;max-width:100%;}
   .sb-add{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:rgba(15,15,20,.13);color:#0f0f14;font-size:19px;font-weight:900;line-height:1;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;transition:background .15s,transform .12s;padding:0 0 2px;}
@@ -3761,7 +3757,7 @@ function renderSlowBoard(){
     var demos=g.tracks.slice().sort(function(a,b){ return (Date.parse(a.createdAt||0)||0)-(Date.parse(b.createdAt||0)||0); });
     var rows=demos.map(function(t,di){
       var onc = t.id ? ' onclick="if(window.playTrack)playTrack(\''+esc(t.id)+'\',\'wall\')"' : '';
-      var add = t.id ? '<button class="sb-add" onclick="event.stopPropagation();if(window.openPlaylistModal)openPlaylistModal(\''+esc(t.id)+'\')" aria-label="플레이리스트에 담기">+</button>' : '';
+      var add = t.id ? '<button class="sb-add" onclick="event.stopPropagation();if(window._sbCollect)_sbCollect(\''+esc(t.id)+'\')" aria-label="플레이리스트에 담기">+</button>' : '';
       return '<div class="sb-rw"><span class="sb-row" style="border-left-color:'+col+'"'+onc+'><b class="sb-num" style="color:'+col+'">'+(di+1)+'</b>'+tagsStr(t)+'</span>'+add+'</div>';
     }).join('');
     var enc=encodeURIComponent(g.name);
@@ -3800,6 +3796,47 @@ window._sbAddComment=function(gi){
   inp.value='';
   var list=document.getElementById('sb-cmts-'+gi); if(list) list.innerHTML=_sbCmtListHtml(name);
 };
+
+// ════════════ 플레이리스트('universe') — 즐겨찾기 대체. 주절주절과 같은 스타일(검은바+흰행). ════════════
+// 최근에 들은 노래(재생 기록 localStorage) + 담은 노래(CollectedTracks). 주절주절 데모 행 스타일 재사용.
+function _recentPlays(){ try{ return JSON.parse(localStorage.getItem('offstage_recent')||'[]')||[]; }catch(_){ return []; } }
+function _pushRecent(id){ if(!id) return; try{ var a=_recentPlays().filter(function(x){return x!==id;}); a.unshift(id); localStorage.setItem('offstage_recent', JSON.stringify(a.slice(0,30))); }catch(_){} }
+window._sbCollect=function(trackId){
+  if(!trackId) return;
+  if(typeof isTrackLiked==='function' && isTrackLiked(trackId)){ if(typeof showToast==='function') showToast(_t('이미 담은 노래예요','Already saved')); return; }
+  if(typeof window.toggleTrackHeart==='function'){ window.toggleTrackHeart(trackId, null); if(typeof showToast==='function') showToast(_t('담은 노래에 추가 💗','Saved 💗')); }
+};
+function renderPlaylist(){
+  currentView='universe';
+  var app=document.getElementById('app-content'); if(!app) return;
+  try{ document.body.style.overflow=''; document.documentElement.style.overflow=''; }catch(_){}
+  try{ if(typeof stopShapesPhysics==='function') stopShapesPhysics(); }catch(_){}
+  _slowStyle();
+  var db=window.DB.get();
+  var all=(Array.isArray(db.tracks)?db.tracks:[]).slice();
+  if(Array.isArray(window.__tracks)) window.__tracks.forEach(function(t){ if(t&&!all.some(function(x){return x.id===t.id;})) all.push(t); });
+  var byId={}; all.forEach(function(t){ if(t&&t.id) byId[t.id]=t; });
+  var esc=(typeof _shEsc==='function')?_shEsc:function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+  function tagsStr(t){ var a=(t&&Array.isArray(t.tags))?t.tags.filter(Boolean).map(String):[]; if(!a.length){a=[(t&&t.title)||'뮤직'];} return a.slice(0,5).map(function(x){return '#'+esc(x.replace(/^#/,''));}).join(''); }
+  function rows(ids,col){
+    var seen={}, out=[];
+    (ids||[]).forEach(function(id){ if(seen[id])return; seen[id]=1; var t=byId[id]; if(!t)return;
+      out.push('<div class="sb-rw"><span class="sb-row" style="border-left-color:'+col+'" onclick="if(window.playTrack)playTrack(\''+esc(id)+'\',\'universe\')"><b class="sb-num" style="color:'+col+'">'+esc((t.artist||'♪')).slice(0,10)+'</b>'+tagsStr(t)+'</span></div>');
+    });
+    return out.length?out.join(''):'<div class="sb-plempty">아직 없어요</div>';
+  }
+  var recent=_recentPlays();
+  var saved=[];
+  try{ if(window.CollectedTracks&&window.CollectedTracks.all) saved=window.CollectedTracks.all().slice(); }catch(_){}
+  if(db.currentUser&&Array.isArray(db.currentUser.likedTracks)) db.currentUser.likedTracks.forEach(function(id){ if(saved.indexOf(id)<0) saved.push(id); });
+  app.innerHTML='<div class="sb-page"><h1 class="sb-wordmark">슬로우 뮤직</h1>'
+    +'<div class="sb-seclabel">플레이리스트</div>'
+    +'<div class="sb-list">'
+      +'<div class="sb-group"><div class="sb-head">🕑 최근에 들은 노래</div><div class="sb-rows">'+rows(recent,'#7FB2EC')+'</div></div>'
+      +'<div class="sb-group"><div class="sb-head">💗 담은 노래</div><div class="sb-rows">'+rows(saved,'#F06CA8')+'</div></div>'
+    +'</div></div>';
+}
+window.renderPlaylist = renderPlaylist;
 
 async function renderProducingBoard(){
   currentView = 'wall';
@@ -9177,6 +9214,9 @@ function _floatingFolderHtml(it, pos) {
 // floating in the same shapes-universe canvas. Drag to rearrange.
 // ============================================================
 window.renderUniverse = async function (force) {
+  // 즐겨찾기 → 플레이리스트로 교체(사용자 요청). 옛 우주(도형·폴더) 코드는 아래 보존.
+  // 롤백: 이 위임 한 줄만 지우면 옛 즐겨찾기 우주로 복귀.
+  if (typeof renderPlaylist === 'function') return renderPlaylist();
   const db = window.DB.get();
   if (!db.currentUser) { navigateTo('auth'); return; }
 
@@ -17152,6 +17192,7 @@ window.playTrack = function (trackId, source) {
 
   currentPlayingTrack = track.id;
   window.currentPlayingTrack = currentPlayingTrack;
+  try { if (typeof _pushRecent === 'function') _pushRecent(track.id); } catch(_){}   // 플레이리스트 '최근 들은 노래'
 
   // 큐 갱신 — universe / shape / shapeshorts / folder 에서 시작하면 그 컨텍스트의 곡들을
   // 이어서 자동 재생. 다른 곳 (wall, 검색 등) 은 단일 곡만 — 자동 진행 X.
