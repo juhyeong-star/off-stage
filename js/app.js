@@ -3958,6 +3958,14 @@ function _artistShopStyle(){
   .ash-drow:hover{box-shadow:0 4px 13px rgba(0,0,0,.2);}
   .ash-dnum{display:inline-block;font-weight:900;margin-right:8px;color:var(--bx,#7FB2EC);}
   .ash-drow-empty{color:rgba(255,255,255,.9);font-weight:700;font-size:13px;}
+  /* 앨범 카드 = 주절주절처럼 검은 헤더(업로드날짜 + 작곡가이름) + 색 박스, 아래로 1열 쌓기 */
+  .ash-boxes-stack{grid-template-columns:1fr !important;}
+  .ash-album{cursor:pointer;border-radius:9px;overflow:hidden;box-shadow:0 5px 16px rgba(0,0,0,.16);transition:transform .15s,box-shadow .15s;}
+  .ash-album:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,.22);}
+  .ash-ahead{background:#0f0f14;color:#fff;font-family:'Pretendard',sans-serif;font-weight:800;font-size:15px;padding:11px 16px;letter-spacing:-.3px;}
+  .ash-adate{opacity:.62;font-weight:700;margin-right:7px;}
+  .ash-album .ash-box{border-radius:0;box-shadow:none;margin:0;}
+  .ash-album .ash-box:hover{transform:none;box-shadow:none;}
   /* 나의 게시판 — 검은 제목바 + 흰 본문 박스 카드 + 글쓰기(제목/긴 본문/업로드) */
   .abd-wrap{max-width:600px;margin:0 auto;padding:0 14px 30px;}
   .abd-compose{margin-bottom:24px;border-radius:9px;overflow:hidden;box-shadow:0 5px 16px rgba(0,0,0,.16);}
@@ -4033,26 +4041,26 @@ function renderArtistShop(artistName){
     if(!albums.length){ body='<div class="ash-empty">아직 올린 앨범이 없어요</div>'; }
     else {
       var _enc=encodeURIComponent(artistName);
-      var cols=window.__ashCols||1;
       var fil=window.__ashFilter||null;
       var shown = fil ? albums.filter(function(a){return a.pid===fil;}) : albums;
       if(fil && !shown.length){ shown=albums; fil=null; }
-      // 필터바(앨범 칩) — 스크린샷의 '빈틈없는 철학사' 자리
+      // 필터바(앨범 칩)
       var filterBar='<div class="ash-filter"><button class="ash-fchip'+(!fil?' on':'')+'" onclick="window.__ashFilter=null;renderArtistShop(\''+_enc+'\')">전체</button>'
         +albums.map(function(al){return '<button class="ash-fchip'+(fil===al.pid?' on':'')+'" onclick="window.__ashFilter=\''+al.pid+'\';renderArtistShop(\''+_enc+'\')">'+esc(al.title)+'</button>';}).join('')+'</div>';
-      // 밀도 토글 (1/2/3열) — 우측 상단 아이콘
-      var density='<div class="ash-density">'+[1,2,3].map(function(n){var ic=''; for(var k=0;k<n;k++)ic+='<i></i>'; return '<button class="ash-den'+(cols===n?' on':'')+'" onclick="window.__ashCols='+n+';renderArtistShop(\''+_enc+'\')" aria-label="'+n+'열">'+ic+'</button>';}).join('')+'</div>';
-      // 큰 박스들 — 각 박스 안에 데모 해시태그 행(주절주절 그대로)
-      var boxes='<div class="ash-boxes" style="grid-template-columns:repeat('+cols+',minmax(0,1fr));">'+shown.map(function(al){
+      // 앨범 = 주절주절처럼 검은 헤더(업로드날짜 + 작곡가이름) + 색 박스(제목·데모), 아래로 1열 쌓기.
+      function _ashDate(ts){ if(!ts) return ''; var d=new Date(ts); return d.getFullYear()+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+('0'+d.getDate()).slice(-2); }
+      var boxes='<div class="ash-boxes ash-boxes-stack">'+shown.map(function(al){
         var drows=al.demos.map(function(d){
           var tstr=d.tags.length? d.tags.map(function(x){return '#'+esc(x);}).join('') : esc(d.title||'데모');
           return '<div class="ash-drw"><span class="ash-drow"><b class="ash-dnum">'+esc(d.num)+'</b>'+tstr+'</span></div>';
         }).join('') || '<div class="ash-drow-empty">데모 없음</div>';
-        return '<div class="ash-box" onclick="navigateTo(\'album:'+encodeURIComponent(al.pid)+'\')" style="--bx:'+al.col+';background:'+al.col+';">'
+        return '<div class="ash-album" onclick="navigateTo(\'album:'+encodeURIComponent(al.pid)+'\')">'
+          +'<div class="ash-ahead"><span class="ash-adate">'+esc(_ashDate(al.last))+'</span>'+esc(artistName)+'</div>'
+          +'<div class="ash-box" style="--bx:'+al.col+';background:'+al.col+';">'
           +'<div class="ash-box-title">'+esc(al.title)+'</div>'
-          +'<div class="ash-box-rows">'+drows+'</div></div>';
+          +'<div class="ash-box-rows">'+drows+'</div></div></div>';
       }).join('')+'</div>';
-      body = filterBar + density + boxes;
+      body = filterBar + boxes;
     }
   }
   function tbtn(id,label){ return '<button class="ash-tab'+(tab===id?' on':'')+'" onclick="window.__artistShopTab=\''+id+'\';renderArtistShop(\''+encodeURIComponent(artistName)+'\')">'+label+'</button>'; }
