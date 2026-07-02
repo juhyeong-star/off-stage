@@ -3854,6 +3854,86 @@ function renderPlaylist(){
 }
 window.renderPlaylist = renderPlaylist;
 
+// ════════════ 아티스트 페이지 = 상점형 (전기가오리 shop 이식). 전체보기/도서/굿즈 탭 + 앨범 카드. ════════════
+// 슬로우뮤직 워드마크 + [작곡가명] 라벨 + 탭. 전체보기=앨범 카드(데모 1~4 칩), 도서=본인 게시판, 굿즈=준비중.
+window.__artistShopTab = window.__artistShopTab || 'all';
+function _artistShopStyle(){
+  if(document.getElementById('ash-style')) return;
+  var st=document.createElement('style'); st.id='ash-style';
+  st.textContent = `
+  .ash-act{display:block;margin:0 auto 16px;background:#0f0f14;color:#fff;border:none;border-radius:8px;padding:7px 22px;font-family:'Pretendard',sans-serif;font-weight:800;font-size:14px;cursor:pointer;}
+  .ash-act.on{background:#fff;color:#0f0f14;border:2px solid #0f0f14;}
+  .ash-tabs{display:flex;gap:8px;justify-content:center;max-width:760px;margin:0 auto 16px;padding:0 14px;}
+  .ash-tab{flex:0 0 auto;background:#fff;border:2.5px solid #0f0f14;border-radius:6px;padding:6px 18px;font-family:'Pretendard',sans-serif;font-weight:800;font-size:14px;color:#0f0f14;cursor:pointer;transition:background .12s;}
+  .ash-tab.on{background:#0f0f14;color:#fff;}
+  .ash-cards{max-width:760px;margin:0 auto;padding:0 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;}
+  .ash-card{background:#fff;border-radius:12px;overflow:hidden;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.14);transition:transform .15s,box-shadow .15s;}
+  .ash-card:hover{transform:translateY(-3px);box-shadow:0 9px 24px rgba(0,0,0,.22);}
+  .ash-cover{height:124px;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Black Han Sans','Pretendard',sans-serif;font-size:32px;background-size:cover;background-position:center;text-shadow:0 2px 8px rgba(0,0,0,.25);}
+  .ash-cbody{padding:9px 11px 12px;}
+  .ash-ctitle{font-family:'Pretendard',sans-serif;font-weight:800;font-size:14px;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ash-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px;}
+  .ash-chip{font-size:11px;font-weight:900;padding:2px 8px;border-radius:20px;background:rgba(15,15,20,.09);color:#0f0f14;}
+  .ash-chip.fin{background:#FFE800;}
+  .ash-empty{text-align:center;color:#0f0f14;opacity:.62;font-weight:700;padding:44px 16px;}
+  `;
+  document.head.appendChild(st);
+}
+function renderArtistShop(artistName){
+  if(typeof artistName==='string' && artistName.indexOf('%')>=0){ try{ artistName=decodeURIComponent(artistName); }catch(_){} }
+  currentView='artist'; window.__currentArtistName=artistName;
+  var app=document.getElementById('app-content'); if(!app) return;
+  try{ document.body.style.overflow=''; document.documentElement.style.overflow=''; }catch(_){}
+  try{ if(typeof stopShapesPhysics==='function') stopShapesPhysics(); }catch(_){}
+  _slowStyle(); _artistShopStyle();
+  var db=window.DB.get();
+  var me=window.__currentUser||(db&&db.currentUser);
+  if(!artistName){ if(me&&me.name) artistName=me.name; else { navigateTo('auth'); return; } }
+  var isSelf=!!(me&&me.name===artistName);
+  var myId=isSelf?me.id:null;
+  var esc=(typeof _shEsc==='function')?_shEsc:function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+  var myTracks=(db.tracks||[]).filter(function(t){return t&&(t.artist===artistName||(myId&&t.artistId===myId));});
+  var projMap={}; myTracks.forEach(function(t){ var pid=t.projectId||('proj_'+t.id); (projMap[pid]=projMap[pid]||[]).push(t); });
+  var albums=Object.keys(projMap).map(function(pid){
+    var vs=projMap[pid].slice().sort(function(a,b){return new Date(a.createdAt||0)-new Date(b.createdAt||0);});
+    var rep=vs.find(function(v){return !v.isDemo;})||vs[vs.length-1];
+    var title=(rep.title||'무제').replace(/\s*\(.*\)$/,'');
+    var col=(typeof genreColorOf==='function')?genreColorOf(rep):'#7FB2EC';
+    var chips=vs.slice(0,4).map(function(v,i){ var m=/^demo(\d+)$/.exec(v.version||''); var fin=(v.version==='final'&&!v.isDemo); return {label:fin?'★':(m?('D'+m[1]):('D'+(i+1))), fin:fin}; });
+    var last=new Date(vs[vs.length-1].createdAt||0).getTime();
+    return {pid:pid, title:title, cover:rep.cover||'', col:col, chips:chips, last:last};
+  }).sort(function(a,b){return b.last-a.last;});
+  var tab=window.__artistShopTab||'all';
+  var body='';
+  if(tab==='board'){
+    var notes=(db.notes||[]).filter(function(n){return n&&n.author===artistName;});
+    body = notes.length ? '<div class="sb-list">'+notes.slice(0,50).map(function(n){
+      return '<div class="sb-group"><div class="sb-rows"><div><span class="sb-row" style="border-left-color:#7FB2EC">'+esc(String(n.text||'').slice(0,140))+'</span></div></div></div>';
+    }).join('')+'</div>' : '<div class="ash-empty">아직 게시글이 없어요</div>';
+  } else if(tab==='goods'){
+    body = '<div class="ash-empty">굿즈는 준비 중이에요 🛍️</div>';
+  } else {
+    body = albums.length ? '<div class="ash-cards">'+albums.map(function(al){
+      var isImg=/^https?:/.test(al.cover);
+      var cov = isImg ? "background-image:url('"+al.cover.replace(/'/g,'%27')+"')" : 'background:'+al.col;
+      return '<div class="ash-card" onclick="navigateTo(\'album:'+encodeURIComponent(al.pid)+'\')">'
+        +'<div class="ash-cover" style="'+cov+'">'+(isImg?'':esc(al.title.slice(0,2)))+'</div>'
+        +'<div class="ash-cbody"><div class="ash-ctitle">'+esc(al.title)+'</div>'
+        +'<div class="ash-chips">'+al.chips.map(function(c){return '<span class="ash-chip'+(c.fin?' fin':'')+'">'+c.label+'</span>';}).join('')+'</div></div></div>';
+    }).join('')+'</div>' : '<div class="ash-empty">아직 올린 앨범이 없어요</div>';
+  }
+  function tbtn(id,label){ return '<button class="ash-tab'+(tab===id?' on':'')+'" onclick="window.__artistShopTab=\''+id+'\';renderArtistShop(\''+encodeURIComponent(artistName)+'\')">'+label+'</button>'; }
+  var act;
+  if(isSelf){ act='<button class="ash-act" onclick="window.editProfile&&editProfile()"><i class="ri-settings-3-line"></i> 편집</button>'; }
+  else{ var following=!!(window._isFollowingName&&window._isFollowingName(artistName)); var aid=(myTracks.find(function(t){return t.artistId;})||{}).artistId||''; act='<button class="ash-act'+(following?' on':'')+'" data-aid="'+esc(aid)+'" data-aname="'+esc(artistName)+'" onclick="window.mhFollow&&mhFollow(this)">'+(following?'팔로잉':'+ 팔로우')+'</button>'; }
+  app.innerHTML='<div class="sb-page"><h1 class="sb-wordmark">슬로우 뮤직</h1>'
+    +'<div class="sb-seclabel">'+esc(artistName)+'</div>'
+    +act
+    +'<div class="ash-tabs">'+tbtn('all','전체보기')+tbtn('board','도서')+tbtn('goods','굿즈')+'</div>'
+    +body+'</div>';
+}
+window.renderArtistShop = renderArtistShop;
+
 async function renderProducingBoard(){
   currentView = 'wall';
   var app = document.getElementById('app-content'); if (!app) return;
@@ -14981,9 +15061,9 @@ function renderArtistHome(artistName) {
 }
 
 function renderArtistProfile(artistName) {
-  // 통일(2026-06-25): 아티스트 페이지도 홈 디자인(데모 타임라인)으로 렌더.
-  // renderArtistHome 가 self/남(편집/팔로우)·데이터·비동기를 모두 처리.
-  // ↓ 아래 옛 단일스크롤 렌더는 이제 호출 안 됨(dead code, 참조용 보존).
+  // 2026-07-02: 아티스트 페이지 = 상점형(전기가오리 shop 이식) renderArtistShop 로 위임.
+  //   롤백=이 한 줄 삭제하면 홈 디자인(renderArtistHome)으로 복귀. 그 아래는 dead(보존).
+  if (typeof renderArtistShop === 'function') return renderArtistShop(artistName);
   return renderArtistHome(artistName);
   // Defensive decode — if the caller passed a URL-encoded name like
   // "%EA%B9%80..." we want to display "김주형" in the header instead.
