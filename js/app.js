@@ -3708,6 +3708,22 @@ function _slowStyle(){
   .sb-row:hover{box-shadow:0 4px 13px rgba(0,0,0,.14);background:#f6f6f9;}
   .sb-row:active{background:#ececef;}
   .sb-empty{text-align:center;color:#0f0f14;font-weight:700;padding:52px 16px;opacity:.72;}
+  /* 데모 행 + 담기(+) 버튼 */
+  .sb-rw{display:flex;align-items:center;gap:8px;max-width:100%;}
+  .sb-add{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:rgba(15,15,20,.13);color:#0f0f14;font-size:19px;font-weight:900;line-height:1;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;transition:background .15s,transform .12s;padding:0 0 2px;}
+  .sb-add:hover{background:rgba(15,15,20,.3);}
+  .sb-add:active{transform:scale(.9);}
+  /* 앨범 전체 댓글 (흰 배경에 쌓임, 길면 잘리고 탭하면 펼침) */
+  .sb-cmts{display:flex;flex-direction:column;gap:4px;margin:9px 0 0 6px;}
+  .sb-cmt{font-family:'Pretendard',sans-serif;font-size:13px;line-height:1.42;color:#0c2733;background:rgba(255,255,255,.62);border-radius:8px;padding:5px 11px;cursor:pointer;max-width:600px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .sb-cmt.expanded{-webkit-line-clamp:unset;}
+  .sb-cmt-ln{opacity:.5;margin-right:5px;font-weight:800;}
+  .sb-cmt-a{opacity:.5;font-weight:700;}
+  .sb-cmtbar{display:flex;gap:6px;margin:8px 0 0 6px;max-width:520px;}
+  .sb-cmtin{flex:1;min-width:0;border:none;border-radius:8px;padding:8px 12px;font-family:'Pretendard',sans-serif;font-size:14px;background:#fff;color:#111;}
+  .sb-cmtin::placeholder{color:#9aa;}
+  .sb-cmtadd{flex:0 0 auto;width:36px;border:none;border-radius:8px;background:#0f0f14;color:#fff;font-size:20px;font-weight:900;cursor:pointer;transition:opacity .15s;}
+  .sb-cmtadd:active{opacity:.6;}
   @media(min-width:769px){ .sb-wordmark{font-size:clamp(72px,9vw,130px);} }
   `;
   document.head.appendChild(st);
@@ -3745,19 +3761,45 @@ function renderSlowBoard(){
     var demos=g.tracks.slice().sort(function(a,b){ return (Date.parse(a.createdAt||0)||0)-(Date.parse(b.createdAt||0)||0); });
     var rows=demos.map(function(t,di){
       var onc = t.id ? ' onclick="if(window.playTrack)playTrack(\''+esc(t.id)+'\',\'wall\')"' : '';
-      return '<div><span class="sb-row" style="border-left-color:'+col+'"'+onc+'><b class="sb-num" style="color:'+col+'">'+(di+1)+'</b>'+tagsStr(t)+'</span></div>';
+      var add = t.id ? '<button class="sb-add" onclick="event.stopPropagation();if(window.openPlaylistModal)openPlaylistModal(\''+esc(t.id)+'\')" aria-label="플레이리스트에 담기">+</button>' : '';
+      return '<div class="sb-rw"><span class="sb-row" style="border-left-color:'+col+'"'+onc+'><b class="sb-num" style="color:'+col+'">'+(di+1)+'</b>'+tagsStr(t)+'</span>'+add+'</div>';
     }).join('');
     var enc=encodeURIComponent(g.name);
     return '<div class="sb-group" style="animation-delay:'+(Math.min(gi,10)*0.05)+'s">'
       + '<div class="sb-head"><span class="sb-date">'+fmtDate(g.latest)+'</span>'
       + '<span class="sb-artist" style="color:'+col+'" onclick="navigateTo(\'artist:'+enc+'\')">'+esc(g.name)+'</span></div>'
-      + '<div class="sb-rows">'+rows+'</div></div>';
+      + '<div class="sb-rows">'+rows+'</div>'
+      + '<div class="sb-cmts" id="sb-cmts-'+gi+'">'+_sbCmtListHtml(g.name)+'</div>'
+      + '<div class="sb-cmtbar"><input class="sb-cmtin" id="sb-cmtin-'+gi+'" maxlength="200" placeholder="이 앨범에 한마디…" onkeydown="if(event.key===\'Enter\'&&!event.isComposing){event.preventDefault();_sbAddComment('+gi+')}"><button class="sb-cmtadd" onclick="_sbAddComment('+gi+')" aria-label="댓글 남기기">+</button></div>'
+      + '</div>';
   }).join('') : '<div class="sb-empty">아직 올라온 데모가 없어요<br>+ 로 첫 곡을 올려보세요</div>';
+  window.__sbNames = order;   // 댓글 함수가 gi→작곡가명 조회용
   app.innerHTML = '<div class="sb-page"><h1 class="sb-wordmark">슬로우 뮤직</h1>'
     + '<div class="sb-seclabel">주절주절</div>'
     + '<div class="sb-list">'+listHtml+'</div></div>';
 }
 window.renderSlowBoard = renderSlowBoard;
+
+// 앨범(작곡가) 전체 댓글 — 지금은 localStorage(이 기기 전용, 서버 미동기). 나중에 테이블로 승격 가능.
+function _sbCmtKey(name){ return 'sbcmt:'+name; }
+function _sbLoadCmts(name){ try{ return JSON.parse(localStorage.getItem(_sbCmtKey(name))||'[]')||[]; }catch(_){ return []; } }
+function _sbCmtListHtml(name){
+  var arr=_sbLoadCmts(name);
+  var e=function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  return arr.map(function(c){
+    return '<div class="sb-cmt" onclick="this.classList.toggle(\'expanded\')"><span class="sb-cmt-ln">ㄴ</span>'+e(c.t)+(c.a?'<span class="sb-cmt-a"> — '+e(c.a)+'</span>':'')+'</div>';
+  }).join('');
+}
+window._sbAddComment=function(gi){
+  var name=(window.__sbNames||[])[gi]; if(name==null) return;
+  var inp=document.getElementById('sb-cmtin-'+gi); if(!inp) return;
+  var txt=(inp.value||'').trim(); if(!txt) return;
+  var me; try{ me=(window.__currentUser&&window.__currentUser.name)||(window.DB.get().currentUser&&window.DB.get().currentUser.name); }catch(_){}
+  var arr=_sbLoadCmts(name); arr.unshift({t:txt, a:me||'익명', ts:Date.now()});
+  try{ localStorage.setItem(_sbCmtKey(name), JSON.stringify(arr.slice(0,50))); }catch(_){}
+  inp.value='';
+  var list=document.getElementById('sb-cmts-'+gi); if(list) list.innerHTML=_sbCmtListHtml(name);
+};
 
 async function renderProducingBoard(){
   currentView = 'wall';
