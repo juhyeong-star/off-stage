@@ -3947,6 +3947,22 @@ function _artistShopStyle(){
   .ash-drow:hover{box-shadow:0 4px 13px rgba(0,0,0,.2);}
   .ash-dnum{display:inline-block;font-weight:900;margin-right:8px;color:var(--bx,#7FB2EC);}
   .ash-drow-empty{color:rgba(255,255,255,.9);font-weight:700;font-size:13px;}
+  /* 나의 게시판 — 검은 제목바 + 흰 본문 박스 카드 + 글쓰기(제목/긴 본문/업로드) */
+  .abd-wrap{max-width:600px;margin:0 auto;padding:0 14px 30px;}
+  .abd-compose{margin-bottom:24px;border-radius:9px;overflow:hidden;box-shadow:0 5px 16px rgba(0,0,0,.16);}
+  .abd-title{display:block;width:100%;background:#0f0f14;color:#fff;border:none;font-family:'Pretendard',sans-serif;font-weight:800;font-size:15px;padding:12px 16px;letter-spacing:-.3px;outline:none;}
+  .abd-title::placeholder{color:rgba(255,255,255,.45);}
+  .abd-box{background:#fff;padding:12px 14px;}
+  .abd-body{display:block;width:100%;border:none;background:transparent;resize:vertical;min-height:130px;font-family:'Pretendard',sans-serif;font-size:14px;line-height:1.6;color:#111;outline:none;}
+  .abd-body::placeholder{color:#9aa;}
+  .abd-upload{display:block;width:100%;background:#0f0f14;color:#fff;border:none;padding:12px;font-family:'Pretendard',sans-serif;font-weight:800;font-size:15px;cursor:pointer;transition:opacity .15s;}
+  .abd-upload:active{opacity:.7;}
+  .abd-post{margin-bottom:14px;border-radius:9px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.13);animation:sbUp .5s cubic-bezier(.22,1,.36,1) both;}
+  .abd-post-head{position:relative;background:#0f0f14;color:#fff;font-family:'Pretendard',sans-serif;font-weight:800;font-size:15px;padding:11px 42px 11px 16px;letter-spacing:-.3px;}
+  .abd-date{opacity:.5;font-weight:700;font-size:12px;margin-left:8px;}
+  .abd-del{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:26px;height:26px;border:none;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:17px;line-height:1;cursor:pointer;transition:background .15s;}
+  .abd-del:hover{background:rgba(255,255,255,.3);}
+  .abd-post-box{background:#fff;color:#111;padding:13px 16px;font-family:'Pretendard',sans-serif;font-size:14px;line-height:1.62;white-space:pre-wrap;word-break:break-word;}
   `;
   document.head.appendChild(st);
 }
@@ -3982,10 +3998,26 @@ function renderArtistShop(artistName){
   var tab=window.__artistShopTab||'all';
   var body='';
   if(tab==='board'){
-    var notes=(db.notes||[]).filter(function(n){return n&&n.author===artistName;});
-    body = notes.length ? '<div class="sb-list">'+notes.slice(0,50).map(function(n){
-      return '<div class="sb-group"><div class="sb-rows"><div><span class="sb-row" style="border-left-color:#7FB2EC">'+esc(String(n.text||'').slice(0,140))+'</span></div></div></div>';
-    }).join('')+'</div>' : '<div class="ash-empty">아직 게시글이 없어요</div>';
+    // 게시판 = 검은 제목바 + 흰 본문 박스 카드. 새 글은 localStorage(sbboard:<아티스트>),
+    // 기존 db.notes(작곡가 글)도 병합해서 같이 표시(제목 없는 레거시 글).
+    var _bposts=_ashBoardPosts(artistName);
+    var _legacy=(db.notes||[]).filter(function(n){return n&&n.author===artistName;}).map(function(n){
+      return { id:'lg_'+(n.id||''), title:'', body:String(n.text||''), ts:new Date(n.createdAt||0).getTime()||0, legacy:true };
+    });
+    var _all=_bposts.concat(_legacy).sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+    var _compose = isSelf ? (
+      '<div class="abd-compose">'
+      + '<input class="abd-title" id="abd-title" maxlength="80" placeholder="제목">'
+      + '<div class="abd-box"><textarea class="abd-body" id="abd-body" placeholder="내용을 자유롭게 적어보세요…"></textarea></div>'
+      + '<button class="abd-upload" onclick="_ashPostNote()">업로드</button>'
+      + '</div>'
+    ) : '';
+    var _list = _all.length ? _all.map(function(p){
+      var _hd = p.title ? esc(p.title)+'<span class="abd-date">'+esc(_ashFmtDate(p.ts))+'</span>' : esc(_ashFmtDate(p.ts));
+      var _del = (isSelf && !p.legacy) ? '<button class="abd-del" onclick="_ashDeletePost(\''+esc(p.id)+'\')" aria-label="삭제">×</button>' : '';
+      return '<div class="abd-post"><div class="abd-post-head">'+_hd+_del+'</div><div class="abd-post-box">'+esc(p.body)+'</div></div>';
+    }).join('') : (isSelf ? '' : '<div class="ash-empty">아직 게시글이 없어요</div>');
+    body = '<div class="abd-wrap">'+_compose+_list+'</div>';
   } else {
     if(!albums.length){ body='<div class="ash-empty">아직 올린 앨범이 없어요</div>'; }
     else {
@@ -4023,6 +4055,30 @@ function renderArtistShop(artistName){
     +body+'</div>';
 }
 window.renderArtistShop = renderArtistShop;
+
+// ── 나의 게시판(아티스트 shop board 탭) — 글은 localStorage 'sbboard:<아티스트>' 에 저장(앨범 댓글과 동일 per-device). ──
+function _ashBoardKey(name){ return 'sbboard:'+(name||''); }
+function _ashBoardPosts(name){ try{ return JSON.parse(localStorage.getItem(_ashBoardKey(name))||'[]')||[]; }catch(_){ return []; } }
+function _ashBoardSave(name, arr){ try{ localStorage.setItem(_ashBoardKey(name), JSON.stringify((arr||[]).slice(0,100))); }catch(_){} }
+function _ashFmtDate(ts){ var d=new Date(ts||Date.now()); function p(n){return String(n).padStart(2,'0');} return d.getFullYear()+'.'+p(d.getMonth()+1)+'.'+p(d.getDate()); }
+window._ashPostNote = function(){
+  var name=window.__currentArtistName; if(!name) return;
+  var tEl=document.getElementById('abd-title'), bEl=document.getElementById('abd-body');
+  if(!bEl) return;
+  var title=(tEl&&tEl.value||'').trim(), bodyTxt=(bEl.value||'').trim();
+  if(!bodyTxt){ if(typeof showToast==='function') showToast('내용을 입력해주세요'); bEl.focus(); return; }
+  var arr=_ashBoardPosts(name);
+  arr.unshift({ id:'bp'+Date.now(), title:title, body:bodyTxt, ts:Date.now() });
+  _ashBoardSave(name, arr);
+  if(typeof showToast==='function') showToast('게시글이 올라갔어요 📌');
+  renderArtistShop(name);
+};
+window._ashDeletePost = function(id){
+  var name=window.__currentArtistName; if(!name) return;
+  var arr=_ashBoardPosts(name).filter(function(p){return p && p.id!==id;});
+  _ashBoardSave(name, arr);
+  renderArtistShop(name);
+};
 
 async function renderProducingBoard(){
   currentView = 'wall';
