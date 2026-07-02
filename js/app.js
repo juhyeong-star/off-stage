@@ -452,7 +452,7 @@ window.showOnboarding = function () {
     </div>`;
   const menuRows = [
     ['ri-triangle-line',    _t2('발견','Discover'),     _t2('노래를 도형으로 발견','Browse songs as shapes')],
-    ['ri-bar-chart-2-fill', _t2('프로듀싱','Producing'), _t2('데모 A·B 투표로 곡을 함께 완성','Vote A/B to shape demos')],
+    ['ri-chat-3-fill', _t2('주절주절','Bla Bla'), _t2('작곡가별 데모를 쭉 둘러봐요','Browse demos by composer')],
     ['ri-add-circle-fill',  _t2('올리기','Upload'),      _t2('가운데 + 로 내 음원 올리기','Tap + to upload your track')],
     ['ri-bookmark-fill',    _t2('즐겨찾기','Favorites'), _t2('모은 곡과 폴더','Saved songs & folders')]
   ].map(([ic,t,d]) => `<div class="ob-menu-row"><span class="ob-menu-ic"><i class="${ic}"></i></span><div class="ob-menu-tx"><b>${t}</b><span>${d}</span></div></div>`).join('');
@@ -543,7 +543,7 @@ window.startTutorial = function () {
   const steps = [
     { route: 'shapes', sel: '.floating-shape[data-track-id]', title: _t2('발견 — 노래','Discover'), body: _t2('떠다니는 도형이 노래예요. 한 번 탭하면 바로 재생, 위로 스와이프하면 쇼츠처럼 다음 곡으로!','Each floating shape is a song. Tap to play, swipe up for the next one like shorts!') },
     { sel: '.mobile-tab-plus, .upload-fab', title: _t2('음원 올리기','Upload'), body: _t2('가운데 ⊕ 를 눌러 내 데모·곡을 올려요.','Tap the ⊕ in the middle to upload your demo or track.') },
-    { route: 'wall', sel: '.pb-fab, .pb-top-new', title: _t2('프로듀싱','Producing'), body: _t2('데모의 A·B 두 버전에 투표해서 곡을 함께 완성해요. ⊕ 로 내 투표도 열 수 있어요.','Vote between two versions (A/B) to shape a demo together. Tap ⊕ to open your own vote.') },
+    { route: 'wall', sel: '.sb-artist, .sb-seclabel', title: _t2('주절주절','Bla Bla'), body: _t2('작곡가별로 올라온 데모를 쭉 볼 수 있어요. 이름을 누르면 그 작곡가 페이지로 가요.','Browse demos grouped by composer. Tap a name to open their page.') },
     { route: 'tags', sel: '.tag-chip', title: _t2('Tags','Tags'), body: _t2('기분·태그로 노래를 찾아봐요.','Find songs by mood and tags.') },
     favStep,
     ...artistSteps,
@@ -1737,7 +1737,7 @@ function navigateTo(route) {
         break;
       }
       case 'tags': renderTags(); break;
-      case 'wall': (typeof renderProducingBoard === 'function' ? renderProducingBoard() : renderWall()); break;
+      case 'wall': renderWall(); break;
       case 'events': renderEvents(); break;
       case 'auth': renderAuth(); break;
       // Pseudo-route: jump to the current user's own /artist:<name> page
@@ -3684,6 +3684,79 @@ function _pbStyle(){
   document.head.appendChild(st);
 }
 
+// ════════════ 주절주절('wall') — 전기가오리 출판 페이지 스타일 데모 리스트 ════════════
+// 스크린샷 이식: 하늘색 배경 + 노란 "슬로우 뮤직" 워드마크 + 박스 "주절주절" 라벨 +
+//   작곡가별 검은 헤더바([업로드일자] [작곡가이름]) + 흰 행(데모 #해시태그, 텍스트 폭만큼).
+// 작곡가 이름 클릭 → 마이페이지. 행 탭 → 재생. 프로듀싱은 라우팅에서 빠져 숨김(코드는 아래 보존).
+function _slowStyle(){
+  if (document.getElementById('sb-style')) return;
+  var st=document.createElement('style'); st.id='sb-style';
+  st.textContent = `
+  .sb-page{min-height:100vh;background:#45CEEB;padding:calc(env(safe-area-inset-top,0px) + 10px) 0 calc(var(--player-height,72px) + 24px);}
+  .sb-wordmark{text-align:center;font-family:'Black Han Sans','Pretendard',sans-serif;font-weight:400;color:#FFE800;font-size:clamp(46px,15vw,120px);line-height:.9;letter-spacing:-.5px;margin:0 0 16px;text-shadow:0 5px 0 rgba(0,0,0,.06);}
+  .sb-seclabel{display:block;width:max-content;margin:0 auto 20px;padding:4px 24px;background:#fff;border:3px solid #0f0f14;border-radius:5px;font-family:'Black Han Sans','Pretendard',sans-serif;font-weight:400;font-size:24px;color:#0f0f14;}
+  .sb-list{max-width:760px;margin:0 auto;padding:0 14px;}
+  .sb-group{margin-bottom:30px;animation:sbUp .5s cubic-bezier(.22,1,.36,1) both;}
+  @keyframes sbUp{0%{opacity:0;transform:translateY(16px);}100%{opacity:1;transform:none;}}
+  .sb-head{display:block;background:#0f0f14;color:#fff;font-family:'Pretendard',sans-serif;font-weight:800;font-size:15px;padding:11px 16px;margin-bottom:9px;letter-spacing:-.3px;}
+  .sb-date{opacity:.6;font-weight:600;margin-right:9px;}
+  .sb-artist{cursor:pointer;font-weight:900;border-bottom:2px solid currentColor;padding-bottom:1px;}
+  .sb-artist:active{opacity:.65;}
+  .sb-rows{display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
+  .sb-row{display:inline-block;background:#fff;color:#111;font-family:'Pretendard',sans-serif;font-weight:700;font-size:15px;line-height:1.45;padding:6px 13px;border-radius:3px;border-left:4px solid #E24A9C;cursor:pointer;transition:transform .16s cubic-bezier(.22,1,.36,1),box-shadow .16s;max-width:100%;word-break:break-all;}
+  .sb-row:hover{transform:translateX(7px);box-shadow:0 5px 15px rgba(0,0,0,.16);}
+  .sb-row:active{transform:translateX(7px) scale(.98);}
+  .sb-empty{text-align:center;color:#0f0f14;font-weight:700;padding:52px 16px;opacity:.72;}
+  @media(min-width:769px){ .sb-wordmark{font-size:clamp(72px,9vw,130px);} }
+  `;
+  document.head.appendChild(st);
+}
+function renderSlowBoard(){
+  currentView = 'wall';
+  var app = document.getElementById('app-content'); if (!app) return;
+  try { document.body.style.overflow=''; document.documentElement.style.overflow=''; } catch(_){}
+  try { if (typeof stopShapesPhysics==='function') stopShapesPhysics(); } catch(_){}
+  _slowStyle();
+  var db = window.DB.get();
+  var tracks = (Array.isArray(db.tracks) ? db.tracks : []).slice();
+  if (Array.isArray(window.__tracks)) { var seen=new Set(tracks.map(function(t){return t&&t.id;})); window.__tracks.forEach(function(t){ if(t&&!seen.has(t.id)) tracks.push(t); }); }
+  tracks = tracks.filter(function(t){ return t && t.version!=='demo_retired'; });
+  var esc = (typeof _shEsc==='function') ? _shEsc : function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  // 작곡가별 그룹 (최신 데모 순)
+  var groups={}, order=[];
+  tracks.forEach(function(t){
+    var name=((t.artist||'익명')+'').trim() || '익명';
+    if(!groups[name]){ groups[name]={name:name, artistId:t.artistId||'', tracks:[], latest:0}; order.push(name); }
+    groups[name].tracks.push(t);
+    var ts=t.createdAt?(Date.parse(t.createdAt)||0):0; if(ts>groups[name].latest) groups[name].latest=ts;
+  });
+  order.sort(function(a,b){ return groups[b].latest-groups[a].latest; });
+  function fmtDate(ts){ if(!ts) return ''; var d=new Date(ts); return d.getFullYear()+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+('0'+d.getDate()).slice(-2); }
+  function tagsStr(t){
+    var a=(t&&Array.isArray(t.tags))?t.tags.filter(Boolean).map(String):[];
+    if(!a.length){ var ti=(t.title||'뮤직').replace(/\s*\(.*\)$/,''); a=[ti]; }
+    return a.slice(0,5).map(function(x){ return '#'+esc(x.replace(/^#/,'')); }).join('');
+  }
+  var INFOCOL=['#E24A9C','#7FB2EC','#86CE34','#B49BEE','#F06CA8','#FF8A6E','#26C6C6','#FFB03A'];
+  var listHtml = order.length ? order.map(function(name,gi){
+    var g=groups[name], col=INFOCOL[gi%INFOCOL.length];
+    var demos=g.tracks.slice().sort(function(a,b){ return (Date.parse(b.createdAt||0)||0)-(Date.parse(a.createdAt||0)||0); });
+    var rows=demos.map(function(t){
+      var onc = t.id ? ' onclick="if(window.playTrack)playTrack(\''+esc(t.id)+'\',\'wall\')"' : '';
+      return '<div><span class="sb-row" style="border-left-color:'+col+'"'+onc+'>'+tagsStr(t)+'</span></div>';
+    }).join('');
+    var enc=encodeURIComponent(g.name);
+    return '<div class="sb-group" style="animation-delay:'+(Math.min(gi,10)*0.05)+'s">'
+      + '<div class="sb-head"><span class="sb-date">'+fmtDate(g.latest)+'</span>'
+      + '<span class="sb-artist" style="color:'+col+'" onclick="navigateTo(\'artist:'+enc+'\')">'+esc(g.name)+'</span></div>'
+      + '<div class="sb-rows">'+rows+'</div></div>';
+  }).join('') : '<div class="sb-empty">아직 올라온 데모가 없어요<br>+ 로 첫 곡을 올려보세요</div>';
+  app.innerHTML = '<div class="sb-page"><h1 class="sb-wordmark">슬로우 뮤직</h1>'
+    + '<div class="sb-seclabel">주절주절</div>'
+    + '<div class="sb-list">'+listHtml+'</div></div>';
+}
+window.renderSlowBoard = renderSlowBoard;
+
 async function renderProducingBoard(){
   currentView = 'wall';
   var app = document.getElementById('app-content'); if (!app) return;
@@ -3971,7 +4044,7 @@ window.pbCreate = async function(btn){
 // 중요: 실시간 구독·새로고침·댓글 핸들러 등 곳곳에서 renderWall() 을 직접 부르므로, 여기서 보드로 위임해야
 //       보드가 옛 주절주절로 덮어써지지 않는다(사용자 보고 버그).
 async function renderWall() {
-  if (typeof renderProducingBoard === 'function') return renderProducingBoard();
+  if (typeof renderSlowBoard === 'function') return renderSlowBoard();
   const appContent = document.getElementById('app-content');
   if (!appContent) return;
   const db = window.DB.get();
