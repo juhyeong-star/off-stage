@@ -2696,6 +2696,15 @@ window.openShareSheet = function (tid) {
     </div></div>`;
   document.body.insertAdjacentHTML('beforeend', html);
   requestAnimationFrame(() => { const s = document.getElementById('share-sheet'); if (s) s.classList.add('show'); });
+  // 아래로 스와이프 → 닫기 (모바일). 카드가 실제로 움직이는 요소, 오버레이가 backdrop.
+  try {
+    const _sc = document.querySelector('#share-sheet .ssh-card');
+    const _ov = document.getElementById('share-sheet');
+    if (_sc && window._attachSwipeDismiss) window._attachSwipeDismiss(_sc, {
+      direction: 'down', backdrop: _ov, grabber: false,
+      onClose: () => { const s = document.getElementById('share-sheet'); if (s) s.remove(); }
+    });
+  } catch (_) {}
 };
 window.closeShareSheet = function () { const s = document.getElementById('share-sheet'); if (s) { s.classList.remove('show'); setTimeout(() => { try { s.remove(); } catch (_) {} }, 220); } };
 window._shareCopy = async function () {
@@ -3783,7 +3792,7 @@ window.pbSeg = function(mode){ window.__pbSeg = mode; renderProducingBoard(); };
 window.pbPlay = function(url){ try{ if(window.__pbAudio){window.__pbAudio.pause();} window.__pbAudio = new Audio(url); window.__pbAudio.play(); }catch(e){} };
 window.pbVote = async function(rid, choice){
   if (!window.__currentUser || !window.__currentUser.id){ alert(_t('로그인하면 투표할 수 있어요','Log in to vote')); return; }
-  var r = _pbFindRound(rid); if (r && r.status!=='open'){ return; }
+  var r = _pbFindRound(rid); if (r && r.status!=='open'){ if(typeof showToast==='function') showToast(_t('이미 마감된 라운드예요','This round is closed')); return; }
   try { await window.Producing.vote(rid, choice); if (r) await _pbFillCard(r); }
   catch(e){ alert(_t('실패: ','Failed: ')+(e.message||e)); }
 };
@@ -15538,7 +15547,15 @@ window.toggleLike = async function (trackId, btnEl) {
   const nowLiked = db.currentUser.likedTracks.indexOf(trackId) > -1;
   if (btnEl) { const _ic = btnEl.querySelector('i'); if (_ic) _ic.className = nowLiked ? 'ri-heart-fill' : 'ri-heart-line'; }
 
+  // 담기(CollectedTracks) 저장소도 동기화 — isTrackLiked 1순위라 안 맞추면 우주/담기에서 '해제 안 되는' 하트 발생
+  if (window.CollectedTracks) {
+    if (nowLiked) window.CollectedTracks.add(trackId);
+    else window.CollectedTracks.remove(trackId);
+  }
+
   window.DB.save(db);
+  // 플레이어 바 담기 버튼도 같은 곡이면 즉시 반영
+  if (typeof _updatePlayerCollectState === 'function' && trackId === window.currentPlayingTrack) _updatePlayerCollectState();
 
   // Persist to Supabase Favorites if available (server-side source of truth)
   if (window.Favorites && window.Favorites.toggle) {
@@ -15547,9 +15564,11 @@ window.toggleLike = async function (trackId, btnEl) {
       // Sync local likedTracks with server state in case of mismatch
       if (res.favorited && db.currentUser.likedTracks.indexOf(trackId) === -1) {
         db.currentUser.likedTracks.push(trackId);
+        if (window.CollectedTracks) window.CollectedTracks.add(trackId);
         window.DB.save(db);
       } else if (!res.favorited && db.currentUser.likedTracks.indexOf(trackId) !== -1) {
         db.currentUser.likedTracks = db.currentUser.likedTracks.filter(id => id !== trackId);
+        if (window.CollectedTracks) window.CollectedTracks.remove(trackId);
         window.DB.save(db);
       }
       if (typeof showToast === 'function') {
@@ -15594,6 +15613,14 @@ window.openPlaylistModal = function(trackId) {
   }).join('');
 
   modal.style.display = 'flex';
+  // 아래로 스와이프 → 닫기 (모바일). 영구 요소라 한 번만 배선(중복배선 가드).
+  try {
+    const _pc = modal.querySelector('.playlist-modal-content');
+    if (_pc && window._attachSwipeDismiss) window._attachSwipeDismiss(_pc, {
+      direction: 'down', backdrop: modal, grabber: 'dark', scrollGuard: '#playlist-modal-list',
+      onClose: () => closePlaylistModal()
+    });
+  } catch (_) {}
 }
 
 window.closePlaylistModal = function() {
@@ -15604,6 +15631,15 @@ window.closePlaylistModal = function() {
 window.addToPlaylist = async function(playlistId) {
   const trackId = window._pendingPlaylistTrackId;
   if (!trackId) return;
+  // 이미 담긴 곡이면 "추가됨" 거짓 토스트 대신 안내만
+  try {
+    const _pl = (window.DB.get().playlists || []).find(p => p.id === playlistId);
+    if (_pl && Array.isArray(_pl.trackIds) && _pl.trackIds.includes(trackId)) {
+      closePlaylistModal();
+      showToast(_t('이미 담긴 곡이에요', 'Already in this playlist'));
+      return;
+    }
+  } catch (_) {}
   try {
     if (window.Playlists) {
       await window.Playlists.addTrack(playlistId, trackId);
@@ -17030,9 +17066,12 @@ window.playTrack = function (trackId, source) {
     playPromise.catch(e => {
       // AbortError는 src 변경 시 정상 — 사용자가 빠르게 다른 트랙 클릭한 경우
       if (e && (e.name === 'AbortError' || /aborted|interrupt/i.test(e.message || ''))) return;
-      // 같은 트랙 의도로 시작했을 때만 진짜 에러로 표시
+      // 오토플레이 정책 차단(NotAllowedError)은 조용히 — 다음 사용자 제스처에 재생됨
+      if (e && e.name === 'NotAllowedError') return;
+      // 같은 트랙 의도로 시작했을 때만 진짜 에러로 표시 (404/디코드 등 소스 실패)
       if (audioElement._intendedId === intendedId) {
         console.warn('[playTrack] failed:', e.message || e);
+        if (typeof showToast === 'function') showToast(_t('이 곡을 재생할 수 없어요 · 잠시 후 다시 시도해주세요', "Can't play this track · try again later"));
       }
     });
   }
@@ -18086,6 +18125,15 @@ window.openCheerModal = function (trackId, trackTitle, artistName) {
     });
     setTimeout(() => ta.focus(), 80);
   }
+  // 아래로 스와이프 → 닫기 (모바일). textarea/버튼은 기본 exclude 라 입력 방해 없음.
+  try {
+    const _cc = document.querySelector('#cheer-modal .cheer-modal-card');
+    const _co = document.getElementById('cheer-modal');
+    if (_cc && window._attachSwipeDismiss) window._attachSwipeDismiss(_cc, {
+      direction: 'down', backdrop: _co, grabber: false,
+      onClose: () => closeCheerModal()
+    });
+  } catch (_) {}
 };
 
 window.closeCheerModal = function () {
