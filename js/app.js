@@ -8122,14 +8122,15 @@ function _dpStyle(){
   .dp-s-text{position:relative;z-index:2;text-align:center;font-weight:800;line-height:1.5;letter-spacing:-.2px;pointer-events:none;white-space:nowrap;color:#1b1522;}
   .dp-tri-wrap .dp-s-text{transform:translateY(28%);}
   /* ── 상단 히어로: 하늘색 배경 + 검은고딕 대형 워드마크 + 떨어지는 번개 (스크린샷 이식) ── */
-  .dp-hero{position:relative;width:100%;min-height:68vh;min-height:68dvh;overflow:hidden;padding:calc(env(safe-area-inset-top,0px) + 4px) 14px 0;pointer-events:none;}
-  .dp-wordmark{position:relative;z-index:2;font-family:'Black Han Sans','Pretendard',sans-serif;color:#FFE800;font-weight:400;line-height:.9;letter-spacing:-.5px;margin:0;font-size:clamp(60px,20vw,190px);text-shadow:0 6px 0 rgba(0,0,0,.06);}
-  /* 떨어지는 장식 도형(번개 대신) — 히어로 위→아래 루프. 곡(음원) 도형 아님(글자 없음). */
-  .dp-fall{position:absolute;top:0;z-index:1;width:var(--fw,32px);height:var(--fw,32px);will-change:transform;animation:dpFall linear infinite;}
+  /* 히어로 = 상단 압축 헤더(워드마크만). 큰 빈 공간 없이 바로 아래 곡 도형과 한 화면에 합쳐짐. */
+  .dp-hero{position:relative;width:100%;padding:calc(env(safe-area-inset-top,0px) + 6px) 14px 2px;pointer-events:none;overflow:visible;}
+  .dp-wordmark{position:relative;z-index:2;font-family:'Black Han Sans','Pretendard',sans-serif;color:#FFE800;font-weight:400;line-height:.9;letter-spacing:-.5px;margin:0;font-size:clamp(52px,16vw,150px);text-shadow:0 5px 0 rgba(0,0,0,.06);}
+  /* 떨어지는 장식 도형(번개 대신) — 화면 위→아래로, 곡 도형 위(z-index 6)로 겹쳐 흘러 하나로 어우러짐. 곡 도형 아님(글자 없음). */
+  .dp-fall{position:absolute;top:0;z-index:6;width:var(--fw,32px);height:var(--fw,32px);will-change:transform;animation:dpFall linear infinite;}
   .dp-fall .dp-shape{filter:drop-shadow(0 3px 6px rgba(0,0,0,.14));}
   .dp-fall .dp-notes{font-size:var(--fw,32px);line-height:1;}
   @keyframes dpFall{0%{transform:translateY(-18vh) rotate(-12deg);opacity:0;}8%{opacity:1;}90%{opacity:1;}100%{transform:translateY(80vh) rotate(200deg);opacity:0;}}
-  @media (max-width:620px){ .dp-wordmark{font-size:clamp(48px,21vw,120px);} .dp-hero{min-height:60vh;min-height:60dvh;} }
+  @media (max-width:620px){ .dp-wordmark{font-size:clamp(46px,17vw,110px);} }
   `;
   document.head.appendChild(st);
 }
