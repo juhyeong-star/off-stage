@@ -205,6 +205,24 @@ window.audioElement = audioElement;
   };
 })();
 
+// 영구 모달(DM · STO · 타마) 아래로 스와이프 닫기 — 요소가 상주하므로 로드 후 한 번만 배선.
+// (display:none 이면 못 만지니 enabled 가드 불필요. 닫기 fn 은 이름으로 늦게 조회 → 정의 순서 무관.)
+(function () {
+  function wireModalSwipes() {
+    [['dm-content', 'closeDmModal'],
+     ['sto-mini-content', 'closeStoMini'],
+     ['tama-modal-content', 'closeTamaModal']].forEach(function (d) {
+      var el = document.getElementById(d[0]);
+      if (el && window._attachSwipeDismiss) window._attachSwipeDismiss(el, {
+        direction: 'down', backdrop: el.parentElement, grabber: 'dark', scrollGuard: 'auto',
+        onClose: function () { try { if (typeof window[d[1]] === 'function') window[d[1]](); } catch (_) {} }
+      });
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wireModalSwipes);
+  else wireModalSwipes();
+})();
+
 // ============================================================
 // i18n — KO / EN 토글 (옵션 B, 점진적 도입)
 // CSS 가 [data-lang="ko"] / [data-lang="en"] 기반으로 한쪽만 표시.
@@ -430,13 +448,13 @@ window.showOnboarding = function () {
         <div class="ob-demo-shape">♪<span class="ob-tap"><i class="ri-cursor-fill"></i></span></div>
       </div>
       <h2 class="ob-title">${_t2("떠다니는 '도형'이 노래예요",'Each floating shape is a song')}</h2>
-      <p class="ob-body">${_t2('한 번 누르면 재생, 한 번 더 누르면 그 아티스트 페이지로! 끌어서 자리도 옮길 수 있어요.','Tap once to play, tap again to open the artist page! Drag to move it around.')}</p>
+      <p class="ob-body">${_t2('한 번 탭하면 바로 재생! 끌어서 옮기고, 위로 스와이프하면 쇼츠처럼 다음 곡으로 넘어가요.','Tap to play instantly. Drag to move it, or swipe up for the next song like shorts.')}</p>
     </div>`;
   const menuRows = [
-    ['ri-triangle-fill',   _t2('발견','Discover'),        _t2('노래를 도형으로 탐색','Browse songs as shapes')],
-    ['ri-sticky-note-fill',_t2('주절주절','Bla Bla'),      _t2('감성 메모를 남기는 벽','A wall of mood notes')],
-    ['ri-bookmark-fill',   _t2('즐겨찾기','Favorites'),    _t2('모은 곡과 폴더','Saved songs & folders')],
-    ['ri-mic-fill',        _t2('MY Page','MY Page'), _t2('데모와 소식 보기','Demos & updates')]
+    ['ri-triangle-line',    _t2('발견','Discover'),     _t2('노래를 도형으로 발견','Browse songs as shapes')],
+    ['ri-bar-chart-2-fill', _t2('프로듀싱','Producing'), _t2('데모 A·B 투표로 곡을 함께 완성','Vote A/B to shape demos')],
+    ['ri-add-circle-fill',  _t2('올리기','Upload'),      _t2('가운데 + 로 내 음원 올리기','Tap + to upload your track')],
+    ['ri-bookmark-fill',    _t2('즐겨찾기','Favorites'), _t2('모은 곡과 폴더','Saved songs & folders')]
   ].map(([ic,t,d]) => `<div class="ob-menu-row"><span class="ob-menu-ic"><i class="${ic}"></i></span><div class="ob-menu-tx"><b>${t}</b><span>${d}</span></div></div>`).join('');
   const slide3 = `
     <div class="ob-slide">
@@ -517,19 +535,15 @@ window.startTutorial = function () {
         body: _t2('좋아한 노래(도형)와 포스트잇을 모아 나만의 우주로 정리하는 곳이에요. 로그인하면 메뉴에서 들어가 써볼 수 있어요.','Collect liked songs (shapes) and post-its into your own universe. Sign in, then open it from the menu.') };
   // 로그인 시: 내 아티스트 페이지로 들어가 소식(투명 + 카드)·프로필 수정을 자세히 안내.
   const artistSteps = _loggedIn ? [
-    { route: 'my-artist', sel: '.thread-composer, .atl-feed-head', title: _t2('MY Page — 주절주절','MY Page — blah blah'),
-      body: _t2('여기가 팬들이 보는 당신의 페이지예요. 아래 주절주절에 노래·사진과 함께 근황을 남길 수 있어요.','This is the page fans see. Post updates — with songs and photos — in the blah blah feed below.') },
-    { sel: '#artist-bio-line, .artist-bio-inline', title: _t2('자기소개','Your bio'),
-      body: _t2('"자신을 소개해보아요"를 눌러 한 줄 소개를 적어보세요. 팬들에게 보이는 첫인상이에요.','Tap “Introduce yourself” to write a short bio — the first thing fans see.') },
-    { sel: '.atl-album-add, .atl-album, .atl-hero', title: _t2('음악 · 데모','Music & demos'),
-      body: _t2('올린 곡은 여기 쌓여요. 카드를 누르면 그 곡 페이지로 가요.','Your tracks stack up here. Tap a card to open that song’s page.') },
-    { sel: '.artist-settings-gear', title: _t2('프로필 수정','Edit profile'),
-      body: _t2('더 자세한 설정 — 프로필 사진·자기소개·SNS 링크는 오른쪽 위 톱니바퀴(⚙)에서.','For more — edit your photo, bio and social links from the gear (top-right).') }
+    { route: 'my-artist', sel: '.mh-track, .mh-stats, .mh-name-row', title: _t2('MY 페이지','MY Page'),
+      body: _t2('팬들이 보는 내 페이지예요. 올린 데모·곡이 여기 쌓이고, 카드를 누르면 그 곡 페이지로 가요.','The page fans see. Your demos and tracks stack up here — tap a card to open that song.') },
+    { sel: '.mh-editbtn', title: _t2('프로필 편집','Edit profile'),
+      body: _t2('이름·한 줄 소개·프로필 사진은 편집 버튼에서 바꿀 수 있어요.','Edit your name, bio and photo from the Edit button.') }
   ] : [];
   const steps = [
-    { route: 'shapes', sel: '.floating-shape[data-track-id]', title: _t2('발견 — 노래','Discover'), body: _t2('떠다니는 도형이 노래예요. 한 번 누르면 재생, 한 번 더 누르면 그 아티스트 페이지로 가요.','Each floating shape is a song. Tap once to play, tap again to open the artist page.') },
-    { sel: '.upload-fab', title: _t2('노래 올리기','Upload'), body: _t2('여기 ⊕ 를 눌러 내 곡을 올려요.','Tap ⊕ here to upload your own track.') },
-    { route: 'wall', sel: '.thread-composer', title: _t2('주절주절','Bla Bla'), body: _t2('노래·사진과 함께 글을 남기는 피드예요. 여기를 눌러 새 글을 써요.','A feed where you post with songs and photos — tap here to write.') },
+    { route: 'shapes', sel: '.floating-shape[data-track-id]', title: _t2('발견 — 노래','Discover'), body: _t2('떠다니는 도형이 노래예요. 한 번 탭하면 바로 재생, 위로 스와이프하면 쇼츠처럼 다음 곡으로!','Each floating shape is a song. Tap to play, swipe up for the next one like shorts!') },
+    { sel: '.mobile-tab-plus, .upload-fab', title: _t2('음원 올리기','Upload'), body: _t2('가운데 ⊕ 를 눌러 내 데모·곡을 올려요.','Tap the ⊕ in the middle to upload your demo or track.') },
+    { route: 'wall', sel: '.pb-fab, .pb-top-new', title: _t2('프로듀싱','Producing'), body: _t2('데모의 A·B 두 버전에 투표해서 곡을 함께 완성해요. ⊕ 로 내 투표도 열 수 있어요.','Vote between two versions (A/B) to shape a demo together. Tap ⊕ to open your own vote.') },
     { route: 'tags', sel: '.tag-chip', title: _t2('Tags','Tags'), body: _t2('기분·태그로 노래를 찾아봐요.','Find songs by mood and tags.') },
     favStep,
     ...artistSteps,
@@ -7316,15 +7330,54 @@ function _shortsMount() {
     _shortsGo(e.deltaY > 0 ? 'next' : 'prev');
   }, { passive: false });
 
-  let touchY0 = null;
+  // 위아래 스와이프 — 손가락 따라 카드가 끌려오고, 놓으면 다음/이전으로 넘어가거나 스프링백.
+  //   (도형 쇼츠와 같은 라이브 모션. 단순 감지가 아니라 실시간 transform 동기화.)
   const main = ov.querySelector('.shorts-main');
-  main.addEventListener('touchstart', (e) => { touchY0 = e.touches[0].clientY; }, { passive: true });
+  let ty0 = null, tx0 = null, dragCard = null, dragging = false;
+  main.addEventListener('touchstart', (e) => {
+    if (!e.touches[0]) return;
+    if (e.target.closest('.shorts-side, .shorts-nav, .shorts-close, .shorts-cm-list')) { ty0 = null; return; }
+    ty0 = e.touches[0].clientY; tx0 = e.touches[0].clientX;
+    dragCard = ov.querySelector('.shorts-card:not(.tear-out-up):not(.tear-out-down)');
+    dragging = false;
+    if (dragCard) { dragCard.style.transition = 'none'; dragCard.style.willChange = 'transform'; }
+  }, { passive: true });
+  main.addEventListener('touchmove', (e) => {
+    if (ty0 == null || !dragCard || !e.touches[0]) return;
+    const dy = e.touches[0].clientY - ty0;
+    const dx = e.touches[0].clientX - tx0;
+    if (!dragging && Math.abs(dy) < 6 && Math.abs(dx) < 6) return;
+    dragging = true;
+    if (e.cancelable) e.preventDefault();
+    dragCard.style.transform = `translateY(${dy}px)`;
+  }, { passive: false });
   main.addEventListener('touchend', (e) => {
-    if (touchY0 == null) return;
-    const dy = e.changedTouches[0].clientY - touchY0;
-    touchY0 = null;
-    if (Math.abs(dy) < 40) return;
-    _shortsGo(dy < 0 ? 'next' : 'prev');
+    if (ty0 == null) { dragCard = null; dragging = false; return; }
+    const t = e.changedTouches[0];
+    const dy = t ? t.clientY - ty0 : 0;
+    const dx = t ? t.clientX - tx0 : 0;
+    ty0 = tx0 = null;
+    const c = dragCard; dragCard = null;
+    const was = dragging; dragging = false;
+    if (!c) return;
+    const st2 = window.__shorts;
+    // 위/아래 스와이프 인정: 50px 이상 + 세로 우세(대각선 22° 허용)
+    if (was && st2 && Math.abs(dy) >= 50 && Math.abs(dy) >= Math.abs(dx) * 0.4) {
+      const dir = dy < 0 ? 'next' : 'prev';
+      const ni = st2.idx + (dir === 'next' ? 1 : -1);
+      if (ni >= 0 && ni < st2.items.length) {
+        // 넘어감 — 인라인 transform 걷어내고 tear 애니에 양보
+        c.style.transition = ''; c.style.transform = ''; c.style.willChange = '';
+        _shortsGo(dir);
+        return;
+      }
+    }
+    // 임계 미달 또는 경계(첫/마지막) → 부드럽게 원위치
+    if (was) {
+      c.style.transition = 'transform 0.34s cubic-bezier(0.34,1.56,0.64,1)';
+      c.style.transform = 'translateY(0)';
+      c.style.willChange = '';
+    }
   }, { passive: true });
 
   window.__shortsKeyHandler = (e) => {
