@@ -5708,7 +5708,7 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
     padding: 32px 24px;
     gap: 22px;
   }
-  .player-track-info { order: 1; flex: 1; min-width: 0; gap: 10px; cursor: pointer; }
+  .player-track-info { order: 2; flex: 1; min-width: 0; gap: 8px; cursor: pointer; }
   #global-player.expanded .player-track-info {
     flex-direction: column;
     width: 100%;
@@ -5725,12 +5725,13 @@ body:has(#global-player.expanded) .wall-search-fab { display: none !important; }
   #global-player.expanded .player-title { font-size: 22px; max-width: 90vw; white-space: normal; }
   .player-artist { font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 38vw; }
   #global-player.expanded .player-artist { font-size: 14px; max-width: 90vw; }
-  /* 담기 버튼(이제 볼륨 옆 직속 자식) — 모바일 순서: 트랙정보(1) → 담기(2) → 컨트롤(3) → 진행바(4) */
-  .player-collect-btn { order: 2; }
-  .player-controls { order: 3; width: auto; gap: 6px; flex-shrink: 0; }
+  /* 모바일 플레이바 순서(사용자 요청): 컨트롤(1) → 트랙정보 disc+제목/가수(2) → 담기(3) → 공유(4) */
+  .player-controls { order: 1; width: auto; gap: 2px; flex-shrink: 0; }
+  .player-collect-btn { order: 3; }
+  .player-share-btn { order: 4; }
   #global-player.expanded .player-controls { gap: 28px; }
-  .control-btn { font-size: 22px; padding: 4px; }
-  .control-btn.play-btn { font-size: 36px; }
+  .control-btn { font-size: 20px; padding: 2px; }
+  .control-btn.play-btn { font-size: 32px; }
   #global-player.expanded .control-btn { font-size: 30px; }
   #global-player.expanded .control-btn.play-btn { font-size: 64px; }
   .progress-container { order: 4; display: none; padding: 0; gap: 6px; }
@@ -11990,17 +11991,11 @@ body {
   :root { --player-height: 60px; }
   body {
     padding-top: calc(var(--mobile-tab-h, 56px) + env(safe-area-inset-top, 0px) + 8px) !important;
-    /* +18px = 미니바를 0.5cm 위로 띄운 만큼 콘텐츠 예약도 늘림 */
-    padding-bottom: calc(var(--player-height) + var(--safe-bottom) + 26px) !important;
+    padding-bottom: calc(var(--player-height) + var(--safe-bottom) + 8px) !important;
   }
-  /* Player 바닥 — tab 이 위로 갔으니 그대로 */
+  /* Player 바닥 — 세이프영역(홈 인디케이터)에 딱 붙임. 플로팅/box-shadow 제거(사용자 "딱 붙여"). 기기별 safe-area 자동. */
   #global-player {
     bottom: var(--safe-bottom) !important;
-  }
-  /* 미니바(펼침 아님)만 0.5cm(18px) 위로 — 아래 18px 는 box-shadow 로 하늘색 채워 검은 틈 방지 (사용자 요청) */
-  #global-player:not(.expanded) {
-    bottom: calc(var(--safe-bottom) + 18px) !important;
-    box-shadow: 0 18px 0 0 #45ceeb;
   }
   /* mobile-tab-bar — top safe area 사용 */
   .mobile-tab-bar {
@@ -19651,13 +19646,31 @@ body.is-shapes-route .shapes-subtitle { display: none !important; }
   #global-player .player-wave { display: none; }
   #global-player .player-collect-btn { margin-left: auto; }
 }
-/* 미니바(모바일) — 담기(저장/플레이리스트)·공유는 노출(사용자 요청). 셔플·볼륨·±10초 숨김. */
+/* 미니바(모바일) — 이전/다음/±10초/담기/공유 모두 노출(사용자 요청 "이전곡 << 재생 >> 다음곡…"). 셔플·볼륨만 숨김. */
 @media (max-width: 768px) {
   #global-player:not(.expanded) .shuffle-btn,
-  #global-player:not(.expanded) .seek-btn,        /* ±10초 = 화면 좌우 더블탭으로 대체 → 미니바 공간 확보(LCD 안 뭉개지게) */
-  #global-player:not(.expanded) .control-btn[aria-label="이전 곡"],
-  #global-player:not(.expanded) .control-btn[aria-label="다음 곡"],  /* 이전/다음은 펼침(풀스크린)에서 — 미니바는 재생만 */
   #global-player:not(.expanded) .player-volume { display: none !important; }
+  /* ±10초 버튼의 '10' 라벨은 모바일에선 숨겨 ◄◄/►► 만(공간 절약). */
+  #global-player:not(.expanded) .seek-btn b { display: none; }
+  #global-player:not(.expanded) .seek-btn { gap: 0; }
+  /* 모바일 미니 LCD = 앨범자켓 + 제목/가수만(제목 위·가수 아래). #태그·가사는 풀스크린에서(컨트롤 공간 확보). */
+  #global-player:not(.expanded) .player-hashline,
+  #global-player:not(.expanded) .player-lyric { display: none !important; }
+  #global-player:not(.expanded) .player-nowline { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; width: 100%; }
+  #global-player:not(.expanded) .player-title,
+  #global-player:not(.expanded) .player-artist { max-width: 100%; }
+  /* 컨트롤 5개(이전/◄◄/재생/►►/다음)+트랙정보+담기+공유 한 줄에 — 미니바 탭타깃 44→축소해 LCD 공간 확보. */
+  #global-player:not(.expanded) .control-btn { min-width: 28px !important; min-height: 34px !important; padding: 2px !important; font-size: 18px !important; }
+  #global-player:not(.expanded) .control-btn.play-btn { min-width: 32px !important; font-size: 30px !important; }
+  #global-player:not(.expanded) .seek-btn { min-width: 22px !important; font-size: 15px !important; }
+  #global-player:not(.expanded) .seek-btn i { font-size: 16px !important; }
+  #global-player:not(.expanded) .player-cover { width: 36px !important; height: 36px !important; }
+  #global-player:not(.expanded) .player-art { width: 36px !important; flex: 0 0 auto; }
+  #global-player:not(.expanded) .player-collect-btn,
+  #global-player:not(.expanded) .player-share-btn { min-width: 28px !important; padding: 4px !important; font-size: 18px; }
+  /* 순서: … 담기(3) → 공유(4) (사용자 "+담기  공유") */
+  #global-player:not(.expanded) .player-collect-btn { order: 3 !important; }
+  #global-player:not(.expanded) .player-share-btn { order: 4 !important; }
   /* 위 화살표 대신 상단 작은 바(그래버) 노출 — 스와이프업 안내. */
   #global-player:not(.expanded) .swipe-grabber { display: block; top: 5px; width: 36px; height: 4px; }
   #global-player:not(.expanded) { padding-top: 4px; }
