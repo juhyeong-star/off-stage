@@ -1706,6 +1706,19 @@ function navigateTo(route) {
     return;
   }
 
+  // 음원 공유 딥링크: "play:<trackId>" — 열면 그 곡을 바로 재생 + 풀스크린 플레이어로 (사용자 요청).
+  // 뒤에 발견(도형) 페이지를 깔고 그 위에 재생. URL 은 #/shapes 로 정리(새로고침 시 재재생 방지).
+  if (route && route.startsWith('play:')) {
+    const tid = decodeURIComponent(route.slice(5));
+    currentView = 'shapes'; window.__currentView = 'shapes';
+    document.body.classList.toggle('is-shapes-route', true);
+    try { renderShapes(); } catch (err) { _renderError(err, '공유 재생'); }
+    try { history.replaceState({ route: 'shapes' }, '', '#/shapes'); } catch (_) {}
+    setTimeout(function () { if (window._playSharedTrack) window._playSharedTrack(tid); }, 300);
+    setTimeout(observeReveals, 20);
+    return;
+  }
+
   // 곡 상세(응원 루프 + 진화 기록): "song:<trackId>"
   if (route && route.startsWith('song:')) {
     currentView = 'song';
@@ -2698,7 +2711,7 @@ window.openShareSheet = function (tid) {
   const t = (db.tracks || []).find(x => x && x.id === tid) || {};
   const title = t.title || 'Off-Stage';
   const artist = t.artist || '';
-  const url = location.origin + location.pathname + '#card:' + encodeURIComponent(tid);
+  const url = location.origin + location.pathname + '#/play:' + encodeURIComponent(tid);
   const _esc = (s) => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const PAL = ['#8B7CF6', '#FB6F92', '#46E08B', '#54E0CE', '#FFC94D', '#5AA9FF'];
   const col = PAL[(_hashSeed('disc:' + tid) >>> 0) % PAL.length];
@@ -2755,6 +2768,33 @@ window._shareNative = async function () {
   const d = window.__shareData || {};
   closeShareSheet();
   try { await navigator.share({ title: d.title, text: d.title + (d.artist ? ' — ' + d.artist : ''), url: d.url }); } catch (_) { /* 취소 무시 */ }
+};
+// 공유 딥링크(#/play:<id>)로 들어오면 그 곡을 바로 재생 + 풀스크린 플레이어. 데이터가 아직 로딩 중일 수 있어 폴링.
+window._playSharedTrack = function (tid) {
+  if (!tid) return;
+  var tries = 0;
+  (function attempt() {
+    var t = null;
+    try {
+      var db = window.DB.get();
+      t = (db.tracks || []).find(function (x) { return x && x.id === tid; });
+      if (!t && Array.isArray(window.__tracks)) t = window.__tracks.find(function (x) { return x && x.id === tid; });
+    } catch (_) {}
+    if (!t) {
+      if (tries++ < 24) { setTimeout(attempt, 250); return; }   // 최대 ~6초 데이터 대기
+      if (typeof showToast === 'function') showToast(_t('공유된 곡을 찾을 수 없어요', 'Shared track not found'));
+      return;
+    }
+    try { if (window.playTrack) window.playTrack(tid, 'shared'); } catch (_) {}
+    try { if (window.openPlayerFs) window.openPlayerFs(); } catch (_) {}
+    // 브라우저 자동재생 정책상 사용자 제스처 없이 재생이 막히면 곡은 로드만 됨(일시정지) → 안내.
+    setTimeout(function () {
+      try {
+        var a = document.getElementById('audio-element');
+        if (a && a.paused && typeof showToast === 'function') showToast(_t('공유된 곡 — ▶ 를 눌러 재생하세요', 'Shared track — tap ▶ to play'));
+      } catch (_) {}
+    }, 800);
+  })();
 };
 
 // (event banner removed)
