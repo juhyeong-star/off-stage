@@ -11993,10 +11993,15 @@ body {
     padding-top: calc(var(--mobile-tab-h, 56px) + env(safe-area-inset-top, 0px) + 8px) !important;
     padding-bottom: calc(var(--player-height) + var(--safe-bottom) + 8px) !important;
   }
-  /* Player 바닥 — 세이프영역(홈 인디케이터)에 딱 붙임. 플로팅/box-shadow 제거(사용자 "딱 붙여"). 기기별 safe-area 자동. */
-  #global-player {
-    bottom: var(--safe-bottom) !important;
+  /* Player(미니바) — 화면 맨 아래(bottom:0)에 딱 붙임. 홈 인디케이터(safe-area)는 바 '안쪽' padding 으로 처리
+     → 바 배경(하늘색)이 바닥 끝까지 채워서 뒤로 페이지가 안 보임(사용자 "둥둥 떠있음/뒤로 보임" 수정).
+     예전 bottom:safe 는 safe 만큼 떠서 그 틈으로 콘텐츠가 비쳤음. */
+  #global-player:not(.expanded) {
+    bottom: 0 !important;
+    height: calc(var(--player-height) + var(--safe-bottom, 0px)) !important;
+    padding-bottom: var(--safe-bottom, 0px) !important;
   }
+  #global-player.expanded { bottom: var(--safe-bottom, 0px) !important; }
   /* mobile-tab-bar — top safe area 사용 */
   .mobile-tab-bar {
     padding-top: calc(6px + env(safe-area-inset-top, 0px));
