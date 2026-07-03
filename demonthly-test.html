@@ -52,7 +52,8 @@
        font-family:'Pretendard';font-weight:900;font-size:15px;color:var(--ink);cursor:pointer;transition:transform .1s;}
   .tab.on{background:var(--ink);color:#fff;}
   .tab:active{transform:scale(.96);}
-  .stage{position:relative;height:440px;margin:10px 12px 0;border-radius:18px;overflow:hidden;
+  /* 스테이지 = '한 화면' 고정 영역(스크롤 피드 아님). 탭 누르면 이 안에 도형이 딱 채워져 날아옴. */
+  .stage{position:relative;height:min(78vh,640px);margin:10px 12px 0;border-radius:18px;overflow:hidden;
          background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0));}
   .hint{position:absolute;left:0;right:0;bottom:10px;text-align:center;font-size:11.5px;font-weight:700;color:#0b3a48;opacity:.6;pointer-events:none;}
 
