@@ -19667,3 +19667,23 @@ body.is-shapes-route .shapes-subtitle { display: none !important; }
 .pfs-seek i { font-size: 25px; }
 .pfs-seek b { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; font-size: 8px; font-weight: 800; pointer-events: none; }
 .pfs-seek:active { transform: scale(.9); }
+
+/* ============ 모바일 네비 개편 (사용자 요청) ============
+   상단 탭바 제거 → '슬로우 뮤직' 워드마크가 맨 위로. 메뉴는 PC처럼 우하단 '더보기'(햄버거) 버튼 →
+   누르면 사이드바 시트가 아래에서 쭉 올라오며 전체 메뉴(발견/주절주절/플레이리스트/MY 등) 나열. */
+@media (max-width: 768px) {
+  .mobile-tab-bar { display: none !important; }
+  /* 상단 탭바 예약 패딩 제거 → 콘텐츠(슬로우뮤직) 위로. 가이드/언어(우상단 ~34px) 바로 아래에 오게 42px만. */
+  body { padding-top: calc(env(safe-area-inset-top, 0px) + 42px) !important; }
+  /* 더보기 = 햄버거를 우하단에 노출(PC 감성). 좌 → 우로 이동. */
+  .hamburger-btn {
+    display: flex !important;
+    left: auto !important;
+    right: 16px !important;
+    bottom: calc(var(--player-height) + var(--safe-bottom, 0px) + 26px) !important;
+  }
+  /* 사이드바 시트 — 탭바 없어졌으니 --mobile-tab-h 빼고 플레이어 바로 위에서 열림 */
+  .sidebar-nav { bottom: calc(var(--player-height) + var(--safe-bottom, 0px) + 22px) !important; }
+  /* (dead) 옛 물리 발견 컨테이너 top — 탭바 높이 안 빼게 */
+  body.is-shapes-route .shapes-universe { top: calc(env(safe-area-inset-top, 0px) + 8px) !important; }
+}
