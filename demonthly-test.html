@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>demon'thly — 테스트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Pretendard:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky:#45CEEB; --sky2:#33c2e6; --ink:#0f0f14; --yellow:#FFE800;
+    --c0:#E24A9C; --c1:#7FB2EC; --c2:#86CE34; --c3:#B49BEE; --c4:#F06CA8; --c5:#FF8A6E; --c6:#26C6C6; --c7:#FFB03A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{font-family:'Pretendard','Apple SD Gothic Neo',sans-serif;background:var(--sky);color:var(--ink);
+       overflow-x:hidden;padding-bottom:40px;}
+  .wrap{max-width:640px;margin:0 auto;}
+
+  /* ─────────── 1. 워드마크 (demon'thly, n 묵음) ─────────── */
+  .brand{padding:26px 16px 10px;text-align:center;}
+  .wordmark{font-family:'Black Han Sans',sans-serif;color:var(--yellow);line-height:.92;
+            font-size:clamp(56px,17vw,120px);letter-spacing:-1px;
+            text-shadow:0 5px 0 rgba(0,0,0,.08);display:inline-flex;align-items:baseline;}
+  /* 묵음 n — 작고 흐리게 + 대각선 취소선 (읽을 땐 "demo-thly / 이달의 데모") */
+  .wordmark .silent{position:relative;font-size:.6em;opacity:.4;transform:translateY(-.06em);margin:0 -.02em;}
+  .wordmark .silent::after{content:"";position:absolute;left:-6%;right:-6%;top:52%;height:.09em;
+            background:currentColor;transform:rotate(-14deg);border-radius:2px;opacity:.85;}
+  .brand .sub{margin-top:8px;font-weight:800;font-size:15px;color:var(--ink);opacity:.82;}
+  .brand .sub b{color:#fff;background:var(--ink);padding:2px 9px;border-radius:5px;}
+  .silent-note{margin-top:6px;font-size:12px;font-weight:700;color:#0b3a48;opacity:.7;}
+
+  /* 묵음 표기 후보들 */
+  .variants{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:16px 12px 2px;}
+  .vchip{background:#fff;border-radius:12px;padding:9px 12px 10px;min-width:120px;text-align:center;
+         box-shadow:0 3px 10px rgba(0,0,0,.12);}
+  .vchip .vlabel{font-size:10.5px;font-weight:800;color:#8a8a95;letter-spacing:.02em;margin-bottom:3px;}
+  .vchip .vword{font-family:'Black Han Sans',sans-serif;font-size:26px;color:var(--ink);line-height:1;display:inline-flex;align-items:baseline;}
+  .v-fade  .n{opacity:.34;}
+  .v-strike .n{opacity:.5;text-decoration:line-through;text-decoration-thickness:2px;}
+  .v-super .n{font-size:.52em;opacity:.5;transform:translateY(-.5em);}
+  .v-paren .p{opacity:.4;font-size:.7em;}
+
+  .section-tag{max-width:640px;margin:30px auto 12px;padding:0 16px;display:flex;align-items:center;gap:9px;}
+  .section-tag .dot{width:11px;height:11px;border-radius:50%;background:var(--ink);}
+  .section-tag h2{font-family:'Black Han Sans',sans-serif;font-size:22px;color:var(--ink);font-weight:400;}
+  .section-tag .memo{font-size:11.5px;font-weight:700;color:#0b3a48;opacity:.62;margin-left:auto;}
+
+  /* ─────────── 2. 발견 탭 + 날아오는 도형 ─────────── */
+  .tabs{display:flex;gap:8px;max-width:640px;margin:0 auto 4px;padding:0 16px;}
+  .tab{flex:1;background:#fff;border:2.5px solid var(--ink);border-radius:11px;padding:11px 6px;
+       font-family:'Pretendard';font-weight:900;font-size:15px;color:var(--ink);cursor:pointer;transition:transform .1s;}
+  .tab.on{background:var(--ink);color:#fff;}
+  .tab:active{transform:scale(.96);}
+  .stage{position:relative;height:440px;margin:10px 12px 0;border-radius:18px;overflow:hidden;
+         background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0));}
+  .hint{position:absolute;left:0;right:0;bottom:10px;text-align:center;font-size:11.5px;font-weight:700;color:#0b3a48;opacity:.6;pointer-events:none;}
+
+  .fs{position:absolute;display:flex;align-items:center;justify-content:center;cursor:pointer;
+      transition:transform .5s cubic-bezier(.2,1,.3,1),opacity .5s,width .35s cubic-bezier(.34,1.4,.5,1),height .35s cubic-bezier(.34,1.4,.5,1);
+      will-change:transform;}
+  .fs .bg{position:absolute;inset:0;}
+  .fs .lbl{position:relative;z-index:2;text-align:center;color:#1b1522;font-weight:900;padding:4px;pointer-events:none;line-height:1.05;}
+  .fs .lbl .nm{font-size:13px;display:block;}
+  .fs .lbl .tg{font-size:10px;opacity:.8;display:block;margin-top:2px;font-weight:800;}
+  .fs .cnt{position:relative;z-index:2;}
+  /* shapes */
+  .sh-circle{border-radius:50%;}
+  .sh-square{border-radius:12px;}
+  .sh-burst{clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);}
+  .sh-tri{clip-path:polygon(50% 4%,97% 96%,3% 96%);}
+  .sh-dia{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);}
+  .pop{position:absolute;z-index:5;font-family:'Black Han Sans';color:#fff;font-size:20px;pointer-events:none;
+       text-shadow:0 2px 6px rgba(0,0,0,.4);animation:pop .7s ease forwards;}
+  @keyframes pop{0%{opacity:0;transform:translateY(6px) scale(.6);}25%{opacity:1;transform:translateY(-8px) scale(1.1);}100%{opacity:0;transform:translateY(-30px) scale(1);}}
+
+  .vote-badge{position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);z-index:3;
+       background:var(--ink);color:#fff;font-weight:900;font-size:11px;padding:2px 9px;border-radius:20px;white-space:nowrap;
+       box-shadow:0 2px 6px rgba(0,0,0,.3);}
+  .hot-badge{position:absolute;top:-6px;right:-6px;z-index:3;background:#fff;border-radius:20px;padding:1px 7px;
+       font-size:11px;font-weight:900;color:#ff4d2e;box-shadow:0 2px 6px rgba(0,0,0,.25);}
+
+  /* ─────────── 3. 주절주절 상단 투표 공지 ─────────── */
+  .notice{max-width:640px;margin:0 auto;padding:0 12px;}
+  .notice-card{border-radius:14px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.18);}
+  .n-head{background:var(--ink);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px;}
+  .n-head .pin{font-size:19px;}
+  .n-head .t{font-family:'Black Han Sans';font-size:18px;letter-spacing:-.3px;}
+  .n-head .t small{display:block;font-family:'Pretendard';font-weight:700;font-size:11px;opacity:.6;letter-spacing:0;margin-top:2px;}
+  .n-head .day{margin-left:auto;font-size:11px;font-weight:800;opacity:.55;text-align:right;}
+  .n-body{background:#fff;padding:12px 14px 15px;}
+  .rank{display:flex;align-items:center;gap:11px;padding:9px 4px;border-bottom:1px solid #eef0f2;}
+  .rank:last-child{border-bottom:none;}
+  .rank .no{flex:0 0 auto;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+       font-family:'Black Han Sans';font-size:17px;color:#fff;}
+  .rank.r1 .no{background:#FFC107;color:#5a4300;} .rank.r2 .no{background:#B8C2CC;color:#333;}
+  .rank.r3 .no{background:#E8A87C;color:#4a2c12;} .rank .no{background:#dfe3e7;color:#5a5f66;}
+  .rank .info{flex:1;min-width:0;}
+  .rank .nm{font-weight:900;font-size:14.5px;color:#111;}
+  .rank .tg{font-size:11px;font-weight:700;color:#9aa0a6;}
+  .rank .bar{height:7px;border-radius:5px;background:#eef0f2;overflow:hidden;margin-top:5px;}
+  .rank .bar i{display:block;height:100%;border-radius:5px;transition:width .8s cubic-bezier(.2,1,.3,1);}
+  .rank .pct{flex:0 0 auto;font-weight:900;font-size:13px;color:#111;min-width:42px;text-align:right;}
+  .n-foot{background:#fff;padding:0 14px 14px;}
+  .n-foot button{width:100%;background:var(--ink);color:#fff;border:none;border-radius:11px;padding:13px;
+       font-family:'Pretendard';font-weight:900;font-size:15px;cursor:pointer;}
+  .n-foot button:active{opacity:.8;}
+  .testflag{max-width:640px;margin:22px auto 0;text-align:center;font-size:12px;font-weight:800;color:#0b3a48;opacity:.55;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 1. 워드마크 -->
+  <div class="brand">
+    <div class="wordmark">demo<span class="silent">n</span>thly</div>
+    <div class="sub"><b>이달의 데모</b> · Demo&nbsp;Monthly</div>
+    <div class="silent-note">↑ 'n'은 묵음 — 흐리게 + 취소선으로 "안 읽는 글자" 표시 (읽으면 데모·틀리 → 이달의 데모)</div>
+  </div>
+
+  <!-- 묵음 표기 후보 -->
+  <div class="variants">
+    <div class="vchip"><div class="vlabel">A · 흐리게(현재)</div><div class="vword v-fade">demo<span class="n">n</span>thly</div></div>
+    <div class="vchip"><div class="vlabel">B · 취소선</div><div class="vword v-strike">demo<span class="n">n</span>thly</div></div>
+    <div class="vchip"><div class="vlabel">C · 위첨자</div><div class="vword v-super">demo<span class="n">n</span>thly</div></div>
+    <div class="vchip"><div class="vlabel">D · 괄호</div><div class="vword v-paren">demo<span class="p">(n)</span>thly</div></div>
+  </div>
+
+  <!-- 2. 발견 탭 + 날아오는 도형 -->
+  <div class="section-tag"><span class="dot"></span><h2>발견 — 탭으로 도형 소환</h2><span class="memo">탭하면 날아옴</span></div>
+  <div class="tabs">
+    <button class="tab on" data-tab="vote">🗳️ 이달의 투표</button>
+    <button class="tab" data-tab="hot">🔥 HOT 데모</button>
+  </div>
+  <div class="stage" id="stage">
+    <div class="hint" id="hint">도형을 탭 → 투표 (투표할수록 커져요)</div>
+  </div>
+
+  <!-- 3. 주절주절 상단 투표 공지 -->
+  <div class="section-tag"><span class="dot"></span><h2>주절주절 — 상단 투표 공지</h2><span class="memo">맨 위 고정</span></div>
+  <div class="notice">
+    <div class="notice-card">
+      <div class="n-head">
+        <span class="pin">📌</span>
+        <div class="t">이달의 데모 투표<small>다음 demon'thly 를 골라주세요</small></div>
+        <div class="day">D-6<br><span style="opacity:.7">6월 마감</span></div>
+      </div>
+      <div class="n-body" id="rankBody"></div>
+      <div class="n-foot"><button onclick="alert('테스트 — 실제 투표 화면으로 이동')">투표하러 가기 →</button></div>
+    </div>
+  </div>
+
+  <div class="testflag">⚠️ 테스트 버전 — 디자인·흐름 확인용 (실데이터 연동 전)</div>
+</div>
+
+<script>
+  var SHAPES=['sh-circle','sh-burst','sh-tri','sh-square','sh-dia'];
+  var COL=['#E24A9C','#7FB2EC','#86CE34','#B49BEE','#F06CA8','#FF8A6E','#26C6C6','#FFB03A'];
+
+  var voteDemos=[
+    {nm:'여우야', tg:'#발라드', votes:31, sh:'sh-burst'},
+    {nm:'짝사랑', tg:'#트로트', votes:22, sh:'sh-circle'},
+    {nm:'이면',   tg:'#발라드', votes:44, sh:'sh-tri'},
+    {nm:'문틈',   tg:'#인디',   votes:17, sh:'sh-burst'},
+    {nm:'잠수이별', tg:'#시티팝', votes:12, sh:'sh-dia'},
+    {nm:'6월월평', tg:'#어쿠스틱', votes:9, sh:'sh-circle'}
+  ];
+  var hotDemos=[
+    {nm:'승빈이존잘', tg:'#힙합', plays:342, sh:'sh-circle'},
+    {nm:'아애이오우', tg:'#R&B', plays:288, sh:'sh-burst'},
+    {nm:'푸르름',   tg:'#밴드', plays:201, sh:'sh-tri'},
+    {nm:'뮤게이징', tg:'#EDM', plays:176, sh:'sh-square'},
+    {nm:'자작곡',   tg:'#로파이', plays:120, sh:'sh-dia'},
+    {nm:'15살차이연애', tg:'#발라드', plays:98, sh:'sh-burst'}
+  ];
+
+  var stage=document.getElementById('stage');
+  var hint=document.getElementById('hint');
+  var curTab='vote';
+
+  function sizeForVotes(v){ return Math.round(84 + Math.min(v,60)*2.1); }   // 투표할수록 큼
+  function sizeForPlays(p){ return Math.round(80 + Math.min(p,400)*0.22); } // 재생 많을수록 큼
+
+  function layout(n){
+    // 스테이지 안 흩뿌릴 위치(겹침 완화) — 씨드 대신 순번 기반 그리드+지터
+    var cols=n<=4?2:3, rows=Math.ceil(n/cols), out=[];
+    for(var i=0;i<n;i++){ var c=i%cols, r=Math.floor(i/cols);
+      out.push({ x:(c+0.5)/cols*100 + (Math.random()-0.5)*14, y:(r+0.5)/rows*100 + (Math.random()-0.5)*12 });
+    } return out;
+  }
+
+  function render(tab){
+    curTab=tab;
+    // 기존 도형 제거
+    Array.prototype.forEach.call(stage.querySelectorAll('.fs,.pop'),function(e){e.remove();});
+    var data = tab==='vote'? voteDemos : hotDemos;
+    var pos=layout(data.length);
+    var W=stage.clientWidth, H=stage.clientHeight;
+    data.forEach(function(d,i){
+      var size = tab==='vote'? sizeForVotes(d.votes) : sizeForPlays(d.plays);
+      var col=COL[i%COL.length];
+      var el=document.createElement('div');
+      el.className='fs';
+      el.style.width=size+'px'; el.style.height=size+'px';
+      var tx=(pos[i].x/100*W - size/2), ty=(pos[i].y/100*H - size/2);
+      el.dataset.tx=tx; el.dataset.ty=ty;
+      // 시작: 화면 밖에서 날아옴
+      var fromX=(Math.random()<.5?-1:1)*(W*0.7+Math.random()*W*0.5);
+      var fromY=(Math.random()-0.5)*H*1.4;
+      el.style.transform='translate('+(tx+fromX)+'px,'+(ty+fromY)+'px) scale(.4) rotate('+((Math.random()-.5)*120)+'deg)';
+      el.style.opacity='0';
+      var badge = tab==='vote'
+        ? '<div class="vote-badge">🗳️ '+d.votes+'</div>'
+        : '<div class="hot-badge">🔥 '+d.plays+'</div>';
+      el.innerHTML='<div class="bg '+d.sh+'" style="background:'+col+'"></div>'+
+                   '<div class="lbl"><span class="nm">'+d.nm+'</span><span class="tg">'+d.tg+'</span></div>'+badge;
+      if(tab==='vote'){ el.addEventListener('click',function(){ vote(d,el); }); }
+      stage.appendChild(el);
+      // 날아오기 (stagger)
+      requestAnimationFrame(function(){ setTimeout(function(){
+        el.style.transform='translate('+tx+'px,'+ty+'px) scale(1) rotate('+((Math.random()-.5)*16)+'deg)';
+        el.style.opacity='1';
+      }, i*70); });
+    });
+    hint.textContent = tab==='vote' ? '도형을 탭 → 투표! (투표할수록 커져요)' : '🔥 재생 많은 데모일수록 크게';
+    stage.appendChild(hint);
+  }
+
+  function vote(d,el){
+    d.votes++;
+    var size=sizeForVotes(d.votes);
+    el.style.width=size+'px'; el.style.height=size+'px';
+    // 위치 보정(가운데 유지)
+    var tx=parseFloat(el.dataset.tx), ty=parseFloat(el.dataset.ty);
+    var rot=(Math.random()-.5)*16;
+    el.style.transform='translate('+tx+'px,'+ty+'px) scale(1.08) rotate('+rot+'deg)';
+    setTimeout(function(){ el.style.transform='translate('+tx+'px,'+ty+'px) scale(1) rotate('+rot+'deg)'; },160);
+    var vb=el.querySelector('.vote-badge'); if(vb) vb.textContent='🗳️ '+d.votes;
+    // +1 팝
+    var p=document.createElement('div'); p.className='pop'; p.textContent='+1';
+    p.style.left=(tx+size/2-10)+'px'; p.style.top=(ty)+'px';
+    stage.appendChild(p); setTimeout(function(){p.remove();},700);
+    renderRanks();
+  }
+
+  // 순위 (투표 기준)
+  function renderRanks(){
+    var body=document.getElementById('rankBody');
+    var sorted=voteDemos.slice().sort(function(a,b){return b.votes-a.votes;});
+    var total=sorted.reduce(function(s,d){return s+d.votes;},0)||1;
+    var max=sorted[0].votes||1;
+    body.innerHTML=sorted.slice(0,4).map(function(d,i){
+      var pct=Math.round(d.votes/total*100);
+      var w=Math.round(d.votes/max*100);
+      var col=COL[i%COL.length];
+      return '<div class="rank r'+(i+1)+'"><div class="no">'+(i+1)+'</div>'+
+        '<div class="info"><div class="nm">'+d.nm+'</div><div class="tg">'+d.tg+'</div>'+
+        '<div class="bar"><i style="width:'+w+'%;background:'+col+'"></i></div></div>'+
+        '<div class="pct">'+pct+'%</div></div>';
+    }).join('');
+  }
+
+  // 탭
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(t){
+    t.addEventListener('click',function(){
+      document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on');});
+      t.classList.add('on');
+      render(t.dataset.tab);
+    });
+  });
+
+  render('vote');
+  renderRanks();
+</script>
+</body>
+</html>
