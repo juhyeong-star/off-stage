@@ -3752,26 +3752,39 @@ function _slowStyle(){
   .sb-cmtin::placeholder{color:#9aa;}
   .sb-cmtadd{flex:0 0 auto;width:36px;border:none;border-radius:8px;background:#0f0f14;color:#fff;font-size:20px;font-weight:900;cursor:pointer;transition:opacity .15s;}
   .sb-cmtadd:active{opacity:.6;}
+  /* 플레이리스트 삭제(×) 버튼 + 왼쪽 스와이프 삭제(모바일) */
+  .sb-del{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:rgba(220,50,50,.16);color:#c0392b;font-size:18px;font-weight:900;line-height:1;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;transition:background .15s,transform .12s;padding:0 0 2px;}
+  .sb-del:hover{background:rgba(220,50,50,.34);}
+  .sb-del:active{transform:scale(.9);}
+  .sb-rw[data-plsw]{touch-action:pan-y;will-change:transform;}
   @media(min-width:769px){ .sb-wordmark{font-size:clamp(72px,9vw,130px);} }
   `;
   document.head.appendChild(st);
-  // 데모 행 hover — 마우스 올릴 때마다 팔레트에서 다음 색 하나를 딱 한 번 입힘(연속 애니 아님). 나가면 원래대로.
+  // 데모 행 hover — 순환 아님. 행의 '자기 색'(왼쪽 테두리색=이름색 / 앨범박스는 박스색)으로 배경을 칠함. 나가면 원래대로.
   if (!window.__sbHoverWired) {
     window.__sbHoverWired = true;
-    var _HC = ['#E24A9C','#7FB2EC','#86CE34','#B49BEE','#F06CA8','#FF8A6E','#26C6C6','#FFB03A','#FFD24A','#3E6FD9'];
+    function _hoverTxt(c){ var m=c&&String(c).match(/\d+/g); if(!m)return '#1b1522'; var l=(0.299*+m[0]+0.587*+m[1]+0.114*+m[2])/255; return l>0.62?'#1b1522':'#fff'; }
+    function _rowColor(row){
+      var c=row.style.borderLeftColor;
+      if(!c || c==='transparent' || c==='rgba(0, 0, 0, 0)'){ var box=row.closest&&row.closest('.ash-box'); if(box) c=getComputedStyle(box).backgroundColor; }
+      if(!c || c==='transparent' || c==='rgba(0, 0, 0, 0)') c=getComputedStyle(row).borderLeftColor;
+      return (c && c!=='transparent' && c!=='rgba(0, 0, 0, 0)') ? c : '';
+    }
     document.addEventListener('mouseover', function(e){
       var row = e.target && e.target.closest && e.target.closest('.sb-row, .ash-drow');
       if (row && row !== window.__sbHoverEl) {
         window.__sbHoverEl = row;
-        window.__sbHoverIdx = (window.__sbHoverIdx || 0) + 1;
-        row.style.background = _HC[window.__sbHoverIdx % _HC.length];
-        row.style.color = '#1b1522';
+        var c = _rowColor(row); if(!c) return;
+        var txt = _hoverTxt(c);
+        row.style.background = c; row.style.color = txt;
+        var num = row.querySelector('.sb-num'); if(num){ if(num.dataset.oc==null) num.dataset.oc = num.style.color||''; num.style.color = txt; }
       }
     });
     document.addEventListener('mouseout', function(e){
       var row = e.target && e.target.closest && e.target.closest('.sb-row, .ash-drow');
       if (row && (!e.relatedTarget || !row.contains(e.relatedTarget))) {
         row.style.background = ''; row.style.color = '';
+        var num = row.querySelector('.sb-num'); if(num && num.dataset.oc!=null){ num.style.color = num.dataset.oc; delete num.dataset.oc; }
         if (row === window.__sbHoverEl) window.__sbHoverEl = null;
       }
     });
@@ -3884,10 +3897,12 @@ function renderPlaylist(){
   var byId={}; all.forEach(function(t){ if(t&&t.id) byId[t.id]=t; });
   var esc=(typeof _shEsc==='function')?_shEsc:function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
   function tagsStr(t){ var a=(t&&Array.isArray(t.tags))?t.tags.filter(Boolean).map(String):[]; if(!a.length){a=[(t&&t.title)||'뮤직'];} return a.slice(0,5).map(function(x){return '#'+esc(x.replace(/^#/,''));}).join(''); }
-  function rows(ids,col){
+  function rows(ids,section){
     var seen={}, out=[];
     (ids||[]).forEach(function(id){ if(seen[id])return; seen[id]=1; var t=byId[id]; if(!t)return;
-      out.push('<div class="sb-rw"><span class="sb-row" style="border-left-color:'+col+'" onclick="if(window.playTrack)playTrack(\''+esc(id)+'\',\'universe\')"><b class="sb-num" style="color:'+col+'">'+esc((t.artist||'♪')).slice(0,10)+'</b>'+tagsStr(t)+'</span></div>');
+      var c=(typeof genreColorOf==='function')?genreColorOf(t):'#7FB2EC';   // 트랙 도형색(disc)과 동일
+      var del=(section==='saved')?'<button class="sb-del" onclick="event.stopPropagation();if(window._plDelete)_plDelete(\''+esc(id)+'\')" aria-label="삭제">×</button>':'';
+      out.push('<div class="sb-rw" data-plid="'+esc(id)+'"'+(section==='saved'?' data-plsw="1"':'')+'><span class="sb-row" style="border-left-color:'+c+'" onclick="if(window.playTrack)playTrack(\''+esc(id)+'\',\'universe\')"><b class="sb-num" style="color:'+c+'">'+esc((t.artist||'♪')).slice(0,10)+'</b>'+tagsStr(t)+'</span>'+del+'</div>');
     });
     return out.length?out.join(''):'<div class="sb-plempty">아직 없어요</div>';
   }
@@ -3907,12 +3922,41 @@ function renderPlaylist(){
   app.innerHTML='<div class="sb-page"><h1 class="sb-wordmark">슬로우 뮤직</h1>'
     +'<div class="sb-seclabel">플레이리스트</div>'
     +'<div class="sb-list">'
-      +'<div class="sb-group"><div class="sb-head">최근에 들은 노래</div><div class="sb-rows">'+rows(recent,'#7FB2EC')+'</div></div>'
-      +'<div class="sb-group"><div class="sb-head">담은 노래</div><div class="sb-rows">'+rows(saved,'#F06CA8')+'</div></div>'
-      +'<div class="sb-group"><div class="sb-head">추천 노래</div><div class="sb-rows">'+rows(recIds,'#86CE34')+'</div></div>'
+      +'<div class="sb-group"><div class="sb-head">최근에 들은 노래</div><div class="sb-rows">'+rows(recent,'recent')+'</div></div>'
+      +'<div class="sb-group"><div class="sb-head">담은 노래</div><div class="sb-rows">'+rows(saved,'saved')+'</div></div>'
+      +'<div class="sb-group"><div class="sb-head">추천 노래</div><div class="sb-rows">'+rows(recIds,'rec')+'</div></div>'
     +'</div></div>';
+  try{ if(typeof _plAttachSwipe==='function') _plAttachSwipe(); }catch(_){}
 }
 window.renderPlaylist = renderPlaylist;
+// 플레이리스트 '담은 노래' 에서 잘못 담은 곡 삭제 — CollectedTracks + 좋아요(likedTracks) 둘 다 해제.
+window._plDelete = function(id){
+  if(!id) return;
+  try{
+    if(typeof window.toggleTrackHeart==='function' && (typeof isTrackLiked!=='function' || isTrackLiked(id))){ window.toggleTrackHeart(id, null); }
+    else if(window.CollectedTracks && window.CollectedTracks.remove){ window.CollectedTracks.remove(id); }
+  }catch(_){}
+  if(typeof showToast==='function') showToast(_t('플레이리스트에서 뺐어요','Removed'));
+  if(currentView==='universe') renderPlaylist();
+};
+// 모바일 — '담은 노래' 행을 왼쪽으로 밀면 삭제(스와이프-투-딜리트).
+function _plAttachSwipe(){
+  if(!('ontouchstart' in window)) return;
+  document.querySelectorAll('.sb-rw[data-plsw]').forEach(function(rw){
+    if(rw.__sw) return; rw.__sw=1;
+    var x0=0,y0=0,dx=0,drag=false;
+    rw.addEventListener('touchstart',function(e){ var t=e.touches[0]; x0=t.clientX; y0=t.clientY; dx=0; drag=false; rw.style.transition=''; },{passive:true});
+    rw.addEventListener('touchmove',function(e){ var t=e.touches[0]; var mx=t.clientX-x0, my=t.clientY-y0;
+      if(!drag){ if(Math.abs(mx)>10 && Math.abs(mx)>Math.abs(my)) drag=true; else return; }
+      dx=Math.min(0,mx); rw.style.transform='translateX('+dx+'px)'; rw.style.opacity=String(Math.max(0.25,1+dx/200)); e.preventDefault();
+    },{passive:false});
+    rw.addEventListener('touchend',function(){ if(!drag) return; rw.style.transition='transform .2s,opacity .2s';
+      if(dx < -80){ rw.style.transform='translateX(-120%)'; rw.style.opacity='0'; var id=rw.getAttribute('data-plid'); setTimeout(function(){ if(window._plDelete) window._plDelete(id); },170); }
+      else { rw.style.transform=''; rw.style.opacity=''; }
+    });
+  });
+}
+window._plAttachSwipe = _plAttachSwipe;
 
 // ════════════ 아티스트 페이지 = 상점형 (전기가오리 shop 이식). 전체보기/나의 게시판 탭 + 앨범 카드. ════════════
 // 슬로우뮤직 워드마크 + [작곡가명] 라벨 + 탭. 전체보기=앨범 카드(데모 1~4 칩), 나의 게시판=본인 게시판.
@@ -8649,8 +8693,10 @@ function renderDiscoverPattern(tracks){
         TPL.forEach(function(s){
           var el=document.createElement('div');
           el.className='dp-slot'+(s.info?' info':'')+(s.cls==='stack'?' dp-stack':'')+(s.cls==='tri'?' dp-tri-wrap':'');
-          var inner=mkShape(s.cls,s.color,s.glyph), track=null;
-          if(s.info){ track=tracks.length?tracks[ti%tracks.length]:null; ti++; inner+=_songText(track); }
+          var track=null, _sc=s.color;
+          if(s.info){ track=tracks.length?tracks[ti%tracks.length]:null; ti++; if(track&&typeof genreColorOf==='function') _sc=genreColorOf(track); }
+          var inner=mkShape(s.cls,_sc,s.glyph);
+          if(s.info) inner+=_songText(track);
           el.innerHTML=inner; band.appendChild(el);
           if(s.info&&track){ el.setAttribute('onclick',"if(window.playTrack)playTrack('"+dpEsc(track.id)+"','universe')"); el.setAttribute('title',dpEsc((track.title||'')+' — '+(track.artist||''))); }
           var W=s.w,H=s.h;
@@ -8667,7 +8713,8 @@ function renderDiscoverPattern(tracks){
           var track=tracks.length?tracks[ti%tracks.length]:null; ti++;
           var st=SONGSH[si%SONGSH.length];
           var el=document.createElement('div'); el.className='dp-slot info'+(st.cls==='tri'?' dp-tri-wrap':'');
-          el.innerHTML=mkShape(st.cls,INFOCOL[si%INFOCOL.length])+_songText(track); band.appendChild(el);
+          var _sc=(track&&typeof genreColorOf==='function')?genreColorOf(track):INFOCOL[si%INFOCOL.length];
+          el.innerHTML=mkShape(st.cls,_sc)+_songText(track); band.appendChild(el);
           if(track){ el.setAttribute('onclick',"if(window.playTrack)playTrack('"+dpEsc(track.id)+"','universe')"); el.setAttribute('title',dpEsc((track.title||'')+' — '+(track.artist||''))); }
           var dim=songDim(el,st,mul); el.style.setProperty('--w',dim.w+'px'); el.style.setProperty('--h',dim.h+'px'); _fitFont(el,st.fit,st.fitH,dim.w,dim.h,mul);
           el.style.setProperty('--rot',((Math.random()-0.5)*16)+'deg');
