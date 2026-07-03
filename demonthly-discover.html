@@ -9,148 +9,167 @@
 <style>
   :root{--sky:#45CEEB;--ink:#0f0f14;--yellow:#FFE800;}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-  body{font-family:'Pretendard','Apple SD Gothic Neo',sans-serif;background:var(--sky);color:var(--ink);
-       overflow-x:hidden;-webkit-overflow-scrolling:touch;}
-  /* 상단(워드마크+탭) = sticky 고정. 탭은 스크롤해도 항상 위에. */
-  .top{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,var(--sky) 78%,rgba(69,206,235,0));
-       padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;}
-  .wm{font-family:'Black Han Sans';color:var(--yellow);font-size:clamp(34px,10vw,54px);line-height:.9;letter-spacing:-1px;text-align:center;text-shadow:0 4px 0 rgba(0,0,0,.08);display:inline-flex;align-items:baseline;width:100%;justify-content:center;}
+  html,body{height:100%;}
+  body{font-family:'Pretendard','Apple SD Gothic Neo',sans-serif;background:var(--sky);color:var(--ink);overflow:hidden;}
+  /* ===== 실제 발견(dp-*) 구성 그대로 ===== */
+  .dp-scroll{position:absolute;inset:0;overflow-y:auto;background:#45CEEB;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-top:118px;}
+  .dp-scroll::-webkit-scrollbar{display:none;}
+  .dp-band{position:relative;}
+  .dp-slot{position:absolute;transform:translate(-50%,-50%) rotate(var(--rot,0deg));width:var(--w);height:var(--h);display:flex;align-items:center;justify-content:center;z-index:1;}
+  .dp-slot.info{z-index:5;cursor:pointer;transition:width .32s cubic-bezier(.34,1.4,.5,1),height .32s cubic-bezier(.34,1.4,.5,1);}
+  .dp-shape{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 4px 11px rgba(0,0,0,.5));}
+  .dp-burst{clip-path:polygon(50% 0%,61% 26%,87% 13%,74% 39%,100% 47%,79% 62%,90% 90%,61% 75%,50% 100%,39% 75%,10% 90%,21% 62%,0% 47%,26% 39%,13% 13%,39% 26%);}
+  .dp-tri{clip-path:polygon(50% 3%,3% 97%,97% 97%);}
+  .dp-spark{clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);}
+  .dp-circle,.dp-ellipse{border-radius:50%;}
+  .dp-square{border-radius:6px;}
+  .dp-stack .dp-shape{background:none;filter:none;}
+  .dp-stack .p{position:absolute;background:#F4F1E8;border:1.5px solid #cfc7b2;border-radius:3px;width:74%;height:74%;box-shadow:0 3px 8px rgba(0,0,0,.45);}
+  .dp-stack .p:nth-child(1){left:0;top:0;transform:rotate(-8deg);} .dp-stack .p:nth-child(2){left:14%;top:12%;transform:rotate(4deg);} .dp-stack .p:nth-child(3){left:26%;top:24%;transform:rotate(-3deg);}
+  .dp-notes{font-size:var(--w);line-height:1;font-weight:900;filter:drop-shadow(0 3px 7px rgba(0,0,0,.5));}
+  .dp-s-text{position:relative;z-index:2;text-align:center;font-weight:800;line-height:1.5;letter-spacing:-.2px;pointer-events:none;white-space:nowrap;color:#1b1522;font-size:15px;}
+  .dp-tri-wrap .dp-s-text{transform:translateY(28%);}
+  /* 곡 도형 배지 = 득표수 + ▲ 투표 / HOT */
+  .dp-vbadge{position:absolute;bottom:2px;left:50%;transform:translate(-50%,50%) rotate(calc(-1*var(--rot,0deg)));z-index:8;display:inline-flex;align-items:center;background:var(--ink);border-radius:22px;padding:2px 2px 2px 9px;box-shadow:0 2px 8px rgba(0,0,0,.4);white-space:nowrap;}
+  .dp-vbadge .vc{color:#fff;font-weight:900;font-size:12px;margin-right:5px;}
+  .dp-vbadge .up{width:23px;height:23px;border-radius:50%;border:none;background:var(--yellow);color:var(--ink);font-size:13px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
+  .dp-vbadge .up:active{transform:scale(.85);}
+  .dp-hot{position:absolute;top:2px;right:2px;transform:translate(30%,-30%) rotate(calc(-1*var(--rot,0deg)));z-index:8;background:#fff;border-radius:20px;padding:1px 8px;font-size:11px;font-weight:900;color:#ff4d2e;box-shadow:0 2px 6px rgba(0,0,0,.3);}
+  .dp-slot.info.play .dp-shape{animation:pl .5s ease;}
+  @keyframes pl{0%{transform:scale(1);}30%{transform:scale(1.08);}100%{transform:scale(1);}}
+  .pop{position:absolute;z-index:9;font-family:'Black Han Sans';font-size:22px;pointer-events:none;text-shadow:0 2px 6px rgba(0,0,0,.35);animation:pop .7s ease forwards;}
+  @keyframes pop{0%{opacity:0;transform:translateY(6px) scale(.6);}25%{opacity:1;transform:translateY(-10px) scale(1.1);}100%{opacity:0;transform:translateY(-34px);}}
+  /* 떨어지는 장식 도형 */
+  .dp-fall-layer{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:6;}
+  .dp-fall{position:absolute;top:0;width:var(--fw,30px);height:var(--fw,30px);animation:dpFall linear infinite;}
+  @keyframes dpFall{0%{transform:translateY(-16vh) rotate(-12deg);opacity:0;}7%{opacity:1;}90%{opacity:1;}100%{transform:translateY(112vh) rotate(220deg);opacity:0;}}
+
+  /* ===== 상단 고정: demon'thly 워드마크 + 탭 ===== */
+  .fixtop{position:fixed;top:0;left:0;right:0;z-index:20;padding:calc(env(safe-area-inset-top) + 8px) 12px 8px;
+          background:linear-gradient(180deg,#45CEEB 74%,rgba(69,206,235,0));}
+  .wm{font-family:'Black Han Sans';color:var(--yellow);font-size:clamp(30px,9vw,48px);line-height:.9;letter-spacing:-1px;text-align:center;text-shadow:0 4px 0 rgba(0,0,0,.07);display:inline-flex;align-items:baseline;width:100%;justify-content:center;}
   .wm .silent{position:relative;font-size:.6em;opacity:.4;transform:translateY(-.06em);margin:0 -.02em;}
   .wm .silent::after{content:"";position:absolute;left:-6%;right:-6%;top:52%;height:.09em;background:currentColor;transform:rotate(-14deg);border-radius:2px;opacity:.85;}
-  .sub{text-align:center;font-weight:800;font-size:12px;opacity:.82;margin-top:2px;}
-  .sub b{background:var(--ink);color:#fff;padding:2px 8px;border-radius:5px;}
-  .tabs{display:flex;gap:8px;margin:12px auto 0;max-width:520px;}
-  .tab{flex:1;background:#fff;border:2.5px solid var(--ink);border-radius:11px;padding:11px 6px;font-weight:900;font-size:15px;color:var(--ink);cursor:pointer;transition:transform .1s;}
-  .tab.on{background:var(--ink);color:#fff;}
-  .tab:active{transform:scale(.96);}
-  /* 스테이지 = 도형 개수만큼 길어지는 스크롤 영역 (탭 소환은 탭탭으로, 보긴 스크롤로) */
-  .stage{position:relative;margin:6px 8px;padding-bottom:calc(env(safe-area-inset-bottom) + 16px);}
-
-  .fs{position:absolute;display:flex;align-items:center;justify-content:center;cursor:pointer;
-      animation:flyIn .6s cubic-bezier(.2,1,.3,1) both;
-      transition:width .3s cubic-bezier(.34,1.4,.5,1),height .3s cubic-bezier(.34,1.4,.5,1),left .3s,top .3s;}
-  @keyframes flyIn{0%{transform:translate(var(--fx),var(--fy)) scale(.35) rotate(var(--r0));opacity:0;}100%{transform:translate(0,0) scale(1) rotate(var(--rot));opacity:1;}}
-  .fs.play{animation:play .5s ease;}
-  @keyframes play{0%{transform:rotate(var(--rot)) scale(1);}30%{transform:rotate(var(--rot)) scale(1.12);}100%{transform:rotate(var(--rot)) scale(1);}}
-  .fs.grew{animation:grew .28s ease;}
-  @keyframes grew{0%{transform:rotate(var(--rot)) scale(1);}45%{transform:rotate(var(--rot)) scale(1.12);}100%{transform:rotate(var(--rot)) scale(1);}}
-  .fs .bg{position:absolute;inset:0;}
-  .fs .lbl{position:relative;z-index:2;text-align:center;color:#1b1522;font-weight:900;padding:4px;pointer-events:none;line-height:1.05;}
-  .fs .lbl .nm{font-size:13px;display:block;} .fs .lbl .tg{font-size:10px;opacity:.8;display:block;margin-top:2px;font-weight:800;}
-  .fs .play-ic{position:absolute;z-index:2;top:8px;left:8px;font-size:12px;opacity:.55;}
-  .sh-circle{border-radius:50%;} .sh-square{border-radius:12px;}
-  .sh-burst{clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);}
-  .sh-tri{clip-path:polygon(50% 4%,97% 96%,3% 96%);}
-  .sh-dia{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);}
-  /* 투표수 + 투표버튼(▲) = 도형 아래 알약. 도형 탭=재생, 이 버튼=투표 */
-  .vbadge{position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);z-index:4;display:inline-flex;align-items:center;gap:0;
-          background:var(--ink);border-radius:22px;padding:2px 2px 2px 10px;box-shadow:0 2px 8px rgba(0,0,0,.35);white-space:nowrap;}
-  .vbadge .vc{color:#fff;font-weight:900;font-size:12px;margin-right:6px;}
-  .vbadge .up{width:24px;height:24px;border-radius:50%;border:none;background:var(--yellow);color:var(--ink);font-size:13px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;transition:transform .1s;}
-  .vbadge .up:active{transform:scale(.85);}
-  .hot-badge{position:absolute;top:-6px;right:-6px;z-index:4;background:#fff;border-radius:20px;padding:1px 8px;font-size:11px;font-weight:900;color:#ff4d2e;box-shadow:0 2px 6px rgba(0,0,0,.25);}
-  .pop{position:absolute;z-index:6;font-family:'Black Han Sans';font-size:20px;pointer-events:none;text-shadow:0 2px 6px rgba(0,0,0,.35);animation:pop .7s ease forwards;}
-  @keyframes pop{0%{opacity:0;transform:translateY(6px) scale(.6);}25%{opacity:1;transform:translateY(-8px) scale(1.1);}100%{opacity:0;transform:translateY(-30px) scale(1);}}
-  .flag{position:fixed;top:calc(env(safe-area-inset-top) + 6px);right:8px;background:rgba(15,15,20,.72);color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px;z-index:30;}
-  /* 재생 토스트(하단) */
-  .nowbar{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);z-index:25;background:var(--ink);color:#fff;
-          border-radius:14px;padding:11px 14px;display:flex;align-items:center;gap:11px;box-shadow:0 8px 24px rgba(0,0,0,.3);
-          transform:translateY(140%);transition:transform .3s cubic-bezier(.2,1,.3,1);}
+  .tabs{display:flex;gap:8px;margin:8px auto 0;max-width:520px;}
+  .tab{flex:1;background:#fff;border:2.5px solid var(--ink);border-radius:11px;padding:9px 6px;font-weight:900;font-size:14px;color:var(--ink);cursor:pointer;transition:transform .1s;}
+  .tab.on{background:var(--ink);color:#fff;} .tab:active{transform:scale(.96);}
+  .flag{position:fixed;top:calc(env(safe-area-inset-top) + 5px);right:8px;background:rgba(15,15,20,.72);color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px;z-index:30;}
+  .nowbar{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);z-index:25;background:var(--ink);color:#fff;border-radius:14px;padding:11px 14px;display:flex;align-items:center;gap:11px;box-shadow:0 8px 24px rgba(0,0,0,.3);transform:translateY(160%);transition:transform .3s cubic-bezier(.2,1,.3,1);}
   .nowbar.show{transform:none;}
-  .nowbar .disc{width:34px;height:34px;border-radius:50%;flex:0 0 auto;}
-  .nowbar .t{font-weight:900;font-size:14px;} .nowbar .t small{display:block;font-weight:700;font-size:11px;opacity:.6;}
-  .nowbar .pl{margin-left:auto;font-size:20px;color:var(--yellow);}
+  .nowbar .disc{width:34px;height:34px;border-radius:50%;flex:0 0 auto;} .nowbar .t{font-weight:900;font-size:14px;} .nowbar .t small{display:block;font-weight:700;font-size:11px;opacity:.6;} .nowbar .pl{margin-left:auto;font-size:20px;color:var(--yellow);}
 </style>
 </head>
 <body>
   <div class="flag">🧪 발견 테스트</div>
-  <div class="top">
+  <div class="fixtop">
     <div class="wm">demo<span class="silent">n</span>thly</div>
-    <div class="sub"><b>이달의 데모</b> — 탭으로 소환 · 스크롤로 쭉 · 도형 탭=재생</div>
     <div class="tabs">
       <button class="tab on" data-tab="vote">🗳️ 이달의 투표</button>
       <button class="tab" data-tab="hot">🔥 HOT 데모</button>
     </div>
   </div>
-  <div class="stage" id="stage"></div>
+  <div class="dp-scroll" id="scroll"></div>
+  <div class="dp-fall-layer" id="fall"></div>
   <div class="nowbar" id="nowbar"><div class="disc" id="nbDisc"></div><div class="t" id="nbT">—<small>재생 중</small></div><div class="pl">▶</div></div>
 
 <script>
-  var COL=['#E24A9C','#7FB2EC','#86CE34','#B49BEE','#F06CA8','#FF8A6E','#26C6C6','#FFB03A'];
+  var COL=['#E24A9C','#7FB2EC','#86CE34','#B49BEE','#F06CA8','#FF8A6E','#26C6C6','#FFB03A','#FFD24A','#3E6FD9'];
+  // 실제 발견 TPL 과 같은 손배치(퍼센트). info=곡(밝은 도형), 나머지=장식.
+  var TPL=[
+    {x:13,y:6,  w:60, cls:'ellipse',color:'#FFD24A'},
+    {x:60,y:8,  w:42, cls:'spark',  color:'#26C6C6'},
+    {x:33,y:19, w:150,cls:'burst',  info:1},
+    {x:79,y:26, w:150,cls:'tri',    info:1},
+    {x:16,y:35, w:80, cls:'stack',  color:'#F4F1E8'},
+    {x:40,y:38, w:38, cls:'notes',  color:'#E24A9C',glyph:'♪'},
+    {x:44,y:46, w:132,cls:'circle', info:1},
+    {x:82,y:52, w:158,cls:'tri',    info:1},
+    {x:21,y:60, w:132,cls:'burst',  info:1},
+    {x:72,y:68, w:140,cls:'burst',  info:1},
+    {x:25,y:76, w:52, cls:'square', color:'#FFD24A'},
+    {x:90,y:16, w:30, cls:'spark',  color:'#E24A9C'},
+    {x:58,y:62, w:34, cls:'notes',  color:'#26C6C6',glyph:'♫'},
+    {x:47,y:73, w:132,cls:'circle', info:1},
+    {x:10,y:88, w:44, cls:'burst',  color:'#3E6FD9'},
+    {x:80,y:84, w:132,cls:'tri',    info:1},
+    {x:53,y:88, w:42, cls:'spark',  color:'#F06CA8'},
+    {x:34,y:93, w:132,cls:'burst',  info:1}
+  ];
   var voteDemos=[
-    {nm:'이면',tg:'#발라드',votes:44,sh:'sh-tri'},{nm:'여우야',tg:'#여름',votes:31,sh:'sh-burst'},
-    {nm:'짝사랑',tg:'#트로트',votes:22,sh:'sh-circle'},{nm:'문틈',tg:'#인디',votes:17,sh:'sh-burst'},
-    {nm:'잠수이별',tg:'#시티팝',votes:12,sh:'sh-dia'},{nm:'6월월평',tg:'#어쿠스틱',votes:9,sh:'sh-circle'},
-    {nm:'첫눈',tg:'#발라드',votes:7,sh:'sh-tri'},{nm:'노을',tg:'#팝',votes:5,sh:'sh-square'},
-    {nm:'파도',tg:'#시티팝',votes:4,sh:'sh-burst'},{nm:'골목길',tg:'#인디',votes:3,sh:'sh-circle'},
-    {nm:'그믐',tg:'#발라드',votes:2,sh:'sh-dia'},{nm:'환승',tg:'#힙합',votes:1,sh:'sh-tri'},
-    {nm:'우산',tg:'#발라드',votes:6,sh:'sh-circle'},{nm:'별밤',tg:'#팝',votes:8,sh:'sh-burst'},
-    {nm:'창문',tg:'#인디',votes:10,sh:'sh-square'},{nm:'모래성',tg:'#시티팝',votes:14,sh:'sh-tri'}
+    {nm:'이면',tags:['#발라드','#임설아'],votes:44},{nm:'여우야',tags:['#여름','#ㅠㅠ'],votes:31},
+    {nm:'짝사랑',tags:['#트로트','#뽕짝'],votes:22},{nm:'문틈',tags:['#인디','#6월'],votes:17},
+    {nm:'잠수이별',tags:['#시티팝'],votes:12},{nm:'6월월평',tags:['#어쿠스틱'],votes:9},
+    {nm:'노을',tags:['#팝'],votes:7},{nm:'파도',tags:['#시티팝'],votes:5}
   ];
   var hotDemos=[
-    {nm:'승빈이존잘',tg:'#힙합',plays:342,sh:'sh-circle'},{nm:'아애이오우',tg:'#R&B',plays:288,sh:'sh-burst'},
-    {nm:'푸르름',tg:'#밴드',plays:201,sh:'sh-tri'},{nm:'뮤게이징',tg:'#EDM',plays:176,sh:'sh-square'},
-    {nm:'자작곡',tg:'#로파이',plays:120,sh:'sh-dia'},{nm:'15살차이',tg:'#발라드',plays:98,sh:'sh-burst'},
-    {nm:'새벽세시',tg:'#R&B',plays:77,sh:'sh-circle'},{nm:'가로등',tg:'#인디',plays:54,sh:'sh-tri'},
-    {nm:'빗소리',tg:'#로파이',plays:41,sh:'sh-burst'},{nm:'첫차',tg:'#팝',plays:33,sh:'sh-circle'},
-    {nm:'노트',tg:'#어쿠스틱',plays:22,sh:'sh-dia'},{nm:'하울',tg:'#밴드',plays:12,sh:'sh-tri'},
-    {nm:'파랑',tg:'#R&B',plays:66,sh:'sh-circle'},{nm:'노선',tg:'#힙합',plays:48,sh:'sh-burst'},
-    {nm:'해변',tg:'#시티팝',plays:29,sh:'sh-square'},{nm:'담벼락',tg:'#인디',plays:18,sh:'sh-tri'}
+    {nm:'승빈이존잘',tags:['#힙합'],plays:342},{nm:'아애이오우',tags:['#R&B'],plays:288},
+    {nm:'푸르름',tags:['#밴드'],plays:201},{nm:'뮤게이징',tags:['#EDM'],plays:176},
+    {nm:'자작곡',tags:['#로파이'],plays:120},{nm:'15살차이',tags:['#발라드'],plays:98},
+    {nm:'새벽세시',tags:['#R&B'],plays:77},{nm:'가로등',tags:['#인디'],plays:54}
   ];
-  var stage=document.getElementById('stage'), nowbar=document.getElementById('nowbar');
-  function sV(v){return Math.round(80+Math.min(v,60)*2.0);}
-  function sP(p){return Math.round(78+Math.min(p,400)*0.20);}
-  function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
-  function render(tab){
-    stage.innerHTML='';
-    var data=tab==='vote'?voteDemos:hotDemos, W=stage.clientWidth||360;
-    // 2열 지그재그 + 각 도형 높이만큼 아래로 → 스테이지가 길어져 스크롤됨
-    var cols=2, colX=[W*0.27,W*0.72], colY=[10,70];
-    data.forEach(function(d,i){
-      var size=tab==='vote'?sV(d.votes):sP(d.plays), col=COL[i%COL.length], c=i%cols;
-      var cx=colX[c]+(Math.random()-.5)*W*.06, cy=colY[c];
-      var tx=clamp(cx-size/2,4,W-size-4), ty=cy;
-      colY[c]=cy+size+34;   // 다음 칸 아래로 (뱃지 공간 포함)
-      var el=document.createElement('div'); el.className='fs'; el.style.width=size+'px'; el.style.height=size+'px';
-      el.style.left=tx+'px'; el.style.top=ty+'px';
-      el.style.setProperty('--fx',((c===0?-1:1)*(W*.5+Math.random()*W*.3))+'px');
-      el.style.setProperty('--fy',((Math.random()-.5)*160)+'px');
-      el.style.setProperty('--r0',((Math.random()-.5)*90)+'deg');
-      el.style.setProperty('--rot',((Math.random()-.5)*14)+'deg');
-      el.style.animationDelay=(i*55)+'ms';
-      var badge=tab==='vote'
-        ? '<div class="vbadge"><span class="vc">🗳️ '+d.votes+'</span><button class="up" title="투표">▲</button></div>'
-        : '<div class="hot-badge">🔥 '+d.plays+'</div>';
-      el.innerHTML='<div class="bg '+d.sh+'" style="background:'+col+'"></div><span class="play-ic">▶</span><div class="lbl"><span class="nm">'+d.nm+'</span><span class="tg">'+d.tg+'</span></div>'+badge;
-      el.__d=d; el.__col=col;
-      el.addEventListener('click',function(){ play(el); });                 // 도형 탭 = 재생
-      var up=el.querySelector('.up');
-      if(up) up.addEventListener('click',function(e){ e.stopPropagation(); vote(el); });  // ▲ = 투표
-      stage.appendChild(el);
-    });
-    stage.style.height=(Math.max(colY[0],colY[1])+10)+'px';   // 스크롤 길이
+  var scroll=document.getElementById('scroll'), nowbar=document.getElementById('nowbar');
+  function sV(v){return Math.round(96+Math.min(v,60)*2.4);}
+  function sP(p){return Math.round(92+Math.min(p,400)*0.28);}
+  function mkShape(cls,color,glyph){
+    if(cls==='stack') return '<div class="dp-shape"><div class="p"></div><div class="p"></div><div class="p"></div></div>';
+    if(cls==='notes') return '<div class="dp-notes" style="color:'+color+'">'+glyph+'</div>';
+    return '<div class="dp-shape dp-'+cls+'" style="background:'+color+'"></div>';
   }
-  function play(el){
-    var d=el.__d;
+  function render(tab){
+    scroll.innerHTML='';
+    var data=tab==='vote'?voteDemos:hotDemos;
+    var BANDS=2;                                   // 2밴드 → 스크롤 아래로 쭉
+    var bandH=Math.round(window.innerHeight*0.96);
+    var di=0, ci=0;
+    for(var b=0;b<BANDS;b++){
+      var band=document.createElement('div'); band.className='dp-band'; band.style.height=bandH+'px'; scroll.appendChild(band);
+      TPL.forEach(function(s){
+        var el=document.createElement('div');
+        el.className='dp-slot'+(s.info?' info':'')+(s.cls==='tri'?' dp-tri-wrap':'');
+        el.style.left=(s.x+(Math.random()-.5)*4)+'%'; el.style.top=(s.y+(Math.random()-.5)*3)+'%';
+        el.style.setProperty('--rot',((Math.random()-.5)*16)+'deg');
+        if(s.info){
+          var d=data[di%data.length]; di++;
+          var col=COL[ci%COL.length]; ci++;
+          var size=tab==='vote'?sV(d.votes):sP(d.plays);
+          el.style.setProperty('--w',size+'px'); el.style.setProperty('--h',size+'px');
+          var txt=d.tags.slice(0,3).map(function(x){return x;}).join('<br>');
+          var badge=tab==='vote'
+            ? '<div class="dp-vbadge"><span class="vc">🗳️ '+d.votes+'</span><button class="up">▲</button></div>'
+            : '<div class="dp-hot">🔥 '+d.plays+'</div>';
+          el.innerHTML=mkShape(s.cls,col)+'<div class="dp-s-text">'+txt+'</div>'+badge;
+          el.__d=d;
+          el.addEventListener('click',function(){ play(el,col,d); });
+          var up=el.querySelector('.up'); if(up) up.addEventListener('click',function(e){e.stopPropagation();vote(el);});
+        } else {
+          el.style.setProperty('--w',s.w+'px'); el.style.setProperty('--h',s.w+'px');
+          el.innerHTML=mkShape(s.cls,s.color,s.glyph);
+        }
+        band.appendChild(el);
+      });
+    }
+  }
+  function play(el,col,d){
     el.classList.remove('play'); void el.offsetWidth; el.classList.add('play');
-    document.getElementById('nbDisc').style.background=el.__col;
-    document.getElementById('nbT').innerHTML=d.nm+' <small>'+d.tg+' · 재생 중 ▶</small>';
+    document.getElementById('nbDisc').style.background=col;
+    document.getElementById('nbT').innerHTML=d.nm+' <small>'+d.tags[0]+' · 재생 중 ▶</small>';
     nowbar.classList.add('show');
   }
   function vote(el){
     var d=el.__d; d.votes++;
-    var W=stage.clientWidth, oldS=el.offsetWidth, newS=sV(d.votes), dl=(newS-oldS)/2;
-    var nl=clamp(parseFloat(el.style.left)-dl,4,W-newS-4), nt=parseFloat(el.style.top)-dl;
-    el.style.left=nl+'px'; el.style.top=nt+'px'; el.style.width=newS+'px'; el.style.height=newS+'px';
-    el.classList.remove('grew'); void el.offsetWidth; el.classList.add('grew');
+    el.style.setProperty('--w',sV(d.votes)+'px'); el.style.setProperty('--h',sV(d.votes)+'px');
     var vc=el.querySelector('.vc'); if(vc)vc.textContent='🗳️ '+d.votes;
-    var p=document.createElement('div'); p.className='pop'; p.textContent='+1'; p.style.color=el.__col;
-    p.style.left=(nl+newS/2-10)+'px'; p.style.top=nt+'px'; stage.appendChild(p); setTimeout(function(){p.remove();},700);
+    var r=el.getBoundingClientRect();
+    var p=document.createElement('div'); p.className='pop'; p.textContent='+1'; p.style.color='#FFE800';
+    p.style.left=(r.left+r.width/2-10)+'px'; p.style.top=(r.top)+'px'; document.body.appendChild(p); setTimeout(function(){p.remove();},700);
   }
-  Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(t){t.addEventListener('click',function(){document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on');});t.classList.add('on');nowbar.classList.remove('show');render(t.dataset.tab);window.scrollTo({top:0,behavior:'smooth'});});});
-  var booted=false;
-  function boot(){ if(booted)return; if(stage.clientWidth<50){return setTimeout(boot,50);} booted=true; render('vote'); }
-  window.addEventListener('load',boot); setTimeout(boot,300);
+  // 떨어지는 도형
+  (function(){
+    var cfg=[{c:'circle',col:'#FFD24A',w:26,l:8,d:6.4},{c:'tri',col:'#E24A9C',w:34,l:26,d:7.6},{c:'square',col:'#26C6C6',w:22,l:44,d:6.8},{c:'spark',col:'#B49BEE',w:28,l:60,d:8},{c:'circle',col:'#7FB2EC',w:20,l:80,d:6},{c:'tri',col:'#FFD24A',w:24,l:92,d:7.2}];
+    document.getElementById('fall').innerHTML=cfg.map(function(f,i){return '<span class="dp-fall" style="left:'+f.l+'%;--fw:'+f.w+'px;animation-duration:'+f.d+'s;animation-delay:'+(i*0.8)+'s"><div class="dp-shape dp-'+f.c+'" style="background:'+f.col+'"></div></span>';}).join('');
+  })();
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(t){t.addEventListener('click',function(){document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on');});t.classList.add('on');nowbar.classList.remove('show');scroll.scrollTop=0;render(t.dataset.tab);});});
+  render('vote');
 </script>
 </body>
 </html>
