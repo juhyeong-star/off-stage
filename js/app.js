@@ -4057,7 +4057,6 @@ function renderArtistShop(artistName){
         return '<div class="ash-album" onclick="navigateTo(\'album:'+encodeURIComponent(al.pid)+'\')">'
           +'<div class="ash-ahead"><span class="ash-adate">'+esc(_ashDate(al.last))+'</span>'+esc(artistName)+'</div>'
           +'<div class="ash-box" style="--bx:'+al.col+';background:'+al.col+';">'
-          +'<div class="ash-box-title">'+esc(al.title)+'</div>'
           +'<div class="ash-box-rows">'+drows+'</div></div></div>';
       }).join('')+'</div>';
       body = filterBar + boxes;

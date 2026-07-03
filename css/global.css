@@ -11990,11 +11990,17 @@ body {
   :root { --player-height: 60px; }
   body {
     padding-top: calc(var(--mobile-tab-h, 56px) + env(safe-area-inset-top, 0px) + 8px) !important;
-    padding-bottom: calc(var(--player-height) + var(--safe-bottom) + 8px) !important;
+    /* +18px = 미니바를 0.5cm 위로 띄운 만큼 콘텐츠 예약도 늘림 */
+    padding-bottom: calc(var(--player-height) + var(--safe-bottom) + 26px) !important;
   }
   /* Player 바닥 — tab 이 위로 갔으니 그대로 */
   #global-player {
     bottom: var(--safe-bottom) !important;
+  }
+  /* 미니바(펼침 아님)만 0.5cm(18px) 위로 — 아래 18px 는 box-shadow 로 하늘색 채워 검은 틈 방지 (사용자 요청) */
+  #global-player:not(.expanded) {
+    bottom: calc(var(--safe-bottom) + 18px) !important;
+    box-shadow: 0 18px 0 0 #45ceeb;
   }
   /* mobile-tab-bar — top safe area 사용 */
   .mobile-tab-bar {
