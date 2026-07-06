@@ -7,9 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#45CEEB; --ink:#111; --y:#FFE800;
-  }
+  :root{ --bg:#45CEEB; --ink:#111; --y:#FFE800; }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0;}
   body{
@@ -17,299 +15,197 @@
     font-family:'Pretendard','Apple SD Gothic Neo',system-ui,sans-serif;
     padding:12px 10px 70px; min-height:100vh; overflow-x:hidden; position:relative;
   }
-  /* ── 지금 사이트 배경: 하늘에서 떨어지는 작은 도형들 (뒤 레이어) ── */
-  .fall-layer{position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0;}
-  .fall{position:absolute; top:0; width:var(--fw,26px); height:var(--fw,26px); animation:fall linear infinite; opacity:.9;}
-  .fall > i{display:block; width:100%; height:100%; background:var(--fc,#E24A9C); filter:drop-shadow(1px 2px 0 rgba(0,0,0,.18));}
-  .fall.c-circle > i{border-radius:50%;}
-  .fall.c-square > i{border-radius:5px;}
-  .fall.c-blob > i{border-radius:58% 42% 55% 45% / 48% 55% 45% 52%;}
-  .fall.c-star > i{clip-path:polygon(50% 0%,71% 21%,98% 35%,84% 61%,79% 91%,50% 86%,21% 91%,16% 61%,2% 35%,29% 21%);}
-  @keyframes fall{0%{transform:translateY(-14vh) rotate(-12deg); opacity:0;} 8%{opacity:.9;} 90%{opacity:.9;} 100%{transform:translateY(114vh) rotate(200deg); opacity:0;}}
-  /* 콘텐츠는 배경 위 */
+  /* ── 배경: 큰 도형 은은히 + 하늘에서 떨어지는 작은 도형 ── */
+  .bg-layer{position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0;}
+  .bg-big{position:absolute; opacity:.22; filter:blur(.3px);}
+  .fall{position:absolute; top:0; width:var(--fw,26px); height:var(--fw,26px); animation:fall linear infinite; opacity:.92;}
+  .fall>i,.bg-big>i{display:block; width:100%; height:100%; background:var(--fc,#E24A9C); filter:drop-shadow(1px 2px 0 rgba(0,0,0,.15));}
+  .c-circle>i{border-radius:50%;}
+  .c-square>i{border-radius:6px;}
+  .c-blob>i{border-radius:58% 42% 55% 45% / 48% 55% 45% 52%;}
+  .c-star>i{clip-path:polygon(50% 0%,71% 21%,98% 35%,84% 61%,79% 91%,50% 86%,21% 91%,16% 61%,2% 35%,29% 21%);}
+  .c-hex>i{clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);}
+  @keyframes fall{0%{transform:translateY(-14vh) rotate(-12deg);opacity:0;}8%{opacity:.92;}90%{opacity:.92;}100%{transform:translateY(116vh) rotate(200deg);opacity:0;}}
   h1,.sub,#app{position:relative; z-index:2;}
-  h1{
-    font-family:'Black Han Sans',sans-serif; font-size:30px; margin:2px 0 0;
-    color:var(--y); text-shadow:2px 3px 0 rgba(0,0,0,.25); letter-spacing:1px;
-  }
+
+  h1{font-family:'Black Han Sans',sans-serif; font-size:30px; margin:2px 0 0;
+    color:var(--y); text-shadow:2px 3px 0 rgba(0,0,0,.25); letter-spacing:1px;}
   .sub{font-size:12px; color:rgba(0,0,0,.55); margin:2px 0 14px; font-weight:700;}
 
-  /* ── 카테고리 — 화면 꽉 차게 ── */
-  .cat{margin:0 0 26px; position:relative;}
-  .cat-pill{
-    display:inline-block; background:#fff; color:#111;
-    font-weight:900; font-size:15px; padding:7px 16px; border-radius:10px;
-    border:2px solid #111; box-shadow:3px 3px 0 #111;
-    position:relative; z-index:10; margin-left:8px;
-  }
+  /* ── 카테고리 — 정사각형 칸 (모바일 한눈에) ── */
+  .cat{margin:0 0 24px; position:relative;}
+  .cat-pill{display:inline-block; background:#fff; color:#111; font-weight:900; font-size:15px;
+    padding:7px 16px; border-radius:10px; border:2px solid #111; box-shadow:3px 3px 0 #111;
+    position:relative; z-index:10; margin-left:8px;}
   .cat-box{
     border:3px dashed rgba(255,255,255,.95); border-radius:18px; margin-top:-16px;
     position:relative; overflow:hidden;
-    height:clamp(360px, 62vh, 460px);   /* 아담하게 — 화면 꽉 채우지 않음 */
+    aspect-ratio:1/1; height:auto; max-height:min(60vh,440px);   /* 정사각형 */
     background:rgba(255,255,255,.08);
   }
   .cat-foot{font-size:11.5px; color:rgba(0,0,0,.5); margin:8px 8px 0; font-weight:600;}
 
-  /* ── 떠다니는 도형 ── */
-  .shape{
-    position:absolute; left:0; top:0;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center; cursor:pointer;
-    font-weight:800; line-height:1.25; color:#111;
-    user-select:none; will-change:transform;
-  }
-  .shape .bg{
-    position:absolute; inset:0; z-index:1;
-    background:var(--shape-color,#E24A9C);
-    filter:drop-shadow(2px 3px 0 rgba(0,0,0,.20));
-    transition:filter .2s;
-  }
+  /* ── 떠다니는 투표 도형 ── */
+  .shape{position:absolute; left:0; top:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; cursor:pointer;
+    font-weight:800; line-height:1.22; color:#111; user-select:none; will-change:transform;}
+  .shape .bg{position:absolute; inset:0; z-index:1; background:var(--shape-color,#E24A9C);
+    filter:drop-shadow(2px 3px 0 rgba(0,0,0,.2)); transition:filter .2s;}
   .shape .tags{position:relative; z-index:2; padding:4px; pointer-events:none;}
-  .shape .cnt{
-    position:relative; z-index:2; margin-top:3px; pointer-events:none;
-    background:rgba(0,0,0,.78); color:#fff;
-    font-size:11px; font-weight:900; padding:2px 9px; border-radius:999px;
-  }
-  /* 재생중 — 은은한 펄스 링 + ♪ */
-  .shape.playing .bg{ filter:drop-shadow(2px 3px 0 rgba(0,0,0,.2)) drop-shadow(0 0 14px rgba(255,232,0,.95)); }
-  .shape .note-ico{
-    position:absolute; top:-6px; right:-2px; z-index:6; font-size:18px; display:none;
-    animation:bob 1s ease-in-out infinite alternate;
-    filter:drop-shadow(1px 1px 0 rgba(0,0,0,.4));
-  }
-  .shape.playing .note-ico{display:block;}
-  @keyframes bob{from{transform:translateY(0);}to{transform:translateY(-5px);}}
-  /* 도형 모양 (삼각형 제외) */
   .s-circle .bg{border-radius:50%;}
-  .s-star .bg{clip-path:polygon(50% 0%, 71% 21%, 98% 35%, 84% 61%, 79% 91%, 50% 86%, 21% 91%, 16% 61%, 2% 35%, 29% 21%);}
+  .s-star .bg{clip-path:polygon(50% 0%,71% 21%,98% 35%,84% 61%,79% 91%,50% 86%,21% 91%,16% 61%,2% 35%,29% 21%);}
   .s-star .tags{padding-top:8%;}
   .s-hex .bg{clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);}
   .s-square .bg{border-radius:16px;}
   .s-blob .bg{border-radius:58% 42% 55% 45% / 48% 55% 45% 52%;}
-  .crown{position:absolute; top:-15px; left:50%; transform:translateX(-50%); font-size:22px; z-index:6;
-    filter:drop-shadow(1px 2px 0 rgba(0,0,0,.4)); pointer-events:none;}
-  @keyframes pop{0%{transform:scale(1);}40%{transform:scale(1.15);}100%{transform:scale(1);}}
-  .shape.pop{animation:pop .4s ease-out;}
-  /* +1 투표 플로터 */
-  .plus1{
-    position:absolute; z-index:20; font-family:'Black Han Sans',sans-serif; font-size:22px; color:var(--y);
-    text-shadow:1px 2px 0 rgba(0,0,0,.5); pointer-events:none;
-    animation:rise .8s ease-out forwards;
-  }
-  @keyframes rise{from{opacity:1; transform:translateY(0);}to{opacity:0; transform:translateY(-40px);}}
 
-  .note-bar{
-    position:fixed; left:0; right:0; bottom:0; padding:9px 14px; text-align:center;
-    background:rgba(0,0,0,.88); color:#fff; font-size:11.5px; z-index:50;
+  /* 투표수 — 상위 1·2위만, 흰색, 우측 상단 */
+  .cnt{position:absolute; top:9%; right:12%; z-index:4; display:none;
+    font-family:'Black Han Sans',sans-serif; color:#fff; font-size:1.15em; line-height:1;
+    text-shadow:0 1px 3px rgba(0,0,0,.55), 1px 1px 0 rgba(0,0,0,.35); pointer-events:none;}
+  .shape.show-cnt .cnt{display:block;}
+
+  /* 1위 = 네온사인 반짝임 (왕관 대신) */
+  @keyframes neon{
+    0%,100%{filter:drop-shadow(2px 3px 0 rgba(0,0,0,.2)) drop-shadow(0 0 4px #fff) drop-shadow(0 0 10px var(--shape-color));}
+    50%{filter:drop-shadow(2px 3px 0 rgba(0,0,0,.2)) drop-shadow(0 0 14px #fff) drop-shadow(0 0 30px var(--shape-color)) drop-shadow(0 0 44px var(--shape-color));}
   }
+  .shape.top .bg{animation:neon 1.15s ease-in-out infinite;}
+
+  /* 재생중 ♪ */
+  .shape .note-ico{position:absolute; top:-6px; left:-2px; z-index:6; font-size:18px; display:none;
+    animation:bob 1s ease-in-out infinite alternate; filter:drop-shadow(1px 1px 0 rgba(0,0,0,.4));}
+  .shape.playing .note-ico{display:block;}
+  @keyframes bob{from{transform:translateY(0);}to{transform:translateY(-5px);}}
+  @keyframes pop{0%{transform:scale(1);}40%{transform:scale(1.14);}100%{transform:scale(1);}}
+  .shape.pop{animation:pop .4s ease-out;}
+  .plus1{position:absolute; z-index:20; font-family:'Black Han Sans',sans-serif; font-size:22px; color:var(--y);
+    text-shadow:1px 2px 0 rgba(0,0,0,.5); pointer-events:none; animation:rise .8s ease-out forwards;}
+  @keyframes rise{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-40px);}}
+
+  .note-bar{position:fixed; left:0; right:0; bottom:0; padding:9px 14px; text-align:center;
+    background:rgba(0,0,0,.88); color:#fff; font-size:11.5px; z-index:50;}
   .note-bar b{color:var(--y);}
 </style>
 </head>
 <body>
-  <div class="fall-layer" id="fall"></div>
+  <div class="bg-layer" id="bg"></div>
   <h1>슬로우 뮤직</h1>
-  <p class="sub">투표할수록 커집니다 — 가장 큰 도형이 다음 발매곡으로 🗳 <span style="opacity:.7">(한 번 = 듣기 · 두 번 = 투표)</span></p>
+  <p class="sub">투표할수록 커집니다 — 1위(반짝이는 도형)가 다음 발매곡으로 🗳 <span style="opacity:.7">(한 번 = 듣기 · 두 번 = 투표)</span></p>
 
   <div id="app"></div>
-
   <div class="note-bar" id="notebar"><b>TEST</b> — 한 번 누르면 ♪ 재생, 두 번 누르면 ▲ 투표!</div>
 
 <script>
-const SHAPES = ['s-circle','s-star','s-hex','s-square','s-blob'];   // 삼각형 제외
-const COLORS = ['#E24A9C','#FFD24A','#8BE04B','#B49BEE','#FF8A5C','#26C6C6','#F06CA8','#5B7CFA'];
-
-const CATS = [
+const SHAPES=['s-circle','s-star','s-hex','s-square','s-blob'];
+const COLORS=['#E24A9C','#FFD24A','#8BE04B','#B49BEE','#FF8A5C','#26C6C6','#F06CA8','#5B7CFA'];
+const CATS=[
   { name:'6월 월평 투표', foot:'6월 작곡 과제 중 이달의 곡을 뽑아요',
-    items:[
-      {tags:['#조연우','#월평','#꿈속'], v:18},
-      {tags:['#전아름','#궤적','#푸가'], v:12},
-      {tags:['#한승수','#지하철노선도','#감기'], v:8},
-      {tags:['#임설아','#이면','#발라드'], v:5},
-      {tags:['#김이든','#문틈'], v:3},
-    ]},
+    items:[{tags:['#조연우','#월평','#꿈속'],v:24},{tags:['#전아름','#궤적'],v:12},{tags:['#한승수','#지하철노선도'],v:8},{tags:['#임설아','#이면'],v:5},{tags:['#김이든','#문틈'],v:3}]},
   { name:'이달의 데모 투표', foot:'가장 응원받은 데모가 다음 마스터 후보로',
-    items:[
-      {tags:['#DJKARLIN','#lover'], v:14},
-      {tags:['#조연우','#몽환'], v:9},
-      {tags:['#DeepHouse','#런던'], v:6},
-      {tags:['#박승빈','#첫데모'], v:2},
-    ]},
+    items:[{tags:['#DJKARLIN','#lover'],v:19},{tags:['#조연우','#몽환'],v:9},{tags:['#DeepHouse','#런던'],v:6},{tags:['#박승빈','#첫데모'],v:2}]},
   { name:'밴드 음악 투표', foot:'밴드 편성 곡만 모아서 한판',
-    items:[
-      {tags:['#푸르름','#휴게이징'], v:16},
-      {tags:['#파워레인저','#ROCK'], v:11},
-      {tags:['#짝사랑','#중독'], v:7},
-      {tags:['#15살차이연애','#인디'], v:4},
-      {tags:['#자우림','#밴드'], v:6},
-      {tags:['#트로트','#7080'], v:2},
-    ]},
+    items:[{tags:['#푸르름','#휴게이징'],v:22},{tags:['#파워레인저','#ROCK'],v:11},{tags:['#짝사랑','#중독'],v:7},{tags:['#자우림','#밴드'],v:6},{tags:['#15살차이연애'],v:4},{tags:['#트로트','#7080'],v:2}]},
 ];
+// 순위대로 사이즈 — 값이 클수록 큼 (박스 작아져서 최대 148)
+function sizeOf(v){ return Math.min(66 + v*3.2, 148); }
+function fontOf(v){ return Math.min(10 + v*0.22, 15); }
 
-function sizeOf(v){ return Math.min(96 + v*3.5, 200); }
-function fontOf(v){ return Math.min(10.5 + v*0.26, 16); }
-
-/* ── WebAudio 간단 멜로디 (클릭 = 듣기) ── */
-let AC=null, curStop=null;
-const SCALE=[0,3,5,7,10,12,15];  // 마이너 펜타토닉
+/* WebAudio 간단 멜로디 */
+let AC=null,curStop=null; const SCALE=[0,3,5,7,10,12,15];
 function playMelody(seed){
-  if(!AC) AC = new (window.AudioContext||window.webkitAudioContext)();
+  if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
   if(curStop) curStop();
-  const base = 220 * Math.pow(2, (seed%5)/12 + (seed%3)*0.33);
-  const g = AC.createGain(); g.connect(AC.destination);
-  g.gain.setValueAtTime(0.0001, AC.currentTime);
-  g.gain.linearRampToValueAtTime(0.12, AC.currentTime+0.05);
-  const oscs=[];
-  for(let n=0;n<6;n++){
-    const o=AC.createOscillator();
-    o.type = seed%2 ? 'triangle' : 'sine';
-    const st = AC.currentTime + n*0.28;
-    o.frequency.setValueAtTime(base*Math.pow(2, SCALE[(seed+n*2)%SCALE.length]/12), st);
-    o.connect(g); o.start(st); o.stop(st+0.26);
-    oscs.push(o);
-  }
-  g.gain.setValueAtTime(0.12, AC.currentTime+1.55);
-  g.gain.linearRampToValueAtTime(0.0001, AC.currentTime+1.9);
-  const stop=()=>{ try{g.gain.cancelScheduledValues(0); g.gain.value=0;}catch(e){} };
-  curStop=stop;
-  return 1900; // ms
+  const base=220*Math.pow(2,(seed%5)/12+(seed%3)*0.33);
+  const g=AC.createGain(); g.connect(AC.destination);
+  g.gain.setValueAtTime(0.0001,AC.currentTime); g.gain.linearRampToValueAtTime(0.12,AC.currentTime+0.05);
+  for(let n=0;n<6;n++){const o=AC.createOscillator();o.type=seed%2?'triangle':'sine';
+    const st=AC.currentTime+n*0.28; o.frequency.setValueAtTime(base*Math.pow(2,SCALE[(seed+n*2)%SCALE.length]/12),st);
+    o.connect(g);o.start(st);o.stop(st+0.26);}
+  g.gain.setValueAtTime(0.12,AC.currentTime+1.55); g.gain.linearRampToValueAtTime(0.0001,AC.currentTime+1.9);
+  curStop=()=>{try{g.gain.cancelScheduledValues(0);g.gain.value=0;}catch(e){}}; return 1900;
 }
 
-/* ── 렌더 + 물리 ── */
 const worlds=[];
 function build(){
   const app=document.getElementById('app');
-  app.innerHTML = CATS.map((cat,ci)=>`
-    <section class="cat">
-      <span class="cat-pill">🗳 ${cat.name}</span>
-      <div class="cat-box" id="box${ci}"></div>
-      <p class="cat-foot">${cat.foot}</p>
-    </section>`).join('');
-
+  app.innerHTML=CATS.map((cat,ci)=>`<section class="cat"><span class="cat-pill">🗳 ${cat.name}</span><div class="cat-box" id="box${ci}"></div><p class="cat-foot">${cat.foot}</p></section>`).join('');
   CATS.forEach((cat,ci)=>{
-    const box=document.getElementById('box'+ci);
-    const W=box.clientWidth, H=box.clientHeight;
-    const bodies=[];
+    const box=document.getElementById('box'+ci), W=box.clientWidth||340, H=box.clientHeight||340, bodies=[];
     cat.items.forEach((it,i)=>{
       const el=document.createElement('div');
-      const shape=SHAPES[(ci*2+i)%SHAPES.length];
-      const color=COLORS[(ci*3+i)%COLORS.length];
-      el.className='shape '+shape;
-      el.style.setProperty('--shape-color',color);
-      el.innerHTML=`<span class="bg"></span><span class="crown" style="display:none">👑</span>
-        <span class="note-ico">🎵</span>
-        <span class="tags">${it.tags.join('<br>')}</span><span class="cnt">▲ ${it.v}</span>`;
+      el.className='shape '+SHAPES[(ci*2+i)%SHAPES.length];
+      el.style.setProperty('--shape-color',COLORS[(ci*3+i)%COLORS.length]);
+      el.innerHTML=`<span class="bg"></span><span class="note-ico">🎵</span><span class="tags">${it.tags.join('<br>')}</span><span class="cnt">${it.v}</span>`;
       box.appendChild(el);
       const r=sizeOf(it.v)/2;
-      const b={
-        el, it, ci, i,
-        r, tr:r,
-        x: r+10+Math.random()*(W-2*r-20),
-        y: r+10+Math.random()*(H-2*r-20),
-        vx:(Math.random()*16+7)*(Math.random()<.5?-1:1),
-        vy:(Math.random()*16+7)*(Math.random()<.5?-1:1),
-      };
-      bodies.push(b);
-      applySize(b);
-      // 클릭(1번=재생) / 더블클릭(2번=투표)
-      let clickTimer=null;
-      el.addEventListener('click', ()=>{
-        if(clickTimer){ clearTimeout(clickTimer); clickTimer=null; vote(b); }
-        else {
-          clickTimer=setTimeout(()=>{ clickTimer=null; play(b); }, 260);
-        }
-      });
+      const b={el,it,ci,i,r,tr:r,x:r+8+Math.random()*(W-2*r-16),y:r+8+Math.random()*(H-2*r-16),
+        vx:(Math.random()*15+7)*(Math.random()<.5?-1:1),vy:(Math.random()*15+7)*(Math.random()<.5?-1:1)};
+      bodies.push(b); applySize(b);
+      let ct=null;
+      el.addEventListener('click',()=>{ if(ct){clearTimeout(ct);ct=null;vote(b);} else {ct=setTimeout(()=>{ct=null;play(b);},260);} });
     });
-    worlds.push({box, bodies, W, H});
-    updateCrown(ci);
+    worlds.push({box,bodies,W,H}); updateRanks(ci);
   });
 }
-function applySize(b){
-  const d=b.r*2;
-  b.el.style.width=d+'px'; b.el.style.height=d+'px';
-  b.el.style.fontSize=fontOf(b.it.v)+'px';
-}
-function updateCrown(ci){
+function applySize(b){const d=b.r*2; b.el.style.width=d+'px'; b.el.style.height=d+'px'; b.el.style.fontSize=fontOf(b.it.v)+'px';}
+function updateRanks(ci){
   const w=worlds[ci]; if(!w) return;
-  let top=w.bodies[0];
-  w.bodies.forEach(b=>{ if(b.it.v>top.it.v) top=b; });
-  w.bodies.forEach(b=>{ b.el.querySelector('.crown').style.display = (b===top)?'block':'none'; });
+  const sorted=[...w.bodies].sort((a,b)=>b.it.v-a.it.v);
+  w.bodies.forEach(b=>{
+    const rank=sorted.indexOf(b);
+    b.el.classList.toggle('top',rank===0);            // 1위 네온
+    b.el.classList.toggle('show-cnt',rank<2);         // 상위 1·2위만 투표수
+    b.el.querySelector('.cnt').textContent=b.it.v;
+  });
 }
 function play(b){
   document.querySelectorAll('.shape.playing').forEach(e=>e.classList.remove('playing'));
-  b.el.classList.add('playing');
-  const dur=playMelody(b.ci*7+b.i*3+1);
+  b.el.classList.add('playing'); const dur=playMelody(b.ci*7+b.i*3+1);
   document.getElementById('notebar').innerHTML='🎵 재생중 — <b>'+b.it.tags.join(' ')+'</b>';
-  setTimeout(()=>{ b.el.classList.remove('playing'); }, dur);
+  setTimeout(()=>b.el.classList.remove('playing'),dur);
 }
 function vote(b){
-  b.it.v++;
-  b.tr=sizeOf(b.it.v)/2;
-  b.el.querySelector('.cnt').textContent='▲ '+b.it.v;
+  b.it.v++; b.tr=sizeOf(b.it.v)/2;
   b.el.classList.remove('pop'); void b.el.offsetWidth; b.el.classList.add('pop');
-  // +1 플로터
-  const w=worlds[b.ci];
-  const p=document.createElement('div'); p.className='plus1'; p.textContent='+1';
-  p.style.left=(b.x-8)+'px'; p.style.top=(b.y-b.r-26)+'px';
-  w.box.appendChild(p); setTimeout(()=>p.remove(), 800);
-  updateCrown(b.ci);
+  const w=worlds[b.ci], p=document.createElement('div'); p.className='plus1'; p.textContent='+1';
+  p.style.left=(b.x-8)+'px'; p.style.top=(b.y-b.r-26)+'px'; w.box.appendChild(p); setTimeout(()=>p.remove(),800);
+  updateRanks(b.ci);
 }
-
-/* 물리 루프 — 천천히 둥둥 + 살짝 부딪힘 */
+/* 물리 루프 */
 let last=performance.now();
-function step(now){
-  const dt=Math.min((now-last)/1000, .05); last=now;
+function stepLoop(now){
+  const dt=Math.min((now-last)/1000,.05); last=now;
   worlds.forEach(w=>{
-    w.W=w.box.clientWidth; w.H=w.box.clientHeight;
-    const bs=w.bodies;
-    bs.forEach(b=>{
-      // 크기 서서히 (투표로 커질 때)
-      if(Math.abs(b.tr-b.r)>0.3){ b.r += (b.tr-b.r)*0.08; applySize(b); }
+    w.W=w.box.clientWidth; w.H=w.box.clientHeight; const bs=w.bodies;
+    bs.forEach(b=>{ if(Math.abs(b.tr-b.r)>0.3){b.r+=(b.tr-b.r)*0.08;applySize(b);}
       b.x+=b.vx*dt; b.y+=b.vy*dt;
-      // 벽 반사 (부드럽게)
-      if(b.x<b.r){ b.x=b.r; b.vx=Math.abs(b.vx); }
-      if(b.x>w.W-b.r){ b.x=w.W-b.r; b.vx=-Math.abs(b.vx); }
-      if(b.y<b.r+6){ b.y=b.r+6; b.vy=Math.abs(b.vy); }
-      if(b.y>w.H-b.r-6){ b.y=w.H-b.r-6; b.vy=-Math.abs(b.vy); }
-    });
-    // 서로 살짝 부딪힘 (원형 충돌)
-    for(let a=0;a<bs.length;a++) for(let c=a+1;c<bs.length;c++){
-      const A=bs[a], B=bs[c];
-      const dx=B.x-A.x, dy=B.y-A.y;
-      const dist=Math.hypot(dx,dy)||0.01, min=A.r+B.r-6;
-      if(dist<min){
-        const nx=dx/dist, ny=dy/dist, o=(min-dist)/2;
-        A.x-=nx*o; A.y-=ny*o; B.x+=nx*o; B.y+=ny*o;
-        // 속도 교환(부드럽게)
-        const avn=A.vx*nx+A.vy*ny, bvn=B.vx*nx+B.vy*ny;
-        const d=(bvn-avn)*0.9;
-        A.vx+=nx*d; A.vy+=ny*d; B.vx-=nx*d; B.vy-=ny*d;
-      }
-    }
-    bs.forEach(b=>{
-      // 속도 상한 (계속 천천히)
-      const sp=Math.hypot(b.vx,b.vy), max=26, min=6;
-      if(sp>max){ b.vx*=max/sp; b.vy*=max/sp; }
-      if(sp<min){ b.vx*=min/(sp||1); b.vy*=min/(sp||1); }
-      b.el.style.transform=`translate(${(b.x-b.r).toFixed(1)}px, ${(b.y-b.r).toFixed(1)}px)`;
-    });
+      if(b.x<b.r){b.x=b.r;b.vx=Math.abs(b.vx);} if(b.x>w.W-b.r){b.x=w.W-b.r;b.vx=-Math.abs(b.vx);}
+      if(b.y<b.r+6){b.y=b.r+6;b.vy=Math.abs(b.vy);} if(b.y>w.H-b.r-6){b.y=w.H-b.r-6;b.vy=-Math.abs(b.vy);} });
+    for(let a=0;a<bs.length;a++)for(let c=a+1;c<bs.length;c++){const A=bs[a],B=bs[c];
+      const dx=B.x-A.x,dy=B.y-A.y,dist=Math.hypot(dx,dy)||0.01,min=A.r+B.r-6;
+      if(dist<min){const nx=dx/dist,ny=dy/dist,o=(min-dist)/2; A.x-=nx*o;A.y-=ny*o;B.x+=nx*o;B.y+=ny*o;
+        const avn=A.vx*nx+A.vy*ny,bvn=B.vx*nx+B.vy*ny,d=(bvn-avn)*0.9; A.vx+=nx*d;A.vy+=ny*d;B.vx-=nx*d;B.vy-=ny*d;}}
+    bs.forEach(b=>{const sp=Math.hypot(b.vx,b.vy); if(sp>26){b.vx*=26/sp;b.vy*=26/sp;} if(sp<6){b.vx*=6/(sp||1);b.vy*=6/(sp||1);}
+      b.el.style.transform=`translate(${(b.x-b.r).toFixed(1)}px,${(b.y-b.r).toFixed(1)}px)`;});
   });
-  requestAnimationFrame(step);
+  requestAnimationFrame(stepLoop);
 }
-/* ── 하늘에서 떨어지는 배경 도형 생성 (지금 사이트 배경) ── */
-(function makeFalls(){
+/* 배경 도형 (지금 사이트 감성) */
+(function bgDeco(){
   const FCOL=['#E24A9C','#7FB2EC','#86CE34','#B49BEE','#F06CA8','#FF8A6E','#26C6C6','#FFB03A','#FFD24A','#3E6FD9'];
-  const FSH=['c-circle','c-square','c-blob','c-star'];
+  const SH=['c-circle','c-square','c-blob','c-star','c-hex'];
   let html='';
-  for(let i=0;i<20;i++){
-    const l=Math.random()*100, w=16+Math.random()*26, d=9+Math.random()*9;
-    const c=FCOL[i%FCOL.length], s=FSH[i%FSH.length];
-    html+=`<span class="fall ${s}" style="left:${l}%;--fw:${w}px;--fc:${c};animation-duration:${d}s;animation-delay:${(-Math.random()*d).toFixed(1)}s;"><i></i></span>`;
-  }
-  document.getElementById('fall').innerHTML=html;
+  // 큰 도형 은은히 (뒤)
+  for(let i=0;i<5;i++){const s=SH[i%SH.length],c=FCOL[(i*2)%FCOL.length],w=90+Math.random()*90;
+    html+=`<span class="bg-big ${s}" style="width:${w}px;height:${w}px;left:${Math.random()*88}%;top:${Math.random()*88}%;--fc:${c};transform:rotate(${(Math.random()*40-20)|0}deg);"><i></i></span>`;}
+  // 떨어지는 작은 도형
+  for(let i=0;i<22;i++){const s=SH[i%SH.length],c=FCOL[i%FCOL.length],w=14+Math.random()*24,d=9+Math.random()*9;
+    html+=`<span class="fall ${s}" style="left:${Math.random()*100}%;--fw:${w}px;--fc:${c};animation-duration:${d}s;animation-delay:${(-Math.random()*d).toFixed(1)}s;"><i></i></span>`;}
+  document.getElementById('bg').innerHTML=html;
 })();
-
 build();
-requestAnimationFrame(step);
+requestAnimationFrame(stepLoop);
 </script>
 </body>
 </html>
