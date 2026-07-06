@@ -35,7 +35,7 @@
     position:relative; z-index:3; margin-left:8px;
   }
   .cat-box{
-    border:3px solid var(--line); border-radius:16px; margin-top:-16px;
+    border:3px dashed rgba(255,255,255,.95); border-radius:16px; margin-top:-16px;
     padding:30px 10px 18px;
     display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
     gap:6px 4px; min-height:170px;
@@ -70,7 +70,9 @@
   .s-circle .bg{border-radius:50%;}
   .s-tri .bg{clip-path:polygon(50% 0, 100% 100%, 0 100%);}
   .s-tri .tags{padding-top:26%;}
-  .s-star .bg{clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);}
+  /* 통통한 별 — 몸통 넓게, 뾰족이 짧게 (한글 안 삐져나오게) */
+  .s-star .bg{clip-path:polygon(50% 0%, 71% 21%, 98% 35%, 84% 61%, 79% 91%, 50% 86%, 21% 91%, 16% 61%, 2% 35%, 29% 21%);}
+  .s-star .tags{padding-top:10%;}
   .s-hex .bg{clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);}
   .s-square .bg{border-radius:14px;}
   .s-blob .bg{border-radius:58% 42% 55% 45% / 48% 55% 45% 52%;}
