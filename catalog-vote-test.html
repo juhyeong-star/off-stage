@@ -258,8 +258,12 @@ function updateProgUI(){
 }
 function setProgUI(f){ document.getElementById('pbFill').style.width=(f*100)+'%'; document.getElementById('pbKnob').style.left=(f*100)+'%'; }
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1500); }
-/* 아티스트 페이지로 (해시태그 클릭) */
-function goArtist(tag){ toast('→ ' + tag + ' 아티스트 페이지로 이동'); /* 실제앱: navigateTo("artist", 이름) */ }
+/* 아티스트 페이지로 (해시태그 클릭) — 실제 사이트 라우팅(index.html#/artist:이름)으로 진짜 이동 */
+function goArtist(tag){
+  const name = tag.replace(/^#/, '');
+  toast('→ ' + tag + ' 아티스트 페이지로 이동');
+  setTimeout(()=>{ location.href = 'index.html#/artist:' + encodeURIComponent(name); }, 550);
+}
 /* 플레이바 버튼 + 진행바 드래그 */
 function wirePlaybar(){
   document.getElementById('pbPlay').addEventListener('click',()=>{ if(!curBody){const l=flatList(); if(l.length)play(l[0]); return;} if(progDur){ endPlay(); } else { play(curBody, 0); } });
