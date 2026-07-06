@@ -15,8 +15,19 @@
   body{
     background:var(--bg); color:var(--ink);
     font-family:'Pretendard','Apple SD Gothic Neo',system-ui,sans-serif;
-    padding:12px 10px 70px; min-height:100vh; overflow-x:hidden;
+    padding:12px 10px 70px; min-height:100vh; overflow-x:hidden; position:relative;
   }
+  /* ── 지금 사이트 배경: 하늘에서 떨어지는 작은 도형들 (뒤 레이어) ── */
+  .fall-layer{position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0;}
+  .fall{position:absolute; top:0; width:var(--fw,26px); height:var(--fw,26px); animation:fall linear infinite; opacity:.9;}
+  .fall > i{display:block; width:100%; height:100%; background:var(--fc,#E24A9C); filter:drop-shadow(1px 2px 0 rgba(0,0,0,.18));}
+  .fall.c-circle > i{border-radius:50%;}
+  .fall.c-square > i{border-radius:5px;}
+  .fall.c-blob > i{border-radius:58% 42% 55% 45% / 48% 55% 45% 52%;}
+  .fall.c-star > i{clip-path:polygon(50% 0%,71% 21%,98% 35%,84% 61%,79% 91%,50% 86%,21% 91%,16% 61%,2% 35%,29% 21%);}
+  @keyframes fall{0%{transform:translateY(-14vh) rotate(-12deg); opacity:0;} 8%{opacity:.9;} 90%{opacity:.9;} 100%{transform:translateY(114vh) rotate(200deg); opacity:0;}}
+  /* 콘텐츠는 배경 위 */
+  h1,.sub,#app{position:relative; z-index:2;}
   h1{
     font-family:'Black Han Sans',sans-serif; font-size:30px; margin:2px 0 0;
     color:var(--y); text-shadow:2px 3px 0 rgba(0,0,0,.25); letter-spacing:1px;
@@ -95,6 +106,7 @@
 </style>
 </head>
 <body>
+  <div class="fall-layer" id="fall"></div>
   <h1>슬로우 뮤직</h1>
   <p class="sub">투표할수록 커집니다 — 가장 큰 도형이 다음 발매곡으로 🗳 <span style="opacity:.7">(한 번 = 듣기 · 두 번 = 투표)</span></p>
 
@@ -283,6 +295,19 @@ function step(now){
   });
   requestAnimationFrame(step);
 }
+/* ── 하늘에서 떨어지는 배경 도형 생성 (지금 사이트 배경) ── */
+(function makeFalls(){
+  const FCOL=['#E24A9C','#7FB2EC','#86CE34','#B49BEE','#F06CA8','#FF8A6E','#26C6C6','#FFB03A','#FFD24A','#3E6FD9'];
+  const FSH=['c-circle','c-square','c-blob','c-star'];
+  let html='';
+  for(let i=0;i<20;i++){
+    const l=Math.random()*100, w=16+Math.random()*26, d=9+Math.random()*9;
+    const c=FCOL[i%FCOL.length], s=FSH[i%FSH.length];
+    html+=`<span class="fall ${s}" style="left:${l}%;--fw:${w}px;--fc:${c};animation-duration:${d}s;animation-delay:${(-Math.random()*d).toFixed(1)}s;"><i></i></span>`;
+  }
+  document.getElementById('fall').innerHTML=html;
+})();
+
 build();
 requestAnimationFrame(step);
 </script>
