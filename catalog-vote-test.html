@@ -148,9 +148,10 @@
 <body>
   <div class="bg-layer" id="bg"></div>
   <h1>슬로우 뮤직</h1>
-  <p class="sub">투표할수록 커집니다 — 1위(반짝이는 도형)가 다음 발매곡으로 🗳 <span style="opacity:.7">(한 번 = 듣기 · 두 번 = 투표)</span></p>
+  <p class="sub">실제 업로드된 곡으로 투표! 1위(반짝이는 도형)가 다음 발매곡으로 🗳 <span style="opacity:.7">(한 번=듣기·두 번=투표, 투표는 이 화면에서만 임시 집계)</span></p>
 
-  <div id="app"></div>
+  <div id="app"><p style="position:relative;z-index:2;color:rgba(0,0,0,.55);font-weight:700;font-size:13px;padding:30px 4px;">🎧 실제 업로드된 곡 불러오는 중…</p></div>
+  <audio id="audioEl" preload="none"></audio>
 
   <div class="test-tag">🧪 투표 시안 TEST</div>
   <div class="playbar" id="playbar">
@@ -168,33 +169,50 @@
 
 <script>
 const SHAPES=['s-circle','s-star','s-hex','s-square','s-blob'];
-const COLORS=['#E24A9C','#FFD24A','#8BE04B','#B49BEE','#FF8A5C','#26C6C6','#F06CA8','#5B7CFA'];
-const CATS=[
-  { name:'6월 월평 투표', foot:'6월 작곡 과제 중 이달의 곡을 뽑아요',
-    items:[{tags:['#조연우','#월평','#꿈속'],v:24},{tags:['#전아름','#궤적'],v:12},{tags:['#한승수','#지하철노선도'],v:8},{tags:['#임설아','#이면'],v:5},{tags:['#김이든','#문틈'],v:3}]},
-  { name:'이달의 데모 투표', foot:'가장 응원받은 데모가 다음 마스터 후보로',
-    items:[{tags:['#DJKARLIN','#lover'],v:19},{tags:['#조연우','#몽환'],v:9},{tags:['#DeepHouse','#런던'],v:6},{tags:['#박승빈','#첫데모'],v:2}]},
-  { name:'밴드 음악 투표', foot:'밴드 편성 곡만 모아서 한판',
-    items:[{tags:['#푸르름','#휴게이징'],v:22},{tags:['#파워레인저','#ROCK'],v:11},{tags:['#짝사랑','#중독'],v:7},{tags:['#자우림','#밴드'],v:6},{tags:['#15살차이연애'],v:4},{tags:['#트로트','#7080'],v:2}]},
-];
+let CATS=[]; // 실제 데이터로 채워짐 (fetchRealTracks)
+
+// ── 실제 사이트 Supabase 에서 곡 목록 읽기 (읽기 전용, 이미 공개된 publishable key) ──
+const SUPABASE_URL='https://vayzhmaggwpkbsrrsdqt.supabase.co';
+const SUPABASE_KEY='sb_publishable_1PxNV0BGL7Wy_strTMqnbA_pCBCsOPG';
+async function fetchRealTracks(){
+  const cols='id,title,artist_id,is_demo,tags,shape,shape_color,cover_url,audio_url,likes_count,created_at,profiles(name,avatar_url)';
+  const url=`${SUPABASE_URL}/rest/v1/tracks?select=${encodeURIComponent(cols)}&order=created_at.desc&limit=200`;
+  const r=await fetch(url,{headers:{apikey:SUPABASE_KEY, Authorization:'Bearer '+SUPABASE_KEY}});
+  if(!r.ok) throw new Error('fetch failed '+r.status);
+  const rows=await r.json();
+  return rows.map(row=>({
+    id:row.id,
+    title:row.title||'제목 없음',
+    artist:(row.profiles&&row.profiles.name)||'알수없는 아티스트',
+    isDemo:!!row.is_demo,
+    tags:Array.isArray(row.tags)?row.tags:[],
+    shapeColor:row.shape_color||'#E24A9C',
+    audioUrl:row.audio_url||'',
+    v:row.likes_count||0,
+    createdAt:row.created_at
+  }));
+}
+function toItem(t){ return { tags:[t.artist, ...t.tags.slice(0,2)], v:t.v, audioUrl:t.audioUrl, title:t.title, color:t.shapeColor, real:true }; }
+
+async function loadRealData(){
+  try{
+    const tracks=await fetchRealTracks();
+    const masters=tracks.filter(t=>!t.isDemo);
+    const demos=tracks.filter(t=>t.isDemo).slice(0,10);
+    CATS=[];
+    if(masters.length) CATS.push({ name:'발매곡 투표', items:masters.map(toItem) });
+    if(demos.length) CATS.push({ name:'최근 데모 투표', items:demos.map(toItem) });
+    if(!CATS.length) throw new Error('no tracks');
+  }catch(e){
+    console.warn('[투표시안] 실제 데이터 로드 실패, 안내만 표시', e);
+    document.getElementById('app').innerHTML='<p style="position:relative;z-index:2;color:rgba(0,0,0,.6);font-weight:700;padding:30px 4px;">⚠️ 실제 곡을 불러오지 못했어요. 네트워크 상태를 확인해주세요.</p>';
+    return false;
+  }
+  return true;
+}
 // 순위대로 사이즈 — 전반적으로 더 크게
 function sizeOf(v){ return Math.min(84 + v*3.6, 178); }
 function fontOf(v){ return Math.min(12 + v*0.28, 19); }
-
-/* WebAudio 간단 멜로디 */
-let AC=null,curStop=null; const SCALE=[0,3,5,7,10,12,15];
-function playMelody(seed){
-  if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
-  if(curStop) curStop();
-  const base=220*Math.pow(2,(seed%5)/12+(seed%3)*0.33);
-  const g=AC.createGain(); g.connect(AC.destination);
-  g.gain.setValueAtTime(0.0001,AC.currentTime); g.gain.linearRampToValueAtTime(0.12,AC.currentTime+0.05);
-  for(let n=0;n<6;n++){const o=AC.createOscillator();o.type=seed%2?'triangle':'sine';
-    const st=AC.currentTime+n*0.28; o.frequency.setValueAtTime(base*Math.pow(2,SCALE[(seed+n*2)%SCALE.length]/12),st);
-    o.connect(g);o.start(st);o.stop(st+0.26);}
-  g.gain.setValueAtTime(0.12,AC.currentTime+1.55); g.gain.linearRampToValueAtTime(0.0001,AC.currentTime+1.9);
-  curStop=()=>{try{g.gain.cancelScheduledValues(0);g.gain.value=0;}catch(e){}}; return 1900;
-}
 
 const worlds=[];
 function build(){
@@ -205,8 +223,11 @@ function build(){
     cat.items.forEach((it,i)=>{
       const el=document.createElement('div');
       el.className='shape '+SHAPES[(ci*2+i)%SHAPES.length];
-      el.style.setProperty('--shape-color',COLORS[(ci*3+i)%COLORS.length]);
-      el.innerHTML=`<span class="bg"></span><span class="note-ico">🎵</span><span class="tags">${it.tags.map(t=>`<span class="tg">${t}</span>`).join('<br>')}</span><span class="cnt">${it.v}</span>`;
+      el.style.setProperty('--shape-color', it.color || '#E24A9C');
+      // 첫 줄 = 아티스트 이름(클릭→아티스트 페이지), 나머지 = 실제 태그(설명용)
+      const [artistName, ...restTags] = it.tags;
+      const tagsHtml = `<span class="tg">${artistName}</span>` + restTags.map(t=>`<br>#${t}`).join('');
+      el.innerHTML=`<span class="bg"></span><span class="note-ico">🎵</span><span class="tags">${tagsHtml}</span><span class="cnt">${it.v}</span>`;
       el.querySelectorAll('.tg').forEach(tg=>tg.addEventListener('click',ev=>{ ev.stopPropagation(); goArtist(tg.textContent); }));
       box.appendChild(el);
       const r=sizeOf(it.v)/2;
@@ -230,31 +251,38 @@ function updateRanks(ci){
     b.el.querySelector('.cnt').textContent=b.it.v;
   });
 }
-let curBody=null, progStart=0, progDur=0, seekFrac=0, dragging=false;
+let curBody=null, dragging=false, seekFrac=0;
 function flatList(){ const arr=[]; worlds.forEach(w=>w.bodies.forEach(b=>arr.push(b))); return arr; }
 const SHAPE2M={'s-circle':'m-circle','s-square':'m-square','s-blob':'m-blob','s-star':'m-star','s-hex':'m-hex'};
+const audioEl=document.getElementById('audioEl');
 function play(b, fromFrac){
+  if(!b.it.audioUrl){ toast('⚠️ 이 곡엔 음원 파일이 없어요'); return; }
   curBody=b;
   document.querySelectorAll('.shape.playing').forEach(e=>e.classList.remove('playing'));
   b.el.classList.add('playing');
-  const dur=playMelody(b.ci*7+b.i*3+1);
   const color=getComputedStyle(b.el).getPropertyValue('--shape-color').trim();
   // 디스크 = 그 도형 모양/색 그대로
   const disc=document.getElementById('pbDisc');
   disc.className='pb-disc spin ' + (SHAPE2M[b.el.classList[1]]||'m-circle');
   disc.style.setProperty('--pb-color', color);
-  document.getElementById('pbTitle').innerHTML=b.it.tags[0]+' <small>'+(b.it.tags.slice(1).join(' ')||'재생 중')+' · ▶</small>';
+  document.getElementById('pbTitle').innerHTML=b.it.tags[0]+' <small>「'+(b.it.title||'')+'」 · ▶</small>';
   document.getElementById('pbPlay').textContent='⏸';
-  // 진행바 (드래그 위치에서 시작 가능)
-  progStart=performance.now() - (fromFrac||0)*dur; progDur=dur;
-  clearTimeout(play._t);
-  play._t=setTimeout(()=>{ endPlay(); }, dur*(1-(fromFrac||0)));
+  // 실제 음원 재생
+  if(audioEl.src!==b.it.audioUrl){ audioEl.src=b.it.audioUrl; }
+  audioEl.currentTime = (fromFrac||0) * (audioEl.duration||0);
+  audioEl.play().catch(()=>{ toast('⚠️ 재생할 수 없는 곡이에요'); });
 }
-function endPlay(){ if(curBody) curBody.el.classList.remove('playing'); document.getElementById('pbDisc').classList.remove('spin'); document.getElementById('pbPlay').textContent='▶'; progDur=0; }
+function endPlay(){
+  if(curBody) curBody.el.classList.remove('playing');
+  document.getElementById('pbDisc').classList.remove('spin');
+  document.getElementById('pbPlay').textContent='▶';
+}
+audioEl.addEventListener('ended', ()=>{ endPlay(); const l=flatList(); if(curBody && l.length){ const i=l.indexOf(curBody); const nxt=l[(i+1)%l.length]; if(nxt) play(nxt); } });
+audioEl.addEventListener('pause', ()=>{ if(!audioEl.ended) document.getElementById('pbPlay').textContent='▶'; });
+audioEl.addEventListener('play', ()=>{ document.getElementById('pbPlay').textContent='⏸'; if(curBody) curBody.el.classList.add('playing'); document.getElementById('pbDisc').classList.add('spin'); });
 function updateProgUI(){
-  if(dragging) return;
-  let f = progDur? Math.min(1,(performance.now()-progStart)/progDur) : 0;
-  setProgUI(f);
+  if(dragging || !audioEl.duration) return;
+  setProgUI(audioEl.currentTime/audioEl.duration);
 }
 function setProgUI(f){ document.getElementById('pbFill').style.width=(f*100)+'%'; document.getElementById('pbKnob').style.left=(f*100)+'%'; }
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1500); }
@@ -266,10 +294,17 @@ function goArtist(tag){
 }
 /* 플레이바 버튼 + 진행바 드래그 */
 function wirePlaybar(){
-  document.getElementById('pbPlay').addEventListener('click',()=>{ if(!curBody){const l=flatList(); if(l.length)play(l[0]); return;} if(progDur){ endPlay(); } else { play(curBody, 0); } });
+  document.getElementById('pbPlay').addEventListener('click',()=>{
+    if(!curBody){ const l=flatList(); if(l.length) play(l[0]); return; }
+    if(audioEl.paused){ audioEl.play().catch(()=>{}); } else { audioEl.pause(); }
+  });
   document.getElementById('pbPrev').addEventListener('click',()=>{ const l=flatList(); if(!l.length)return; let i=curBody?l.indexOf(curBody):0; play(l[(i-1+l.length)%l.length]); });
   document.getElementById('pbNext').addEventListener('click',()=>{ const l=flatList(); if(!l.length)return; let i=curBody?l.indexOf(curBody):-1; play(l[(i+1)%l.length]); });
-  document.getElementById('pbShare').addEventListener('click',()=>{ if(navigator.share){ navigator.share({title:'슬로우 뮤직', text:curBody?curBody.it.tags.join(' '):'', url:location.href}).catch(()=>{}); } else { toast(curBody? ('🔗 '+curBody.it.tags[0]+' 링크 복사됨!') : '🔗 재생 중인 곡이 없어요'); } });
+  document.getElementById('pbShare').addEventListener('click',()=>{
+    const shareText = curBody ? (curBody.it.tags[0]+' — 「'+(curBody.it.title||'')+'」') : '슬로우 뮤직';
+    if(navigator.share){ navigator.share({title:'슬로우 뮤직', text:shareText, url:location.href}).catch(()=>{}); }
+    else { toast(curBody? ('🔗 '+shareText+' 링크 복사됨!') : '🔗 재생 중인 곡이 없어요'); }
+  });
   // 진행바 드래그
   const prog=document.getElementById('pbProg');
   function fracFromEvent(e){ const r=prog.getBoundingClientRect(); const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left; return Math.max(0,Math.min(1,x/r.width)); }
@@ -335,9 +370,13 @@ function stepLoop(now){
   tick(); setInterval(tick,1000);
 })();
 
-build();
-wirePlaybar();
-requestAnimationFrame(stepLoop);
+(async function init(){
+  const ok = await loadRealData();
+  if(!ok) return;
+  build();
+  wirePlaybar();
+  requestAnimationFrame(stepLoop);
+})();
 </script>
 </body>
 </html>
