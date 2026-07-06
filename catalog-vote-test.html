@@ -170,6 +170,8 @@
 
 <script>
 const SHAPES=['s-circle','s-star','s-hex','s-square','s-blob'];
+// 밝고 다양한 팔레트 — 실제 색이 다 비슷한 핑크라 임의 배정(사용자 요청). 인접 도형끼리 안 겹치게.
+const PALETTE=['#FF6B9D','#FFD24A','#4EC8E0','#8BE04B','#B49BEE','#FF8A5C','#5B9BFA','#F06CA8','#26C6C6','#FFA23A','#9B7BFF','#63D9A6'];
 let CATS=[]; // 실제 데이터로 채워짐 (fetchRealTracks)
 
 // ── 실제 사이트 Supabase 에서 곡 목록 읽기 (읽기 전용, 이미 공개된 publishable key) ──
@@ -243,7 +245,8 @@ function build(){
     cat.items.forEach((it,i)=>{
       const el=document.createElement('div');
       el.className='shape '+SHAPES[(ci*2+i)%SHAPES.length];
-      el.style.setProperty('--shape-color', it.color || '#E24A9C');
+      // 실제 색 대신 팔레트를 순서대로 — 인접 도형끼리 확실히 다른 색
+      el.style.setProperty('--shape-color', PALETTE[(ci*4 + i*5) % PALETTE.length]);
       // 첫 줄 = 아티스트 이름(클릭→아티스트 페이지), 나머지 = 실제 태그(설명용)
       const [artistName, ...restTags] = it.tags;
       const tagsHtml = `<span class="tg">${artistName}</span>` + restTags.map(t=>`<br>#${t}`).join('');
