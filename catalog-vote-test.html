@@ -86,6 +86,15 @@
   .note-bar{position:fixed; left:0; right:0; bottom:0; padding:9px 14px; text-align:center;
     background:rgba(0,0,0,.88); color:#fff; font-size:11.5px; z-index:50;}
   .note-bar b{color:var(--y);}
+  /* ── 마감 카운트다운 (하단 가운데, 흰색) ── */
+  .countdown{position:fixed; left:0; right:0; bottom:44px; z-index:49; text-align:center; pointer-events:none;}
+  .countdown .cd-label{font-size:11px; font-weight:800; color:rgba(255,255,255,.9); letter-spacing:.5px;
+    text-shadow:0 1px 4px rgba(0,0,0,.5); margin-bottom:2px;}
+  .countdown .cd-time{display:inline-flex; align-items:baseline; gap:3px;
+    font-family:'Black Han Sans',sans-serif; color:#fff; font-size:26px; line-height:1;
+    text-shadow:0 2px 8px rgba(0,0,0,.55), 1px 1px 0 rgba(0,0,0,.3);}
+  .countdown .cd-time small{font-family:'Pretendard',sans-serif; font-size:12px; font-weight:800; opacity:.85; margin:0 4px 0 0;}
+  .countdown .cd-time .colon{opacity:.6; padding:0 1px;}
 </style>
 </head>
 <body>
@@ -94,6 +103,11 @@
   <p class="sub">투표할수록 커집니다 — 1위(반짝이는 도형)가 다음 발매곡으로 🗳 <span style="opacity:.7">(한 번 = 듣기 · 두 번 = 투표)</span></p>
 
   <div id="app"></div>
+
+  <div class="countdown" id="countdown">
+    <div class="cd-label">🗳 이달의 투표 마감까지</div>
+    <div class="cd-time" id="cdTime">—</div>
+  </div>
   <div class="note-bar" id="notebar"><b>TEST</b> — 한 번 누르면 ♪ 재생, 두 번 누르면 ▲ 투표!</div>
 
 <script>
@@ -204,6 +218,23 @@ function stepLoop(now){
     html+=`<span class="fall ${s}" style="left:${Math.random()*100}%;--fw:${w}px;--fc:${c};animation-duration:${d}s;animation-delay:${(-Math.random()*d).toFixed(1)}s;"><i></i></span>`;}
   document.getElementById('bg').innerHTML=html;
 })();
+/* ── 마감 카운트다운 (이달 말일 자정까지) ── */
+(function countdown(){
+  const cd=document.getElementById('cdTime');
+  const now0=new Date();
+  const end=new Date(now0.getFullYear(), now0.getMonth()+1, 1, 0,0,0); // 다음 달 1일 0시
+  function tick(){
+    let s=Math.max(0, Math.floor((end - new Date())/1000));
+    const d=Math.floor(s/86400); s-=d*86400;
+    const h=Math.floor(s/3600); s-=h*3600;
+    const m=Math.floor(s/60); s-=m*60;
+    const p=n=>String(n).padStart(2,'0');
+    cd.innerHTML = (d>0? `<small>D-${d}</small>`:'') +
+      `${p(h)}<span class="colon">:</span>${p(m)}<span class="colon">:</span>${p(s)}`;
+  }
+  tick(); setInterval(tick,1000);
+})();
+
 build();
 requestAnimationFrame(stepLoop);
 </script>
