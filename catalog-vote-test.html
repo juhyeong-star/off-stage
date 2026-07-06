@@ -8,98 +8,103 @@
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#45CEEB;          /* 기존 메인(발견) 하늘색 배경 유지 */
-    --ink:#111;
-    --line:#FF3B3B;        /* 카테고리 박스 빨간 라인 */
-    --y:#FFE800;
+    --bg:#45CEEB; --ink:#111; --y:#FFE800;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;}
   body{
-    margin:0; background:var(--bg); color:var(--ink);
+    background:var(--bg); color:var(--ink);
     font-family:'Pretendard','Apple SD Gothic Neo',system-ui,sans-serif;
-    padding:16px 12px 96px; min-height:100vh; overflow-x:hidden;
+    padding:12px 10px 70px; min-height:100vh; overflow-x:hidden;
   }
-  /* 워드마크 — 기존 '슬로우 뮤직' 톤 */
   h1{
-    font-family:'Black Han Sans',sans-serif; font-size:34px; margin:2px 0 2px;
+    font-family:'Black Han Sans',sans-serif; font-size:30px; margin:2px 0 0;
     color:var(--y); text-shadow:2px 3px 0 rgba(0,0,0,.25); letter-spacing:1px;
   }
-  .sub{font-size:12.5px; color:rgba(0,0,0,.55); margin:0 0 18px; font-weight:600;}
+  .sub{font-size:12px; color:rgba(0,0,0,.55); margin:2px 0 14px; font-weight:700;}
 
-  /* ── 카테고리 줄 ── */
-  .cat{margin:0 0 30px; position:relative;}
+  /* ── 카테고리 — 화면 꽉 차게 ── */
+  .cat{margin:0 0 26px; position:relative;}
   .cat-pill{
     display:inline-block; background:#fff; color:#111;
     font-weight:900; font-size:15px; padding:7px 16px; border-radius:10px;
     border:2px solid #111; box-shadow:3px 3px 0 #111;
-    position:relative; z-index:3; margin-left:8px;
+    position:relative; z-index:10; margin-left:8px;
   }
   .cat-box{
-    border:3px dashed rgba(255,255,255,.95); border-radius:16px; margin-top:-16px;
-    padding:30px 10px 18px;
-    display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
-    gap:6px 4px; min-height:170px;
-    background:rgba(255,255,255,.10);
+    border:3px dashed rgba(255,255,255,.95); border-radius:18px; margin-top:-16px;
+    position:relative; overflow:hidden;
+    height:calc(100vh - 150px);      /* 한 카테고리가 화면을 거의 채움 */
+    min-height:480px;
+    background:rgba(255,255,255,.08);
   }
   .cat-foot{font-size:11.5px; color:rgba(0,0,0,.5); margin:8px 8px 0; font-weight:600;}
 
-  /* ── 도형 (투표할수록 커짐) ── */
+  /* ── 떠다니는 도형 ── */
   .shape{
+    position:absolute; left:0; top:0;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center; cursor:pointer; position:relative; flex-shrink:0;
+    text-align:center; cursor:pointer;
     font-weight:800; line-height:1.25; color:#111;
-    transition:width .35s cubic-bezier(.34,1.56,.64,1), height .35s cubic-bezier(.34,1.56,.64,1), font-size .35s;
-    user-select:none;
+    user-select:none; will-change:transform;
   }
-  .shape:active{transform:scale(.93);}
-  /* 배경 레이어에만 clip-path — 글씨/숫자는 안 잘림 */
   .shape .bg{
     position:absolute; inset:0; z-index:1;
     background:var(--shape-color,#E24A9C);
-    filter:drop-shadow(2px 3px 0 rgba(0,0,0,.22));
+    filter:drop-shadow(2px 3px 0 rgba(0,0,0,.20));
+    transition:filter .2s;
   }
-  .shape .tags{position:relative; z-index:2; padding:4px;}
+  .shape .tags{position:relative; z-index:2; padding:4px; pointer-events:none;}
   .shape .cnt{
-    position:relative; z-index:2; margin-top:3px;
+    position:relative; z-index:2; margin-top:3px; pointer-events:none;
     background:rgba(0,0,0,.78); color:#fff;
     font-size:11px; font-weight:900; padding:2px 9px; border-radius:999px;
-    box-shadow:1px 1px 0 rgba(0,0,0,.3);
   }
-  .shape.voted .cnt{background:#111; color:var(--y);}
-  /* 도형 모양들 (배경 레이어에 적용) */
+  /* 재생중 — 은은한 펄스 링 + ♪ */
+  .shape.playing .bg{ filter:drop-shadow(2px 3px 0 rgba(0,0,0,.2)) drop-shadow(0 0 14px rgba(255,232,0,.95)); }
+  .shape .note-ico{
+    position:absolute; top:-6px; right:-2px; z-index:6; font-size:18px; display:none;
+    animation:bob 1s ease-in-out infinite alternate;
+    filter:drop-shadow(1px 1px 0 rgba(0,0,0,.4));
+  }
+  .shape.playing .note-ico{display:block;}
+  @keyframes bob{from{transform:translateY(0);}to{transform:translateY(-5px);}}
+  /* 도형 모양 (삼각형 제외) */
   .s-circle .bg{border-radius:50%;}
-  .s-tri .bg{clip-path:polygon(50% 0, 100% 100%, 0 100%);}
-  .s-tri .tags{padding-top:26%;}
-  /* 통통한 별 — 몸통 넓게, 뾰족이 짧게 (한글 안 삐져나오게) */
   .s-star .bg{clip-path:polygon(50% 0%, 71% 21%, 98% 35%, 84% 61%, 79% 91%, 50% 86%, 21% 91%, 16% 61%, 2% 35%, 29% 21%);}
-  .s-star .tags{padding-top:10%;}
+  .s-star .tags{padding-top:8%;}
   .s-hex .bg{clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);}
-  .s-square .bg{border-radius:14px;}
+  .s-square .bg{border-radius:16px;}
   .s-blob .bg{border-radius:58% 42% 55% 45% / 48% 55% 45% 52%;}
-  /* 1위 왕관 */
-  .crown{position:absolute; top:-14px; left:50%; transform:translateX(-50%); font-size:22px; z-index:5;
-    filter:drop-shadow(1px 2px 0 rgba(0,0,0,.4));}
-  /* 투표 팡 애니메이션 */
-  @keyframes pop{ 0%{transform:scale(1);} 40%{transform:scale(1.12);} 100%{transform:scale(1);} }
-  .shape.pop{animation:pop .35s ease-out;}
-
-  .note{
-    position:fixed; left:0; right:0; bottom:0; padding:10px 16px; text-align:center;
-    background:rgba(0,0,0,.85); color:#fff; font-size:11.5px; z-index:50;
+  .crown{position:absolute; top:-15px; left:50%; transform:translateX(-50%); font-size:22px; z-index:6;
+    filter:drop-shadow(1px 2px 0 rgba(0,0,0,.4)); pointer-events:none;}
+  @keyframes pop{0%{transform:scale(1);}40%{transform:scale(1.15);}100%{transform:scale(1);}}
+  .shape.pop{animation:pop .4s ease-out;}
+  /* +1 투표 플로터 */
+  .plus1{
+    position:absolute; z-index:20; font-family:'Black Han Sans',sans-serif; font-size:22px; color:var(--y);
+    text-shadow:1px 2px 0 rgba(0,0,0,.5); pointer-events:none;
+    animation:rise .8s ease-out forwards;
   }
-  .note b{color:var(--y);}
+  @keyframes rise{from{opacity:1; transform:translateY(0);}to{opacity:0; transform:translateY(-40px);}}
+
+  .note-bar{
+    position:fixed; left:0; right:0; bottom:0; padding:9px 14px; text-align:center;
+    background:rgba(0,0,0,.88); color:#fff; font-size:11.5px; z-index:50;
+  }
+  .note-bar b{color:var(--y);}
 </style>
 </head>
 <body>
   <h1>슬로우 뮤직</h1>
-  <p class="sub">투표할수록 커집니다 — 가장 큰 도형이 다음 발매곡으로 🗳</p>
+  <p class="sub">투표할수록 커집니다 — 가장 큰 도형이 다음 발매곡으로 🗳 <span style="opacity:.7">(한 번 = 듣기 · 두 번 = 투표)</span></p>
 
   <div id="app"></div>
 
-  <div class="note"><b>TEST</b> — 실제 사이트엔 영향 없어요. 도형을 눌러보세요 → 커집니다!</div>
+  <div class="note-bar" id="notebar"><b>TEST</b> — 한 번 누르면 ♪ 재생, 두 번 누르면 ▲ 투표!</div>
 
 <script>
-const SHAPES = ['s-circle','s-tri','s-star','s-hex','s-square','s-blob'];
+const SHAPES = ['s-circle','s-star','s-hex','s-square','s-blob'];   // 삼각형 제외
 const COLORS = ['#E24A9C','#FFD24A','#8BE04B','#B49BEE','#FF8A5C','#26C6C6','#F06CA8','#5B7CFA'];
 
 const CATS = [
@@ -129,51 +134,158 @@ const CATS = [
     ]},
 ];
 
-// 투표수 → 도형 크기 (px). 기본 86, 표당 +3.5, 최대 190
-function sizeOf(v){ return Math.min(86 + v*3.5, 190); }
-// 크기에 비례한 글자 크기
-function fontOf(v){ return Math.min(10 + v*0.28, 16); }
+function sizeOf(v){ return Math.min(96 + v*3.5, 200); }
+function fontOf(v){ return Math.min(10.5 + v*0.26, 16); }
 
-function render(){
+/* ── WebAudio 간단 멜로디 (클릭 = 듣기) ── */
+let AC=null, curStop=null;
+const SCALE=[0,3,5,7,10,12,15];  // 마이너 펜타토닉
+function playMelody(seed){
+  if(!AC) AC = new (window.AudioContext||window.webkitAudioContext)();
+  if(curStop) curStop();
+  const base = 220 * Math.pow(2, (seed%5)/12 + (seed%3)*0.33);
+  const g = AC.createGain(); g.connect(AC.destination);
+  g.gain.setValueAtTime(0.0001, AC.currentTime);
+  g.gain.linearRampToValueAtTime(0.12, AC.currentTime+0.05);
+  const oscs=[];
+  for(let n=0;n<6;n++){
+    const o=AC.createOscillator();
+    o.type = seed%2 ? 'triangle' : 'sine';
+    const st = AC.currentTime + n*0.28;
+    o.frequency.setValueAtTime(base*Math.pow(2, SCALE[(seed+n*2)%SCALE.length]/12), st);
+    o.connect(g); o.start(st); o.stop(st+0.26);
+    oscs.push(o);
+  }
+  g.gain.setValueAtTime(0.12, AC.currentTime+1.55);
+  g.gain.linearRampToValueAtTime(0.0001, AC.currentTime+1.9);
+  const stop=()=>{ try{g.gain.cancelScheduledValues(0); g.gain.value=0;}catch(e){} };
+  curStop=stop;
+  return 1900; // ms
+}
+
+/* ── 렌더 + 물리 ── */
+const worlds=[];
+function build(){
   const app=document.getElementById('app');
-  app.innerHTML = CATS.map((cat,ci)=>{
-    const top = cat.items.reduce((m,it,i)=> it.v>cat.items[m].v? i:m, 0);
-    const shapes = cat.items.map((it,i)=>{
-      const shape = SHAPES[(ci*2+i)%SHAPES.length];
-      const color = COLORS[(ci*3+i)%COLORS.length];
-      const s = sizeOf(it.v), f = fontOf(it.v);
-      const crown = i===top ? '<span class="crown">👑</span>' : '';
-      return `
-        <div class="shape ${shape} ${it._voted?'voted':''}" data-c="${ci}" data-i="${i}"
-             style="width:${s}px;height:${s}px;--shape-color:${color};font-size:${f}px;">
-          <span class="bg"></span>
-          ${crown}
-          <span class="tags">${it.tags.join('<br>')}</span>
-          <span class="cnt">▲ ${it.v}</span>
-        </div>`;
-    }).join('');
-    return `
-      <section class="cat">
-        <span class="cat-pill">🗳 ${cat.name}</span>
-        <div class="cat-box">${shapes}</div>
-        <p class="cat-foot">${cat.foot}</p>
-      </section>`;
-  }).join('');
+  app.innerHTML = CATS.map((cat,ci)=>`
+    <section class="cat">
+      <span class="cat-pill">🗳 ${cat.name}</span>
+      <div class="cat-box" id="box${ci}"></div>
+      <p class="cat-foot">${cat.foot}</p>
+    </section>`).join('');
 
-  app.querySelectorAll('.shape').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      const ci=+el.dataset.c, i=+el.dataset.i;
-      const it=CATS[ci].items[i];
-      if(it._voted){ it.v--; it._voted=false; }
-      else { it.v++; it._voted=true; }
-      render();
-      // 방금 누른 도형에 팡 효과
-      const again=app.querySelector(`.shape[data-c="${ci}"][data-i="${i}"]`);
-      if(again) again.classList.add('pop');
+  CATS.forEach((cat,ci)=>{
+    const box=document.getElementById('box'+ci);
+    const W=box.clientWidth, H=box.clientHeight;
+    const bodies=[];
+    cat.items.forEach((it,i)=>{
+      const el=document.createElement('div');
+      const shape=SHAPES[(ci*2+i)%SHAPES.length];
+      const color=COLORS[(ci*3+i)%COLORS.length];
+      el.className='shape '+shape;
+      el.style.setProperty('--shape-color',color);
+      el.innerHTML=`<span class="bg"></span><span class="crown" style="display:none">👑</span>
+        <span class="note-ico">🎵</span>
+        <span class="tags">${it.tags.join('<br>')}</span><span class="cnt">▲ ${it.v}</span>`;
+      box.appendChild(el);
+      const r=sizeOf(it.v)/2;
+      const b={
+        el, it, ci, i,
+        r, tr:r,
+        x: r+10+Math.random()*(W-2*r-20),
+        y: r+10+Math.random()*(H-2*r-20),
+        vx:(Math.random()*16+7)*(Math.random()<.5?-1:1),
+        vy:(Math.random()*16+7)*(Math.random()<.5?-1:1),
+      };
+      bodies.push(b);
+      applySize(b);
+      // 클릭(1번=재생) / 더블클릭(2번=투표)
+      let clickTimer=null;
+      el.addEventListener('click', ()=>{
+        if(clickTimer){ clearTimeout(clickTimer); clickTimer=null; vote(b); }
+        else {
+          clickTimer=setTimeout(()=>{ clickTimer=null; play(b); }, 260);
+        }
+      });
     });
+    worlds.push({box, bodies, W, H});
+    updateCrown(ci);
   });
 }
-render();
+function applySize(b){
+  const d=b.r*2;
+  b.el.style.width=d+'px'; b.el.style.height=d+'px';
+  b.el.style.fontSize=fontOf(b.it.v)+'px';
+}
+function updateCrown(ci){
+  const w=worlds[ci]; if(!w) return;
+  let top=w.bodies[0];
+  w.bodies.forEach(b=>{ if(b.it.v>top.it.v) top=b; });
+  w.bodies.forEach(b=>{ b.el.querySelector('.crown').style.display = (b===top)?'block':'none'; });
+}
+function play(b){
+  document.querySelectorAll('.shape.playing').forEach(e=>e.classList.remove('playing'));
+  b.el.classList.add('playing');
+  const dur=playMelody(b.ci*7+b.i*3+1);
+  document.getElementById('notebar').innerHTML='🎵 재생중 — <b>'+b.it.tags.join(' ')+'</b>';
+  setTimeout(()=>{ b.el.classList.remove('playing'); }, dur);
+}
+function vote(b){
+  b.it.v++;
+  b.tr=sizeOf(b.it.v)/2;
+  b.el.querySelector('.cnt').textContent='▲ '+b.it.v;
+  b.el.classList.remove('pop'); void b.el.offsetWidth; b.el.classList.add('pop');
+  // +1 플로터
+  const w=worlds[b.ci];
+  const p=document.createElement('div'); p.className='plus1'; p.textContent='+1';
+  p.style.left=(b.x-8)+'px'; p.style.top=(b.y-b.r-26)+'px';
+  w.box.appendChild(p); setTimeout(()=>p.remove(), 800);
+  updateCrown(b.ci);
+}
+
+/* 물리 루프 — 천천히 둥둥 + 살짝 부딪힘 */
+let last=performance.now();
+function step(now){
+  const dt=Math.min((now-last)/1000, .05); last=now;
+  worlds.forEach(w=>{
+    w.W=w.box.clientWidth; w.H=w.box.clientHeight;
+    const bs=w.bodies;
+    bs.forEach(b=>{
+      // 크기 서서히 (투표로 커질 때)
+      if(Math.abs(b.tr-b.r)>0.3){ b.r += (b.tr-b.r)*0.08; applySize(b); }
+      b.x+=b.vx*dt; b.y+=b.vy*dt;
+      // 벽 반사 (부드럽게)
+      if(b.x<b.r){ b.x=b.r; b.vx=Math.abs(b.vx); }
+      if(b.x>w.W-b.r){ b.x=w.W-b.r; b.vx=-Math.abs(b.vx); }
+      if(b.y<b.r+6){ b.y=b.r+6; b.vy=Math.abs(b.vy); }
+      if(b.y>w.H-b.r-6){ b.y=w.H-b.r-6; b.vy=-Math.abs(b.vy); }
+    });
+    // 서로 살짝 부딪힘 (원형 충돌)
+    for(let a=0;a<bs.length;a++) for(let c=a+1;c<bs.length;c++){
+      const A=bs[a], B=bs[c];
+      const dx=B.x-A.x, dy=B.y-A.y;
+      const dist=Math.hypot(dx,dy)||0.01, min=A.r+B.r-6;
+      if(dist<min){
+        const nx=dx/dist, ny=dy/dist, o=(min-dist)/2;
+        A.x-=nx*o; A.y-=ny*o; B.x+=nx*o; B.y+=ny*o;
+        // 속도 교환(부드럽게)
+        const avn=A.vx*nx+A.vy*ny, bvn=B.vx*nx+B.vy*ny;
+        const d=(bvn-avn)*0.9;
+        A.vx+=nx*d; A.vy+=ny*d; B.vx-=nx*d; B.vy-=ny*d;
+      }
+    }
+    bs.forEach(b=>{
+      // 속도 상한 (계속 천천히)
+      const sp=Math.hypot(b.vx,b.vy), max=26, min=6;
+      if(sp>max){ b.vx*=max/sp; b.vy*=max/sp; }
+      if(sp<min){ b.vx*=min/(sp||1); b.vy*=min/(sp||1); }
+      b.el.style.transform=`translate(${(b.x-b.r).toFixed(1)}px, ${(b.y-b.r).toFixed(1)}px)`;
+    });
+  });
+  requestAnimationFrame(step);
+}
+build();
+requestAnimationFrame(step);
 </script>
 </body>
 </html>
