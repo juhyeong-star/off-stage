@@ -13,7 +13,7 @@
   body{
     background:var(--bg); color:var(--ink);
     font-family:'Pretendard','Apple SD Gothic Neo',system-ui,sans-serif;
-    padding:12px 10px 70px; min-height:100vh; overflow-x:hidden; position:relative;
+    padding:12px 10px 90px; min-height:100vh; overflow-x:hidden; position:relative;
   }
   /* ── 배경: 큰 도형 은은히 + 하늘에서 떨어지는 작은 도형 ── */
   .bg-layer{position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0;}
@@ -95,9 +95,34 @@
     text-shadow:1px 2px 0 rgba(0,0,0,.5); pointer-events:none; animation:rise .8s ease-out forwards;}
   @keyframes rise{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-40px);}}
 
-  .note-bar{position:fixed; left:0; right:0; bottom:0; padding:9px 14px; text-align:center;
-    background:rgba(0,0,0,.88); color:#fff; font-size:11.5px; z-index:50;}
-  .note-bar b{color:var(--y);}
+  /* 작은 TEST 태그 */
+  .test-tag{position:fixed; top:calc(env(safe-area-inset-top) + 6px); right:8px; z-index:60;
+    background:rgba(15,15,20,.72); color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:20px;}
+
+  /* ── 하단 음원 플레이바 (재생/이전/다음 + 진행바 + 공유) ── */
+  .playbar{position:fixed; left:10px; right:10px; bottom:calc(env(safe-area-inset-bottom) + 10px); z-index:55;
+    background:var(--ink); color:#fff; border-radius:16px; padding:9px 12px;
+    display:flex; align-items:center; gap:10px; box-shadow:0 8px 24px rgba(0,0,0,.35);
+    border:2px solid rgba(255,255,255,.12);}
+  .pb-disc{width:38px; height:38px; border-radius:50%; flex:0 0 auto; background:#666;
+    box-shadow:inset 0 0 0 4px rgba(0,0,0,.35), inset 0 0 0 6px rgba(255,255,255,.15); position:relative;}
+  .pb-disc::after{content:""; position:absolute; inset:44% 44%; background:#111; border-radius:50%; box-shadow:0 0 0 2px rgba(255,255,255,.25);}
+  .pb-disc.spin{animation:spin 2.4s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .pb-info{flex:1; min-width:0;}
+  .pb-title{font-weight:900; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .pb-title small{font-weight:700; opacity:.6; font-size:11px;}
+  .pb-prog{height:4px; background:rgba(255,255,255,.18); border-radius:3px; margin-top:5px; overflow:hidden;}
+  .pb-prog>i{display:block; height:100%; width:0%; background:var(--y); border-radius:3px;}
+  .pb-btn{flex:0 0 auto; background:none; border:none; color:#fff; font-size:17px; cursor:pointer; padding:2px 3px; line-height:1;}
+  .pb-btn:active{transform:scale(.88);}
+  .pb-play{width:34px; height:34px; border-radius:50%; background:var(--y); color:#111; font-size:15px; display:flex; align-items:center; justify-content:center;}
+  .pb-share{font-size:16px;}
+  /* 공유 토스트 */
+  .toast{position:fixed; left:50%; bottom:80px; transform:translateX(-50%) translateY(10px); z-index:70;
+    background:rgba(0,0,0,.9); color:#fff; font-size:12px; font-weight:700; padding:8px 16px; border-radius:20px;
+    opacity:0; transition:opacity .2s, transform .2s; pointer-events:none;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
   /* ── 마감 카운트다운 (하단 가운데, 흰색) ── */
   .countdown{position:fixed; left:0; right:0; bottom:44px; z-index:49; text-align:center; pointer-events:none;}
   .countdown .cd-label{font-size:11px; font-weight:800; color:rgba(255,255,255,.9); letter-spacing:.5px;
@@ -115,7 +140,20 @@
   <p class="sub">투표할수록 커집니다 — 1위(반짝이는 도형)가 다음 발매곡으로 🗳 <span style="opacity:.7">(한 번 = 듣기 · 두 번 = 투표)</span></p>
 
   <div id="app"></div>
-  <div class="note-bar" id="notebar"><b>TEST</b> — 한 번 누르면 ♪ 재생, 두 번 누르면 ▲ 투표!</div>
+
+  <div class="test-tag">🧪 투표 시안 TEST</div>
+  <div class="playbar" id="playbar">
+    <div class="pb-disc" id="pbDisc"></div>
+    <div class="pb-info">
+      <div class="pb-title" id="pbTitle">— <small>곡을 눌러 재생 · 두 번 눌러 투표</small></div>
+      <div class="pb-prog"><i id="pbProg"></i></div>
+    </div>
+    <button class="pb-btn pb-prev" id="pbPrev">⏮</button>
+    <button class="pb-btn pb-play" id="pbPlay">▶</button>
+    <button class="pb-btn pb-next" id="pbNext">⏭</button>
+    <button class="pb-btn pb-share" id="pbShare" title="공유">🔗</button>
+  </div>
+  <div class="toast" id="toast"></div>
 
 <script>
 const SHAPES=['s-circle','s-star','s-hex','s-square','s-blob'];
@@ -180,11 +218,32 @@ function updateRanks(ci){
     b.el.querySelector('.cnt').textContent=b.it.v;
   });
 }
+let curBody=null, progTimer=null;
+function flatList(){ const arr=[]; worlds.forEach(w=>w.bodies.forEach(b=>arr.push(b))); return arr; }
 function play(b){
+  curBody=b;
   document.querySelectorAll('.shape.playing').forEach(e=>e.classList.remove('playing'));
-  b.el.classList.add('playing'); const dur=playMelody(b.ci*7+b.i*3+1);
-  document.getElementById('notebar').innerHTML='🎵 재생중 — <b>'+b.it.tags.join(' ')+'</b>';
-  setTimeout(()=>b.el.classList.remove('playing'),dur);
+  b.el.classList.add('playing');
+  const dur=playMelody(b.ci*7+b.i*3+1);
+  const color=getComputedStyle(b.el).getPropertyValue('--shape-color').trim();
+  // 플레이바 갱신
+  const disc=document.getElementById('pbDisc');
+  disc.style.background=color; disc.classList.add('spin');
+  document.getElementById('pbTitle').innerHTML=b.it.tags[0]+' <small>'+(b.it.tags.slice(1).join(' ')||'재생 중')+' · ▶</small>';
+  document.getElementById('pbPlay').textContent='⏸';
+  // 진행바 애니메이션
+  const prog=document.getElementById('pbProg'); prog.style.transition='none'; prog.style.width='0%';
+  void prog.offsetWidth; prog.style.transition='width '+(dur/1000)+'s linear'; prog.style.width='100%';
+  clearTimeout(progTimer);
+  progTimer=setTimeout(()=>{ b.el.classList.remove('playing'); disc.classList.remove('spin'); document.getElementById('pbPlay').textContent='▶'; }, dur);
+}
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1500); }
+/* 플레이바 버튼 */
+function wirePlaybar(){
+  document.getElementById('pbPlay').addEventListener('click',()=>{ if(curBody) play(curBody); });
+  document.getElementById('pbPrev').addEventListener('click',()=>{ const l=flatList(); if(!l.length)return; let i=curBody?l.indexOf(curBody):0; play(l[(i-1+l.length)%l.length]); });
+  document.getElementById('pbNext').addEventListener('click',()=>{ const l=flatList(); if(!l.length)return; let i=curBody?l.indexOf(curBody):-1; play(l[(i+1)%l.length]); });
+  document.getElementById('pbShare').addEventListener('click',()=>{ toast(curBody? ('🔗 '+curBody.it.tags[0]+' 링크 복사됨!') : '🔗 재생 중인 곡이 없어요'); });
 }
 function vote(b){
   b.it.v++; b.tr=sizeOf(b.it.v)/2;
@@ -242,6 +301,7 @@ function stepLoop(now){
 })();
 
 build();
+wirePlaybar();
 requestAnimationFrame(stepLoop);
 </script>
 </body>
