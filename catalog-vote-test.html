@@ -64,6 +64,8 @@
   .shape .bg{position:absolute; inset:0; z-index:1; background:var(--shape-color,#E24A9C);
     filter:drop-shadow(2px 3px 0 rgba(0,0,0,.2)); transition:filter .2s;}
   .shape .tags{position:relative; z-index:2; padding:4px; pointer-events:none;}
+  .shape .tg{pointer-events:auto; cursor:pointer; border-radius:4px; transition:background .12s;}
+  .shape .tg:hover,.shape .tg:active{background:rgba(255,255,255,.35); text-decoration:underline;}
   .s-circle .bg{border-radius:50%;}
   .s-star .bg{clip-path:polygon(50% 0%,71% 21%,98% 35%,84% 61%,79% 91%,50% 86%,21% 91%,16% 61%,2% 35%,29% 21%);}
   .s-star .tags{padding-top:8%;}
@@ -104,16 +106,25 @@
     background:var(--ink); color:#fff; border-radius:16px; padding:9px 12px;
     display:flex; align-items:center; gap:10px; box-shadow:0 8px 24px rgba(0,0,0,.35);
     border:2px solid rgba(255,255,255,.12);}
-  .pb-disc{width:38px; height:38px; border-radius:50%; flex:0 0 auto; background:#666;
-    box-shadow:inset 0 0 0 4px rgba(0,0,0,.35), inset 0 0 0 6px rgba(255,255,255,.15); position:relative;}
-  .pb-disc::after{content:""; position:absolute; inset:44% 44%; background:#111; border-radius:50%; box-shadow:0 0 0 2px rgba(255,255,255,.25);}
-  .pb-disc.spin{animation:spin 2.4s linear infinite;}
+  .pb-disc{width:40px; height:40px; flex:0 0 auto; position:relative;}
+  .pb-disc .pbg{position:absolute; inset:0; background:var(--pb-color,#666);}      /* 도형 모양 담김 */
+  .pb-disc.spin{animation:spin 2.6s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
+  /* 재생 중인 도형 모양대로 */
+  .pb-disc.m-circle .pbg{border-radius:50%;}
+  .pb-disc.m-square .pbg{border-radius:9px;}
+  .pb-disc.m-blob .pbg{border-radius:58% 42% 55% 45% / 48% 55% 45% 52%;}
+  .pb-disc.m-star .pbg{clip-path:polygon(50% 0%,71% 21%,98% 35%,84% 61%,79% 91%,50% 86%,21% 91%,16% 61%,2% 35%,29% 21%);}
+  .pb-disc.m-hex .pbg{clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);}
   .pb-info{flex:1; min-width:0;}
   .pb-title{font-weight:900; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .pb-title small{font-weight:700; opacity:.6; font-size:11px;}
-  .pb-prog{height:4px; background:rgba(255,255,255,.18); border-radius:3px; margin-top:5px; overflow:hidden;}
-  .pb-prog>i{display:block; height:100%; width:0%; background:var(--y); border-radius:3px;}
+  /* 진행바 — 손으로 드래그 */
+  .pb-prog{height:14px; display:flex; align-items:center; margin-top:3px; cursor:pointer; touch-action:none;}
+  .pb-prog .track{position:relative; height:5px; width:100%; background:rgba(255,255,255,.18); border-radius:3px;}
+  .pb-prog .fill{position:absolute; left:0; top:0; height:100%; width:0%; background:var(--y); border-radius:3px;}
+  .pb-prog .knob{position:absolute; top:50%; left:0%; width:13px; height:13px; border-radius:50%; background:#fff;
+    transform:translate(-50%,-50%); box-shadow:0 1px 4px rgba(0,0,0,.5); border:2px solid var(--y);}
   .pb-btn{flex:0 0 auto; background:none; border:none; color:#fff; font-size:17px; cursor:pointer; padding:2px 3px; line-height:1;}
   .pb-btn:active{transform:scale(.88);}
   .pb-play{width:34px; height:34px; border-radius:50%; background:var(--y); color:#111; font-size:15px; display:flex; align-items:center; justify-content:center;}
@@ -143,10 +154,10 @@
 
   <div class="test-tag">🧪 투표 시안 TEST</div>
   <div class="playbar" id="playbar">
-    <div class="pb-disc" id="pbDisc"></div>
+    <div class="pb-disc" id="pbDisc"><span class="pbg"></span></div>
     <div class="pb-info">
       <div class="pb-title" id="pbTitle">— <small>곡을 눌러 재생 · 두 번 눌러 투표</small></div>
-      <div class="pb-prog"><i id="pbProg"></i></div>
+      <div class="pb-prog" id="pbProg"><div class="track"><div class="fill" id="pbFill"></div><div class="knob" id="pbKnob"></div></div></div>
     </div>
     <button class="pb-btn pb-prev" id="pbPrev">⏮</button>
     <button class="pb-btn pb-play" id="pbPlay">▶</button>
@@ -195,7 +206,8 @@ function build(){
       const el=document.createElement('div');
       el.className='shape '+SHAPES[(ci*2+i)%SHAPES.length];
       el.style.setProperty('--shape-color',COLORS[(ci*3+i)%COLORS.length]);
-      el.innerHTML=`<span class="bg"></span><span class="note-ico">🎵</span><span class="tags">${it.tags.join('<br>')}</span><span class="cnt">${it.v}</span>`;
+      el.innerHTML=`<span class="bg"></span><span class="note-ico">🎵</span><span class="tags">${it.tags.map(t=>`<span class="tg">${t}</span>`).join('<br>')}</span><span class="cnt">${it.v}</span>`;
+      el.querySelectorAll('.tg').forEach(tg=>tg.addEventListener('click',ev=>{ ev.stopPropagation(); goArtist(tg.textContent); }));
       box.appendChild(el);
       const r=sizeOf(it.v)/2;
       const b={el,it,ci,i,r,tr:r,x:r+8+Math.random()*(W-2*r-16),y:r+8+Math.random()*(H-2*r-16),
@@ -218,32 +230,51 @@ function updateRanks(ci){
     b.el.querySelector('.cnt').textContent=b.it.v;
   });
 }
-let curBody=null, progTimer=null;
+let curBody=null, progStart=0, progDur=0, seekFrac=0, dragging=false;
 function flatList(){ const arr=[]; worlds.forEach(w=>w.bodies.forEach(b=>arr.push(b))); return arr; }
-function play(b){
+const SHAPE2M={'s-circle':'m-circle','s-square':'m-square','s-blob':'m-blob','s-star':'m-star','s-hex':'m-hex'};
+function play(b, fromFrac){
   curBody=b;
   document.querySelectorAll('.shape.playing').forEach(e=>e.classList.remove('playing'));
   b.el.classList.add('playing');
   const dur=playMelody(b.ci*7+b.i*3+1);
   const color=getComputedStyle(b.el).getPropertyValue('--shape-color').trim();
-  // 플레이바 갱신
+  // 디스크 = 그 도형 모양/색 그대로
   const disc=document.getElementById('pbDisc');
-  disc.style.background=color; disc.classList.add('spin');
+  disc.className='pb-disc spin ' + (SHAPE2M[b.el.classList[1]]||'m-circle');
+  disc.style.setProperty('--pb-color', color);
   document.getElementById('pbTitle').innerHTML=b.it.tags[0]+' <small>'+(b.it.tags.slice(1).join(' ')||'재생 중')+' · ▶</small>';
   document.getElementById('pbPlay').textContent='⏸';
-  // 진행바 애니메이션
-  const prog=document.getElementById('pbProg'); prog.style.transition='none'; prog.style.width='0%';
-  void prog.offsetWidth; prog.style.transition='width '+(dur/1000)+'s linear'; prog.style.width='100%';
-  clearTimeout(progTimer);
-  progTimer=setTimeout(()=>{ b.el.classList.remove('playing'); disc.classList.remove('spin'); document.getElementById('pbPlay').textContent='▶'; }, dur);
+  // 진행바 (드래그 위치에서 시작 가능)
+  progStart=performance.now() - (fromFrac||0)*dur; progDur=dur;
+  clearTimeout(play._t);
+  play._t=setTimeout(()=>{ endPlay(); }, dur*(1-(fromFrac||0)));
 }
+function endPlay(){ if(curBody) curBody.el.classList.remove('playing'); document.getElementById('pbDisc').classList.remove('spin'); document.getElementById('pbPlay').textContent='▶'; progDur=0; }
+function updateProgUI(){
+  if(dragging) return;
+  let f = progDur? Math.min(1,(performance.now()-progStart)/progDur) : 0;
+  setProgUI(f);
+}
+function setProgUI(f){ document.getElementById('pbFill').style.width=(f*100)+'%'; document.getElementById('pbKnob').style.left=(f*100)+'%'; }
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1500); }
-/* 플레이바 버튼 */
+/* 아티스트 페이지로 (해시태그 클릭) */
+function goArtist(tag){ toast('→ ' + tag + ' 아티스트 페이지로 이동'); /* 실제앱: navigateTo("artist", 이름) */ }
+/* 플레이바 버튼 + 진행바 드래그 */
 function wirePlaybar(){
-  document.getElementById('pbPlay').addEventListener('click',()=>{ if(curBody) play(curBody); });
+  document.getElementById('pbPlay').addEventListener('click',()=>{ if(!curBody){const l=flatList(); if(l.length)play(l[0]); return;} if(progDur){ endPlay(); } else { play(curBody, 0); } });
   document.getElementById('pbPrev').addEventListener('click',()=>{ const l=flatList(); if(!l.length)return; let i=curBody?l.indexOf(curBody):0; play(l[(i-1+l.length)%l.length]); });
   document.getElementById('pbNext').addEventListener('click',()=>{ const l=flatList(); if(!l.length)return; let i=curBody?l.indexOf(curBody):-1; play(l[(i+1)%l.length]); });
-  document.getElementById('pbShare').addEventListener('click',()=>{ toast(curBody? ('🔗 '+curBody.it.tags[0]+' 링크 복사됨!') : '🔗 재생 중인 곡이 없어요'); });
+  document.getElementById('pbShare').addEventListener('click',()=>{ if(navigator.share){ navigator.share({title:'슬로우 뮤직', text:curBody?curBody.it.tags.join(' '):'', url:location.href}).catch(()=>{}); } else { toast(curBody? ('🔗 '+curBody.it.tags[0]+' 링크 복사됨!') : '🔗 재생 중인 곡이 없어요'); } });
+  // 진행바 드래그
+  const prog=document.getElementById('pbProg');
+  function fracFromEvent(e){ const r=prog.getBoundingClientRect(); const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left; return Math.max(0,Math.min(1,x/r.width)); }
+  function start(e){ if(!curBody)return; dragging=true; move(e); }
+  function move(e){ if(!dragging)return; seekFrac=fracFromEvent(e); setProgUI(seekFrac); e.preventDefault&&e.preventDefault(); }
+  function end(){ if(!dragging)return; dragging=false; if(curBody) play(curBody, seekFrac); }
+  prog.addEventListener('mousedown',start); window.addEventListener('mousemove',move); window.addEventListener('mouseup',end);
+  prog.addEventListener('touchstart',start,{passive:false}); window.addEventListener('touchmove',move,{passive:false}); window.addEventListener('touchend',end);
+  setInterval(updateProgUI, 60);
 }
 function vote(b){
   b.it.v++; b.tr=sizeOf(b.it.v)/2;
