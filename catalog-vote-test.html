@@ -194,15 +194,29 @@ async function fetchRealTracks(){
 }
 function toItem(t){ return { tags:[t.artist, ...t.tags.slice(0,2)], v:t.v, audioUrl:t.audioUrl, title:t.title, color:t.shapeColor, real:true }; }
 
+// 태그로 실제 카테고리 분류 (임의 마스터/데모 구분 대신 — 사용자 요청)
+function hasTag(t, re){ return t.tags.some(tg=>re.test(tg)); }
 async function loadRealData(){
   try{
     const tracks=await fetchRealTracks();
-    const masters=tracks.filter(t=>!t.isDemo);
-    const demos=tracks.filter(t=>t.isDemo).slice(0,10);
+    const used=new Set();
+    function take(pred, limit){
+      const picked=[];
+      for(const t of tracks){ if(used.has(t.id)) continue; if(!pred(t)) continue; picked.push(t); used.add(t.id); if(picked.length>=limit) break; }
+      return picked;
+    }
+    // 1) 6월 월평 투표 — 실제 '6월' 태그 붙은 것만 (샘플 디자인과 같은 개수: 최대 6개)
+    const june = take(t=>hasTag(t,/6월/), 6);
+    // 2) 밴드 음악 투표 — 밴드/록 태그 (먼저 배정해야 '데모'가 다 가져가지 않음)
+    const band = take(t=>hasTag(t,/밴드|록|rock|band/i), 6);
+    // 3) 이달의 데모 투표 — 나머지 데모 중 최신순 (최대 5개, 샘플과 동일 개수감)
+    const demos = take(t=>t.isDemo, 5);
+
     CATS=[];
-    if(masters.length) CATS.push({ name:'발매곡 투표', items:masters.map(toItem) });
-    if(demos.length) CATS.push({ name:'최근 데모 투표', items:demos.map(toItem) });
-    if(!CATS.length) throw new Error('no tracks');
+    if(june.length)  CATS.push({ name:'6월 월평 투표',   items:june.map(toItem) });
+    if(demos.length) CATS.push({ name:'이달의 데모 투표', items:demos.map(toItem) });
+    if(band.length)  CATS.push({ name:'밴드 음악 투표',   items:band.map(toItem) });
+    if(!CATS.length) throw new Error('no matching tracks');
   }catch(e){
     console.warn('[투표시안] 실제 데이터 로드 실패, 안내만 표시', e);
     document.getElementById('app').innerHTML='<p style="position:relative;z-index:2;color:rgba(0,0,0,.6);font-weight:700;padding:30px 4px;">⚠️ 실제 곡을 불러오지 못했어요. 네트워크 상태를 확인해주세요.</p>';
