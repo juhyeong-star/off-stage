@@ -73,10 +73,11 @@
   .s-square .bg{border-radius:16px;}
   .s-blob .bg{border-radius:58% 42% 55% 45% / 48% 55% 45% 52%;}
 
-  /* 투표수 — 상위 1·2위만, 흰색, 우측 상단 */
-  .cnt{position:absolute; top:9%; right:12%; z-index:4; display:none;
-    font-family:'Black Han Sans',sans-serif; color:#fff; font-size:1.15em; line-height:1;
-    text-shadow:0 1px 3px rgba(0,0,0,.55), 1px 1px 0 rgba(0,0,0,.35); pointer-events:none;}
+  /* 투표수 — 상위 1·2위만. 도형 모양과 무관하게 항상 위에 뜨는 알약 배지 */
+  .cnt{position:absolute; top:-9px; left:50%; transform:translateX(-50%); z-index:5; display:none;
+    font-family:'Black Han Sans',sans-serif; color:#fff; background:#111; line-height:1;
+    font-size:12px; padding:3px 10px; border-radius:999px; white-space:nowrap;
+    box-shadow:0 2px 5px rgba(0,0,0,.4); pointer-events:none;}
   .shape.show-cnt .cnt{display:block;}
 
   /* 1위 = 네온사인 반짝임 (왕관 대신) — 잔잔하게 */
@@ -225,8 +226,8 @@ async function loadRealData(){
   return true;
 }
 // 순위대로 사이즈 — 전반적으로 더 크게
-function sizeOf(v){ return Math.min(84 + v*3.6, 178); }
-function fontOf(v){ return Math.min(12 + v*0.28, 19); }
+function sizeOf(v){ return Math.min(62 + v*2.2, 122); }
+function fontOf(v){ return Math.min(10.5 + v*0.14, 15); }
 
 const worlds=[];
 function build(){
