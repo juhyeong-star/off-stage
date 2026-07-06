@@ -43,7 +43,19 @@
     aspect-ratio:1/.86; height:auto; max-height:min(52vh,380px);  /* 세로 더 줄임 — 한눈에 */
     background:rgba(255,255,255,.08);
   }
-  .cat-foot{font-size:11.5px; color:rgba(0,0,0,.5); margin:8px 8px 0; font-weight:600;}
+  /* 칸 하단 카운트다운 — 박스 안 아래 가운데 흰색 */
+  .cd-strip{
+    position:absolute; left:0; right:0; bottom:0; z-index:9;
+    display:flex; align-items:center; justify-content:center; gap:7px;
+    padding:6px 10px 8px;
+    background:linear-gradient(0deg, rgba(0,0,0,.30), rgba(0,0,0,0));
+    pointer-events:none;
+  }
+  .cd-strip .lab{font-size:10.5px; font-weight:800; color:rgba(255,255,255,.92); text-shadow:0 1px 3px rgba(0,0,0,.5);}
+  .cd-strip .tm{font-family:'Black Han Sans',sans-serif; color:#fff; font-size:19px; line-height:1;
+    text-shadow:0 2px 6px rgba(0,0,0,.55);}
+  .cd-strip .tm small{font-family:'Pretendard',sans-serif; font-size:11px; font-weight:800; opacity:.9; margin-right:3px;}
+  .cd-strip .tm .colon{opacity:.55; padding:0 1px;}
 
   /* ── 떠다니는 투표 도형 ── */
   .shape{position:absolute; left:0; top:0; display:flex; flex-direction:column;
@@ -103,11 +115,6 @@
   <p class="sub">투표할수록 커집니다 — 1위(반짝이는 도형)가 다음 발매곡으로 🗳 <span style="opacity:.7">(한 번 = 듣기 · 두 번 = 투표)</span></p>
 
   <div id="app"></div>
-
-  <div class="countdown" id="countdown">
-    <div class="cd-label">🗳 이달의 투표 마감까지</div>
-    <div class="cd-time" id="cdTime">—</div>
-  </div>
   <div class="note-bar" id="notebar"><b>TEST</b> — 한 번 누르면 ♪ 재생, 두 번 누르면 ▲ 투표!</div>
 
 <script>
@@ -143,7 +150,7 @@ function playMelody(seed){
 const worlds=[];
 function build(){
   const app=document.getElementById('app');
-  app.innerHTML=CATS.map((cat,ci)=>`<section class="cat"><span class="cat-pill">${cat.name}</span><div class="cat-box" id="box${ci}"></div><p class="cat-foot">${cat.foot}</p></section>`).join('');
+  app.innerHTML=CATS.map((cat,ci)=>`<section class="cat"><span class="cat-pill">${cat.name}</span><div class="cat-box" id="box${ci}"><div class="cd-strip"><span class="lab">투표 마감까지</span><span class="tm" id="cd${ci}">—</span></div></div></section>`).join('');
   CATS.forEach((cat,ci)=>{
     const box=document.getElementById('box'+ci), W=box.clientWidth||340, H=box.clientHeight||340, bodies=[];
     cat.items.forEach((it,i)=>{
@@ -218,19 +225,18 @@ function stepLoop(now){
     html+=`<span class="fall ${s}" style="left:${Math.random()*100}%;--fw:${w}px;--fc:${c};animation-duration:${d}s;animation-delay:${(-Math.random()*d).toFixed(1)}s;"><i></i></span>`;}
   document.getElementById('bg').innerHTML=html;
 })();
-/* ── 마감 카운트다운 (이달 말일 자정까지) ── */
+/* ── 칸별 마감 카운트다운 (이달 말일 자정까지) ── */
 (function countdown(){
-  const cd=document.getElementById('cdTime');
   const now0=new Date();
-  const end=new Date(now0.getFullYear(), now0.getMonth()+1, 1, 0,0,0); // 다음 달 1일 0시
+  const end=new Date(now0.getFullYear(), now0.getMonth()+1, 1, 0,0,0);
+  const p=n=>String(n).padStart(2,'0');
   function tick(){
     let s=Math.max(0, Math.floor((end - new Date())/1000));
     const d=Math.floor(s/86400); s-=d*86400;
     const h=Math.floor(s/3600); s-=h*3600;
     const m=Math.floor(s/60); s-=m*60;
-    const p=n=>String(n).padStart(2,'0');
-    cd.innerHTML = (d>0? `<small>D-${d}</small>`:'') +
-      `${p(h)}<span class="colon">:</span>${p(m)}<span class="colon">:</span>${p(s)}`;
+    const html=(d>0?`<small>D-${d}</small>`:'')+`${p(h)}<span class="colon">:</span>${p(m)}<span class="colon">:</span>${p(s)}`;
+    CATS.forEach((c,ci)=>{ const el=document.getElementById('cd'+ci); if(el) el.innerHTML=html; });
   }
   tick(); setInterval(tick,1000);
 })();
