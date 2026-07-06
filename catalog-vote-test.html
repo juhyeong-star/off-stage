@@ -40,7 +40,7 @@
   .cat-box{
     border:3px dashed rgba(255,255,255,.95); border-radius:18px; margin-top:-16px;
     position:relative; overflow:hidden;
-    aspect-ratio:1/1; height:auto; max-height:min(60vh,440px);   /* 정사각형 */
+    aspect-ratio:1/.86; height:auto; max-height:min(52vh,380px);  /* 세로 더 줄임 — 한눈에 */
     background:rgba(255,255,255,.08);
   }
   .cat-foot{font-size:11.5px; color:rgba(0,0,0,.5); margin:8px 8px 0; font-weight:600;}
@@ -65,12 +65,12 @@
     text-shadow:0 1px 3px rgba(0,0,0,.55), 1px 1px 0 rgba(0,0,0,.35); pointer-events:none;}
   .shape.show-cnt .cnt{display:block;}
 
-  /* 1위 = 네온사인 반짝임 (왕관 대신) */
+  /* 1위 = 네온사인 반짝임 (왕관 대신) — 잔잔하게 */
   @keyframes neon{
-    0%,100%{filter:drop-shadow(2px 3px 0 rgba(0,0,0,.2)) drop-shadow(0 0 4px #fff) drop-shadow(0 0 10px var(--shape-color));}
-    50%{filter:drop-shadow(2px 3px 0 rgba(0,0,0,.2)) drop-shadow(0 0 14px #fff) drop-shadow(0 0 30px var(--shape-color)) drop-shadow(0 0 44px var(--shape-color));}
+    0%,100%{filter:drop-shadow(2px 3px 0 rgba(0,0,0,.2)) drop-shadow(0 0 4px rgba(255,255,255,.7)) drop-shadow(0 0 9px var(--shape-color));}
+    50%{filter:drop-shadow(2px 3px 0 rgba(0,0,0,.2)) drop-shadow(0 0 9px rgba(255,255,255,.85)) drop-shadow(0 0 18px var(--shape-color));}
   }
-  .shape.top .bg{animation:neon 1.15s ease-in-out infinite;}
+  .shape.top .bg{animation:neon 2.2s ease-in-out infinite;}
 
   /* 재생중 ♪ */
   .shape .note-ico{position:absolute; top:-6px; left:-2px; z-index:6; font-size:18px; display:none;
@@ -107,9 +107,9 @@ const CATS=[
   { name:'밴드 음악 투표', foot:'밴드 편성 곡만 모아서 한판',
     items:[{tags:['#푸르름','#휴게이징'],v:22},{tags:['#파워레인저','#ROCK'],v:11},{tags:['#짝사랑','#중독'],v:7},{tags:['#자우림','#밴드'],v:6},{tags:['#15살차이연애'],v:4},{tags:['#트로트','#7080'],v:2}]},
 ];
-// 순위대로 사이즈 — 값이 클수록 큼 (박스 작아져서 최대 148)
-function sizeOf(v){ return Math.min(66 + v*3.2, 148); }
-function fontOf(v){ return Math.min(10 + v*0.22, 15); }
+// 순위대로 사이즈 — 전반적으로 더 크게
+function sizeOf(v){ return Math.min(84 + v*3.6, 178); }
+function fontOf(v){ return Math.min(12 + v*0.28, 19); }
 
 /* WebAudio 간단 멜로디 */
 let AC=null,curStop=null; const SCALE=[0,3,5,7,10,12,15];
@@ -129,7 +129,7 @@ function playMelody(seed){
 const worlds=[];
 function build(){
   const app=document.getElementById('app');
-  app.innerHTML=CATS.map((cat,ci)=>`<section class="cat"><span class="cat-pill">🗳 ${cat.name}</span><div class="cat-box" id="box${ci}"></div><p class="cat-foot">${cat.foot}</p></section>`).join('');
+  app.innerHTML=CATS.map((cat,ci)=>`<section class="cat"><span class="cat-pill">${cat.name}</span><div class="cat-box" id="box${ci}"></div><p class="cat-foot">${cat.foot}</p></section>`).join('');
   CATS.forEach((cat,ci)=>{
     const box=document.getElementById('box'+ci), W=box.clientWidth||340, H=box.clientHeight||340, bodies=[];
     cat.items.forEach((it,i)=>{
