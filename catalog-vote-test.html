@@ -225,9 +225,14 @@ async function loadRealData(){
   }
   return true;
 }
-// 순위대로 사이즈 — 전반적으로 더 크게
-function sizeOf(v){ return Math.min(62 + v*2.2, 122); }
-function fontOf(v){ return Math.min(10.5 + v*0.14, 15); }
+// 크기 = 기본 순위 크기(idx 작을수록 큼) + 투표수 보너스. 투표 0이어도 샘플처럼 다양.
+// idx: 카테고리 내 표시 순서(0=제일 큼). 모바일 박스(~355) 안에 맞게 상한 128.
+const SIZE_STEPS=[128, 108, 96, 86, 78, 72]; // 순서별 기본 지름
+function sizeOf(v, idx){
+  const base = SIZE_STEPS[Math.min(idx||0, SIZE_STEPS.length-1)];
+  return Math.min(base + v*3, 150);
+}
+function fontOf(d){ return Math.max(10, Math.min(d*0.135, 17)); } // 지름 기준
 
 const worlds=[];
 function build(){
@@ -245,8 +250,8 @@ function build(){
       el.innerHTML=`<span class="bg"></span><span class="note-ico">🎵</span><span class="tags">${tagsHtml}</span><span class="cnt">${it.v}</span>`;
       el.querySelectorAll('.tg').forEach(tg=>tg.addEventListener('click',ev=>{ ev.stopPropagation(); goArtist(tg.textContent); }));
       box.appendChild(el);
-      const r=sizeOf(it.v)/2;
-      const b={el,it,ci,i,r,tr:r,x:r+8+Math.random()*(W-2*r-16),y:r+8+Math.random()*(H-2*r-16),
+      const r=sizeOf(it.v, i)/2;
+      const b={el,it,ci,i,idx:i,r,tr:r,x:r+8+Math.random()*(W-2*r-16),y:r+8+Math.random()*(H-2*r-16),
         vx:(Math.random()*15+7)*(Math.random()<.5?-1:1),vy:(Math.random()*15+7)*(Math.random()<.5?-1:1)};
       bodies.push(b); applySize(b);
       let ct=null;
@@ -255,7 +260,7 @@ function build(){
     worlds.push({box,bodies,W,H}); updateRanks(ci);
   });
 }
-function applySize(b){const d=b.r*2; b.el.style.width=d+'px'; b.el.style.height=d+'px'; b.el.style.fontSize=fontOf(b.it.v)+'px';}
+function applySize(b){const d=b.r*2; b.el.style.width=d+'px'; b.el.style.height=d+'px'; b.el.style.fontSize=fontOf(d)+'px';}
 function updateRanks(ci){
   const w=worlds[ci]; if(!w) return;
   const sorted=[...w.bodies].sort((a,b)=>b.it.v-a.it.v);
@@ -331,7 +336,7 @@ function wirePlaybar(){
   setInterval(updateProgUI, 60);
 }
 function vote(b){
-  b.it.v++; b.tr=sizeOf(b.it.v)/2;
+  b.it.v++; b.tr=sizeOf(b.it.v, b.idx)/2;
   b.el.classList.remove('pop'); void b.el.offsetWidth; b.el.classList.add('pop');
   const w=worlds[b.ci], p=document.createElement('div'); p.className='plus1'; p.textContent='+1';
   p.style.left=(b.x-8)+'px'; p.style.top=(b.y-b.r-26)+'px'; w.box.appendChild(p); setTimeout(()=>p.remove(),800);
