@@ -977,26 +977,44 @@ window.addEventListener('popstate', (e) => {
 });
 
 
-// Toggle bottom hamburger menu
+// Toggle bottom hamburger menu — 간단 메뉴(테스트버전, 사용자 요청): 큰 .sidebar-nav 시트 대신
+// .quick-menu(글자만) 를 연다. #sidebar-nav 자체는 다른 곳(더보기 등)에서 계속 쓸 수 있어 손대지 않음.
 window.toggleMenu = function() {
-  const sidebar = document.getElementById('sidebar-nav');
+  const menu = document.getElementById('quick-menu');
   const btn = document.getElementById('hamburger-btn');
-  const isOpen = sidebar.classList.toggle('open');
+  if (!menu) return;
+  const isOpen = menu.classList.toggle('open');
   if (btn) {
     btn.classList.toggle('open', isOpen);
     const icon = btn.querySelector('i');
     if (icon) icon.className = isOpen ? 'ri-close-line' : 'ri-menu-line';
   }
+  if (isOpen) _updateQuickMenuUser();
 };
 function closeMenu() {
-  const sidebar = document.getElementById('sidebar-nav');
+  const menu = document.getElementById('quick-menu');
   const btn = document.getElementById('hamburger-btn');
-  if (sidebar) sidebar.classList.remove('open');
+  if (menu) menu.classList.remove('open');
   if (btn) {
     btn.classList.remove('open');
     const icon = btn.querySelector('i');
     if (icon) icon.className = 'ri-menu-line';
   }
+}
+// 메뉴 바깥을 누르면 닫힘.
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('quick-menu');
+  const btn = document.getElementById('hamburger-btn');
+  if (!menu || !menu.classList.contains('open')) return;
+  if (menu.contains(e.target) || (btn && btn.contains(e.target))) return;
+  closeMenu();
+});
+// 간단 메뉴의 '로그인 / 가입' 항목을 실제 로그인 상태(이름)로 갱신.
+function _updateQuickMenuUser() {
+  const el = document.getElementById('quick-menu-user');
+  if (!el) return;
+  const user = window.__currentUser || (window.DB && window.DB.get && window.DB.get().currentUser) || null;
+  el.textContent = user ? user.name : '로그인 / 가입';
 }
 
 // Mobile bottom-tab "더보기" — opens the sidebar sheet so mobile users can
@@ -3140,6 +3158,7 @@ function updateHeaderAuth() {
       <button class="btn-primary" style="width:100%;padding:10px;font-size:13px;" onclick="navigateTo('auth')">${_t('로그인 / 가입', 'Sign in / up')}</button>
     `;
   }
+  if (typeof _updateQuickMenuUser === 'function') _updateQuickMenuUser();
 }
 
 window.renderSidebarPlaylists = function() {
