@@ -10727,14 +10727,20 @@ window.uwUpGo = function (step) {
 window.uwUpBack = function () { window.uwUpGo(window.__uwFormBack || 'kiosk'); };
 window.uwUpPick = function (what) {
   var click = function (sel) { var el = document.querySelector('#uploadWizard ' + sel); if (el) el.click(); };
-  if (what === 'release') {
-    // 발매는 아직 런칭 전 — 막고 '준비 중' 안내. (지금은 데모만)
-    if (typeof showToast === 'function') showToast(_t('발매는 아직 준비 중이에요 🛠️ 지금은 데모만 올릴 수 있어요', 'Release is coming soon — demos only for now'));
-    return;
+  if (what === 'vote') {
+    // 투표참여 — 업로드 자체는 데모와 동일(발매는 아직 준비중), 제출 직전에 투표 카테고리만 고름.
+    window.__uwVoteEntry = true; window.__uwVoteCategory = null;
+    click('[data-version-type="demo"]'); window.uwUpGo('dchoice');
   }
-  else if (what === 'demo') { click('[data-version-type="demo"]'); window.uwUpGo('dchoice'); }
+  else if (what === 'demo') { window.__uwVoteEntry = false; window.__uwVoteCategory = null; click('[data-version-type="demo"]'); window.uwUpGo('dchoice'); }
   else if (what === 'new') { click('[data-proj-choice="new"]'); window.__uwFormBack = 'dchoice'; window.uwUpGo('form'); }
   else if (what === 'existing') { click('[data-proj-choice="existing"]'); window.__uwFormBack = 'dchoice'; window.uwUpGo('form'); }
+};
+// 투표 카테고리 선택 — 고른 뒤 원래 업로드 폼 제출을 이어서 실행(같은 submit 핸들러가 태그를 반영).
+window.uwPickVoteCategory = function (name) {
+  window.__uwVoteCategory = name;
+  var form = document.getElementById('upload-form');
+  if (form) { if (form.requestSubmit) form.requestSubmit(); else form.dispatchEvent(new Event('submit', { cancelable: true })); }
 };
 window.uwPrevLine = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
 window.uwPickShape = function (el) {
@@ -10773,6 +10779,7 @@ window.uwGenrePreview = function (key) {
 };
 
 function renderUpload() {
+  window.__uwVoteEntry = false; window.__uwVoteCategory = null;   // 새 업로드 세션 — 투표참여 상태 초기화
   const db = window.DB.get();
   if (!db.currentUser) {
     // pending 상태 남겨두면 다음 로그인 시 의도와 다른 자동 세팅이 됨 — 항상 클리어.
@@ -10835,9 +10842,17 @@ function renderUpload() {
         <h1 style="text-align:center;margin:8px 0 2px;">${_i18n('무엇을 올릴까요?','What are you uploading?')}</h1>
         <p style="text-align:center;color:var(--text-secondary);font-size:13px;margin:0;">${_i18n('탭해서 선택하세요','Tap to choose')}</p>
         <div class="uw-kgrid">
-          <button type="button" class="uw-kbtn uw-krel uw-soon" onclick="uwUpPick('release')" style="opacity:.5; position:relative;"><span class="uw-knum">1</span><span class="uw-kic"><i class="ri-album-line"></i></span><span class="uw-kt">${_i18n('발매','Release')}</span><span class="uw-ken">RELEASE</span><span class="uw-kd">${_i18n('준비 중<br>곧 열려요','Coming soon')}</span><span style="position:absolute; top:8px; right:8px; background:#FFC94D; color:#06140C; font-size:9px; font-weight:900; padding:3px 8px; border-radius:999px; letter-spacing:.02em;">${_i18n('준비 중','SOON')}</span></button>
+          <button type="button" class="uw-kbtn uw-krel" onclick="uwUpPick('vote')"><span class="uw-knum">1</span><span class="uw-kic"><i class="ri-trophy-line"></i></span><span class="uw-kt">${_i18n('투표참여','Vote entry')}</span><span class="uw-ken">VOTE</span><span class="uw-kd">${_i18n('메인 투표 3곳 중<br>하나에 올리기','Enter one of the 3 main vote boxes')}</span></button>
           <button type="button" class="uw-kbtn uw-kdemo" onclick="uwUpPick('demo')"><span class="uw-knum">2</span><span class="uw-kic"><i class="ri-mic-2-line"></i></span><span class="uw-kt">${_i18n('데모','Demo')}</span><span class="uw-ken">DEMO</span><span class="uw-kd">${_i18n('작업 중인 곡<br>가볍게','Work in progress<br>quick')}</span></button>
         </div>
+      </div>
+      <div class="uw-step" data-step="votecat">
+        <button type="button" class="uw-back" onclick="uwUpGo('form')"><i class="ri-arrow-left-line"></i> ${_i18n('뒤로','Back')}</button>
+        <h1 style="margin:0 0 2px;">${_i18n('어느 투표에 참여할까요?','Which vote?')}</h1>
+        <p style="color:var(--text-secondary);font-size:13px;margin:0 0 16px;">${_i18n('메인 화면 투표 탭의 3개 박스 중 하나를 골라주세요','Pick one of the 3 boxes on the main vote page')}</p>
+        <button type="button" class="uw-cc" onclick="uwPickVoteCategory('6월 월평 투표')"><span class="uw-ci"><i class="ri-calendar-event-line"></i></span><span><span class="uw-ct">${_i18n('6월 월평 투표','This month\'s pick')}</span></span></button>
+        <button type="button" class="uw-cc" onclick="uwPickVoteCategory('이달의 데모 투표')"><span class="uw-ci"><i class="ri-mic-2-line"></i></span><span><span class="uw-ct">${_i18n('이달의 데모 투표','Demo of the month')}</span></span></button>
+        <button type="button" class="uw-cc" onclick="uwPickVoteCategory('밴드 음악 투표')"><span class="uw-ci"><i class="ri-music-2-line"></i></span><span><span class="uw-ct">${_i18n('밴드 음악 투표','Band music')}</span></span></button>
       </div>
       <div class="uw-step" data-step="dchoice">
         <button type="button" class="uw-back" onclick="uwUpGo('kiosk')"><i class="ri-arrow-left-line"></i> ${_i18n('뒤로','Back')}</button>
@@ -11226,6 +11241,8 @@ function renderUpload() {
 
   document.getElementById('upload-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    // 투표참여를 골랐는데 아직 어느 투표인지 안 정했으면 — 실제 업로드 전에 카테고리부터 고르게.
+    if (window.__uwVoteEntry && !window.__uwVoteCategory) { window.uwUpGo('votecat'); return; }
     const submitBtn = e.target.querySelector('button[type=submit]');
     const setStatus = (msg) => { if (submitBtn) submitBtn.textContent = msg; };
     if (submitBtn) { submitBtn.disabled = true; }
@@ -11311,6 +11328,11 @@ function renderUpload() {
       const tags = genreVal
         ? [genreVal].concat(messageTags.filter(t => t.toLowerCase() !== genreVal.toLowerCase()))
         : messageTags;
+      // 투표참여 — 고른 카테고리를 실제 태그로 자동 반영(메인 투표 페이지가 태그로 카테고리를 나눔).
+      if (window.__uwVoteEntry && window.__uwVoteCategory) {
+        const _voteCatTag = { '6월 월평 투표': '6월월평', '밴드 음악 투표': '밴드' }[window.__uwVoteCategory];
+        if (_voteCatTag && !tags.some(t => t.toLowerCase() === _voteCatTag.toLowerCase())) tags.push(_voteCatTag);
+      }
       const description = document.getElementById('up-description').value;
       const lyrics = (document.getElementById('up-lyrics')?.value || '').trim();
       const line1 = (document.getElementById('up-line1') || {}).value || '';
