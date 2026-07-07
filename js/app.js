@@ -1630,6 +1630,7 @@ function navigateTo(route) {
   document.body.classList.toggle('is-shapes-route', route === 'shapes');
   // 발견 페이지를 떠나면 물리 루프 정지(rAF 누수 방지)
   if (route !== 'shapes' && typeof stopShapesPhysics === 'function') stopShapesPhysics();
+  if (route !== 'shapes' && typeof stopVoteDiscoverPhysics === 'function') stopVoteDiscoverPhysics();
   // Toggle global back button visibility based on the new route.
   _updateBackButton(route);
   appContent.innerHTML = '';
@@ -8271,8 +8272,10 @@ function initDiscoverDrag() {
 // ===================== SHAPES UNIVERSE (original floating shapes view) =====================
 function renderShapes() {
   const db = window.DB.get();
-  // 자켓 모드 제거(사용자 요청) — 발견은 항상 도형(shape) 모드. 저장된 jacket 선택도 무시.
-  window.__discoverMode = 'shape';
+  // 자켓 모드 제거(사용자 요청) — 저장된 jacket 선택은 무시. '투표' 모드만 localStorage 로 유지.
+  let _storedDiscoverMode = null;
+  try { _storedDiscoverMode = localStorage.getItem('offstage_discover_mode'); } catch (_) {}
+  window.__discoverMode = (_storedDiscoverMode === 'vote') ? 'vote' : 'shape';
   const _jacketMode = false;
   // 도형 페이지 들어올 때마다 Supabase에서 새 트랙 백그라운드 확인.
   // 트랙 목록이 바뀌었을 때만 다시 그려서 무한루프 방지.
@@ -8319,7 +8322,10 @@ function renderShapes() {
       return a.id < b.id ? 1 : a.id > b.id ? -1 : 0;
     });
 
-  // 발견 = 패턴 디자인(테스트 이식, 실제 곡). 롤백: 이 한 블록만 지우면 아래 옛 별필드로 복귀.
+  // 발견 = 패턴 디자인(테스트 이식, 실제 곡) 또는 투표 모드. 롤백: 이 블록만 지우면 아래 옛 별필드로 복귀.
+  if (window.__discoverMode === 'vote' && typeof renderDiscoverVote === 'function') {
+    try { renderDiscoverVote(tracks); return; } catch (e) { console.warn('[discover-vote]', e); }
+  }
   if (typeof renderDiscoverPattern === 'function') { try { renderDiscoverPattern(tracks); return; } catch (e) { console.warn('[discover-pattern]', e); } }
 
   // Starfield background — replaces the old "조잡한" floating shapes with
@@ -8562,6 +8568,18 @@ window.renderShapes = renderShapes;
 // renderShapes 가 트랙 계산 후 이리로 위임. 롤백: renderShapes 의 위임 한 줄만 지우면 옛 별필드로.
 // ============================================================
 function dpEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+// 발견 도형 ↔ 투표 보기 전환 — 두 렌더 함수(renderDiscoverPattern/renderDiscoverVote) 모두 같은 토글을 씀.
+window.setDiscoverMode = function (mode) {
+  window.__discoverMode = (mode === 'vote') ? 'vote' : 'shape';
+  try { localStorage.setItem('offstage_discover_mode', window.__discoverMode); } catch (_) {}
+  if (typeof renderShapes === 'function') renderShapes();
+};
+function _dpModeToggleHtml(mode) {
+  return '<div class="dv-toggle">'
+    + '<button type="button" class="dv-toggle-btn' + (mode !== 'vote' ? ' active' : '') + '" onclick="window.setDiscoverMode(\'shape\')">🔀 도형</button>'
+    + '<button type="button" class="dv-toggle-btn' + (mode === 'vote' ? ' active' : '') + '" onclick="window.setDiscoverMode(\'vote\')">🗳 투표</button>'
+    + '</div>';
+}
 // 즐겨찾기/폴더의 dp-univ 도형은 고정 크기 → 긴 해시태그가 별/삼각 뾰족한 부분에서 잘림.
 // 렌더 후 도형별 안전영역에 맞게 폰트를 줄여 잘림 방지(원>삼각>별 순으로 여유). rAF 로 레이아웃 후 실행.
 function _fitDpUnivText(root){
@@ -8638,7 +8656,9 @@ function renderDiscoverPattern(tracks){
   currentView = 'shapes';
   var app = document.getElementById('app-content'); if (!app) return;
   try { if (typeof stopShapesPhysics==='function') stopShapesPhysics(); } catch(_){}
+  try { if (typeof stopVoteDiscoverPhysics==='function') stopVoteDiscoverPhysics(); } catch(_){}
   _dpStyle();
+  if (typeof _dvStyle === 'function') _dvStyle();   // 투표 토글 버튼 CSS(dv-*)도 도형 모드에서 필요
   tracks = (tracks||[]).filter(Boolean);
   // 곡 → 해시태그 3개(태그 우선, 없으면 아티스트/제목으로 보충)
   function tagsOf(t){
@@ -8675,7 +8695,8 @@ function renderDiscoverPattern(tracks){
     return '<div class="dp-shape dp-'+cls+'" style="background:'+color+'"></div>';
   }
   var perBand=6, bandCount = tracks.length ? Math.min(16, Math.max(3, Math.ceil(tracks.length/perBand))) : 3;
-  app.innerHTML = '<div class="dp-scroll" id="dp-scroll"></div>'
+  app.innerHTML = _dpModeToggleHtml('shape')
+    + '<div class="dp-scroll" id="dp-scroll"></div>'
     + '<div class="upload-fab" onclick="navigateTo(\'upload\')" title="음악 업로드"><i class="ri-add-line"></i></div>';
   var scroll = document.getElementById('dp-scroll'), ti=0, built=false;
   // 곡 도형: 태그 길이에 맞춰 스케일(mul=화면폭 배율 반영). 글자=12*mul
@@ -8776,6 +8797,253 @@ function renderDiscoverPattern(tracks){
   setTimeout(build, 350);
 }
 window.renderDiscoverPattern = renderDiscoverPattern;
+
+// ============================================================
+// 발견 · 투표 모드 (catalog-vote-test.html 프로토타입 이식). 실제 트랙 데이터(window.DB.get().tracks)
+// 그대로 쓰고, 재생은 실제 사이트 글로벌 플레이어(window.playTrack)를 그대로 재사용.
+// 투표는 지금은 이 세션에서만 임시 집계(새로고침하면 0으로 리셋) — 추후 Supabase 테이블 연동 예정.
+// ============================================================
+function _dvStyle(){
+  if (document.getElementById('dv-style')) return;
+  var st = document.createElement('style'); st.id = 'dv-style';
+  st.textContent = `
+  .dv-toggle{position:fixed; top:calc(env(safe-area-inset-top,0px) + 46px); right:10px; z-index:1101; display:flex; gap:6px;}
+  .dv-toggle-btn{font-family:'Pretendard',sans-serif; font-weight:800; font-size:12px; padding:6px 12px; border-radius:999px;
+    border:2px solid #111; background:rgba(255,255,255,.55); color:#111; cursor:pointer; opacity:.6; transition:opacity .15s, background .15s;}
+  .dv-toggle-btn.active{opacity:1; background:#fff; box-shadow:2px 2px 0 #111;}
+  .dv-wrap{position:relative; min-height:100vh; min-height:100dvh; overflow-y:auto; background:#45CEEB; padding:12px 10px calc(90px + env(safe-area-inset-bottom,0px));}
+  .dv-hero{text-align:center; padding:calc(env(safe-area-inset-top,0px) + 6px) 14px 4px;}
+  .dv-wordmark{font-family:'Black Han Sans','Pretendard',sans-serif; font-size:clamp(30px,8vw,44px); color:#FFE800;
+    text-shadow:2px 3px 0 rgba(0,0,0,.25); letter-spacing:.5px; margin:2px 0 0;}
+  .dv-sub{font-size:12px; color:rgba(0,0,0,.55); font-weight:700; margin:4px 0 14px;}
+  .dv-sub-note{opacity:.7;}
+  .dv-empty{color:rgba(0,0,0,.6); font-weight:700; padding:30px 4px; text-align:center; position:relative; z-index:2;}
+  .dv-cat{margin:0 0 24px; position:relative;}
+  .dv-cat-pill{display:inline-block; background:#fff; color:#111; font-weight:900; font-size:15px;
+    padding:7px 16px; border-radius:10px; border:2px solid #111; box-shadow:3px 3px 0 #111;
+    position:relative; z-index:10; margin-left:8px;}
+  .dv-cat-box{border:3px dashed rgba(255,255,255,.95); border-radius:18px; margin-top:-16px;
+    position:relative; overflow:hidden; aspect-ratio:1/.86; height:auto; max-height:min(52vh,380px);
+    background:rgba(255,255,255,.08);}
+  .dv-cd-strip{position:absolute; left:0; right:0; bottom:0; z-index:9; display:flex; align-items:center; justify-content:center; gap:7px;
+    padding:6px 10px 8px; background:linear-gradient(0deg, rgba(0,0,0,.30), rgba(0,0,0,0)); pointer-events:none;}
+  .dv-lab{font-size:10.5px; font-weight:800; color:rgba(255,255,255,.92); text-shadow:0 1px 3px rgba(0,0,0,.5);}
+  .dv-tm{font-family:'Black Han Sans',sans-serif; color:#fff; font-size:19px; line-height:1; text-shadow:0 2px 6px rgba(0,0,0,.55);}
+  .dv-tm small{font-family:'Pretendard',sans-serif; font-size:11px; font-weight:800; opacity:.9; margin-right:3px;}
+  .dv-colon{opacity:.55; padding:0 1px;}
+  .dv-shape{position:absolute; left:0; top:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; cursor:pointer; font-weight:800; line-height:1.22; color:#111; user-select:none; will-change:transform;}
+  .dv-bg{position:absolute; inset:0; z-index:1; background:var(--dv-color,#E24A9C); filter:drop-shadow(2px 3px 0 rgba(0,0,0,.2)); transition:filter .2s;}
+  .dv-tags{position:relative; z-index:2; padding:4px; pointer-events:none;}
+  .dv-tg{pointer-events:auto; cursor:pointer; border-radius:4px; transition:background .12s;}
+  .dv-tg:hover,.dv-tg:active{background:rgba(255,255,255,.35); text-decoration:underline;}
+  .dv-s-circle .dv-bg{border-radius:50%;}
+  .dv-s-star .dv-bg{clip-path:polygon(50% 0%,71% 21%,98% 35%,84% 61%,79% 91%,50% 86%,21% 91%,16% 61%,2% 35%,29% 21%);}
+  .dv-s-star .dv-tags{padding-top:8%;}
+  .dv-s-hex .dv-bg{clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);}
+  .dv-s-square .dv-bg{border-radius:16px;}
+  .dv-s-blob .dv-bg{border-radius:58% 42% 55% 45% / 48% 55% 45% 52%;}
+  .dv-cnt{position:absolute; top:-9px; left:50%; transform:translateX(-50%); z-index:5; display:none;
+    font-family:'Black Han Sans',sans-serif; color:#fff; background:#111; line-height:1;
+    font-size:12px; padding:3px 10px; border-radius:999px; white-space:nowrap; box-shadow:0 2px 5px rgba(0,0,0,.4); pointer-events:none;}
+  .dv-shape.show-cnt .dv-cnt{display:block;}
+  @keyframes dv-neon{
+    0%,100%{filter:drop-shadow(2px 3px 0 rgba(0,0,0,.2)) drop-shadow(0 0 4px rgba(255,255,255,.7)) drop-shadow(0 0 9px var(--dv-color));}
+    50%{filter:drop-shadow(2px 3px 0 rgba(0,0,0,.2)) drop-shadow(0 0 9px rgba(255,255,255,.85)) drop-shadow(0 0 18px var(--dv-color));}
+  }
+  .dv-shape.top .dv-bg{animation:dv-neon 2.2s ease-in-out infinite;}
+  .dv-note-ico{position:absolute; top:-6px; left:-2px; z-index:6; font-size:18px; display:none;
+    animation:dv-bob 1s ease-in-out infinite alternate; filter:drop-shadow(1px 1px 0 rgba(0,0,0,.4));}
+  .dv-shape.playing .dv-note-ico{display:block;}
+  @keyframes dv-bob{from{transform:translateY(0);}to{transform:translateY(-5px);}}
+  @keyframes dv-pop{0%{transform:scale(1);}40%{transform:scale(1.14);}100%{transform:scale(1);}}
+  .dv-shape.dv-pop{animation:dv-pop .4s ease-out;}
+  .dv-plus1{position:absolute; z-index:20; font-family:'Black Han Sans',sans-serif; font-size:22px; color:#FFE800;
+    text-shadow:1px 2px 0 rgba(0,0,0,.5); pointer-events:none; animation:dv-rise .8s ease-out forwards;}
+  @keyframes dv-rise{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-40px);}}
+  `;
+  document.head.appendChild(st);
+}
+
+window.__voteDiscPhys = window.__voteDiscPhys || { raf: 0 };
+function stopVoteDiscoverPhysics() {
+  if (window.__voteDiscPhys.raf) { cancelAnimationFrame(window.__voteDiscPhys.raf); window.__voteDiscPhys.raf = 0; }
+}
+const DV_SHAPES = ['dv-s-circle', 'dv-s-star', 'dv-s-hex', 'dv-s-square', 'dv-s-blob'];
+const DV_PALETTE = ['#FF6B9D', '#FFD24A', '#4EC8E0', '#8BE04B', '#B49BEE', '#FF8A5C', '#5B9BFA', '#F06CA8', '#26C6C6', '#FFA23A', '#9B7BFF', '#63D9A6'];
+const DV_SIZE_STEPS = [128, 108, 96, 86, 78, 72];
+function _dvSizeOf(v, idx) { return Math.min(DV_SIZE_STEPS[Math.min(idx || 0, DV_SIZE_STEPS.length - 1)] + v * 3, 150); }
+function _dvFontOf(d) { return Math.max(10, Math.min(d * 0.135, 17)); }
+window.__voteCounts = window.__voteCounts || {};   // 세션 임시 투표수 (trackId → count). 새로고침하면 리셋.
+
+function _dvApplySize(b) { const d = b.r * 2; b.el.style.width = d + 'px'; b.el.style.height = d + 'px'; b.el.style.fontSize = _dvFontOf(d) + 'px'; }
+function _dvUpdateRanks(worlds, ci) {
+  const w = worlds[ci]; if (!w) return;
+  const sorted = [...w.bodies].sort((a, b) => (window.__voteCounts[b.track.id] || 0) - (window.__voteCounts[a.track.id] || 0));
+  w.bodies.forEach(b => {
+    const rank = sorted.indexOf(b);
+    b.el.classList.toggle('top', rank === 0);
+    b.el.classList.toggle('show-cnt', rank < 2);
+    const cntEl = b.el.querySelector('.dv-cnt');
+    if (cntEl) cntEl.textContent = window.__voteCounts[b.track.id] || 0;
+  });
+}
+function _dvVote(b, worlds) {
+  window.__voteCounts[b.track.id] = (window.__voteCounts[b.track.id] || 0) + 1;
+  b.tr = _dvSizeOf(window.__voteCounts[b.track.id], b.idx) / 2;
+  b.el.classList.remove('dv-pop'); void b.el.offsetWidth; b.el.classList.add('dv-pop');
+  const w = worlds[b.ci];
+  const p = document.createElement('div'); p.className = 'dv-plus1'; p.textContent = '+1';
+  p.style.left = (b.x - 8) + 'px'; p.style.top = (b.y - b.r - 26) + 'px';
+  w.box.appendChild(p); setTimeout(() => p.remove(), 800);
+  _dvUpdateRanks(worlds, b.ci);
+}
+function _dvCountdown(CATS) {
+  const now0 = new Date();
+  const end = new Date(now0.getFullYear(), now0.getMonth() + 1, 1, 0, 0, 0);
+  const p = n => String(n).padStart(2, '0');
+  function tick() {
+    let s = Math.max(0, Math.floor((end - new Date()) / 1000));
+    const d = Math.floor(s / 86400); s -= d * 86400;
+    const h = Math.floor(s / 3600); s -= h * 3600;
+    const m = Math.floor(s / 60); s -= m * 60;
+    const html = (d > 0 ? '<small>D-' + d + '</small>' : '') + p(h) + '<span class="dv-colon">:</span>' + p(m) + '<span class="dv-colon">:</span>' + p(s);
+    CATS.forEach((c, ci) => { const el = document.getElementById('dv-cd' + ci); if (el) el.innerHTML = html; });
+  }
+  tick();
+  if (window.__dvCountdownTimer) clearInterval(window.__dvCountdownTimer);
+  window.__dvCountdownTimer = setInterval(tick, 1000);
+}
+// 실제 글로벌 플레이어 재생 상태를 도형에 반영(♪ 아이콘) — 리스너는 한 번만 붙임.
+function _dvSyncPlaying() {
+  document.querySelectorAll('.dv-shape.playing').forEach(e => e.classList.remove('playing'));
+  const id = window.currentPlayingTrack;
+  if (!id || audioElement.paused) return;
+  const el = document.querySelector('.dv-shape[data-track-id="' + id + '"]');
+  if (el) el.classList.add('playing');
+}
+if (!window.__dvPlaySyncBound) {
+  window.__dvPlaySyncBound = true;
+  try {
+    audioElement.addEventListener('play', _dvSyncPlaying);
+    audioElement.addEventListener('pause', _dvSyncPlaying);
+    audioElement.addEventListener('ended', _dvSyncPlaying);
+  } catch (_) {}
+}
+
+function renderDiscoverVote(tracks) {
+  currentView = 'shapes';
+  const app = document.getElementById('app-content'); if (!app) return;
+  try { if (typeof stopShapesPhysics === 'function') stopShapesPhysics(); } catch (_) {}
+  stopVoteDiscoverPhysics();
+  _dvStyle();
+
+  function hasTag(t, re) { return (t.tags || []).some(tg => re.test(tg)); }
+  const used = new Set();
+  function take(pred, limit) {
+    const picked = [];
+    for (const t of tracks) { if (used.has(t.id)) continue; if (!pred(t)) continue; picked.push(t); used.add(t.id); if (picked.length >= limit) break; }
+    return picked;
+  }
+  // 순서 중요: band를 demos보다 먼저 배정해야 데모 카테고리가 다 가져가지 않음.
+  const june = take(t => hasTag(t, /6월|월평/), 6);
+  const band = take(t => hasTag(t, /밴드|록|rock|band/i), 6);
+  const demos = take(t => t.isDemo, 5);
+
+  const CATS = [];
+  if (june.length)  CATS.push({ name: '6월 월평 투표', items: june });
+  if (demos.length) CATS.push({ name: '이달의 데모 투표', items: demos });
+  if (band.length)  CATS.push({ name: '밴드 음악 투표', items: band });
+
+  if (!CATS.length) {
+    app.innerHTML = _dpModeToggleHtml('vote')
+      + '<div class="dv-wrap"><p class="dv-empty">🗳 아직 투표할 곡이 모이지 않았어요. 곧 채워질 거예요!</p></div>';
+    return;
+  }
+
+  app.innerHTML = _dpModeToggleHtml('vote')
+    + '<div class="dv-wrap">'
+    + '<div class="dv-hero"><h1 class="dv-wordmark">이달의 투표</h1>'
+    + '<p class="dv-sub">실제 업로드된 곡으로 투표! 1위(반짝이는 도형)가 눈에 띄어요 🗳 <span class="dv-sub-note">(한 번=듣기 · 두 번=투표, 지금은 이 화면에서만 임시 집계)</span></p></div>'
+    + CATS.map((cat, ci) => '<section class="dv-cat"><span class="dv-cat-pill">' + dpEsc(cat.name) + '</span><div class="dv-cat-box" id="dv-box' + ci + '"><div class="dv-cd-strip"><span class="dv-lab">투표 마감까지</span><span class="dv-tm" id="dv-cd' + ci + '">—</span></div></div></section>').join('')
+    + '</div>'
+    + '<div class="upload-fab" onclick="navigateTo(\'upload\')" title="음악 업로드"><i class="ri-add-line"></i></div>';
+
+  const worlds = [];
+  CATS.forEach((cat, ci) => {
+    const box = document.getElementById('dv-box' + ci);
+    const W = box.clientWidth || 340, H = box.clientHeight || 340, bodies = [];
+    cat.items.forEach((track, i) => {
+      const v = window.__voteCounts[track.id] || 0;
+      const el = document.createElement('div');
+      el.className = 'dv-shape ' + DV_SHAPES[(ci * 2 + i) % DV_SHAPES.length];
+      el.dataset.trackId = track.id;
+      el.style.setProperty('--dv-color', DV_PALETTE[(ci * 4 + i * 5) % DV_PALETTE.length]);
+      const restTags = (track.tags || []).slice(0, 2);
+      const tagsHtml = '<span class="dv-tg">' + dpEsc(track.artist || '') + '</span>' + restTags.map(t => '<br>#' + dpEsc(t)).join('');
+      el.innerHTML = '<span class="dv-bg"></span><span class="dv-note-ico">🎵</span><span class="dv-tags">' + tagsHtml + '</span><span class="dv-cnt">' + v + '</span>';
+      el.querySelectorAll('.dv-tg').forEach(tg => tg.addEventListener('click', ev => {
+        ev.stopPropagation();
+        if (track.artist && typeof navigateTo === 'function') navigateTo('artist:' + encodeURIComponent(track.artist));
+      }));
+      box.appendChild(el);
+      const r = _dvSizeOf(v, i) / 2;
+      const b = {
+        el, track, ci, idx: i, r, tr: r,
+        x: r + 8 + Math.random() * Math.max(1, W - 2 * r - 16),
+        y: r + 8 + Math.random() * Math.max(1, H - 2 * r - 16),
+        vx: (Math.random() * 15 + 7) * (Math.random() < .5 ? -1 : 1),
+        vy: (Math.random() * 15 + 7) * (Math.random() < .5 ? -1 : 1)
+      };
+      bodies.push(b);
+      _dvApplySize(b);
+      let ct = null;
+      el.addEventListener('click', () => {
+        if (ct) { clearTimeout(ct); ct = null; _dvVote(b, worlds); }
+        else { ct = setTimeout(() => { ct = null; if (typeof window.playTrack === 'function') window.playTrack(track.id, 'shapes'); }, 260); }
+      });
+    });
+    worlds.push({ box, bodies, W, H });
+    _dvUpdateRanks(worlds, ci);
+  });
+
+  _dvCountdown(CATS);
+  _dvSyncPlaying();
+
+  let last = performance.now();
+  function stepLoop(now) {
+    const dt = Math.min((now - last) / 1000, .05); last = now;
+    worlds.forEach(w => {
+      w.W = w.box.clientWidth; w.H = w.box.clientHeight;
+      const bs = w.bodies;
+      bs.forEach(b => {
+        if (Math.abs(b.tr - b.r) > 0.3) { b.r += (b.tr - b.r) * 0.08; _dvApplySize(b); }
+        b.x += b.vx * dt; b.y += b.vy * dt;
+        if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx); } if (b.x > w.W - b.r) { b.x = w.W - b.r; b.vx = -Math.abs(b.vx); }
+        if (b.y < b.r + 6) { b.y = b.r + 6; b.vy = Math.abs(b.vy); } if (b.y > w.H - b.r - 6) { b.y = w.H - b.r - 6; b.vy = -Math.abs(b.vy); }
+      });
+      for (let a = 0; a < bs.length; a++) for (let c = a + 1; c < bs.length; c++) {
+        const A = bs[a], B = bs[c];
+        const dx = B.x - A.x, dy = B.y - A.y, dist = Math.hypot(dx, dy) || 0.01, min = A.r + B.r - 6;
+        if (dist < min) {
+          const nx = dx / dist, ny = dy / dist, o = (min - dist) / 2;
+          A.x -= nx * o; A.y -= ny * o; B.x += nx * o; B.y += ny * o;
+          const avn = A.vx * nx + A.vy * ny, bvn = B.vx * nx + B.vy * ny, d = (bvn - avn) * 0.9;
+          A.vx += nx * d; A.vy += ny * d; B.vx -= nx * d; B.vy -= ny * d;
+        }
+      }
+      bs.forEach(b => {
+        const sp = Math.hypot(b.vx, b.vy);
+        if (sp > 26) { b.vx *= 26 / sp; b.vy *= 26 / sp; }
+        if (sp < 6) { b.vx *= 6 / (sp || 1); b.vy *= 6 / (sp || 1); }
+        b.el.style.transform = 'translate(' + (b.x - b.r).toFixed(1) + 'px,' + (b.y - b.r).toFixed(1) + 'px)';
+      });
+    });
+    window.__voteDiscPhys.raf = requestAnimationFrame(stepLoop);
+  }
+  window.__voteDiscPhys.raf = requestAnimationFrame(stepLoop);
+}
+window.renderDiscoverVote = renderDiscoverVote;
 
 // ============================================================
 // 발견(도형) 물리 — 둥둥 드리프트 + 벽 가둠 + 안겹침 분리(도형끼리 튕김 없음) + 끌어서 던지기(flick).
