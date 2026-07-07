@@ -759,14 +759,14 @@ body.guest .sidebar-my-channel { display: none; }
   left: 16px;
   width: 48px; height: 48px;
   border-radius: 50%;
-  background: rgba(30,30,30,0.9);
-  border: 1px solid var(--divider);
+  background: transparent;
+  border: none;
   color: white;
   font-size: 24px;
   display: flex; align-items: center; justify-content: center;
   z-index: 1001;
   cursor: pointer;
-  backdrop-filter: blur(12px);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.55);
   transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), background 0.3s;
 }
 .hamburger-btn:hover { background: var(--brand-color); transform: scale(1.1); }
