@@ -8863,8 +8863,8 @@ function _dvStyle(){
   .dv-s-square .dv-bg{border-radius:16px;}
   .dv-s-blob .dv-bg{border-radius:58% 42% 55% 45% / 48% 55% 45% 52%;}
   .dv-cnt{position:absolute; top:-9px; left:50%; transform:translateX(-50%); z-index:5; display:none;
-    font-family:'Black Han Sans',sans-serif; color:#fff; background:#111; line-height:1;
-    font-size:12px; padding:3px 10px; border-radius:999px; white-space:nowrap; box-shadow:0 2px 5px rgba(0,0,0,.4); pointer-events:none;}
+    font-family:'Black Han Sans',sans-serif; color:#fff; line-height:1;
+    font-size:15px; text-shadow:0 1px 4px rgba(0,0,0,.6); white-space:nowrap; pointer-events:none;}
   .dv-shape.show-cnt .dv-cnt{display:block;}
   @keyframes dv-neon{
     0%,100%{filter:drop-shadow(2px 3px 0 rgba(0,0,0,.2)) drop-shadow(0 0 4px rgba(255,255,255,.7)) drop-shadow(0 0 9px var(--dv-color));}
