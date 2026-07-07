@@ -752,53 +752,25 @@ body.guest .sidebar-my-channel { display: none; }
 .sidebar-playlist-item:hover { color: var(--text-primary); }
 .sidebar-user { padding: 14px 0 0; border-top: 1px solid var(--divider); margin-top: 8px; }
 
-/* Hamburger toggle button — 배경 없이 흰색 3줄 아이콘만(사용자 요청) */
+/* Hamburger toggle button */
 .hamburger-btn {
   position: fixed;
   bottom: calc(var(--player-height) + 16px);
   left: 16px;
   width: 48px; height: 48px;
   border-radius: 50%;
-  background: transparent;
-  border: none;
+  background: rgba(30,30,30,0.9);
+  border: 1px solid var(--divider);
   color: white;
-  font-size: 26px;
+  font-size: 24px;
   display: flex; align-items: center; justify-content: center;
   z-index: 1001;
   cursor: pointer;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.55);   /* 배경 없어도 밝은 화면 위에서 아이콘 보이게 */
-  transition: transform 0.15s ease;
+  backdrop-filter: blur(12px);
+  transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), background 0.3s;
 }
-.hamburger-btn:hover { transform: scale(1.1); }
-.hamburger-btn.open { transform: scale(0.94); }
-
-/* 간단 메뉴(테스트버전) — 배경 없이 글자만 딱 (사용자 요청: 원상복귀 + 배경 제거) */
-.quick-menu {
-  display: none;
-  position: fixed;
-  bottom: calc(var(--player-height) + 16px + 56px);
-  left: 16px;
-  z-index: 1001;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-  opacity: 0; transform: translateY(8px) scale(0.97);
-  transition: opacity 0.12s ease, transform 0.12s ease;
-}
-.quick-menu.open {
-  display: flex;
-  opacity: 1; transform: translateY(0) scale(1);
-}
-.quick-menu a {
-  display: inline-block;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 800;
-  text-decoration: none;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
-  white-space: nowrap;
-}
-.quick-menu a:hover, .quick-menu a:active { opacity: 0.75; }
+.hamburger-btn:hover { background: var(--brand-color); transform: scale(1.1); }
+.hamburger-btn.open { background: var(--brand-color); }
 
 /* ===================== MAIN LAYOUT ===================== */
 .layout-wrapper { margin-left: 0; }
