@@ -8818,6 +8818,7 @@ function _dvStyle(){
   .dv-sub{font-size:12px; color:rgba(0,0,0,.55); font-weight:700; margin:4px 0 14px;}
   .dv-sub-note{opacity:.7;}
   .dv-empty{color:rgba(0,0,0,.6); font-weight:700; padding:30px 4px; text-align:center; position:relative; z-index:2;}
+  .dv-cats-row{display:block;}
   .dv-cat{margin:0 0 24px; position:relative;}
   .dv-cat-pill{display:inline-block; background:#fff; color:#111; font-weight:900; font-size:15px;
     padding:7px 16px; border-radius:10px; border:2px solid #111; box-shadow:3px 3px 0 #111;
@@ -8825,6 +8826,17 @@ function _dvStyle(){
   .dv-cat-box{border:3px dashed rgba(255,255,255,.95); border-radius:18px; margin-top:-16px;
     position:relative; overflow:hidden; aspect-ratio:1/.86; height:auto; max-height:min(52vh,380px);
     background:rgba(255,255,255,.08);}
+  /* PC 버전 — 모바일의 세로 1열 대신 3칸 나란히, 박스도 더 크고 넓게 */
+  @media (min-width:769px){
+    .dv-wrap{max-width:1180px; margin:0 auto;}
+    .dv-hero{padding-top:24px;}
+    .dv-cats-row{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; align-items:start;}
+    .dv-cat{margin:0;}
+    .dv-cat-box{aspect-ratio:auto; height:460px; max-height:none;}
+  }
+  @media (min-width:769px) and (max-width:1099px){
+    .dv-cats-row{grid-template-columns:repeat(2,1fr);}
+  }
   .dv-cd-strip{position:absolute; left:0; right:0; bottom:0; z-index:9; display:flex; align-items:center; justify-content:center; gap:7px;
     padding:6px 10px 8px; background:linear-gradient(0deg, rgba(0,0,0,.30), rgba(0,0,0,0)); pointer-events:none;}
   .dv-lab{font-size:10.5px; font-weight:800; color:rgba(255,255,255,.92); text-shadow:0 1px 3px rgba(0,0,0,.5);}
@@ -8965,7 +8977,9 @@ function renderDiscoverVote(tracks) {
     + '<div class="dv-wrap">'
     + '<div class="dv-hero"><h1 class="dv-wordmark">이달의 투표</h1>'
     + '<p class="dv-sub">실제 업로드된 곡으로 투표! 1위(반짝이는 도형)가 눈에 띄어요 🗳 <span class="dv-sub-note">(한 번=듣기 · 두 번=투표, 지금은 이 화면에서만 임시 집계)</span></p></div>'
+    + '<div class="dv-cats-row">'
     + CATS.map((cat, ci) => '<section class="dv-cat"><span class="dv-cat-pill">' + dpEsc(cat.name) + '</span><div class="dv-cat-box" id="dv-box' + ci + '"><div class="dv-cd-strip"><span class="dv-lab">투표 마감까지</span><span class="dv-tm" id="dv-cd' + ci + '">—</span></div></div></section>').join('')
+    + '</div>'
     + '</div>'
     + '<div class="upload-fab" onclick="navigateTo(\'upload\')" title="음악 업로드"><i class="ri-add-line"></i></div>';
 
