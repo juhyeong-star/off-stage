@@ -18059,6 +18059,8 @@ function updateProgress() {
   if (currentTime >= 30 && !window.__playCounted && window.currentPlayingTrack) {
     window.__playCounted = true;
     try { if (typeof _incPlay === 'function') _incPlay(window.currentPlayingTrack); } catch (_) {}
+    // 로컬(기기별)뿐 아니라 실제 서버 plays_count 도 반영 — 다른 사람도 볼 수 있게.
+    try { if (window.Tracks && window.Tracks.incrementPlays) window.Tracks.incrementPlays(window.currentPlayingTrack); } catch (_) {}
   }
   // 가사 줄 싱크 — 재생 위치에 맞춰 한 줄씩 (미니 = 활성 줄, 풀스크린 = 하이라이트+스크롤)
   try { if (typeof _syncLyricLine === 'function') _syncLyricLine(); } catch (_) {}

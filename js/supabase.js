@@ -981,6 +981,27 @@
       return (data || []).map(row => mapTrackRow(row, row.profiles));
     },
 
+    // 실제 재생수 서버 반영 — 30초 이상 들으면 app.js 가 이걸 호출(세션당 1회).
+    // supabase/plays.sql 의 increment_track_plays 함수가 tracks.plays_count 를 원자적으로 +1.
+    async incrementPlays(trackId) {
+      if (!window.supabase || !trackId) return;
+      try {
+        const { error } = await window.supabase.rpc('increment_track_plays', { p_track_id: trackId });
+        if (error) {
+          if (/function .* does not exist/i.test(error.message || '')) {
+            console.warn('[Tracks.incrementPlays] supabase/plays.sql 아직 실행 안 됨');
+          } else {
+            console.warn('[Tracks.incrementPlays]', error.message);
+          }
+          return;
+        }
+        if (Array.isArray(window.__tracks)) {
+          const t = window.__tracks.find(t => t.id === trackId);
+          if (t) t.plays = (t.plays || 0) + 1;
+        }
+      } catch (e) { console.warn('[Tracks.incrementPlays]', e); }
+    },
+
     async uploadFile(file, bucket) {
       if (!window.supabase || !file) throw new Error('Supabase or file missing');
 
