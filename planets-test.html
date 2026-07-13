@@ -10,8 +10,9 @@
   :root{ --ink:#111; --y:#FFE800; }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0;}
+  html{background:#45CEEB;}   /* 어떤 화면에서도 흰 여백 안 보이게 바탕색 고정 */
   body{
-    background:linear-gradient(170deg,#57D6F0 0%, #45CEEB 42%, #7BE0C4 100%);
+    background:linear-gradient(170deg,#57D6F0 0%, #45CEEB 42%, #7BE0C4 100%) fixed;
     color:var(--ink); font-family:'Pretendard','Apple SD Gothic Neo',system-ui,sans-serif;
     padding:12px 12px 96px; min-height:100vh; overflow-x:hidden; position:relative;
   }
