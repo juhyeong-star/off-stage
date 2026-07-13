@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>지원 · 투표 (TEST)</title>
+<title>서울음악페스티벌 SMF (TEST)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
 <style>
@@ -19,7 +19,8 @@
   .bg span{position:absolute; opacity:.16;} .bg i{display:block; width:100%; height:100%; background:var(--c,#fff);}
   .bg .c-c i{border-radius:50%;} .bg .c-s i{border-radius:10px;} .bg .c-t i{clip-path:polygon(50% 0,100% 100%,0 100%);}
   header,#app{position:relative; z-index:2;}
-  h1{font-family:'Black Han Sans',sans-serif; font-size:30px; margin:2px 0 0; color:var(--y); text-shadow:2px 3px 0 rgba(0,0,0,.22); letter-spacing:1px;}
+  h1{font-family:'Black Han Sans',sans-serif; font-size:29px; margin:2px 0 0; color:var(--y); text-shadow:2px 3px 0 rgba(0,0,0,.22); letter-spacing:.5px; display:flex; align-items:center; gap:9px; flex-wrap:wrap;}
+  h1 .smf{font-size:16px; background:#111; color:#fff; padding:4px 11px; border-radius:8px; letter-spacing:2px; box-shadow:2px 2px 0 rgba(0,0,0,.25);}
   .sub{font-size:12.5px; color:rgba(0,0,0,.55); margin:3px 0 16px; font-weight:700;}
   .sub b{color:#0a5;}
 
@@ -115,14 +116,14 @@
   <div class="bg" id="bgLayer"></div>
   <div class="wrap">
     <header>
-      <h1>지원 · 투표</h1>
-      <p class="sub">쇼케이스·공연·발매까지 — 실제 곡으로 투표! <b>1위(반짝이는 도형)</b>가 무대에 올라요 🎤 <span style="opacity:.7">· 한 번=듣기 · 두 번=투표</span></p>
+      <h1>서울음악페스티벌 <span class="smf">SMF</span></h1>
+      <p class="sub">🎤 페스티벌 지원자 <b>투표중</b> <span style="opacity:.7">· 한 번=듣기 · 두 번=투표</span></p>
     </header>
     <div id="app" class="grid"><p style="color:rgba(0,0,0,.55);font-weight:700;font-size:13px;padding:26px 4px;grid-column:1/-1;">🎧 음악 불러오는 중…</p></div>
   </div>
 
   <audio id="audioEl" preload="none"></audio>
-  <div class="flag">🧪 지원·투표 TEST</div>
+  <div class="flag">🧪 SMF TEST</div>
   <div class="playbar" id="playbar">
     <div class="pb-disc" id="pbDisc"></div>
     <div class="pb-info">
@@ -175,6 +176,9 @@ async function loadData(){
   return true;
 }
 
+// 멤피스 팔레트 — 첨부 건물(off-stage/공감센터) 색감. 도형마다 다른 밝은 색(박스 한 색 X).
+const PALETTE=['#FF2EA0','#FFD24A','#22C3E6','#86E05A','#B14BFF','#FF6B5C','#3E6FD9','#F06CA8','#2EE6D6','#FFA23A','#9B7BFF','#5AD86B'];
+function colorFor(ci,i){ return PALETTE[(ci*5 + i*7) % PALETTE.length]; }  // 인접 도형끼리 확실히 다른 색
 const SIZE_STEPS=[124,106,94,84,76,70];
 function sizeOf(v,idx){ return Math.min(SIZE_STEPS[Math.min(idx||0,SIZE_STEPS.length-1)]+v*4, 150); }
 function fontOf(d){ return Math.max(10, Math.min(d*0.135,17)); }
@@ -206,7 +210,7 @@ function build(){
     c.items.forEach((t,i)=>{
       const el=document.createElement('div');
       el.className='shape '+SHAPES[(ci+i)%SHAPES.length];
-      el.style.setProperty('--sc', shade(c.color,i));
+      el.style.setProperty('--sc', colorFor(ci,i));
       const tag=(t.tags||[])[0]||'';
       el.innerHTML=`<span class="bg2"></span><span class="ico">🎵</span><span class="tx"><span class="t-art">${esc(t.artist)}</span>${tag?'<br><span class="t-tag">#'+esc(tag)+'</span>':''}</span><span class="cnt">${t.v}</span>`;
       box.appendChild(el);
