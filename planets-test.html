@@ -193,7 +193,7 @@ function build(){
   const app=document.getElementById('app');
   let html=CATS.map((c,ci)=>{
     return `<section class="cat">
-      <div class="cat-head"><span class="cat-pill"><span class="cat-dot" style="background:${c.color}"></span>${esc(c.name)}</span><span class="cat-cnt">${c.total}곡</span></div>
+      <div class="cat-head"><span class="cat-pill">${esc(c.name)}</span><span class="cat-cnt">${c.total}곡</span></div>
       <div class="cat-box" id="box${ci}"><div class="cd-strip"><span class="lab">투표 마감까지</span><span class="tm" id="cd${ci}">—</span></div></div>
     </section>`;
   }).join('');
