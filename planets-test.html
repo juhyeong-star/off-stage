@@ -19,9 +19,12 @@
   .bg span{position:absolute; opacity:.16;} .bg i{display:block; width:100%; height:100%; background:var(--c,#fff);}
   .bg .c-c i{border-radius:50%;} .bg .c-s i{border-radius:10px;} .bg .c-t i{clip-path:polygon(50% 0,100% 100%,0 100%);}
   header,#app{position:relative; z-index:2;}
-  h1{font-family:'Black Han Sans',sans-serif; font-size:29px; margin:2px 0 0; color:var(--y); text-shadow:2px 3px 0 rgba(0,0,0,.22); letter-spacing:.5px; display:flex; align-items:center; gap:9px; flex-wrap:wrap;}
-  h1 .smf{font-size:16px; background:#111; color:#fff; padding:4px 11px; border-radius:8px; letter-spacing:2px; box-shadow:2px 2px 0 rgba(0,0,0,.25);}
-  .sub{font-size:12.5px; color:rgba(0,0,0,.55); margin:3px 0 16px; font-weight:700;}
+  /* 제목 — 기존 '슬로우 뮤직' 워드마크와 동일 폰트·색·크게·가운데 */
+  .wordmark{font-family:'Black Han Sans','Pretendard',sans-serif; font-weight:400; color:var(--y); text-align:center;
+    font-size:clamp(38px,12vw,92px); line-height:.9; letter-spacing:-.5px; margin:6px 0 0; text-shadow:2px 5px 0 rgba(0,0,0,.14);}
+  .wordmark-en{font-family:'Black Han Sans','Pretendard',sans-serif; font-weight:400; text-align:center; color:#0f2a33;
+    font-size:clamp(12px,3.6vw,20px); letter-spacing:4px; margin:3px 0 0; opacity:.85;}
+  .sub{font-size:12.5px; color:rgba(0,0,0,.55); margin:8px 0 18px; font-weight:700; text-align:center;}
   .sub b{color:#0a5;}
 
   /* ── 투표 박스 ── */
@@ -64,20 +67,17 @@
   .plus1{position:absolute; z-index:20; font-family:'Black Han Sans',sans-serif; font-size:22px; color:var(--y); text-shadow:1px 2px 0 rgba(0,0,0,.5); pointer-events:none; animation:rise .8s ease-out forwards;}
   @keyframes rise{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-40px);}}
 
-  /* ── 발매된 음원 (커버 이미지 갤러리) ── */
+  /* ── 참가 아티스트 (클릭 → 아티스트 페이지) ── */
   .rel{margin:6px 0 26px;}
-  .rel-head{display:flex; align-items:center; gap:8px; margin:0 0 12px 6px;}
+  .rel-head{display:flex; align-items:center; gap:8px; margin:0 0 14px 6px;}
   .rel-pill{display:inline-flex; align-items:center; gap:7px; background:#111; color:#fff; font-weight:900; font-size:15px;
     padding:7px 15px; border-radius:11px; border:2px solid #111; box-shadow:3px 3px 0 rgba(0,0,0,.25);}
-  .rel-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:14px;}
-  .rel-card{background:#fff; border:2px solid #111; border-radius:14px; overflow:hidden; cursor:pointer; box-shadow:3px 3px 0 #111; transition:transform .12s;}
-  .rel-card:active{transform:translate(1px,1px);}
-  .rel-cover{aspect-ratio:1/1; background:#ddd center/cover no-repeat; position:relative;}
-  .rel-cover .play{position:absolute; right:8px; bottom:8px; width:34px; height:34px; border-radius:50%; background:rgba(0,0,0,.6); color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; backdrop-filter:blur(4px);}
-  .rel-body{padding:8px 10px 10px;}
-  .rel-title{font-weight:900; font-size:13px; color:#111; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .rel-art{font-weight:700; font-size:11px; color:rgba(0,0,0,.5); margin-top:1px;}
-  .rel-card.playing{outline:3px solid var(--y); outline-offset:2px;}
+  .art-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(88px,1fr)); gap:16px 12px;}
+  .art-card{cursor:pointer; text-align:center;}
+  .art-av{aspect-ratio:1/1; border-radius:50%; background:#fff center/cover no-repeat; border:3px solid #111; box-shadow:3px 3px 0 #111;
+    display:flex; align-items:center; justify-content:center; font-family:'Black Han Sans',sans-serif; font-size:30px; color:#111; overflow:hidden; transition:transform .1s;}
+  .art-card:active .art-av{transform:translate(1px,1px); box-shadow:2px 2px 0 #111;}
+  .art-name{margin-top:8px; font-weight:800; font-size:12.5px; color:#0d2530; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 
   .flag{position:fixed; top:calc(env(safe-area-inset-top) + 6px); right:8px; z-index:60; background:rgba(15,15,20,.72); color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:20px;}
 
@@ -116,7 +116,8 @@
   <div class="bg" id="bgLayer"></div>
   <div class="wrap">
     <header>
-      <h1>서울음악페스티벌 <span class="smf">SMF</span></h1>
+      <h1 class="wordmark">서울음악페스티벌</h1>
+      <p class="wordmark-en">SEOUL MUSIC FESTIVAL</p>
       <p class="sub">🎤 페스티벌 지원자 <b>투표중</b> <span style="opacity:.7">· 한 번=듣기 · 두 번=투표</span></p>
     </header>
     <div id="app" class="grid"><p style="color:rgba(0,0,0,.55);font-weight:700;font-size:13px;padding:26px 4px;grid-column:1/-1;">🎧 음악 불러오는 중…</p></div>
@@ -127,7 +128,7 @@
   <div class="playbar" id="playbar">
     <div class="pb-disc" id="pbDisc"></div>
     <div class="pb-info">
-      <div class="pb-title" id="pbTitle">— <small>도형/커버를 눌러 재생</small></div>
+      <div class="pb-title" id="pbTitle">— <small>도형을 눌러 재생</small></div>
       <div class="pb-prog" id="pbProg"><div class="track"><div class="fill" id="pbFill"></div><div class="knob" id="pbKnob"></div></div></div>
     </div>
     <button class="pb-btn" id="pbPrev">⏮</button>
@@ -147,31 +148,31 @@ const EVENTS=[
 const SUPABASE_URL='https://vayzhmaggwpkbsrrsdqt.supabase.co';
 const SUPABASE_KEY='sb_publishable_1PxNV0BGL7Wy_strTMqnbA_pCBCsOPG';
 async function fetchTracks(){
-  const cols='id,title,tags,audio_url,cover_url,likes_count,is_demo,profiles(name)';
+  const cols='id,title,tags,audio_url,cover_url,likes_count,is_demo,profiles(name,avatar_url)';
   const url=`${SUPABASE_URL}/rest/v1/tracks?select=${encodeURIComponent(cols)}&order=created_at.desc&limit=200`;
   const r=await fetch(url,{headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY}});
   if(!r.ok) throw new Error('fetch '+r.status);
   return (await r.json()).map(row=>({
     id:row.id, title:row.title||'제목 없음', artist:(row.profiles&&row.profiles.name)||'익명',
+    avatar:(row.profiles&&/^https?:\/\//.test(row.profiles.avatar_url||''))?row.profiles.avatar_url:'',
     tags:Array.isArray(row.tags)?row.tags:[], audioUrl:row.audio_url||'',
     cover:(row.cover_url&&/^https?:\/\//.test(row.cover_url))?row.cover_url:'', v:row.likes_count||0
   }));
 }
 function hash(s){ let h=0; for(let i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))|0; } return Math.abs(h); }
 
-let CATS=[], RELEASED=[];
+let CATS=[], ARTISTS=[];
 async function loadData(){
   try{
     const tracks=await fetchTracks();
-    // 발매된 음원 = 실제 커버 이미지 있는 곡 (최대 12)
-    RELEASED=tracks.filter(t=>t.cover).slice(0,12);
-    const relIds=new Set(RELEASED.map(t=>t.id));
-    // 참가 투표 4개 = 나머지 곡을 해시로 임의 배정(시안). 창당 최대 6.
-    const rest=tracks.filter(t=>!relIds.has(t.id));
+    // 참가 투표 4개 = 모든 곡을 해시로 임의 배정(시안). 창당 최대 6.
     const buckets=[[],[],[],[]];
-    rest.forEach(t=>{ buckets[hash(t.id)%4].push(t); });
+    tracks.forEach(t=>{ buckets[hash(t.id)%4].push(t); });
     CATS=EVENTS.map((e,i)=>({ ...e, items:buckets[i].slice(0,6), total:buckets[i].length }));
-    if(!RELEASED.length && !rest.length) throw new Error('no data');
+    // 참가 아티스트 = 중복 없는 아티스트 목록(아바타 있으면 사용). 클릭 → 아티스트 페이지.
+    const seen=new Set(); ARTISTS=[];
+    tracks.forEach(t=>{ if(!t.artist||seen.has(t.artist))return; seen.add(t.artist); ARTISTS.push({name:t.artist, avatar:t.avatar||''}); });
+    if(!tracks.length) throw new Error('no data');
   }catch(e){ document.getElementById('app').innerHTML='<p style="color:rgba(0,0,0,.6);padding:26px 4px;grid-column:1/-1;font-weight:700;">⚠️ 음악을 불러오지 못했어요.</p>'; return false; }
   return true;
 }
@@ -197,11 +198,14 @@ function build(){
       <div class="cat-box" id="box${ci}"><div class="cd-strip"><span class="lab">투표 마감까지</span><span class="tm" id="cd${ci}">—</span></div></div>
     </section>`;
   }).join('');
-  // 5번째 — 발매된 음원 (커버 이미지)
-  html+=`<section class="rel"><div class="rel-head"><span class="rel-pill">💿 발매된 음원</span><span class="cat-cnt">${RELEASED.length}곡</span></div>`
-    + (RELEASED.length
-        ? `<div class="rel-grid">`+RELEASED.map((t,i)=>`<div class="rel-card" data-rel="${i}"><div class="rel-cover" style="background-image:url('${(t.cover||'').replace(/'/g,'%27')}')"><span class="play">▶</span></div><div class="rel-body"><div class="rel-title">${esc(t.title)}</div><div class="rel-art">${esc(t.artist)}</div></div></div>`).join('')+`</div>`
-        : `<p style="color:rgba(0,0,0,.55);font-weight:700;padding:10px 4px;">아직 발매된 음원이 없어요</p>`)
+  // 5번째 — 참가 아티스트 (클릭하면 그 아티스트 페이지로)
+  html+=`<section class="rel"><div class="rel-head"><span class="rel-pill">🎤 참가 아티스트</span><span class="cat-cnt">${ARTISTS.length}명</span></div>`
+    + (ARTISTS.length
+        ? `<div class="art-grid">`+ARTISTS.map(a=>{
+            const av=a.avatar?`background-image:url('${a.avatar.replace(/'/g,'%27')}')`:`background:${PALETTE[hash(a.name)%PALETTE.length]}`;
+            return `<div class="art-card" onclick="goArtist('${encodeURIComponent(a.name)}')"><div class="art-av" style="${av}">${a.avatar?'':esc(a.name.slice(0,1))}</div><div class="art-name">${esc(a.name)}</div></div>`;
+          }).join('')+`</div>`
+        : `<p style="color:rgba(0,0,0,.55);font-weight:700;padding:10px 4px;">아직 참가 아티스트가 없어요</p>`)
     + `</section>`;
   app.innerHTML=html;
 
@@ -223,10 +227,7 @@ function build(){
     });
     worlds.push({box,bodies,W,H}); updateRanks(ci);
   });
-  // 발매 커버 카드 — 한 번 클릭=재생 (투표 없음)
-  document.querySelectorAll('.rel-card').forEach(card=>{
-    card.addEventListener('click',()=>{ const t=RELEASED[+card.dataset.rel]; if(t) playTrack(t, card); });
-  });
+  // 참가 아티스트 카드는 인라인 onclick=goArtist 로 아티스트 페이지 이동.
 }
 function applySize(b){const d=b.r*2; b.el.style.width=d+'px'; b.el.style.height=d+'px'; b.el.style.fontSize=fontOf(d)+'px';}
 function updateRanks(ci){
@@ -251,7 +252,7 @@ function play(b){ playTrack(b.t, b.el); }
 function playTrack(t, el){
   if(!t.audioUrl){ toast('⚠️ 이 곡엔 음원이 없어요'); return; }
   curTrack=t; curEl=el;
-  document.querySelectorAll('.shape.playing,.rel-card.playing').forEach(e=>e.classList.remove('playing'));
+  document.querySelectorAll('.shape.playing').forEach(e=>e.classList.remove('playing'));
   if(el) el.classList.add('playing');
   const disc=document.getElementById('pbDisc'); disc.classList.add('spin');
   disc.style.setProperty('--pbc', el&&el.classList.contains('shape')?getComputedStyle(el).getPropertyValue('--sc').trim():'#888');
@@ -264,7 +265,7 @@ function playTrack(t, el){
 }
 function goArtist(enc){ const name=decodeURIComponent(enc); toast('→ '+name+' 페이지로 이동'); setTimeout(()=>{ location.href='index.html#/artist:'+enc; },500); }
 function endPlay(){ if(curEl) curEl.classList.remove('playing'); document.getElementById('pbDisc').classList.remove('spin'); document.getElementById('pbPlay').textContent='▶'; }
-function allTracks(){ const a=[]; worlds.forEach(w=>w.bodies.forEach(b=>a.push({t:b.t,el:b.el}))); RELEASED.forEach((t,i)=>a.push({t, el:document.querySelector('.rel-card[data-rel="'+i+'"]')})); return a; }
+function allTracks(){ const a=[]; worlds.forEach(w=>w.bodies.forEach(b=>a.push({t:b.t,el:b.el}))); return a; }
 audioEl.addEventListener('ended',()=>{ endPlay(); const l=allTracks(); const i=l.findIndex(x=>x.t===curTrack); if(i>=0&&l.length){ const n=l[(i+1)%l.length]; if(n) playTrack(n.t,n.el); } });
 audioEl.addEventListener('pause',()=>{ if(!audioEl.ended) document.getElementById('pbPlay').textContent='▶'; });
 audioEl.addEventListener('play',()=>{ document.getElementById('pbPlay').textContent='⏸'; document.getElementById('pbDisc').classList.add('spin'); });
