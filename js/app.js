@@ -4021,6 +4021,10 @@ function _artistShopStyle(){
   .ash-chip{font-size:11px;font-weight:900;padding:2px 8px;border-radius:20px;background:rgba(15,15,20,.09);color:#0f0f14;}
   .ash-chip.fin{background:#FFE800;}
   .ash-empty{text-align:center;color:#0f0f14;opacity:.62;font-weight:700;padding:44px 16px;}
+  /* 아티스트 소개(bio) — 프로필 연동 */
+  .ash-bio{max-width:600px;margin:-6px auto 18px;padding:0 20px;text-align:center;font-family:'Pretendard',sans-serif;font-weight:600;font-size:14px;line-height:1.6;color:#0d2a33;white-space:pre-wrap;word-break:keep-all;}
+  .ash-bio:empty{display:none;}
+  .ash-bio-empty{display:inline-block;color:rgba(15,15,20,.5);font-weight:700;cursor:pointer;border:1.5px dashed rgba(15,15,20,.35);border-radius:20px;padding:6px 16px;}
   /* 필터바(앨범 칩) */
   .ash-filter{display:flex;gap:7px;max-width:900px;margin:0 auto 10px;padding:0 14px;overflow-x:auto;scrollbar-width:none;}
   .ash-filter::-webkit-scrollbar{display:none;}
@@ -4151,11 +4155,23 @@ function renderArtistShop(artistName){
   var act;
   if(isSelf){ act='<button class="ash-act" onclick="window.editProfile&&editProfile()"><i class="ri-settings-3-line"></i> 편집</button>'; }
   else{ var following=!!(window._isFollowingName&&window._isFollowingName(artistName)); var aid=(myTracks.find(function(t){return t.artistId;})||{}).artistId||''; act='<button class="ash-act'+(following?' on':'')+'" data-aid="'+esc(aid)+'" data-aname="'+esc(artistName)+'" onclick="window.mhFollow&&mhFollow(this)">'+(following?'팔로잉':'+ 팔로우')+'</button>'; }
+  // 아티스트 소개(bio) — 프로필 연동. 본인은 저장된 bio 즉시, 남이면 아래에서 비동기로 채움.
+  var _bio = (isSelf && me && me.bio) ? String(me.bio) : '';
+  var bioHtml = '<div class="ash-bio" id="ash-bio">'
+    + (_bio ? esc(_bio) : (isSelf ? '<span class="ash-bio-empty" onclick="window.editProfile&&editProfile()">+ 소개를 적어보세요</span>' : ''))
+    + '</div>';
   app.innerHTML='<div class="sb-page"><h1 class="sb-wordmark">슬로우 뮤직</h1>'
     +'<div class="sb-seclabel">'+esc(artistName)+'</div>'
+    +bioHtml
     +act
     +'<div class="ash-tabs">'+tbtn('all','전체보기')+tbtn('board','나의 게시판')+'</div>'
     +body+'</div>';
+  // 남의 페이지면 프로필에서 소개 비동기로 가져와 채움(프로필 연동).
+  if(!isSelf && typeof window.fetchProfileByName==='function'){
+    window.fetchProfileByName(artistName).then(function(p){
+      if(p&&p.bio){ var el=document.getElementById('ash-bio'); if(el&&currentView==='artist'&&window.__currentArtistName===artistName) el.textContent=p.bio; }
+    }).catch(function(){});
+  }
 }
 window.renderArtistShop = renderArtistShop;
 
@@ -10836,6 +10852,30 @@ function renderUpload() {
       .uws-circle{border-radius:50%}.uws-oval{border-radius:50%;top:9px;bottom:9px}.uws-rect{border-radius:9px}.uws-wide{border-radius:6px;top:11px;bottom:11px}.uws-pill{border-radius:999px;top:13px;bottom:13px}.uws-hexagon{clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)}
       .uw-cols{display:flex;gap:9px;flex-wrap:wrap}
       .uw-col{width:31px;height:31px;border-radius:50%;cursor:pointer;border:2px solid transparent}.uw-col.uw-sel{outline:2px solid #1d9e75;outline-offset:2px}
+      /* ── 밝은 배경 테마 (사용자 요청: 현재 사이트 배경과 통일) — 업로드 페이지에만 스코프 ── */
+      #uploadWizard{background:linear-gradient(170deg,#57D6F0 0%,#45CEEB 45%,#7BE0C4 100%); min-height:100vh; color:#0f1720;}
+      #uploadWizard .uw-step{color:#0f1720}
+      #uploadWizard h1,#uploadWizard h2{color:#0f1720 !important}
+      #uploadWizard .uw-back{color:#0f1720}
+      #uploadWizard .uw-krel,#uploadWizard .uw-kdemo{background:#fff !important; border-color:#111 !important; box-shadow:4px 4px 0 #111; opacity:1 !important}
+      #uploadWizard .uw-kt,#uploadWizard .uw-kd{color:#0f1720}
+      #uploadWizard .uw-ken{color:rgba(0,0,0,.42)}
+      #uploadWizard .uw-cc{background:#fff; border:2px solid #111; box-shadow:3px 3px 0 #111; color:#0f1720}
+      #uploadWizard .uw-cc:hover{background:#f4f2ff}
+      #uploadWizard .uw-cc .uw-cdd{color:rgba(0,0,0,.6)}
+      #uploadWizard .card{background:#fff; border:2px solid #111; box-shadow:5px 5px 0 #111; border-radius:16px; color:#0f1720}
+      #uploadWizard .form-group label{color:#1a2530; font-weight:800}
+      #uploadWizard .form-control{background:#fff; border:2px solid rgba(0,0,0,.25); color:#0f1720; border-radius:10px}
+      #uploadWizard .form-control:focus{border-color:#111; outline:none}
+      #uploadWizard .form-control::placeholder{color:rgba(0,0,0,.38)}
+      #uploadWizard .form-note{color:rgba(0,0,0,.55)}
+      #uploadWizard hr{border-color:rgba(0,0,0,.15) !important}
+      #uploadWizard .agreement-box{background:#f4f9fb; border:1.5px solid rgba(0,0,0,.15); color:#1a2530}
+      #uploadWizard .agreement-box em{color:rgba(0,0,0,.5) !important}
+      #uploadWizard .checkbox-label{color:#1a2530}
+      #uploadWizard .upload-type-opt{background:#fff; border:2px solid rgba(0,0,0,.2); color:#0f1720}
+      #uploadWizard .upload-type-opt.active{border-color:#111; box-shadow:2px 2px 0 #111}
+      #uploadWizard .upload-type-sub{color:rgba(0,0,0,.55)}
     </style>
     <div class="upload-wizard" id="uploadWizard">
       <div class="uw-step uw-on" data-step="kiosk">
