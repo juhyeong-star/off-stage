@@ -8902,6 +8902,10 @@ function _dvStyle(){
   .smf-back{display:inline-flex; align-items:center; gap:5px; margin:0 0 4px 8px; background:#111; color:#fff; border:none; border-radius:999px; padding:7px 15px; font-weight:800; font-size:13px; cursor:pointer; font-family:inherit;}
   .smf-back:active{transform:scale(.95);}
   .smf-vhero{height:120px; border-radius:16px; margin:0 8px 12px; background:#cbe8f2 center/cover no-repeat; border:2px solid #111; box-shadow:3px 3px 0 #111;}
+  /* 도형이 건물 안에서 떠다니게 — 건물 이미지를 박스 배경으로 + 도형 잘 보이게 살짝 어둡게 */
+  .dv-cat-box.smf-stage{background-size:cover; background-position:center; border-color:#111; margin-top:6px;}
+  .dv-cat-box.smf-stage::before{content:''; position:absolute; inset:0; z-index:0; background:linear-gradient(180deg, rgba(8,16,26,.28) 0%, rgba(8,16,26,.5) 100%);}
+  .dv-cat-box.smf-stage .dv-shape{z-index:2;}
   @media (min-width:769px){ .smf-venues{grid-template-columns:repeat(3,1fr); max-width:960px;} .smf-vimg{height:150px;} }
   `;
   document.head.appendChild(st);
@@ -9017,9 +9021,8 @@ function renderDiscoverVote(tracks) {
     + '<div class="dv-wrap">'
     + '<button class="smf-back" onclick="window.__voteVenue=null; renderShapes();"><i class="ri-arrow-left-line"></i> 공연장 선택</button>'
     + '<div class="dv-hero"><h1 class="dv-wordmark" style="font-size:clamp(28px,8vw,52px)">' + dpEsc(vObj.name) + '</h1></div>'
-    + '<div class="smf-vhero" style="background-image:url(\'' + vObj.img + '\')"></div>'
     + '<div class="dv-cats-row">'
-    + '<section class="dv-cat"><div class="dv-cat-box" id="dv-box0" style="aspect-ratio:1/1; max-height:min(66vh,500px)"><div class="dv-cd-strip"><span class="dv-lab">투표 마감까지</span><span class="dv-tm" id="dv-cd0">—</span></div></div></section>'
+    + '<section class="dv-cat"><div class="dv-cat-box smf-stage" id="dv-box0" style="aspect-ratio:1/1.05; max-height:min(72vh,560px); background-image:url(\'' + vObj.img + '\')"><div class="dv-cd-strip"><span class="dv-lab">투표 마감까지</span><span class="dv-tm" id="dv-cd0">—</span></div></div></section>'
     + '</div></div>'
     + '<div class="upload-fab" onclick="navigateTo(\'upload\')" title="음악 업로드"><i class="ri-add-line"></i></div>';
 
