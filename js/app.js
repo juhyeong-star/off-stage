@@ -8828,7 +8828,7 @@ function _dvStyle(){
     border:2px solid #111; background:rgba(255,255,255,.55); color:#111; cursor:pointer; opacity:.6; transition:opacity .15s, background .15s;}
   .dv-toggle-btn.active{opacity:1; background:#fff; box-shadow:2px 2px 0 #111;}
   .dv-wrap{position:relative; min-height:100vh; min-height:100dvh; overflow-y:auto; background:#45CEEB; padding:12px 10px calc(90px + env(safe-area-inset-bottom,0px));}
-  .dv-hero{text-align:center; padding:calc(env(safe-area-inset-top,0px) + 6px) 14px 4px;}
+  .dv-hero{text-align:center; padding:calc(env(safe-area-inset-top,0px) + 48px) 14px 4px;}
   .dv-wordmark{font-family:'Black Han Sans','Pretendard',sans-serif; font-size:clamp(30px,8vw,44px); color:#FFE800;
     text-shadow:2px 3px 0 rgba(0,0,0,.25); letter-spacing:.5px; margin:2px 0 0;}
   .dv-sub{font-size:12px; color:rgba(0,0,0,.55); font-weight:700; margin:4px 0 14px;}
@@ -8889,6 +8889,20 @@ function _dvStyle(){
   .dv-plus1{position:absolute; z-index:20; font-family:'Black Han Sans',sans-serif; font-size:22px; color:#FFE800;
     text-shadow:1px 2px 0 rgba(0,0,0,.5); pointer-events:none; animation:dv-rise .8s ease-out forwards;}
   @keyframes dv-rise{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-40px);}}
+  /* ── SMF 페스티벌 — 공연장(건물) 선택 ── */
+  .dv-en{text-align:center; font-family:'Black Han Sans','Pretendard',sans-serif; font-weight:400; color:#0f2a33; font-size:clamp(11px,3.4vw,18px); letter-spacing:4px; margin:2px 0 0; opacity:.85;}
+  .smf-venues{display:grid; grid-template-columns:1fr; gap:16px; max-width:520px; margin:6px auto 0; padding:0 4px;}
+  .smf-venue{display:block; width:100%; padding:0; border:3px solid #111; border-radius:20px; overflow:hidden; background:#fff; box-shadow:5px 5px 0 #111; cursor:pointer; transition:transform .12s, box-shadow .12s; font-family:inherit;}
+  .smf-venue:active{transform:translate(2px,2px); box-shadow:3px 3px 0 #111;}
+  .smf-vimg{height:132px; background:#cbe8f2 center/cover no-repeat;}
+  .smf-vbar{display:flex; align-items:center; gap:8px; padding:11px 15px; background:#111;}
+  .smf-vname{font-family:'Black Han Sans','Pretendard',sans-serif; font-weight:400; color:#fff; font-size:19px; letter-spacing:.5px;}
+  .smf-vn{margin-left:auto; font-size:12px; font-weight:800; color:#FFE800;}
+  .smf-venue .smf-vgo{color:#FFE800; font-size:16px;}
+  .smf-back{display:inline-flex; align-items:center; gap:5px; margin:0 0 4px 8px; background:#111; color:#fff; border:none; border-radius:999px; padding:7px 15px; font-weight:800; font-size:13px; cursor:pointer; font-family:inherit;}
+  .smf-back:active{transform:scale(.95);}
+  .smf-vhero{height:120px; border-radius:16px; margin:0 8px 12px; background:#cbe8f2 center/cover no-repeat; border:2px solid #111; box-shadow:3px 3px 0 #111;}
+  @media (min-width:769px){ .smf-venues{grid-template-columns:repeat(3,1fr); max-width:960px;} .smf-vimg{height:150px;} }
   `;
   document.head.appendChild(st);
 }
@@ -8959,6 +8973,14 @@ if (!window.__dvPlaySyncBound) {
   } catch (_) {}
 }
 
+// SMF 페스티벌 공연장(건물) — 이미지 크롭은 img/smf/. 클릭 → 그 공연장 참가곡 도형 투표.
+const SMF_VENUES = [
+  { key: 'gonggam',  name: '공감홀 투표',     img: 'img/smf/gonggam.jpg' },
+  { key: 'redpoint', name: '레드 포인트 투표', img: 'img/smf/redpoint.jpg' },
+  { key: 'euu',      name: 'Euu 투표',        img: 'img/smf/euu.jpg' },
+];
+function _smfHash(s){ let h=0; s=String(s||''); for(let i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))|0; } return Math.abs(h); }
+
 function renderDiscoverVote(tracks) {
   currentView = 'shapes';
   const app = document.getElementById('app-content'); if (!app) return;
@@ -8966,38 +8988,44 @@ function renderDiscoverVote(tracks) {
   stopVoteDiscoverPhysics();
   _dvStyle();
 
-  function hasTag(t, re) { return (t.tags || []).some(tg => re.test(tg)); }
-  const used = new Set();
-  function take(pred, limit) {
-    const picked = [];
-    for (const t of tracks) { if (used.has(t.id)) continue; if (!pred(t)) continue; picked.push(t); used.add(t.id); if (picked.length >= limit) break; }
-    return picked;
-  }
-  // 순서 중요: band를 demos보다 먼저 배정해야 데모 카테고리가 다 가져가지 않음.
-  const june = take(t => hasTag(t, /6월|월평/), 6);
-  const band = take(t => hasTag(t, /밴드|록|rock|band/i), 6);
-  const demos = take(t => t.isDemo, 5);
+  // 곡을 공연장 3곳에 해시로 분배(아직 공연장 태그가 없어 시안용 임의 배정).
+  const byVenue = { gonggam: [], redpoint: [], euu: [] };
+  (tracks || []).forEach(t => { if (t && t.id) byVenue[SMF_VENUES[_smfHash(t.id) % 3].key].push(t); });
 
-  const CATS = [];
-  if (june.length)  CATS.push({ name: '6월 월평 투표', items: june });
-  if (demos.length) CATS.push({ name: '이달의 데모 투표', items: demos });
-  if (band.length)  CATS.push({ name: '밴드 음악 투표', items: band });
-
-  if (!CATS.length) {
+  // ── Level 1: 공연장(건물) 선택 ──
+  const venueKey = window.__voteVenue || null;
+  if (!venueKey) {
     app.innerHTML = _dpModeToggleHtml('vote')
-      + '<div class="dv-wrap"><p class="dv-empty">🗳 아직 투표할 곡이 모이지 않았어요. 곧 채워질 거예요!</p></div>';
+      + '<div class="dv-wrap">'
+      + '<div class="dv-hero"><h1 class="dv-wordmark">서울음악페스티벌</h1><p class="dv-en">SEOUL MUSIC FESTIVAL</p>'
+      + '<p class="dv-sub">🎤 공연장을 골라 참가곡에 투표하세요 <span class="dv-sub-note">(한 번=듣기 · 두 번=투표)</span></p></div>'
+      + '<div class="smf-venues">'
+      + SMF_VENUES.map(v => '<button class="smf-venue" onclick="window.__voteVenue=\'' + v.key + '\'; renderShapes();">'
+          + '<div class="smf-vimg" style="background-image:url(\'' + v.img + '\')"></div>'
+          + '<div class="smf-vbar"><span class="smf-vname">' + dpEsc(v.name) + '</span><span class="smf-vn">' + byVenue[v.key].length + '곡</span><span class="smf-vgo">▶</span></div></button>').join('')
+      + '</div></div>'
+      + '<div class="upload-fab" onclick="navigateTo(\'upload\')" title="음악 업로드"><i class="ri-add-line"></i></div>';
     return;
   }
 
+  // ── Level 2: 선택된 공연장의 도형 투표 ──
+  const vObj = SMF_VENUES.find(v => v.key === venueKey) || SMF_VENUES[0];
+  const items = (byVenue[venueKey] || []).slice(0, 8);
+  const CATS = [{ name: vObj.name, items: items }];
+
   app.innerHTML = _dpModeToggleHtml('vote')
     + '<div class="dv-wrap">'
-    + '<div class="dv-hero"><h1 class="dv-wordmark">이달의 투표</h1>'
-    + '<p class="dv-sub">실제 업로드된 곡으로 투표! 1위(반짝이는 도형)가 눈에 띄어요 🗳 <span class="dv-sub-note">(한 번=듣기 · 두 번=투표, 지금은 이 화면에서만 임시 집계)</span></p></div>'
+    + '<button class="smf-back" onclick="window.__voteVenue=null; renderShapes();"><i class="ri-arrow-left-line"></i> 공연장 선택</button>'
+    + '<div class="dv-hero"><h1 class="dv-wordmark" style="font-size:clamp(28px,8vw,52px)">' + dpEsc(vObj.name) + '</h1></div>'
+    + '<div class="smf-vhero" style="background-image:url(\'' + vObj.img + '\')"></div>'
     + '<div class="dv-cats-row">'
-    + CATS.map((cat, ci) => '<section class="dv-cat"><span class="dv-cat-pill">' + dpEsc(cat.name) + '</span><div class="dv-cat-box" id="dv-box' + ci + '"><div class="dv-cd-strip"><span class="dv-lab">투표 마감까지</span><span class="dv-tm" id="dv-cd' + ci + '">—</span></div></div></section>').join('')
-    + '</div>'
-    + '</div>'
+    + '<section class="dv-cat"><div class="dv-cat-box" id="dv-box0" style="aspect-ratio:1/1; max-height:min(66vh,500px)"><div class="dv-cd-strip"><span class="dv-lab">투표 마감까지</span><span class="dv-tm" id="dv-cd0">—</span></div></div></section>'
+    + '</div></div>'
     + '<div class="upload-fab" onclick="navigateTo(\'upload\')" title="음악 업로드"><i class="ri-add-line"></i></div>';
+
+  if (!items.length) {
+    document.getElementById('dv-box0').insertAdjacentHTML('afterbegin', '<p class="dv-empty" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">아직 이 공연장 참가곡이 없어요</p>');
+  }
 
   const worlds = [];
   CATS.forEach((cat, ci) => {
