@@ -9,42 +9,63 @@
 <style>
   :root{ --ink:#111; --y:#FFE800; }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;}
-  html{background:#45CEEB;}   /* 어떤 화면에서도 흰 여백 안 보이게 바탕색 고정 */
+  html,body{margin:0;} html{background:#45CEEB;}
   body{
     background:linear-gradient(170deg,#57D6F0 0%, #45CEEB 42%, #7BE0C4 100%) fixed;
     color:var(--ink); font-family:'Pretendard','Apple SD Gothic Neo',system-ui,sans-serif;
     padding:12px 12px 96px; min-height:100vh; overflow-x:hidden; position:relative;
   }
-  .bg{position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0;}
-  .bg span{position:absolute; opacity:.16;} .bg i{display:block; width:100%; height:100%; background:var(--c,#fff);}
-  .bg .c-c i{border-radius:50%;} .bg .c-s i{border-radius:10px;} .bg .c-t i{clip-path:polygon(50% 0,100% 100%,0 100%);}
   header,#app{position:relative; z-index:2;}
-  /* 제목 — 기존 '슬로우 뮤직' 워드마크와 동일 폰트·색·크게·가운데 */
   .wordmark{font-family:'Black Han Sans','Pretendard',sans-serif; font-weight:400; color:var(--y); text-align:center;
-    font-size:clamp(38px,12vw,92px); line-height:.9; letter-spacing:-.5px; margin:6px 0 0; text-shadow:2px 5px 0 rgba(0,0,0,.14);}
+    font-size:clamp(34px,11vw,88px); line-height:.9; letter-spacing:-.5px; margin:6px 0 0; text-shadow:2px 5px 0 rgba(0,0,0,.14);}
   .wordmark-en{font-family:'Black Han Sans','Pretendard',sans-serif; font-weight:400; text-align:center; color:#0f2a33;
-    font-size:clamp(12px,3.6vw,20px); letter-spacing:4px; margin:3px 0 0; opacity:.85;}
+    font-size:clamp(11px,3.4vw,18px); letter-spacing:4px; margin:3px 0 0; opacity:.85;}
   .sub{font-size:12.5px; color:rgba(0,0,0,.55); margin:8px 0 18px; font-weight:700; text-align:center;}
   .sub b{color:#0a5;}
 
-  /* ── 투표 박스 ── */
-  .cat{margin:0 0 26px; position:relative;}
-  .cat-head{display:flex; align-items:center; gap:8px; margin:0 0 8px 6px;}
-  .cat-pill{display:inline-flex; align-items:center; gap:7px; background:#fff; color:#111; font-weight:900; font-size:15px;
-    padding:7px 15px; border-radius:11px; border:2px solid #111; box-shadow:3px 3px 0 #111; position:relative; z-index:10;}
-  .cat-dot{width:12px; height:12px; border-radius:50%;}
-  .cat-cnt{margin-left:auto; margin-right:6px; font-size:11px; font-weight:800; color:rgba(0,0,0,.5);}
-  .cat-box{border:3px dashed rgba(255,255,255,.95); border-radius:20px; margin-top:-14px; position:relative; overflow:hidden;
-    aspect-ratio:1/.82; height:auto; max-height:min(50vh,360px); background:rgba(255,255,255,.1);}
+  /* ── 공연장(건물) 선택 카드 ── */
+  .venues{display:grid; grid-template-columns:1fr; gap:18px; max-width:900px; margin:0 auto;}
+  .venue{position:relative; border-radius:22px; overflow:hidden; cursor:pointer; border:3px solid #111; box-shadow:6px 6px 0 #111;
+    aspect-ratio:16/9; background:var(--vg); transition:transform .12s, box-shadow .12s;}
+  .venue:active{transform:translate(2px,2px); box-shadow:3px 3px 0 #111;}
+  /* 건물 몸체 + 창문 그리드 */
+  .venue .bld{position:absolute; left:8%; right:8%; bottom:0; height:62%; background:linear-gradient(180deg,#2a2f3a,#171a22);
+    border-radius:10px 10px 0 0; box-shadow:0 -4px 20px rgba(0,0,0,.3);
+    background-image:repeating-linear-gradient(90deg,transparent 0 14px,rgba(255,255,255,.05) 14px 15px),repeating-linear-gradient(0deg,transparent 0 12px,rgba(255,255,255,.05) 12px 13px);}
+  /* LED 스크린 (건물 정면) */
+  .venue .led{position:absolute; left:14%; right:14%; bottom:12%; height:34%; border-radius:6px; background:rgba(0,0,0,.55);
+    display:flex; align-items:center; justify-content:center; gap:9px; box-shadow:inset 0 0 20px rgba(0,0,0,.6);}
+  .venue .led i{width:22px; height:22px; display:block;}
+  .venue .led .c{border-radius:50%;} .venue .led .t{clip-path:polygon(50% 0,100% 100%,0 100%);}
+  .venue .led .s{clip-path:polygon(50% 0%,71% 21%,98% 35%,84% 61%,79% 91%,50% 86%,21% 91%,16% 61%,2% 35%,29% 21%);}
+  .venue .led .d{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);}
+  /* 하늘 장식 도형 */
+  .venue .sky{position:absolute; opacity:.92;} .venue .sky.c{border-radius:50%;}
+  .venue .sky.t{clip-path:polygon(50% 0,100% 100%,0 100%);}
+  .venue .sky.d{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);}
+  .venue-info{position:absolute; left:16px; top:14px; z-index:3;}
+  .venue-name{font-family:'Black Han Sans',sans-serif; font-size:26px; color:#fff; text-shadow:2px 2px 0 rgba(0,0,0,.35); line-height:1;}
+  .venue-en{font-size:10px; font-weight:800; letter-spacing:2px; color:rgba(255,255,255,.75); margin-top:3px;}
+  .venue-cta{position:absolute; right:14px; bottom:14px; z-index:3; background:#fff; color:#111; font-weight:900; font-size:12.5px;
+    padding:7px 14px; border-radius:999px; border:2px solid #111; box-shadow:2px 2px 0 #111; display:flex; align-items:center; gap:6px;}
+  .venue-cnt{position:absolute; left:16px; bottom:14px; z-index:3; color:#fff; font-weight:800; font-size:12px; text-shadow:0 1px 3px rgba(0,0,0,.5);}
+
+  /* ── 투표(도형) 화면 ── */
+  .vote-top{display:flex; align-items:center; gap:10px; max-width:900px; margin:0 auto 12px;}
+  .back{background:#111; color:#fff; border:none; border-radius:999px; width:40px; height:40px; font-size:18px; cursor:pointer; flex:0 0 auto; box-shadow:2px 2px 0 rgba(0,0,0,.25);}
+  .back:active{transform:translate(1px,1px);}
+  .vote-title{font-family:'Black Han Sans',sans-serif; font-size:22px; color:#111;}
+  .vote-title small{font-family:'Pretendard'; font-weight:800; font-size:12px; color:rgba(0,0,0,.5); margin-left:6px;}
+  .cat-box{border:3px dashed rgba(255,255,255,.95); border-radius:22px; position:relative; overflow:hidden;
+    height:min(64vh,560px); background:rgba(255,255,255,.1); max-width:900px; margin:0 auto;}
   .cd-strip{position:absolute; left:0; right:0; bottom:0; z-index:9; display:flex; align-items:center; justify-content:center; gap:7px;
     padding:6px 10px 8px; background:linear-gradient(0deg, rgba(0,0,0,.28), rgba(0,0,0,0)); pointer-events:none;}
-  .cd-strip .lab{font-size:10.5px; font-weight:800; color:rgba(255,255,255,.92); text-shadow:0 1px 3px rgba(0,0,0,.5);}
-  .cd-strip .tm{font-family:'Black Han Sans',sans-serif; color:#fff; font-size:19px; line-height:1; text-shadow:0 2px 6px rgba(0,0,0,.55);}
+  .cd-strip .lab{font-size:11px; font-weight:800; color:rgba(255,255,255,.92); text-shadow:0 1px 3px rgba(0,0,0,.5);}
+  .cd-strip .tm{font-family:'Black Han Sans',sans-serif; color:#fff; font-size:20px; line-height:1; text-shadow:0 2px 6px rgba(0,0,0,.55);}
   .cd-strip .tm small{font-family:'Pretendard',sans-serif; font-size:11px; font-weight:800; opacity:.9; margin-right:3px;}
   .cd-strip .colon{opacity:.55; padding:0 1px;}
+  .vhint{max-width:900px; margin:10px auto 0; text-align:center; font-size:12px; font-weight:700; color:rgba(0,0,0,.5);}
 
-  /* ── 곡 도형 ── */
   .shape{position:absolute; left:0; top:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
     text-align:center; cursor:pointer; font-weight:800; line-height:1.2; color:#111; user-select:none; will-change:transform;}
   .shape .bg2{position:absolute; inset:0; z-index:1; background:var(--sc,#E24A9C); filter:drop-shadow(2px 3px 0 rgba(0,0,0,.2)); transition:filter .2s;}
@@ -68,21 +89,8 @@
   .plus1{position:absolute; z-index:20; font-family:'Black Han Sans',sans-serif; font-size:22px; color:var(--y); text-shadow:1px 2px 0 rgba(0,0,0,.5); pointer-events:none; animation:rise .8s ease-out forwards;}
   @keyframes rise{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-40px);}}
 
-  /* ── 참가 아티스트 (클릭 → 아티스트 페이지) ── */
-  .rel{margin:6px 0 26px;}
-  .rel-head{display:flex; align-items:center; gap:8px; margin:0 0 14px 6px;}
-  .rel-pill{display:inline-flex; align-items:center; gap:7px; background:#111; color:#fff; font-weight:900; font-size:15px;
-    padding:7px 15px; border-radius:11px; border:2px solid #111; box-shadow:3px 3px 0 rgba(0,0,0,.25);}
-  .art-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(88px,1fr)); gap:16px 12px;}
-  .art-card{cursor:pointer; text-align:center;}
-  .art-av{aspect-ratio:1/1; border-radius:50%; background:#fff center/cover no-repeat; border:3px solid #111; box-shadow:3px 3px 0 #111;
-    display:flex; align-items:center; justify-content:center; font-family:'Black Han Sans',sans-serif; font-size:30px; color:#111; overflow:hidden; transition:transform .1s;}
-  .art-card:active .art-av{transform:translate(1px,1px); box-shadow:2px 2px 0 #111;}
-  .art-name{margin-top:8px; font-weight:800; font-size:12.5px; color:#0d2530; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-
   .flag{position:fixed; top:calc(env(safe-area-inset-top) + 6px); right:8px; z-index:60; background:rgba(15,15,20,.72); color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:20px;}
 
-  /* ── 플레이바 ── */
   .playbar{position:fixed; left:10px; right:10px; bottom:calc(env(safe-area-inset-bottom) + 10px); z-index:55;
     background:var(--ink); color:#fff; border-radius:16px; padding:9px 12px; display:flex; align-items:center; gap:10px; box-shadow:0 8px 24px rgba(0,0,0,.35); border:2px solid rgba(255,255,255,.12);}
   .pb-disc{width:40px; height:40px; flex:0 0 auto; border-radius:50%; position:relative; background:var(--pbc,#666);}
@@ -105,23 +113,18 @@
 
   @media (min-width:769px){
     body{padding:20px 20px 100px;}
-    .wrap{max-width:1200px; margin:0 auto;}
-    .grid{display:grid; grid-template-columns:repeat(2,1fr); gap:22px; align-items:start;}
-    .cat{margin:0;} .cat-box{aspect-ratio:auto; height:400px; max-height:none;}
-    .rel{grid-column:1/-1;}
+    .venues{grid-template-columns:repeat(3,1fr);}
   }
-  @media (min-width:1100px){ .grid{grid-template-columns:repeat(4,1fr);} }
 </style>
 </head>
 <body>
-  <div class="bg" id="bgLayer"></div>
   <div class="wrap">
     <header>
       <h1 class="wordmark">서울음악페스티벌</h1>
       <p class="wordmark-en">SEOUL MUSIC FESTIVAL</p>
-      <p class="sub">🎤 페스티벌 지원자 <b>투표중</b> <span style="opacity:.7">· 한 번=듣기 · 두 번=투표</span></p>
+      <p class="sub" id="subLine">🏛 무대를 골라 지원팀에 투표하세요 <span style="opacity:.7">· 건물을 눌러 입장</span></p>
     </header>
-    <div id="app" class="grid"><p style="color:rgba(0,0,0,.55);font-weight:700;font-size:13px;padding:26px 4px;grid-column:1/-1;">🎧 음악 불러오는 중…</p></div>
+    <div id="app"><p style="color:rgba(0,0,0,.55);font-weight:700;font-size:13px;padding:26px 4px;text-align:center;">🎧 음악 불러오는 중…</p></div>
   </div>
 
   <audio id="audioEl" preload="none"></audio>
@@ -139,125 +142,123 @@
   <div class="toast" id="toast"></div>
 
 <script>
-// 5개 창: 참가 투표 4개(도형) + 발매된 음원 1개(커버 이미지)
-const EVENTS=[
-  {name:'쇼케이스 참가 투표', color:'#FF6B9D'},
-  {name:'레드 포인트 참가 투표', color:'#FF4D4D'},
-  {name:'Euu 카페 참가 투표', color:'#FFA23A'},
-  {name:'음원발매 투표', color:'#4EC8E0'},
+// 3개 공연장(건물). 클릭 → 그 무대의 지원팀 도형 투표.
+const VENUES=[
+  {name:'공감홀',      en:'GONGGAM HALL',  vg:'linear-gradient(160deg,#7C5BFF,#4A2FB5)'},
+  {name:'레드 포인트', en:'RED POINT',     vg:'linear-gradient(160deg,#FF5B7A,#C1223E)'},
+  {name:'Euu 카페',    en:'EUU CAFE',      vg:'linear-gradient(160deg,#FFA23A,#E06A12)'},
 ];
+// 멤피스 팔레트 — 도형마다 다른 밝은 색(첨부 인포그래픽 색감)
+const PALETTE=['#FF2EA0','#FFD24A','#22C3E6','#86E05A','#B14BFF','#FF6B5C','#3E6FD9','#F06CA8','#2EE6D6','#FFA23A','#9B7BFF','#5AD86B'];
+function colorFor(i){ return PALETTE[(i*7) % PALETTE.length]; }
+
 const SUPABASE_URL='https://vayzhmaggwpkbsrrsdqt.supabase.co';
 const SUPABASE_KEY='sb_publishable_1PxNV0BGL7Wy_strTMqnbA_pCBCsOPG';
 async function fetchTracks(){
-  const cols='id,title,tags,audio_url,cover_url,likes_count,is_demo,profiles(name,avatar_url)';
+  const cols='id,title,tags,audio_url,likes_count,profiles(name)';
   const url=`${SUPABASE_URL}/rest/v1/tracks?select=${encodeURIComponent(cols)}&order=created_at.desc&limit=200`;
   const r=await fetch(url,{headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY}});
   if(!r.ok) throw new Error('fetch '+r.status);
   return (await r.json()).map(row=>({
     id:row.id, title:row.title||'제목 없음', artist:(row.profiles&&row.profiles.name)||'익명',
-    avatar:(row.profiles&&/^https?:\/\//.test(row.profiles.avatar_url||''))?row.profiles.avatar_url:'',
-    tags:Array.isArray(row.tags)?row.tags:[], audioUrl:row.audio_url||'',
-    cover:(row.cover_url&&/^https?:\/\//.test(row.cover_url))?row.cover_url:'', v:row.likes_count||0
+    tags:Array.isArray(row.tags)?row.tags:[], audioUrl:row.audio_url||'', v:row.likes_count||0
   }));
 }
 function hash(s){ let h=0; for(let i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))|0; } return Math.abs(h); }
 
-let CATS=[], ARTISTS=[];
 async function loadData(){
   try{
     const tracks=await fetchTracks();
-    // 참가 투표 4개 = 모든 곡을 해시로 임의 배정(시안). 창당 최대 6.
-    const buckets=[[],[],[],[]];
-    tracks.forEach(t=>{ buckets[hash(t.id)%4].push(t); });
-    CATS=EVENTS.map((e,i)=>({ ...e, items:buckets[i].slice(0,6), total:buckets[i].length }));
-    // 참가 아티스트 = 중복 없는 아티스트 목록(아바타 있으면 사용). 클릭 → 아티스트 페이지.
-    const seen=new Set(); ARTISTS=[];
-    tracks.forEach(t=>{ if(!t.artist||seen.has(t.artist))return; seen.add(t.artist); ARTISTS.push({name:t.artist, avatar:t.avatar||''}); });
+    // 지원팀을 3개 무대에 해시로 임의 배정(시안). 무대당 최대 8팀.
+    const buckets=[[],[],[]];
+    tracks.forEach(t=>{ buckets[hash(t.id)%3].push(t); });
+    VENUES.forEach((v,i)=>{ v.items=buckets[i].slice(0,8); v.total=buckets[i].length; });
     if(!tracks.length) throw new Error('no data');
-  }catch(e){ document.getElementById('app').innerHTML='<p style="color:rgba(0,0,0,.6);padding:26px 4px;grid-column:1/-1;font-weight:700;">⚠️ 음악을 불러오지 못했어요.</p>'; return false; }
+  }catch(e){ document.getElementById('app').innerHTML='<p style="color:rgba(0,0,0,.6);padding:26px 4px;text-align:center;font-weight:700;">⚠️ 음악을 불러오지 못했어요.</p>'; return false; }
   return true;
 }
 
-// 멤피스 팔레트 — 첨부 건물(off-stage/공감센터) 색감. 도형마다 다른 밝은 색(박스 한 색 X).
-const PALETTE=['#FF2EA0','#FFD24A','#22C3E6','#86E05A','#B14BFF','#FF6B5C','#3E6FD9','#F06CA8','#2EE6D6','#FFA23A','#9B7BFF','#5AD86B'];
-function colorFor(ci,i){ return PALETTE[(ci*5 + i*7) % PALETTE.length]; }  // 인접 도형끼리 확실히 다른 색
-const SIZE_STEPS=[124,106,94,84,76,70];
-function sizeOf(v,idx){ return Math.min(SIZE_STEPS[Math.min(idx||0,SIZE_STEPS.length-1)]+v*4, 150); }
-function fontOf(d){ return Math.max(10, Math.min(d*0.135,17)); }
+const SIZE_STEPS=[130,112,98,88,80,74,70,66];
+function sizeOf(v,idx){ return Math.min(SIZE_STEPS[Math.min(idx||0,SIZE_STEPS.length-1)]+v*4, 160); }
+function fontOf(d){ return Math.max(10, Math.min(d*0.135,18)); }
 const SHAPES=['s-circle','s-star','s-hex','s-square','s-blob'];
 function esc(s){ return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
-function shade(hex,i){ const f=[0,1,-1,2,-2,3][i%6]*0.08; const n=parseInt(hex.slice(1),16);
-  let r=n>>16&255,g=n>>8&255,b=n&255; const adj=x=>Math.max(0,Math.min(255,Math.round(x+(f<0?x*f:(255-x)*f))));
-  return `rgb(${adj(r)},${adj(g)},${adj(b)})`; }
 
-const worlds=[];
-function build(){
-  const app=document.getElementById('app');
-  let html=CATS.map((c,ci)=>{
-    return `<section class="cat">
-      <div class="cat-head"><span class="cat-pill">${esc(c.name)}</span><span class="cat-cnt">${c.total}곡</span></div>
-      <div class="cat-box" id="box${ci}"><div class="cd-strip"><span class="lab">투표 마감까지</span><span class="tm" id="cd${ci}">—</span></div></div>
-    </section>`;
-  }).join('');
-  // 5번째 — 참가 아티스트 (클릭하면 그 아티스트 페이지로)
-  html+=`<section class="rel"><div class="rel-head"><span class="rel-pill">🎤 참가 아티스트</span><span class="cat-cnt">${ARTISTS.length}명</span></div>`
-    + (ARTISTS.length
-        ? `<div class="art-grid">`+ARTISTS.map(a=>{
-            const av=a.avatar?`background-image:url('${a.avatar.replace(/'/g,'%27')}')`:`background:${PALETTE[hash(a.name)%PALETTE.length]}`;
-            return `<div class="art-card" onclick="goArtist('${encodeURIComponent(a.name)}')"><div class="art-av" style="${av}">${a.avatar?'':esc(a.name.slice(0,1))}</div><div class="art-name">${esc(a.name)}</div></div>`;
-          }).join('')+`</div>`
-        : `<p style="color:rgba(0,0,0,.55);font-weight:700;padding:10px 4px;">아직 참가 아티스트가 없어요</p>`)
-    + `</section>`;
-  app.innerHTML=html;
+// ── 화면 1: 공연장 선택 ──
+function renderVenues(){
+  world=null; stopPhysics();
+  document.getElementById('subLine').innerHTML='🏛 무대를 골라 지원팀에 투표하세요 <span style="opacity:.7">· 건물을 눌러 입장</span>';
+  const shp=['c','t','s','d'], scol=['#FF2EA0','#FFD24A','#22C3E6','#86E05A','#B14BFF','#FF6B5C'];
+  document.getElementById('app').innerHTML='<div class="venues">'+VENUES.map((v,vi)=>{
+    const led=[0,1,2,3].map(k=>`<i class="${shp[(vi+k)%4]}" style="background:${scol[(vi*2+k)%scol.length]}"></i>`).join('');
+    const sky=[0,1,2].map(k=>{ const c=scol[(vi+k*3)%scol.length], s=shp[(vi+k)%4], sz=18+k*8, x=8+k*30+vi*6, y=6+k*7;
+      return `<span class="sky ${s}" style="width:${sz}px;height:${sz}px;left:${x}%;top:${y}%;background:${c}"></span>`; }).join('');
+    return `<div class="venue" style="--vg:${v.vg}" onclick="enterVenue(${vi})">
+      ${sky}
+      <div class="venue-info"><div class="venue-name">${esc(v.name)}</div><div class="venue-en">${v.en}</div></div>
+      <div class="bld"></div>
+      <div class="led">${led}</div>
+      <div class="venue-cnt">🎤 ${v.total}팀 지원 · 투표중</div>
+      <div class="venue-cta">입장 <span style="font-size:15px">→</span></div>
+    </div>`;
+  }).join('')+'</div>';
+}
 
-  CATS.forEach((c,ci)=>{
-    const box=document.getElementById('box'+ci), W=box.clientWidth||320, H=box.clientHeight||300, bodies=[];
-    c.items.forEach((t,i)=>{
-      const el=document.createElement('div');
-      el.className='shape '+SHAPES[(ci+i)%SHAPES.length];
-      el.style.setProperty('--sc', colorFor(ci,i));
-      const tag=(t.tags||[])[0]||'';
-      el.innerHTML=`<span class="bg2"></span><span class="ico">🎵</span><span class="tx"><span class="t-art">${esc(t.artist)}</span>${tag?'<br><span class="t-tag">#'+esc(tag)+'</span>':''}</span><span class="cnt">${t.v}</span>`;
-      box.appendChild(el);
-      const r=sizeOf(t.v,i)/2;
-      const b={el,t,ci,idx:i,r,tr:r,x:r+8+Math.random()*(W-2*r-16),y:r+8+Math.random()*(H-2*r-16),
-        vx:(Math.random()*14+6)*(Math.random()<.5?-1:1),vy:(Math.random()*14+6)*(Math.random()<.5?-1:1)};
-      bodies.push(b); applySize(b);
-      let ct=null;
-      el.addEventListener('click',()=>{ if(ct){clearTimeout(ct);ct=null;vote(b);} else {ct=setTimeout(()=>{ct=null;play(b);},260);} });
-    });
-    worlds.push({box,bodies,W,H}); updateRanks(ci);
+// ── 화면 2: 무대별 투표(도형) ──
+let world=null;
+function enterVenue(vi){
+  const v=VENUES[vi]; curVenue=vi;
+  document.getElementById('subLine').innerHTML='🎤 '+esc(v.name)+' 지원팀 <b>투표중</b> <span style="opacity:.7">· 한 번=듣기 · 두 번=투표</span>';
+  document.getElementById('app').innerHTML=
+    '<div class="vote-top"><button class="back" onclick="renderVenues()">←</button>'
+    + '<div class="vote-title">'+esc(v.name)+' 투표 <small>'+v.total+'팀</small></div></div>'
+    + '<div class="cat-box" id="box"><div class="cd-strip"><span class="lab">투표 마감까지</span><span class="tm" id="cd">—</span></div></div>'
+    + '<p class="vhint">도형을 한 번 누르면 듣기 · 두 번 누르면 투표 (도형이 커져요)</p>';
+  const box=document.getElementById('box'), W=box.clientWidth||340, H=box.clientHeight||480, bodies=[];
+  v.items.forEach((t,i)=>{
+    const el=document.createElement('div');
+    el.className='shape '+SHAPES[i%SHAPES.length];
+    el.style.setProperty('--sc', colorFor(i));
+    const tag=(t.tags||[])[0]||'';
+    el.innerHTML=`<span class="bg2"></span><span class="ico">🎵</span><span class="tx"><span class="t-art">${esc(t.artist)}</span>${tag?'<br><span class="t-tag">#'+esc(tag)+'</span>':''}</span><span class="cnt">${t.v}</span>`;
+    box.appendChild(el);
+    const r=sizeOf(t.v,i)/2;
+    const b={el,t,idx:i,r,tr:r,x:r+8+Math.random()*(W-2*r-16),y:r+8+Math.random()*(H-2*r-16),
+      vx:(Math.random()*14+6)*(Math.random()<.5?-1:1),vy:(Math.random()*14+6)*(Math.random()<.5?-1:1)};
+    bodies.push(b); applySize(b);
+    let ct=null;
+    el.addEventListener('click',()=>{ if(ct){clearTimeout(ct);ct=null;vote(b);} else {ct=setTimeout(()=>{ct=null;play(b);},260);} });
   });
-  // 참가 아티스트 카드는 인라인 onclick=goArtist 로 아티스트 페이지 이동.
+  world={box,bodies,W,H}; updateRanks();
+  startPhysics();
 }
 function applySize(b){const d=b.r*2; b.el.style.width=d+'px'; b.el.style.height=d+'px'; b.el.style.fontSize=fontOf(d)+'px';}
-function updateRanks(ci){
-  const w=worlds[ci]; if(!w) return;
-  const sorted=[...w.bodies].sort((a,b)=>b.t.v-a.t.v);
-  w.bodies.forEach(b=>{ const rank=sorted.indexOf(b);
-    b.el.classList.toggle('top',rank===0); b.el.classList.toggle('show-cnt',rank<2);
+function updateRanks(){
+  if(!world) return;
+  const sorted=[...world.bodies].sort((a,b)=>b.t.v-a.t.v);
+  world.bodies.forEach(b=>{ const rank=sorted.indexOf(b);
+    b.el.classList.toggle('top',rank===0); b.el.classList.toggle('show-cnt',rank<3);
     const c=b.el.querySelector('.cnt'); if(c) c.textContent=b.t.v; });
 }
 function vote(b){
   b.t.v++; b.tr=sizeOf(b.t.v,b.idx)/2;
   b.el.classList.remove('pop'); void b.el.offsetWidth; b.el.classList.add('pop');
-  const w=worlds[b.ci], p=document.createElement('div'); p.className='plus1'; p.textContent='+1';
-  p.style.left=(b.x-8)+'px'; p.style.top=(b.y-b.r-26)+'px'; w.box.appendChild(p); setTimeout(()=>p.remove(),800);
-  updateRanks(b.ci);
+  const p=document.createElement('div'); p.className='plus1'; p.textContent='+1';
+  p.style.left=(b.x-8)+'px'; p.style.top=(b.y-b.r-26)+'px'; world.box.appendChild(p); setTimeout(()=>p.remove(),800);
+  updateRanks();
 }
 
-// ── 재생 (도형/커버 공용) ──
-let curTrack=null, curEl=null, dragging=false, seekFrac=0;
+// ── 재생 ──
+let curVenue=0, curBody=null, dragging=false, seekFrac=0;
 const audioEl=document.getElementById('audioEl');
 function play(b){ playTrack(b.t, b.el); }
 function playTrack(t, el){
   if(!t.audioUrl){ toast('⚠️ 이 곡엔 음원이 없어요'); return; }
-  curTrack=t; curEl=el;
+  curBody={t,el};
   document.querySelectorAll('.shape.playing').forEach(e=>e.classList.remove('playing'));
   if(el) el.classList.add('playing');
   const disc=document.getElementById('pbDisc'); disc.classList.add('spin');
   disc.style.setProperty('--pbc', el&&el.classList.contains('shape')?getComputedStyle(el).getPropertyValue('--sc').trim():'#888');
-  // 아티스트 이름 클릭 → 실제 아티스트 페이지로
   document.getElementById('pbTitle').innerHTML='<span class="pb-artist" onclick="goArtist(\''+encodeURIComponent(t.artist)+'\')">'+esc(t.artist)+'</span> <small>「'+esc(t.title)+'」</small>';
   document.getElementById('pbPlay').textContent='⏸';
   if(audioEl.src!==t.audioUrl) audioEl.src=t.audioUrl;
@@ -265,20 +266,20 @@ function playTrack(t, el){
   audioEl.play().catch(()=>toast('⚠️ 재생할 수 없는 곡'));
 }
 function goArtist(enc){ const name=decodeURIComponent(enc); toast('→ '+name+' 페이지로 이동'); setTimeout(()=>{ location.href='index.html#/artist:'+enc; },500); }
-function endPlay(){ if(curEl) curEl.classList.remove('playing'); document.getElementById('pbDisc').classList.remove('spin'); document.getElementById('pbPlay').textContent='▶'; }
-function allTracks(){ const a=[]; worlds.forEach(w=>w.bodies.forEach(b=>a.push({t:b.t,el:b.el}))); return a; }
-audioEl.addEventListener('ended',()=>{ endPlay(); const l=allTracks(); const i=l.findIndex(x=>x.t===curTrack); if(i>=0&&l.length){ const n=l[(i+1)%l.length]; if(n) playTrack(n.t,n.el); } });
+function endPlay(){ if(curBody&&curBody.el) curBody.el.classList.remove('playing'); document.getElementById('pbDisc').classList.remove('spin'); document.getElementById('pbPlay').textContent='▶'; }
+function venueList(){ return world?world.bodies.map(b=>({t:b.t,el:b.el})):[]; }
+audioEl.addEventListener('ended',()=>{ endPlay(); const l=venueList(); if(curBody&&l.length){ const i=l.findIndex(x=>x.t===curBody.t); const n=l[(i+1)%l.length]; if(n) playTrack(n.t,n.el); } });
 audioEl.addEventListener('pause',()=>{ if(!audioEl.ended) document.getElementById('pbPlay').textContent='▶'; });
 audioEl.addEventListener('play',()=>{ document.getElementById('pbPlay').textContent='⏸'; document.getElementById('pbDisc').classList.add('spin'); });
 function setProg(f){ document.getElementById('pbFill').style.width=(f*100)+'%'; document.getElementById('pbKnob').style.left=(f*100)+'%'; }
 function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1500); }
 function wire(){
-  document.getElementById('pbPlay').addEventListener('click',()=>{ if(!curTrack){ const l=allTracks(); if(l.length) playTrack(l[0].t,l[0].el); return; } audioEl.paused?audioEl.play().catch(()=>{}):audioEl.pause(); });
-  document.getElementById('pbPrev').addEventListener('click',()=>{ const l=allTracks(); if(!l.length)return; let i=l.findIndex(x=>x.t===curTrack); if(i<0)i=0; const n=l[(i-1+l.length)%l.length]; playTrack(n.t,n.el); });
-  document.getElementById('pbNext').addEventListener('click',()=>{ const l=allTracks(); if(!l.length)return; let i=l.findIndex(x=>x.t===curTrack); const n=l[(i+1)%l.length]; playTrack(n.t,n.el); });
+  document.getElementById('pbPlay').addEventListener('click',()=>{ if(!curBody){ const l=venueList(); if(l.length) playTrack(l[0].t,l[0].el); return; } audioEl.paused?audioEl.play().catch(()=>{}):audioEl.pause(); });
+  document.getElementById('pbPrev').addEventListener('click',()=>{ const l=venueList(); if(!l.length)return; let i=curBody?l.findIndex(x=>x.t===curBody.t):0; const n=l[(i-1+l.length)%l.length]; playTrack(n.t,n.el); });
+  document.getElementById('pbNext').addEventListener('click',()=>{ const l=venueList(); if(!l.length)return; let i=curBody?l.findIndex(x=>x.t===curBody.t):-1; const n=l[(i+1)%l.length]; playTrack(n.t,n.el); });
   const prog=document.getElementById('pbProg');
   const frac=e=>{ const r=prog.getBoundingClientRect(); const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left; return Math.max(0,Math.min(1,x/r.width)); };
-  const start=e=>{ if(!curTrack)return; dragging=true; seekFrac=frac(e); setProg(seekFrac); };
+  const start=e=>{ if(!curBody)return; dragging=true; seekFrac=frac(e); setProg(seekFrac); };
   const move=e=>{ if(!dragging)return; seekFrac=frac(e); setProg(seekFrac); e.preventDefault&&e.preventDefault(); };
   const end=()=>{ if(!dragging)return; dragging=false; if(audioEl.duration){ audioEl.currentTime=seekFrac*audioEl.duration; } };
   prog.addEventListener('mousedown',start); window.addEventListener('mousemove',move); window.addEventListener('mouseup',end);
@@ -286,10 +287,13 @@ function wire(){
   setInterval(()=>{ if(!dragging&&audioEl.duration) setProg(audioEl.currentTime/audioEl.duration); },80);
 }
 
-let last=performance.now();
+// ── 물리 ──
+let raf=0, last=0;
+function stopPhysics(){ if(raf) cancelAnimationFrame(raf); raf=0; }
+function startPhysics(){ stopPhysics(); last=performance.now(); raf=requestAnimationFrame(step); }
 function step(now){
   const dt=Math.min((now-last)/1000,.05); last=now;
-  worlds.forEach(w=>{ w.W=w.box.clientWidth; w.H=w.box.clientHeight; const bs=w.bodies;
+  if(world){ const w=world; w.W=w.box.clientWidth; w.H=w.box.clientHeight; const bs=w.bodies;
     bs.forEach(b=>{ if(Math.abs(b.tr-b.r)>0.3){b.r+=(b.tr-b.r)*0.08;applySize(b);}
       b.x+=b.vx*dt; b.y+=b.vy*dt;
       if(b.x<b.r){b.x=b.r;b.vx=Math.abs(b.vx);} if(b.x>w.W-b.r){b.x=w.W-b.r;b.vx=-Math.abs(b.vx);}
@@ -300,26 +304,20 @@ function step(now){
         const an=A.vx*nx+A.vy*ny,bn=B.vx*nx+B.vy*ny,p=(bn-an)*.9; A.vx+=nx*p;A.vy+=ny*p;B.vx-=nx*p;B.vy-=ny*p; } }
     bs.forEach(b=>{ const sp=Math.hypot(b.vx,b.vy); if(sp>26){b.vx*=26/sp;b.vy*=26/sp;} if(sp<6){b.vx*=6/(sp||1);b.vy*=6/(sp||1);}
       b.el.style.transform=`translate(${(b.x-b.r).toFixed(1)}px,${(b.y-b.r).toFixed(1)}px)`; });
-  });
-  requestAnimationFrame(step);
+  }
+  raf=requestAnimationFrame(step);
 }
-(function bgDeco(){
-  const COL=['#E24A9C','#7FB2EC','#86CE34','#B49BEE','#F06CA8','#FFB03A','#FFFFFF']; const CL=['c-c','c-s','c-t'];
-  let h=''; for(let i=0;i<9;i++){ const cl=CL[i%3],c=COL[i%COL.length],w=60+Math.random()*90;
-    h+=`<span class="${cl}" style="width:${w}px;height:${w}px;left:${Math.random()*90}%;top:${Math.random()*92}%;--c:${c};transform:rotate(${(Math.random()*40-20)|0}deg);"><i></i></span>`; }
-  document.getElementById('bgLayer').innerHTML=h;
-})();
 (function cd(){
   const now0=new Date(), end=new Date(now0.getFullYear(),now0.getMonth()+1,1,0,0,0);
   const p=n=>String(n).padStart(2,'0');
   function tick(){ let s=Math.max(0,Math.floor((end-new Date())/1000));
     const d=Math.floor(s/86400); s-=d*86400; const h=Math.floor(s/3600); s-=h*3600; const m=Math.floor(s/60); s-=m*60;
     const html=(d>0?`<small>D-${d}</small>`:'')+p(h)+'<span class="colon">:</span>'+p(m)+'<span class="colon">:</span>'+p(s);
-    CATS.forEach((c,ci)=>{ const el=document.getElementById('cd'+ci); if(el) el.innerHTML=html; }); }
+    const el=document.getElementById('cd'); if(el) el.innerHTML=html; }
   tick(); setInterval(tick,1000);
 })();
 
-(async function init(){ if(!(await loadData())) return; build(); wire(); requestAnimationFrame(step); })();
+(async function init(){ if(!(await loadData())) return; renderVenues(); wire(); }) ();
 </script>
 </body>
 </html>
