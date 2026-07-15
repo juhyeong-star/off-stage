@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>아티스트 페이지 시안 (TEST)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#0f1720; --y:#FFE800; --sky:#45CEEB; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;} html{background:#eaf6fb;}
+  body{background:#eaf6fb; color:var(--ink); font-family:'Pretendard','Apple SD Gothic Neo',system-ui,sans-serif;
+    padding:0 0 96px; min-height:100vh; overflow-x:hidden;}
+  .wrap{max-width:760px; margin:0 auto;}
+
+  /* ── 히어로 ── */
+  .hero{position:relative; height:190px; background:linear-gradient(135deg,#57D6F0,#7C5BFF); overflow:hidden;}
+  .hero .cover{position:absolute; inset:0; background-size:cover; background-position:center; opacity:.9;}
+  .hero .veil{position:absolute; inset:0; background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.45));}
+  .hero .deco{position:absolute; opacity:.9;} .hero .deco.c{border-radius:50%;}
+  .hero .deco.t{clip-path:polygon(50% 0,100% 100%,0 100%);}
+  .back{position:fixed; top:calc(env(safe-area-inset-top) + 10px); left:10px; z-index:60; width:40px; height:40px; border-radius:50%;
+    background:rgba(0,0,0,.5); color:#fff; border:none; font-size:20px; cursor:pointer; backdrop-filter:blur(6px);}
+
+  .id{position:relative; margin-top:-52px; padding:0 18px; z-index:3; display:flex; align-items:flex-end; gap:14px;}
+  .avatar{width:104px; height:104px; border-radius:50%; border:4px solid #fff; background:#ccc center/cover no-repeat;
+    box-shadow:0 6px 18px rgba(0,0,0,.25); flex:0 0 auto; display:flex; align-items:center; justify-content:center;
+    font-family:'Black Han Sans'; font-size:40px; color:#fff;}
+  .id-main{flex:1; min-width:0; padding-bottom:6px;}
+  .id-name{font-family:'Black Han Sans',sans-serif; font-size:28px; line-height:1; color:#0f1720;}
+  .id-role{display:inline-block; margin-top:6px; font-size:11px; font-weight:800; color:#7C5BFF; background:rgba(124,91,255,.12); padding:3px 10px; border-radius:999px;}
+
+  .bio{padding:14px 20px 0; font-size:14px; line-height:1.6; color:#33414d; font-weight:500; white-space:pre-wrap;}
+  .bio:empty{display:none;}
+
+  /* SNS + 팔로우 */
+  .sns{display:flex; flex-wrap:wrap; gap:8px; padding:14px 18px 0;}
+  .sns a{display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:800; text-decoration:none; color:#111;
+    background:#fff; border:2px solid #111; border-radius:999px; padding:7px 13px; box-shadow:2px 2px 0 #111;}
+  .sns a:active{transform:translate(1px,1px); box-shadow:1px 1px 0 #111;}
+  .sns .ig{background:linear-gradient(45deg,#F58529,#DD2A7B,#8134AF); color:#fff; border-color:#111;}
+  .sns .yt{background:#FF0000; color:#fff;} .sns .tt{background:#000; color:#fff;} .sns .tw{background:#1DA1F2; color:#fff;}
+  .sns-empty{font-size:12px; color:rgba(0,0,0,.4); font-weight:700; padding:14px 20px 0;}
+
+  .cta{display:flex; gap:10px; padding:16px 18px 4px;}
+  .follow{flex:1; background:#111; color:#fff; border:none; border-radius:14px; padding:14px; font-size:15px; font-weight:900; cursor:pointer; box-shadow:3px 3px 0 rgba(0,0,0,.2);}
+  .follow.on{background:#fff; color:#111; border:2px solid #111;}
+  .follow:active{transform:translate(1px,1px);}
+  .msg{width:54px; flex:0 0 auto; background:#fff; border:2px solid #111; border-radius:14px; font-size:20px; cursor:pointer; box-shadow:3px 3px 0 rgba(0,0,0,.12);}
+
+  /* 스탯 */
+  .stats{display:flex; margin:18px 18px 0; background:#fff; border:2px solid #111; border-radius:16px; box-shadow:4px 4px 0 #111; overflow:hidden;}
+  .stat{flex:1; text-align:center; padding:13px 4px; border-right:2px solid #eee;}
+  .stat:last-child{border-right:none;}
+  .stat b{display:block; font-family:'Black Han Sans',sans-serif; font-size:22px; color:#0f1720; line-height:1;}
+  .stat span{font-size:11px; font-weight:700; color:rgba(0,0,0,.5);}
+
+  /* 섹션 */
+  .sec{margin:26px 0 0; padding:0 18px;}
+  .sec-h{display:flex; align-items:center; gap:8px; margin-bottom:12px;}
+  .sec-h .t{font-family:'Black Han Sans',sans-serif; font-size:19px; color:#0f1720;}
+  .sec-h .n{font-size:12px; font-weight:800; color:rgba(0,0,0,.4);}
+  .sec-h .badge{margin-left:auto; font-size:10.5px; font-weight:900; padding:3px 10px; border-radius:999px;}
+  .badge.master{background:#FFE800; color:#111;} .badge.demo{background:#7C5BFF; color:#fff;}
+
+  /* 발매곡 카드(커버) */
+  .mstr{display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:14px;}
+  .mcard{background:#fff; border:2px solid #111; border-radius:14px; overflow:hidden; cursor:pointer; box-shadow:3px 3px 0 #111;}
+  .mcard:active{transform:translate(1px,1px);}
+  .mcover{aspect-ratio:1/1; background:#ddd center/cover no-repeat; position:relative;}
+  .mcover .pl{position:absolute; right:8px; bottom:8px; width:34px; height:34px; border-radius:50%; background:rgba(0,0,0,.62); color:#fff; display:flex; align-items:center; justify-content:center; font-size:15px;}
+  .mbody{padding:8px 10px 10px;} .mtitle{font-weight:900; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .mmeta{font-size:11px; font-weight:700; color:rgba(0,0,0,.45); margin-top:1px;}
+
+  /* 데모 리스트(단계별) */
+  .demos{background:#fff; border:2px solid #111; border-radius:16px; box-shadow:4px 4px 0 #111; overflow:hidden;}
+  .drow{display:flex; align-items:center; gap:11px; padding:12px 14px; border-bottom:1px solid #eee; cursor:pointer;}
+  .drow:last-child{border-bottom:none;} .drow:active{background:#f6f6fa;}
+  .dnum{width:30px; height:30px; flex:0 0 auto; border-radius:9px; background:#7C5BFF; color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Black Han Sans'; font-size:14px;}
+  .dnum.fin{background:#FFE800; color:#111;}
+  .dinfo{flex:1; min-width:0;} .dtitle{font-weight:800; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .dtags{font-size:11.5px; font-weight:600; color:rgba(0,0,0,.45); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .dplay{width:34px; height:34px; flex:0 0 auto; border-radius:50%; background:#111; color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px;}
+  .empty{color:rgba(0,0,0,.45); font-weight:700; padding:18px; text-align:center;}
+
+  .flag{position:fixed; top:calc(env(safe-area-inset-top) + 10px); right:10px; z-index:60; background:rgba(15,15,20,.72); color:#fff; font-size:10px; font-weight:800; padding:4px 9px; border-radius:20px;}
+
+  /* 플레이바 */
+  .playbar{position:fixed; left:10px; right:10px; bottom:calc(env(safe-area-inset-bottom) + 10px); z-index:55; max-width:740px; margin:0 auto;
+    background:var(--ink); color:#fff; border-radius:16px; padding:9px 12px; display:flex; align-items:center; gap:10px; box-shadow:0 8px 24px rgba(0,0,0,.35); border:2px solid rgba(255,255,255,.12);}
+  .pb-disc{width:40px; height:40px; flex:0 0 auto; border-radius:50%; background:var(--pbc,#666) center/cover no-repeat;}
+  .pb-disc.spin{animation:spin 2.6s linear infinite;} @keyframes spin{to{transform:rotate(360deg);}}
+  .pb-info{flex:1; min-width:0;} .pb-title{font-weight:900; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .pb-title small{font-weight:700; opacity:.6;}
+  .pb-prog{height:12px; display:flex; align-items:center; margin-top:3px;} .pb-prog .track{position:relative; height:4px; width:100%; background:rgba(255,255,255,.18); border-radius:3px;}
+  .pb-prog .fill{position:absolute; left:0; top:0; height:100%; width:0%; background:var(--y); border-radius:3px;}
+  .pb-btn{flex:0 0 auto; background:none; border:none; color:#fff; font-size:16px; cursor:pointer; padding:2px 3px;}
+  .pb-play{width:34px; height:34px; border-radius:50%; background:var(--y); color:#111; font-size:15px; display:flex; align-items:center; justify-content:center;}
+  .toast{position:fixed; left:50%; bottom:80px; transform:translateX(-50%) translateY(10px); z-index:70; background:rgba(0,0,0,.9); color:#fff; font-size:12px; font-weight:700; padding:8px 16px; border-radius:20px; opacity:0; transition:.2s; pointer-events:none;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+  <button class="back" onclick="history.length>1?history.back():location.href='index.html'">←</button>
+  <div class="flag">🧪 아티스트 시안 TEST</div>
+  <div class="wrap" id="app"><p style="padding:60px 20px;text-align:center;color:#889;font-weight:700;">불러오는 중…</p></div>
+
+  <audio id="audioEl" preload="none"></audio>
+  <div class="playbar" id="playbar" style="display:none;">
+    <div class="pb-disc" id="pbDisc"></div>
+    <div class="pb-info"><div class="pb-title" id="pbTitle">—</div><div class="pb-prog"><div class="track"><div class="fill" id="pbFill"></div></div></div></div>
+    <button class="pb-btn" id="pbPrev">⏮</button><button class="pb-btn pb-play" id="pbPlay">▶</button><button class="pb-btn" id="pbNext">⏭</button>
+  </div>
+  <div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL='https://vayzhmaggwpkbsrrsdqt.supabase.co';
+const SUPABASE_KEY='sb_publishable_1PxNV0BGL7Wy_strTMqnbA_pCBCsOPG';
+const H={apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY};
+function esc(s){ return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function qp(k,d){ const m=new RegExp('[?&]'+k+'=([^&]+)').exec(location.search); return m?decodeURIComponent(m[1]):d; }
+const ARTIST=qp('a','이수진');
+
+async function get(path){ const r=await fetch(SUPABASE_URL+'/rest/v1/'+path,{headers:H}); if(!r.ok) throw new Error(r.status); return r.json(); }
+
+let TRACKS=[], PROFILE=null, following=false;
+async function load(){
+  try{
+    const profs=await get('profiles?name=eq.'+encodeURIComponent(ARTIST)+'&select=*&limit=1');
+    PROFILE=profs[0]||{name:ARTIST};
+    const cols='id,title,tags,audio_url,cover_url,is_demo,version,likes_count,plays_count,created_at';
+    const t=await get('tracks?artist_id=eq.'+PROFILE.id+'&select='+encodeURIComponent(cols)+'&order=created_at.asc');
+    TRACKS=(t||[]).map(r=>({id:r.id,title:r.title||'무제',tags:r.tags||[],audioUrl:r.audio_url||'',
+      cover:(r.cover_url&&/^https?:\/\//.test(r.cover_url))?r.cover_url:'',isDemo:!!r.is_demo,version:r.version||'',
+      likes:r.likes_count||0,plays:r.plays_count||0}));
+  }catch(e){ document.getElementById('app').innerHTML='<p style="padding:60px 20px;text-align:center;color:#889;font-weight:700;">⚠️ 아티스트 정보를 불러오지 못했어요.</p>'; return false; }
+  return true;
+}
+
+function fmt(n){ return n>=1000?(n/1000).toFixed(n>=10000?0:1).replace(/\.0$/,'')+'K':(''+(n||0)); }
+function render(){
+  const p=PROFILE;
+  const av=(p.avatar_url&&/^https?:\/\//.test(p.avatar_url))?p.avatar_url:'';
+  const hero=(p.hero_url&&/^https?:\/\//.test(p.hero_url))?p.hero_url:'';
+  const masters=TRACKS.filter(t=>!t.isDemo);
+  const demos=TRACKS.filter(t=>t.isDemo);
+  const plays=TRACKS.reduce((s,t)=>s+(t.plays||0),0);
+  const likes=TRACKS.reduce((s,t)=>s+(t.likes||0),0);
+  const roleLabel=(p.role==='admin')?'운영자':(p.role==='student'?'학생 아티스트':'아티스트');
+  // 히어로 장식
+  const deco='<span class="deco c" style="width:60px;height:60px;left:8%;top:18%;background:#FF2EA0"></span>'
+    +'<span class="deco t" style="width:52px;height:52px;right:14%;top:12%;background:#FFD24A"></span>'
+    +'<span class="deco c" style="width:30px;height:30px;right:34%;top:52%;background:#22C3E6"></span>';
+  // SNS
+  const sns=[];
+  if(p.sns_instagram) sns.push(`<a class="ig" href="${esc(p.sns_instagram)}" target="_blank">📷 인스타그램</a>`);
+  if(p.sns_youtube)   sns.push(`<a class="yt" href="${esc(p.sns_youtube)}" target="_blank">▶ 유튜브</a>`);
+  if(p.sns_tiktok)    sns.push(`<a class="tt" href="${esc(p.sns_tiktok)}" target="_blank">🎵 틱톡</a>`);
+  if(p.sns_twitter)   sns.push(`<a class="tw" href="${esc(p.sns_twitter)}" target="_blank">𝕏 트위터</a>`);
+  const snsHtml = sns.length ? `<div class="sns">${sns.join('')}</div>` : `<div class="sns-empty">🔗 아직 연결된 SNS가 없어요 (프로필 편집에서 인스타·유튜브 추가)</div>`;
+  // 발매곡
+  const mstrHtml = masters.length
+    ? `<div class="mstr">`+masters.map(t=>`<div class="mcard" onclick="playT('${t.id}')"><div class="mcover" style="${t.cover?`background-image:url('${t.cover.replace(/'/g,'%27')}')`:'background:linear-gradient(135deg,#7C5BFF,#22C3E6)'}"><span class="pl">▶</span></div><div class="mbody"><div class="mtitle">${esc(t.title)}</div><div class="mmeta">▶ ${fmt(t.plays)} · ♥ ${fmt(t.likes)}</div></div></div>`).join('')+`</div>`
+    : `<div class="demos"><div class="empty">아직 발매한 곡이 없어요</div></div>`;
+  // 데모(단계별)
+  const demoHtml = demos.length
+    ? `<div class="demos">`+demos.map((t,i)=>{
+        const m=/^demo(\d+)$/.exec(t.version); const fin=(t.version==='final'&&!t.isDemo);
+        const num=fin?'★':(m?m[1]:String(i+1));
+        const tags=(t.tags||[]).slice(0,4).map(x=>'#'+esc(x)).join(' ');
+        return `<div class="drow" onclick="playT('${t.id}')"><div class="dnum${fin?' fin':''}">${num}</div><div class="dinfo"><div class="dtitle">${esc(t.title)}</div><div class="dtags">${tags||'—'}</div></div><div class="dplay">▶</div></div>`;
+      }).join('')+`</div>`
+    : `<div class="demos"><div class="empty">아직 올린 데모가 없어요</div></div>`;
+
+  document.getElementById('app').innerHTML=`
+    <div class="hero"><div class="cover" style="${hero?`background-image:url('${hero.replace(/'/g,'%27')}')`:''}"></div>${deco}<div class="veil"></div></div>
+    <div class="id">
+      <div class="avatar" style="${av?`background-image:url('${av.replace(/'/g,'%27')}')`:''}">${av?'':esc((p.name||'?').slice(0,1))}</div>
+      <div class="id-main"><div class="id-name">${esc(p.name||ARTIST)}</div><div class="id-role">${roleLabel}</div></div>
+    </div>
+    <div class="bio">${esc(p.bio||'')}</div>
+    ${snsHtml}
+    <div class="cta">
+      <button class="follow" id="followBtn" onclick="toggleFollow()">🔥 팬 되기</button>
+      <button class="msg" title="메시지" onclick="toast('메시지 기능은 실제 사이트에서 동작해요')">✉️</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="fanN">0</b><span>팬</span></div>
+      <div class="stat"><b>${masters.length+demos.length}</b><span>곡</span></div>
+      <div class="stat"><b>${fmt(plays)}</b><span>재생</span></div>
+      <div class="stat"><b>${fmt(likes)}</b><span>좋아요</span></div>
+    </div>
+    <div class="sec"><div class="sec-h"><span class="t">발매곡</span><span class="n">${masters.length}</span><span class="badge master">MASTER</span></div>${mstrHtml}</div>
+    <div class="sec"><div class="sec-h"><span class="t">데모</span><span class="n">${demos.length}</span><span class="badge demo">DEMO · 단계별</span></div>${demoHtml}</div>
+    <p style="text-align:center;font-size:11px;color:#aab;font-weight:700;padding:24px 20px 0;">🧪 시안 — 팔로우·팬 수는 이 화면에서만 임시 집계</p>
+  `;
+}
+let fanBase=0;
+window.toggleFollow=function(){
+  following=!following;
+  const b=document.getElementById('followBtn');
+  b.classList.toggle('on',following); b.textContent=following?'✓ 팬이에요':'🔥 팬 되기';
+  document.getElementById('fanN').textContent=fanBase+(following?1:0);
+};
+
+// ── 재생 ──
+const audioEl=document.getElementById('audioEl'); let cur=null;
+function list(){ return TRACKS.filter(t=>t.audioUrl); }
+window.playT=function(id){
+  const t=TRACKS.find(x=>x.id===id); if(!t) return;
+  if(!t.audioUrl){ toast('⚠️ 이 곡엔 음원이 없어요'); return; }
+  cur=t;
+  document.getElementById('playbar').style.display='flex';
+  const disc=document.getElementById('pbDisc'); disc.classList.add('spin');
+  disc.style.backgroundImage=t.cover?`url('${t.cover.replace(/'/g,'%27')}')`:''; disc.style.setProperty('--pbc','#7C5BFF');
+  document.getElementById('pbTitle').innerHTML=esc(t.title)+' <small>· '+esc(PROFILE.name||ARTIST)+'</small>';
+  document.getElementById('pbPlay').textContent='⏸';
+  if(audioEl.src!==t.audioUrl) audioEl.src=t.audioUrl; audioEl.currentTime=0;
+  audioEl.play().catch(()=>toast('⚠️ 재생할 수 없는 곡'));
+};
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1600); }
+audioEl.addEventListener('timeupdate',()=>{ if(audioEl.duration) document.getElementById('pbFill').style.width=(audioEl.currentTime/audioEl.duration*100)+'%'; });
+audioEl.addEventListener('ended',()=>{ const l=list(); const i=l.findIndex(x=>x===cur); if(i>=0&&l.length){ playT(l[(i+1)%l.length].id); } });
+audioEl.addEventListener('pause',()=>{ document.getElementById('pbPlay').textContent='▶'; document.getElementById('pbDisc').classList.remove('spin'); });
+audioEl.addEventListener('play',()=>{ document.getElementById('pbPlay').textContent='⏸'; document.getElementById('pbDisc').classList.add('spin'); });
+document.getElementById('pbPlay').addEventListener('click',()=>{ if(!cur){ const l=list(); if(l.length) playT(l[0].id); return;} audioEl.paused?audioEl.play():audioEl.pause(); });
+document.getElementById('pbPrev').addEventListener('click',()=>{ const l=list(); if(!l.length)return; let i=l.findIndex(x=>x===cur); playT(l[(i-1+l.length)%l.length].id); });
+document.getElementById('pbNext').addEventListener('click',()=>{ const l=list(); if(!l.length)return; let i=l.findIndex(x=>x===cur); playT(l[(i+1)%l.length].id); });
+
+(async function(){ if(await load()) render(); })();
+</script>
+</body>
+</html>
