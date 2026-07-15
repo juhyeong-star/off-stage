@@ -65,7 +65,7 @@
     if (!window.supabase || !artistName) return null;
     const { data } = await window.supabase
       .from('profiles')
-      .select('id, name, avatar_url, hero_url, bio')
+      .select('id, name, avatar_url, hero_url, bio, sns_instagram, sns_youtube, sns_tiktok, sns_twitter')
       .eq('name', artistName)
       .maybeSingle();
     return data || null;

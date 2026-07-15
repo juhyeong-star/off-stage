@@ -4071,6 +4071,54 @@ function _artistShopStyle(){
   .abd-del{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:26px;height:26px;border:none;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:17px;line-height:1;cursor:pointer;transition:background .15s;}
   .abd-del:hover{background:rgba(255,255,255,.3);}
   .abd-post-box{background:#fff;color:#111;padding:13px 16px;font-family:'Pretendard',sans-serif;font-size:14px;line-height:1.62;white-space:pre-wrap;word-break:break-word;}
+  /* ===== 새 아티스트 페이지(팬덤형) — ash2-* ===== */
+  .ash2{max-width:760px;margin:0 auto;}
+  .ash2-hero{position:relative;height:180px;background:linear-gradient(135deg,#57D6F0,#7C5BFF);overflow:hidden;border-radius:0 0 4px 4px;}
+  .ash2-hero .cov{position:absolute;inset:0;background-size:cover;background-position:center;}
+  .ash2-hero .veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.03),rgba(0,0,0,.42));}
+  .ash2-hero .dc{position:absolute;opacity:.9;} .ash2-hero .dc.c{border-radius:50%;} .ash2-hero .dc.t{clip-path:polygon(50% 0,100% 100%,0 100%);}
+  .ash2-id{position:relative;margin-top:-50px;padding:0 18px;z-index:3;display:flex;align-items:flex-end;gap:14px;}
+  .ash2-av{width:100px;height:100px;border-radius:50%;border:4px solid #fff;background:#c9d3dd center/cover no-repeat;box-shadow:0 6px 18px rgba(0,0,0,.25);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-family:'Black Han Sans',sans-serif;font-size:38px;color:#fff;}
+  .ash2-idm{flex:1;min-width:0;padding-bottom:6px;}
+  .ash2-name{font-family:'Black Han Sans',sans-serif;font-size:26px;line-height:1;color:#0f1720;}
+  .ash2-role{display:inline-block;margin-top:6px;font-size:11px;font-weight:800;color:#7C5BFF;background:rgba(124,91,255,.12);padding:3px 10px;border-radius:999px;}
+  .ash2-bio{padding:14px 20px 0;font-size:14px;line-height:1.6;color:#33414d;font-weight:500;white-space:pre-wrap;}
+  .ash2-bio:empty{display:none;}
+  .ash2-sns{display:flex;flex-wrap:wrap;gap:8px;padding:14px 18px 0;}
+  .ash2-sns:empty{display:none;}
+  .ash2-sns a{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;text-decoration:none;color:#fff;border:2px solid #111;border-radius:999px;padding:7px 13px;box-shadow:2px 2px 0 #111;}
+  .ash2-sns a:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #111;}
+  .ash2-sns .ig{background:linear-gradient(45deg,#F58529,#DD2A7B,#8134AF);} .ash2-sns .yt{background:#FF0000;} .ash2-sns .tt{background:#000;} .ash2-sns .tw{background:#1DA1F2;}
+  .ash2-snsEmpty{padding:14px 20px 0;font-size:12px;color:rgba(0,0,0,.4);font-weight:700;}
+  .ash2-cta{display:flex;gap:10px;padding:16px 18px 4px;}
+  .ash2-follow{flex:1;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:900;cursor:pointer;background:#111;color:#fff;box-shadow:3px 3px 0 rgba(0,0,0,.2);}
+  .ash2-follow.on{background:#fff;color:#111;border:2px solid #111;}
+  .ash2-follow:active{transform:translate(1px,1px);}
+  .ash2-edit{flex:1;border:2px solid #111;border-radius:14px;padding:13px;font-size:15px;font-weight:900;cursor:pointer;background:#fff;color:#111;box-shadow:3px 3px 0 rgba(0,0,0,.12);}
+  .ash2-stats{display:flex;margin:18px 18px 0;background:#fff;border:2px solid #111;border-radius:16px;box-shadow:4px 4px 0 #111;overflow:hidden;}
+  .ash2-stat{flex:1;text-align:center;padding:12px 4px;border-right:2px solid #eee;} .ash2-stat:last-child{border-right:none;}
+  .ash2-stat b{display:block;font-family:'Black Han Sans',sans-serif;font-size:21px;color:#0f1720;line-height:1;}
+  .ash2-stat span{font-size:11px;font-weight:700;color:rgba(0,0,0,.5);}
+  .ash2-tabs{display:flex;gap:8px;padding:20px 18px 4px;}
+  .ash2-tab{flex:0 0 auto;background:#fff;border:2px solid #111;border-radius:8px;padding:7px 16px;font-weight:800;font-size:13px;color:#111;cursor:pointer;}
+  .ash2-tab.on{background:#111;color:#fff;}
+  .ash2-sec{margin:22px 0 0;padding:0 18px;}
+  .ash2-sech{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .ash2-sech .t{font-family:'Black Han Sans',sans-serif;font-size:19px;color:#0f1720;} .ash2-sech .n{font-size:12px;font-weight:800;color:rgba(0,0,0,.4);}
+  .ash2-sech .bd{margin-left:auto;font-size:10.5px;font-weight:900;padding:3px 10px;border-radius:999px;} .bd.m{background:#FFE800;color:#111;} .bd.d{background:#7C5BFF;color:#fff;}
+  .ash2-mstr{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;}
+  .ash2-mc{background:#fff;border:2px solid #111;border-radius:14px;overflow:hidden;cursor:pointer;box-shadow:3px 3px 0 #111;}
+  .ash2-mc:active{transform:translate(1px,1px);}
+  .ash2-mcov{aspect-ratio:1/1;background:#ddd center/cover no-repeat;position:relative;}
+  .ash2-mcov .pl{position:absolute;right:8px;bottom:8px;width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.62);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;}
+  .ash2-mb{padding:8px 10px 10px;} .ash2-mt{font-weight:900;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#111;} .ash2-mm{font-size:11px;font-weight:700;color:rgba(0,0,0,.45);margin-top:1px;}
+  .ash2-demos{background:#fff;border:2px solid #111;border-radius:16px;box-shadow:4px 4px 0 #111;overflow:hidden;}
+  .ash2-dr{display:flex;align-items:center;gap:11px;padding:12px 14px;border-bottom:1px solid #eee;cursor:pointer;} .ash2-dr:last-child{border-bottom:none;} .ash2-dr:active{background:#f6f6fa;}
+  .ash2-dn{width:30px;height:30px;flex:0 0 auto;border-radius:9px;background:#7C5BFF;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Black Han Sans',sans-serif;font-size:14px;} .ash2-dn.fin{background:#FFE800;color:#111;}
+  .ash2-di{flex:1;min-width:0;} .ash2-dt{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#111;} .ash2-dg{font-size:11.5px;font-weight:600;color:rgba(0,0,0,.45);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ash2-dp{width:34px;height:34px;flex:0 0 auto;border-radius:50%;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;}
+  .ash2-empty{color:rgba(0,0,0,.45);font-weight:700;padding:18px;text-align:center;background:#fff;border:2px solid #111;border-radius:16px;box-shadow:4px 4px 0 #111;}
+  .ash2-note{text-align:center;font-size:11px;color:#9aa8b3;font-weight:700;padding:24px 20px 10px;}
   `;
   document.head.appendChild(st);
 }
@@ -4127,49 +4175,75 @@ function renderArtistShop(artistName){
     }).join('') : (isSelf ? '' : '<div class="ash-empty">아직 게시글이 없어요</div>');
     body = '<div class="abd-wrap">'+_compose+_list+'</div>';
   } else {
-    if(!albums.length){ body='<div class="ash-empty">아직 올린 앨범이 없어요</div>'; }
-    else {
-      var _enc=encodeURIComponent(artistName);
-      var fil=window.__ashFilter||null;
-      var shown = fil ? albums.filter(function(a){return a.pid===fil;}) : albums;
-      if(fil && !shown.length){ shown=albums; fil=null; }
-      // 필터바(앨범 칩)
-      var filterBar='<div class="ash-filter"><button class="ash-fchip'+(!fil?' on':'')+'" onclick="window.__ashFilter=null;renderArtistShop(\''+_enc+'\')">전체</button>'
-        +albums.map(function(al){return '<button class="ash-fchip'+(fil===al.pid?' on':'')+'" onclick="window.__ashFilter=\''+al.pid+'\';renderArtistShop(\''+_enc+'\')">'+esc(al.title)+'</button>';}).join('')+'</div>';
-      // 앨범 = 주절주절처럼 검은 헤더(업로드날짜 + 작곡가이름) + 색 박스(제목·데모), 아래로 1열 쌓기.
-      function _ashDate(ts){ if(!ts) return ''; var d=new Date(ts); return d.getFullYear()+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+('0'+d.getDate()).slice(-2); }
-      var boxes='<div class="ash-boxes ash-boxes-stack">'+shown.map(function(al){
-        var drows=al.demos.map(function(d){
-          var tstr=d.tags.length? d.tags.map(function(x){return '#'+esc(x);}).join('') : esc(d.title||'데모');
-          return '<div class="ash-drw"><span class="ash-drow"><b class="ash-dnum">'+esc(d.num)+'</b>'+tstr+'</span></div>';
-        }).join('') || '<div class="ash-drow-empty">데모 없음</div>';
-        return '<div class="ash-album" onclick="navigateTo(\'album:'+encodeURIComponent(al.pid)+'\')">'
-          +'<div class="ash-ahead"><span class="ash-adate">'+esc(_ashDate(al.last))+'</span>'+esc(artistName)+'</div>'
-          +'<div class="ash-box" style="--bx:'+al.col+';background:'+al.col+';">'
-          +'<div class="ash-box-rows">'+drows+'</div></div></div>';
-      }).join('')+'</div>';
-      body = filterBar + boxes;
-    }
+    // 전체보기 = 새 팬덤형 프로필. 발매곡(마스터) 카드 + 데모(단계별) 리스트.
+    var masters=myTracks.filter(function(t){return !t.isDemo;});
+    var demos=myTracks.filter(function(t){return t.isDemo;});
+    var _fmt=function(n){ n=n||0; return n>=1000?(n/1000).toFixed(n>=10000?0:1).replace(/\.0$/,'')+'K':(''+n); };
+    var mstrHtml = masters.length
+      ? '<div class="ash2-mstr">'+masters.map(function(t){
+          var cov=(t.cover&&/^https?:\/\//.test(t.cover))?"background-image:url('"+t.cover.replace(/'/g,'%27')+"')":'background:linear-gradient(135deg,#7C5BFF,#22C3E6)';
+          return '<div class="ash2-mc" onclick="if(window.playTrack)playTrack(\''+esc(t.id)+'\',\'artist\')"><div class="ash2-mcov" style="'+cov+'"><span class="pl">▶</span></div><div class="ash2-mb"><div class="ash2-mt">'+esc(t.title||'무제')+'</div><div class="ash2-mm">▶ '+_fmt(t.plays)+' · ♥ '+_fmt(t.likes)+'</div></div></div>';
+        }).join('')+'</div>'
+      : '<div class="ash2-empty">아직 발매한 곡이 없어요</div>';
+    var demoHtml = demos.length
+      ? '<div class="ash2-demos">'+demos.map(function(t,i){
+          var m=/^demo(\d+)$/.exec(t.version||''); var fin=(t.version==='final'); var num=fin?'★':(m?m[1]:String(i+1));
+          var tags=(Array.isArray(t.tags)?t.tags:[]).slice(0,4).map(function(x){return '#'+esc(x);}).join(' ');
+          return '<div class="ash2-dr" onclick="if(window.playTrack)playTrack(\''+esc(t.id)+'\',\'artist\')"><div class="ash2-dn'+(fin?' fin':'')+'">'+num+'</div><div class="ash2-di"><div class="ash2-dt">'+esc(t.title||'무제')+'</div><div class="ash2-dg">'+(tags||'—')+'</div></div><div class="ash2-dp">▶</div></div>';
+        }).join('')+'</div>'
+      : '<div class="ash2-empty">아직 올린 데모가 없어요</div>';
+    body = '<div class="ash2-sec"><div class="ash2-sech"><span class="t">발매곡</span><span class="n">'+masters.length+'</span><span class="bd m">MASTER</span></div>'+mstrHtml+'</div>'
+      + '<div class="ash2-sec"><div class="ash2-sech"><span class="t">데모</span><span class="n">'+demos.length+'</span><span class="bd d">DEMO · 단계별</span></div>'+demoHtml+'</div>';
   }
-  function tbtn(id,label){ return '<button class="ash-tab'+(tab===id?' on':'')+'" onclick="window.__artistShopTab=\''+id+'\';renderArtistShop(\''+encodeURIComponent(artistName)+'\')">'+label+'</button>'; }
-  var act;
-  if(isSelf){ act='<button class="ash-act" onclick="window.editProfile&&editProfile()"><i class="ri-settings-3-line"></i> 편집</button>'; }
-  else{ var following=!!(window._isFollowingName&&window._isFollowingName(artistName)); var aid=(myTracks.find(function(t){return t.artistId;})||{}).artistId||''; act='<button class="ash-act'+(following?' on':'')+'" data-aid="'+esc(aid)+'" data-aname="'+esc(artistName)+'" onclick="window.mhFollow&&mhFollow(this)">'+(following?'팔로잉':'+ 팔로우')+'</button>'; }
-  // 아티스트 소개(bio) — 프로필 연동. 본인은 저장된 bio 즉시, 남이면 아래에서 비동기로 채움.
+  function tbtn(id,label){ return '<button class="ash2-tab'+(tab===id?' on':'')+'" onclick="window.__artistShopTab=\''+id+'\';renderArtistShop(\''+encodeURIComponent(artistName)+'\')">'+label+'</button>'; }
+  // 통계
+  var _fmt2=function(n){ n=n||0; return n>=1000?(n/1000).toFixed(n>=10000?0:1).replace(/\.0$/,'')+'K':(''+n); };
+  var totalPlays=myTracks.reduce(function(s,t){return s+(t.plays||0);},0);
+  var totalLikes=myTracks.reduce(function(s,t){return s+(t.likes||0);},0);
+  var _aid=(myTracks.find(function(t){return t.artistId;})||{}).artistId||'';
+  var fanCount=(_aid && window.__fanCounts && window.__fanCounts.get)?(window.__fanCounts.get(_aid)||0):0;
+  // 팔로우/편집 버튼
+  var ctaBtn;
+  if(isSelf){ ctaBtn='<button class="ash2-edit" onclick="window.editProfile&&editProfile()">✎ 프로필 편집</button>'; }
+  else{ var following=!!(window._isFollowingName&&window._isFollowingName(artistName));
+    ctaBtn='<button class="ash2-follow'+(following?' on':'')+'" data-aid="'+esc(_aid)+'" data-aname="'+esc(artistName)+'" onclick="window.mhFollow&&mhFollow(this)">'+(following?'✓ 팬이에요':'🔥 팬 되기')+'</button>'; }
+  // 소개(bio) — 본인 즉시, 남이면 비동기
   var _bio = (isSelf && me && me.bio) ? String(me.bio) : '';
-  var bioHtml = '<div class="ash-bio" id="ash-bio">'
-    + (_bio ? esc(_bio) : (isSelf ? '<span class="ash-bio-empty" onclick="window.editProfile&&editProfile()">+ 소개를 적어보세요</span>' : ''))
-    + '</div>';
-  app.innerHTML='<div class="sb-page"><h1 class="sb-wordmark">슬로우 뮤직</h1>'
-    +'<div class="sb-seclabel">'+esc(artistName)+'</div>'
-    +bioHtml
-    +act
-    +'<div class="ash-tabs">'+tbtn('all','전체보기')+tbtn('board','나의 게시판')+'</div>'
-    +body+'</div>';
-  // 남의 페이지면 프로필에서 소개 비동기로 가져와 채움(프로필 연동).
-  if(!isSelf && typeof window.fetchProfileByName==='function'){
+  var role0=(myTracks.length>0?'artist':'listener'); var roleLabel=(role0==='artist')?'아티스트':'리스너';
+  var _av0=(isSelf && me && me.avatar && /^https?:\/\//.test(me.avatar))?me.avatar:((myTracks[0]&&myTracks[0].artistAvatar)||'');
+  var avStyle=_av0?"background-image:url('"+_av0.replace(/'/g,'%27')+"')":'';
+  var initial=esc((artistName||'?').slice(0,1));
+  var deco='<span class="dc c" style="width:56px;height:56px;left:8%;top:18%;background:#FF2EA0"></span><span class="dc t" style="width:48px;height:48px;right:14%;top:12%;background:#FFD24A"></span><span class="dc c" style="width:28px;height:28px;right:34%;top:52%;background:#22C3E6"></span>';
+  app.innerHTML='<div style="background:#eaf6fb;min-height:100vh;"><div class="ash2 sb-page-artist">'
+    +'<div class="ash2-hero"><div class="cov" id="ash2-cov"></div>'+deco+'<div class="veil"></div></div>'
+    +'<div class="ash2-id"><div class="ash2-av" id="ash2-av" style="'+avStyle+'">'+(_av0?'':initial)+'</div>'
+      +'<div class="ash2-idm"><div class="ash2-name">'+esc(artistName)+'</div><div class="ash2-role">'+roleLabel+'</div></div></div>'
+    +'<div class="ash2-bio" id="ash2-bio">'+esc(_bio)+'</div>'
+    +'<div class="ash2-sns" id="ash2-sns"></div>'
+    +'<div class="ash2-cta">'+ctaBtn+'</div>'
+    +'<div class="ash2-stats"><div class="ash2-stat"><b id="ash2-fan">'+_fmt2(fanCount)+'</b><span>팬</span></div>'
+      +'<div class="ash2-stat"><b>'+myTracks.length+'</b><span>곡</span></div>'
+      +'<div class="ash2-stat"><b>'+_fmt2(totalPlays)+'</b><span>재생</span></div>'
+      +'<div class="ash2-stat"><b>'+_fmt2(totalLikes)+'</b><span>좋아요</span></div></div>'
+    +'<div class="ash2-tabs">'+tbtn('all','발매·데모')+tbtn('board','게시판')+'</div>'
+    +body
+    +'<p class="ash2-note">🎵 팬이 되면 이 아티스트의 새 소식을 받아볼 수 있어요</p>'
+    +'</div></div>';
+  // 프로필에서 커버·아바타·소개·SNS 비동기로 채움 (본인/남 공통 — 최신 프로필 반영)
+  if(typeof window.fetchProfileByName==='function'){
     window.fetchProfileByName(artistName).then(function(p){
-      if(p&&p.bio){ var el=document.getElementById('ash-bio'); if(el&&currentView==='artist'&&window.__currentArtistName===artistName) el.textContent=p.bio; }
+      if(!p) return; if(currentView!=='artist'||window.__currentArtistName!==artistName) return;
+      var cov=document.getElementById('ash2-cov'); if(cov && p.hero_url && /^https?:\/\//.test(p.hero_url)) cov.style.backgroundImage="url('"+p.hero_url.replace(/'/g,'%27')+"')";
+      var av=document.getElementById('ash2-av'); if(av && p.avatar_url && /^https?:\/\//.test(p.avatar_url)){ av.style.backgroundImage="url('"+p.avatar_url.replace(/'/g,'%27')+"')"; av.textContent=''; }
+      var bioEl=document.getElementById('ash2-bio'); if(bioEl && p.bio && !bioEl.textContent) bioEl.textContent=p.bio;
+      var snsEl=document.getElementById('ash2-sns'); if(snsEl){
+        var h='';
+        if(p.sns_instagram) h+='<a class="ig" href="'+esc(p.sns_instagram)+'" target="_blank" rel="noopener">📷 인스타그램</a>';
+        if(p.sns_youtube)   h+='<a class="yt" href="'+esc(p.sns_youtube)+'" target="_blank" rel="noopener">▶ 유튜브</a>';
+        if(p.sns_tiktok)    h+='<a class="tt" href="'+esc(p.sns_tiktok)+'" target="_blank" rel="noopener">🎵 틱톡</a>';
+        if(p.sns_twitter)   h+='<a class="tw" href="'+esc(p.sns_twitter)+'" target="_blank" rel="noopener">𝕏 트위터</a>';
+        snsEl.innerHTML=h;
+      }
     }).catch(function(){});
   }
 }
