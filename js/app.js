@@ -8918,9 +8918,9 @@ function _dvStyle(){
     background:rgba(255,255,255,.08);}
   /* PC 버전 — 모바일의 세로 1열 대신 3칸 나란히, 박스도 더 크고 넓게 */
   @media (min-width:769px){
-    .dv-wrap{max-width:1180px; margin:0 auto;}
+    .dv-wrap{max-width:none;}   /* 하늘색 배경을 화면 전체 폭으로(검은 여백 제거) */
     .dv-hero{padding-top:24px;}
-    .dv-cats-row{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; align-items:start;}
+    .dv-cats-row{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; align-items:start; max-width:1180px; margin:0 auto;}
     .dv-cat{margin:0;}
     .dv-cat-box{aspect-ratio:auto; height:460px; max-height:none;}
   }
@@ -8980,7 +8980,21 @@ function _dvStyle(){
   .dv-cat-box.smf-stage{background-size:cover; background-position:center; border-color:#111; margin-top:6px;}
   .dv-cat-box.smf-stage::before{content:''; position:absolute; inset:0; z-index:0; background:linear-gradient(180deg, rgba(8,16,26,.28) 0%, rgba(8,16,26,.5) 100%);}
   .dv-cat-box.smf-stage .dv-shape{z-index:2;}
-  @media (min-width:769px){ .smf-venues{grid-template-columns:repeat(3,1fr); max-width:960px;} .smf-vimg{height:150px;} }
+  /* ── PC: 공연장 3개를 좌·중·우로 크고 길게, 화면에 꽉 차게 ── */
+  @media (min-width:769px){
+    .smf-venues{grid-template-columns:repeat(3,1fr); max-width:min(1600px,94vw); gap:28px; padding:0 24px; margin-top:14px;}
+    .smf-venue{border-width:4px; box-shadow:7px 7px 0 #111; border-radius:26px;}
+    .smf-vimg{height:min(46vh,420px);}
+    .smf-vbar{padding:18px 22px;}
+    .smf-vname{font-size:30px;}
+    .smf-vn{font-size:16px;}
+    .smf-venue .smf-vgo{font-size:22px;}
+    /* 입장 후 무대(도형 투표)도 PC에서 크게 — 단일 무대라 1열 넓게 */
+    .dv-cats-row.smf-stage-row{grid-template-columns:1fr; max-width:min(1400px,92vw); margin:0 auto;}
+    .dv-cat-box.smf-stage{aspect-ratio:auto !important; height:min(74vh,760px) !important; max-height:none !important;}
+    .smf-vhero{height:200px; max-width:1400px; margin-left:auto; margin-right:auto;}
+    .smf-back{font-size:15px; padding:9px 18px;}
+  }
   `;
   document.head.appendChild(st);
 }
@@ -9095,7 +9109,7 @@ function renderDiscoverVote(tracks) {
     + '<div class="dv-wrap">'
     + '<button class="smf-back" onclick="window.__voteVenue=null; renderShapes();"><i class="ri-arrow-left-line"></i> 공연장 선택</button>'
     + '<div class="dv-hero"><h1 class="dv-wordmark" style="font-size:clamp(28px,8vw,52px)">' + dpEsc(vObj.name) + '</h1></div>'
-    + '<div class="dv-cats-row">'
+    + '<div class="dv-cats-row smf-stage-row">'
     + '<section class="dv-cat"><div class="dv-cat-box smf-stage" id="dv-box0" style="aspect-ratio:1/1.05; max-height:min(72vh,560px); background-image:url(\'' + vObj.img + '\')"><div class="dv-cd-strip"><span class="dv-lab">투표 마감까지</span><span class="dv-tm" id="dv-cd0">—</span></div></div></section>'
     + '</div></div>'
     + '<div class="upload-fab" onclick="navigateTo(\'upload\')" title="음악 업로드"><i class="ri-add-line"></i></div>';
