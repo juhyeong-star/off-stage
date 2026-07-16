@@ -4153,7 +4153,11 @@ function renderArtistShop(artistName){
   }).sort(function(a,b){return b.last-a.last;});
   var tab=window.__artistShopTab||'all';
   var body='';
-  if(tab==='board'){
+  if(tab==='log'){
+    // OFFLOG — 작업 로그 피드 (데모·생각글·사진·반응·게이지)
+    _offlogStyle();
+    body=_offlogFeed(artistName, isSelf, myTracks, esc);
+  } else if(tab==='board'){
     // 게시판 = 검은 제목바 + 흰 본문 박스 카드. 새 글은 localStorage(sbboard:<아티스트>),
     // 기존 db.notes(작곡가 글)도 병합해서 같이 표시(제목 없는 레거시 글).
     var _bposts=_ashBoardPosts(artistName);
@@ -4225,10 +4229,11 @@ function renderArtistShop(artistName){
       +'<div class="ash2-stat"><b>'+myTracks.length+'</b><span>곡</span></div>'
       +'<div class="ash2-stat"><b>'+_fmt2(totalPlays)+'</b><span>재생</span></div>'
       +'<div class="ash2-stat"><b>'+_fmt2(totalLikes)+'</b><span>좋아요</span></div></div>'
-    +'<div class="ash2-tabs">'+tbtn('all','발매·데모')+tbtn('board','게시판')+'</div>'
+    +'<div class="ash2-tabs">'+tbtn('all','발매·데모')+tbtn('log','📓 로그')+tbtn('board','게시판')+'</div>'
     +body
-    +'<p class="ash2-note">🎵 팬이 되면 이 아티스트의 새 소식을 받아볼 수 있어요</p>'
+    +(tab==='log'?'':'<p class="ash2-note">🎵 팬이 되면 이 아티스트의 새 소식을 받아볼 수 있어요</p>')
     +'</div></div>';
+  if(tab==='log'){ try{ _offlogWire(artistName); }catch(e){ console.warn('[offlog]',e); } }
   // 프로필에서 커버·아바타·소개·SNS 비동기로 채움 (본인/남 공통 — 최신 프로필 반영)
   if(typeof window.fetchProfileByName==='function'){
     window.fetchProfileByName(artistName).then(function(p){
@@ -4247,6 +4252,183 @@ function renderArtistShop(artistName){
     }).catch(function(){});
   }
 }
+
+// ============================================================
+// OFFLOG — 아티스트 작업 로그 피드 (offlog-artist-page-v3 이식)
+// 데모/보이스(파형·실제 재생), 생각글(포스트잇), 사진 로그(업로드·다운스케일 localStorage),
+// 도형 반응, 발매일 '메이킹 필름' 게이지. Off-Stage(무대 뒤) 컨셉.
+// ============================================================
+function _offlogPhotos(name){ try{ return JSON.parse(localStorage.getItem('offlog:'+name)||'[]')||[]; }catch(_){ return []; } }
+function _offlogSavePhotos(name, arr){ try{ localStorage.setItem('offlog:'+name, JSON.stringify((arr||[]).slice(0,80))); }catch(e){ if(typeof showToast==='function') showToast('저장 공간이 부족해요 (사진을 줄여보세요)'); } }
+function _offlogRx(name){ try{ return JSON.parse(localStorage.getItem('offlog-rx:'+name)||'{}')||{}; }catch(_){ return {}; } }
+function _offlogSaveRx(name,o){ try{ localStorage.setItem('offlog-rx:'+name, JSON.stringify(o)); }catch(_){} }
+function _oflTime(ts){ var d=new Date(ts||Date.now()); function p(n){return String(n).padStart(2,'0');} return p(d.getHours())+':'+p(d.getMinutes()); }
+function _oflDay(ts){ var d=new Date(ts||Date.now()); var now=new Date(); var dd=new Date(d.getFullYear(),d.getMonth(),d.getDate()); var t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()); var diff=Math.round((t0-dd)/86400000); var lbl=diff===0?'오늘':(diff===1?'어제':(d.getMonth()+1)+'월 '+d.getDate()+'일'); return {key:d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate(), label:lbl}; }
+
+function _offlogStyle(){
+  if(document.getElementById('oflog-style')) return;
+  // 도형 SVG 심볼 (한 번만)
+  if(!document.getElementById('oflog-symbols')){
+    var wrap=document.createElement('div'); wrap.id='oflog-symbols'; wrap.style.cssText='position:absolute;width:0;height:0;overflow:hidden';
+    wrap.innerHTML='<svg width="0" height="0"><defs>'
+      +'<symbol id="ofl-tri" viewBox="0 0 24 24"><polygon points="12,2.5 22.5,21 1.5,21" stroke-linejoin="round"/></symbol>'
+      +'<symbol id="ofl-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5"/></symbol>'
+      +'<symbol id="ofl-diamond" viewBox="0 0 24 24"><polygon points="12,1.5 22.5,12 12,22.5 1.5,12" stroke-linejoin="round"/></symbol>'
+      +'<symbol id="ofl-star" viewBox="0 0 24 24"><polygon points="12,1 14.3,6.46 19.78,4.22 17.54,9.7 23,12 17.54,14.3 19.78,19.78 14.3,17.54 12,23 9.7,17.54 4.22,19.78 6.46,14.3 1,12 6.46,9.7 4.22,4.22 9.7,6.46" stroke-linejoin="round"/></symbol>'
+      +'</defs></svg>';
+    document.body.appendChild(wrap);
+  }
+  // 재생 상태 → 파형 동기화 (한 번만 바인딩)
+  if(!window.__offlogPlaySync && window.audioElement){ window.__offlogPlaySync=true; ['play','pause','ended'].forEach(function(ev){ try{ window.audioElement.addEventListener(ev, function(){ try{_offlogSyncPlaying();}catch(_){} }); }catch(_){} }); }
+  var st=document.createElement('style'); st.id='oflog-style';
+  st.textContent = `
+  .oflog{background:#080809; margin:18px -18px 0; padding:18px 14px 44px; color:#F5F5F2; border-radius:22px 22px 0 0;}
+  .oflog .ofl-sub{display:flex;align-items:center;justify-content:center;gap:6px;color:#8A8A90;font-size:12px;margin-bottom:16px;text-align:center;font-weight:600;}
+  .oflog .ofl-sub em{font-style:normal;color:#53E0C8;font-weight:800;}
+  .oflog .ofl-compose{display:flex;gap:8px;margin-bottom:16px;}
+  .oflog .ofl-cbtn{flex:1;background:#1B1B1F;border:1px solid #2c2c31;color:#eee;border-radius:14px;padding:13px;font-weight:800;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;}
+  .oflog .ofl-cbtn:active{transform:scale(.98);}
+  .oflog .ofl-log{position:relative;border-radius:22px;background:#161618;overflow:hidden;margin-bottom:14px;min-height:168px;display:flex;align-items:center;justify-content:center;}
+  .oflog .ofl-who{position:absolute;top:12px;left:12px;display:flex;align-items:center;gap:7px;z-index:3;font-size:13px;font-weight:700;text-shadow:0 1px 6px rgba(0,0,0,.7);}
+  .oflog .ofl-tag{position:absolute;top:12px;right:12px;z-index:3;background:rgba(0,0,0,.55);border-radius:99px;padding:4px 11px;font-size:10.5px;font-weight:700;letter-spacing:.08em;color:#FFE94A;}
+  .oflog .ofl-center{position:relative;z-index:2;text-align:center;padding:0 16px;}
+  .oflog .ofl-ts{font-family:'Black Han Sans','Pretendard',sans-serif;font-size:32px;letter-spacing:1px;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.75);}
+  .oflog .ofl-cap{font-size:13px;color:rgba(255,255,255,.92);text-shadow:0 1px 8px rgba(0,0,0,.8);margin-top:2px;}
+  .oflog .ofl-bgimg{position:absolute;inset:0;background-size:cover;background-position:center;z-index:1;}
+  .oflog .ofl-more{position:absolute;bottom:9px;right:14px;z-index:3;color:#bbb;letter-spacing:2px;font-weight:700;}
+  .oflog .ofl-avatar{width:26px;height:26px;position:relative;flex-shrink:0;filter:drop-shadow(0 2px 5px rgba(0,0,0,.55));}
+  .oflog .ofl-avatar svg{width:100%;height:100%;overflow:visible;} .oflog .ofl-avatar b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Black Han Sans',sans-serif;font-size:11px;color:#1c1005;}
+  .oflog .ofl-rx{position:absolute;bottom:11px;left:12px;display:flex;gap:6px;z-index:3;align-items:center;}
+  .oflog .ofl-shape{width:26px;height:26px;border:none;background:transparent;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 5px rgba(0,0,0,.55));transition:transform .12s;}
+  .oflog .ofl-shape svg{width:100%;height:100%;overflow:visible;} .oflog .ofl-shape.hit{transform:scale(1.2);}
+  .oflog .ofl-rxn{background:rgba(0,0,0,.55);border-radius:99px;color:#eee;font-size:11.5px;padding:4px 9px;font-weight:700;}
+  .oflog .ofl-demo{background:linear-gradient(160deg,#191920,#101014);}
+  .oflog .ofl-wavebar{position:absolute;left:12px;right:12px;bottom:38px;display:flex;align-items:center;gap:9px;z-index:3;}
+  .oflog .ofl-play{width:38px;height:38px;border-radius:50%;background:#53E0C8;border:none;color:#04231d;font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .oflog .ofl-play.pk{background:#FF5FE0;color:#2b0522;}
+  .oflog .ofl-wave{flex:1;display:flex;align-items:center;gap:2.5px;height:34px;}
+  .oflog .ofl-wave i{flex:1;background:#55555e;border-radius:2px;height:calc(var(--h)*1%);transform-origin:center;}
+  .oflog .ofl-demo.playing .ofl-wave i{background:#53E0C8;animation:oflwv 1s ease-in-out infinite;animation-delay:calc(var(--d)*-.09s);}
+  .oflog .ofl-demo.playing .ofl-wave.pkw i{background:#FF5FE0;}
+  .oflog .ofl-dur{font-size:11px;color:#8A8A90;min-width:8px;}
+  @keyframes oflwv{0%,100%{transform:scaleY(.55)}50%{transform:scaleY(1.15)}}
+  .oflog .ofl-demo .ofl-center{transform:translateY(-14px);} .oflog .ofl-short{min-height:138px;}
+  .oflog .ofl-postit{background:#FFF3A6;color:#2B2417;border-radius:4px;padding:20px 18px 14px;width:86%;margin:2px auto 16px;transform:rotate(-2deg);box-shadow:0 10px 24px rgba(0,0,0,.55);position:relative;font-family:'Gaegu',cursive;}
+  .oflog .ofl-postit.blue{background:#CFEBFF;transform:rotate(1.6deg);}
+  .oflog .ofl-postit::before{content:'';position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(-1deg);width:74px;height:20px;background:rgba(255,255,255,.55);}
+  .oflog .ofl-postit p{font-size:19.5px;line-height:1.4;font-weight:700;white-space:pre-wrap;word-break:break-word;}
+  .oflog .ofl-postit .m{display:flex;justify-content:space-between;margin-top:9px;font-size:13px;opacity:.6;}
+  .oflog .ofl-day{display:flex;align-items:center;gap:10px;color:#8A8A90;font-size:11.5px;font-weight:700;margin:20px 4px 12px;letter-spacing:.08em;}
+  .oflog .ofl-day::after{content:'';flex:1;height:1px;background:#222;}
+  .oflog .ofl-invite{background:#101012;border:1px solid #222;min-height:120px;flex-direction:column;gap:10px;cursor:pointer;}
+  .oflog .ofl-plus{width:46px;height:46px;border-radius:50%;background:#232327;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;}
+  .oflog .ofl-invite p{color:#8A8A90;font-size:13.5px;font-weight:500;}
+  .oflog .ofl-gauge{background:#111114;border:1px solid #222;border-radius:22px;padding:15px;margin-top:20px;}
+  .oflog .ofl-gauge h3{font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center;}
+  .oflog .ofl-gauge h3 em{font-family:'Black Han Sans',sans-serif;font-style:normal;color:#53E0C8;font-size:16px;}
+  .oflog .ofl-strip{display:flex;gap:4px;margin:12px 0 9px;}
+  .oflog .ofl-cell{flex:1;height:24px;border-radius:5px;background:#1c1c20;border:1px dashed #2e2e34;}
+  .oflog .ofl-cell.f{background:repeating-linear-gradient(135deg,#53E0C8,#53E0C8 5px,#3fbfa9 5px,#3fbfa9 10px);border:none;}
+  .oflog .ofl-gauge small{font-size:11.5px;color:#8A8A90;line-height:1.5;display:block;}
+  .oflog .ofl-empty{color:#8A8A90;text-align:center;padding:32px 16px;font-weight:600;line-height:1.6;}
+  @media(min-width:769px){ .oflog{max-width:760px;margin:18px auto 0;border-radius:22px;} }
+  `;
+  document.head.appendChild(st);
+}
+
+function _offlogFeed(artistName, isSelf, myTracks, esc){
+  var db=window.DB.get();
+  var rx=_offlogRx(artistName);
+  var items=[];
+  (myTracks||[]).filter(function(t){return t.audioUrl;}).forEach(function(t){ items.push({type:'demo', ts:new Date(t.createdAt||0).getTime()||0, t:t}); });
+  var bposts=(typeof _ashBoardPosts==='function')?_ashBoardPosts(artistName):[];
+  bposts.forEach(function(p){ items.push({type:'note', ts:p.ts||0, body:p.body}); });
+  (db.notes||[]).filter(function(n){return n&&n.author===artistName;}).forEach(function(n){ items.push({type:'note', ts:new Date(n.createdAt||0).getTime()||0, body:String(n.text||'')}); });
+  _offlogPhotos(artistName).forEach(function(ph){ items.push({type:'photo', ts:ph.ts||0, img:ph.img, cap:ph.cap, id:ph.id}); });
+  items.sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+
+  var av='<span class="ofl-avatar"><svg><use href="#ofl-star" fill="#E8695A"/></svg><b>'+esc((artistName||'?').slice(0,1))+'</b></span>';
+  var logN=items.length;
+  var html='<div class="ofl-sub">작업 로그 <em>'+logN+'</em>개 · 발매일에 메이킹 필름으로</div>';
+  if(isSelf){ html+='<div class="ofl-compose"><button class="ofl-cbtn" onclick="_offlogAddPhoto()">📷 사진 로그</button><button class="ofl-cbtn" onclick="_offlogAddNote()">✏️ 생각글</button></div>'; }
+  if(!items.length){ html+='<div class="ofl-empty">'+(isSelf?'첫 로그를 남겨보세요 —<br>작업 사진·데모·생각을 쌓으면<br>발매일에 메이킹 필름이 돼요 🎬':'아직 로그가 없어요')+'</div>'; }
+  var lastDay='';
+  items.forEach(function(it,idx){
+    var d=_oflDay(it.ts);
+    if(d.key!==lastDay){ lastDay=d.key; html+='<div class="ofl-day">'+esc(d.label)+'</div>'; }
+    if(it.type==='demo'){
+      var t=it.t; var isVoice=/voice|보이스|메모/i.test((t.tags||[]).join(' ')+' '+(t.title||''));
+      var rid='t_'+t.id; var rn=rx[rid]||0;
+      var tag=isVoice?'VOICE':(t.isDemo?'DEMO':'MASTER');
+      var sb=isVoice?'':'<div class="ofl-rx"><button class="ofl-shape" data-rid="'+rid+'"><svg><use href="#ofl-tri" fill="#9FE84C"/></svg></button><button class="ofl-shape" data-rid="'+rid+'"><svg><use href="#ofl-circle" fill="#F06CB4"/></svg></button><button class="ofl-shape" data-rid="'+rid+'"><svg><use href="#ofl-star" fill="#F2C94C"/></svg></button><span class="ofl-rxn" data-n="'+rn+'">'+rn+'</span></div>';
+      html+='<div class="ofl-log ofl-demo'+(isVoice?' ofl-short':'')+'" data-track="'+esc(t.id)+'">'
+        +'<div class="ofl-who">'+av+esc(artistName)+'</div>'
+        +'<span class="ofl-tag"'+(isVoice?' style="color:#FF5FE0"':'')+'>'+tag+'</span>'
+        +'<div class="ofl-center"><div class="ofl-ts">'+_oflTime(it.ts)+'</div><div class="ofl-cap">'+esc(t.title||'무제')+((t.tags&&t.tags.length)?' · #'+esc(t.tags[0]):'')+'</div></div>'
+        +'<div class="ofl-wavebar"'+(isVoice?' style="bottom:12px"':'')+'><button class="ofl-play'+(isVoice?' pk':'')+'" aria-label="재생">▶</button><div class="ofl-wave'+(isVoice?' pkw':'')+'"></div><span class="ofl-dur"></span></div>'
+        +sb+'<span class="ofl-more">…</span></div>';
+    } else if(it.type==='note'){
+      html+='<div class="ofl-postit'+((idx%2===1)?' blue':'')+'"><p>'+esc(it.body||'')+'</p><div class="m"><span>생각글</span><span>'+_oflTime(it.ts)+'</span></div></div>';
+    } else if(it.type==='photo'){
+      var rid2='p_'+it.id; var rn2=rx[rid2]||0;
+      html+='<div class="ofl-log ofl-photo">'
+        +'<div class="ofl-bgimg" style="background-image:linear-gradient(rgba(0,0,0,.18),rgba(0,0,0,.35)),url(\''+String(it.img).replace(/'/g,'%27')+'\')"></div>'
+        +'<div class="ofl-who">'+av+esc(artistName)+'</div>'
+        +'<div class="ofl-center"><div class="ofl-ts">'+_oflTime(it.ts)+'</div>'+(it.cap?'<div class="ofl-cap">'+esc(it.cap)+'</div>':'')+'</div>'
+        +'<div class="ofl-rx"><button class="ofl-shape" data-rid="'+rid2+'"><svg><use href="#ofl-diamond" fill="#B48CE8"/></svg></button><button class="ofl-shape" data-rid="'+rid2+'"><svg><use href="#ofl-tri" fill="#7B8BE8"/></svg></button><span class="ofl-rxn" data-n="'+rn2+'">'+rn2+'</span></div>'
+        +(isSelf?'<span class="ofl-more" style="cursor:pointer" onclick="_offlogDelPhoto(\''+esc(it.id)+'\')">✕</span>':'<span class="ofl-more">…</span>')+'</div>';
+    }
+  });
+  html+='<div class="ofl-log ofl-invite" onclick="'+(isSelf?'_offlogAddPhoto()':'(window.mhFollow&&document.querySelector(\'.ash2-follow\')&&mhFollow(document.querySelector(\'.ash2-follow\')))')+'"><div class="ofl-plus">＋</div><p>'+(isSelf?'로그 남기기 · new log':'팬 로그 열기 · 팬 되기')+'</p></div>';
+  var filled=Math.min(logN,60); var cells=''; for(var i=0;i<10;i++){ cells+='<div class="ofl-cell'+(((i+1)/10*60)<=filled?' f':'')+'"></div>'; }
+  html+='<div class="ofl-gauge"><h3>발매일 메이킹 필름 <em>'+filled+' / 60</em></h3><div class="ofl-strip">'+cells+'</div><small>지금까지의 로그가 발매일에 한 편의 메이킹 필름으로 자동 편집됩니다.</small></div>';
+  return '<div class="oflog">'+html+'</div>';
+}
+
+function _offlogSyncPlaying(){
+  var root=document.querySelector('.oflog'); if(!root) return;
+  root.querySelectorAll('.ofl-demo').forEach(function(c){ c.classList.remove('playing'); var pb=c.querySelector('.ofl-play'); if(pb) pb.textContent='▶'; });
+  var id=window.currentPlayingTrack; if(!id) return; var a=window.audioElement; if(a&&a.paused) return;
+  var card=root.querySelector('.ofl-demo[data-track="'+id+'"]'); if(card){ card.classList.add('playing'); var pb=card.querySelector('.ofl-play'); if(pb) pb.textContent='⏸'; }
+}
+function _offlogWire(artistName){
+  var root=document.querySelector('.oflog'); if(!root) return;
+  root.querySelectorAll('.ofl-wave').forEach(function(w){ if(w.childElementCount) return; for(var i=0;i<28;i++){ var b=document.createElement('i'); b.style.setProperty('--h', 24+Math.round(Math.random()*70)); b.style.setProperty('--d', i); w.appendChild(b); } });
+  root.querySelectorAll('.ofl-play').forEach(function(p){ p.addEventListener('click', function(e){ e.stopPropagation(); var card=p.closest('.ofl-demo'); var tid=card&&card.getAttribute('data-track'); if(tid&&window.playTrack){ window.playTrack(tid,'artist'); } }); });
+  root.querySelectorAll('.ofl-shape').forEach(function(s){ s.addEventListener('click', function(e){ e.stopPropagation(); if(s.dataset.hit) return; var wrap=s.parentElement; var n=wrap.querySelector('.ofl-rxn'); if(!n) return; s.dataset.hit=1; s.classList.add('hit'); var v=(+n.dataset.n||0)+1; n.dataset.n=v; n.textContent=v; var rid=s.getAttribute('data-rid'); var o=_offlogRx(artistName); o[rid]=v; _offlogSaveRx(artistName,o); }); });
+  _offlogSyncPlaying();
+}
+window._offlogAddPhoto=function(){
+  var name=window.__currentArtistName; if(!name) return;
+  var inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+  inp.onchange=function(){ var f=inp.files[0]; if(!f) return; var rd=new FileReader();
+    rd.onload=function(ev){ var img=new Image(); img.onload=function(){
+      var mx=900, sc=Math.min(1, mx/Math.max(img.width,img.height));
+      var cv=document.createElement('canvas'); cv.width=Math.round(img.width*sc); cv.height=Math.round(img.height*sc);
+      try{ cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height); }catch(_){}
+      var data; try{ data=cv.toDataURL('image/jpeg',0.72); }catch(_){ data=ev.target.result; }
+      var cap=(window.prompt('로그 한 줄 (선택)')||'').slice(0,80);
+      var arr=_offlogPhotos(name); arr.push({id:'ph'+Date.now(), img:data, cap:cap, ts:Date.now()}); _offlogSavePhotos(name,arr);
+      if(typeof showToast==='function') showToast('사진 로그를 남겼어요 📷');
+      window.__artistShopTab='log'; renderArtistShop(name);
+    }; img.src=ev.target.result; };
+    rd.readAsDataURL(f); };
+  inp.click();
+};
+window._offlogAddNote=function(){
+  var name=window.__currentArtistName; if(!name) return;
+  var txt=window.prompt('생각글 — 작업하며 든 생각을 남겨보세요'); if(!txt||!txt.trim()) return;
+  if(typeof _ashBoardPosts==='function' && typeof _ashBoardSave==='function'){ var arr=_ashBoardPosts(name); arr.unshift({id:'bp'+Date.now(), title:'', body:txt.trim(), ts:Date.now()}); _ashBoardSave(name,arr); }
+  if(typeof showToast==='function') showToast('생각글을 남겼어요 ✏️');
+  window.__artistShopTab='log'; renderArtistShop(name);
+};
+window._offlogDelPhoto=function(id){
+  var name=window.__currentArtistName; if(!name) return;
+  if(!window.confirm('이 사진 로그를 지울까요?')) return;
+  var arr=_offlogPhotos(name).filter(function(p){return p&&p.id!==id;}); _offlogSavePhotos(name,arr);
+  window.__artistShopTab='log'; renderArtistShop(name);
+};
+
 window.renderArtistShop = renderArtistShop;
 
 // ── 나의 게시판(아티스트 shop board 탭) — 글은 localStorage 'sbboard:<아티스트>' 에 저장(앨범 댓글과 동일 per-device). ──
@@ -9006,8 +9188,10 @@ function stopVoteDiscoverPhysics() {
 const DV_SHAPES = ['dv-s-circle', 'dv-s-star', 'dv-s-hex', 'dv-s-square', 'dv-s-blob'];
 const DV_PALETTE = ['#FF6B9D', '#FFD24A', '#4EC8E0', '#8BE04B', '#B49BEE', '#FF8A5C', '#5B9BFA', '#F06CA8', '#26C6C6', '#FFA23A', '#9B7BFF', '#63D9A6'];
 const DV_SIZE_STEPS = [128, 108, 96, 86, 78, 72];
-function _dvSizeOf(v, idx) { return Math.min(DV_SIZE_STEPS[Math.min(idx || 0, DV_SIZE_STEPS.length - 1)] + v * 3, 150); }
-function _dvFontOf(d) { return Math.max(10, Math.min(d * 0.135, 17)); }
+// PC(넓은 화면)에선 도형을 훨씬 크게 — 모바일은 배율 1(그대로).
+function _dvScale() { return (typeof window !== 'undefined' && window.innerWidth >= 769) ? Math.min(2.9, Math.max(2.1, window.innerWidth / 440)) : 1; }
+function _dvSizeOf(v, idx) { return Math.min(DV_SIZE_STEPS[Math.min(idx || 0, DV_SIZE_STEPS.length - 1)] + v * 3, 150) * _dvScale(); }
+function _dvFontOf(d) { return Math.max(10, Math.min(d * 0.135, 34)); }
 window.__voteCounts = window.__voteCounts || {};   // 세션 임시 투표수 (trackId → count). 새로고침하면 리셋.
 
 function _dvApplySize(b) { const d = b.r * 2; b.el.style.width = d + 'px'; b.el.style.height = d + 'px'; b.el.style.fontSize = _dvFontOf(d) + 'px'; }
