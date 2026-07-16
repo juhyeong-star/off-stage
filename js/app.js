@@ -1679,6 +1679,15 @@ function navigateTo(route) {
     return;
   }
 
+  // OFFLOG 로그룸: "offlog:<이름>" — 프로필과 분리된 전체화면 로그룸 (스펙 v1.0)
+  if (route && route.startsWith('offlog:')) {
+    currentView = 'offlog';
+    const name = decodeURIComponent(route.slice(7));
+    try { renderOfflogRoom(name); } catch (err) { _renderError(err, '로그룸'); }
+    setTimeout(observeReveals, 20);
+    return;
+  }
+
   // Album (project) page route: "album:<projectId>" — 데모 하나의 프로젝트(마스터+데모) 페이지
   if (route && route.startsWith('album:')) {
     currentView = 'album';
@@ -4151,13 +4160,10 @@ function renderArtistShop(artistName){
     var last=new Date(vs[vs.length-1].createdAt||0).getTime();
     return {pid:pid, title:title, cover:rep.cover||'', col:col, demos:demos, last:last};
   }).sort(function(a,b){return b.last-a.last;});
+  if(window.__artistShopTab==='log') window.__artistShopTab='all';   // 로그는 전용 로그룸(#/offlog:)으로 분리 (스펙 v1.0)
   var tab=window.__artistShopTab||'all';
   var body='';
-  if(tab==='log'){
-    // OFFLOG — 작업 로그 피드 (데모·생각글·사진·반응·게이지)
-    _offlogStyle();
-    body=_offlogFeed(artistName, isSelf, myTracks, esc);
-  } else if(tab==='board'){
+  if(tab==='board'){
     // 게시판 = 검은 제목바 + 흰 본문 박스 카드. 새 글은 localStorage(sbboard:<아티스트>),
     // 기존 db.notes(작곡가 글)도 병합해서 같이 표시(제목 없는 레거시 글).
     var _bposts=_ashBoardPosts(artistName);
@@ -4229,11 +4235,10 @@ function renderArtistShop(artistName){
       +'<div class="ash2-stat"><b>'+myTracks.length+'</b><span>곡</span></div>'
       +'<div class="ash2-stat"><b>'+_fmt2(totalPlays)+'</b><span>재생</span></div>'
       +'<div class="ash2-stat"><b>'+_fmt2(totalLikes)+'</b><span>좋아요</span></div></div>'
-    +'<div class="ash2-tabs">'+tbtn('all','발매·데모')+tbtn('log','📓 로그')+tbtn('board','게시판')+'</div>'
+    +'<div class="ash2-tabs">'+tbtn('all','발매·데모')+'<button class="ash2-tab" onclick="navigateTo(\'offlog:'+encodeURIComponent(artistName)+'\')">📓 로그룸</button>'+tbtn('board','게시판')+'</div>'
     +body
-    +(tab==='log'?'':'<p class="ash2-note">🎵 팬이 되면 이 아티스트의 새 소식을 받아볼 수 있어요</p>')
+    +'<p class="ash2-note">🎵 팬이 되면 이 아티스트의 새 소식을 받아볼 수 있어요</p>'
     +'</div></div>';
-  if(tab==='log'){ try{ _offlogWire(artistName); }catch(e){ console.warn('[offlog]',e); } }
   // 프로필에서 커버·아바타·소개·SNS 비동기로 채움 (본인/남 공통 — 최신 프로필 반영)
   if(typeof window.fetchProfileByName==='function'){
     window.fetchProfileByName(artistName).then(function(p){
@@ -4409,7 +4414,7 @@ window._offlogAddPhoto=function(){
   var name=window.__currentArtistName; if(!name) return;
   var me=window.__currentUser||(window.DB&&window.DB.get&&window.DB.get().currentUser);
   if(!me||me.name!==name){ if(typeof showToast==='function') showToast('본인 로그에만 올릴 수 있어요'); return; }
-  var inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+  var inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.setAttribute('capture','environment');   // 모바일 = 인앱 카메라 직행(즉석 캡처 원칙)
   inp.onchange=function(){ var f=inp.files[0]; if(!f) return; var rd=new FileReader();
     rd.onload=function(ev){ var img=new Image(); img.onload=function(){
       var mx=900, sc=Math.min(1, mx/Math.max(img.width,img.height));
@@ -4419,7 +4424,7 @@ window._offlogAddPhoto=function(){
       var cap=(window.prompt('로그 한 줄 (선택)')||'').slice(0,80);
       var arr=_offlogPhotos(name); arr.push({id:'ph'+Date.now(), img:data, cap:cap, ts:Date.now()}); _offlogSavePhotos(name,arr);
       if(typeof showToast==='function') showToast('사진 로그를 남겼어요 📷');
-      window.__artistShopTab='log'; renderArtistShop(name);
+      _offlogRefresh(name);
     }; img.src=ev.target.result; };
     rd.readAsDataURL(f); };
   inp.click();
@@ -4431,7 +4436,7 @@ window._offlogAddNote=function(){
   var txt=window.prompt('생각글 — 작업하며 든 생각을 남겨보세요'); if(!txt||!txt.trim()) return;
   if(typeof _ashBoardPosts==='function' && typeof _ashBoardSave==='function'){ var arr=_ashBoardPosts(name); arr.unshift({id:'bp'+Date.now(), title:'', body:txt.trim(), ts:Date.now()}); _ashBoardSave(name,arr); }
   if(typeof showToast==='function') showToast('생각글을 남겼어요 ✏️');
-  window.__artistShopTab='log'; renderArtistShop(name);
+  _offlogRefresh(name);
 };
 // + 로그 남기기 — 음원/사진/생각글 선택 시트 (영상은 서버 저장 필요 — 준비 중)
 window._offlogAddMenu=function(){
@@ -4453,7 +4458,228 @@ window._offlogDelPhoto=function(id){
   if(!me||me.name!==name){ if(typeof showToast==='function') showToast('본인만 지울 수 있어요'); return; }
   if(!window.confirm('이 사진 로그를 지울까요?')) return;
   var arr=_offlogPhotos(name).filter(function(p){return p&&p.id!==id;}); _offlogSavePhotos(name,arr);
-  window.__artistShopTab='log'; renderArtistShop(name);
+  _offlogRefresh(name);
+};
+
+// ============================================================
+// OFFLOG 로그룸 v1.0 — 프로필과 분리된 전체화면 로그룸 (#/offlog:<이름>)
+// RoomHeader / SlotDots / SkinPicker(noir·lemon·midnight) / LogCard /
+// 도형=감정 반응(세모=소름·별=최고·동그라미=루프·다이아=울컥, 1인 1회) /
+// MakingFilmGauge / InviteCard / DockToggle(REC ● ↔ 로그, 캡처 시트)
+// ============================================================
+var OFLG_EMO={ tri:{n:'소름',c:'#9FE84C'}, circle:{n:'루프',c:'#F06CB4'}, diamond:{n:'울컥',c:'#7B8BE8'}, star:{n:'최고',c:'#F2C94C'} };
+function _oflgRx(name){ try{ return JSON.parse(localStorage.getItem('offlog-rx2:'+name)||'{}')||{}; }catch(_){ return {}; } }
+function _oflgSaveRx(name,o){ try{ localStorage.setItem('offlog-rx2:'+name, JSON.stringify(o)); }catch(_){} }
+function _oflgMine(name){ try{ return JSON.parse(localStorage.getItem('offlog-rxme:'+name)||'{}')||{}; }catch(_){ return {}; } }
+function _oflgSaveMine(name,o){ try{ localStorage.setItem('offlog-rxme:'+name, JSON.stringify(o)); }catch(_){} }
+function _offlogRefresh(name){ if(currentView==='offlog'&&typeof renderOfflogRoom==='function'){ renderOfflogRoom(name); } else { window.__artistShopTab='all'; renderArtistShop(name); } }
+
+function _oflgRoomStyle(){
+  if(document.getElementById('oflog-room-style')) return;
+  var st=document.createElement('style'); st.id='oflog-room-style';
+  st.textContent = `
+  .oflg-room{--olB:#000;--olC:#161618;--olC2:#1F1F23;--olL:#2A2A2E;--olT:#F5F5F2;--olM:#8A8A90;--olGlow:#FF5FE0;--olLogo:#53E0C8;--olG:#53E0C8;
+    background:var(--olB);min-height:100vh;padding:14px 0 calc(var(--player-height,72px) + 150px);color:var(--olT);transition:background .35s,color .35s;}
+  .oflg-room[data-theme=lemon]{--olB:#F3EFE4;--olC:#FFFFFF;--olC2:#EAE4D4;--olL:#DCD5C2;--olT:#26231B;--olM:#8D8778;--olGlow:#FFD335;--olLogo:#E8912A;--olG:#FFD335;}
+  .oflg-room[data-theme=midnight]{--olB:#0A0E1E;--olC:#141A30;--olC2:#1C2444;--olL:#273057;--olT:#EEF1FA;--olM:#7C86A8;--olGlow:#6C7BFF;--olLogo:#8FA0FF;--olG:#8FA0FF;}
+  .oflg-wrap{max-width:430px;margin:0 auto;padding:0 14px;}
+  .oflg-brand{font-family:'Fredoka','Bebas Neue','Pretendard',sans-serif;font-weight:600;font-size:13px;letter-spacing:.14em;color:var(--olLogo);text-align:center;margin-bottom:6px;}
+  .oflg-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .oflg-hd .r{display:flex;gap:8px;}
+  .oflg-circ{width:38px;height:38px;border-radius:50%;background:var(--olC2);border:none;color:var(--olT);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;}
+  .oflg-pill{background:var(--olC2);border-radius:99px;padding:9px 18px;font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px;color:var(--olT);}
+  .oflg-pill i{font-style:normal;color:var(--olM);font-size:11px;}
+  .oflg-dots{display:flex;justify-content:center;gap:6px;margin:2px 0 10px;}
+  .oflg-dots b{width:6px;height:6px;border-radius:50%;background:var(--olL);}
+  .oflg-dots b.on{background:var(--olGlow);box-shadow:0 0 8px var(--olGlow);}
+  .oflg-sub{display:flex;align-items:center;justify-content:center;gap:6px;color:var(--olM);font-size:12px;margin-bottom:12px;font-weight:600;}
+  .oflg-sub em{font-style:normal;color:var(--olLogo);font-weight:800;}
+  .oflg-skins{display:flex;justify-content:center;gap:9px;margin:0 0 14px;}
+  .oflg-sw{width:26px;height:26px;border-radius:50%;border:2px solid var(--olL);cursor:pointer;padding:0;}
+  .oflg-sw.on{outline:2px solid var(--olLogo);outline-offset:2px;}
+  /* 방(테마) 안 피드 색을 테마 토큰으로 */
+  .oflg-room .oflog{background:transparent;margin:0;padding:0;border-radius:0;color:var(--olT);}
+  .oflg-room .ofl-log{background:var(--olC);}
+  .oflg-room .ofl-demo{background:var(--olC);}
+  .oflg-room .ofl-invite{background:var(--olC2);border:1px solid var(--olL);}
+  .oflg-room .ofl-invite p{color:var(--olM);}
+  .oflg-room .ofl-plus{background:var(--olC2);color:var(--olT);border:1px solid var(--olL);}
+  .oflg-room .ofl-day{color:var(--olM);} .oflg-room .ofl-day::after{background:var(--olL);}
+  .oflg-room .ofl-gauge{background:var(--olC2);border:1px solid var(--olL);}
+  .oflg-room .ofl-gauge h3{color:var(--olT);} .oflg-room .ofl-gauge h3 em{color:var(--olLogo);}
+  .oflg-room .ofl-gauge small{color:var(--olM);}
+  .oflg-room .ofl-cell{background:var(--olC);border-color:var(--olL);}
+  .oflg-room .ofl-cell.f{background:repeating-linear-gradient(135deg,var(--olG),var(--olG) 5px,rgba(0,0,0,.25) 5px,rgba(0,0,0,.25) 10px);border:none;}
+  .oflg-room .ofl-play{background:var(--olLogo);color:#111;}
+  .oflg-room .ofl-wave i{background:var(--olL);}
+  .oflg-room .ofl-demo.playing .ofl-wave i{background:var(--olLogo);}
+  .oflg-room .ofl-ts{color:var(--olT);text-shadow:none;}
+  .oflg-room .ofl-cap{color:var(--olM);text-shadow:none;}
+  .oflg-room .ofl-who{color:var(--olT);text-shadow:none;}
+  .oflg-room .ofl-photo .ofl-ts{color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.75);}
+  .oflg-room .ofl-photo .ofl-cap{color:rgba(255,255,255,.92);text-shadow:0 1px 8px rgba(0,0,0,.8);}
+  .oflg-room .ofl-photo .ofl-who{color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.7);}
+  .oflg-room .ofl-empty{color:var(--olM);}
+  .oflg-room[data-theme=lemon] .ofl-tag{background:rgba(0,0,0,.72);}
+  .ofl-emopop{position:absolute;z-index:30;font-weight:900;font-size:12px;color:#fff;background:rgba(0,0,0,.72);padding:3px 9px;border-radius:99px;pointer-events:none;animation:oflpop .9s ease-out forwards;}
+  @keyframes oflpop{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-26px);}}
+  .oflg-dock{position:fixed;left:0;right:0;bottom:calc(var(--player-height,72px) + 14px);display:flex;justify-content:center;z-index:59;pointer-events:none;}
+  .oflg-toggle{pointer-events:auto;display:flex;background:#1B1B1F;border:1px solid #2c2c31;border-radius:99px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+  .oflg-toggle button{border:none;background:transparent;color:#8A8A90;font-size:13.5px;font-weight:700;padding:9px 22px;border-radius:99px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;}
+  .oflg-toggle button.on{background:#37373d;color:#fff;}
+  .oflg-dot{width:8px;height:8px;border-radius:50%;background:#FF4D4D;display:inline-block;animation:oflblink 1.4s infinite;}
+  @keyframes oflblink{50%{opacity:.3;}}
+  @media(prefers-reduced-motion:reduce){ .oflg-room *{animation:none!important;transition:none!important;} }
+  `;
+  document.head.appendChild(st);
+}
+
+// 감정 반응 바 — 카드당 도형 4개(감정 1:1 고정) + 합계. mine = 내가 이미 누른 것(1인 1회)
+function _oflgRxBar(rid, rx, mine){
+  var o=rx[rid]||{}; var total=0; Object.keys(OFLG_EMO).forEach(function(k){ total+=o[k]||0; });
+  return '<div class="ofl-rx" data-rid="'+rid+'">'+Object.keys(OFLG_EMO).map(function(sh){
+    var e=OFLG_EMO[sh]; var hit=mine[rid+':'+sh]?' hit':'';
+    return '<button class="ofl-shape'+hit+'" data-sh="'+sh+'" aria-label="'+e.n+' 반응"><svg><use href="#ofl-'+sh+'" fill="'+e.c+'"/></svg></button>';
+  }).join('')+'<span class="ofl-rxn">'+total+'</span></div>';
+}
+
+// 로그룸 피드 카드 (곡·생각글·사진 → 시간 역순 + 날짜 구분선)
+function _oflgFeedCards(artistName, isSelf, myTracks, esc){
+  var db=window.DB.get();
+  var rx=_oflgRx(artistName), mine=_oflgMine(artistName);
+  var items=[];
+  (myTracks||[]).filter(function(t){return t.audioUrl;}).forEach(function(t){ items.push({type:'demo', ts:new Date(t.createdAt||0).getTime()||0, t:t}); });
+  var bposts=(typeof _ashBoardPosts==='function')?_ashBoardPosts(artistName):[];
+  bposts.forEach(function(p){ items.push({type:'note', ts:p.ts||0, body:p.body}); });
+  (db.notes||[]).filter(function(n){return n&&n.author===artistName;}).forEach(function(n){ items.push({type:'note', ts:new Date(n.createdAt||0).getTime()||0, body:String(n.text||'')}); });
+  _offlogPhotos(artistName).forEach(function(ph){ items.push({type:'photo', ts:ph.ts||0, img:ph.img, cap:ph.cap, id:ph.id}); });
+  items.sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+  var av='<span class="ofl-avatar"><svg><use href="#ofl-star" fill="#E8695A"/></svg><b>'+esc((artistName||'?').slice(0,1))+'</b></span>';
+  var html=''; var lastDay='';
+  if(!items.length){ html+='<div class="ofl-empty">'+(isSelf?'첫 로그를 남겨보세요 —<br>REC 를 눌러 작업 사진·데모·생각을 쌓으면<br>발매일에 메이킹 필름이 돼요 🎬':'아직 로그가 없어요')+'</div>'; }
+  items.forEach(function(it,idx){
+    var d=_oflDay(it.ts);
+    if(d.key!==lastDay){ lastDay=d.key; html+='<div class="ofl-day">'+esc(d.label)+'</div>'; }
+    if(it.type==='demo'){
+      var t=it.t; var isVoice=/voice|보이스|메모/i.test((t.tags||[]).join(' ')+' '+(t.title||''));
+      var m=/^demo(\d+)$/.exec(t.version||'');
+      var tag=isVoice?'VOICE':(t.isDemo?('DEMO'+(m?' v'+m[1]:'')):'MASTER');
+      html+='<div class="ofl-log ofl-demo'+(isVoice?' ofl-short':'')+'" data-track="'+esc(t.id)+'">'
+        +'<div class="ofl-who">'+av+esc(artistName)+'</div>'
+        +'<span class="ofl-tag"'+(isVoice?' style="color:#FF5FE0"':'')+'>'+tag+'</span>'
+        +'<div class="ofl-center"><div class="ofl-ts">'+_oflTime(it.ts)+'</div><div class="ofl-cap">'+esc(t.title||'무제')+((t.tags&&t.tags.length)?' · #'+esc(t.tags[0]):'')+'</div></div>'
+        +'<div class="ofl-wavebar"'+(isVoice?' style="bottom:12px"':'')+'><button class="ofl-play'+(isVoice?' pk':'')+'" aria-label="재생">▶</button><div class="ofl-wave'+(isVoice?' pkw':'')+'"></div><span class="ofl-dur"></span></div>'
+        +(isVoice?'':_oflgRxBar('t_'+t.id, rx, mine))+'<span class="ofl-more">…</span></div>';
+    } else if(it.type==='note'){
+      html+='<div class="ofl-postit'+((idx%2===1)?' blue':'')+'"><p>'+esc(it.body||'')+'</p><div class="m"><span>생각글</span><span>'+_oflTime(it.ts)+'</span></div></div>';
+    } else if(it.type==='photo'){
+      html+='<div class="ofl-log ofl-photo">'
+        +'<div class="ofl-bgimg" style="background-image:linear-gradient(rgba(0,0,0,.18),rgba(0,0,0,.35)),url(\''+String(it.img).replace(/'/g,'%27')+'\')"></div>'
+        +'<div class="ofl-who">'+av+esc(artistName)+'</div>'
+        +'<div class="ofl-center"><div class="ofl-ts">'+_oflTime(it.ts)+'</div>'+(it.cap?'<div class="ofl-cap">'+esc(it.cap)+'</div>':'')+'</div>'
+        +_oflgRxBar('p_'+it.id, rx, mine)
+        +(isSelf?'<span class="ofl-more" style="cursor:pointer" onclick="_offlogDelPhoto(\''+esc(it.id)+'\')">✕</span>':'<span class="ofl-more">…</span>')+'</div>';
+    }
+  });
+  return { html:html, count:items.length };
+}
+
+function renderOfflogRoom(artistName){
+  if(typeof artistName==='string'&&artistName.indexOf('%')>=0){ try{ artistName=decodeURIComponent(artistName); }catch(_){} }
+  currentView='offlog'; window.__currentView='offlog'; window.__currentArtistName=artistName;
+  var app=document.getElementById('app-content'); if(!app) return;
+  try{ document.body.style.overflow=''; document.documentElement.style.overflow=''; }catch(_){}
+  try{ if(typeof stopShapesPhysics==='function') stopShapesPhysics(); }catch(_){}
+  _offlogStyle(); _oflgRoomStyle();
+  var db=window.DB.get(); var me=window.__currentUser||(db&&db.currentUser);
+  var isSelf=!!(me&&me.name===artistName); var myId=isSelf?me.id:null;
+  var esc=(typeof _shEsc==='function')?_shEsc:function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+  var myTracks=(db.tracks||[]).filter(function(t){return t&&(t.artist===artistName||(myId&&t.artistId===myId));});
+  var enc=encodeURIComponent(artistName);
+  var skin='noir'; try{ skin=localStorage.getItem('offlog-skin:'+artistName)||'noir'; }catch(_){}
+  if(['noir','lemon','midnight'].indexOf(skin)<0) skin='noir';
+  var latest=myTracks.slice().sort(function(a,b){return new Date(b.createdAt||0)-new Date(a.createdAt||0);})[0];
+  var song=latest?(latest.title||'Untitled'):'Untitled'; var wip=(latest&&latest.isDemo)?' (가제)':'';
+  var feed=_oflgFeedCards(artistName, isSelf, myTracks, esc);
+  var skins=isSelf?('<div class="oflg-skins">'+['noir','lemon','midnight'].map(function(s){
+    var col=s==='noir'?'#161618':(s==='lemon'?'#F3EFE4':'#141A30');
+    return '<button class="oflg-sw'+(s===skin?' on':'')+'" data-sk="'+s+'" style="background:'+col+'" onclick="_oflgSetSkin(\''+s+'\')" aria-label="'+s+' 테마"></button>';
+  }).join('')+'</div>'):'';
+  var invite='<div class="ofl-log ofl-invite" onclick="'+(isSelf?'_oflgRecSheet()':'_offlogFanInvite(\''+enc+'\')')+'"><div class="ofl-plus">＋</div><p>'+(isSelf?'로그 남기기 · REC':'팬 로그 열기 · 팬 되기')+'</p></div>';
+  var filled=Math.min(feed.count,60); var cells=''; for(var i=0;i<10;i++){ cells+='<div class="ofl-cell'+(((i+1)*6)<=filled?' f':'')+'"></div>'; }
+  var gauge='<div class="ofl-gauge"><h3>발매일 메이킹 필름 <em>'+filled+' / 60</em></h3><div class="ofl-strip">'+cells+'</div><small>지금까지의 로그가 발매일에 한 편의 메이킹 필름으로 자동 편집됩니다.</small></div>';
+  var dock=isSelf?'<div class="oflg-dock"><div class="oflg-toggle"><button onclick="_oflgRecSheet()"><span class="oflg-dot"></span>REC</button><button class="on">로그</button></div></div>':'';
+  app.innerHTML='<div class="oflg-room" data-theme="'+skin+'"><div class="oflg-wrap">'
+    +'<div class="oflg-brand">OFFLOG</div>'
+    +'<div class="oflg-hd"><button class="oflg-circ" aria-label="뒤로" onclick="navigateTo(\'artist:'+enc+'\')">‹</button>'
+      +'<div class="oflg-pill">'+esc(artistName)+' <i>⌄</i></div>'
+      +'<div class="r"><button class="oflg-circ" aria-label="공유" onclick="_oflgShare(\''+enc+'\')">⤴</button>'
+      +'<button class="oflg-circ" aria-label="채팅" onclick="if(typeof showToast===\'function\')showToast(\'팬 채팅은 준비 중이에요 💬\')">💬</button></div></div>'
+    +'<div class="oflg-dots" aria-hidden="true"><b></b><b></b><b class="on"></b><b></b><b></b></div>'
+    +'<div class="oflg-sub">'+esc(song)+wip+' · <em>로그 '+feed.count+'</em></div>'
+    +skins
+    +'<div class="oflog oflg-feed">'+feed.html+invite+gauge+'</div>'
+    +'</div>'+dock+'</div>';
+  try{ _oflgWire(artistName); }catch(e){ console.warn('[offlog room]', e); }
+}
+window.renderOfflogRoom=renderOfflogRoom;
+
+function _oflgWire(artistName){
+  var root=document.querySelector('.oflg-room'); if(!root) return;
+  root.querySelectorAll('.ofl-wave').forEach(function(w){ if(w.childElementCount) return; for(var i=0;i<28;i++){ var b=document.createElement('i'); b.style.setProperty('--h', 24+Math.round(Math.random()*70)); b.style.setProperty('--d', i); w.appendChild(b); } });
+  root.querySelectorAll('.ofl-play').forEach(function(p){ p.addEventListener('click', function(e){ e.stopPropagation(); var card=p.closest('.ofl-demo'); var tid=card&&card.getAttribute('data-track'); if(tid&&window.playTrack){ window.playTrack(tid,'artist'); } }); });
+  root.querySelectorAll('.ofl-shape').forEach(function(s){ s.addEventListener('click', function(e){
+    e.stopPropagation();
+    var bar=s.closest('.ofl-rx'); var rid=bar&&bar.getAttribute('data-rid'); var sh=s.getAttribute('data-sh'); if(!rid||!sh||!OFLG_EMO[sh]) return;
+    var mine=_oflgMine(artistName); var mk=rid+':'+sh; if(mine[mk]) return;   // 1인(기기) 1회
+    mine[mk]=1; _oflgSaveMine(artistName,mine);
+    var rx=_oflgRx(artistName); rx[rid]=rx[rid]||{}; rx[rid][sh]=(rx[rid][sh]||0)+1; _oflgSaveRx(artistName,rx);
+    var tot=0; Object.keys(rx[rid]).forEach(function(k){ tot+=rx[rid][k]; });
+    var n=bar.querySelector('.ofl-rxn'); if(n) n.textContent=tot;
+    s.classList.add('hit');
+    var card=s.closest('.ofl-log');
+    if(card){ var pop=document.createElement('span'); pop.className='ofl-emopop'; pop.textContent=OFLG_EMO[sh].n+' +1';
+      var r1=s.getBoundingClientRect(), r2=card.getBoundingClientRect();
+      pop.style.left=Math.max(6,(r1.left-r2.left))+'px'; pop.style.top=Math.max(6,(r1.top-r2.top-10))+'px';
+      card.appendChild(pop); setTimeout(function(){ pop.remove(); },900); }
+  }); });
+  try{ _offlogSyncPlaying(); }catch(_){}
+}
+
+// REC 캡처 시트 — 4모드 (카메라 / 마이크(준비중) / 데모 업로드 / 포스트잇)
+window._oflgRecSheet=function(){
+  var name=window.__currentArtistName; if(!name) return;
+  var me=window.__currentUser||(window.DB&&window.DB.get&&window.DB.get().currentUser);
+  if(!me||me.name!==name){ if(typeof showToast==='function') showToast('본인 로그룸에서만 기록할 수 있어요'); return; }
+  var old=document.getElementById('ofl-sheet'); if(old) old.remove();
+  var d=document.createElement('div'); d.id='ofl-sheet'; d.className='ofl-sheet';
+  d.innerHTML='<div class="ofl-sheet-card"><b>● REC — 지금을 기록</b>'
+    +'<button onclick="document.getElementById(\'ofl-sheet\').remove(); _offlogAddPhoto()">📷 카메라 (사진 즉석 캡처)</button>'
+    +'<button class="ofl-soon" onclick="if(typeof showToast===\'function\')showToast(\'보이스 캡처는 준비 중이에요 🎙\')">🎙 마이크 <em>준비 중</em></button>'
+    +'<button onclick="document.getElementById(\'ofl-sheet\').remove(); navigateTo(\'upload\')">🎵 데모 업로드 (버전 자동 각인)</button>'
+    +'<button onclick="document.getElementById(\'ofl-sheet\').remove(); _offlogAddNote()">✏️ 포스트잇 (생각글)</button>'
+    +'<button class="ofl-cancel" onclick="document.getElementById(\'ofl-sheet\').remove()">취소</button></div>';
+  d.addEventListener('click', function(e){ if(e.target===d) d.remove(); });
+  document.body.appendChild(d);
+};
+window._offlogFanInvite=function(enc){
+  var name=''; try{ name=decodeURIComponent(enc); }catch(_){ name=enc; }
+  var db=window.DB.get();
+  var t=(db.tracks||[]).find(function(x){ return x&&x.artist===name&&x.artistId; });
+  if(t&&typeof toggleFollowArtist==='function'){ try{ toggleFollowArtist(t.artistId, name); if(typeof showToast==='function') showToast('🔥 팬 로그 신청! 새 로그 소식을 받아요'); return; }catch(_){} }
+  navigateTo('artist:'+enc);
+};
+window._oflgShare=function(enc){
+  var url=location.origin+location.pathname+'#/offlog:'+enc;
+  if(navigator.share){ navigator.share({title:'OFFLOG', url:url}).catch(function(){}); }
+  else{ try{ navigator.clipboard.writeText(url); }catch(_){} if(typeof showToast==='function') showToast('🔗 로그룸 링크를 복사했어요'); }
+};
+window._oflgSetSkin=function(sk){
+  var name=window.__currentArtistName; if(!name) return;
+  if(['noir','lemon','midnight'].indexOf(sk)<0) return;
+  try{ localStorage.setItem('offlog-skin:'+name, sk); }catch(_){}
+  var r=document.querySelector('.oflg-room'); if(r) r.setAttribute('data-theme', sk);
+  document.querySelectorAll('.oflg-sw').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-sk')===sk); });
 };
 
 window.renderArtistShop = renderArtistShop;
