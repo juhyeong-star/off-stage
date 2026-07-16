@@ -4331,7 +4331,14 @@ function _offlogStyle(){
   .oflog .ofl-cell.f{background:repeating-linear-gradient(135deg,#53E0C8,#53E0C8 5px,#3fbfa9 5px,#3fbfa9 10px);border:none;}
   .oflog .ofl-gauge small{font-size:11.5px;color:#8A8A90;line-height:1.5;display:block;}
   .oflog .ofl-empty{color:#8A8A90;text-align:center;padding:32px 16px;font-weight:600;line-height:1.6;}
-  @media(min-width:769px){ .oflog{max-width:760px;margin:18px auto 0;border-radius:22px;} }
+  .ofl-sheet{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;}
+  .ofl-sheet-card{width:100%;max-width:480px;background:#161618;border-radius:22px 22px 0 0;padding:18px 16px calc(env(safe-area-inset-bottom,0px) + 18px);display:flex;flex-direction:column;gap:9px;}
+  .ofl-sheet-card b{color:#fff;font-size:14px;text-align:center;margin-bottom:4px;font-weight:800;}
+  .ofl-sheet-card button{background:#1B1B1F;border:1px solid #2c2c31;color:#eee;border-radius:14px;padding:14px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;}
+  .ofl-sheet-card button:active{transform:scale(.98);}
+  .ofl-sheet-card .ofl-soon{opacity:.5;} .ofl-sheet-card .ofl-soon em{font-style:normal;font-size:10.5px;color:#FFE94A;margin-left:4px;}
+  .ofl-sheet-card .ofl-cancel{background:transparent;border:none;color:#8A8A90;}
+  @media(min-width:769px){ .oflog{max-width:760px;margin:18px auto 0;border-radius:22px;} .ofl-sheet{align-items:center;} .ofl-sheet-card{border-radius:22px;} }
   `;
   document.head.appendChild(st);
 }
@@ -4350,7 +4357,7 @@ function _offlogFeed(artistName, isSelf, myTracks, esc){
   var av='<span class="ofl-avatar"><svg><use href="#ofl-star" fill="#E8695A"/></svg><b>'+esc((artistName||'?').slice(0,1))+'</b></span>';
   var logN=items.length;
   var html='<div class="ofl-sub">작업 로그 <em>'+logN+'</em>개 · 발매일에 메이킹 필름으로</div>';
-  if(isSelf){ html+='<div class="ofl-compose"><button class="ofl-cbtn" onclick="_offlogAddPhoto()">📷 사진 로그</button><button class="ofl-cbtn" onclick="_offlogAddNote()">✏️ 생각글</button></div>'; }
+  if(isSelf){ html+='<div class="ofl-compose"><button class="ofl-cbtn" onclick="navigateTo(\'upload\')">🎵 음원</button><button class="ofl-cbtn" onclick="_offlogAddPhoto()">📷 사진</button><button class="ofl-cbtn" onclick="_offlogAddNote()">✏️ 생각글</button></div>'; }
   if(!items.length){ html+='<div class="ofl-empty">'+(isSelf?'첫 로그를 남겨보세요 —<br>작업 사진·데모·생각을 쌓으면<br>발매일에 메이킹 필름이 돼요 🎬':'아직 로그가 없어요')+'</div>'; }
   var lastDay='';
   items.forEach(function(it,idx){
@@ -4379,7 +4386,7 @@ function _offlogFeed(artistName, isSelf, myTracks, esc){
         +(isSelf?'<span class="ofl-more" style="cursor:pointer" onclick="_offlogDelPhoto(\''+esc(it.id)+'\')">✕</span>':'<span class="ofl-more">…</span>')+'</div>';
     }
   });
-  html+='<div class="ofl-log ofl-invite" onclick="'+(isSelf?'_offlogAddPhoto()':'(window.mhFollow&&document.querySelector(\'.ash2-follow\')&&mhFollow(document.querySelector(\'.ash2-follow\')))')+'"><div class="ofl-plus">＋</div><p>'+(isSelf?'로그 남기기 · new log':'팬 로그 열기 · 팬 되기')+'</p></div>';
+  html+='<div class="ofl-log ofl-invite" onclick="'+(isSelf?'_offlogAddMenu()':'(window.mhFollow&&document.querySelector(\'.ash2-follow\')&&mhFollow(document.querySelector(\'.ash2-follow\')))')+'"><div class="ofl-plus">＋</div><p>'+(isSelf?'로그 남기기 · 음원 / 사진 / 생각글':'팬 로그 열기 · 팬 되기')+'</p></div>';
   var filled=Math.min(logN,60); var cells=''; for(var i=0;i<10;i++){ cells+='<div class="ofl-cell'+(((i+1)/10*60)<=filled?' f':'')+'"></div>'; }
   html+='<div class="ofl-gauge"><h3>발매일 메이킹 필름 <em>'+filled+' / 60</em></h3><div class="ofl-strip">'+cells+'</div><small>지금까지의 로그가 발매일에 한 편의 메이킹 필름으로 자동 편집됩니다.</small></div>';
   return '<div class="oflog">'+html+'</div>';
@@ -4400,6 +4407,8 @@ function _offlogWire(artistName){
 }
 window._offlogAddPhoto=function(){
   var name=window.__currentArtistName; if(!name) return;
+  var me=window.__currentUser||(window.DB&&window.DB.get&&window.DB.get().currentUser);
+  if(!me||me.name!==name){ if(typeof showToast==='function') showToast('본인 로그에만 올릴 수 있어요'); return; }
   var inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
   inp.onchange=function(){ var f=inp.files[0]; if(!f) return; var rd=new FileReader();
     rd.onload=function(ev){ var img=new Image(); img.onload=function(){
@@ -4417,13 +4426,31 @@ window._offlogAddPhoto=function(){
 };
 window._offlogAddNote=function(){
   var name=window.__currentArtistName; if(!name) return;
+  var me=window.__currentUser||(window.DB&&window.DB.get&&window.DB.get().currentUser);
+  if(!me||me.name!==name){ if(typeof showToast==='function') showToast('본인 로그에만 올릴 수 있어요'); return; }
   var txt=window.prompt('생각글 — 작업하며 든 생각을 남겨보세요'); if(!txt||!txt.trim()) return;
   if(typeof _ashBoardPosts==='function' && typeof _ashBoardSave==='function'){ var arr=_ashBoardPosts(name); arr.unshift({id:'bp'+Date.now(), title:'', body:txt.trim(), ts:Date.now()}); _ashBoardSave(name,arr); }
   if(typeof showToast==='function') showToast('생각글을 남겼어요 ✏️');
   window.__artistShopTab='log'; renderArtistShop(name);
 };
+// + 로그 남기기 — 음원/사진/생각글 선택 시트 (영상은 서버 저장 필요 — 준비 중)
+window._offlogAddMenu=function(){
+  var old=document.getElementById('ofl-sheet'); if(old) old.remove();
+  var d=document.createElement('div'); d.id='ofl-sheet'; d.className='ofl-sheet';
+  d.innerHTML='<div class="ofl-sheet-card"><b>로그 남기기</b>'
+    +'<button onclick="document.getElementById(\'ofl-sheet\').remove(); navigateTo(\'upload\')">🎵 데모 · 음원 올리기</button>'
+    +'<button onclick="document.getElementById(\'ofl-sheet\').remove(); _offlogAddPhoto()">📷 사진 로그</button>'
+    +'<button onclick="document.getElementById(\'ofl-sheet\').remove(); _offlogAddNote()">✏️ 생각글</button>'
+    +'<button class="ofl-soon" onclick="if(typeof showToast===\'function\')showToast(\'영상 로그는 준비 중이에요 🎬\')">🎬 영상 로그 <em>준비 중</em></button>'
+    +'<button class="ofl-cancel" onclick="document.getElementById(\'ofl-sheet\').remove()">취소</button></div>';
+  d.addEventListener('click', function(e){ if(e.target===d) d.remove(); });
+  document.body.appendChild(d);
+};
 window._offlogDelPhoto=function(id){
   var name=window.__currentArtistName; if(!name) return;
+  // 본인만 삭제 가능 — 버튼이 안 보여도 함수 직접 호출까지 차단
+  var me=window.__currentUser||(window.DB&&window.DB.get&&window.DB.get().currentUser);
+  if(!me||me.name!==name){ if(typeof showToast==='function') showToast('본인만 지울 수 있어요'); return; }
   if(!window.confirm('이 사진 로그를 지울까요?')) return;
   var arr=_offlogPhotos(name).filter(function(p){return p&&p.id!==id;}); _offlogSavePhotos(name,arr);
   window.__artistShopTab='log'; renderArtistShop(name);
