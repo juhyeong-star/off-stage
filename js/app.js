@@ -4474,114 +4474,99 @@ function _oflgMine(name){ try{ return JSON.parse(localStorage.getItem('offlog-rx
 function _oflgSaveMine(name,o){ try{ localStorage.setItem('offlog-rxme:'+name, JSON.stringify(o)); }catch(_){} }
 function _offlogRefresh(name){ if(currentView==='offlog'&&typeof renderOfflogRoom==='function'){ renderOfflogRoom(name); } else { window.__artistShopTab='all'; renderArtistShop(name); } }
 
+// ── OFFLOG 로그룸 v34 — 시안 디자인 그대로(폰트/간격/카드), 실제 데이터 + 긴 글 … 처리 ──
+var OFLG_COLS={coral:'#E8695A',blue:'#7B8BE8',shpink:'#F06CB4',green:'#9FE84C',yellow:'#F2C94C',purple:'#B48CE8',pink:'#FF5FE0',mint:'#53E0C8'};
+var OFLG_COLKEYS=['coral','blue','shpink','green','yellow','purple'];
+function _oflgColorFor(name){ var h=0; name=String(name||''); for(var i=0;i<name.length;i++){ h=(h*31+name.charCodeAt(i))|0; } return OFLG_COLS[OFLG_COLKEYS[Math.abs(h)%OFLG_COLKEYS.length]]; }
+function _oflgSmile(color){ return '<span class="ol-smile" style="background:'+color+'"><svg viewBox="0 0 24 24"><path d="M6 13a6 6 0 0 1 12 0" fill="none" stroke="#1a1206" stroke-width="2.2" stroke-linecap="round"/><ellipse cx="9.4" cy="16.6" rx="1.15" ry="1.6" fill="#1a1206"/><ellipse cx="14.6" cy="16.6" rx="1.15" ry="1.6" fill="#1a1206"/></svg></span>'; }
+function _oflgWaveBars(n){ var s=''; for(var i=0;i<n;i++){ s+='<i style="--h:'+(22+Math.round(Math.random()*72))+';--d:'+i+'"></i>'; } return s; }
+function _oflgTrunc(s,n){ s=String(s==null?'':s); return s.length>n ? s.slice(0,n-1).replace(/\s+$/,'')+'…' : s; }
+
 function _oflgRoomStyle(){
   if(document.getElementById('oflog-room-style')) return;
   var st=document.createElement('style'); st.id='oflog-room-style';
   st.textContent = `
-  .oflg-room{--olB:#000;--olC:#161618;--olC2:#1F1F23;--olL:#2A2A2E;--olT:#F5F5F2;--olM:#8A8A90;--olGlow:#FF5FE0;--olLogo:#53E0C8;--olG:#53E0C8;
-    background:var(--olB);min-height:100vh;padding:14px 0 calc(var(--player-height,72px) + 150px);color:var(--olT);transition:background .35s,color .35s;}
-  .oflg-room[data-theme=lemon]{--olB:#F3EFE4;--olC:#FFFFFF;--olC2:#EAE4D4;--olL:#DCD5C2;--olT:#26231B;--olM:#8D8778;--olGlow:#FFD335;--olLogo:#E8912A;--olG:#FFD335;}
-  .oflg-room[data-theme=midnight]{--olB:#0A0E1E;--olC:#141A30;--olC2:#1C2444;--olL:#273057;--olT:#EEF1FA;--olM:#7C86A8;--olGlow:#6C7BFF;--olLogo:#8FA0FF;--olG:#8FA0FF;}
+  .oflg-room{--olB:#000;--olCard:#161618;--olCard2:#1F1F23;--olLine:#2A2A2E;--olTxt:#F5F5F2;--olMuted:#8A8A90;
+    --olMint:#53E0C8;--olPink:#FF5FE0;--olPaper:#FFF3A6;--olPaper2:#CFEBFF;--olInk:#2B2417;
+    background:#050505;min-height:100vh;color:var(--olTxt);
+    padding:14px 0 calc(var(--player-height,72px) + 40px);
+    font-family:'Noto Sans KR','Pretendard','Apple SD Gothic Neo',sans-serif;-webkit-font-smoothing:antialiased;}
   .oflg-wrap{max-width:430px;margin:0 auto;padding:0 14px;}
-  .oflg-brand{font-family:'Fredoka','Bebas Neue','Pretendard',sans-serif;font-weight:600;font-size:13px;letter-spacing:.14em;color:var(--olLogo);text-align:center;margin-bottom:6px;}
-  .oflg-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-  .oflg-hd .r{display:flex;gap:8px;}
-  .oflg-circ{width:38px;height:38px;border-radius:50%;background:var(--olC2);border:none;color:var(--olT);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;}
-  .oflg-pill{background:var(--olC2);border-radius:99px;padding:9px 18px;font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px;color:var(--olT);}
-  .oflg-pill i{font-style:normal;color:var(--olM);font-size:11px;}
-  .oflg-dots{display:flex;justify-content:center;gap:6px;margin:2px 0 10px;}
-  .oflg-dots b{width:6px;height:6px;border-radius:50%;background:var(--olL);}
-  .oflg-dots b.on{background:var(--olGlow);box-shadow:0 0 8px var(--olGlow);}
-  .oflg-sub{display:flex;align-items:center;justify-content:center;gap:6px;color:var(--olM);font-size:12px;margin-bottom:12px;font-weight:600;}
-  .oflg-sub em{font-style:normal;color:var(--olLogo);font-weight:800;}
-  .oflg-skins{display:flex;justify-content:center;gap:9px;margin:0 0 14px;}
-  .oflg-sw{width:26px;height:26px;border-radius:50%;border:2px solid var(--olL);cursor:pointer;padding:0;}
-  .oflg-sw.on{outline:2px solid var(--olLogo);outline-offset:2px;}
-  /* 방(테마) 안 피드 색을 테마 토큰으로 */
-  .oflg-room .oflog{background:transparent;margin:0;padding:0;border-radius:0;color:var(--olT);}
-  .oflg-room .ofl-log{background:var(--olC);}
-  .oflg-room .ofl-demo{background:var(--olC);}
-  .oflg-room .ofl-invite{background:var(--olC2);border:1px solid var(--olL);}
-  .oflg-room .ofl-invite p{color:var(--olM);}
-  .oflg-room .ofl-plus{background:var(--olC2);color:var(--olT);border:1px solid var(--olL);}
-  .oflg-room .ofl-day{color:var(--olM);} .oflg-room .ofl-day::after{background:var(--olL);}
-  .oflg-room .ofl-gauge{background:var(--olC2);border:1px solid var(--olL);}
-  .oflg-room .ofl-gauge h3{color:var(--olT);} .oflg-room .ofl-gauge h3 em{color:var(--olLogo);}
-  .oflg-room .ofl-gauge small{color:var(--olM);}
-  .oflg-room .ofl-cell{background:var(--olC);border-color:var(--olL);}
-  .oflg-room .ofl-cell.f{background:repeating-linear-gradient(135deg,var(--olG),var(--olG) 5px,rgba(0,0,0,.25) 5px,rgba(0,0,0,.25) 10px);border:none;}
-  .oflg-room .ofl-play{background:var(--olLogo);color:#111;}
-  .oflg-room .ofl-wave i{background:var(--olL);}
-  .oflg-room .ofl-demo.playing .ofl-wave i{background:var(--olLogo);}
-  .oflg-room .ofl-ts{color:var(--olT);text-shadow:none;}
-  .oflg-room .ofl-cap{color:var(--olM);text-shadow:none;}
-  .oflg-room .ofl-who{color:var(--olT);text-shadow:none;}
-  .oflg-room .ofl-photo .ofl-ts{color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.75);}
-  .oflg-room .ofl-photo .ofl-cap{color:rgba(255,255,255,.92);text-shadow:0 1px 8px rgba(0,0,0,.8);}
-  .oflg-room .ofl-photo .ofl-who{color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.7);}
-  .oflg-room .ofl-empty{color:var(--olM);}
-  .oflg-room[data-theme=lemon] .ofl-tag{background:rgba(0,0,0,.72);}
-  .ofl-emopop{position:absolute;z-index:30;font-weight:900;font-size:12px;color:#fff;background:rgba(0,0,0,.72);padding:3px 9px;border-radius:99px;pointer-events:none;animation:oflpop .9s ease-out forwards;}
-  @keyframes oflpop{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-26px);}}
-  .oflg-dock{position:fixed;left:0;right:0;bottom:calc(var(--player-height,72px) + 14px);display:flex;justify-content:center;z-index:59;pointer-events:none;}
-  .oflg-toggle{pointer-events:auto;display:flex;background:#1B1B1F;border:1px solid #2c2c31;border-radius:99px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.4);}
-  .oflg-toggle button{border:none;background:transparent;color:#8A8A90;font-size:13.5px;font-weight:700;padding:9px 22px;border-radius:99px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;}
-  .oflg-toggle button.on{background:#37373d;color:#fff;}
-  .oflg-dot{width:8px;height:8px;border-radius:50%;background:#FF4D4D;display:inline-block;animation:oflblink 1.4s infinite;}
-  @keyframes oflblink{50%{opacity:.3;}}
+  .ol-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;min-height:38px;}
+  .ol-htitle{font-size:15px;font-weight:700;flex:1;text-align:center;}
+  .ol-htitle small{display:block;font-size:10.5px;color:var(--olMuted);font-weight:400;margin-top:1px;}
+  .ol-circ{width:34px;height:34px;border-radius:50%;background:var(--olCard2);border:none;color:var(--olTxt);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;flex-shrink:0;}
+  .ol-hd .r{display:flex;gap:7px;}
+  .ol-mprof{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0 16px;text-align:center;}
+  .ol-av{width:64px;height:64px;border-radius:50%;background:#2a2a30 center/cover no-repeat;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .ol-av .ol-smile{width:64px;height:64px;} .ol-av .ol-smile svg{width:44px;height:44px;}
+  .ol-mprof h3{font-size:17px;font-weight:700;}
+  .ol-mprof p{font-size:11px;color:var(--olMuted);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ol-fcount{display:flex;align-items:center;gap:16px;margin-top:9px;}
+  .ol-fc{background:none;border:none;color:var(--olTxt);font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;}
+  .ol-fc b{font-family:'Black Han Sans','Pretendard';font-weight:400;font-size:15px;letter-spacing:.5px;}
+  .ol-fc small{font-size:9.5px;color:var(--olMuted);}
+  .ol-fcdiv{width:1px;height:22px;background:var(--olLine);}
+  .ol-fol{margin-top:11px;background:transparent;border:1px solid var(--olMint);color:var(--olMint);border-radius:99px;padding:7px 24px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+  .ol-fol.on{background:var(--olMint);color:#04231d;}
+  .ol-seg{display:flex;background:var(--olCard2);border:1px solid var(--olLine);border-radius:99px;padding:4px;margin-bottom:18px;}
+  .ol-seg button{flex:1;border:none;background:transparent;color:var(--olMuted);font-family:'Fredoka','Pretendard';font-weight:600;letter-spacing:.1em;font-size:12.5px;padding:9px 0;border-radius:99px;cursor:pointer;}
+  .ol-seg button.on{background:var(--olCard);color:var(--olTxt);}
+  .ol-seg button b{font-family:'Black Han Sans','Pretendard';font-weight:400;font-size:11px;color:var(--olMuted);margin-left:3px;}
+  .ol-seg button.on b{color:var(--olMint);}
+  .ol-tools{display:flex;gap:7px;justify-content:center;margin-bottom:22px;flex-wrap:wrap;}
+  .ol-tool{width:38px;height:38px;border-radius:50%;background:transparent;border:1px solid var(--olLine);color:var(--olTxt);font-size:15px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;transition:border-color .2s,transform .2s;flex-shrink:0;}
+  .ol-tool:active{transform:translateY(-2px);border-color:var(--olMint);}
+  .ol-stream{position:relative;padding-bottom:12px;}
+  .ol-fcard{margin-bottom:16px;position:relative;}
+  .ol-rcard{position:relative;border-radius:22px;overflow:hidden;height:200px;background:#141418;}
+  .ol-rcard.snd{cursor:pointer;background:linear-gradient(160deg,#17171d,#0e0e13);}
+  .ol-rcard.paper{background:var(--olPaper);}
+  .ol-rcard.paper.b{background:var(--olPaper2);}
+  .ol-rcard .bgimg{position:absolute;inset:0;background-size:cover;background-position:center;}
+  .ol-grainy{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);background-size:3px 3px;pointer-events:none;z-index:3;}
+  .ol-rcard.paper .ol-grainy{display:none;}
+  .ol-rmid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:4;text-align:center;padding:0 34px;}
+  .ol-rts{font-family:'Black Han Sans','Pretendard';font-weight:400;font-size:32px;letter-spacing:1px;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.8);}
+  .ol-rcap{font-size:13px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.85);margin-top:2px;max-width:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .ol-rcard.paper .ol-rts{color:rgba(43,36,23,.35);text-shadow:none;font-size:15px;margin-bottom:7px;}
+  .ol-rnote{font-family:'Gaegu','Nanum JungShik','Nanum Pen Script',cursive;font-weight:700;font-size:19.5px;line-height:1.42;color:var(--olInk);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
+  .ol-bigwv{position:absolute;left:14px;right:14px;top:46px;bottom:42px;display:flex;align-items:center;gap:2px;z-index:2;}
+  .ol-bigwv i{flex:1;border-radius:1.5px;background:#3a3a44;height:calc(var(--h)*1%);transform-origin:center;min-height:2px;}
+  .ol-rcard.playing .ol-bigwv i{background:var(--olMint);animation:olwv 1s ease-in-out infinite;animation-delay:calc(var(--d)*-.09s);}
+  @keyframes olwv{0%,100%{transform:scaleY(.55);}50%{transform:scaleY(1.15);}}
+  .ol-sndpill{display:inline-flex;align-items:center;gap:6px;margin-top:10px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.16);border-radius:99px;padding:5px 13px;font-size:11px;color:#fff;}
+  .ol-sndpill b{font-family:'Black Han Sans','Pretendard';font-weight:400;letter-spacing:.5px;}
+  .ol-sndpill em{font-style:normal;color:var(--olMint);font-size:10px;}
+  .ol-mychip{position:absolute;top:11px;left:11px;z-index:6;background:var(--olMint);border:none;color:#04231d;border-radius:99px;padding:3px 9px;font-size:9.5px;font-weight:700;line-height:1.5;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ol-rcard.paper .ol-mychip{}
+  .ol-del{position:absolute;top:9px;right:11px;z-index:6;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);border:none;color:#fff;width:26px;height:26px;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.75;}
+  .ol-rcard.paper .ol-del{background:rgba(43,36,23,.12);color:var(--olInk);}
+  .ol-fab{display:block;margin:8px auto 0;width:54px;height:54px;border-radius:50%;background:transparent;border:1.5px solid var(--olLine);color:var(--olMuted);font-size:24px;cursor:pointer;font-family:inherit;}
+  .ol-fab:active{border-color:var(--olMint);color:var(--olMint);}
+  .ol-expire{text-align:center;font-size:10.5px;color:var(--olMuted);margin:14px 0 4px;line-height:1.6;}
+  .ol-expire b{color:var(--olMint);}
+  .ol-empty{color:var(--olMuted);text-align:center;padding:34px 16px;line-height:1.7;font-weight:600;}
+  .ol-workrow{display:flex;align-items:center;gap:12px;background:var(--olCard);border:1px solid var(--olLine);border-radius:20px;padding:13px;margin-bottom:10px;cursor:pointer;}
+  .ol-wthumb{width:56px;height:56px;border-radius:12px;flex-shrink:0;position:relative;overflow:hidden;background:#22222a center/cover no-repeat;}
+  .ol-wplay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.28);border:none;color:#fff;font-size:15px;cursor:pointer;}
+  .ol-winfo{flex:1;min-width:0;}
+  .ol-winfo b{font-size:15px;font-weight:700;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ol-winfo small{font-size:11px;color:var(--olMuted);}
+  .ol-openst{background:transparent;border:1px solid var(--olMint);color:var(--olMint);border-radius:99px;padding:7px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;}
+  .ol-smile{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  /* REC 시트 */
+  .ofl-sheet{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;}
+  .ofl-sheet-card{width:100%;max-width:460px;background:#161618;border-radius:22px 22px 0 0;padding:18px 16px calc(env(safe-area-inset-bottom,0px) + 18px);display:flex;flex-direction:column;gap:9px;}
+  .ofl-sheet-card b{color:#fff;font-size:14px;text-align:center;margin-bottom:4px;font-weight:800;}
+  .ofl-sheet-card button{background:#1B1B1F;border:1px solid #2c2c31;color:#eee;border-radius:14px;padding:14px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;}
+  .ofl-sheet-card button:active{transform:scale(.98);}
+  .ofl-sheet-card .ofl-soon{opacity:.5;} .ofl-sheet-card .ofl-soon em{font-style:normal;font-size:10.5px;color:#FFE94A;margin-left:4px;}
+  .ofl-sheet-card .ofl-cancel{background:transparent;border:none;color:#8A8A90;}
   @media(prefers-reduced-motion:reduce){ .oflg-room *{animation:none!important;transition:none!important;} }
+  @media(min-width:769px){ .ofl-sheet{align-items:center;} .ofl-sheet-card{border-radius:22px;} }
   `;
   document.head.appendChild(st);
-}
-
-// 감정 반응 바 — 카드당 도형 4개(감정 1:1 고정) + 합계. mine = 내가 이미 누른 것(1인 1회)
-function _oflgRxBar(rid, rx, mine){
-  var o=rx[rid]||{}; var total=0; Object.keys(OFLG_EMO).forEach(function(k){ total+=o[k]||0; });
-  return '<div class="ofl-rx" data-rid="'+rid+'">'+Object.keys(OFLG_EMO).map(function(sh){
-    var e=OFLG_EMO[sh]; var hit=mine[rid+':'+sh]?' hit':'';
-    return '<button class="ofl-shape'+hit+'" data-sh="'+sh+'" aria-label="'+e.n+' 반응"><svg><use href="#ofl-'+sh+'" fill="'+e.c+'"/></svg></button>';
-  }).join('')+'<span class="ofl-rxn">'+total+'</span></div>';
-}
-
-// 로그룸 피드 카드 (곡·생각글·사진 → 시간 역순 + 날짜 구분선)
-function _oflgFeedCards(artistName, isSelf, myTracks, esc){
-  var db=window.DB.get();
-  var rx=_oflgRx(artistName), mine=_oflgMine(artistName);
-  var items=[];
-  (myTracks||[]).filter(function(t){return t.audioUrl;}).forEach(function(t){ items.push({type:'demo', ts:new Date(t.createdAt||0).getTime()||0, t:t}); });
-  var bposts=(typeof _ashBoardPosts==='function')?_ashBoardPosts(artistName):[];
-  bposts.forEach(function(p){ items.push({type:'note', ts:p.ts||0, body:p.body}); });
-  (db.notes||[]).filter(function(n){return n&&n.author===artistName;}).forEach(function(n){ items.push({type:'note', ts:new Date(n.createdAt||0).getTime()||0, body:String(n.text||'')}); });
-  _offlogPhotos(artistName).forEach(function(ph){ items.push({type:'photo', ts:ph.ts||0, img:ph.img, cap:ph.cap, id:ph.id}); });
-  items.sort(function(a,b){return (b.ts||0)-(a.ts||0);});
-  var av='<span class="ofl-avatar"><svg><use href="#ofl-star" fill="#E8695A"/></svg><b>'+esc((artistName||'?').slice(0,1))+'</b></span>';
-  var html=''; var lastDay='';
-  if(!items.length){ html+='<div class="ofl-empty">'+(isSelf?'첫 로그를 남겨보세요 —<br>REC 를 눌러 작업 사진·데모·생각을 쌓으면<br>발매일에 메이킹 필름이 돼요 🎬':'아직 로그가 없어요')+'</div>'; }
-  items.forEach(function(it,idx){
-    var d=_oflDay(it.ts);
-    if(d.key!==lastDay){ lastDay=d.key; html+='<div class="ofl-day">'+esc(d.label)+'</div>'; }
-    if(it.type==='demo'){
-      var t=it.t; var isVoice=/voice|보이스|메모/i.test((t.tags||[]).join(' ')+' '+(t.title||''));
-      var m=/^demo(\d+)$/.exec(t.version||'');
-      var tag=isVoice?'VOICE':(t.isDemo?('DEMO'+(m?' v'+m[1]:'')):'MASTER');
-      html+='<div class="ofl-log ofl-demo'+(isVoice?' ofl-short':'')+'" data-track="'+esc(t.id)+'">'
-        +'<div class="ofl-who">'+av+esc(artistName)+'</div>'
-        +'<span class="ofl-tag"'+(isVoice?' style="color:#FF5FE0"':'')+'>'+tag+'</span>'
-        +'<div class="ofl-center"><div class="ofl-ts">'+_oflTime(it.ts)+'</div><div class="ofl-cap">'+esc(t.title||'무제')+((t.tags&&t.tags.length)?' · #'+esc(t.tags[0]):'')+'</div></div>'
-        +'<div class="ofl-wavebar"'+(isVoice?' style="bottom:12px"':'')+'><button class="ofl-play'+(isVoice?' pk':'')+'" aria-label="재생">▶</button><div class="ofl-wave'+(isVoice?' pkw':'')+'"></div><span class="ofl-dur"></span></div>'
-        +(isVoice?'':_oflgRxBar('t_'+t.id, rx, mine))+'<span class="ofl-more">…</span></div>';
-    } else if(it.type==='note'){
-      html+='<div class="ofl-postit'+((idx%2===1)?' blue':'')+'"><p>'+esc(it.body||'')+'</p><div class="m"><span>생각글</span><span>'+_oflTime(it.ts)+'</span></div></div>';
-    } else if(it.type==='photo'){
-      html+='<div class="ofl-log ofl-photo">'
-        +'<div class="ofl-bgimg" style="background-image:linear-gradient(rgba(0,0,0,.18),rgba(0,0,0,.35)),url(\''+String(it.img).replace(/'/g,'%27')+'\')"></div>'
-        +'<div class="ofl-who">'+av+esc(artistName)+'</div>'
-        +'<div class="ofl-center"><div class="ofl-ts">'+_oflTime(it.ts)+'</div>'+(it.cap?'<div class="ofl-cap">'+esc(it.cap)+'</div>':'')+'</div>'
-        +_oflgRxBar('p_'+it.id, rx, mine)
-        +(isSelf?'<span class="ofl-more" style="cursor:pointer" onclick="_offlogDelPhoto(\''+esc(it.id)+'\')">✕</span>':'<span class="ofl-more">…</span>')+'</div>';
-    }
-  });
-  return { html:html, count:items.length };
 }
 
 function renderOfflogRoom(artistName){
@@ -4596,55 +4581,108 @@ function renderOfflogRoom(artistName){
   var esc=(typeof _shEsc==='function')?_shEsc:function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
   var myTracks=(db.tracks||[]).filter(function(t){return t&&(t.artist===artistName||(myId&&t.artistId===myId));});
   var enc=encodeURIComponent(artistName);
-  var skin='noir'; try{ skin=localStorage.getItem('offlog-skin:'+artistName)||'noir'; }catch(_){}
-  if(['noir','lemon','midnight'].indexOf(skin)<0) skin='noir';
-  var latest=myTracks.slice().sort(function(a,b){return new Date(b.createdAt||0)-new Date(a.createdAt||0);})[0];
-  var song=latest?(latest.title||'Untitled'):'Untitled'; var wip=(latest&&latest.isDemo)?' (가제)':'';
-  var feed=_oflgFeedCards(artistName, isSelf, myTracks, esc);
-  var skins=isSelf?('<div class="oflg-skins">'+['noir','lemon','midnight'].map(function(s){
-    var col=s==='noir'?'#161618':(s==='lemon'?'#F3EFE4':'#141A30');
-    return '<button class="oflg-sw'+(s===skin?' on':'')+'" data-sk="'+s+'" style="background:'+col+'" onclick="_oflgSetSkin(\''+s+'\')" aria-label="'+s+' 테마"></button>';
-  }).join('')+'</div>'):'';
-  var invite='<div class="ofl-log ofl-invite" onclick="'+(isSelf?'_oflgRecSheet()':'_offlogFanInvite(\''+enc+'\')')+'"><div class="ofl-plus">＋</div><p>'+(isSelf?'로그 남기기 · REC':'팬 로그 열기 · 팬 되기')+'</p></div>';
-  var filled=Math.min(feed.count,60); var cells=''; for(var i=0;i<10;i++){ cells+='<div class="ofl-cell'+(((i+1)*6)<=filled?' f':'')+'"></div>'; }
-  var gauge='<div class="ofl-gauge"><h3>발매일 메이킹 필름 <em>'+filled+' / 60</em></h3><div class="ofl-strip">'+cells+'</div><small>지금까지의 로그가 발매일에 한 편의 메이킹 필름으로 자동 편집됩니다.</small></div>';
-  var dock=isSelf?'<div class="oflg-dock"><div class="oflg-toggle"><button onclick="_oflgRecSheet()"><span class="oflg-dot"></span>REC</button><button class="on">로그</button></div></div>':'';
-  app.innerHTML='<div class="oflg-room" data-theme="'+skin+'"><div class="oflg-wrap">'
-    +'<div class="oflg-brand">OFFLOG</div>'
-    +'<div class="oflg-hd"><button class="oflg-circ" aria-label="뒤로" onclick="navigateTo(\'artist:'+enc+'\')">‹</button>'
-      +'<div class="oflg-pill">'+esc(artistName)+' <i>⌄</i></div>'
-      +'<div class="r"><button class="oflg-circ" aria-label="공유" onclick="_oflgShare(\''+enc+'\')">⤴</button>'
-      +'<button class="oflg-circ" aria-label="채팅" onclick="if(typeof showToast===\'function\')showToast(\'팬 채팅은 준비 중이에요 💬\')">💬</button></div></div>'
-    +'<div class="oflg-dots" aria-hidden="true"><b></b><b></b><b class="on"></b><b></b><b></b></div>'
-    +'<div class="oflg-sub">'+esc(song)+wip+' · <em>로그 '+feed.count+'</em></div>'
-    +skins
-    +'<div class="oflog oflg-feed">'+feed.html+invite+gauge+'</div>'
-    +'</div>'+dock+'</div>';
+  // 프로필
+  var _av0=(isSelf && me && me.avatar && /^https?:\/\//.test(me.avatar))?me.avatar:((myTracks[0]&&myTracks[0].artistAvatar)||'');
+  var _bio=(isSelf && me && me.bio)?String(me.bio):'';
+  var col=_oflgColorFor(artistName);
+  var _aid=(myTracks.find(function(t){return t.artistId;})||{}).artistId||'';
+  var fanCount=(_aid && window.__fanCounts && window.__fanCounts.get)?(window.__fanCounts.get(_aid)||0):0;
+  // 작품(프로젝트) — WORKS 탭
+  var projMap={}; myTracks.forEach(function(t){ var pid=t.projectId||('proj_'+t.id); (projMap[pid]=projMap[pid]||[]).push(t); });
+  var works=Object.keys(projMap).map(function(pid){
+    var vs=projMap[pid].slice().sort(function(a,b){return new Date(b.createdAt||0)-new Date(a.createdAt||0);});
+    var rep=vs.find(function(v){return !v.isDemo;})||vs[0];
+    var last=Math.max.apply(null,vs.map(function(v){return new Date(v.createdAt||0).getTime()||0;}));
+    return {pid:pid, title:(rep.title||'무제').replace(/\s*\(.*\)$/,''), cover:(rep.cover&&/^https?:\/\//.test(rep.cover))?rep.cover:'', rep:rep, n:vs.length, last:last};
+  }).sort(function(a,b){return b.last-a.last;});
+  var trackWork={}; works.forEach(function(w){ (projMap[w.pid]||[]).forEach(function(t){ trackWork[t.id]=w.title; }); });
+  // 스트림(로그) — 데모/생각글/사진 시간역순
+  var items=[];
+  myTracks.filter(function(t){return t.audioUrl;}).forEach(function(t){ items.push({type:'snd', ts:new Date(t.createdAt||0).getTime()||0, t:t}); });
+  (typeof _ashBoardPosts==='function'?_ashBoardPosts(artistName):[]).forEach(function(p){ items.push({type:'note', ts:p.ts||0, body:p.body}); });
+  (db.notes||[]).filter(function(n){return n&&n.author===artistName;}).forEach(function(n){ items.push({type:'note', ts:new Date(n.createdAt||0).getTime()||0, body:String(n.text||'')}); });
+  _offlogPhotos(artistName).forEach(function(ph){ items.push({type:'photo', ts:ph.ts||0, img:ph.img, cap:ph.cap, id:ph.id}); });
+  items.sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+
+  function mark(it){
+    var t=_oflTime(it.ts);
+    if(it.type==='photo'){
+      var chip=isSelf?'<span class="ol-mychip">📷 사진</span>':'';
+      var del=isSelf?'<button class="ol-del" onclick="_offlogDelPhoto(\''+esc(it.id)+'\')" aria-label="삭제">✕</button>':'';
+      return '<div class="ol-fcard"><div class="ol-rcard"><div class="bgimg" style="background-image:url(\''+String(it.img).replace(/'/g,'%27')+'\')"></div><div class="ol-grainy"></div><div class="ol-rmid"><div class="ol-rts">'+t+'</div>'+(it.cap?'<div class="ol-rcap">'+esc(_oflgTrunc(it.cap,60))+'</div>':'')+'</div>'+chip+del+'</div></div>';
+    }
+    if(it.type==='snd'){
+      var tr=it.t; var m=/^demo(\d+)$/.exec(tr.version||''); var voice=/voice|보이스|음성/i.test((tr.tags||[]).join(' ')+' '+(tr.title||''));
+      var badge=voice?'VOICE':(tr.isDemo?('DEMO'+(m?' v'+m[1]:'')):'MASTER');
+      var wchip=(isSelf&&trackWork[tr.id])?'<span class="ol-mychip">◆ '+esc(_oflgTrunc(trackWork[tr.id],16))+'</span>':'';
+      return '<div class="ol-fcard"><div class="ol-rcard snd" data-track="'+esc(tr.id)+'"><div class="ol-bigwv">'+_oflgWaveBars(34)+'</div><div class="ol-rmid"><div class="ol-rts">'+t+'</div><div class="ol-rcap">'+esc(_oflgTrunc(tr.title||'무제',40))+'</div><span class="ol-sndpill"><em>▶</em><b>'+badge+'</b></span></div>'+wchip+'</div></div>';
+    }
+    return '<div class="ol-fcard"><div class="ol-rcard paper"><div class="ol-rmid"><div class="ol-rts">'+t+'</div><div class="ol-rnote">'+esc(_oflgTrunc(it.body||'',180))+'</div></div></div></div>';
+  }
+
+  var seg=(window.__oflgSeg==='works')?'works':'log';
+  var freeCount=items.filter(function(it){ return it.type!=='snd'; }).length;
+  var tools=[['💬','생각'],['📷','사진'],['🎤','음성'],['📋','메모'],['🎙','녹음'],['♪','음원']];
+  var toolsHtml=isSelf?'<div class="ol-tools">'+tools.map(function(tl,i){ return '<button class="ol-tool" onclick="_oflgTool('+i+')" aria-label="'+tl[1]+'" title="'+tl[1]+'">'+tl[0]+'</button>'; }).join('')+'</div>':'';
+  var streamHtml = items.length ? '<div class="ol-stream">'+items.map(mark).join('')+'</div>' : '<div class="ol-empty">'+(isSelf?'첫 로그를 남겨보세요 —<br>＋ 를 눌러 작업 사진·데모·생각을 쌓으면<br>발매일에 메이킹 필름이 돼요 🎬':'아직 남긴 로그가 없어요')+'</div>';
+  var fabHtml=isSelf?'<button class="ol-fab" onclick="_oflgRecSheet()" aria-label="새 로그">＋</button><div class="ol-expire">아직 어느 작품도 아닌 로그 <b>'+freeCount+'개</b><br>곡이 생기면 그 작품 안에 담으면 됩니다</div>':'';
+  var logBody=toolsHtml+streamHtml+fabHtml;
+  var worksBody = works.length ? works.map(function(w){
+    var thumb=w.cover?'style="background-image:url(\''+w.cover.replace(/'/g,'%27')+'\')"':'';
+    return '<div class="ol-workrow" onclick="if(window.playTrack)playTrack(\''+esc(w.rep.id)+'\',\'artist\')"><div class="ol-wthumb" '+thumb+'><button class="ol-wplay" aria-label="재생">▶</button></div><div class="ol-winfo"><b>'+esc(w.title)+'</b><small>'+w.n+' Logs</small></div><span class="ol-openst">듣기 ›</span></div>';
+  }).join('') : '<div class="ol-empty">아직 작품이 없어요</div>';
+
+  var avStyle=_av0?"background-image:url('"+_av0.replace(/'/g,'%27')+"')":'';
+  var avInner=_av0?'':_oflgSmile(col);
+  var titleSub=isSelf?'내 페이지':'Artist';
+  var backBtn=isSelf?'<span style="width:34px"></span>':'<button class="ol-circ" onclick="navigateTo(\'artist:'+enc+'\')" aria-label="뒤로">‹</button>';
+  var followBtn=isSelf?'':(function(){ var f=!!(window._isFollowingName&&window._isFollowingName(artistName)); return '<button class="ol-fol'+(f?' on':'')+'" data-aid="'+esc(_aid)+'" data-aname="'+esc(artistName)+'" onclick="window.mhFollow&&mhFollow(this)">'+(f?'팔로잉':'팔로우')+'</button>'; })();
+
+  app.innerHTML='<div class="oflg-room"><div class="oflg-wrap">'
+    +'<div class="ol-hd">'+backBtn+'<div class="ol-htitle">'+esc(artistName)+'<small>'+titleSub+'</small></div>'
+      +'<div class="r"><button class="ol-circ" onclick="_oflgShare(\''+enc+'\')" aria-label="공유">⤴</button>'
+      +(isSelf?'<button class="ol-circ" onclick="window.editProfile&&editProfile()" aria-label="설정">⋯</button>':'')+'</div></div>'
+    +'<div class="ol-mprof"><span class="ol-av" id="ol-av" style="'+avStyle+'">'+avInner+'</span>'
+      +'<h3>'+esc(artistName)+'</h3><p id="ol-sub">'+esc(_bio||titleSub)+'</p>'
+      +'<div class="ol-fcount"><button class="ol-fc"><b id="ol-fan">'+fanCount+'</b><small>팔로워</small></button>'
+        +'<span class="ol-fcdiv"></span>'
+        +'<button class="ol-fc"><b>'+items.length+'</b><small>로그</small></button></div>'
+      +followBtn+'</div>'
+    +'<div class="ol-seg"><button class="'+(seg==='log'?'on':'')+'" onclick="window.__oflgSeg=\'log\';renderOfflogRoom(\''+enc+'\')">LOG <b>'+items.length+'</b></button>'
+      +'<button class="'+(seg==='works'?'on':'')+'" onclick="window.__oflgSeg=\'works\';renderOfflogRoom(\''+enc+'\')">WORKS <b>'+works.length+'</b></button></div>'
+    +(seg==='works'?worksBody:logBody)
+    +'<div style="height:14px"></div>'
+    +'</div></div>';
+  // 프로필에서 아바타·소개 비동기로 채움 (최신 반영)
+  if(typeof window.fetchProfileByName==='function'){
+    window.fetchProfileByName(artistName).then(function(p){
+      if(!p||currentView!=='offlog'||window.__currentArtistName!==artistName) return;
+      var av=document.getElementById('ol-av'); if(av && p.avatar_url && /^https?:\/\//.test(p.avatar_url)){ av.style.backgroundImage="url('"+p.avatar_url.replace(/'/g,'%27')+"')"; av.innerHTML=''; }
+      var sub=document.getElementById('ol-sub'); if(sub && p.bio && (sub.textContent===titleSub||!_bio)) sub.textContent=_oflgTrunc(p.bio,40);
+    }).catch(function(){});
+  }
   try{ _oflgWire(artistName); }catch(e){ console.warn('[offlog room]', e); }
 }
 window.renderOfflogRoom=renderOfflogRoom;
 
 function _oflgWire(artistName){
   var root=document.querySelector('.oflg-room'); if(!root) return;
-  root.querySelectorAll('.ofl-wave').forEach(function(w){ if(w.childElementCount) return; for(var i=0;i<28;i++){ var b=document.createElement('i'); b.style.setProperty('--h', 24+Math.round(Math.random()*70)); b.style.setProperty('--d', i); w.appendChild(b); } });
-  root.querySelectorAll('.ofl-play').forEach(function(p){ p.addEventListener('click', function(e){ e.stopPropagation(); var card=p.closest('.ofl-demo'); var tid=card&&card.getAttribute('data-track'); if(tid&&window.playTrack){ window.playTrack(tid,'artist'); } }); });
-  root.querySelectorAll('.ofl-shape').forEach(function(s){ s.addEventListener('click', function(e){
-    e.stopPropagation();
-    var bar=s.closest('.ofl-rx'); var rid=bar&&bar.getAttribute('data-rid'); var sh=s.getAttribute('data-sh'); if(!rid||!sh||!OFLG_EMO[sh]) return;
-    var mine=_oflgMine(artistName); var mk=rid+':'+sh; if(mine[mk]) return;   // 1인(기기) 1회
-    mine[mk]=1; _oflgSaveMine(artistName,mine);
-    var rx=_oflgRx(artistName); rx[rid]=rx[rid]||{}; rx[rid][sh]=(rx[rid][sh]||0)+1; _oflgSaveRx(artistName,rx);
-    var tot=0; Object.keys(rx[rid]).forEach(function(k){ tot+=rx[rid][k]; });
-    var n=bar.querySelector('.ofl-rxn'); if(n) n.textContent=tot;
-    s.classList.add('hit');
-    var card=s.closest('.ofl-log');
-    if(card){ var pop=document.createElement('span'); pop.className='ofl-emopop'; pop.textContent=OFLG_EMO[sh].n+' +1';
-      var r1=s.getBoundingClientRect(), r2=card.getBoundingClientRect();
-      pop.style.left=Math.max(6,(r1.left-r2.left))+'px'; pop.style.top=Math.max(6,(r1.top-r2.top-10))+'px';
-      card.appendChild(pop); setTimeout(function(){ pop.remove(); },900); }
-  }); });
+  root.querySelectorAll('.ol-bigwv').forEach(function(w){ if(w.childElementCount) return; w.innerHTML=_oflgWaveBars(34); });
+  root.querySelectorAll('.ol-rcard.snd').forEach(function(card){ card.addEventListener('click', function(e){ if(e.target.closest('.ol-del'))return; var tid=card.getAttribute('data-track'); if(tid&&window.playTrack) window.playTrack(tid,'artist'); }); });
   try{ _offlogSyncPlaying(); }catch(_){}
 }
+
+// 도구(생각/사진/음성/메모/녹음/음원) — 본인만
+window._oflgTool=function(i){
+  var name=window.__currentArtistName; if(!name) return;
+  var me=window.__currentUser||(window.DB&&window.DB.get&&window.DB.get().currentUser);
+  if(!me||me.name!==name){ if(typeof showToast==='function') showToast('본인 로그룸에서만 기록할 수 있어요'); return; }
+  if(i===0||i===3){ _offlogAddNote(); }        // 생각 / 메모
+  else if(i===1){ _offlogAddPhoto(); }          // 사진
+  else if(i===5){ navigateTo('upload'); }       // 음원
+  else { if(typeof showToast==='function') showToast('음성·녹음은 준비 중이에요 🎙'); }  // 음성/녹음
+};
+
 
 // REC 캡처 시트 — 4모드 (카메라 / 마이크(준비중) / 데모 업로드 / 포스트잇)
 window._oflgRecSheet=function(){
