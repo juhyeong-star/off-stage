@@ -1166,7 +1166,7 @@ function feedCard(t,i){
     t.t==='ph'  ? `<div class="rcard" data-slide="${i}">
         <div class="bgimg" style="background:${t.bg}"></div><div class="grainy"></div>
         <div class="rmid"><div class="rts">${t.at}</div><div class="rcap">${t.cap}</div></div>${who}${fol}${rx}</div>`
-  : t.t==='snd' ? `<div class="rcard snd" data-play>
+  : t.t==='snd' ? `<div class="rcard snd" data-play${t.audio?` data-audio="${t.audio}"`:''}>
         <div class="bigwv">${waveBars(34)}</div>
         <div class="rmid"><div class="rts">${t.at||''}</div><div class="rcap">${t.nm||t.cap}</div>
           <span class="sndpill"><em>▶</em><b>${t.dur||''}</b></span></div>${who}${fol}${rx}</div>`
@@ -1261,7 +1261,7 @@ function roomFull(){
       <div class="rmid"><div class="rts">${slot}</div><div class="rcap">${r.cap}</div></div>
       <div class="uphint2">📷 탭해서 사진 넣기</div>${chrome(r)}</div>`;
 
-    if(r.t==='snd') return `<div class="rcard snd" data-play>
+    if(r.t==='snd') return `<div class="rcard snd" data-play${r.audio?` data-audio="${r.audio}"`:''}>
       <div class="bigwv">${waveBars(34)}</div>
       <div class="rmid"><div class="rts">${slot}</div><div class="rcap">${r.cap}</div>
         <span class="sndpill"><em>▶</em><b>${r.dur}</b></span></div>${chrome(r)}</div>`;
@@ -1368,7 +1368,7 @@ function mine(){
     if(l.t==='ph') return `<div class="fcard my"><div class="rcard">
       <div class="bgimg" style="background:${l.bg}"></div><div class="grainy"></div>
       <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${l.cap}</div></div>${chrome}</div></div>`;
-    if(l.t==='snd') return `<div class="fcard my"><div class="rcard snd" data-play>
+    if(l.t==='snd') return `<div class="fcard my"><div class="rcard snd" data-play${l.audio?` data-audio="${l.audio}"`:''}>
       <div class="bigwv">${waveBars(34)}</div>
       <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${l.nm}</div>
         <span class="sndpill"><em>▶</em><b>${l.dur}</b></span></div>${chrome}</div></div>`;
@@ -1665,7 +1665,7 @@ function work(){
       <div class="bgimg" style="background:${r.bg}"></div><div class="grainy"></div>
       <div class="rmid"><div class="rts">${r.at}</div><div class="rcap">${r.cap}</div></div>
       <div class="uphint2">📷 탭해서 사진 넣기</div>${chrome}</div>`;
-    if(r.t==='snd')return `<div class="rcard snd" data-play style="height:170px">
+    if(r.t==='snd')return `<div class="rcard snd" data-play${r.audio?` data-audio="${r.audio}"`:''} style="height:170px">
       <div class="bigwv">${waveBars(30)}</div>
       <div class="rmid"><div class="rts">${r.at}</div><div class="rcap">${r.cap}</div>
         <span class="sndpill"><em>▶</em><b>${r.dur}</b></span></div>${chrome}</div>`;
@@ -1781,7 +1781,32 @@ function relMissing(){
 }
 
 /* ── 미니 플레이어 ── 곡·리스트명은 실제 데이터(NOWPLAY)에서 온다 */
-let NOWPLAY={label:'발견', cnt:0, nm:'', tm:''};
+let NOWPLAY={label:'발견', cnt:0, nm:'', tm:'', src:''};
+
+/* ── 실제 오디오 재생 (전역 Audio 1개) ── 재생버튼에 진짜 mp3를 물린다 */
+const AUDIO=new Audio(); AUDIO.preload='none';
+let CURSRC='';
+function _clearPlayingUI(){
+  document.querySelectorAll('.rcard.playing').forEach(function(x){
+    x.classList.remove('playing');
+    var em=x.querySelector('.sndpill em'); if(em)em.textContent='▶';
+  });
+}
+function playSrc(url,nm){
+  if(!url) return false;
+  if(CURSRC!==url){ AUDIO.src=url; CURSRC=url; }
+  var p=AUDIO.play(); if(p&&p.catch)p.catch(function(e){console.warn('[audio] play blocked',e);});
+  if(nm) NOWPLAY.nm=nm; NOWPLAY.src=url;
+  S.mini.on=true; S.mini.playing=true;
+  return true;
+}
+function toggleSrc(url,nm){
+  if(CURSRC===url && !AUDIO.paused){ AUDIO.pause(); S.mini.playing=false; return false; }
+  _clearPlayingUI();
+  return playSrc(url,nm);
+}
+AUDIO.addEventListener('ended',function(){ S.mini.playing=false; CURSRC=''; _clearPlayingUI(); renderMini(); });
+
 function renderMini(){
   const m=document.getElementById('mini');
   const _lab=NOWPLAY.label+(NOWPLAY.cnt?' · '+NOWPLAY.cnt+'곡':'');
@@ -1792,8 +1817,12 @@ function renderMini(){
           <span class="nm">${NOWPLAY.nm}</span><span class="tm">${NOWPLAY.tm||''}</span>
           <button class="minilist" id="mlist" aria-label="재생목록">☰</button></div></div>` : '';
   const mp=document.getElementById('mp'), mx=document.getElementById('mx'), ml=document.getElementById('mlist');
-  if(mp)mp.onclick=()=>{S.mini.playing=!S.mini.playing;renderMini()};
-  if(mx)mx.onclick=()=>{S.mini.on=false;renderMini()};
+  if(mp)mp.onclick=()=>{
+    if(!AUDIO.paused){ AUDIO.pause(); S.mini.playing=false; _clearPlayingUI(); }
+    else { const url=NOWPLAY.src||CURSRC; if(url){ _clearPlayingUI(); playSrc(url, NOWPLAY.nm); } }
+    renderMini();
+  };
+  if(mx)mx.onclick=()=>{ S.mini.on=false; AUDIO.pause(); S.mini.playing=false; _clearPlayingUI(); renderMini(); };
   if(ml)ml.onclick=()=>{S.list='p1'; S.share=false; S.view='list'; render()};
 }
 
@@ -2058,12 +2087,22 @@ function bind(){
     const on=b.classList.toggle('on');
     b.textContent=on?'✓ 작품':'＋ 작품';
   });
-  /* 소리 카드: 카드 전체가 재생 버튼 */
+  /* 소리 카드: 카드 전체가 재생 버튼 — 실제 mp3 재생 */
   document.querySelectorAll('.rcard[data-play]').forEach(cd=>cd.onclick=e=>{
     if(e.target.closest('.rheart,.keep,.rreply'))return;
-    const on=cd.classList.toggle('playing');
-    const em=cd.querySelector('.sndpill em');
-    if(em)em.textContent=on?'⏸':'▶';
+    const url=cd.dataset.audio;
+    if(url){
+      const capEl=cd.querySelector('.rcap');
+      const nm=(capEl&&capEl.textContent)||NOWPLAY.nm;
+      const playing=toggleSrc(url, nm);
+      cd.classList.toggle('playing', playing);
+      const em=cd.querySelector('.sndpill em'); if(em)em.textContent=playing?'⏸':'▶';
+      renderMini();
+    } else {
+      /* 오디오 URL 없는 카드 → 기존 애니메이션만 */
+      const on=cd.classList.toggle('playing');
+      const em=cd.querySelector('.sndpill em'); if(em)em.textContent=on?'⏸':'▶';
+    }
   });
   /* 사진 카드: 탭하면 갤러리에서 진짜 사진 넣기 */
   const rp=document.getElementById('rpicker');
@@ -2204,7 +2243,7 @@ setInterval(()=>{
     if(storyArtists.length) STORIES=storyArtists.map(function(a){
       var ts=byArtist[a].slice(0,2);
       return { who:a, c:colOf(a), following:false, seen:false, items:ts.map(function(t){
-        return t.cover ? {t:'ph', at:tm(t.ts), cap:t.title, bg:'#141418', img:t.cover} : {t:'snd', at:tm(t.ts), cap:t.title, dur:''};
+        return t.cover ? {t:'ph', at:tm(t.ts), cap:t.title, bg:'#141418', img:t.cover} : {t:'snd', at:tm(t.ts), cap:t.title, dur:'', audio:t.audio};
       }) };
     });
 
@@ -2225,7 +2264,7 @@ setInterval(()=>{
     var meA=artists.slice().sort(function(a,b){return byArtist[b].length-byArtist[a].length;})[0];
     if(meA){
       STREAM=byArtist[meA].slice(0,8).map(function(t,i){
-        return t.audio ? {id:'l'+i, t:'snd', at:tm(t.ts), nm:t.title, dur:'', side:(i%2?'r':'l'), work:null}
+        return t.audio ? {id:'l'+i, t:'snd', at:tm(t.ts), nm:t.title, dur:'', side:(i%2?'r':'l'), work:null, audio:t.audio}
                        : {id:'l'+i, t:'note', at:tm(t.ts), text:'#'+(t.tags[0]||t.title), tone:(i%2?'b':'y'), side:(i%2?'r':'l'), work:null};
       });
     }
@@ -2237,7 +2276,7 @@ setInterval(()=>{
       // TREND = 대표 카드: 오디오→snd, 커버→ph, 그 외→note. 시각·색·반응은 데이터에서.
       TREND=feedTracks.slice(0,8).map(function(t){
         var base={who:cut(t.artist,18), c:colOf(t.artist), at:tm(t.ts), rx:(t.likes||0)};
-        if(t.audio){ base.t='snd'; base.nm=cut(t.title,20); base.sub=cut((t.demo?'Demo':'Track')+(t.tags[0]?' · '+t.tags[0]:''),24); base.tags=t.tags.slice(0,2).map(function(x){return '#'+String(x).replace(/^#/,'');}); }
+        if(t.audio){ base.t='snd'; base.nm=cut(t.title,20); base.sub=cut((t.demo?'Demo':'Track')+(t.tags[0]?' · '+t.tags[0]:''),24); base.tags=t.tags.slice(0,2).map(function(x){return '#'+String(x).replace(/^#/,'');}); base.audio=t.audio; }
         else if(t.cover){ base.t='ph'; base.cap=cut(t.title,20); base.bg=GRADS[(base.who.length)%GRADS.length]; base.img=t.cover; }
         else { base.t='note'; base.text=cut(t.title,40); base.tone=(t.tags.length%2?'b':'y'); }
         return base;
@@ -2245,19 +2284,19 @@ setInterval(()=>{
       // FORYOU = 오디오 트랙만 (없으면 아무 트랙)
       var au=feedTracks.filter(function(t){return t.audio;}); if(!au.length) au=feedTracks;
       FORYOU=au.slice(0,6).map(function(t){
-        return {t:'snd', at:tm(t.ts), nm:cut(t.title,20), who:cut(t.artist,18), c:colOf(t.artist), dur:'', rx:(t.likes||0)};
+        return {t:'snd', at:tm(t.ts), nm:cut(t.title,20), who:cut(t.artist,18), c:colOf(t.artist), dur:'', rx:(t.likes||0), audio:t.audio};
       });
       // FOLLOWLOG = 팔로우한 사람들 로그 — 서로 다른 아티스트 우선
       var seen={}, fl=[];
       feedTracks.forEach(function(t){ if(fl.length>=6) return; if(seen[t.artist]) return; seen[t.artist]=1;
-        if(t.audio) fl.push({who:cut(t.artist,18), c:colOf(t.artist), t:'snd', cap:cut(t.title,20), dur:'', at:tm(t.ts), rx:(t.likes||0)});
+        if(t.audio) fl.push({who:cut(t.artist,18), c:colOf(t.artist), t:'snd', cap:cut(t.title,20), dur:'', at:tm(t.ts), rx:(t.likes||0), audio:t.audio});
         else if(t.cover) fl.push({who:cut(t.artist,18), c:colOf(t.artist), t:'ph', cap:cut(t.title,20), at:tm(t.ts), rx:(t.likes||0), bg:GRADS[(t.title.length)%GRADS.length], img:t.cover});
         else fl.push({who:cut(t.artist,18), c:colOf(t.artist), t:'note', text:cut(t.title,40), at:tm(t.ts), tone:(t.tags.length%2?'y':'b'), rx:(t.likes||0)});
       });
       if(fl.length) FOLLOWLOG=fl;
       // 미니 플레이어 = 실제 첫 오디오 트랙, 리스트명 '발견'
       var first=(au[0]||feedTracks[0]);
-      if(first){ NOWPLAY={label:'발견', cnt:au.length||feedTracks.length, nm:cut(first.title,20), tm:''}; }
+      if(first){ NOWPLAY={label:'발견', cnt:au.length||feedTracks.length, nm:cut(first.title,20), tm:'', src:first.audio}; }
     }
 
     // ── 합주실(ROOM) 시간대 카드도 실제 아티스트 4명으로 ── (PEEK/MINLEE/전아름 목업 제거)
@@ -2270,7 +2309,7 @@ setInterval(()=>{
           var base={who:cut(a,14), c:colOf(a)}; var pick=(si+ai)%3;
           if(!t || pick===2){ base.t='empty'; }
           else if(t.cover && pick===0){ base.t='ph'; base.cap=cut(t.title,16); base.bg=GRADS[(ai+si)%GRADS.length]; }
-          else if(t.audio){ base.t='snd'; base.cap=cut(t.title,16); base.dur=''; }
+          else if(t.audio){ base.t='snd'; base.cap=cut(t.title,16); base.dur=''; base.audio=t.audio; }
           else if(pick===0){ base.t='ph'; base.cap=cut(t.title,16); base.bg=GRADS[(ai+si)%GRADS.length]; }
           else { base.t='note'; base.text=cut(t.title,18); }
           return base;
