@@ -889,8 +889,87 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 <input type="file" id="apicker" accept="audio/*" style="display:none">
 <input type="file" id="artpicker" accept="image/*" style="display:none">
 
+<!-- 메인앱과 동일 Supabase SDK — 같은 도메인이라 로그인 세션이 자동 공유된다 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 const V=getComputedStyle(document.documentElement), c=n=>V.getPropertyValue('--'+n).trim();
+
+/* ── 로그인 세션 (메인앱 회원 그대로) + 실제 쓰기 클라이언트 ── */
+const SB_URL='https://vayzhmaggwpkbsrrsdqt.supabase.co';
+const SB_KEY='sb_publishable_1PxNV0BGL7Wy_strTMqnbA_pCBCsOPG';
+let SBC=null;               // 인증 클라이언트 (RLS용 JWT 자동 첨부)
+let ME=null;                // 현재 로그인 유저 {id,name}
+const MYFOLLOWS=new Set();  // 내가 팔로우한 artist profile id
+const MYREACT={};           // track_id -> Set(kind)
+try{
+  if(window.supabase && window.supabase.createClient){
+    SBC=window.supabase.createClient(SB_URL, SB_KEY, {auth:{persistSession:true, autoRefreshToken:true}});
+  }
+}catch(e){ console.warn('[offlog] supabase client init 실패', e); }
+
+/* 로그인 유저 로드 + 내 팔로우/반응 상태 미리 받아두기 */
+async function loadMe(){
+  if(!SBC) return null;
+  try{
+    const {data:{user}}=await SBC.auth.getUser();
+    if(user){
+      const meta=user.user_metadata||{};
+      ME={ id:user.id, name:(meta.name||meta.full_name||(user.email?user.email.split('@')[0]:'나')) };
+      // 내 팔로우
+      const f=await SBC.from('follows').select('following_id').eq('follower_id', user.id);
+      if(f.data) f.data.forEach(r=>MYFOLLOWS.add(r.following_id));
+      // 내 반응
+      const r=await SBC.from('track_reactions').select('track_id,kind').eq('user_id', user.id);
+      if(r.data) r.data.forEach(x=>{ (MYREACT[x.track_id]=MYREACT[x.track_id]||new Set()).add(x.kind); });
+    }
+  }catch(e){ console.warn('[offlog] loadMe 실패', e); }
+  return ME;
+}
+/* 비로그인 안내 — 조용히 실패시키지 않고 알려준다 */
+let _toastT=null;
+function offToast(msg){
+  let el=document.getElementById('offtoast');
+  if(!el){ el=document.createElement('div'); el.id='offtoast';
+    el.style.cssText='position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:9999;background:#1F1F23;color:#F5F5F2;border:1px solid #53E0C8;padding:11px 16px;border-radius:14px;font-size:13px;font-family:\'Noto Sans KR\',sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.5);max-width:80vw;text-align:center';
+    document.body.appendChild(el); }
+  el.textContent=msg; el.style.opacity='1';
+  clearTimeout(_toastT); _toastT=setTimeout(()=>{el.style.opacity='0';}, 2600);
+}
+function needLogin(){ offToast('로그인하면 저장돼요 — 메인에서 로그인 후 이용하세요'); }
+
+/* ── 실제 쓰기 (RLS: 로그인 유저의 JWT로 통과, 익명은 차단) ── */
+async function followArtist(aid){
+  if(!aid){ return false; }
+  if(!ME){ needLogin(); return false; }
+  try{
+    const {error}=await SBC.from('follows').insert({follower_id:ME.id, following_id:aid});
+    if(error && error.code!=='23505'){ throw error; }   // 23505=이미 있음 → 무시
+    MYFOLLOWS.add(aid); return true;
+  }catch(e){ console.warn('[offlog] follow 실패', e); offToast('저장 실패 — 잠시 후 다시'); return false; }
+}
+async function unfollowArtist(aid){
+  if(!aid){ return false; }
+  if(!ME){ needLogin(); return false; }
+  try{
+    const {error}=await SBC.from('follows').delete().eq('follower_id',ME.id).eq('following_id',aid);
+    if(error) throw error;
+    MYFOLLOWS.delete(aid); return true;
+  }catch(e){ console.warn('[offlog] unfollow 실패', e); offToast('저장 실패 — 잠시 후 다시'); return false; }
+}
+async function toggleReact(tid, kind){
+  if(!tid){ return; }
+  if(!ME){ needLogin(); return; }
+  const set=MYREACT[tid]=MYREACT[tid]||new Set();
+  try{
+    if(set.has(kind)){
+      const {error}=await SBC.from('track_reactions').delete().eq('user_id',ME.id).eq('track_id',tid).eq('kind',kind);
+      if(error) throw error; set.delete(kind);
+    }else{
+      const {error}=await SBC.from('track_reactions').insert({user_id:ME.id, track_id:tid, kind:kind});
+      if(error && error.code!=='23505') throw error; set.add(kind);
+    }
+  }catch(e){ console.warn('[offlog] react 실패', e); offToast('저장 실패 — 잠시 후 다시'); }
+}
 
 /* 스토리 — 원 = 아티스트. 탭하면 그 사람이 방금 올린 로그가 전체화면으로 재생된다.
    following:false 인 원도 섞여 있음 — 아직 안 팔로우하는 아티스트를 발견하는 자리.
@@ -1171,12 +1250,15 @@ function feedCard(t,i){
 
   const who=`<div class="rwho" data-prof="${t.who}" style="cursor:pointer">${smileEl(t.c)}${t.who}</div>`;
   /* 팔로우 = 카드 우측 상단. 반응 도형 = 카드 위 하단. 전부 카드 위에 얹힌다 */
-  const fol = t.src==='follow' ? '' : `<button class="fol ffol">팔로우</button>`;
-  const rx=`<div class="frx">
-      <button class="shape rbtn" data-emo="소름" aria-label="소름">${shape('tri',c('green'),22)}</button>
-      <button class="shape rbtn" data-emo="루프" aria-label="루프">${shape('circle',c('shpink'),22)}</button>
-      <button class="shape rbtn" data-emo="울컥" aria-label="울컥">${shape('diamond',c('blue'),22)}</button>
-      <button class="shape rbtn" data-emo="최고" aria-label="최고">${shape('star',c('yellow'),22)}</button>
+  const _foned = t.aid && MYFOLLOWS.has(t.aid);   // 저장된 내 팔로우 반영
+  const fol = t.src==='follow' ? '' : `<button class="fol ffol${_foned?' on':''}" data-aid="${t.aid||''}">${_foned?'팔로잉':'팔로우'}</button>`;
+  const _mine = (t.tid && MYREACT[t.tid]) || null;  // 저장된 내 반응
+  const _rb=(emo,sh,col)=>`<button class="shape rbtn${_mine&&_mine.has(emo)?' hit':''}" data-emo="${emo}"${_mine&&_mine.has(emo)?' data-hit="1"':''} aria-label="${emo}">${shape(sh,c(col),22)}</button>`;
+  const rx=`<div class="frx" data-tid="${t.tid||''}">
+      ${_rb('소름','tri','green')}
+      ${_rb('루프','circle','shpink')}
+      ${_rb('울컥','diamond','blue')}
+      ${_rb('최고','star','yellow')}
       <span class="rxn" data-n="${t.rx||0}">${t.rx||0}</span></div>`;
 
   const body =
@@ -2172,8 +2254,13 @@ function bind(){
   });
   document.querySelectorAll('.fol').forEach(b=>b.onclick=e=>{
     e.stopPropagation();
-    const on=b.classList.toggle('on');
+    const aid=b.dataset.aid;
+    if(!ME){ needLogin(); return; }               // 비로그인 → UI 안 바꾸고 안내
+    const on=b.classList.toggle('on');             // 낙관적 UI
     b.textContent=on?'팔로잉':'팔로우';
+    (on?followArtist(aid):unfollowArtist(aid)).then(ok=>{
+      if(!ok){ const back=b.classList.toggle('on'); b.textContent=back?'팔로잉':'팔로우'; } // 실패 시 롤백
+    });
   });
   /* 스트림 안에서 소리가 울리면 종이 전체가 반응한다 */
   document.querySelectorAll('.dotplay').forEach(p=>p.onclick=e=>{
@@ -2188,15 +2275,18 @@ function bind(){
   });
   document.querySelectorAll('.rbtn').forEach(r=>r.onclick=e=>{
     e.stopPropagation();
-    if(r.dataset.hit)return; r.dataset.hit=1; r.classList.add('hit');
-    const n=r.parentElement.querySelector('.rxn');
-    if(n){n.textContent=+n.dataset.n+1; n.dataset.n=+n.dataset.n+1}
-    const box=r.closest('.fcard')||r.closest('.log')||r.closest('.dplayer')||r.closest('.svbody')||r.closest('.sl');
-    if(box){
-      const p=document.createElement('span');
-      p.className='pop'; p.textContent=r.dataset.emo+' +1';
-      box.style.position='relative'; box.appendChild(p); setTimeout(()=>p.remove(),900);
+    const frx=r.closest('.frx'); const tid=frx&&frx.dataset.tid;
+    if(tid && !ME){ needLogin(); return; }           // 진짜 곡 반응인데 비로그인 → 안내(저장은 로그인 필요)
+    const was=r.dataset.hit==='1';                    // 토글
+    r.dataset.hit=was?'':'1'; r.classList.toggle('hit', !was);
+    const n=(frx||r.parentElement).querySelector('.rxn');
+    if(n){ n.dataset.n=Math.max(0,(+n.dataset.n)+(was?-1:1)); n.textContent=n.dataset.n; }
+    if(!was){                                          // 추가할 때만 +1 팝
+      const box=r.closest('.fcard')||r.closest('.log')||r.closest('.dplayer')||r.closest('.svbody')||r.closest('.sl');
+      if(box){ const p=document.createElement('span'); p.className='pop'; p.textContent=r.dataset.emo+' +1';
+        box.style.position='relative'; box.appendChild(p); setTimeout(()=>p.remove(),900); }
     }
+    if(tid) toggleReact(tid, r.dataset.emo);          // 실제 곡이면 서버 저장
   });
 
   /* 스토리 열 + 전체화면 뷰어 */
@@ -2205,7 +2295,11 @@ function bind(){
   const svtapl=document.getElementById('svtapl'); if(svtapl)svtapl.onclick=e=>{e.stopPropagation();prevItem()};
   const svtapr=document.getElementById('svtapr'); if(svtapr)svtapr.onclick=e=>{e.stopPropagation();nextItem()};
   const svfolbtn=document.getElementById('svfolbtn');
-  if(svfolbtn)svfolbtn.onclick=e=>{e.stopPropagation();STORIES[S.storyIdx].following=true;render()};
+  if(svfolbtn)svfolbtn.onclick=e=>{e.stopPropagation();
+    const st=STORIES[S.storyIdx]; if(!st)return;
+    if(!ME){ needLogin(); return; }
+    st.following=true; followArtist(st.aid); render();
+  };
   const svwrap=document.getElementById('svwrap');
   if(svwrap){
     const activeI=svwrap.querySelector('.svbar.active i');
@@ -2233,7 +2327,7 @@ setInterval(()=>{
   try{
     var SB='https://vayzhmaggwpkbsrrsdqt.supabase.co';
     var KEY='sb_publishable_1PxNV0BGL7Wy_strTMqnbA_pCBCsOPG';
-    var cols='id,title,tags,audio_url,cover_url,is_demo,project_id,created_at,likes_count,profiles(name,avatar_url)';
+    var cols='id,title,tags,audio_url,cover_url,is_demo,project_id,created_at,likes_count,profiles(id,name,avatar_url)';
     var r=await fetch(SB+'/rest/v1/tracks?select='+encodeURIComponent(cols)+'&order=created_at.desc&limit=200',{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
     if(!r.ok) throw new Error('fetch '+r.status);
     var rows=await r.json();
@@ -2248,25 +2342,29 @@ setInterval(()=>{
     ];
     var tracks=rows.map(function(x){ return {
       id:x.id, title:x.title||'무제', artist:(x.profiles&&x.profiles.name)||'익명',
+      artistId:(x.profiles&&x.profiles.id)||null,
       tags:Array.isArray(x.tags)?x.tags:[], audio:x.audio_url||'',
       cover:(x.cover_url&&/^https?:\/\//.test(x.cover_url))?x.cover_url:'',
       demo:!!x.is_demo, pid:x.project_id||('p_'+x.id), ts:x.created_at, likes:(x.likes_count||0)
     }; });
     var byArtist={}; tracks.forEach(function(t){ (byArtist[t.artist]=byArtist[t.artist]||[]).push(t); });
     var artists=Object.keys(byArtist);
+    var aidOf=function(name){ var ts=byArtist[name]; return (ts&&ts[0]&&ts[0].artistId)||null; }; // 아티스트명 → profile id
+    var iFollow=function(name){ var id=aidOf(name); return !!(id&&MYFOLLOWS.has(id)); };            // 내가 팔로우 중?
+    await loadMe(); // 로그인 유저 + 내 팔로우/반응 상태를 카드 빌드 전에 확보
 
     // STORIES = 오디오 있는 아티스트(최대 8), 최근 곡 2개를 스토리 아이템으로
     var storyArtists=artists.filter(function(a){ return byArtist[a].some(function(t){return t.audio;}); }).slice(0,8);
     if(storyArtists.length) STORIES=storyArtists.map(function(a){
       var ts=byArtist[a].slice(0,2);
-      return { who:a, c:colOf(a), following:false, seen:false, items:ts.map(function(t){
+      return { who:a, c:colOf(a), aid:aidOf(a), following:iFollow(a), seen:false, items:ts.map(function(t){
         return t.cover ? {t:'ph', at:tm(t.ts), cap:t.title, bg:'#141418', img:t.cover} : {t:'snd', at:tm(t.ts), cap:t.title, dur:'', audio:t.audio};
       }) };
     });
 
     // PEOPLE = 아티스트 목록
     if(artists.length) PEOPLE=artists.slice(0,24).map(function(a){
-      return { who:a, c:colOf(a), sub:(byArtist[a][0].tags[0]||'Artist'), fing:0 };
+      return { who:a, c:colOf(a), aid:aidOf(a), sub:(byArtist[a][0].tags[0]||'Artist'), fing:(iFollow(a)?1:0) };
     });
 
     // WORKS = 프로젝트(project_id)별 대표 — 로그 수 = 그 프로젝트 곡 수
@@ -2292,7 +2390,7 @@ setInterval(()=>{
     if(feedTracks.length){
       // TREND = 대표 카드: 오디오→snd, 커버→ph, 그 외→note. 시각·색·반응은 데이터에서.
       TREND=feedTracks.slice(0,8).map(function(t){
-        var base={who:cut(t.artist,18), c:colOf(t.artist), at:tm(t.ts), rx:(t.likes||0)};
+        var base={who:cut(t.artist,18), c:colOf(t.artist), at:tm(t.ts), rx:(t.likes||0), aid:aidOf(t.artist), tid:t.id};
         if(t.audio){ base.t='snd'; base.nm=cut(t.title,20); base.sub=cut((t.demo?'Demo':'Track')+(t.tags[0]?' · '+t.tags[0]:''),24); base.tags=t.tags.slice(0,2).map(function(x){return '#'+String(x).replace(/^#/,'');}); base.audio=t.audio; }
         else if(t.cover){ base.t='ph'; base.cap=cut(t.title,20); base.bg=GRADS[(base.who.length)%GRADS.length]; base.img=t.cover; }
         else { base.t='note'; base.text=cut(t.title,40); base.tone=(t.tags.length%2?'b':'y'); }
@@ -2301,14 +2399,15 @@ setInterval(()=>{
       // FORYOU = 오디오 트랙만 (없으면 아무 트랙)
       var au=feedTracks.filter(function(t){return t.audio;}); if(!au.length) au=feedTracks;
       FORYOU=au.slice(0,6).map(function(t){
-        return {t:'snd', at:tm(t.ts), nm:cut(t.title,20), who:cut(t.artist,18), c:colOf(t.artist), dur:'', rx:(t.likes||0), audio:t.audio};
+        return {t:'snd', at:tm(t.ts), nm:cut(t.title,20), who:cut(t.artist,18), c:colOf(t.artist), dur:'', rx:(t.likes||0), audio:t.audio, aid:aidOf(t.artist), tid:t.id};
       });
       // FOLLOWLOG = 팔로우한 사람들 로그 — 서로 다른 아티스트 우선
       var seen={}, fl=[];
       feedTracks.forEach(function(t){ if(fl.length>=6) return; if(seen[t.artist]) return; seen[t.artist]=1;
-        if(t.audio) fl.push({who:cut(t.artist,18), c:colOf(t.artist), t:'snd', cap:cut(t.title,20), dur:'', at:tm(t.ts), rx:(t.likes||0), audio:t.audio});
-        else if(t.cover) fl.push({who:cut(t.artist,18), c:colOf(t.artist), t:'ph', cap:cut(t.title,20), at:tm(t.ts), rx:(t.likes||0), bg:GRADS[(t.title.length)%GRADS.length], img:t.cover});
-        else fl.push({who:cut(t.artist,18), c:colOf(t.artist), t:'note', text:cut(t.title,40), at:tm(t.ts), tone:(t.tags.length%2?'y':'b'), rx:(t.likes||0)});
+        var idc={aid:aidOf(t.artist), tid:t.id};
+        if(t.audio) fl.push(Object.assign({who:cut(t.artist,18), c:colOf(t.artist), t:'snd', cap:cut(t.title,20), dur:'', at:tm(t.ts), rx:(t.likes||0), audio:t.audio}, idc));
+        else if(t.cover) fl.push(Object.assign({who:cut(t.artist,18), c:colOf(t.artist), t:'ph', cap:cut(t.title,20), at:tm(t.ts), rx:(t.likes||0), bg:GRADS[(t.title.length)%GRADS.length], img:t.cover}, idc));
+        else fl.push(Object.assign({who:cut(t.artist,18), c:colOf(t.artist), t:'note', text:cut(t.title,40), at:tm(t.ts), tone:(t.tags.length%2?'y':'b'), rx:(t.likes||0)}, idc));
       });
       if(fl.length) FOLLOWLOG=fl;
       // 미니 플레이어 = 실제 첫 오디오 트랙, 리스트명 '발견'
