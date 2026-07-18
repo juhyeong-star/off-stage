@@ -1628,6 +1628,8 @@ function navigateTo(route) {
   if (route !== 'universe') document.body.classList.remove('is-universe-route');
   // 도형 페이지일 때 body 클래스 — CSS 가 page-intro 를 fixed 로 띄우는 데 사용
   document.body.classList.toggle('is-shapes-route', route === 'shapes');
+  // OFFLOG 로그룸 — 상단/하단 크롬까지 전부 다크 테마로 (머리부터 발끝까지). 떠나면 해제.
+  document.body.classList.toggle('offlog-mode', !!(route && route.indexOf('offlog:') === 0));
   // 발견 페이지를 떠나면 물리 루프 정지(rAF 누수 방지)
   if (route !== 'shapes' && typeof stopShapesPhysics === 'function') stopShapesPhysics();
   if (route !== 'shapes' && typeof stopVoteDiscoverPhysics === 'function') stopVoteDiscoverPhysics();

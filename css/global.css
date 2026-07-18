@@ -19705,3 +19705,41 @@ body.is-shapes-route .shapes-subtitle { display: none !important; }
   /* (dead) 옛 물리 발견 컨테이너 top — 탭바 높이 안 빼게 */
   body.is-shapes-route .shapes-universe { top: calc(env(safe-area-inset-top, 0px) + 8px) !important; }
 }
+
+/* ============================================================
+   OFFLOG 모드 — 로그룸(#/offlog:)에선 상단/하단 크롬까지 전부 다크로 통일.
+   기존 밝은 테마(하늘색 플레이어·초록 LCD·노랑 재생, 초록 언어토글)와 안 섞이게.
+   body.offlog-mode 는 navigateTo 에서 offlog 라우트일 때만 켜짐 → 다른 페이지 영향 0.
+   ============================================================ */
+body.offlog-mode { background:#050505; --brand-color:#53E0C8; }
+/* 하단 플레이어 — 하늘색/LCD/노랑 전부 OFFLOG 다크로 (기존 !important 이겨야 해 !important) */
+body.offlog-mode #global-player{ background:#141418 !important; border-top:1px solid #2A2A2E !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; font-family:'Fredoka','Noto Sans KR','Pretendard',sans-serif; }
+body.offlog-mode #global-player .player-text{ background:transparent !important; box-shadow:none !important; padding:0 !important; }
+body.offlog-mode #global-player .player-title{ color:#F5F5F2 !important; text-shadow:none !important; font-weight:700 !important; }
+body.offlog-mode #global-player .player-artist{ color:#8A8A90 !important; }
+body.offlog-mode #global-player .player-cover{ border:1px solid #2A2A2E !important; }
+body.offlog-mode #global-player .player-hashline{ color:#53E0C8 !important; }
+body.offlog-mode #global-player .player-lyric{ color:#8A8A90 !important; }
+body.offlog-mode #global-player .player-lyric.empty{ color:rgba(138,138,144,.55) !important; }
+body.offlog-mode #global-player .seek-btn, body.offlog-mode #global-player .seek-btn i, body.offlog-mode #global-player .seek-btn b{ color:#8A8A90 !important; }
+body.offlog-mode #global-player .progress-fill{ background:#53E0C8 !important; }
+body.offlog-mode #global-player .progress-bar-track{ background:rgba(255,255,255,.14) !important; }
+body.offlog-mode #global-player .time-text{ color:#8A8A90 !important; }
+body.offlog-mode #global-player .play-btn, body.offlog-mode #global-player .play-btn i{ color:#53E0C8 !important; }
+body.offlog-mode #global-player .control-btn, body.offlog-mode #global-player .control-btn i{ color:#F5F5F2 !important; }
+body.offlog-mode #global-player .player-collect-btn, body.offlog-mode #global-player .player-share-btn,
+body.offlog-mode #global-player .player-collect-btn i, body.offlog-mode #global-player .player-share-btn i,
+body.offlog-mode #global-player .vol-btn, body.offlog-mode #global-player .vol-percent{ color:#8A8A90 !important; }
+body.offlog-mode #global-player .vol-slider{ accent-color:#53E0C8; }
+body.offlog-mode #global-player .player-wave i{ background:#53E0C8 !important; }
+/* 상단 크롬 — 가이드 / 언어(KO·EN) : 이미 어둡지만 OFFLOG 토큰으로 통일 + 초록→민트 */
+body.offlog-mode .guide-btn{ background:rgba(31,31,35,0.94) !important; border-color:#2A2A2E !important; color:#F5F5F2 !important; }
+body.offlog-mode .lang-toggle{ background:rgba(31,31,35,0.94) !important; border-color:#2A2A2E !important; }
+body.offlog-mode .lang-toggle .opt{ color:rgba(255,255,255,.55) !important; }
+body.offlog-mode .lang-toggle .opt.active{ background:#53E0C8 !important; color:#04231d !important; }
+body.offlog-mode .guide-btn, body.offlog-mode .lang-toggle{ font-family:'Fredoka','Noto Sans KR','Pretendard',sans-serif; }
+/* off-stage 플로팅 워드마크 / 전역 뒤로가기 — 톤 맞춤(중복 백버튼 완화) */
+body.offlog-mode .beta-wordmark-float{ opacity:.45; }
+body.offlog-mode .global-back-btn{ background:rgba(31,31,35,0.94) !important; border-color:#2A2A2E !important; color:#F5F5F2 !important; }
+/* 떠다니는 FAB/햄버거 — 톤만 다크로 */
+body.offlog-mode .hamburger-btn, body.offlog-mode .hamburger-btn i{ color:#F5F5F2 !important; }
