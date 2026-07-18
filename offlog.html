@@ -843,6 +843,25 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .dayhd small{font-size:10.5px;color:var(--muted);font-family:'Black Han Sans'}
 .dayhd.rel::before{background:var(--lemon);box-shadow:0 0 10px var(--lemon)}
 .dayhd.rel b{color:var(--lemon)}
+/* ── 새 로그 작성 시트 (마이 ＋) ── */
+#composeview:empty{display:none}
+.cs-bd{position:absolute;inset:0;z-index:60;background:rgba(0,0,0,.55);display:flex;align-items:flex-end}
+.cs{width:100%;background:var(--card2);border-top-left-radius:22px;border-top-right-radius:22px;border-top:1px solid var(--line);
+  padding:16px 16px calc(20px + env(safe-area-inset-bottom));animation:csup .22s ease}
+@keyframes csup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.cs-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cs-hd b{font-family:'Black Han Sans';font-size:16px}
+.cs-x{background:none;border:0;color:var(--muted);font-size:18px;min-width:44px;min-height:44px}
+.cs-ta{width:100%;min-height:84px;background:var(--card);border:1px solid var(--line);border-radius:14px;
+  color:var(--txt);padding:12px;font-size:16px;font-family:'Gaegu','Noto Sans KR',sans-serif;resize:none;line-height:1.5}
+.cs-ta:focus{outline:2px solid var(--mint)}
+.cs-prev{margin-top:10px;border-radius:14px;overflow:hidden;max-height:230px;background:#000}
+.cs-prev img,.cs-prev video{width:100%;display:block;max-height:230px;object-fit:contain}
+.cs-row{display:flex;gap:8px;margin-top:12px}
+.cs-add{flex:1;background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:11px;font-size:13.5px;min-height:44px}
+.cs-add:hover{border-color:var(--mint);color:var(--mint)}
+.cs-post{margin-top:12px;width:100%;background:var(--mint);color:#04231d;border:0;border-radius:14px;padding:13px;font-weight:800;font-size:15px;min-height:48px}
+.cs-post:disabled{opacity:.4}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 
 /* ── 실제 폰 규격 (≤640px): 데스크톱 프리뷰의 핑크 베젤은 유지, 폰에서는 풀스크린 앱 ── */
@@ -877,6 +896,7 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
   <div class="screen" id="screen"><div id="body"></div></div>
   <div id="slideview"></div>
   <div id="storyview"></div>
+  <div id="composeview"></div>
   <div id="mini"></div>
   <div class="nav" id="nav">
     <button data-v="home"><i>⌂</i>홈</button>
@@ -888,6 +908,9 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 <input type="file" id="rpicker" accept="image/*" style="display:none">
 <input type="file" id="apicker" accept="audio/*" style="display:none">
 <input type="file" id="artpicker" accept="image/*" style="display:none">
+<!-- 새 로그 작성: 폰에서 capture=카메라 바로 열림 -->
+<input type="file" id="cphoto" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="cvideo" accept="video/*" capture="environment" style="display:none">
 
 <!-- 메인앱과 동일 Supabase SDK — 같은 도메인이라 로그인 세션이 자동 공유된다 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -1125,7 +1148,7 @@ const curRound = ()=>ROUNDS.find(r=>r.id===S.round)||ROUNDS[0];
 
 
 let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:'me', round:'jul', lseg:'list', vcat:'music', flist:null, fq:'', flFrom:'mine', list:null, share:false, addlist:false,
-  pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[],
+  pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null,
   relForm:{audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', dsp:[]}};
 
 const shape=(s,f,z)=>`<svg viewBox="0 0 24 24" width="${z}" height="${z}" style="overflow:visible"><use href="#${s}" fill="${f}"/></svg>`;
@@ -1183,7 +1206,7 @@ function storyViewer(){
 }
 
 function openStory(i){ S.storyIdx=i; S.itemIdx=0; STORIES[i].seen=true; render(); }
-function closeStory(){ S.storyIdx=null; render(); }
+function closeStory(){ S.storyIdx=null; try{AUDIO.pause();}catch(e){} render(); }
 function nextItem(){
   const s=STORIES[S.storyIdx];
   if(S.itemIdx<s.items.length-1){ S.itemIdx++; render(); } else { nextStory(); }
@@ -1471,6 +1494,9 @@ function mine(){
       <div class="bigwv">${waveBars(34)}</div>
       <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${l.nm}</div>
         <span class="sndpill"><em>▶</em><b>${l.dur}</b></span></div>${chrome}</div></div>`;
+    if(l.t==='vid') return `<div class="fcard my"><div class="rcard" style="overflow:hidden">
+      <video src="${l.src}" controls playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>
+      <div class="rmid" style="pointer-events:none"><div class="rts">${l.at}</div>${l.cap?`<div class="rcap">${l.cap}</div>`:''}</div>${chrome}</div></div>`;
     return `<div class="fcard my"><div class="rcard paper ${l.tone==='b'?'b':''}">
       <div class="rmid"><div class="rts">${l.at}</div><div class="rnote">${l.text}</div></div>${chrome}</div></div>`;
   };
@@ -1879,6 +1905,51 @@ function relMissing(){
   return m;
 }
 
+/* ── 스토리 오디오: 현재 스토리 항목이 '데모(소리)'면 실제로 재생 ── */
+function syncStoryAudio(){
+  if(S.storyIdx===null) return;                 // 스토리 아닐 땐 관여 안 함(피드 재생 보호)
+  const s=STORIES[S.storyIdx]; const it=s&&s.items[S.itemIdx];
+  if(it && it.t==='snd' && it.audio){
+    if(CURSRC!==it.audio){ AUDIO.src=it.audio; CURSRC=it.audio; }
+    const p=AUDIO.play(); if(p&&p.catch)p.catch(function(){});
+  }else{ AUDIO.pause(); }                        // 소리 아닌 항목이면 정지
+}
+
+/* ── 새 로그 작성 시트 (마이 ＋ / 도구) ── */
+function composeSheet(){
+  if(!S.compose) return '';
+  const m=S.compose.media;
+  const prev = m ? (m.kind==='vid'
+      ? `<div class="cs-prev"><video src="${m.url}" controls playsinline></video></div>`
+      : `<div class="cs-prev"><img src="${m.url}" alt=""></div>`) : '';
+  const canPost = !!((S.compose.text||'').trim() || m);
+  return `<div class="cs-bd" id="csbd"><div class="cs">
+    <div class="cs-hd"><b>새 로그</b><button class="cs-x" id="csx" aria-label="닫기">✕</button></div>
+    <textarea class="cs-ta" id="csta" placeholder="지금 무슨 생각이에요?">${S.compose.text||''}</textarea>
+    ${prev}
+    <div class="cs-row">
+      <button class="cs-add" id="csphoto">📷 사진</button>
+      <button class="cs-add" id="csvideo">🎥 영상</button>
+    </div>
+    <button class="cs-post" id="cspost"${canPost?'':' disabled'}>올리기</button>
+  </div></div>`;
+}
+function submitCompose(){
+  if(!S.compose) return;
+  const txt=(S.compose.text||'').trim(), m=S.compose.media;
+  if(!txt && !m) return;
+  const d=new Date(), p=x=>String(x).padStart(2,'0'), now=p(d.getHours())+':'+p(d.getMinutes());
+  let log;
+  if(m && m.kind==='vid') log={id:'my_'+d.getTime(), t:'vid', at:now, cap:txt, src:m.url, side:'l', work:null};
+  else if(m)              log={id:'my_'+d.getTime(), t:'ph',  at:now, cap:txt||'사진', bg:'center/cover no-repeat url('+m.url+')', side:'l', work:null};
+  else                    log={id:'my_'+d.getTime(), t:'note',at:now, text:txt, tone:'y', side:'l', work:null};
+  STREAM.unshift(log);
+  S.compose=null;
+  if(S.view!=='mine' || S.profile!=='me'){ S.view='mine'; S.profile='me'; }
+  render();
+  offToast('로그를 올렸어요');
+}
+
 /* ── 미니 플레이어 ── 곡·리스트명은 실제 데이터(NOWPLAY)에서 온다 */
 let NOWPLAY={label:'발견', cnt:0, nm:'', tm:'', src:''};
 
@@ -1939,8 +2010,10 @@ function render(){
     if(el)el.scrollIntoView({block:'start'});
   }
   document.getElementById('storyview').innerHTML = S.storyIdx!==null ? storyViewer() : '';
+  document.getElementById('composeview').innerHTML = S.compose ? composeSheet() : '';
   renderMini();
   bind();
+  syncStoryAudio();     // 스토리 데모면 실제 소리 재생
 }
 
 function bind(){
@@ -1958,7 +2031,7 @@ function bind(){
     e.stopPropagation(); goProfile(b.dataset.prof2);
   });
   document.querySelectorAll('[data-svprof]').forEach(b=>b.onclick=e=>{
-    e.stopPropagation(); S.storyIdx=null; goProfile(b.dataset.svprof);
+    e.stopPropagation(); S.storyIdx=null; try{AUDIO.pause();}catch(_){} goProfile(b.dataset.svprof);
   });
   /* 팔로워 / 팔로잉 */
   document.querySelectorAll('[data-flist]').forEach(b=>b.onclick=()=>{
@@ -2244,7 +2317,37 @@ function bind(){
     LISTS.unshift({id, nm:w.nm+' 리스트', cnt:1, pub:0, cov:[w.id], tracks:[{nm:w.nm, by:w.by, dur:w.dur}]});
     S.addlist=false; S.list=id; S.view='list'; render();
   };
-  document.querySelectorAll('[data-lt]').forEach(b=>b.onclick=()=>{S.ltype=+b.dataset.lt;render()});
+  /* 도구줄: 사진→카메라, 생각/메모→글 작성 (음성/녹음/음원은 다음 단계) */
+  document.querySelectorAll('[data-lt]').forEach(b=>b.onclick=()=>{
+    S.ltype=+b.dataset.lt; const lab=b.dataset.l;
+    if(lab==='사진'){ S.compose={text:'',media:null}; render(); setTimeout(()=>{const el=document.getElementById('cphoto'); if(el)el.click();},60); return; }
+    if(lab==='생각'||lab==='메모'){ S.compose={text:'',media:null}; render(); return; }
+    render();
+  });
+  /* 새 로그 ＋ (FAB) → 작성 시트 열기 */
+  document.querySelectorAll('.fab').forEach(b=>b.onclick=()=>{ S.compose={text:'',media:null}; render(); });
+  /* 작성 시트 컨트롤 (매 렌더 재바인딩) */
+  if(S.compose){
+    const bd=document.getElementById('csbd'), x=document.getElementById('csx');
+    const ta=document.getElementById('csta'), post=document.getElementById('cspost');
+    const cph=document.getElementById('csphoto'), cvd=document.getElementById('csvideo');
+    const close=()=>{ S.compose=null; render(); };
+    if(bd)bd.onclick=e=>{ if(e.target===bd) close(); };
+    if(x)x.onclick=close;
+    if(ta)ta.oninput=()=>{ S.compose.text=ta.value; if(post)post.disabled=!((ta.value||'').trim()||S.compose.media); };
+    if(cph)cph.onclick=()=>{ const el=document.getElementById('cphoto'); if(el)el.click(); };
+    if(cvd)cvd.onclick=()=>{ const el=document.getElementById('cvideo'); if(el)el.click(); };
+    if(post)post.onclick=submitCompose;
+  }
+  /* 카메라/갤러리 파일 입력 (1회 바인딩) */
+  const cpho=document.getElementById('cphoto');
+  if(cpho && !cpho.__b){ cpho.__b=1; cpho.onchange=()=>{ const f=cpho.files&&cpho.files[0];
+    if(f){ if(!S.compose)S.compose={text:'',media:null}; if(S.compose.media&&S.compose.media.url){try{URL.revokeObjectURL(S.compose.media.url)}catch(_){}}
+      S.compose.media={kind:'ph',url:URL.createObjectURL(f)}; render(); } cpho.value=''; }; }
+  const cvid=document.getElementById('cvideo');
+  if(cvid && !cvid.__b){ cvid.__b=1; cvid.onchange=()=>{ const f=cvid.files&&cvid.files[0];
+    if(f){ if(!S.compose)S.compose={text:'',media:null}; if(S.compose.media&&S.compose.media.url){try{URL.revokeObjectURL(S.compose.media.url)}catch(_){}}
+      S.compose.media={kind:'vid',url:URL.createObjectURL(f)}; render(); } cvid.value=''; }; }
   document.querySelectorAll('.play').forEach(p=>p.onclick=e=>{
     e.stopPropagation();
     const box=p.closest('.dplayer')||p.closest('.fy');
