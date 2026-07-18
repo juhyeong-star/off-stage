@@ -936,7 +936,7 @@ let ROOM={
 };
 
 /* Trending — 첫 진입. 다양한 사람들의 로그를 음악·사진·글 섞어서 */
-const TREND=[
+let TREND=[
   {who:'Seoul Music High School (SMHS)', c:'shpink', t:'snd', nm:'이런일이 생기면', sub:'Demo v2 · 02:52', tags:['#인디','#락'], rx:63},
   {who:'조연우', c:'yellow', t:'ph', cap:'합주실 4시간째', at:'17:20',
    bg:'radial-gradient(circle at 25% 30%,#6a4a20,transparent 60%),radial-gradient(circle at 80% 70%,#2a1a3a,transparent 55%),#141014', rx:28},
@@ -945,7 +945,7 @@ const TREND=[
   {who:'현수윤', c:'purple', t:'ph', cap:'가사 노트', at:'22:40',
    bg:'radial-gradient(circle at 60% 20%,#3a2a5c,transparent 55%),radial-gradient(circle at 15% 85%,#1a3a3a,transparent 60%),#101018', rx:22},
 ];
-const FORYOU=[
+let FORYOU=[
   {t:'snd', at:'14:20', nm:'이런일이 생기면', who:'SMHS', c:'shpink', dur:'02:52', rx:38},
   {t:'snd', at:'03:10', nm:'싸이코', who:'PEEK', c:'coral', dur:'0:31', rx:27},
   {t:'snd', at:'09:45', nm:'궤적', who:'전아름', c:'green', dur:'0:07', rx:16},
@@ -1285,7 +1285,7 @@ function roomFull(){
 
 /* For You — 소리만. 자동재생. 일상은 안 보여준다 */
 /* 팔로우한 사람들의 개별 로그 — 피드에 섞인다 */
-const FOLLOWLOG=[
+let FOLLOWLOG=[
   {who:'PEEK', c:'coral', t:'snd', cap:'훅 8마디 갈아엎음', dur:'0:31', at:'15:00', rx:42},
   {who:'MINLEE', c:'blue', t:'ph', cap:'보컬 부스 들어감', at:'15:00', rx:31,
    bg:'radial-gradient(circle at 70% 25%,#5c3050,transparent 55%),radial-gradient(circle at 20% 80%,#20305c,transparent 60%),#12121a'},
@@ -1780,14 +1780,16 @@ function relMissing(){
   return m;
 }
 
-/* ── 미니 플레이어 ── */
+/* ── 미니 플레이어 ── 곡·리스트명은 실제 데이터(NOWPLAY)에서 온다 */
+let NOWPLAY={label:'발견', cnt:0, nm:'', tm:''};
 function renderMini(){
   const m=document.getElementById('mini');
-  m.innerHTML = (S.mini.on && !(S.view==='home'&&S.mode==='slide'))
+  const _lab=NOWPLAY.label+(NOWPLAY.cnt?' · '+NOWPLAY.cnt+'곡':'');
+  m.innerHTML = (S.mini.on && NOWPLAY.nm && !(S.view==='home'&&S.mode==='slide'))
     ? `<div class="mini ${S.mini.playing?'playing':''}">
-        <div class="mini-top"><span>새벽 작업용 · 12곡</span><button id="mx" aria-label="닫기">✕</button></div>
+        <div class="mini-top"><span>${_lab}</span><button id="mx" aria-label="닫기">✕</button></div>
         <div class="mini-btm"><button class="miniplay" id="mp" aria-label="재생">${S.mini.playing?'⏸':'▶'}</button>
-          <span class="nm">나야</span><span class="tm">02:45</span>
+          <span class="nm">${NOWPLAY.nm}</span><span class="tm">${NOWPLAY.tm||''}</span>
           <button class="minilist" id="mlist" aria-label="재생목록">☰</button></div></div>` : '';
   const mp=document.getElementById('mp'), mx=document.getElementById('mx'), ml=document.getElementById('mlist');
   if(mp)mp.onclick=()=>{S.mini.playing=!S.mini.playing;renderMini()};
@@ -2192,7 +2194,7 @@ setInterval(()=>{
       id:x.id, title:x.title||'무제', artist:(x.profiles&&x.profiles.name)||'익명',
       tags:Array.isArray(x.tags)?x.tags:[], audio:x.audio_url||'',
       cover:(x.cover_url&&/^https?:\/\//.test(x.cover_url))?x.cover_url:'',
-      demo:!!x.is_demo, pid:x.project_id||('p_'+x.id), ts:x.created_at
+      demo:!!x.is_demo, pid:x.project_id||('p_'+x.id), ts:x.created_at, likes:(x.likes_count||0)
     }; });
     var byArtist={}; tracks.forEach(function(t){ (byArtist[t.artist]=byArtist[t.artist]||[]).push(t); });
     var artists=Object.keys(byArtist);
@@ -2225,6 +2227,73 @@ setInterval(()=>{
       STREAM=byArtist[meA].slice(0,8).map(function(t,i){
         return t.audio ? {id:'l'+i, t:'snd', at:tm(t.ts), nm:t.title, dur:'', side:(i%2?'r':'l'), work:null}
                        : {id:'l'+i, t:'note', at:tm(t.ts), text:'#'+(t.tags[0]||t.title), tone:(i%2?'b':'y'), side:(i%2?'r':'l'), work:null};
+      });
+    }
+
+    // ── 홈 피드(TREND/FORYOU/FOLLOWLOG)도 실제 트랙으로 — 목업(PEEK 등) 완전 제거 ──
+    var cut=function(s,n){ s=String(s||''); return s.length>n ? s.slice(0,n-1)+'…' : s; };
+    var feedTracks=tracks.slice(0,60);
+    if(feedTracks.length){
+      // TREND = 대표 카드: 오디오→snd, 커버→ph, 그 외→note. 시각·색·반응은 데이터에서.
+      TREND=feedTracks.slice(0,8).map(function(t){
+        var base={who:cut(t.artist,18), c:colOf(t.artist), at:tm(t.ts), rx:(t.likes||0)};
+        if(t.audio){ base.t='snd'; base.nm=cut(t.title,20); base.sub=cut((t.demo?'Demo':'Track')+(t.tags[0]?' · '+t.tags[0]:''),24); base.tags=t.tags.slice(0,2).map(function(x){return '#'+String(x).replace(/^#/,'');}); }
+        else if(t.cover){ base.t='ph'; base.cap=cut(t.title,20); base.bg=GRADS[(base.who.length)%GRADS.length]; base.img=t.cover; }
+        else { base.t='note'; base.text=cut(t.title,40); base.tone=(t.tags.length%2?'b':'y'); }
+        return base;
+      });
+      // FORYOU = 오디오 트랙만 (없으면 아무 트랙)
+      var au=feedTracks.filter(function(t){return t.audio;}); if(!au.length) au=feedTracks;
+      FORYOU=au.slice(0,6).map(function(t){
+        return {t:'snd', at:tm(t.ts), nm:cut(t.title,20), who:cut(t.artist,18), c:colOf(t.artist), dur:'', rx:(t.likes||0)};
+      });
+      // FOLLOWLOG = 팔로우한 사람들 로그 — 서로 다른 아티스트 우선
+      var seen={}, fl=[];
+      feedTracks.forEach(function(t){ if(fl.length>=6) return; if(seen[t.artist]) return; seen[t.artist]=1;
+        if(t.audio) fl.push({who:cut(t.artist,18), c:colOf(t.artist), t:'snd', cap:cut(t.title,20), dur:'', at:tm(t.ts), rx:(t.likes||0)});
+        else if(t.cover) fl.push({who:cut(t.artist,18), c:colOf(t.artist), t:'ph', cap:cut(t.title,20), at:tm(t.ts), rx:(t.likes||0), bg:GRADS[(t.title.length)%GRADS.length], img:t.cover});
+        else fl.push({who:cut(t.artist,18), c:colOf(t.artist), t:'note', text:cut(t.title,40), at:tm(t.ts), tone:(t.tags.length%2?'y':'b'), rx:(t.likes||0)});
+      });
+      if(fl.length) FOLLOWLOG=fl;
+      // 미니 플레이어 = 실제 첫 오디오 트랙, 리스트명 '발견'
+      var first=(au[0]||feedTracks[0]);
+      if(first){ NOWPLAY={label:'발견', cnt:au.length||feedTracks.length, nm:cut(first.title,20), tm:''}; }
+    }
+
+    // ── 합주실(ROOM) 시간대 카드도 실제 아티스트 4명으로 ── (PEEK/MINLEE/전아름 목업 제거)
+    var roomA=artists.slice(0,4);
+    if(roomA.length){
+      var rslots=['12:00','15:00','18:00','21:00']; var NR={};
+      rslots.forEach(function(sl,si){
+        NR[sl]=roomA.map(function(a,ai){
+          var ts=byArtist[a]||[]; var t=ts[(si+ai)%(ts.length||1)];
+          var base={who:cut(a,14), c:colOf(a)}; var pick=(si+ai)%3;
+          if(!t || pick===2){ base.t='empty'; }
+          else if(t.cover && pick===0){ base.t='ph'; base.cap=cut(t.title,16); base.bg=GRADS[(ai+si)%GRADS.length]; }
+          else if(t.audio){ base.t='snd'; base.cap=cut(t.title,16); base.dur=''; }
+          else if(pick===0){ base.t='ph'; base.cap=cut(t.title,16); base.bg=GRADS[(ai+si)%GRADS.length]; }
+          else { base.t='note'; base.text=cut(t.title,18); }
+          return base;
+        });
+      });
+      ROOM=NR;
+    }
+
+    // ── 라운드(ROUNDS) 후보 도형도 실제 곡/아티스트로 ── (한 라운드 안에서 아티스트 중복 방지)
+    var pool=tracks.slice(0);
+    if(pool.length){
+      var SHP=['hex','star','circle']; var pi=0;
+      ROUNDS.forEach(function(rd){
+        var used={};
+        rd.cands=rd.cands.map(function(cd,ci){
+          var t=null, tries=0;
+          while(tries++<pool.length){ var cand=pool[(pi++)%pool.length]; if(!used[cand.artist]){ t=cand; used[cand.artist]=1; break; } }
+          if(!t) t=pool[(pi++)%pool.length];
+          var nc={t:[cut(t.title,16), cut(t.artist,14)], s:SHP[ci%3], c:colOf(t.artist),
+                  v:(t.likes||cd.v||0), x:cd.x, y:cd.y, bd:cd.bd};
+          if(cd.me) nc.me=1;
+          return nc;
+        });
       });
     }
   }catch(e){ console.warn('[offlog] real data load failed', e); }
