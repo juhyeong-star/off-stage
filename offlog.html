@@ -1,0 +1,2237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OFFLOG — 시안 v34</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Black+Han+Sans&family=Gaegu:wght@700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#000; --card:#161618; --card2:#1F1F23; --line:#2A2A2E;
+  --txt:#F5F5F2; --muted:#8A8A90;
+  --pink:#FF5FE0; --mint:#53E0C8; --lemon:#FFE94A;
+  --paper:#FFF3A6; --paper2:#CFEBFF; --ink:#2B2417;
+  --green:#9FE84C; --shpink:#F06CB4; --coral:#E8695A;
+  --blue:#7B8BE8; --yellow:#F2C94C; --purple:#B48CE8;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#050505;min-height:100vh;display:flex;justify-content:center;padding:16px 8px 40px;
+  font-family:'Noto Sans KR',sans-serif;-webkit-font-smoothing:antialiased}
+.phone{width:100%;max-width:400px;background:var(--bg);color:var(--txt);border-radius:44px;border:3px solid var(--pink);
+  box-shadow:0 0 0 1px rgba(255,95,224,.35),0 0 38px rgba(255,95,224,.35);overflow:hidden;position:relative}
+.screen{padding:16px 14px 120px;height:840px;overflow-y:auto;scrollbar-width:none}
+.screen::-webkit-scrollbar{display:none}
+
+/* ── 헤더 ── */
+.hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;min-height:38px}
+.brand{font-family:'Fredoka';font-weight:600;font-size:17px;letter-spacing:.14em;color:var(--mint)}
+.htitle{font-size:15px;font-weight:700;flex:1;text-align:center}
+.htitle small{display:block;font-size:10.5px;color:var(--muted);font-weight:400;margin-top:1px}
+.circ{width:34px;height:34px;border-radius:50%;background:var(--card2);border:none;color:var(--txt);font-size:14px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;flex-shrink:0}
+.circ:focus-visible{outline:2px solid var(--pink)}
+.hd .r{display:flex;gap:7px}
+
+/* ── Demo 업로드 ── */
+.upfile{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px;margin-bottom:14px}
+.upwv{display:flex;align-items:center;gap:2px;height:60px;margin-bottom:12px}
+.upwv i{flex:1;border-radius:1.5px;background:var(--mint);opacity:.8;height:calc(var(--h)*1%);min-height:2px}
+.upmeta{display:flex;align-items:center;gap:8px}
+.upmeta b{font-size:13.5px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.upmeta small{font-size:11px;color:var(--muted);font-family:'Black Han Sans';flex-shrink:0}
+.upx{background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:2px 4px;flex-shrink:0}
+.upx:focus-visible{outline:2px solid var(--pink);border-radius:4px}
+.fld{margin-bottom:16px}
+.fld label{display:block;font-size:11px;color:var(--muted);font-weight:700;margin:0 4px 7px}
+.fld input{width:100%;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:13px;
+  color:var(--txt);font-family:inherit;font-size:14px}
+.fld input:focus{outline:none;border-color:var(--mint)}
+.tagadd{background:transparent;border:1px dashed var(--line);color:var(--muted);border-radius:99px;
+  padding:5px 12px;font-size:11.5px;cursor:pointer;font-family:inherit}
+.tagadd:hover{border-color:var(--mint);color:var(--mint)}
+
+/* ── 이벤트 신청 ── */
+.opt{font-style:normal;color:#5a5a62;font-weight:400;margin-left:4px}
+.rulen{font-size:10.5px;color:var(--muted);text-align:center;margin:9px 0 0}
+.evrow{width:100%;display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;padding:12px 13px;margin-bottom:7px;cursor:pointer;font-family:inherit;color:var(--txt);text-align:left}
+.evrow.on{border-color:var(--mint)}
+.evrow:focus-visible{outline:2px solid var(--mint)}
+.evck{width:17px;height:17px;border-radius:50%;border:1.5px solid var(--line);flex-shrink:0;position:relative}
+.evrow.on .evck{border-color:var(--mint);background:var(--mint)}
+.evrow.on .evck::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:10px;color:#04231d;font-weight:900}
+.evnm{flex:1;min-width:0}
+.evnm b{font-size:13px;font-weight:700;display:block}
+.evnm small{font-size:10.5px;color:var(--muted)}
+.evwarn{font-size:9.5px;color:var(--lemon);flex-shrink:0}
+
+.applied{display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--mint);
+  border-radius:13px;padding:13px;font-size:13px}
+.ap-dot{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 8px var(--mint);flex-shrink:0}
+.applied b{color:var(--mint)}
+.ap-ch{margin-left:auto;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:99px;
+  padding:5px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+.ap-ch:hover{border-color:var(--mint);color:var(--mint)}
+.ap-ch:focus-visible{outline:2px solid var(--mint)}
+
+/* ── 곡 선택 시트 ── */
+.sheet-bd{position:absolute;inset:0;z-index:44;background:rgba(0,0,0,.6);backdrop-filter:blur(2px)}
+.pksheet{position:absolute;left:0;right:0;bottom:0;z-index:45;background:var(--card2);
+  border-top:1px solid var(--line);border-radius:24px 24px 0 0;padding:16px 14px 26px;
+  animation:up .3s cubic-bezier(.34,1.3,.64,1)}
+@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.pkhd{display:flex;align-items:center;margin-bottom:12px}
+.pkhd b{font-size:14.5px;font-weight:700}
+.pkx{margin-left:auto;background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;padding:3px}
+.pkx:focus-visible{outline:2px solid var(--pink);border-radius:5px}
+.pkwarn{background:rgba(255,233,74,.09);border:1px solid rgba(255,233,74,.28);border-radius:11px;
+  padding:9px 12px;font-size:11.5px;color:var(--lemon);margin-bottom:10px}
+.pkwarn b{font-weight:700}
+.pkrow{width:100%;display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;padding:11px 13px;margin-bottom:7px;cursor:pointer;font-family:inherit;color:var(--txt);text-align:left}
+.pkrow:hover{border-color:var(--mint)}
+.pkrow.cur{border-color:var(--mint)}
+.pkrow:focus-visible{outline:2px solid var(--mint)}
+.pkplay{width:28px;height:28px;border-radius:50%;background:var(--mint);color:#04231d;font-size:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center}
+.pknm{flex:1;min-width:0}
+.pknm b{font-size:13.5px;font-weight:700;display:block}
+.pknm small{font-size:10px;color:var(--muted)}
+.pkdur{font-family:'Black Han Sans';font-size:11.5px;color:var(--muted);flex-shrink:0}
+.pkcur{font-size:9.5px;color:var(--mint);flex-shrink:0}
+.pknote{font-size:10.5px;color:var(--muted);text-align:center;margin-top:11px}
+
+/* ── 본인만 보이는 것 ── */
+.mark .t{display:flex;align-items:center;gap:6px}
+.mark.r .t{justify-content:flex-end}
+.edit{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:0 3px;
+  letter-spacing:1px;line-height:1;opacity:.55}
+.edit:hover{opacity:1;color:var(--mint)}
+.edit:focus-visible{outline:2px solid var(--mint);border-radius:4px}
+
+/* ── 작품 소속 칩 — 이 로그가 어느 작품 것인지 (표시 전용) ── */
+.wchip{background:var(--mint);border:1px solid var(--mint);color:#04231d;border-radius:99px;
+  padding:2px 8px;font-size:9.5px;font-weight:700;font-family:inherit;line-height:1.5;
+  max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── 곡 안에서 로그 담기 ── */
+.sechd{display:flex;align-items:center;justify-content:space-between;margin:20px 4px 10px}
+.pullbtn{background:transparent;border:1px solid var(--mint);color:var(--mint);border-radius:99px;
+  padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+.pullbtn:focus-visible{outline:2px solid var(--mint)}
+.plrow.on{border-color:var(--mint);background:rgba(83,224,200,.06)}
+.plck{width:17px;height:17px;border-radius:5px;border:1.5px solid var(--line);flex-shrink:0;position:relative}
+.plrow.on .plck{border-color:var(--mint);background:var(--mint)}
+.plrow.on .plck::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:#04231d;font-weight:900}
+.plth{width:32px;height:32px;border-radius:8px;flex-shrink:0;background-size:cover;background-color:#22222a;
+  display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted)}
+.plth.paper{background:var(--paper);color:var(--ink)}
+.plth.snd{background:linear-gradient(150deg,#1e1e26,#141419);color:var(--mint)}
+.cta:disabled{opacity:.35;cursor:default}
+
+/* ── 발매 ── */
+.pksheet.tall{max-height:76%;overflow-y:auto;scrollbar-width:none}
+.pksheet.tall::-webkit-scrollbar{display:none}
+.pksub{font-size:10px;color:var(--muted);margin-left:7px}
+.rsec{font-size:11px;color:var(--muted);font-weight:700;margin:15px 4px 8px}
+.rsec:first-of-type{margin-top:4px}
+.ubox{width:100%;display:flex;align-items:center;gap:11px;background:var(--card);border:1.5px dashed var(--line);
+  border-radius:14px;padding:13px;cursor:pointer;font-family:inherit;color:var(--txt);text-align:left}
+.ubox:hover{border-color:var(--mint)}
+.ubox.on{border-style:solid;border-color:var(--mint)}
+.ubox:focus-visible{outline:2px solid var(--mint)}
+.ub-ic{width:34px;height:34px;border-radius:9px;background:var(--card2);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--mint)}
+.artimg{width:44px;height:44px;border-radius:8px;flex-shrink:0;background-size:cover;background-position:center}
+.ub-t{flex:1;min-width:0}
+.ub-t b{font-size:13px;font-weight:700;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ub-t small{font-size:10px;color:var(--muted)}
+.ub-ok{color:var(--mint);font-size:14px;flex-shrink:0}
+.instck{width:100%;display:flex;align-items:center;gap:9px;background:none;border:none;color:var(--txt);
+  font-family:inherit;font-size:12.5px;cursor:pointer;padding:4px 4px 10px}
+.instck.on{color:var(--mint)}
+.instck.on .evck{border-color:var(--mint);background:var(--mint)}
+.instck.on .evck::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:10px;color:#04231d;font-weight:900}
+.instck:focus-visible{outline:2px solid var(--mint);border-radius:8px}
+.lyr{width:100%;min-height:110px;background:var(--card);border:1px solid var(--line);border-radius:13px;
+  padding:12px;color:var(--txt);font-family:inherit;font-size:12.5px;line-height:1.6;resize:vertical}
+.lyr:focus{outline:none;border-color:var(--mint)}
+.crow{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.clab{font-size:11.5px;color:var(--muted);width:48px;flex-shrink:0;font-weight:700}
+.cin{flex:1;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 11px;
+  color:var(--txt);font-family:inherit;font-size:12.5px}
+.cin:focus{outline:none;border-color:var(--mint)}
+.missn{font-size:11px;color:var(--coral);text-align:center;margin-top:9px}
+.relbtn{width:calc(100% - 24px);background:transparent;border:1.5px solid var(--lemon);color:var(--lemon);border-radius:13px;
+  padding:13px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 12px 12px}
+.relbtn:focus-visible{outline:2px solid #fff}
+.stagebtn{width:calc(100% - 24px);background:transparent;border:1.5px solid var(--mint);color:var(--mint);
+  border-radius:13px;padding:13px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 12px 8px}
+.stagebtn:focus-visible{outline:2px solid #fff}
+/* VOTE 신청 — 로그 스트림과 분리된 하단 독립 CTA. 스토리를 다 보고 난 뒤의 자리 */
+.votecta{margin:18px 0 8px;text-align:center}
+.votecta .stagebtn.full{width:100%;margin:0}
+.votecta small{display:block;margin-top:9px;font-size:10.5px;color:var(--muted)}
+.reldone{display:flex;align-items:center;gap:8px;margin:0 12px 12px;padding:11px 13px;background:var(--card2);
+  border:1px solid var(--line);border-radius:12px;font-size:11.5px;color:var(--muted)}
+.rdate{width:100%;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:11px;
+  color:var(--txt);font-family:'Black Han Sans';font-size:13.5px;color-scheme:dark}
+.rdate:focus{outline:none;border-color:var(--mint)}
+.dsps{display:flex;flex-wrap:wrap;gap:6px}
+.dsp{background:var(--card);border:1px solid var(--line);color:var(--muted);border-radius:99px;
+  padding:6px 12px;font-size:11px;cursor:pointer;font-family:inherit}
+.dsp.on{background:var(--mint);border-color:var(--mint);color:#04231d;font-weight:700}
+.dsp:focus-visible{outline:2px solid var(--mint)}
+.relsum{font-size:11.5px;color:var(--muted);text-align:center;margin:18px 0 12px;line-height:1.5}
+.relsum b{color:var(--mint)}
+.profol{margin:8px 0 0;font-size:11.5px;padding:6px 18px}
+.profol.on{background:var(--mint);color:#04231d}
+
+/* ── 슬라이드 뷰 — 한 화면에 로그 하나. 위아래로 넘긴다 ── */
+.slwrap{position:absolute;left:0;right:0;top:0;bottom:64px;z-index:40;background:#000;
+  overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.slwrap::-webkit-scrollbar{display:none}
+.sl{height:100%;scroll-snap-align:start;scroll-snap-stop:always;position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center}
+.sl .bgimg{position:absolute;inset:0;background-size:cover;background-position:center}
+.sl.paper{background:var(--paper)}
+.sl.paper.b{background:var(--paper2)}
+.sl.snd{background:linear-gradient(165deg,#17171d,#0a0a0e)}
+.slwho{position:absolute;top:16px;left:16px;z-index:6;display:flex;align-items:center;gap:8px;
+  font-size:13.5px;font-weight:700;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.7)}
+.sl.paper .slwho{color:var(--ink);text-shadow:none}
+.slfol{background:transparent;border:1px solid var(--mint);color:var(--mint);border-radius:99px;
+  padding:4px 11px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:3px}
+.slfol.on{background:var(--mint);color:#04231d}
+.slfol:focus-visible{outline:2px solid #fff}
+.slmid{position:relative;z-index:3;text-align:center;padding:0 34px;width:100%}
+.slts{font-family:'Black Han Sans';font-size:46px;letter-spacing:1px;color:#fff;text-shadow:0 2px 20px rgba(0,0,0,.8)}
+.sl.snd .slts{font-size:34px;color:rgba(255,255,255,.55);text-shadow:none}
+.sl.paper .slts{color:rgba(43,36,23,.3);text-shadow:none;font-size:17px;margin-bottom:14px}
+.slcap{font-size:16px;color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.85);margin-top:4px;line-height:1.4}
+.sl.snd .slcap{color:#fff;text-shadow:none}
+.slnote{font-family:'Gaegu';font-weight:700;font-size:27px;line-height:1.5;color:var(--ink)}
+.slwave{display:flex;align-items:center;gap:3px;height:96px;margin:22px auto 18px;max-width:290px}
+.slwave i{flex:1;background:#3a3a44;border-radius:2px;height:calc(var(--h)*1%);transform-origin:center;min-height:2px}
+.sl.playing .slwave i{background:var(--mint);animation:wv 1s ease-in-out infinite;animation-delay:calc(var(--d)*-.09s)}
+.slpill{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.18);
+  border-radius:99px;padding:8px 18px;font-size:13px;color:#fff;cursor:pointer;font-family:inherit;margin-top:8px}
+.slpill b{font-family:'Black Han Sans';font-weight:400;letter-spacing:.5px}
+.slpill em{font-style:normal;color:var(--mint)}
+.slrx{position:absolute;bottom:20px;left:16px;right:16px;z-index:6;display:flex;align-items:center;gap:11px}
+.sl.paper .slrx .rxn{color:rgba(43,36,23,.55)}
+.slroom{display:flex;gap:8px;padding:0 16px;width:100%;z-index:3;position:relative}
+.slroom .rm{width:auto;flex:1;height:190px}
+.slhint{position:absolute;bottom:64px;left:50%;transform:translateX(-50%);z-index:6;color:rgba(255,255,255,.3);
+  font-size:19px;animation:bounce 1.8s ease-in-out infinite;pointer-events:none}
+@keyframes bounce{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,5px)}}
+.slx{position:absolute;top:14px;right:14px;z-index:8;width:34px;height:34px;border-radius:50%;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.18);
+  color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-family:inherit;line-height:1}
+.slx:focus-visible{outline:2px solid #fff}
+
+.showhint{font-size:10.5px;color:#55555d;text-align:center;margin-top:10px}
+
+/* ── ♪ 탭 세그먼트: LIST | 투표 ── */
+.lseg{display:flex;background:var(--card);border-radius:99px;padding:4px;margin-bottom:16px}
+.lseg button{flex:1;background:none;border:none;color:var(--muted);font-family:'Fredoka';font-weight:600;
+  letter-spacing:.12em;font-size:12px;padding:9px 0;border-radius:99px;cursor:pointer}
+.lseg button.on{background:var(--card2);color:var(--txt)}
+.lseg button:focus-visible{outline:2px solid var(--mint)}
+/* 도형이 카테고리다: ◇음원 ○공연 ⬡추천 */
+.vcats{display:flex;gap:8px;margin-bottom:18px}
+.vcat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:13px 0 11px;
+  cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px;
+  transition:border-color .25s,transform .2s}
+.vcat:hover{transform:translateY(-2px)}
+.vcat small{font-size:10.5px;font-weight:700;color:var(--muted)}
+.vcat.on{border-color:rgba(255,233,74,.5);background:linear-gradient(170deg,rgba(255,233,74,.06),transparent 65%),var(--card)}
+.vcat.on small{color:var(--lemon)}
+.vcat.on .vcsh{filter:drop-shadow(0 0 9px rgba(255,233,74,.5))}
+.vcat:focus-visible{outline:2px solid var(--mint)}
+.vcsh{display:flex}
+.rhead{text-align:center;margin:6px 0 13px}
+.rtitle{font-family:'Black Han Sans';font-size:17px;letter-spacing:.5px;display:flex;align-items:center;
+  justify-content:center;gap:7px;flex-wrap:wrap}
+.rtitle i{font-style:normal;color:var(--lemon);font-size:12px}
+.rcd{font-family:'Black Han Sans';font-size:11.5px;color:var(--lemon);letter-spacing:.5px}
+.rwhat{font-size:11.5px;color:var(--txt);margin-top:5px;line-height:1.5}
+.rprize{font-size:10.5px;color:var(--mint);margin-top:3px}
+.crow2{background:var(--card);border:1px solid transparent;border-radius:18px;margin-bottom:9px;overflow:hidden;
+  cursor:pointer;transition:transform .2s,border-color .25s}
+.crow2:hover{transform:translateY(-2px);border-color:var(--line)}
+.crow2.voted{border-color:rgba(83,224,200,.4)}
+.crow2.top{border-color:rgba(255,233,74,.4)}
+.crow2.top .cshape{filter:drop-shadow(0 0 8px rgba(255,233,74,.55))}
+.chd{display:flex;align-items:center;gap:10px;padding:11px 12px;cursor:pointer}
+.cshape{flex-shrink:0;display:flex;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+.cplay{width:30px;height:30px;border-radius:50%;background:transparent;border:1.5px solid var(--mint);
+  color:var(--mint);font-size:10px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.cplay.on{background:var(--mint);color:#04231d}
+.cinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.cttl{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.cinfo b{font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px}
+.cinfo small{font-size:10.5px;color:var(--muted)}
+.cprev{font-size:11px;color:#9a9aa0;margin-top:1px;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;display:block;max-width:100%}
+.cprev.note{font-family:'Gaegu';font-weight:700;color:#c7c7cc;font-size:12.5px}
+.cprev.snd{color:var(--mint)}
+.cprev.empty{color:#4a4a52;font-style:italic}
+.toptag{font-style:normal;font-size:8.5px;font-weight:700;color:#241f00;background:var(--lemon);
+  border-radius:99px;padding:1.5px 6px;flex-shrink:0;white-space:nowrap}
+.mytag{font-style:normal;font-size:8.5px;font-weight:700;color:var(--mint);
+  border:1px solid rgba(83,224,200,.35);border-radius:99px;padding:1px 5px;flex-shrink:0;white-space:nowrap}
+.cv{font-family:'Black Han Sans';font-size:16px;letter-spacing:.5px;flex-shrink:0}
+.crow2.voted .cv{color:var(--mint)}
+.cbar{height:3px;background:var(--line)}
+.cbar i{display:block;height:100%;background:var(--pink);transition:width .5s}
+.cex{border-top:1px dashed var(--line);padding:11px 12px;background:rgba(255,255,255,.015)}
+.cexh{font-family:'Gaegu';font-size:13px;color:var(--mint);margin-bottom:8px}
+.clog{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px}
+.clog .at{font-family:'Black Han Sans';font-size:10px;color:var(--muted);flex-shrink:0;margin-top:3px;letter-spacing:.5px}
+.cnote{flex:1;background:var(--paper);color:var(--ink);border-radius:8px;padding:8px 10px;
+  font-family:'Gaegu';font-weight:700;font-size:13.5px;line-height:1.4}
+.cnote.b{background:var(--paper2)}
+.csnd{flex:1;display:flex;align-items:center;gap:7px;background:var(--card2);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--muted)}
+.csnd em{font-style:normal;color:var(--mint)}
+.cgo{background:none;border:none;color:var(--muted);font-size:11px;font-family:inherit;cursor:pointer;padding:3px 0 0;display:block}
+.cgo:hover{color:var(--mint)}
+
+/* ── 플레이리스트 ── */
+.lrow{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.lcov{position:relative;width:62px;height:44px;flex-shrink:0}
+.lcov i{position:absolute;top:0;width:44px;height:44px;border-radius:9px;border:1.5px solid var(--bg);background-size:cover}
+.lcov.big{width:110px;height:74px}
+.lcov.big i{width:74px;height:74px;border-radius:12px;border-width:2px}
+.lnm{flex:1;min-width:0}
+.lnm b{font-size:13.5px;font-weight:700;display:block}
+.lnm small{font-size:10.5px;color:var(--muted)}
+.lshare{background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;padding:5px;flex-shrink:0}
+.lshare:hover{color:var(--mint)}
+.lshare:focus-visible{outline:2px solid var(--mint);border-radius:6px}
+.newlist{width:100%;background:transparent;border:1.5px dashed var(--line);color:var(--muted);border-radius:14px;
+  padding:14px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:14px}
+.newlist:hover{border-color:var(--mint);color:var(--mint)}
+.newlist:focus-visible{outline:2px solid var(--mint)}
+.lhero{display:flex;gap:14px;align-items:center;padding:6px 2px 16px}
+.lhinfo{flex:1;min-width:0}
+.lhinfo h3{font-size:17px;font-weight:700}
+.lhinfo small{font-size:11px;color:var(--muted)}
+.lhbtn{display:flex;gap:7px;margin-top:10px}
+.lhbtn .cta{padding:9px 14px;font-size:12px}
+.lhbtn .savebtn{padding:9px 14px;font-size:12px;flex:0 0 auto}
+.trow{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--line)}
+.tno{font-family:'Black Han Sans';font-size:11px;color:#4a4a52;width:18px;flex-shrink:0}
+.tplay{width:26px;height:26px;border-radius:50%;background:transparent;border:1.5px solid var(--mint);color:var(--mint);
+  font-size:9px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.tplay.on{background:var(--mint);color:#04231d}
+.tplay:focus-visible{outline:2px solid var(--mint)}
+.tnm{flex:1;min-width:0}
+.tnm b{font-size:13px;font-weight:700;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tnm small{font-size:10px;color:var(--muted)}
+.tdur{font-family:'Black Han Sans';font-size:11px;color:var(--muted);flex-shrink:0}
+.tx{background:none;border:none;color:#3f3f47;font-size:11px;cursor:pointer;padding:4px;flex-shrink:0}
+.tx:hover{color:var(--coral)}
+.shlink{display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:11px 13px;margin-bottom:10px}
+.shlink span{flex:1;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shcopy{background:var(--mint);border:none;color:#04231d;border-radius:99px;padding:5px 13px;
+  font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0}
+.evck.on{border-color:var(--mint);background:var(--mint)}
+.evck.on::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:10px;color:#04231d;font-weight:900}
+.shrow{display:flex;gap:8px;margin-top:12px}
+.shbtn{flex:1;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:12px 0;
+  cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px}
+.shbtn span{font-size:18px;line-height:1}
+.shbtn small{font-size:9.5px;color:var(--muted)}
+.shbtn:hover{border-color:var(--mint)}
+.shbtn:focus-visible{outline:2px solid var(--mint)}
+
+/* ── 내 로그 카드 — 칩과 수정은 카드 안 오버레이 ── */
+.fcard.my .rcard{overflow:visible}
+.mychip{position:absolute;top:11px;left:11px;z-index:6;background:var(--mint);border:none;color:#04231d;
+  border-radius:99px;padding:3px 9px;font-size:9.5px;font-weight:700;line-height:1.5;
+  max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.edit.mine{position:absolute;top:9px;right:11px;z-index:6;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);
+  border:none;color:#fff;width:26px;height:26px;border-radius:50%;font-size:12px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;letter-spacing:0;opacity:.7;padding:0}
+.edit.mine:hover{opacity:1}
+.rcard.paper .edit.mine{background:rgba(43,36,23,.12);color:var(--ink)}
+
+/* ── 피드 카드 — Work 스토리와 같은 문법 ── */
+.fcard{margin-bottom:16px;position:relative}
+.fcard .rcard{margin-bottom:0}
+.fcard .pop{left:13px;bottom:44px}
+
+/* ── 같은 시각 카드 — 룸이 피드 안으로 ── */
+.roomfeed{cursor:pointer}
+.rmrow{display:flex;gap:6px;overflow-x:auto;padding:10px 13px 0;scrollbar-width:none}
+.rmrow::-webkit-scrollbar{display:none}
+.rm{position:relative;flex-shrink:0;width:104px;height:126px;border-radius:14px;overflow:hidden;
+  background-size:cover;background-position:center;background-color:#141418;
+  display:flex;align-items:center;justify-content:center}
+.rm.empty{background:#141418;background-image:radial-gradient(rgba(255,255,255,.045) 1px,transparent 1px);background-size:3px 3px}
+.rm.snd{background:linear-gradient(160deg,#17171d,#0e0e13)}
+.rm.paper{background:var(--paper2)}
+.rmw{position:absolute;top:7px;left:8px;font-size:9px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.7);
+  max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rm.empty .rmw{color:var(--muted);text-shadow:none}
+.rmts{font-family:'Black Han Sans';font-size:17px;color:rgba(255,255,255,.09);letter-spacing:.5px}
+.rmts.on{color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.8)}
+.rmwv{position:absolute;left:9px;right:9px;top:34px;bottom:34px;display:flex;align-items:center;gap:1.5px}
+.rmwv i{flex:1;background:#3a3a44;border-radius:1px;height:calc(var(--h)*1%);min-height:1px}
+.rmnote{font-family:'Gaegu';font-weight:700;font-size:12.5px;color:var(--ink);padding:0 9px;text-align:center;line-height:1.35}
+
+/* ── 아바타 열 — 인스타 스토리 문법. 원 = 아티스트, 탭하면 전체화면 스토리 ── */
+.avrow{display:flex;gap:11px;overflow-x:auto;padding:2px 2px 14px;scrollbar-width:none}
+.avrow::-webkit-scrollbar{display:none}
+.av{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;
+  background:none;border:none;font-family:inherit;padding:2px 0 0}
+.av:focus-visible{outline:2px solid var(--mint);border-radius:14px}
+.av-ring{width:56px;height:56px;border-radius:50%;padding:2.5px;display:flex;align-items:center;justify-content:center}
+.av-ring.new{background:conic-gradient(from 210deg,var(--mint),var(--pink),var(--lemon),var(--mint))}
+.av-ring.seen{background:var(--line)}
+.av-ring.discover{background:transparent;border:2px dashed #3a3a42}
+.av-in{width:100%;height:100%;border-radius:50%;border:2.5px solid var(--bg);display:flex;align-items:center;justify-content:center;
+  font-family:'Black Han Sans';font-size:18px;color:#141105;position:relative}
+.av-plus{position:absolute;bottom:-1px;right:-1px;width:17px;height:17px;border-radius:50%;background:var(--mint);
+  border:2px solid var(--bg);display:flex;align-items:center;justify-content:center;font-size:10px;color:#04231d;font-weight:900}
+.av small{font-size:9.5px;color:var(--muted);max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av.discover small{color:#63636b}
+
+/* ── 스토리 뷰어 — 전체화면 오버레이 ── */
+.svwrap{position:absolute;inset:0;z-index:60;background:#000;display:flex;flex-direction:column}
+.svbars{display:flex;gap:4px;padding:10px 12px 0;position:relative;z-index:6}
+.svbar{flex:1;height:2.5px;border-radius:99px;background:rgba(255,255,255,.32);overflow:hidden}
+.svbar i{display:block;height:100%;width:0%;background:#fff}
+.svbar.done i{width:100%!important;animation:none!important}
+.svbar.active i{animation:svfill linear forwards}
+@keyframes svfill{from{width:0%}to{width:100%}}
+.svwrap.paused .svbar.active i{animation-play-state:paused}
+.svhd{display:flex;align-items:center;gap:8px;padding:11px 13px 7px;position:relative;z-index:6}
+.svhd b{font-size:12.5px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.svhd .tm{font-size:11px;color:rgba(255,255,255,.55);flex-shrink:0}
+.svfol{background:var(--mint);color:#04231d;border:none;border-radius:99px;padding:5px 12px;font-size:11px;
+  font-weight:700;cursor:pointer;font-family:inherit;margin-left:4px;flex-shrink:0}
+.svfol:focus-visible{outline:2px solid #fff}
+.svclose{margin-left:auto;background:none;border:none;color:#fff;font-size:19px;cursor:pointer;padding:4px;opacity:.85;flex-shrink:0}
+.svclose:focus-visible{outline:2px solid #fff;border-radius:6px}
+.svbody{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.svbg{position:absolute;inset:0;background-size:cover;background-position:center}
+.svtap{position:absolute;top:0;bottom:0;width:32%;z-index:5;background:none;border:none;padding:0}
+.svtap.l{left:0}
+.svtap.r{right:0}
+.svmid{position:relative;z-index:2;text-align:center;padding:0 30px;width:100%}
+.svts{font-family:'Black Han Sans';font-size:24px;color:rgba(255,255,255,.5);letter-spacing:1px;margin-bottom:10px}
+.svcap{font-size:17px;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.7);line-height:1.42}
+.svwave{display:flex;align-items:center;gap:3px;height:64px;margin:0 auto 18px;max-width:270px}
+.svwave i{flex:1;background:rgba(255,255,255,.88);border-radius:2px;height:calc(var(--h)*1%);transform-origin:center}
+.svpill{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.14);border-radius:99px;
+  padding:6px 15px;font-size:12px;color:#fff;margin-top:5px}
+.svnote{background:var(--paper);color:var(--ink);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:0 32px}
+.svnote.b{background:var(--paper2)}
+.svnote p{font-family:'Gaegu';font-weight:700;font-size:25px;line-height:1.5;white-space:pre-line}
+.svrx{position:relative;z-index:6;display:flex;align-items:center;gap:11px;padding:14px 16px 20px}
+
+/* ── 피드 카드 ── */
+.log{position:relative;border-radius:22px;background:var(--card);border:1px solid var(--line);overflow:hidden;margin-bottom:8px}
+.log-hd{display:flex;align-items:center;gap:7px;padding:11px 13px 0;font-size:12.5px;font-weight:700}
+.log-hd .dot{width:16px;height:16px;border-radius:50%;flex-shrink:0}
+.log-media{position:relative;margin:9px 0 0;height:186px;display:flex;align-items:center;justify-content:center}
+.log-media .bgimg{position:absolute;inset:0;background-size:cover;background-position:center;z-index:1}
+.grain{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.055) 1px,transparent 1px);
+  background-size:3px 3px;pointer-events:none;z-index:2}
+.log-center{position:relative;z-index:3;text-align:center}
+.ts{font-family:'Black Han Sans';font-size:36px;letter-spacing:1px;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.75)}
+.cap{font-size:12.5px;color:rgba(255,255,255,.92);text-shadow:0 1px 8px rgba(0,0,0,.8);margin-top:1px}
+.shape{border:none;background:transparent;padding:0;cursor:pointer;display:flex;transition:transform .15s;
+  filter:drop-shadow(0 2px 5px rgba(0,0,0,.45))}
+.shape.hit{transform:scale(1.2)}
+.shape:focus-visible{outline:2px solid #fff;border-radius:6px}
+.rxn{font-family:'Black Han Sans';font-size:13px;color:var(--muted);margin-left:2px}
+/* 반응 도형 = 카드 위 하단 오버레이 · 팔로우 = 카드 우측 상단 오버레이 (v30) */
+.frx{position:absolute;left:11px;right:11px;bottom:11px;z-index:6;display:flex;align-items:center;gap:6px}
+.rcard.paper .rxn{color:var(--ink)}
+.ffol{position:absolute;top:11px;right:11px;z-index:6;background:rgba(0,0,0,.42);backdrop-filter:blur(4px);
+  border:1px solid rgba(255,255,255,.28);color:#fff;border-radius:99px;
+  padding:4px 12px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.ffol:hover{border-color:var(--mint);color:var(--mint)}
+.ffol:focus-visible{outline:2px solid #fff}
+.ffol.on{background:var(--mint);border-color:var(--mint);color:#04231d}
+.rcard.paper .ffol{background:rgba(43,36,23,.1);border-color:rgba(43,36,23,.25);color:var(--ink)}
+.log-meta{display:flex;align-items:center;gap:13px;padding:9px 13px 12px;font-size:11.5px;color:var(--muted)}
+.log-meta b{font-family:'Black Han Sans';color:var(--txt);font-weight:400;margin-left:3px}
+.log-meta .go{margin-left:auto;color:var(--muted);font-weight:700}
+.pop{position:absolute;left:13px;bottom:56px;z-index:9;font-family:'Gaegu';font-size:15px;font-weight:700;color:#fff;
+  background:rgba(0,0,0,.75);border-radius:99px;padding:2px 11px;pointer-events:none;animation:pp .9s ease-out forwards;white-space:nowrap}
+@keyframes pp{0%{opacity:0;transform:translateY(4px)}20%{opacity:1}100%{opacity:0;transform:translateY(-24px)}}
+.cmt{display:flex;align-items:center;gap:7px;padding:0 6px;margin-bottom:16px;font-size:11.5px;color:var(--muted)}
+.cmt .dot{width:18px;height:18px;border-radius:50%;flex-shrink:0}
+.cmt b{color:var(--txt);font-weight:700;margin-right:4px}
+.cmt .anchor{font-family:'Black Han Sans';color:var(--mint);font-size:10.5px;margin-right:5px;letter-spacing:.5px}
+.cmt.artist b{color:var(--mint)}
+.cmt .re{color:var(--mint);font-size:9.5px;margin-right:4px}
+.cmt .all{margin-left:auto;color:var(--muted);font-size:10.5px;flex-shrink:0}
+
+/* ── Following — 시간대 로그룸 (셋로그 문법: 미디어가 카드를 가득 채운다) ── */
+.roomhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.slots{display:flex;gap:7px;align-items:center}
+.slot{width:7px;height:7px;border-radius:50%;background:var(--line);border:none;cursor:pointer;padding:0;transition:all .25s}
+.slot.on{background:var(--txt);transform:scale(1.3)}
+.slot.on.filled{background:var(--pink);box-shadow:0 0 8px rgba(255,95,224,.8)}
+.slot:focus-visible{outline:2px solid var(--mint)}
+.mkvid{background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:99px;padding:6px 13px;
+  font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px}
+.mkvid i{font-style:normal;color:var(--mint)}
+.mkvid:focus-visible{outline:2px solid var(--mint)}
+.slotlab{text-align:center;font-family:'Black Han Sans';font-size:13px;color:var(--muted);letter-spacing:1.5px;margin-bottom:14px}
+.slotlab b{color:var(--txt)}
+
+.rcard{position:relative;border-radius:22px;overflow:hidden;margin-bottom:10px;height:200px;background:#141418}
+.rcard.snd{cursor:pointer;background:linear-gradient(160deg,#17171d,#0e0e13)}
+.rcard.paper{background:var(--paper)}
+.rcard.paper.b{background:var(--paper2)}
+.rcard.empty{height:150px}
+.rcard .bgimg{position:absolute;inset:0;background-size:cover;background-position:center}
+.grainy{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:3px 3px;pointer-events:none;z-index:3}
+.rcard.paper .grainy{display:none}
+
+.rwho{position:absolute;top:11px;left:11px;z-index:6;display:flex;align-items:center;gap:7px;
+  font-size:13px;font-weight:700;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.7)}
+.rcard.paper .rwho{color:var(--ink);text-shadow:none}
+.rcard.empty .rwho{color:var(--muted);text-shadow:none}
+.smile{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.smile svg{width:19px;height:19px}
+
+.rmid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:4;text-align:center;padding:0 44px;pointer-events:none}
+.rts{font-family:'Black Han Sans';font-size:32px;letter-spacing:1px;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.8)}
+.rcap{font-size:13px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.85);margin-top:1px}
+.rcard.empty .rts{color:rgba(255,255,255,.075);text-shadow:none}
+.rcard.paper .rts{color:rgba(43,36,23,.35);text-shadow:none;font-size:15px;margin-bottom:7px}
+.rnote{font-family:'Gaegu';font-weight:700;font-size:19.5px;line-height:1.42;color:var(--ink);white-space:pre-line}
+
+/* 소리 카드 — 웨이브폼이 곧 사진이다 */
+.bigwv{position:absolute;left:14px;right:14px;top:46px;bottom:42px;display:flex;align-items:center;gap:2px;z-index:2}
+.bigwv i{flex:1;border-radius:1.5px;background:#3a3a44;height:calc(var(--h)*1%);transform-origin:center;min-height:2px}
+.rcard.playing .bigwv i{background:var(--mint);animation:wv 1s ease-in-out infinite;animation-delay:calc(var(--d)*-.09s)}
+.sndpill{display:inline-flex;align-items:center;gap:6px;margin-top:10px;background:rgba(0,0,0,.55);
+  border:1px solid rgba(255,255,255,.16);border-radius:99px;padding:5px 13px;font-size:11px;color:#fff}
+.sndpill b{font-family:'Black Han Sans';font-weight:400;letter-spacing:.5px}
+.sndpill em{font-style:normal;color:var(--mint);font-size:10px}
+
+.uphint2{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:6;background:rgba(0,0,0,.55);
+  border:1px dashed rgba(255,255,255,.35);color:#ddd;font-size:10px;border-radius:99px;padding:3px 10px;white-space:nowrap}
+.has-img .uphint2{display:none}
+.has-img .grainy{display:none}
+
+.rbub{position:absolute;bottom:11px;left:11px;z-index:6;display:flex;align-items:center;gap:6px}
+.rbub .bb{background:#fff;color:#141414;border-radius:99px;padding:4px 11px;font-size:11.5px;font-weight:500;
+  box-shadow:0 3px 10px rgba(0,0,0,.4)}
+.rheart{position:absolute;bottom:10px;right:12px;z-index:6;font-size:19px;cursor:pointer;background:none;border:none;
+  padding:0;opacity:.35;transition:opacity .2s,transform .2s}
+.rheart.on{opacity:1;transform:scale(1.12)}
+.rheart:focus-visible{outline:2px solid #fff;border-radius:6px}
+.rreply{position:absolute;top:40%;right:12px;z-index:6;font-size:17px;color:#fff;background:none;border:none;
+  cursor:pointer;opacity:.75;padding:0;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+.rcard.paper .rreply{color:var(--ink);text-shadow:none;opacity:.5}
+.rcard.empty .rreply{display:none}
+.rreply:focus-visible{outline:2px solid #fff;border-radius:6px}
+.keep{position:absolute;top:11px;right:12px;z-index:6;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
+  border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:99px;padding:3px 9px;font-size:9.5px;font-weight:700;
+  cursor:pointer;font-family:inherit}
+.keep.on{background:var(--mint);color:#04231d;border-color:var(--mint)}
+.keep:focus-visible{outline:2px solid #fff}
+.rcard.paper .keep{background:rgba(43,36,23,.1);color:var(--ink);border-color:rgba(43,36,23,.25)}
+.rcard.paper .keep.on{background:var(--mint);color:#04231d;border-color:var(--mint)}
+.expire{text-align:center;font-size:10.5px;color:var(--muted);margin:14px 0 4px;line-height:1.6}
+.expire b{color:var(--mint)}
+.fy{position:relative;border-radius:22px;overflow:hidden;margin-bottom:12px;
+  background:linear-gradient(165deg,#1b1b24,#0c0c11);border:1px solid var(--line);padding:16px}
+.fy .fwho{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;margin-bottom:12px}
+.fy .fwho .dot{width:16px;height:16px;border-radius:50%;flex-shrink:0}
+.fol{margin-left:auto;background:transparent;border:1px solid var(--mint);color:var(--mint);border-radius:99px;
+  padding:4px 12px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.fol:focus-visible{outline:2px solid var(--mint)}
+.fol.on{background:var(--mint);color:#04231d}
+.fy .fnm{font-family:'Black Han Sans';font-size:23px;letter-spacing:.5px}
+.fy .fsub{font-size:11px;color:var(--muted);margin-top:1px}
+.fybig{display:flex;align-items:center;gap:2.5px;height:62px;margin:15px 0 13px}
+.fybig i{flex:1;border-radius:2px;background:var(--line);height:calc(var(--h)*1%);transform-origin:center;min-height:2px}
+.fy.playing .fybig i{background:var(--mint);animation:wv 1s ease-in-out infinite;animation-delay:calc(var(--d)*-.09s)}
+.fyctrl{display:flex;align-items:center;gap:7px}
+.fytags{display:flex;gap:5px;margin-left:auto}
+.fytags span{background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:3px 9px;font-size:10px;color:var(--muted)}
+.fyhint{text-align:center;font-size:10.5px;color:var(--muted);margin:2px 0 14px;font-family:'Gaegu';font-size:13px}
+
+/* ── Trending — 지금 표를 받는 중 ── */
+.trbar{display:flex;align-items:center;justify-content:space-between;background:var(--card2);border:1px solid var(--line);
+  border-radius:14px;padding:10px 13px;margin-bottom:6px;font-size:11.5px;color:var(--muted)}
+.trbar b{font-family:'Black Han Sans';color:var(--lemon);font-size:14px;letter-spacing:.5px}
+.trow{display:flex;align-items:center;gap:10px;padding:13px 4px;border-bottom:1px solid var(--line);cursor:pointer;
+  background:none;border-left:none;border-right:none;border-top:none;width:100%;font-family:inherit;color:var(--txt);text-align:left}
+.trow:last-of-type{border-bottom:none}
+.trow:focus-visible{outline:2px solid var(--mint);border-radius:8px}
+.rank{font-family:'Black Han Sans';font-size:19px;width:22px;text-align:center;color:var(--muted);flex-shrink:0}
+.trow.top .rank{color:var(--lemon)}
+.trow .tnm{flex:1;min-width:0}
+.trow .tnm b{font-size:13.5px;font-weight:700;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trow .tnm small{font-size:10.5px;color:var(--muted)}
+.mv{font-size:10px;font-family:'Black Han Sans';width:26px;text-align:right;flex-shrink:0}
+.mv.up{color:var(--green)}.mv.dn{color:var(--coral)}.mv.eq{color:var(--muted)}
+.vct{font-family:'Black Han Sans';font-size:15px;width:40px;text-align:right;flex-shrink:0}
+
+/* ── 미니 플레이어 ── */
+.mini{position:absolute;left:14px;right:14px;bottom:74px;z-index:19;background:rgba(28,28,32,.96);backdrop-filter:blur(10px);
+  border:1px solid var(--line);border-radius:16px;padding:10px 12px}
+.mini-top{display:flex;align-items:center;justify-content:space-between;font-size:10.5px;color:var(--mint);font-weight:700}
+.mini-top button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px}
+.mini-btm{display:flex;align-items:center;gap:9px;margin-top:5px}
+.mini-btm .nm{font-size:13.5px;font-weight:700;flex:1}
+.mini-btm .tm{font-family:'Black Han Sans';font-size:12px;color:var(--muted)}
+.minilist{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:3px 2px;flex-shrink:0}
+.minilist:hover{color:var(--mint)}
+.minilist:focus-visible{outline:2px solid var(--mint);border-radius:5px}
+.miniplay{width:28px;height:28px;border-radius:50%;background:var(--mint);border:none;color:#04231d;font-size:11px;cursor:pointer;flex-shrink:0}
+
+/* ── 로그 — 자유 스트림 ── */
+/* 남기는 도구: 폼이 아니라 손닿는 자리에 놓인 것들 */
+.tools{display:flex;gap:7px;justify-content:center;margin-bottom:20px}
+.tool{width:38px;height:38px;border-radius:50%;background:transparent;border:1px solid var(--line);color:var(--txt);
+  font-size:15px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;
+  transition:border-color .25s,transform .25s;position:relative;flex-shrink:0}
+.tool:hover{transform:translateY(-2px)}
+.tool.on{border-color:var(--mint);box-shadow:0 0 12px rgba(83,224,200,.25)}
+.tool:focus-visible{outline:2px solid var(--mint)}
+.tool::after{content:attr(data-l);position:absolute;bottom:-15px;left:50%;transform:translateX(-50%);
+  font-size:9px;color:var(--muted);white-space:nowrap;opacity:0;transition:opacity .25s}
+.tool.on::after{opacity:1;color:var(--mint)}
+
+/* 소리가 울리면 종이 전체가 반응한다 */
+.stream{position:relative;padding-bottom:12px}
+.ambient{position:absolute;inset:-40px -20px;pointer-events:none;z-index:0;opacity:0;transition:opacity .8s;
+  background:radial-gradient(circle at 50% 40%,rgba(83,224,200,.10),transparent 62%)}
+.stream.sounding .ambient{opacity:1}
+.marks{position:relative;z-index:1}
+
+.mark{position:relative;margin-bottom:20px;width:84%}
+.mark.r{margin-left:auto}
+.mark .t{font-family:'Black Han Sans';font-size:11px;color:var(--muted);letter-spacing:.6px;margin-bottom:6px;padding:0 3px}
+.mark.r .t{text-align:right}
+
+/* 생각글 */
+.m-note{background:var(--paper);color:var(--ink);border-radius:3px;padding:15px 15px 12px;font-family:'Gaegu';
+  box-shadow:0 9px 24px rgba(0,0,0,.5)}
+.m-note.b{background:var(--paper2)}
+.m-note p{font-size:18px;line-height:1.42;font-weight:700;white-space:pre-line}
+
+/* 소리 — 카드가 아니라 종이 위에 그은 선 */
+.m-snd{display:flex;align-items:center;gap:10px;padding:2px 3px}
+.dotplay{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--mint);background:transparent;color:var(--mint);
+  font-size:9px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.dotplay:focus-visible{outline:2px solid var(--mint)}
+.mark.playing .dotplay{background:var(--mint);color:#04231d}
+.sline{flex:1;display:flex;align-items:center;gap:2px;height:28px}
+.sline i{flex:1;border-radius:1px;background:var(--muted);opacity:.38;height:calc(var(--h)*1%);transform-origin:center;min-height:1px;
+  transition:opacity .3s}
+.mark.playing .sline i{opacity:1;background:var(--mint);animation:wv 1s ease-in-out infinite;animation-delay:calc(var(--d)*-.09s)}
+.m-snd .lab{font-size:12px;color:var(--muted);font-family:'Black Han Sans';letter-spacing:.5px;flex-shrink:0}
+.m-snd .nm{font-size:13.5px;font-weight:700;flex-shrink:0}
+
+/* 사진 */
+.m-ph{background:#fbfbf7;border-radius:2px;padding:7px 7px 22px;box-shadow:0 9px 24px rgba(0,0,0,.5)}
+.m-ph .img{height:132px;border-radius:1px;position:relative;overflow:hidden}
+.m-ph .img .grain{z-index:1}
+.m-ph .cc{position:absolute;bottom:5px;left:0;right:0;text-align:center;font-family:'Gaegu';font-size:14.5px;color:#3a3a3a}
+
+/* 이 소리를 Demo로 */
+.promote{background:none;border:none;color:var(--muted);font-size:11px;font-family:inherit;cursor:pointer;
+  padding:3px 0 0 39px;opacity:.7}
+.promote:hover{color:var(--mint);opacity:1}
+.promote:focus-visible{outline:2px solid var(--mint);border-radius:4px}
+
+.fab{display:block;margin:8px auto 0;width:54px;height:54px;border-radius:50%;background:transparent;border:1.5px solid var(--line);
+  color:var(--muted);font-size:24px;cursor:pointer;font-family:inherit;transition:border-color .25s,color .25s}
+.fab:hover{border-color:var(--mint);color:var(--mint)}
+.fab:focus-visible{outline:2px solid var(--mint)}
+
+/* 웨이브 */
+.play{width:36px;height:36px;border-radius:50%;border:none;font-size:13px;cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;background:var(--mint);color:#04231d}
+.play:focus-visible{outline:2px solid #fff}
+.wave{flex:1;display:flex;align-items:center;gap:2.5px;height:32px}
+.wave i{flex:1;border-radius:2px;transform-origin:center;background:var(--muted);opacity:.55;height:calc(var(--h)*1%)}
+.playing .wave i{opacity:1;background:var(--mint);animation:wv 1s ease-in-out infinite;animation-delay:calc(var(--d)*-.09s)}
+@keyframes wv{0%,100%{transform:scaleY(.55)}50%{transform:scaleY(1.15)}}
+.dur{font-size:11px;color:var(--muted);font-family:'Black Han Sans'}
+
+/* ── Demo 플레이어 ── */
+.dplayer{background:linear-gradient(170deg,#1a1a22,#0d0d12);border:1px solid var(--line);border-radius:22px;padding:22px 16px 18px;
+  text-align:center;margin-bottom:14px}
+.dplayer .big{font-family:'Black Han Sans';font-size:46px;letter-spacing:1px}
+.bigwave{display:flex;align-items:center;gap:2.5px;height:52px;margin:16px 0 18px}
+.bigwave i{flex:1;border-radius:2px;background:var(--line);height:calc(var(--h)*1%);transform-origin:center}
+.dplayer.playing .bigwave i{background:var(--mint);animation:wv 1s ease-in-out infinite;animation-delay:calc(var(--d)*-.09s)}
+.dctrl{display:flex;align-items:center;justify-content:center;gap:9px}
+.dctrl .play{width:42px;height:42px;font-size:15px}
+.sec{font-size:12px;font-weight:700;color:var(--muted);margin:0 4px 8px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.tags span{background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:5px 12px;font-size:11.5px;color:var(--txt)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:15px;margin-bottom:14px}
+.ph{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700}
+.ph em{font-family:'Black Han Sans';font-style:normal;color:var(--mint);font-size:16px}
+.strip{display:flex;gap:4px;margin:11px 0 9px}
+.cell{flex:1;height:22px;border-radius:5px;background:var(--card2);border:1px dashed var(--line)}
+.cell.f{background:repeating-linear-gradient(135deg,var(--mint),var(--mint) 5px,#3fbfa9 5px,#3fbfa9 10px);border:none}
+.note{font-size:11.5px;color:var(--muted);line-height:1.55;display:block}
+.cta{width:100%;background:var(--mint);border:none;border-radius:13px;padding:14px;font-family:inherit;
+  font-size:14px;font-weight:700;color:#04231d;cursor:pointer}
+.cta:focus-visible{outline:2px solid #fff}
+
+/* ── 발매 / 메이킹 필름 ── */
+.album{border-radius:22px;overflow:hidden;border:1px solid var(--line);margin-bottom:14px}
+.acover{height:190px;position:relative;background:
+  radial-gradient(circle at 50% 30%,rgba(255,233,74,.25),transparent 55%),
+  radial-gradient(circle at 20% 80%,#5c2040,transparent 60%),
+  radial-gradient(circle at 85% 75%,#1c2a5c,transparent 55%),#0d0a14;
+  display:flex;align-items:flex-end;padding:14px}
+.acover::before{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:4px 4px}
+.acover .film{position:relative;z-index:1}
+.acover .film b{font-family:'Fredoka';font-size:19px;font-weight:600;display:block}
+.acover .film small{font-size:11px;color:rgba(255,255,255,.75)}
+.tracks{background:var(--card);padding:6px 14px 14px}
+.trhd{font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 6px}
+.tr{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.tr:last-child{border:none}
+.tr .no{font-family:'Black Han Sans';font-size:11px;color:var(--muted);width:16px}
+.tr .nm{flex:1;font-weight:500}
+.tr .tm{font-family:'Black Han Sans';font-size:11.5px;color:var(--muted)}
+
+/* ── 마이 ── */
+.mine{text-align:center;padding:14px 0 18px}
+.mine .av-ring{width:74px;height:74px;margin:0 auto 9px}
+.mine .av-in{font-size:26px}
+.mine h3{font-size:17px;font-weight:700}
+.mine p{font-size:11.5px;color:var(--muted);margin-top:2px}
+.igrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}
+.icard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px}
+.icard b{font-family:'Black Han Sans';font-size:20px;display:block;margin-top:5px}
+.icard small{font-size:10.5px;color:var(--muted)}
+.chart{display:flex;align-items:flex-end;gap:2px;height:56px;margin:11px 0 4px}
+.chart i{flex:1;border-radius:2px 2px 0 0;background:var(--mint);min-height:2px;opacity:.8}
+.season{display:flex;justify-content:space-between;align-items:center;margin:14px 2px 0;position:relative}
+.season::before{content:'';position:absolute;left:6px;right:6px;top:5px;height:1.5px;background:var(--line)}
+.st{position:relative;display:flex;flex-direction:column;align-items:center;gap:5px}
+.st i{width:11px;height:11px;border-radius:50%;background:var(--line);border:2px solid var(--bg)}
+.st.done i{background:var(--mint)}
+.st.now i{background:var(--lemon);box-shadow:0 0 9px var(--lemon)}
+.st small{font-size:9.5px;color:var(--muted)}
+.st.now small{color:var(--lemon);font-weight:700}
+
+/* ── 하단 5탭 ── */
+.nav{position:absolute;left:0;right:0;bottom:0;z-index:20;display:flex;background:rgba(10,10,12,.96);
+  backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:9px 0 18px}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-family:inherit;font-size:9.5px;font-weight:700;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;padding:2px 0}
+.nav button i{font-style:normal;font-size:17px;line-height:1;opacity:.65}
+.nav button.on{color:var(--mint)}
+.nav button.on i{opacity:1}
+.nav button:focus-visible{outline:2px solid var(--mint);border-radius:8px}
+/* 내 플레이리스트 — 하단 가운데 */
+.navctr{position:relative}
+.navctr i{width:48px;height:48px;border-radius:50%;background:var(--card2);border:1.5px solid var(--mint);
+  display:flex;align-items:center;justify-content:center;font-size:21px!important;color:var(--mint);
+  margin-top:-16px;opacity:1!important;transition:all .25s;
+  box-shadow:0 0 0 4px var(--bg),0 4px 14px rgba(0,0,0,.6)}
+.navctr:hover i{transform:translateY(-2px)}
+.navctr.on i{background:var(--mint);color:#04231d;
+  box-shadow:0 0 0 4px var(--bg),0 0 20px rgba(83,224,200,.55)}
+/* ── 마이: LOG | WORKS ── */
+.mprof{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0 16px;text-align:center}
+.mprof .smile{width:64px;height:64px}
+.mprof .smile svg{width:44px;height:44px}
+.mprof h3{font-size:17px;font-weight:700}
+.mprof p{font-size:11px;color:var(--muted)}
+.mprof .smile{cursor:pointer}
+.fcount{display:flex;align-items:center;gap:16px;margin-top:9px}
+.fc{background:none;border:none;color:var(--txt);font-family:inherit;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:1px;padding:2px 4px}
+.fc b{font-family:'Black Han Sans';font-size:15px;letter-spacing:.5px}
+.fc small{font-size:9.5px;color:var(--muted)}
+.fc:hover b{color:var(--mint)}
+.fc:focus-visible{outline:2px solid var(--mint);border-radius:8px}
+.fcdiv{width:1px;height:22px;background:var(--line)}
+.people{position:relative}
+.pdot{position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--mint);
+  box-shadow:0 0 6px var(--mint)}
+.srch{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+  border-radius:13px;padding:10px 12px;margin-bottom:14px}
+.srchi{color:var(--muted);font-size:14px;flex-shrink:0}
+.srch input{flex:1;background:none;border:none;color:var(--txt);font-family:inherit;font-size:13px;outline:none;min-width:0}
+.srch input::placeholder{color:#55555d}
+.srch:focus-within{border-color:var(--mint)}
+.srchx{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 4px;flex-shrink:0}
+.seg button b{font-family:'Black Han Sans';font-weight:400;font-size:11px;color:var(--muted);margin-left:3px}
+.seg button.on b{color:var(--mint)}
+.prow{display:flex;align-items:center;gap:11px;padding:11px 4px;border-bottom:1px solid var(--line)}
+.pgo{display:flex;align-items:center;gap:11px;flex:1;min-width:0;cursor:pointer}
+.pnm{min-width:0}
+.pnm b{font-size:13.5px;font-weight:700;display:block}
+.pnm small{font-size:10.5px;color:var(--muted)}
+.plfol{flex-shrink:0}
+.svgo{display:flex;align-items:center;gap:8px;cursor:pointer;min-width:0}
+.svgo b{font-size:12.5px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+.seg{display:flex;background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:4px;margin-bottom:18px}
+.seg button{flex:1;border:none;background:transparent;color:var(--muted);font-family:'Fredoka';font-size:12.5px;
+  letter-spacing:.12em;font-weight:600;padding:9px 0;border-radius:99px;cursor:pointer}
+.seg button.on{background:var(--card);color:var(--txt)}
+.seg button:focus-visible{outline:2px solid var(--mint)}
+
+.workrow{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);
+  border-radius:20px;padding:13px;margin-bottom:10px}
+.wthumb{width:56px;height:56px;border-radius:12px;flex-shrink:0;position:relative;overflow:hidden}
+.wplay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.28);
+  border:none;color:#fff;font-size:15px;cursor:pointer}
+.wplay:focus-visible{outline:2px solid #fff}
+.winfo{flex:1;min-width:0}
+.winfo b{font-size:15px;font-weight:700;display:block}
+.winfo small{font-size:11px;color:var(--muted)}
+.openst{background:transparent;border:1px solid var(--mint);color:var(--mint);border-radius:99px;
+  padding:7px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0}
+.openst:focus-visible{outline:2px solid var(--mint)}
+
+/* ── Work: 참여 중인 이벤트 ── */
+.evstat.one{display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;padding:11px 13px;margin:0 0 10px}
+.evbadge{font-size:9px;font-weight:700;color:var(--mint);border:1px solid rgba(83,224,200,.35);
+  border-radius:99px;padding:2px 7px;flex-shrink:0}
+.evstat.one b{font-size:13px;font-weight:700;flex:1;min-width:0}
+.evcd{font-family:'Black Han Sans';font-size:11px;color:var(--lemon);letter-spacing:.5px;flex-shrink:0}
+
+/* ── Work — 음악이 위, 그 아래 모든 로그 ── */
+.whero{border-radius:24px;overflow:hidden;border:1px solid var(--line);margin-bottom:6px}
+.wcover{height:210px;position:relative;cursor:pointer}
+.wcover .bgimg{position:absolute;inset:0;background-size:cover;background-position:center}
+.wmeta{position:absolute;left:0;right:0;bottom:0;z-index:4;padding:14px;background:linear-gradient(transparent,rgba(0,0,0,.82))}
+.wmeta h2{font-family:'Black Han Sans';font-size:26px;letter-spacing:.5px;color:#fff}
+.wmeta small{font-size:11px;color:rgba(255,255,255,.78)}
+.wbtns{display:flex;gap:8px;padding:12px;background:var(--card)}
+.wbtns .cta{flex:1;padding:12px}
+.savebtn{flex:1;background:transparent;border:1px solid var(--line);color:var(--txt);border-radius:13px;
+  padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.savebtn.on{border-color:var(--mint);color:var(--mint)}
+.savebtn:focus-visible{outline:2px solid var(--mint)}
+
+.mchips{display:flex;gap:6px;overflow-x:auto;margin:2px 0 14px;scrollbar-width:none;padding-bottom:2px}
+.mchips::-webkit-scrollbar{display:none}
+.mchip{background:var(--card2);border:1px solid var(--line);color:var(--muted);border-radius:99px;
+  padding:6px 13px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.mchip.on{background:var(--mint);border-color:var(--mint);color:#04231d}
+.mchip:focus-visible{outline:2px solid var(--mint)}
+
+.daytl{border-left:1.5px dashed var(--line);margin:4px 0 8px 9px;padding-left:17px}
+.dayhd{position:relative;display:flex;align-items:baseline;gap:8px;margin:20px 0 10px}
+.dayhd::before{content:'';position:absolute;left:-23px;top:3px;width:10px;height:10px;border-radius:50%;
+  background:var(--mint);border:2px solid var(--bg)}
+.dayhd b{font-family:'Black Han Sans';font-size:16px;letter-spacing:.5px}
+.dayhd small{font-size:10.5px;color:var(--muted);font-family:'Black Han Sans'}
+.dayhd.rel::before{background:var(--lemon);box-shadow:0 0 10px var(--lemon)}
+.dayhd.rel b{color:var(--lemon)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="tri" viewBox="0 0 24 24"><polygon points="12,2.5 22.5,21 1.5,21" stroke-linejoin="round"/></symbol>
+  <symbol id="circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5"/></symbol>
+  <symbol id="diamond" viewBox="0 0 24 24"><polygon points="12,1.5 22.5,12 12,22.5 1.5,12" stroke-linejoin="round"/></symbol>
+  <symbol id="star" viewBox="0 0 24 24"><polygon points="12,1 14.3,6.46 19.78,4.22 17.54,9.7 23,12 17.54,14.3 19.78,19.78 14.3,17.54 12,23 9.7,17.54 4.22,19.78 6.46,14.3 1,12 6.46,9.7 4.22,4.22 9.7,6.46" stroke-linejoin="round"/></symbol>
+  <symbol id="hex" viewBox="0 0 24 24"><polygon points="12,1.5 21.5,7 21.5,17 12,22.5 2.5,17 2.5,7" stroke-linejoin="round"/></symbol>
+</defs></svg>
+
+<div class="phone">
+  <div class="screen" id="screen"><div id="body"></div></div>
+  <div id="slideview"></div>
+  <div id="storyview"></div>
+  <div id="mini"></div>
+  <div class="nav" id="nav">
+    <button data-v="home"><i>⌂</i>홈</button>
+    <button class="navctr" data-v="lists" aria-label="내 플레이리스트"><i>♪</i></button>
+    <button data-v="mine"><i>◉</i>마이</button>
+  </div>
+</div>
+
+<input type="file" id="rpicker" accept="image/*" style="display:none">
+<input type="file" id="apicker" accept="audio/*" style="display:none">
+<input type="file" id="artpicker" accept="image/*" style="display:none">
+
+<script>
+const V=getComputedStyle(document.documentElement), c=n=>V.getPropertyValue('--'+n).trim();
+
+/* 스토리 — 원 = 아티스트. 탭하면 그 사람이 방금 올린 로그가 전체화면으로 재생된다.
+   following:false 인 원도 섞여 있음 — 아직 안 팔로우하는 아티스트를 발견하는 자리.
+   ring: 팔로우+안봄=new(그라데이션 발광) / 팔로우+봄=seen(회색) / 안팔로우=discover(점선)   */
+let STORIES=[
+  {who:'PEEK', c:'coral', following:true, seen:false, items:[
+    {t:'snd', at:'21:00', cap:'훅 8마디 갈아엎음', dur:'0:31'},
+    {t:'ph', at:'23:40', cap:'자정까지 믹스. 도망 못 감',
+     bg:'radial-gradient(circle at 30% 25%,#4a2f66,transparent 60%),radial-gradient(circle at 80% 75%,#173f38,transparent 55%),#101014'},
+  ]},
+  {who:'MINLEE', c:'blue', following:true, seen:false, items:[
+    {t:'ph', at:'15:00', cap:'보컬 부스 들어감',
+     bg:'radial-gradient(circle at 70% 25%,#5c3050,transparent 55%),radial-gradient(circle at 20% 80%,#20305c,transparent 60%),#12121a'},
+  ]},
+  {who:'SMHS', c:'shpink', following:true, seen:true, items:[
+    {t:'snd', at:'02:56', cap:'목이 나와 잡았어요', dur:'0:14'},
+  ]},
+  {who:'전아름', c:'green', following:false, seen:false, items:[
+    {t:'snd', at:'18:00', cap:'푸가 스케치', dur:'0:22'},
+  ]},
+  {who:'김이든', c:'yellow', following:false, seen:false, items:[
+    {t:'note', at:'12:00', text:'가사 한 줄도 안 써짐', tone:'y'},
+  ]},
+];
+
+/* Following — 시간대별로 모은다. 한 슬롯 = 그 시각의 모두.
+   안 찍은 사람은 흐린 타임스탬프로 남는다 (셋로그 구조)      */
+const SLOTS=['12:00','15:00','18:00','21:00'];
+let ROOM={
+  '12:00':[
+    {who:'PEEK', c:'coral', t:'empty'},
+    {who:'MINLEE', c:'blue', t:'ph', cap:'스튜디오 가는 길',
+     bg:'radial-gradient(circle at 40% 30%,#3d4a7a,transparent 60%),radial-gradient(circle at 80% 80%,#2a3350,transparent 55%),#12141c'},
+    {who:'전아름', c:'green', t:'empty'},
+    {who:'김이든', c:'yellow', t:'note', text:'가사 한 줄도 안 써짐'},
+  ],
+  '15:00':[
+    {who:'PEEK', c:'coral', t:'snd', cap:'훅 8마디 갈아엎음', dur:'0:31',
+     bub:{who:'세밍', c:'shpink', txt:'이거다 ㄷㄷ'}, heart:1, keep:1},
+    {who:'MINLEE', c:'blue', t:'ph', cap:'보컬 부스 들어감',
+     bg:'radial-gradient(circle at 70% 25%,#5c3050,transparent 55%),radial-gradient(circle at 20% 80%,#20305c,transparent 60%),#12121a',
+     heart:1},
+    {who:'전아름', c:'green', t:'empty'},
+    {who:'김이든', c:'yellow', t:'snd', cap:'허밍 메모', dur:'0:07'},
+  ],
+  '18:00':[
+    {who:'PEEK', c:'coral', t:'note', text:'2절이 너무 착하다.\n더 삐딱하게 —'},
+    {who:'MINLEE', c:'blue', t:'empty'},
+    {who:'전아름', c:'green', t:'snd', cap:'푸가 스케치', dur:'0:22', keep:1},
+    {who:'김이든', c:'yellow', t:'empty'},
+  ],
+  '21:00':[
+    {who:'PEEK', c:'coral', t:'ph', cap:'자정까지 믹스. 도망 못 감',
+     bg:'radial-gradient(circle at 30% 25%,#4a2f66,transparent 60%),radial-gradient(circle at 80% 75%,#173f38,transparent 55%),#101014',
+     bub:{who:'jihyun', c:'blue', txt:'이 시간에 ㄷㄷ'}, heart:1},
+    {who:'MINLEE', c:'blue', t:'empty'},
+    {who:'전아름', c:'green', t:'empty'},
+    {who:'김이든', c:'yellow', t:'empty'},
+  ],
+};
+
+/* Trending — 첫 진입. 다양한 사람들의 로그를 음악·사진·글 섞어서 */
+const TREND=[
+  {who:'Seoul Music High School (SMHS)', c:'shpink', t:'snd', nm:'이런일이 생기면', sub:'Demo v2 · 02:52', tags:['#인디','#락'], rx:63},
+  {who:'조연우', c:'yellow', t:'ph', cap:'합주실 4시간째', at:'17:20',
+   bg:'radial-gradient(circle at 25% 30%,#6a4a20,transparent 60%),radial-gradient(circle at 80% 70%,#2a1a3a,transparent 55%),#141014', rx:28},
+  {who:'PEEK', c:'coral', t:'note', text:'파리 세션 드럼으로 간다.\n서울 테이크 폐기.', at:'18:05', tone:'b', rx:19},
+  {who:'박승빈', c:'green', t:'snd', nm:'아애이오우', sub:'허밍 · 0:14', tags:['#실험','#자작곡'], rx:41},
+  {who:'현수윤', c:'purple', t:'ph', cap:'가사 노트', at:'22:40',
+   bg:'radial-gradient(circle at 60% 20%,#3a2a5c,transparent 55%),radial-gradient(circle at 15% 85%,#1a3a3a,transparent 60%),#101018', rx:22},
+];
+const FORYOU=[
+  {t:'snd', at:'14:20', nm:'이런일이 생기면', who:'SMHS', c:'shpink', dur:'02:52', rx:38},
+  {t:'snd', at:'03:10', nm:'싸이코', who:'PEEK', c:'coral', dur:'0:31', rx:27},
+  {t:'snd', at:'09:45', nm:'궤적', who:'전아름', c:'green', dur:'0:07', rx:16},
+];
+
+/* Trending — 인기 차트가 아니라 무대에 가까워지는 순위 */
+const TRENDING=[
+  {r:1, nm:'이런일이 생기면', who:'Seoul Music High School (SMHS)', v:63, mv:'↑2'},
+  {r:2, nm:'아애이오우', who:'박승빈', v:41, mv:'↓1'},
+  {r:3, nm:'밀린수', who:'현수윤', v:37, mv:'↑1'},
+  {r:4, nm:'지하철노선도', who:'조연우', v:34, mv:'–'},
+  {r:5, nm:'7080', who:'taeHoon Cho', v:28, mv:'↓2'},
+];
+
+/* 하나의 스트림. 생각도 소리도 사진도 같은 무게로 섞여 있다.
+   소리는 별도 목적지가 아니라 여기 자연히 놓인 것.                 */
+/* work: 이 로그가 담긴 작품 id. null이면 아직 안 담김 = 2주 뒤 사라진다 */
+let STREAM=[
+  {id:'l1', t:'note', at:'02:55', text:'집에 가면 뭐 하고 놀지 ..\n오늘 넘 피곤', tone:'y', rot:-2.2, side:'l', work:null},
+  {id:'l2', t:'snd',  at:'02:45', nm:'나야', dur:'0:31', side:'r', work:'ml'},
+  {id:'l3', t:'ph',   at:'23:40', cap:'자정까지 믹스', side:'l', rot:1.6, work:'ml',
+   bg:'radial-gradient(circle at 70% 25%,#5c3050,transparent 55%),radial-gradient(circle at 20% 80%,#20305c,transparent 60%),#12121a'},
+  {id:'l4', t:'snd',  at:'11:00', nm:'허밍', dur:'0:07', side:'l', work:null},
+  {id:'l5', t:'note', at:'18:05', text:'드럼은 파리 세션 걸로.\n서울 테이크는 폐기.', tone:'b', rot:1.8, side:'r', work:null},
+];
+
+
+/* 투표 라운드 — 두 종류가 있다.
+   curated = 우리가 후보를 올린다. 신청 못 함. 테마로 묶는다.
+   open    = 아티스트가 신청해서 후보가 된다. 득표가 무대를 연다.   */
+let ROUNDS=[
+  {id:'jul', nm:'7월 발매 음악', cat:'music', type:'curated', by:'OFFLOG 선정',
+   sub:'이번 달 나온 곡 중에서', prize:'1위 → 8월 메인 배너 + 플레이리스트 상단',
+   what:'이번 달 발매된 곡 중 최고를 뽑는 라운드입니다',
+   end:Date.now()+6*864e5+12*36e5+33*6e4, applied:null,
+   cands:[
+     {t:['Summer Rain','PEEK'], s:'hex', c:'blue', v:88, x:34, y:1, bd:'7.1s'},
+     {t:['궤적','전아름'], s:'star', c:'green', v:71, x:4, y:16, bd:'6.8s'},
+     {t:['이런일이 생기면','SMHS'], s:'circle', c:'shpink', v:64, x:66, y:12, bd:'7.6s'},
+     {t:['틸함','조연우'], s:'hex', c:'yellow', v:52, x:26, y:36, bd:'8s'},
+     {t:['반짝映','현수윤'], s:'hex', c:'purple', v:47, x:62, y:42, bd:'6.5s'},
+     {t:['도자기','조예만'], s:'circle', c:'coral', v:31, x:8, y:58, bd:'7.3s'},
+   ]},
+  {id:'rp', nm:'레드 포인트', cat:'stage', type:'open', by:'신청 받는 중',
+   sub:'레드포인트 200석', prize:'득표 500 → 단독 공연', need:500,
+   what:'이기면 레드포인트(200석 공연장)에서 단독 공연을 엽니다',
+   end:Date.now()+14*864e5+14*36e5+48*6e4, applied:'Summer Rain',
+   cands:[
+     {me:1, t:['Summer Rain','PEEK'], s:'circle', c:'coral', v:210, x:33, y:60, bd:'7.2s'},
+     {t:['반짝映','현수윤'], s:'hex', c:'green', v:34, x:38, y:2, bd:'7s'},
+     {t:['링크크','박하람'], s:'hex', c:'purple', v:41, x:70, y:0, bd:'8s'},
+     {t:['틸함','조연우'], s:'hex', c:'green', v:28, x:6, y:14, bd:'6.6s'},
+     {t:['아애이오우','박승빈'], s:'star', c:'coral', v:63, x:60, y:22, bd:'7.4s'},
+     {t:['7080','taeHoon Cho'], s:'hex', c:'blue', v:37, x:30, y:34, bd:'7.8s'},
+     {t:['도자기','조예만'], s:'circle', c:'yellow', v:22, x:2, y:52, bd:'6.9s'},
+     {t:['이런일이 생기면','SMHS'], s:'circle', c:'shpink', v:19, x:33, y:56, bd:'7.2s'},
+   ]},
+  {id:'gh', nm:'8월 공감홀 쇼케이스', cat:'stage', type:'open', by:'신청 받는 중',
+   sub:'공감홀 60석', prize:'득표 100 → 쇼케이스 무대', need:100,
+   what:'이기면 공감홀(60석 소극장)에서 쇼케이스 무대에 섭니다',
+   end:Date.now()+32*864e5+3*36e5+11*6e4, applied:null,
+   cands:[
+     {t:['허밍','김이든'], s:'hex', c:'yellow', v:14, x:30, y:8, bd:'7.2s'},
+     {t:['푸가','전아름'], s:'circle', c:'green', v:11, x:58, y:24, bd:'6.7s'},
+     {t:['미로','MINLEE'], s:'star', c:'blue', v:9, x:14, y:44, bd:'7.9s'},
+   ]},
+  {id:'sep', nm:'9월 공연 음원', cat:'music', type:'curated', by:'OFFLOG 선정',
+   sub:'9월 무대에 올릴 곡', prize:'상위 5곡 → 9월 합동 공연 셋리스트',
+   what:'상위 5곡이 9월 합동 공연 셋리스트에 오릅니다',
+   end:Date.now()+21*864e5+7*36e5+2*6e4, applied:null,
+   cands:[
+     {t:['Moonlight','PEEK'], s:'circle', c:'purple', v:43, x:32, y:6, bd:'7.4s'},
+     {t:['아애이오우','박승빈'], s:'hex', c:'coral', v:38, x:64, y:20, bd:'6.9s'},
+     {t:['지하철노선도','조연우'], s:'star', c:'yellow', v:26, x:8, y:40, bd:'8.1s'},
+     {t:['링크크','박하람'], s:'hex', c:'blue', v:17, x:44, y:54, bd:'7.1s'},
+   ]},
+];
+const curRound = ()=>ROUNDS.find(r=>r.id===S.round)||ROUNDS[0];
+
+/* 내 곡 — LOG의 소리와 WORKS의 음원 전부. 신청은 여기서 고른다 */
+
+
+let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:'me', round:'jul', lseg:'list', vcat:'music', flist:null, fq:'', flFrom:'mine', list:null, share:false, addlist:false,
+  pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[],
+  relForm:{audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', dsp:[]}};
+
+const shape=(s,f,z)=>`<svg viewBox="0 0 24 24" width="${z}" height="${z}" style="overflow:visible"><use href="#${s}" fill="${f}"/></svg>`;
+const waveBars=n=>[...Array(n)].map((_,i)=>`<i style="--h:${22+Math.round(Math.random()*72)};--d:${i}"></i>`).join('');
+const dot=col=>`<span class="dot" style="background:${c(col)}"></span>`;
+
+/* ── 스토리 열 (아웃라인 상단 고정) — 팔로우 중 + 발견 가능한 아티스트 ── */
+function storyRow(){
+  return `<div class="avrow">${STORIES.map((s,i)=>{
+    const ring = !s.following ? 'discover' : (s.seen ? 'seen' : 'new');
+    return `<button class="av ${!s.following?'discover':''}" data-story="${i}" aria-label="${s.who} 스토리 보기">
+      <div class="av-ring ${ring}"><div class="av-in" style="background:${c(s.c)}">${s.who[0]}
+        ${!s.following?'<span class="av-plus">＋</span>':''}</div></div>
+      <small>${s.who}</small></button>`;
+  }).join('')}</div>`;
+}
+
+/* ── 스토리 뷰어 — 전체화면. 원 하나 = 그 아티스트의 최근 로그 시퀀스 ── */
+function storyViewer(){
+  if(S.storyIdx===null) return '';
+  const s=STORIES[S.storyIdx], it=s.items[S.itemIdx];
+  const dur = it.t==='snd' ? 5.2 : 4.2;
+  const bars = s.items.map((_,idx)=>{
+    const cls = idx<S.itemIdx?'done':idx===S.itemIdx?'active':'';
+    return `<div class="svbar ${cls}"><i style="${idx===S.itemIdx?`animation-duration:${dur}s`:''}"></i></div>`;
+  }).join('');
+  const content =
+    it.t==='ph'  ? `<div class="svbg" style="background:${it.bg}"></div><div class="grainy"></div>
+                     <div class="svmid"><div class="svcap">${it.cap}</div></div>`
+    : it.t==='snd' ? `<div class="svmid"><div class="svts">${it.at}</div>
+                        <div class="svwave">${waveBars(28)}</div><div class="svcap">${it.cap}</div>
+                        <div class="svpill">▶ ${it.dur}</div></div>`
+    :               `<div class="svnote ${it.tone==='b'?'b':''}"><p>${it.text}</p></div>`;
+  return `<div class="svwrap" id="svwrap">
+    <div class="svbars">${bars}</div>
+    <div class="svhd">
+      <span class="svgo" data-svprof="${s.who}">
+        <span class="smile" style="width:28px;height:28px;background:${c(s.c)}">
+          <svg viewBox="0 0 24 24"><path d="M6 13a6 6 0 0 1 12 0" fill="none" stroke="#1a1206" stroke-width="2.2" stroke-linecap="round"/>
+          <ellipse cx="9.4" cy="16.6" rx="1.15" ry="1.6" fill="#1a1206"/><ellipse cx="14.6" cy="16.6" rx="1.15" ry="1.6" fill="#1a1206"/></svg></span>
+        <b>${s.who}</b></span>
+      <span class="tm">${it.at}</span>
+      ${!s.following?`<button class="svfol" id="svfolbtn">팔로우</button>`:''}
+      <button class="svclose" id="svclose" aria-label="닫기">✕</button></div>
+    <div class="svbody">${content}
+      <button class="svtap l" id="svtapl" aria-label="이전"></button>
+      <button class="svtap r" id="svtapr" aria-label="다음"></button></div>
+    <div class="svrx">
+      <button class="shape rbtn" data-emo="소름" aria-label="소름">${shape('tri',c('green'),24)}</button>
+      <button class="shape rbtn" data-emo="루프" aria-label="루프">${shape('circle',c('shpink'),24)}</button>
+      <button class="shape rbtn" data-emo="울컥" aria-label="울컥">${shape('diamond',c('blue'),24)}</button>
+      <button class="shape rbtn" data-emo="최고" aria-label="최고">${shape('star',c('yellow'),24)}</button>
+      <span class="rxn svrxn" data-n="0">0</span></div>
+  </div>`;
+}
+
+function openStory(i){ S.storyIdx=i; S.itemIdx=0; STORIES[i].seen=true; render(); }
+function closeStory(){ S.storyIdx=null; render(); }
+function nextItem(){
+  const s=STORIES[S.storyIdx];
+  if(S.itemIdx<s.items.length-1){ S.itemIdx++; render(); } else { nextStory(); }
+}
+function prevItem(){
+  if(S.itemIdx>0){ S.itemIdx--; render(); } else { prevStory(); }
+}
+function nextStory(){
+  if(S.storyIdx<STORIES.length-1){ openStory(S.storyIdx+1); } else { closeStory(); }
+}
+function prevStory(){
+  if(S.storyIdx>0){ S.storyIdx--; S.itemIdx=0; STORIES[S.storyIdx].seen=true; render(); } else { closeStory(); }
+}
+
+/* ── 홈 — 탭 없음. 하나의 알고리즘 피드.
+   처음 = Trending. 그 다음부터 Following·Trending·For You가 섞여서 랜덤하게 계속 바뀐다. ── */
+function home(){
+  const fing=PEOPLE.filter(p=>p.fing).length;
+  return `<div class="hd"><span style="width:34px"></span><div class="brand" style="flex:1;text-align:center">OFFLOG</div>
+    <button class="circ people" id="gopeople" aria-label="팔로워 · 팔로잉">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+        <circle cx="9" cy="8" r="3.4"/><path d="M3.2 19.5c0-3.3 2.6-5.6 5.8-5.6s5.8 2.3 5.8 5.6"/>
+        <path d="M16.4 5.2a3.4 3.4 0 0 1 0 5.7"/><path d="M18 14.4c2 .7 3.3 2.6 3.3 5.1"/></svg>
+      ${fing?`<span class="pdot"></span>`:''}</button></div>
+  ${storyRow()}
+  ${S.feed.map(feedCard).join('')}`;
+}
+
+/* 홈에 다시 올 때마다 갱신된다. 버튼 없이, 다녀오면 새 얼굴 */
+function renewHome(){
+  S.feed=buildFeed();
+  /* 스토리도 리뉴얼 — 누군가 새로 올렸다 */
+  STORIES.forEach(s=>{ if(Math.random()<0.45) s.seen=false; });
+  const n=Math.floor(Math.random()*STORIES.length);
+  const [moved]=STORIES.splice(n,1);
+  STORIES.unshift(moved);            /* 새로 올린 사람이 앞으로 */
+}
+
+/* 스토리 열의 원을 제외한 모든 이름·아바타가 여기로 온다 */
+function goProfile(who){
+  if(who==='PEEK'){ S.profile='me'; } else { S.profile=who; }
+  S.seg='log'; S.flist=null; S.mode='feed'; S.view='mine'; render();
+}
+
+/* 알고리즘 — 처음은 Trending, 나머지는 3종 섞어서 무작위 */
+function shuffle(a){
+  const x=[...a];
+  for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]]}
+  return x;
+}
+function buildFeed(){
+  const trend  = TREND.map(t=>({src:'trend', ...t}));
+  const foryou = FORYOU.map(f=>({src:'foryou', ...f}));
+  const rooms  = SLOTS.map(s=>({src:'room', slot:s}));
+  const follow = FOLLOWLOG.map(f=>({src:'follow', ...f}));
+  const head   = shuffle(trend).slice(0,1);                  /* 처음 = Trending */
+  const rest   = shuffle([...trend.filter(t=>t!==head[0]), ...foryou, ...rooms, ...follow]);
+  return [...head, ...rest];
+}
+
+/* Work 스토리 카드와 같은 문법. 안 기울고, 시각이 카드 중앙에 있고, 미디어가 카드를 채운다 */
+function feedCard(t,i){
+  if(t.src==='room') return roomCard(t.slot);
+
+  const who=`<div class="rwho" data-prof="${t.who}" style="cursor:pointer">${smileEl(t.c)}${t.who}</div>`;
+  /* 팔로우 = 카드 우측 상단. 반응 도형 = 카드 위 하단. 전부 카드 위에 얹힌다 */
+  const fol = t.src==='follow' ? '' : `<button class="fol ffol">팔로우</button>`;
+  const rx=`<div class="frx">
+      <button class="shape rbtn" data-emo="소름" aria-label="소름">${shape('tri',c('green'),22)}</button>
+      <button class="shape rbtn" data-emo="루프" aria-label="루프">${shape('circle',c('shpink'),22)}</button>
+      <button class="shape rbtn" data-emo="울컥" aria-label="울컥">${shape('diamond',c('blue'),22)}</button>
+      <button class="shape rbtn" data-emo="최고" aria-label="최고">${shape('star',c('yellow'),22)}</button>
+      <span class="rxn" data-n="${t.rx||0}">${t.rx||0}</span></div>`;
+
+  const body =
+    t.t==='ph'  ? `<div class="rcard" data-slide="${i}">
+        <div class="bgimg" style="background:${t.bg}"></div><div class="grainy"></div>
+        <div class="rmid"><div class="rts">${t.at}</div><div class="rcap">${t.cap}</div></div>${who}${fol}${rx}</div>`
+  : t.t==='snd' ? `<div class="rcard snd" data-play>
+        <div class="bigwv">${waveBars(34)}</div>
+        <div class="rmid"><div class="rts">${t.at||''}</div><div class="rcap">${t.nm||t.cap}</div>
+          <span class="sndpill"><em>▶</em><b>${t.dur||''}</b></span></div>${who}${fol}${rx}</div>`
+  :               `<div class="rcard paper ${t.tone==='b'?'b':''}" data-slide="${i}">
+        <div class="rmid"><div class="rts">${t.at}</div><div class="rnote">${t.text}</div></div>${who}${fol}${rx}</div>`;
+
+  return `<div class="fcard">${body}</div>`;
+}
+
+/* ── 슬라이드 뷰 — 같은 피드, 한 화면에 하나씩. 위아래로 넘긴다 ── */
+function slideView(){
+  const sl=(t,i)=>{
+    const anchor=` id="sl${i}"`;
+    const who=`<div class="slwho"><span data-prof="${t.who}" style="cursor:pointer;display:flex;align-items:center;gap:8px">${dot(t.c)}${t.who||''}</span>
+      ${t.src!=='follow'&&t.src!=='room'?`<button class="slfol">팔로우</button>`:''}</div>`;
+    const rx=`<div class="slrx">
+      <button class="shape rbtn" data-emo="소름" aria-label="소름">${shape('tri',c('green'),26)}</button>
+      <button class="shape rbtn" data-emo="루프" aria-label="루프">${shape('circle',c('shpink'),26)}</button>
+      <button class="shape rbtn" data-emo="울컥" aria-label="울컥">${shape('diamond',c('blue'),26)}</button>
+      <button class="shape rbtn" data-emo="최고" aria-label="최고">${shape('star',c('yellow'),26)}</button>
+      <span class="rxn" data-n="${t.rx||0}">${t.rx||0}</span></div>`;
+    const hint=i===0?`<span class="slhint">⌄</span>`:'';
+
+    if(t.src==='room'){
+      const rows=ROOM[t.slot];
+      const mini=r=>{
+        if(r.t==='empty') return `<div class="rm empty"><span class="rmw">${r.who}</span><span class="rmts">${t.slot}</span></div>`;
+        if(r.t==='ph')  return `<div class="rm" style="background:${r.bg}"><span class="rmw">${r.who}</span><span class="rmts on">${t.slot}</span></div>`;
+        if(r.t==='snd') return `<div class="rm snd"><div class="rmwv">${waveBars(12)}</div><span class="rmw">${r.who}</span><span class="rmts on">${t.slot}</span></div>`;
+        return `<div class="rm paper"><span class="rmw" style="color:${c('ink')}">${r.who}</span><span class="rmnote">${r.text}</span></div>`;
+      };
+      return `<div class="sl"${anchor} data-room="${t.slot}">
+        <div class="slwho"><b style="font-family:'Black Han Sans';font-size:17px">${t.slot}</b>
+          <span style="font-size:11px;color:rgba(255,255,255,.6);font-weight:400">${rows.filter(r=>r.t!=='empty').length}/${rows.length}명</span></div>
+        <div class="slroom">${rows.map(mini).join('')}</div>${hint}</div>`;
+    }
+    if(t.t==='ph') return `<div class="sl"${anchor}>
+      <div class="bgimg" style="background:${t.bg}"></div><div class="grainy"></div>
+      ${who}<div class="slmid"><div class="slts">${t.at}</div><div class="slcap">${t.cap}</div></div>${rx}${hint}</div>`;
+    if(t.t==='snd') return `<div class="sl snd"${anchor} data-slplay>
+      ${who}<div class="slmid"><div class="slts">${t.at||''}</div>
+        <div class="slwave">${waveBars(30)}</div>
+        <div class="slcap">${t.nm||t.cap}</div>
+        <span class="slpill"><em>▶</em><b>${t.dur||t.sub||''}</b></span></div>${rx}${hint}</div>`;
+    return `<div class="sl paper ${t.tone==='b'?'b':''}"${anchor}>
+      ${who}<div class="slmid"><div class="slts">${t.at}</div><div class="slnote">${t.text}</div></div>${rx}${hint}</div>`;
+  };
+  return `<div class="slwrap" id="slwrap">
+    <button class="slx" id="slclose" aria-label="닫기">✕</button>
+    ${S.feed.map((t,i)=>sl(t,i)).join('')}</div>`;
+}
+/* 같은 시각 카드 — 셋로그 룸이 피드 안에 들어온 형태. 탭하면 전체 룸 */
+function roomCard(slot){
+  const rows=ROOM[slot];
+  const shot=rows.filter(r=>r.t!=='empty').length;
+  const mini=r=>{
+    if(r.t==='empty') return `<div class="rm empty"><span class="rmw">${r.who}</span><span class="rmts">${slot}</span></div>`;
+    if(r.t==='ph')  return `<div class="rm" style="background:${r.bg}"><span class="rmw">${r.who}</span><span class="rmts on">${slot}</span></div>`;
+    if(r.t==='snd') return `<div class="rm snd"><div class="rmwv">${waveBars(14)}</div><span class="rmw">${r.who}</span><span class="rmts on">${slot}</span></div>`;
+    return `<div class="rm paper"><span class="rmw" style="color:${c('ink')}">${r.who}</span><span class="rmnote">${r.text}</span></div>`;
+  };
+  return `<div class="log roomfeed" data-room="${slot}">
+    <div class="log-hd"><b style="font-family:'Black Han Sans';font-size:15px">${slot}</b>
+      <span style="font-size:11px;color:${c('muted')}">${shot}/${rows.length}명</span>
+      <span style="margin-left:auto;color:${c('muted')};font-weight:700">›</span></div>
+    <div class="rmrow">${rows.map(mini).join('')}</div>
+    <div style="height:12px"></div></div>`;
+}
+
+/* 같은 시각 — 전체 룸. 피드의 '같은 시각' 카드를 탭하면 여기로 (셋로그 구조) */
+function roomFull(){
+  const slot=SLOTS[S.slot];
+  const rows=ROOM[slot];
+  const shot=rows.filter(r=>r.t!=='empty').length;
+  const smile=col=>`<span class="smile" style="background:${c(col)}">
+    <svg viewBox="0 0 24 24"><path d="M6 13a6 6 0 0 1 12 0" fill="none" stroke="#1a1206" stroke-width="2.2" stroke-linecap="round"/>
+    <ellipse cx="9.4" cy="16.6" rx="1.15" ry="1.6" fill="#1a1206"/><ellipse cx="14.6" cy="16.6" rx="1.15" ry="1.6" fill="#1a1206"/></svg></span>`;
+
+  /* 남의 로그다. 반응은 되지만 담기·수정은 안 된다 */
+  const chrome=r=>`
+      <div class="rwho" data-prof="${r.who}" style="cursor:pointer">${smile(r.c)}${r.who}</div>
+      ${r.bub?`<div class="rbub">${smile(r.bub.c)}<span class="bb">${r.bub.txt}</span></div>`:''}
+      ${r.t!=='empty'?`<button class="rheart ${r.heart?'on':''}" aria-label="하트">❤️</button>
+      <button class="rreply" aria-label="답장">↰</button>`:''}`;
+
+  const card=r=>{
+    if(r.t==='empty') return `<div class="rcard empty"><div class="grainy"></div>
+      <div class="rmid"><div class="rts">${slot}</div></div>${chrome(r)}</div>`;
+
+    if(r.t==='ph') return `<div class="rcard upcard">
+      <div class="bgimg" style="background:${r.bg}"></div><div class="grainy"></div>
+      <div class="rmid"><div class="rts">${slot}</div><div class="rcap">${r.cap}</div></div>
+      <div class="uphint2">📷 탭해서 사진 넣기</div>${chrome(r)}</div>`;
+
+    if(r.t==='snd') return `<div class="rcard snd" data-play>
+      <div class="bigwv">${waveBars(34)}</div>
+      <div class="rmid"><div class="rts">${slot}</div><div class="rcap">${r.cap}</div>
+        <span class="sndpill"><em>▶</em><b>${r.dur}</b></span></div>${chrome(r)}</div>`;
+
+    return `<div class="rcard paper ${r.tone==='b'?'b':''}">
+      <div class="rmid"><div class="rts">${slot}</div><div class="rnote">${r.text}</div></div>${chrome(r)}</div>`;
+  };
+
+  return `<div class="hd"><button class="circ" data-v="home" aria-label="뒤로">‹</button>
+    <div class="htitle">같은 시각<small>팔로잉</small></div>
+    <div class="r"><button class="circ" aria-label="공유">⤴</button></div></div>
+  <div class="roomhd">
+    <div class="slots">${SLOTS.map((s,i)=>{
+      const filled=ROOM[s].some(r=>r.t!=='empty');
+      return `<button class="slot ${i===S.slot?'on':''} ${filled?'filled':''}" data-slot="${i}" aria-label="${s}"></button>`}).join('')}</div>
+    <button class="mkvid"><i>✦</i>영상으로 만들기</button></div>
+  <div class="slotlab"><b>${slot}</b> · ${shot}/${rows.length}명</div>
+  ${rows.map(card).join('')}
+  <div class="expire">이 시간대 로그는 <b>2주 후</b> 사라집니다<br>작품에 담은 것만 남습니다</div>`;
+}
+
+/* For You — 소리만. 자동재생. 일상은 안 보여준다 */
+/* 팔로우한 사람들의 개별 로그 — 피드에 섞인다 */
+const FOLLOWLOG=[
+  {who:'PEEK', c:'coral', t:'snd', cap:'훅 8마디 갈아엎음', dur:'0:31', at:'15:00', rx:42},
+  {who:'MINLEE', c:'blue', t:'ph', cap:'보컬 부스 들어감', at:'15:00', rx:31,
+   bg:'radial-gradient(circle at 70% 25%,#5c3050,transparent 55%),radial-gradient(circle at 20% 80%,#20305c,transparent 60%),#12121a'},
+  {who:'SMHS', c:'shpink', t:'note', text:'목이 나와 잡았어요', at:'02:56', tone:'y', rx:24},
+];
+
+/* 라운드당 한 곡. 새로 신청하면 이전 도형은 사라진다 */
+function applyToEvent(r, songName){
+  const prev=r.cands.findIndex(x=>x.me);
+  if(prev>-1)r.cands.splice(prev,1);       /* 교체하면 이전 도형은 사라진다 */
+  r.applied=songName;
+  r.cands.push({me:1, t:['PEEK', songName], s:'circle', c:'coral',
+                v:0, x:33, y:60, bd:'7.2s'});   /* 0표부터 다시 */
+}
+
+
+/* ── 마이 — LOG와 WORKS. 딱 2개 ── */
+let WORKS=[
+ {id:'sr', nm:'Summer Rain', by:'PEEK', dur:'03:12', logs:183, span:'6 Months', date:'2026.06.01',
+  bg:'radial-gradient(circle at 30% 25%,#2e5a7e,transparent 60%),radial-gradient(circle at 80% 80%,#173a4e,transparent 55%),#0c141c'},
+ {id:'ml', nm:'Moonlight', by:'PEEK', dur:'02:47', logs:91, span:'2 Months', date:'작업 중',
+  bg:'radial-gradient(circle at 65% 20%,#4a3a7e,transparent 55%),radial-gradient(circle at 20% 85%,#1c2a5c,transparent 60%),#0e0c18'},
+];
+
+/* 참여 중인 이벤트 — 한 줄이면 된다. 자세한 건 투표 탭이 할 일 */
+function eventStatus(w){
+  const r = ROUNDS.find(x=>x.applied===w.nm);
+  if(!r) return '';
+  return `<div class="evstat one">
+    <span class="evbadge">◆ 참여 중</span><b>${r.nm}</b>
+    <span class="evcd" data-cd="${r.id}">—</span></div>`;
+}
+
+/* Summer Rain의 스토리 — 음악 아래에 펼쳐지는 6개월. 전부 더미 */
+let STORY=[
+ {day:'Day 1', date:'1.03', items:[
+   {t:'note', c:'coral', who:'PEEK', at:'23:10', text:'장마 소리에서 시작하자.\n빗소리를 그대로 샘플로.', tone:'b', tag:'note'}]},
+ {day:'Day 4', date:'1.06', items:[
+   {t:'snd', c:'coral', who:'PEEK', at:'02:40', cap:'Demo v1 — 훅 스케치', dur:'0:19', tag:'demo', keep:1}]},
+ {day:'Day 17', date:'1.19', items:[
+   {t:'ph', c:'coral', who:'PEEK', at:'15:00', cap:'스튜디오 첫 세션', tag:'pic',
+    bg:'radial-gradient(circle at 70% 25%,#5c3050,transparent 55%),radial-gradient(circle at 20% 80%,#20305c,transparent 60%),#12121a'},
+   {t:'snd', c:'coral', who:'PEEK', at:'16:30', cap:'허밍 — 브릿지 멜로디', dur:'0:07', tag:'voice'}]},
+ {day:'Day 35', date:'2.06', items:[
+   {t:'snd', c:'coral', who:'PEEK', at:'21:00', cap:'보컬 녹음', dur:'0:12', tag:'voice', keep:1},
+   {t:'note', c:'coral', who:'PEEK', at:'21:40', text:'2절은 비 그친 뒤 느낌으로.', tone:'y', tag:'idea'}]},
+ {day:'Release', date:'6.01', rel:1, items:[
+   {t:'snd', c:'coral', who:'PEEK', at:'00:00', cap:'Summer Rain — Final', dur:'03:12', tag:'demo'}]},
+];
+
+const smileEl=col=>`<span class="smile" style="background:${c(col)}">
+  <svg viewBox="0 0 24 24"><path d="M6 13a6 6 0 0 1 12 0" fill="none" stroke="#1a1206" stroke-width="2.2" stroke-linecap="round"/>
+  <ellipse cx="9.4" cy="16.6" rx="1.15" ry="1.6" fill="#1a1206"/><ellipse cx="14.6" cy="16.6" rx="1.15" ry="1.6" fill="#1a1206"/></svg></span>`;
+
+/* ── 마이 / 아티스트 페이지 ──
+   내 페이지 = 도구·＋·수정 전부 여기서. 남의 페이지 = 보기만. */
+function mine(){
+  const me   = S.profile==='me';
+  const prof = me ? {who:'PEEK', c:'coral', sub:'서울실용음악고 · 힙합', fer:'1,204', fing:'87'}
+                  : (()=>{ const st=STORIES.find(s=>s.who===S.profile);
+                           return {who:S.profile, c:(st&&st.c)||'blue', sub:'Artist',
+                                   fer:(st&&st.fer)||'312', fing:(st&&st.fing)||'54'}; })();
+  const st   = STORIES.find(s=>s.who===S.profile);
+
+  const works=WORKS.map(w=>`<div class="workrow">
+    <div class="wthumb"><div class="bgimg" style="position:absolute;inset:0;background:${w.bg}"></div>
+      <button class="wplay" aria-label="재생">▶</button></div>
+    <div class="winfo"><b>${w.nm}</b><small>${w.logs} Logs · ${w.span}</small></div>
+    <button class="openst" data-work="${w.id}">Collect ${me?'LOG':'log'} ›</button></div>`).join('');
+
+  /* 녹음 = 즉석. 음원 = 믹스다운 파일 업로드 (Demo 탭이 하던 일) */
+  const tools=[['💬','생각'],['🖼','사진'],['🎤','음성'],['📋','메모'],['🎙','녹음'],['♪','음원']];
+  /* 피드·Work 스토리와 같은 카드 문법. 안 기울고, 시각이 카드 중앙에 */
+  const mark=l=>{
+    const w = l.work ? WORKS.find(x=>x.id===l.work) : null;
+    const chrome = me
+      ? `${w?`<span class="wchip mychip">◆ ${w.nm}</span>`:''}
+         <button class="edit mine" aria-label="수정">⋯</button>`
+      : '';
+    if(l.t==='ph') return `<div class="fcard my"><div class="rcard">
+      <div class="bgimg" style="background:${l.bg}"></div><div class="grainy"></div>
+      <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${l.cap}</div></div>${chrome}</div></div>`;
+    if(l.t==='snd') return `<div class="fcard my"><div class="rcard snd" data-play>
+      <div class="bigwv">${waveBars(34)}</div>
+      <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${l.nm}</div>
+        <span class="sndpill"><em>▶</em><b>${l.dur}</b></span></div>${chrome}</div></div>`;
+    return `<div class="fcard my"><div class="rcard paper ${l.tone==='b'?'b':''}">
+      <div class="rmid"><div class="rts">${l.at}</div><div class="rnote">${l.text}</div></div>${chrome}</div></div>`;
+  };
+
+  const logs=`
+    ${me?`<div class="tools">${tools.map((t,i)=>
+      `<button class="tool ${S.ltype===i?'on':''}" data-lt="${i}" data-l="${t[1]}" aria-label="${t[1]}">${t[0]}</button>`).join('')}</div>`:''}
+    <div class="stream" id="stream"><div class="ambient"></div>
+      <div class="marks">${STREAM.map(mark).join('')}</div></div>
+    ${me?`<button class="fab" aria-label="새 로그">＋</button>
+      <div class="expire">아직 어느 작품도 아닌 로그 <b>${STREAM.filter(l=>!l.work).length}개</b><br>
+        곡이 생기면 그 작품 안에서 담으면 됩니다</div>`:''}`;
+
+  return `<div class="hd">
+    ${me?`<span style="width:34px"></span>`:`<button class="circ" data-v="home" aria-label="뒤로">‹</button>`}
+    <div class="htitle">${prof.who}<small>${me?'내 페이지':'Artist'}</small></div>
+    <div class="r"><button class="circ" aria-label="공유">⤴</button>
+      ${me?`<button class="circ" aria-label="설정">⋯</button>`:''}</div></div>
+  <div class="mprof"><span data-prof2="${prof.who}">${smileEl(prof.c)}</span>
+    <h3>${prof.who}</h3><p>${prof.sub||'Artist'}</p>
+    <div class="fcount">
+      <button class="fc" data-flist="follower"><b>${prof.fer}</b><small>팔로워</small></button>
+      <span class="fcdiv"></span>
+      <button class="fc" data-flist="following"><b>${prof.fing}</b><small>팔로잉</small></button></div>
+    ${me?'':`<button class="fol profol ${st&&st.following?'on':''}">${st&&st.following?'팔로잉':'팔로우'}</button>`}</div>
+  <div class="seg">
+    <button class="${S.seg==='log'?'on':''}" data-seg="log">LOG</button>
+    <button class="${S.seg==='works'?'on':''}" data-seg="works">WORKS</button></div>
+  ${S.seg==='works'?works:logs}
+  <div style="height:14px"></div>`;
+}
+
+/* 곡이 로그를 부른다. 로그가 곡을 고르는 게 아니라.
+   미분류 로그를 한 번에 여러 개 골라 담는다 — 창작이 끝난 뒤 돌아보는 순서 */
+function logPuller(w){
+  const free=STREAM.filter(l=>!l.work);
+  const pv=l=>
+      l.t==='note' ? `<span class="plth paper">✎</span>`
+    : l.t==='ph'   ? `<span class="plth" style="background:${l.bg}"></span>`
+    :                `<span class="plth snd">♪</span>`;
+  const nm=l=> l.t==='note' ? l.text.replace(/\n.*/,'') : l.t==='ph' ? l.cap : l.nm;
+  return `<div class="sheet-bd" id="plbd"></div>
+  <div class="pksheet">
+    <div class="pkhd"><b>${w.nm}에 담을 로그</b>
+      <button class="pkx" id="plclose" aria-label="닫기">✕</button></div>
+    <div class="pkwarn" style="background:rgba(83,224,200,.07);border-color:rgba(83,224,200,.25);color:var(--mint)">
+      작업 기간 <b>${w.span}</b> 안의 아직 어느 작품도 아닌 로그입니다</div>
+    ${free.length?free.map(l=>`<button class="pkrow plrow ${S.sel.includes(l.id)?'on':''}" data-sel="${l.id}">
+      <span class="plck"></span>${pv(l)}
+      <span class="pknm"><b>${nm(l)}</b><small>${l.at}${l.dur?' · '+l.dur:''}</small></span></button>`).join('')
+      : `<div class="pknote" style="padding:20px 0">담을 로그가 없습니다</div>`}
+    <button class="cta" id="pulldone" ${S.sel.length?'':'disabled'}>
+      ${S.sel.length?S.sel.length+'개 담기':'로그를 고르세요'}</button>
+  </div>`;
+}
+
+/* 팔로워 / 팔로잉 목록 */
+let PEOPLE=[
+  {who:'PEEK', c:'coral', sub:'서울실용음악고 · 힙합', fing:1},
+  {who:'MINLEE', c:'blue', sub:'보컬 · R&B', fing:1},
+  {who:'SMHS', c:'shpink', sub:'서울실용음악고', fing:1},
+  {who:'전아름', c:'green', sub:'작곡 · 실험', fing:0},
+  {who:'김이든', c:'yellow', sub:'싱어송라이터', fing:0},
+  {who:'조연우', c:'yellow', sub:'밴드 · 인디', fing:0},
+  {who:'박승빈', c:'coral', sub:'자작곡', fing:1},
+  {who:'현수윤', c:'purple', sub:'일렉트로닉', fing:0},
+];
+
+function flist(){
+  const isFer = S.flist==='follower';
+  const q = (S.fq||'').trim().toLowerCase();
+  let rows = isFer ? PEOPLE : PEOPLE.filter(p=>p.fing);
+  if(q) rows = PEOPLE.filter(p=>p.who.toLowerCase().includes(q) || p.sub.toLowerCase().includes(q));
+  return `<div class="hd"><button class="circ" id="flback" aria-label="뒤로">‹</button>
+    <div class="htitle">${S.profile==='me'?'PEEK':S.profile}<small>${q?'검색':isFer?'팔로워':'팔로잉'}</small></div>
+    <span style="width:34px"></span></div>
+  <div class="srch"><span class="srchi">⌕</span>
+    <input id="fq" value="${S.fq||''}" placeholder="아티스트 찾기">
+    ${q?`<button class="srchx" id="fqx" aria-label="지우기">✕</button>`:''}</div>
+  ${q?'':`<div class="seg">
+    <button class="${isFer?'on':''}" data-flist="follower">팔로워 <b>${PEOPLE.length}</b></button>
+    <button class="${isFer?'':'on'}" data-flist="following">팔로잉 <b>${PEOPLE.filter(p=>p.fing).length}</b></button></div>`}
+  ${rows.length?rows.map(p=>`<div class="prow">
+    <span class="pgo" data-prof="${p.who}">${smileEl(p.c)}
+      <span class="pnm"><b>${p.who}</b><small>${p.sub}</small></span></span>
+    <button class="fol plfol ${p.fing?'on':''}" data-pfol="${p.who}">${p.fing?'팔로잉':'팔로우'}</button>
+  </div>`).join('') : `<div class="pknote" style="padding:36px 0">찾는 아티스트가 없습니다</div>`}
+  <div style="height:20px"></div>`;
+}
+
+/* ── 플레이리스트 — 내가 모은 소리. 공유하면 남이 듣는다 ── */
+let LISTS=[
+  {id:'p1', nm:'새벽 작업용', cnt:12, pub:1, cov:['sr','ml','gj'],
+   tracks:[{nm:'Summer Rain', by:'PEEK', dur:'03:12'},{nm:'Moonlight', by:'PEEK', dur:'02:47'},
+           {nm:'궤적', by:'전아름', dur:'02:58'},{nm:'이런일이 생기면', by:'SMHS', dur:'02:52'}]},
+  {id:'p2', nm:'소름 돋은 데모', cnt:7, pub:0, cov:['ml','gj'],
+   tracks:[{nm:'아애이오우', by:'박승빈', dur:'0:14'},{nm:'싸이코', by:'PEEK', dur:'0:31'},
+           {nm:'허밍', by:'김이든', dur:'0:07'}]},
+  {id:'p3', nm:'레드포인트 후보', cnt:5, pub:1, cov:['sr'],
+   tracks:[{nm:'이런일이 생기면', by:'SMHS', dur:'02:52'},{nm:'궤적', by:'전아름', dur:'02:58'}]},
+];
+/* 커버 색: 내 작품은 WORKS에서, 남의 곡은 여기서. 없으면 중립 회색 */
+const COVERS={gj:'radial-gradient(circle at 35% 30%,#3a5c3e,transparent 60%),radial-gradient(circle at 80% 75%,#1c3a2c,transparent 55%),#0c140e'};
+const covOf=id=>(WORKS.find(w=>w.id===id)||{}).bg||COVERS[id]||'#22222a';
+
+/* 후보 아티스트의 최근 생각 — 펼치면 보인다 */
+const ARTLOGS={
+  'PEEK':[{t:'note',at:'18:05',tx:'드럼은 파리 세션 걸로.',tone:'b'},{t:'snd',at:'02:45',tx:'나야 · 0:31'}],
+  '전아름':[{t:'snd',at:'18:00',tx:'푸가 스케치 · 0:22'},{t:'note',at:'23:10',tx:'대위법은 결국 대화다',tone:''}],
+  'SMHS':[{t:'note',at:'02:56',tx:'목이 나와 잡았어요',tone:''}],
+  '조연우':[{t:'note',at:'17:20',tx:'합주실 4시간째. 지하철 놓침',tone:'b'}],
+  '박승빈':[{t:'snd',at:'11:00',tx:'아애이오우 허밍 · 0:14'},{t:'note',at:'11:20',tx:'모음만으로 노래가 될까',tone:''}],
+  '현수윤':[{t:'note',at:'22:40',tx:'가사 노트 다시 폈다',tone:''}],
+  '박하람':[{t:'note',at:'20:15',tx:'링크크 브릿지 다시 써야겠다',tone:'b'}],
+  '조예만':[{t:'note',at:'16:40',tx:'도자기 굽듯 천천히 가자',tone:''}],
+  '김이든':[{t:'snd',at:'12:00',tx:'허밍 메모 · 0:07'}],
+  'MINLEE':[{t:'note',at:'19:50',tx:'미로 후렴 다시 쓴다',tone:''}],
+  'taeHoon Cho':[{t:'snd',at:'09:30',tx:'7080 편곡 데모 · 0:18'}],
+};
+const artOf=d=>(d.t[1]||d.t[0]).replace(/^#/,'');
+
+function lists(){
+  return `<div class="hd"><span style="width:34px"></span>
+    <div class="brand" style="flex:1;text-align:center;letter-spacing:.18em;font-size:14px">${S.lseg==='vote'?'VOTE':'MY LIST'}</div>
+    <span style="width:34px"></span></div>
+  <div class="lseg">
+    <button class="${S.lseg!=='vote'?'on':''}" data-lseg="list">LIST</button>
+    <button class="${S.lseg==='vote'?'on':''}" data-lseg="vote">투표</button></div>
+  ${S.lseg==='vote'?voteHub():`
+  ${LISTS.map(p=>`<div class="lrow" data-list="${p.id}">
+    <span class="lcov">${p.cov.slice(0,3).map((id,i)=>
+      `<i style="background:${covOf(id)};z-index:${3-i};left:${i*9}px"></i>`).join('')}</span>
+    <span class="lnm"><b>${p.nm}</b><small>${p.cnt}곡 ${p.pub?'· 공개':'· 나만'}</small></span>
+    <button class="lshare" data-share="${p.id}" aria-label="공유">⤴</button>
+  </div>`).join('')}
+  <button class="newlist" id="newlist">＋ 새 플레이리스트</button>`}
+  ${S.share?shareSheet(LISTS.find(x=>x.id===S.list)):''}
+  <div style="height:20px"></div>`;
+}
+
+/* 투표 — 목록으로. 노래도 듣고, 펼치면 그 사람의 로그(생각)도 보인다 */
+function voteHub(){
+  const cat=S.vcat||'music';
+  const cats=[['music','diamond','음원 투표'],['stage','circle','공연 투표'],['reco','hex','추천']];
+  const bar=`<div class="vcats">${cats.map(([k,sym,lb])=>`
+    <button class="vcat ${cat===k?'on':''}" data-vcat="${k}">
+      <span class="vcsh">${shape(sym, cat===k?c('lemon'):'#4a4a52', 26)}</span>
+      <small>${lb}</small></button>`).join('')}</div>`;
+  if(cat==='reco') return bar+recoView();
+  const rounds=ROUNDS.filter(r=>r.cat===cat);
+  return bar + rounds.map(r=>{
+    const max=Math.max(...r.cands.map(x=>x.v))||1;
+    const shown=[...r.cands].map((d,i)=>({...d,_i:i})).sort((a,b)=>b.v-a.v).slice(0,20);
+    return `<div class="rhead">
+      <div class="rtitle">${r.type==='curated'?'<i>✦</i>':''}${r.nm}
+        <span class="rcd" data-cd="${r.id}">—</span></div>
+      <div class="rwhat">${r.what}</div>
+      <div class="rprize">${r.prize} · 참가 ${r.cands.length}명</div></div>
+    ${shown.map((d,rank)=>{
+      const who=artOf(d), top=rank===0;
+      const logs=ARTLOGS[who]||[];
+      const preview = logs[0]
+        ? (logs[0].t==='note' ? `<span class="cprev note">✎ ${logs[0].tx}</span>`
+                               : `<span class="cprev snd">♪ ${logs[0].tx}</span>`)
+        : `<span class="cprev empty">아직 공개된 로그가 없습니다</span>`;
+      return `<div class="crow2 ${d.voted?'voted':''} ${top?'top':''}" data-goart="${who}">
+        <div class="chd">
+          <span class="cshape">${shape(d.s,c(d.c),26)}</span>
+          <button class="cplay" data-cp aria-label="재생">▶</button>
+          <span class="cinfo">
+            <span class="cttl"><b>${d.t[0]}</b>${top?'<i class="toptag">⬡ 추천</i>':''}${d.me?'<i class="mytag">내 곡</i>':''}</span>
+            <small>${who} · log 보기 ›</small>
+            ${preview}
+          </span>
+          <span class="cv">${d.v}</span>
+          <button class="votebtn ${d.voted?'on':''}" data-vote="${r.id}|${d._i}">${d.voted?'✓':'투표'}</button></div>
+        <div class="cbar"><i style="width:${d.v/max*100}%"></i></div>
+      </div>`;
+    }).join('')}
+    ${r.cands.length>20?`<div class="showhint">상위 20명까지만 · 예선은 각자 Work에서</div>`:''}`;
+  }).join('<div style="height:10px"></div>')
+  + `<div class="showhint">카드를 누르면 그 아티스트의 log로 들어갑니다 · 신청은 내 작품 안 [VOTE 신청하기]</div>`;
+}
+
+/* ⬡ 추천 — 전 라운드 합산, 지금 가장 사랑받는 아티스트 */
+function recoView(){
+  const totals={};
+  ROUNDS.forEach(r=>r.cands.forEach(d=>{const w=artOf(d); totals[w]=(totals[w]||0)+d.v}));
+  const top=Object.entries(totals).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const st=w=>STORIES.find(x=>x.who===w);
+  return `<div class="rhead">
+    <div class="rtitle"><i style="color:var(--lemon)">⬡</i>이번 주 추천 아티스트</div>
+    <div class="rwhat">모든 라운드의 응원을 합쳐 가장 사랑받는 사람들입니다</div></div>
+  ${top.map(([who,v],i)=>{
+    const logs=ARTLOGS[who]||[];
+    const preview = logs[0]
+      ? (logs[0].t==='note' ? `<span class="cprev note">✎ ${logs[0].tx}</span>`
+                             : `<span class="cprev snd">♪ ${logs[0].tx}</span>`)
+      : `<span class="cprev empty">아직 공개된 로그가 없습니다</span>`;
+    return `<div class="crow2 ${i===0?'top':''}" data-goart="${who}">
+      <div class="chd">
+        <span class="cshape">${shape('hex', i===0?c('lemon'):c((st(who)||{}).c||'blue'), 28)}</span>
+        <span class="cinfo">
+          <span class="cttl"><b>${who}</b>${i===0?'<i class="toptag">⬡ 1위</i>':''}</span>
+          <small>log 보기 ›</small>
+          ${preview}
+        </span>
+        <span class="cv">${v}</span></div>
+    </div>`;
+  }).join('')}
+  <div class="showhint">카드를 누르면 그 아티스트의 log로 들어갑니다</div>`;
+}
+
+function listDetail(){
+  const p=LISTS.find(x=>x.id===S.list);
+  return `<div class="hd"><button class="circ" id="ldback" aria-label="뒤로">‹</button>
+    <div class="htitle">${p.nm}<small>${p.cnt}곡 ${p.pub?'· 공개':'· 나만 보기'}</small></div>
+    <div class="r"><button class="circ" data-share="${p.id}" aria-label="공유">⤴</button></div></div>
+  <div class="lhero">
+    <span class="lcov big">${p.cov.slice(0,3).map((id,i)=>
+      `<i style="background:${covOf(id)};z-index:${3-i};left:${i*22}px"></i>`).join('')}</span>
+    <div class="lhinfo"><h3>${p.nm}</h3><small>PEEK · ${p.cnt}곡</small>
+      <div class="lhbtn"><button class="cta" id="lplay">▶ 전체 재생</button>
+        <button class="savebtn" data-share="${p.id}">⤴ 공유</button></div></div>
+  </div>
+  ${p.tracks.map((t,i)=>`<div class="trow">
+    <span class="tno">${String(i+1).padStart(2,'0')}</span>
+    <button class="tplay" aria-label="재생">▶</button>
+    <span class="tnm"><b>${t.nm}</b><small>${t.by}</small></span>
+    <span class="tdur">${t.dur}</span>
+    <button class="tx" aria-label="빼기">✕</button></div>`).join('')}
+  <div class="pknote" style="margin-top:14px">＋ 플레이리스트로 담으면 여기 쌓입니다</div>
+  ${S.share?shareSheet(p):''}
+  <div style="height:20px"></div>`;
+}
+
+/* 무대에 내기 — 어느 라운드에? 신청형만 받는다 */
+function stageSheet(w){
+  const open=ROUNDS.filter(r=>r.type==='open');
+  return `<div class="sheet-bd" id="stbd"></div>
+  <div class="pksheet">
+    <div class="pkhd"><b>${w.nm}을 낼 무대</b>
+      <button class="pkx" id="stclose" aria-label="닫기">✕</button></div>
+    ${open.map(r=>`<button class="pkrow ${r.applied===w.nm?'cur':''}" data-stage="${r.id}">
+      <span class="pkth" style="background:var(--card2);display:flex;align-items:center;justify-content:center;color:var(--lemon)">◆</span>
+      <span class="pknm"><b>${r.nm}</b><small>${r.sub} · ${r.prize}</small></span>
+      ${r.applied?`<span class="pkcur">${r.applied===w.nm?'신청 중':r.applied+' →교체'}</span>`:''}</button>`).join('')}
+    <div class="pknote">라운드당 한 곡만. 교체하면 득표는 0부터 다시 시작합니다</div>
+  </div>`;
+}
+
+/* 어느 플레이리스트에 담을까 */
+function listPicker(w){
+  return `<div class="sheet-bd" id="lpbd"></div>
+  <div class="pksheet">
+    <div class="pkhd"><b>${w.nm}을 담을 곳</b>
+      <button class="pkx" id="lpclose" aria-label="닫기">✕</button></div>
+    ${LISTS.map(p=>`<button class="pkrow" data-addto="${p.id}">
+      <span class="lcov" style="width:44px;height:34px">${p.cov.slice(0,2).map((id,i)=>
+        `<i style="background:${covOf(id)};z-index:${2-i};left:${i*8}px;width:34px;height:34px"></i>`).join('')}</span>
+      <span class="pknm"><b>${p.nm}</b><small>${p.cnt}곡</small></span></button>`).join('')}
+    <button class="newlist" id="lpnew" style="margin-top:8px">＋ 새 플레이리스트에 담기</button>
+  </div>`;
+}
+
+/* 공유 — 링크는 남이 여는 순간 이 사람의 취향이 된다 */
+function shareSheet(p){
+  return `<div class="sheet-bd" id="shbd"></div>
+  <div class="pksheet">
+    <div class="pkhd"><b>${p.nm} 공유</b>
+      <button class="pkx" id="shclose" aria-label="닫기">✕</button></div>
+    <div class="shlink"><span>offlog.app/l/${p.id}</span><button class="shcopy" id="shcopy">복사</button></div>
+    <button class="pkrow" data-pub="${p.id}">
+      <span class="evck ${p.pub?'on':''}"></span>
+      <span class="pknm"><b>${p.pub?'공개 중':'나만 보기'}</b>
+        <small>${p.pub?'링크가 있으면 누구나 들을 수 있습니다':'링크를 열어도 나만 보입니다'}</small></span></button>
+    <div class="shrow">${[['💬','메시지'],['📷','스토리'],['🔗','링크'],['⋯','더보기']].map(([i,l])=>
+      `<button class="shbtn"><span>${i}</span><small>${l}</small></button>`).join('')}</div>
+  </div>`;
+}
+
+/* ── Work — 음악이 위에 있고, 그 아래에 그 음악의 모든 로그가 펼쳐진다 ── */
+function work(){
+  const w=WORKS.find(x=>x.id===S.work)||WORKS[0];
+  const story=w.id==='sr'?STORY:STORY.slice(0,3);
+  const chips=[['all','전체'],['demo','Demo'],['pic','사진'],['vid','영상'],['idea','아이디어'],['voice','보이스'],['note','노트']];
+  const scard=r=>{
+    /* 작품 스토리 안 = 이미 담긴 것들. 뱃지 불필요 */
+    const chrome=`<div class="rwho" data-prof="${r.who}" style="cursor:pointer">${smileEl(r.c)}${r.who}</div>`;
+    if(r.t==='ph')return `<div class="rcard upcard" style="height:180px">
+      <div class="bgimg" style="background:${r.bg}"></div><div class="grainy"></div>
+      <div class="rmid"><div class="rts">${r.at}</div><div class="rcap">${r.cap}</div></div>
+      <div class="uphint2">📷 탭해서 사진 넣기</div>${chrome}</div>`;
+    if(r.t==='snd')return `<div class="rcard snd" data-play style="height:170px">
+      <div class="bigwv">${waveBars(30)}</div>
+      <div class="rmid"><div class="rts">${r.at}</div><div class="rcap">${r.cap}</div>
+        <span class="sndpill"><em>▶</em><b>${r.dur}</b></span></div>${chrome}</div>`;
+    return `<div class="rcard paper ${r.tone==='b'?'b':''}" style="height:170px">
+      <div class="rmid"><div class="rts">${r.at}</div><div class="rnote">${r.text.replace(/\n/g,'<br>')}</div></div>${chrome}</div>`;
+  };
+  const groups=story.map(g=>{
+    const items=g.items.filter(i=>S.wf==='all'||i.tag===S.wf);
+    if(!items.length)return '';
+    return `<div class="dayhd ${g.rel?'rel':''}"><b>${g.day}</b><small>${g.date}</small></div>${items.map(scard).join('')}`;
+  }).join('');
+  return `<div class="hd"><button class="circ" data-v="mine" aria-label="뒤로">‹</button>
+    <div class="htitle">${w.nm}<small>PEEK</small></div>
+    <div class="r"><button class="circ" aria-label="공유">⤴</button></div></div>
+  <div class="whero">
+    <div class="wcover upcard"><div class="bgimg" style="background:${w.bg}${S.relForm.art&&w.id===S.work&&w.pending?`;background-image:url(${S.relForm.art});background-size:cover`:''}"></div><div class="grainy"></div>
+      <div class="uphint2" style="bottom:auto;top:12px">🖼 탭해서 앨범 사진 넣기</div>
+      <div class="wmeta"><h2>${w.nm}</h2>
+        <small>${w.date==='작업 중'?'작업 중':(w.pending?'발매 예약 '+w.date:'발매 '+w.date)} · ${w.logs} Logs · ${w.span}</small></div></div>
+    <div class="wbtns">
+      <button class="cta" id="wplaybig">▶ Play</button>
+      <button class="savebtn" id="wsave">＋ 플레이리스트</button></div>
+    ${w.by==='PEEK' ? (w.date==='작업 중'
+      ? `<button class="relbtn" id="relbtn">음원 발매하기 <b>▸</b></button>`
+      : w.pending
+      ? `<div class="reldone"><span class="ap-dot" style="background:var(--lemon);box-shadow:0 0 8px var(--lemon)"></span>
+          <b style="color:var(--lemon)">${w.date}</b> 발매 예약됨 · ${(w.dsp||[]).join(' · ')||'유통 심사 중'}
+          <button class="ap-ch" id="relbtn">수정</button></div>`
+      : `<div class="reldone"><span class="ap-dot"></span>${w.date} 발매됨 · Spotify · Apple · Melon</div>`) : ''}
+  </div>
+  ${eventStatus(w)}
+  <div class="sechd">
+    <div class="sec" style="margin:0">The Story</div>
+    ${w.by==='PEEK'?`<button class="pullbtn" id="pullbtn">＋ 로그 담기</button>`:''}</div>
+  <div class="mchips">${chips.map(([k,l])=>`<button class="mchip ${S.wf===k?'on':''}" data-wf="${k}">${l}</button>`).join('')}</div>
+  <div class="daytl">${groups}</div>
+  ${w.id==='ml'?`<div class="expire">이 스토리는 지금도 자라는 중 · <b>91 Logs</b></div>`:''}
+  ${w.by==='PEEK'?`<div class="votecta">
+    <button class="stagebtn full" id="stagebtn">VOTE 신청하기 <b>▸</b></button>
+    <small>이 곡을 무대 투표 라운드에 올립니다 · 라운드당 한 곡만</small>
+  </div>`:''}
+  ${S.pull?logPuller(w):''}
+  ${S.stage?stageSheet(w):''}
+  ${S.addlist?listPicker(w):''}
+  ${S.rel?releaseSheet(w):''}
+  <div style="height:14px"></div>`;
+}
+
+/* 발매 — LOG의 것이 WORKS가 되는 순간. 작품 단위 행위다 */
+/* 발매 = 유통사 제출. 아트워크·가사·크레딧이 없으면 반려된다.
+   발매일은 심사 기간 때문에 최소 2주 뒤부터. */
+function releaseSheet(w){
+  const R=S.relForm, kept=STREAM.filter(l=>l.work===w.id).length;
+  const miss=relMissing();
+  return `<div class="sheet-bd" id="relbd"></div>
+  <div class="pksheet tall">
+    <div class="pkhd"><b>발매 설정</b><span class="pksub">유통 제출</span>
+      <button class="pkx" id="relclose" aria-label="닫기">✕</button></div>
+
+    <div class="rsec">음원</div>
+    <button class="ubox ${R.audio?'on':''}" id="relaudio">
+      <span class="ub-ic">${R.audio?'♪':'＋'}</span>
+      <span class="ub-t"><b>${R.audio?R.audio.name:'음원 파일 업로드'}</b>
+        <small>${R.audio?R.audio.size+(R.audio.dur?' · '+R.audio.dur:''):'wav · flac 권장'}</small></span>
+      ${R.audio?`<span class="ub-ok">✓</span>`:''}</button>
+
+    <div class="rsec">앨범 아트워크</div>
+    <button class="ubox art ${R.art?'on':''}" id="relart">
+      ${R.art?`<span class="artimg" style="background-image:url(${R.art})"></span>`:`<span class="ub-ic">＋</span>`}
+      <span class="ub-t"><b>${R.art?'아트워크 등록됨':'이미지 업로드'}</b>
+        <small>3000×3000 · JPG/PNG · 텍스트 없는 정사각</small></span>
+      ${R.art?`<span class="ub-ok">✓</span>`:''}</button>
+
+    <div class="rsec">가사</div>
+    <button class="instck ${R.inst?'on':''}" id="relinst">
+      <span class="evck"></span><span>연주곡 (가사 없음)</span></button>
+    ${R.inst?'' : `<textarea class="lyr" id="rellyr" placeholder="가사를 붙여넣으세요&#10;&#10;줄바꿈 그대로 유통사에 전달됩니다">${R.lyr}</textarea>`}
+
+    <div class="rsec">크레딧 <em class="opt">작곡가는 필수</em></div>
+    ${[['comp','작곡'],['lyri','작사'],['arr','편곡'],['prod','프로듀서']].map(([k,l])=>`
+      <div class="crow"><span class="clab">${l}</span>
+        <input class="cin" data-cr="${k}" value="${R[k]}" placeholder="${k==='comp'?'이름 (필수)':'이름'}"></div>`).join('')}
+
+    <div class="rsec">발매일</div>
+    <input class="rdate" type="date" id="reldate" value="${R.date}" min="${minRelDate()}">
+    <div class="rulen" style="text-align:left;margin:7px 4px 0">유통사 심사 때문에 <b style="color:var(--lemon)">최소 2주 뒤</b>부터 지정할 수 있습니다 · 빠른 날짜 ${minRelDate().replace(/-/g,'.')}</div>
+
+    <div class="rsec">유통</div>
+    <div class="dsps">${['Spotify','Apple Music','Melon','YouTube Music','Genie','Bugs'].map(d=>
+      `<button class="dsp ${R.dsp.includes(d)?'on':''}" data-dsp="${d}">${d}</button>`).join('')}</div>
+
+    <div class="relsum">이 작품의 로그 <b>${kept}개</b>가 발매일에 메이킹 필름으로 자동 편집됩니다</div>
+    <button class="cta" id="reldone" ${miss.length?'disabled':''}>발매 예약</button>
+    ${miss.length?`<div class="missn">${miss.join(' · ')} 필요</div>`:''}
+  </div>`;
+}
+
+/* 발매일 최소 = 오늘 + 2주 */
+function minRelDate(){
+  const d=new Date(); d.setDate(d.getDate()+14);
+  return d.toISOString().slice(0,10);
+}
+/* 유통사가 반려하는 것들 */
+function relMissing(){
+  const R=S.relForm, m=[];
+  if(!R.audio) m.push('음원');
+  if(!R.art)   m.push('아트워크');
+  if(!R.inst && !R.lyr.trim()) m.push('가사');
+  if(!R.comp.trim()) m.push('작곡가');
+  if(!R.dsp.length) m.push('유통사');
+  if(!R.date) m.push('발매일');
+  return m;
+}
+
+/* ── 미니 플레이어 ── */
+function renderMini(){
+  const m=document.getElementById('mini');
+  m.innerHTML = (S.mini.on && !(S.view==='home'&&S.mode==='slide'))
+    ? `<div class="mini ${S.mini.playing?'playing':''}">
+        <div class="mini-top"><span>새벽 작업용 · 12곡</span><button id="mx" aria-label="닫기">✕</button></div>
+        <div class="mini-btm"><button class="miniplay" id="mp" aria-label="재생">${S.mini.playing?'⏸':'▶'}</button>
+          <span class="nm">나야</span><span class="tm">02:45</span>
+          <button class="minilist" id="mlist" aria-label="재생목록">☰</button></div></div>` : '';
+  const mp=document.getElementById('mp'), mx=document.getElementById('mx'), ml=document.getElementById('mlist');
+  if(mp)mp.onclick=()=>{S.mini.playing=!S.mini.playing;renderMini()};
+  if(mx)mx.onclick=()=>{S.mini.on=false;renderMini()};
+  if(ml)ml.onclick=()=>{S.list='p1'; S.share=false; S.view='list'; render()};
+}
+
+/* ── 렌더 ── */
+function render(){
+  document.getElementById('body').innerHTML =
+    S.view==='home'?home():S.view==='room'?roomFull():S.view==='work'?work():S.view==='flist'?flist():S.view==='lists'?lists():S.view==='list'?listDetail():mine();
+  document.getElementById('screen').scrollTop=0;
+  [...document.querySelectorAll('#nav button')].forEach(b=>
+    b.classList.toggle('on', b.dataset.v===S.view || (S.view==='work'&&b.dataset.v==='mine') || (S.view==='flist'&&b.dataset.v===S.flFrom) || (S.view==='list'&&b.dataset.v==='lists') || (S.view==='room'&&b.dataset.v==='home')));
+  document.getElementById('slideview').innerHTML =
+    (S.view==='home' && S.mode==='slide') ? slideView() : '';
+  if(S.view==='home' && S.mode==='slide' && S.slideAt){
+    const el=document.getElementById('sl'+S.slideAt);
+    if(el)el.scrollIntoView({block:'start'});
+  }
+  document.getElementById('storyview').innerHTML = S.storyIdx!==null ? storyViewer() : '';
+  renderMini();
+  bind();
+}
+
+function bind(){
+  document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{
+    S.view=b.dataset.v;
+    if(S.view==='home')renewHome();          /* 홈에 다시 올 때마다 피드·스토리가 갱신된다 */
+    if(S.view==='mine'){S.profile='me'; S.flist=null; if(S.seg==='list')S.seg='log'}
+    render();
+  });
+  /* 이름·프로필 동그라미 탭 → 그 사람 페이지 (스토리 열의 원은 제외) */
+  document.querySelectorAll('[data-prof]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation(); goProfile(b.dataset.prof);
+  });
+  document.querySelectorAll('[data-prof2]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation(); goProfile(b.dataset.prof2);
+  });
+  document.querySelectorAll('[data-svprof]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation(); S.storyIdx=null; goProfile(b.dataset.svprof);
+  });
+  /* 팔로워 / 팔로잉 */
+  document.querySelectorAll('[data-flist]').forEach(b=>b.onclick=()=>{
+    if(S.view!=='flist')S.flFrom='mine';
+    S.flist=b.dataset.flist; S.fq=''; S.view='flist'; render();
+  });
+  /* 플레이리스트 */
+  document.querySelectorAll('[data-list]').forEach(b=>b.onclick=e=>{
+    if(e.target.closest('[data-share]'))return;
+    S.list=b.dataset.list; S.share=false; S.view='list'; render();
+  });
+  const ldb=document.getElementById('ldback');
+  if(ldb)ldb.onclick=()=>{S.view='lists'; S.share=false; render()};
+  document.querySelectorAll('[data-share]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation(); S.list=b.dataset.share; S.share=true; S.view='list'; render();
+  });
+  const shx=document.getElementById('shclose'); if(shx)shx.onclick=()=>{S.share=false;render()};
+  const shbd=document.getElementById('shbd');   if(shbd)shbd.onclick=()=>{S.share=false;render()};
+  const shc=document.getElementById('shcopy');
+  if(shc)shc.onclick=()=>{shc.textContent='✓ 복사됨'; setTimeout(()=>{if(shc)shc.textContent='복사'},1400)};
+  document.querySelectorAll('[data-pub]').forEach(b=>b.onclick=()=>{
+    const p=LISTS.find(x=>x.id===b.dataset.pub); if(p)p.pub=p.pub?0:1; render();
+  });
+  const nl=document.getElementById('newlist');
+  if(nl)nl.onclick=()=>{
+    const id='p'+Date.now().toString(36);
+    LISTS.unshift({id, nm:'새 플레이리스트', cnt:0, pub:0, cov:[], tracks:[]});
+    S.list=id; S.share=false; S.view='list'; render();
+  };
+  document.querySelectorAll('.tplay').forEach(b=>b.onclick=()=>{
+    const on=b.classList.contains('on');
+    document.querySelectorAll('.tplay.on').forEach(x=>{x.classList.remove('on');x.textContent='▶'});
+    if(!on){b.classList.add('on'); b.textContent='❙❙'; S.mini.playing=true; renderMini()}
+  });
+  const lp=document.getElementById('lplay');
+  if(lp)lp.onclick=()=>{S.mini.playing=!S.mini.playing; lp.textContent=S.mini.playing?'⏸ 재생 중':'▶ 전체 재생'; renderMini()};
+  const gp=document.getElementById('gopeople');
+  if(gp)gp.onclick=()=>{S.profile='me'; S.flist='following'; S.fq=''; S.flFrom='home'; S.view='flist'; render()};
+  const flb=document.getElementById('flback');
+  if(flb)flb.onclick=()=>{S.view=S.flFrom; S.flist=null; S.fq=''; render()};
+  const fq=document.getElementById('fq');
+  if(fq)fq.oninput=()=>{
+    S.fq=fq.value;
+    const pos=fq.selectionStart;
+    render();
+    const el=document.getElementById('fq');
+    if(el){el.focus(); el.setSelectionRange(pos,pos)}
+  };
+  const fqx=document.getElementById('fqx'); if(fqx)fqx.onclick=()=>{S.fq='';render()};
+  document.querySelectorAll('[data-pfol]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    const p=PEOPLE.find(x=>x.who===b.dataset.pfol);
+    if(p)p.fing=p.fing?0:1;
+    const st=STORIES.find(x=>x.who===b.dataset.pfol);
+    if(st)st.following=!!(p&&p.fing);
+    render();
+  });
+  document.querySelectorAll('.profol').forEach(b=>b.onclick=()=>{
+    const st=STORIES.find(s=>s.who===S.profile);
+    if(st){st.following=!st.following; render()}
+  });
+  /* Demo — 음원 파일 올리기 */
+  const ap=document.getElementById('apicker');
+  if(ap && !ap.__bound){
+    ap.__bound=1;
+    ap.onchange=()=>{
+      const f=ap.files[0]; if(!f)return;
+      const meta={name:f.name, size:(f.size/1048576).toFixed(1)+'MB',
+                  title:f.name.replace(/\.[^.]+$/,''), dur:''};
+      S.relForm.audio=meta;
+      const a=new Audio(URL.createObjectURL(f));
+      a.onloadedmetadata=()=>{
+        const s=Math.round(a.duration);
+        meta.dur=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+        render();
+      };
+      render();
+    };
+  }
+  /* ♪ 세그먼트: LIST | 투표 */
+  document.querySelectorAll('[data-lseg]').forEach(b=>b.onclick=()=>{S.lseg=b.dataset.lseg;render()});
+  document.querySelectorAll('[data-vcat]').forEach(b=>b.onclick=()=>{S.vcat=b.dataset.vcat;render()});
+  /* 후보 카드 탭 → 그 아티스트의 log로 들어간다 */
+  document.querySelectorAll('[data-goart]').forEach(b=>b.onclick=e=>{
+    if(e.target.closest('.votebtn,[data-cp]'))return;
+    goProfile(b.dataset.goart);
+  });
+  document.querySelectorAll('[data-cp]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    const on=b.classList.toggle('on');
+    b.textContent=on?'❙❙':'▶';
+    if(on){S.mini.playing=true; renderMini()}
+  });
+  /* 투표 — 그 자리에서 끝난다 */
+  document.querySelectorAll('[data-vote]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    const [rid,i]=b.dataset.vote.split('|');
+    const r=ROUNDS.find(x=>x.id===rid), d=r.cands[+i];
+    if(d.voted)return;
+    d.voted=1; d.v++;
+    const row=b.closest('.crow2');
+    if(row){
+      const p=document.createElement('span');
+      p.className='pop'; p.textContent='+1 🎟'; p.style.cssText+='left:auto;right:14px;bottom:14px';
+      row.style.position='relative'; row.appendChild(p); setTimeout(()=>p.remove(),900);
+    }
+    render();
+  });
+  /* Work 안에서 로그 담기 — 다중 선택 */
+  const pb=document.getElementById('pullbtn');
+  if(pb)pb.onclick=()=>{S.pull=true;S.sel=[];render()};
+  const plx=document.getElementById('plclose'); if(plx)plx.onclick=()=>{S.pull=false;S.sel=[];render()};
+  const plbd=document.getElementById('plbd');   if(plbd)plbd.onclick=()=>{S.pull=false;S.sel=[];render()};
+  document.querySelectorAll('[data-sel]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.sel;
+    S.sel = S.sel.includes(id) ? S.sel.filter(x=>x!==id) : [...S.sel, id];
+    render();
+  });
+  const pd=document.getElementById('pulldone');
+  if(pd)pd.onclick=()=>{
+    const w=WORKS.find(x=>x.id===S.work);
+    S.sel.forEach(id=>{const l=STREAM.find(x=>x.id===id); if(l)l.work=w.id});
+    w.logs+=S.sel.length;
+    S.pull=false; S.sel=[]; render();
+  };
+  /* 발매 — 유통 제출 폼 */
+  const sb=document.getElementById('stagebtn');
+  if(sb)sb.onclick=()=>{S.stage=true;render()};
+  const stx=document.getElementById('stclose'); if(stx)stx.onclick=()=>{S.stage=false;render()};
+  const stbd=document.getElementById('stbd');   if(stbd)stbd.onclick=()=>{S.stage=false;render()};
+  document.querySelectorAll('[data-stage]').forEach(b=>b.onclick=()=>{
+    const r=ROUNDS.find(x=>x.id===b.dataset.stage), w=WORKS.find(x=>x.id===S.work);
+    applyToEvent(r, w.nm);
+    S.stage=false; render();
+  });
+  const rb=document.getElementById('relbtn');
+  if(rb)rb.onclick=()=>{
+    if(!S.relForm.date)S.relForm.date=minRelDate();
+    S.rel=true; render();
+  };
+  const rx=document.getElementById('relclose'); if(rx)rx.onclick=()=>{S.rel=false;render()};
+  const rbd=document.getElementById('relbd');   if(rbd)rbd.onclick=()=>{S.rel=false;render()};
+
+  /* 음원 업로드 */
+  const ra=document.getElementById('relaudio');
+  if(ra)ra.onclick=()=>{const p=document.getElementById('apicker'); p.value=''; p.click()};
+  /* 아트워크 업로드 */
+  const rart=document.getElementById('relart');
+  if(rart)rart.onclick=()=>{const p=document.getElementById('artpicker'); p.value=''; p.click()};
+  const artp=document.getElementById('artpicker');
+  if(artp && !artp.__bound){
+    artp.__bound=1;
+    artp.onchange=()=>{
+      const f=artp.files[0]; if(!f)return;
+      const rd=new FileReader();
+      rd.onload=ev=>{S.relForm.art=ev.target.result; render()};
+      rd.readAsDataURL(f);
+    };
+  }
+  /* 연주곡이면 가사를 묻지 않는다 */
+  const ri=document.getElementById('relinst');
+  if(ri)ri.onclick=()=>{S.relForm.inst=!S.relForm.inst; render()};
+  const rl=document.getElementById('rellyr');
+  if(rl)rl.oninput=()=>{
+    S.relForm.lyr=rl.value;
+    const btn=document.getElementById('reldone'), mn=relMissing();
+    if(btn)btn.disabled=mn.length>0;
+    const el=document.querySelector('.missn');
+    if(el)el.textContent=mn.length?mn.join(' · ')+' 필요':'';
+  };
+  document.querySelectorAll('[data-cr]').forEach(i=>i.oninput=()=>{
+    S.relForm[i.dataset.cr]=i.value;
+    const btn=document.getElementById('reldone'), mn=relMissing();
+    if(btn)btn.disabled=mn.length>0;
+    const el=document.querySelector('.missn');
+    if(el)el.textContent=mn.length?mn.join(' · ')+' 필요':'';
+  });
+  const rdt=document.getElementById('reldate');
+  if(rdt)rdt.onchange=()=>{
+    if(rdt.value < minRelDate()){ rdt.value=minRelDate(); }   /* 2주 룰 */
+    S.relForm.date=rdt.value; render();
+  };
+  document.querySelectorAll('[data-dsp]').forEach(b=>b.onclick=()=>{
+    const d=b.dataset.dsp;
+    S.relForm.dsp = S.relForm.dsp.includes(d) ? S.relForm.dsp.filter(x=>x!==d) : [...S.relForm.dsp, d];
+    render();
+  });
+  const rd=document.getElementById('reldone');
+  if(rd)rd.onclick=()=>{
+    if(relMissing().length)return;
+    const w=WORKS.find(x=>x.id===S.work);
+    w.date=S.relForm.date.replace(/-/g,'.');
+    w.dsp=S.relForm.dsp;
+    w.pending=1;
+    S.rel=false; render();
+  };
+  /* 카드 탭 → 그 카드부터 슬라이드로 (소리 카드는 탭=재생이라 제외) */
+  document.querySelectorAll('[data-slide]').forEach(cd=>cd.onclick=e=>{
+    if(e.target.closest('.rbtn,.fol,.rwho,[data-prof]'))return;
+    S.mode='slide'; S.slideAt=+cd.dataset.slide; render();
+  });
+  const sx=document.getElementById('slclose');
+  if(sx)sx.onclick=()=>{S.mode='feed';render()};
+  document.querySelectorAll('.sl[data-slplay]').forEach(cd=>cd.onclick=e=>{
+    if(e.target.closest('.rbtn,.slfol'))return;
+    const on=cd.classList.toggle('playing');
+    const em=cd.querySelector('.slpill em');
+    if(em)em.textContent=on?'⏸':'▶';
+  });
+  document.querySelectorAll('.slfol').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    const on=b.classList.toggle('on');
+    b.textContent=on?'팔로잉':'팔로우';
+  });
+  document.querySelectorAll('[data-room]').forEach(b=>b.onclick=e=>{
+    if(e.target.closest('.rbtn,.fol,.play'))return;
+    S.slot=SLOTS.indexOf(b.dataset.room); S.view='room'; render();
+  });
+  document.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{S.slot=+b.dataset.slot;render()});
+  document.querySelectorAll('.rheart').forEach(b=>b.onclick=e=>{
+    e.stopPropagation(); b.classList.toggle('on');
+  });
+  document.querySelectorAll('.keep').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    const on=b.classList.toggle('on');
+    b.textContent=on?'✓ 작품':'＋ 작품';
+  });
+  /* 소리 카드: 카드 전체가 재생 버튼 */
+  document.querySelectorAll('.rcard[data-play]').forEach(cd=>cd.onclick=e=>{
+    if(e.target.closest('.rheart,.keep,.rreply'))return;
+    const on=cd.classList.toggle('playing');
+    const em=cd.querySelector('.sndpill em');
+    if(em)em.textContent=on?'⏸':'▶';
+  });
+  /* 사진 카드: 탭하면 갤러리에서 진짜 사진 넣기 */
+  const rp=document.getElementById('rpicker');
+  document.querySelectorAll('.upcard').forEach(cd=>cd.onclick=e=>{
+    if(e.target.closest('.rheart,.keep,.rreply'))return;
+    window.__rt=cd; rp.value=''; rp.click();
+  });
+  if(rp && !rp.__bound){
+    rp.__bound=1;
+    rp.onchange=()=>{
+      const f=rp.files[0], t=window.__rt;
+      if(!f||!t)return;
+      const rd=new FileReader();
+      rd.onload=ev=>{
+        t.querySelector('.bgimg').style.background=
+          `linear-gradient(rgba(0,0,0,.15),rgba(0,0,0,.28)), url(${ev.target.result}) center/cover`;
+        t.classList.add('has-img');
+      };
+      rd.readAsDataURL(f);
+    };
+  }
+  /* 마이 · Work */
+  document.querySelectorAll('[data-seg]').forEach(b=>b.onclick=()=>{S.seg=b.dataset.seg;render()});
+  document.querySelectorAll('[data-work]').forEach(b=>b.onclick=()=>{S.work=b.dataset.work;S.wf='all';S.view='work';render()});
+  document.querySelectorAll('[data-wf]').forEach(b=>b.onclick=()=>{S.wf=b.dataset.wf;render()});
+  const wp=document.getElementById('wplaybig');
+  if(wp)wp.onclick=()=>{wp.textContent=wp.textContent.startsWith('▶')?'⏸ Playing':'▶ Play'};
+  const wsv=document.getElementById('wsave');
+  if(wsv)wsv.onclick=()=>{S.addlist=true;render()};
+  const lpx=document.getElementById('lpclose'); if(lpx)lpx.onclick=()=>{S.addlist=false;render()};
+  const lpbd=document.getElementById('lpbd');   if(lpbd)lpbd.onclick=()=>{S.addlist=false;render()};
+  document.querySelectorAll('[data-addto]').forEach(b=>b.onclick=()=>{
+    const p=LISTS.find(x=>x.id===b.dataset.addto), w=WORKS.find(x=>x.id===S.work);
+    if(p&&w){ p.tracks.push({nm:w.nm, by:w.by, dur:w.dur}); p.cnt++; if(p.cov.length<3)p.cov.push(w.id); }
+    S.addlist=false; render();
+  });
+  const lpn=document.getElementById('lpnew');
+  if(lpn)lpn.onclick=()=>{
+    const w=WORKS.find(x=>x.id===S.work), id='p'+Date.now().toString(36);
+    LISTS.unshift({id, nm:w.nm+' 리스트', cnt:1, pub:0, cov:[w.id], tracks:[{nm:w.nm, by:w.by, dur:w.dur}]});
+    S.addlist=false; S.list=id; S.view='list'; render();
+  };
+  document.querySelectorAll('[data-lt]').forEach(b=>b.onclick=()=>{S.ltype=+b.dataset.lt;render()});
+  document.querySelectorAll('.play').forEach(p=>p.onclick=e=>{
+    e.stopPropagation();
+    const box=p.closest('.dplayer')||p.closest('.fy');
+    if(!box)return;
+    const on=box.classList.toggle('playing');
+    p.textContent=on?'⏸':'▶';
+  });
+  document.querySelectorAll('.fol').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    const on=b.classList.toggle('on');
+    b.textContent=on?'팔로잉':'팔로우';
+  });
+  /* 스트림 안에서 소리가 울리면 종이 전체가 반응한다 */
+  document.querySelectorAll('.dotplay').forEach(p=>p.onclick=e=>{
+    e.stopPropagation();
+    const m=p.closest('.mark'), st=document.getElementById('stream');
+    const on=!m.classList.contains('playing');
+    document.querySelectorAll('.mark.playing').forEach(x=>{
+      x.classList.remove('playing'); x.querySelector('.dotplay').textContent='▶';
+    });
+    if(on){m.classList.add('playing'); p.textContent='❙❙'}
+    if(st)st.classList.toggle('sounding', on);
+  });
+  document.querySelectorAll('.rbtn').forEach(r=>r.onclick=e=>{
+    e.stopPropagation();
+    if(r.dataset.hit)return; r.dataset.hit=1; r.classList.add('hit');
+    const n=r.parentElement.querySelector('.rxn');
+    if(n){n.textContent=+n.dataset.n+1; n.dataset.n=+n.dataset.n+1}
+    const box=r.closest('.fcard')||r.closest('.log')||r.closest('.dplayer')||r.closest('.svbody')||r.closest('.sl');
+    if(box){
+      const p=document.createElement('span');
+      p.className='pop'; p.textContent=r.dataset.emo+' +1';
+      box.style.position='relative'; box.appendChild(p); setTimeout(()=>p.remove(),900);
+    }
+  });
+
+  /* 스토리 열 + 전체화면 뷰어 */
+  document.querySelectorAll('[data-story]').forEach(b=>b.onclick=()=>openStory(+b.dataset.story));
+  const svclose=document.getElementById('svclose'); if(svclose)svclose.onclick=closeStory;
+  const svtapl=document.getElementById('svtapl'); if(svtapl)svtapl.onclick=e=>{e.stopPropagation();prevItem()};
+  const svtapr=document.getElementById('svtapr'); if(svtapr)svtapr.onclick=e=>{e.stopPropagation();nextItem()};
+  const svfolbtn=document.getElementById('svfolbtn');
+  if(svfolbtn)svfolbtn.onclick=e=>{e.stopPropagation();STORIES[S.storyIdx].following=true;render()};
+  const svwrap=document.getElementById('svwrap');
+  if(svwrap){
+    const activeI=svwrap.querySelector('.svbar.active i');
+    if(activeI)activeI.addEventListener('animationend',nextItem,{once:true});
+    const pause=()=>svwrap.classList.add('paused');
+    const resume=()=>svwrap.classList.remove('paused');
+    svwrap.addEventListener('pointerdown',pause);
+    svwrap.addEventListener('pointerup',resume);
+    svwrap.addEventListener('pointerleave',resume);
+  }
+}
+
+setInterval(()=>{
+  document.querySelectorAll('[data-cd]').forEach(el=>{
+    const r=ROUNDS.find(x=>x.id===el.dataset.cd); if(!r)return;
+    const t=Math.max(0,r.end-Date.now());
+    el.textContent=`D-${Math.floor(t/864e5)} `+
+      [Math.floor(t%864e5/36e5),Math.floor(t%36e5/6e4),Math.floor(t%6e4/1e3)]
+        .map(x=>String(x).padStart(2,'0')).join(':');
+  });
+},1000);
+
+/* ── 실제 데이터 주입 — 디자인/구성은 v34 그대로, 목업만 진짜 음악/아티스트로 교체 ── */
+(async function loadReal(){
+  try{
+    var SB='https://vayzhmaggwpkbsrrsdqt.supabase.co';
+    var KEY='sb_publishable_1PxNV0BGL7Wy_strTMqnbA_pCBCsOPG';
+    var cols='id,title,tags,audio_url,cover_url,is_demo,project_id,created_at,likes_count,profiles(name,avatar_url)';
+    var r=await fetch(SB+'/rest/v1/tracks?select='+encodeURIComponent(cols)+'&order=created_at.desc&limit=200',{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
+    if(!r.ok) throw new Error('fetch '+r.status);
+    var rows=await r.json();
+    var COLS=['coral','blue','green','yellow','purple','shpink'];
+    var colOf=function(n){ var h=0; n=String(n||''); for(var i=0;i<n.length;i++) h=(h*31+n.charCodeAt(i))|0; return COLS[Math.abs(h)%6]; };
+    var tm=function(iso){ var d=new Date(iso||Date.now()); function p(x){return String(x).padStart(2,'0');} return p(d.getHours())+':'+p(d.getMinutes()); };
+    var GRADS=[
+      'radial-gradient(circle at 30% 25%,#2e5a7e,transparent 60%),radial-gradient(circle at 80% 80%,#173a4e,transparent 55%),#0c141c',
+      'radial-gradient(circle at 65% 20%,#4a3a7e,transparent 55%),radial-gradient(circle at 20% 85%,#1c2a5c,transparent 60%),#0e0c18',
+      'radial-gradient(circle at 25% 30%,#4a2f66,transparent 60%),radial-gradient(circle at 80% 75%,#173f38,transparent 55%),#101014',
+      'radial-gradient(circle at 70% 25%,#5c3050,transparent 55%),radial-gradient(circle at 20% 80%,#20305c,transparent 60%),#12121a'
+    ];
+    var tracks=rows.map(function(x){ return {
+      id:x.id, title:x.title||'무제', artist:(x.profiles&&x.profiles.name)||'익명',
+      tags:Array.isArray(x.tags)?x.tags:[], audio:x.audio_url||'',
+      cover:(x.cover_url&&/^https?:\/\//.test(x.cover_url))?x.cover_url:'',
+      demo:!!x.is_demo, pid:x.project_id||('p_'+x.id), ts:x.created_at
+    }; });
+    var byArtist={}; tracks.forEach(function(t){ (byArtist[t.artist]=byArtist[t.artist]||[]).push(t); });
+    var artists=Object.keys(byArtist);
+
+    // STORIES = 오디오 있는 아티스트(최대 8), 최근 곡 2개를 스토리 아이템으로
+    var storyArtists=artists.filter(function(a){ return byArtist[a].some(function(t){return t.audio;}); }).slice(0,8);
+    if(storyArtists.length) STORIES=storyArtists.map(function(a){
+      var ts=byArtist[a].slice(0,2);
+      return { who:a, c:colOf(a), following:false, seen:false, items:ts.map(function(t){
+        return t.cover ? {t:'ph', at:tm(t.ts), cap:t.title, bg:'#141418', img:t.cover} : {t:'snd', at:tm(t.ts), cap:t.title, dur:''};
+      }) };
+    });
+
+    // PEOPLE = 아티스트 목록
+    if(artists.length) PEOPLE=artists.slice(0,24).map(function(a){
+      return { who:a, c:colOf(a), sub:(byArtist[a][0].tags[0]||'Artist'), fing:0 };
+    });
+
+    // WORKS = 프로젝트(project_id)별 대표 — 로그 수 = 그 프로젝트 곡 수
+    var byPid={}; tracks.forEach(function(t){ (byPid[t.pid]=byPid[t.pid]||[]).push(t); });
+    var wl=Object.keys(byPid).map(function(pid,i){
+      var vs=byPid[pid]; var rep=vs[0];
+      return { id:'w'+i, nm:(rep.title||'무제').replace(/\s*\(.*\)$/,''), by:rep.artist, dur:'', logs:vs.length, span:'', date:'', bg:GRADS[i%GRADS.length], _cover:rep.cover, _rep:rep };
+    }).slice(0,12);
+    if(wl.length) WORKS=wl;
+
+    // STREAM = 로그 스트림(mine) — 곡 많은 아티스트를 'me'로 삼아 진짜 로그처럼
+    var meA=artists.slice().sort(function(a,b){return byArtist[b].length-byArtist[a].length;})[0];
+    if(meA){
+      STREAM=byArtist[meA].slice(0,8).map(function(t,i){
+        return t.audio ? {id:'l'+i, t:'snd', at:tm(t.ts), nm:t.title, dur:'', side:(i%2?'r':'l'), work:null}
+                       : {id:'l'+i, t:'note', at:tm(t.ts), text:'#'+(t.tags[0]||t.title), tone:(i%2?'b':'y'), side:(i%2?'r':'l'), work:null};
+      });
+    }
+  }catch(e){ console.warn('[offlog] real data load failed', e); }
+  try{ renewHome(); }catch(e){}
+  render();
+})();
+
+</script>
+</body>
+</html>
