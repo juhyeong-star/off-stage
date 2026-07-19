@@ -889,21 +889,12 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .cs-att.on{border-color:var(--mint);background:rgba(80,230,190,.1)}
 .cs-att.on span{color:var(--mint)}
 .cs-prev.aud{min-height:auto;background:var(--card);border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;padding:20px;color:var(--mint);font-weight:700}
-.composebtn{display:block;width:100%;margin:0 0 14px;background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:14px;padding:14px;font-size:14px;font-weight:800;min-height:48px}
-.composebtn:hover{border-color:var(--mint);color:var(--mint)}
-/* LOG 위 2주 날짜 스트립 — 하루 생활루틴 */
-.daystrip{display:flex;gap:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:2px 2px 12px;margin:0 -2px}
-.daystrip::-webkit-scrollbar{display:none}
-.dchip{flex:0 0 auto;min-width:46px;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative;
-  background:var(--card2);border:1px solid var(--line);color:var(--muted);border-radius:13px;padding:8px 6px 9px;cursor:pointer}
-.dchip em{font-style:normal;font-size:10px;opacity:.8}
-.dchip b{font-family:'Black Han Sans';font-weight:400;font-size:16px;color:var(--txt);line-height:1}
-.dchip.all{justify-content:center;font-size:12px;font-weight:800;color:var(--txt);padding:0 14px}
-.dchip.has::after{content:'';position:absolute;bottom:5px;width:4px;height:4px;border-radius:50%;background:var(--mint)}
-.dchip .dtoday{font-style:normal;font-size:8.5px;color:var(--mint);font-weight:800;margin-top:1px}
-.dchip.on{border-color:var(--mint);background:rgba(80,230,190,.12)}
-.dchip.on b,.dchip.on em{color:var(--mint)}
-.dchip:active{transform:scale(.94)}
+.composebtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;width:100%;margin:0 0 14px;background:var(--card2);border:1px solid var(--line);border-radius:18px;padding:22px 14px;font-family:inherit;cursor:pointer}
+.composebtn .cplus{display:flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:50%;border:1.5px solid var(--line);font-size:26px;color:var(--txt);line-height:1}
+.composebtn .clabel{font-size:13.5px;font-weight:700;color:var(--muted)}
+.composebtn:hover{border-color:var(--mint)}
+.composebtn:hover .cplus{border-color:var(--mint);color:var(--mint)}
+.composebtn:active{transform:scale(.99)}
 /* 새 작품 이름 입력 / 플레이리스트 이름 */
 .cs-name{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--txt);padding:13px;font-size:17px;font-family:'Black Han Sans';letter-spacing:-.01em}
 .cs-name:focus{outline:2px solid var(--mint)}
@@ -1305,25 +1296,7 @@ function streamOrder(arr){
     return logTs(a)-logTs(b);               /* 나머지는 이른 시간부터(루틴) */
   });
 }
-/* ── 오늘 날짜(YYYY-MM-DD) & 로그의 날짜(없으면 오늘로 취급) ── */
-function todayISO(){ var d=new Date(), p=x=>String(x).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
-function logDayOf(l){ return (l&&l.dt) || todayISO(); }
-/* ── LOG 위 2주 날짜 스트립 — 하루 생활루틴을 날짜별로 ── */
-const _WD=['일','월','화','수','목','금','토'];
-function dayStrip(){
-  var today=new Date(), p=x=>String(x).padStart(2,'0');
-  var iso=d=>d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
-  var tIso=iso(today);
-  var have={}; STREAM.forEach(function(l){ have[logDayOf(l)]=(have[logDayOf(l)]||0)+1; });
-  var chips='<button class="dchip all'+(!S.logDay?' on':'')+'" data-day="">전체</button>';
-  for(var i=13;i>=0;i--){
-    var d=new Date(today); d.setDate(today.getDate()-i); var di=iso(d);
-    chips+='<button class="dchip'+(S.logDay===di?' on':'')+(have[di]?' has':'')+'" data-day="'+di+'">'
-      +'<em>'+_WD[d.getDay()]+'</em><b>'+d.getDate()+'</b>'
-      +(di===tIso?'<i class="dtoday">오늘</i>':'')+'</button>';
-  }
-  return '<div class="daystrip" id="daystrip">'+chips+'</div>';
-}
+/* (LOG 2주 날짜 스트립 제거 — 2026-07 리뷰 반영: 단순화. 필요 시 git 히스토리 576b3f6에서 복원) */
 
 
 /* 투표 라운드 — 두 종류가 있다.
@@ -1383,7 +1356,6 @@ const curRound = ()=>ROUNDS.find(r=>r.id===S.round)||ROUNDS[0];
 
 let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:'me', round:'jul', lseg:'list', vcat:'music', flist:null, fq:'', flFrom:'mine', list:null, share:false, addlist:false,
   pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'', auth:false, profileAid:null, saveTrack:null,
-  logDay:null,   /* LOG 날짜 스트립 필터: null=전체, 'YYYY-MM-DD'=그날만 */
   relForm:{audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', event:''}};
 
 const shape=(s,f,z)=>`<svg viewBox="0 0 24 24" width="${z}" height="${z}" style="overflow:visible"><use href="#${s}" fill="${f}"/></svg>`;
@@ -1767,12 +1739,10 @@ function mine(){
       <div class="rmid"><div class="rts">${l.at}</div><div class="rnote">${l.text}</div></div>${chrome}</div></div>`;
   };
 
-  const _dayStream = (me && S.logDay) ? STREAM.filter(l=>logDayOf(l)===S.logDay) : STREAM;
   const logs=`
-    ${me?dayStrip():''}
-    ${me?`<button class="composebtn" id="composebtn">＋ 로그 남기기</button>`:''}
+    ${me?`<button class="composebtn" id="composebtn"><span class="cplus">＋</span><span class="clabel">로그 남기기</span></button>`:''}
     <div class="stream" id="stream"><div class="ambient"></div>
-      <div class="marks">${streamOrder(_dayStream).map(mark).join('')||`<div class="pknote" style="padding:26px 0">${S.logDay?'이 날의 로그가 없어요':'아직 로그가 없어요'}</div>`}</div></div>
+      <div class="marks">${streamOrder(STREAM).map(mark).join('')||`<div class="pknote" style="padding:26px 0">아직 로그가 없어요</div>`}</div></div>
     ${me?`<div class="expire">아직 어느 작품도 아닌 로그 <b>${STREAM.filter(l=>!l.work).length}개</b><br>
         곡이 생기면 그 작품 안에서 담으면 됩니다</div>`:''}`;
 
@@ -2285,7 +2255,6 @@ function pushLog(txt, m, audioUrl){
   SESSION_NEW.add(id);          /* 방금 올린 것 → 맨 위 핀(루틴 피드 위에) */
   studioSave();
   S.compose=null;
-  S.logDay=null;                /* 과거 날짜 필터 켜져 있어도 방금 올린 로그가 보이게 해제 */
   if(S.view!=='mine' || S.profile!=='me'){ S.view='mine'; S.profile='me'; }
   render();
   offToast('로그를 올렸어요');
@@ -2860,8 +2829,6 @@ function bind(){
   }
   /* 마이 · Work */
   document.querySelectorAll('[data-seg]').forEach(b=>b.onclick=()=>{S.seg=b.dataset.seg;render()});
-  /* LOG 날짜 스트립 — 날짜 탭 → 그날 로그만, 전체 → 필터 해제 */
-  document.querySelectorAll('[data-day]').forEach(b=>b.onclick=()=>{ S.logDay=b.dataset.day||null; render(); });
   /* 내 로그 ⋯ → 음악·데모·사진 다시 받기 */
   document.querySelectorAll('[data-logdl]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); downloadLog(b.dataset.logdl); });
   /* 타인 로그 ⋯ → 노래 담기(플레이리스트) */
