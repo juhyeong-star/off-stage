@@ -994,9 +994,8 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
 <input type="file" id="rpicker" accept="image/*" style="display:none">
 <input type="file" id="apicker" accept="audio/*" style="display:none">
 <input type="file" id="artpicker" accept="image/*" style="display:none">
-<!-- 새 로그 작성: 폰에서 capture=카메라 바로 열림 -->
-<input type="file" id="cphoto" accept="image/*" capture="environment" style="display:none">
-<input type="file" id="cvideo" accept="video/*" capture="environment" style="display:none">
+<!-- 새 로그 작성: 폰에서 capture=카메라 바로 열림. ccam=사진·영상 통합(카메라에서 직접 선택), caudio=데모 -->
+<input type="file" id="ccam" accept="image/*,video/*" capture="environment" style="display:none">
 <input type="file" id="caudio" accept="audio/*" style="display:none">
 
 <!-- 메인앱과 동일 Supabase SDK — 같은 도메인이라 로그인 세션이 자동 공유된다 -->
@@ -1271,13 +1270,26 @@ let STREAM=[
   {id:'l4', t:'snd',  at:'11:00', nm:'허밍', dur:'0:07', side:'l', work:null},
   {id:'l5', t:'note', at:'18:05', text:'드럼은 파리 세션 걸로.\n서울 테이크는 폐기.', tone:'b', rot:1.8, side:'r', work:null},
 ];
-/* 로그 정렬 키 — 최근이 위로. 내가 올린 로그(my_)는 생성시각(ms), 시드는 날짜+시각. */
+/* 로그 정렬 키 — 시각(ms). 내가 올린 로그(my_)는 생성시각, 시드는 날짜+시각. */
 function logTs(l){
   if(!l) return 0;
   var id=String(l.id||'');
   if(id.indexOf('my_')===0){ var n=parseInt(id.slice(3),10); if(n) return n; }
   var t=Date.parse(((l.dt||'2000-01-01')+'T'+(l.at||'00:00')));
   return isNaN(t)?0:t;
+}
+/* 이번 세션에 내가 방금 올린 로그 id — 하루 루틴은 이른 시간부터(위→아래) 보되,
+   방금 올린 건 즉시 확인되도록 맨 위로 핀한다. */
+const SESSION_NEW=new Set();
+/* 내 페이지 로그 순서: (1) 방금 올린 것 = 맨 위(최신부터) → (2) 나머지 = 이른 시간부터(데일리 루틴) */
+function streamOrder(arr){
+  return arr.slice().sort(function(a,b){
+    var pa=SESSION_NEW.has(a.id), pb=SESSION_NEW.has(b.id);
+    if(pa&&!pb) return -1;
+    if(pb&&!pa) return 1;
+    if(pa&&pb)  return logTs(b)-logTs(a);   /* 방금 올린 것끼리는 최신이 위 */
+    return logTs(a)-logTs(b);               /* 나머지는 이른 시간부터(루틴) */
+  });
 }
 
 
@@ -1723,7 +1735,7 @@ function mine(){
   const logs=`
     ${me?`<button class="composebtn" id="composebtn">＋ 로그 남기기</button>`:''}
     <div class="stream" id="stream"><div class="ambient"></div>
-      <div class="marks">${STREAM.slice().sort((a,b)=>logTs(b)-logTs(a)).map(mark).join('')}</div></div>
+      <div class="marks">${streamOrder(STREAM).map(mark).join('')}</div></div>
     ${me?`<div class="expire">아직 어느 작품도 아닌 로그 <b>${STREAM.filter(l=>!l.work).length}개</b><br>
         곡이 생기면 그 작품 안에서 담으면 됩니다</div>`:''}`;
 
@@ -2208,12 +2220,11 @@ function composeSheet(){
   const canPost = !!((C.text||'').trim() || m);
   return `<div class="cs-bd" id="csbd"><div class="cs">
     <div class="cs-hd"><b>로그 남기기</b><button class="cs-x" id="csx" aria-label="닫기">✕</button></div>
-    <textarea class="cs-ta" id="csta" placeholder="무슨 생각이에요?  ·  아래에서 사진·영상·데모를 끼워넣을 수 있어요">${C.text||''}</textarea>
+    <textarea class="cs-ta" id="csta" placeholder="무슨 생각이에요?  ·  그냥 쓰면 시간과 글만 남아요">${C.text||''}</textarea>
     ${prev}
     <div class="cs-attach">
-      <button class="cs-att${m&&m.kind==='ph'?' on':''}" id="csphoto" aria-label="사진 끼워넣기">📷<span>사진</span></button>
-      <button class="cs-att${m&&m.kind==='vid'?' on':''}" id="csvideo" aria-label="영상 끼워넣기">🎥<span>영상</span></button>
-      <button class="cs-att${m&&m.kind==='aud'?' on':''}" id="csaudio" aria-label="데모 끼워넣기">🎵<span>데모</span></button>
+      <button class="cs-att${m&&(m.kind==='ph'||m.kind==='vid')?' on':''}" id="cscam" aria-label="카메라">📷<span>카메라</span></button>
+      <button class="cs-att${m&&m.kind==='aud'?' on':''}" id="csaudio" aria-label="데모">🎵<span>데모</span></button>
     </div>
     <button class="cs-post" id="cspost"${canPost?'':' disabled'}>올리기</button>
   </div></div>`;
@@ -2234,6 +2245,7 @@ function pushLog(txt, m, audioUrl){
   else if(m && m.kind==='ph')  log={id, t:'ph',  at:now, dt, cap:txt||'사진', bg:'center/cover no-repeat url('+m.url+')', side:'l', work:null};
   else                         log={id, t:'note',at:now, dt, text:txt, tone:'y', side:'l', work:null};
   STREAM.unshift(log);
+  SESSION_NEW.add(id);          /* 방금 올린 것 → 맨 위 핀(루틴 피드 위에) */
   studioSave();
   S.compose=null;
   if(S.view!=='mine' || S.profile!=='me'){ S.view='mine'; S.profile='me'; }
@@ -2809,33 +2821,33 @@ function bind(){
     LISTS.unshift({id, nm:w.nm+' 리스트', mine:true, cnt:1, pub:0, cov:[w.id], tracks:[{nm:w.nm, by:w.by, dur:w.dur}]});
     studioSave(); S.addlist=false; S.list=id; S.view='list'; render();
   };
-  /* 새 로그 ＋ (FAB / 상단 버튼) → 작성 시트 */
-  document.querySelectorAll('.fab,#composebtn').forEach(b=>b.onclick=()=>{ S.compose={text:'',media:null}; render(); });
-  /* 작성 시트 컨트롤 (매 렌더 재바인딩) — 한 박스에서 글 + 사진/영상/데모 끼워넣기 */
+  /* 새 로그 ＋ — 누르면 바로 카메라가 열린다(사진·영상 직접 촬영). 시트는 뒤에서 준비 */
+  document.querySelectorAll('.fab,#composebtn').forEach(b=>b.onclick=()=>{
+    S.compose={text:'',media:null}; render();
+    const cam=document.getElementById('ccam'); if(cam)cam.click();   /* 바로 카메라 */
+  });
+  /* 작성 시트 컨트롤 (매 렌더 재바인딩) — 카메라(사진/영상) + 데모, 글만 쓰면 노트 */
   if(S.compose){
     const bd=document.getElementById('csbd'), x=document.getElementById('csx');
     const ta=document.getElementById('csta'), post=document.getElementById('cspost'), rm=document.getElementById('csrm');
-    const cph=document.getElementById('csphoto'), cvd=document.getElementById('csvideo'), cau=document.getElementById('csaudio');
+    const cam=document.getElementById('cscam'), cau=document.getElementById('csaudio');
     const close=()=>{ S.compose=null; render(); };
     if(bd)bd.onclick=e=>{ if(e.target===bd) close(); };
     if(x)x.onclick=close;
     if(ta)ta.oninput=()=>{ S.compose.text=ta.value; if(post) post.disabled = !((ta.value||'').trim()||S.compose.media); };
-    if(cph)cph.onclick=()=>{ const el=document.getElementById('cphoto'); if(el)el.click(); };
-    if(cvd)cvd.onclick=()=>{ const el=document.getElementById('cvideo'); if(el)el.click(); };
+    if(cam)cam.onclick=()=>{ const el=document.getElementById('ccam'); if(el)el.click(); };
     if(cau)cau.onclick=()=>{ const el=document.getElementById('caudio'); if(el)el.click(); };
     if(rm)rm.onclick=()=>{ const md=S.compose.media; if(md&&md.url&&/^blob:/.test(md.url)){try{URL.revokeObjectURL(md.url)}catch(_){}} S.compose.media=null; render(); };
     if(post)post.onclick=submitCompose;
   }
-  /* 파일 입력 (1회 바인딩) — 고르면 그 자리에서 미리보기로 끼워넣는다 */
-  const cpho=document.getElementById('cphoto');
-  if(cpho && !cpho.__b){ cpho.__b=1; cpho.onchange=()=>{ const f=cpho.files&&cpho.files[0];
+  /* 카메라 입력(1회 바인딩) — 찍은 게 영상이면 영상 로그, 사진이면 사진 로그로 자동 판별 */
+  const ccam=document.getElementById('ccam');
+  if(ccam && !ccam.__b){ ccam.__b=1; ccam.onchange=()=>{ const f=ccam.files&&ccam.files[0];
     if(f){ if(!S.compose)S.compose={text:'',media:null};
-      const rd=new FileReader(); rd.onload=()=>{ S.compose.media={kind:'ph',url:rd.result}; render(); }; rd.readAsDataURL(f); }
-    cpho.value=''; }; }
-  const cvid=document.getElementById('cvideo');
-  if(cvid && !cvid.__b){ cvid.__b=1; cvid.onchange=()=>{ const f=cvid.files&&cvid.files[0];
-    if(f){ if(!S.compose)S.compose={text:'',media:null}; if(S.compose.media&&S.compose.media.url&&/^blob:/.test(S.compose.media.url||'')){try{URL.revokeObjectURL(S.compose.media.url)}catch(_){}}
-      S.compose.media={kind:'vid',url:URL.createObjectURL(f)}; render(); } cvid.value=''; }; }
+      const md=S.compose.media; if(md&&md.url&&/^blob:/.test(md.url||'')){try{URL.revokeObjectURL(md.url)}catch(_){}}
+      if(/^video\//.test(f.type||'')){ S.compose.media={kind:'vid',url:URL.createObjectURL(f)}; render(); }
+      else { const rd=new FileReader(); rd.onload=()=>{ S.compose.media={kind:'ph',url:rd.result}; render(); }; rd.readAsDataURL(f); } }
+    ccam.value=''; }; }
   const caud=document.getElementById('caudio');
   if(caud && !caud.__b){ caud.__b=1; caud.onchange=()=>{ const f=caud.files&&caud.files[0];
     if(f){ if(!S.compose)S.compose={text:'',media:null}; S.compose.media={kind:'aud',file:f,name:f.name}; render(); } caud.value=''; }; }
