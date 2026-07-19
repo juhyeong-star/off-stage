@@ -180,11 +180,15 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .rdate{width:100%;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:11px;
   color:var(--txt);font-family:'Black Han Sans';font-size:13.5px;color-scheme:dark}
 .rdate:focus{outline:none;border-color:var(--mint)}
-.dsps{display:flex;flex-wrap:wrap;gap:6px}
-.dsp{background:var(--card);border:1px solid var(--line);color:var(--muted);border-radius:99px;
-  padding:6px 12px;font-size:11px;cursor:pointer;font-family:inherit}
-.dsp.on{background:var(--mint);border-color:var(--mint);color:#04231d;font-weight:700}
-.dsp:focus-visible{outline:2px solid var(--mint)}
+/* 공연 이벤트 참여 선택 (발매 시 — 유통사 표시 대신) */
+.evpick{display:flex;flex-direction:column;gap:7px}
+.evopt{width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:11px 13px;font-family:inherit;color:var(--txt);min-height:44px}
+.evopt b{display:block;font-size:13.5px;font-weight:800}
+.evopt small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.evopt.on{border-color:var(--mint);background:rgba(83,224,200,.08)}
+.evopt.on b{color:var(--mint)}
+.evopt:focus-visible{outline:2px solid var(--mint)}
 .relsum{font-size:11.5px;color:var(--muted);text-align:center;margin:18px 0 12px;line-height:1.5}
 .relsum b{color:var(--mint)}
 .profol{margin:8px 0 0;font-size:11.5px;padding:6px 18px}
@@ -813,6 +817,8 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
   border-radius:99px;padding:2px 7px;flex-shrink:0}
 .evstat.one b{font-size:13px;font-weight:700;flex:1;min-width:0}
 .evcd{font-family:'Black Han Sans';font-size:11px;color:var(--lemon);letter-spacing:.5px;flex-shrink:0}
+.evstat.one.confirmed{border-color:var(--lemon);background:rgba(255,243,166,.06)}
+.evbadge.confirmed{background:var(--lemon);color:#2b2417;border-color:var(--lemon)}
 
 /* ── Work — 음악이 위, 그 아래 모든 로그 ── */
 .whero{border-radius:24px;overflow:hidden;border:1px solid var(--line);margin-bottom:6px}
@@ -1290,7 +1296,7 @@ const curRound = ()=>ROUNDS.find(r=>r.id===S.round)||ROUNDS[0];
 
 let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:'me', round:'jul', lseg:'list', vcat:'music', flist:null, fq:'', flFrom:'mine', list:null, share:false, addlist:false,
   pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'', auth:false, profileAid:null,
-  relForm:{audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', dsp:[]}};
+  relForm:{audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', event:''}};
 
 const shape=(s,f,z)=>`<svg viewBox="0 0 24 24" width="${z}" height="${z}" style="overflow:visible"><use href="#${s}" fill="${f}"/></svg>`;
 const waveBars=n=>[...Array(n)].map((_,i)=>`<i style="--h:${22+Math.round(Math.random()*72)};--d:${i}"></i>`).join('');
@@ -1586,9 +1592,15 @@ let WORKS=[
 function eventStatus(w){
   const r = ROUNDS.find(x=>x.applied===w.nm);
   if(!r) return '';
+  const mine=r.cands.find(x=>x.me);
+  const v=(mine&&mine.v)||0;
+  const confirmed = r.need && v>=r.need;
+  if(confirmed) return `<div class="evstat one confirmed">
+    <span class="evbadge confirmed">🎉 공연 확정</span><b>${r.nm}</b>
+    <span class="evcd">득표 ${v}/${r.need}</span></div>`;
   return `<div class="evstat one">
     <span class="evbadge">◆ 참여 중</span><b>${r.nm}</b>
-    <span class="evcd" data-cd="${r.id}">—</span></div>`;
+    <span class="evcd" data-cd="${r.id}">${r.need?v+'/'+r.need+'표':''}</span></div>`;
 }
 
 /* Summer Rain의 스토리 — 음악 아래에 펼쳐지는 6개월. 전부 더미 */
@@ -2030,15 +2042,14 @@ function work(){
     ${w.mine ? ((!w.date || w.date==='작업 중')
       ? `<button class="relbtn" id="relbtn">음원 발매하기 <b>▸</b></button>`
       : `<div class="reldone"><span class="ap-dot" style="background:var(--lemon);box-shadow:0 0 8px var(--lemon)"></span>
-          <b style="color:var(--lemon)">${w.date}</b> 발매 예약 · ${(w.dsp||[]).join(' · ')||'유통 준비'}
+          <b style="color:var(--lemon)">${w.date}</b> 발매 예약
           <button class="ap-ch" id="relbtn">수정</button></div>`) : ''}
   </div>
-  ${w.mine && (w.cover||w.lyr||(w.credits&&(w.credits.comp||w.credits.lyri||w.credits.arr||w.credits.prod))||(w.dsp&&w.dsp.length)) ? `<div class="albuminfo">
+  ${w.mine && (w.cover||w.lyr||(w.credits&&(w.credits.comp||w.credits.lyri||w.credits.arr||w.credits.prod))) ? `<div class="albuminfo">
     ${w.credits&&(w.credits.comp||w.credits.lyri||w.credits.arr||w.credits.prod)?`<div class="ai-sec"><div class="ai-t">크레딧</div><div class="ai-cr">
       ${w.credits.comp?`<span>작곡 <b>${w.credits.comp}</b></span>`:''}${w.credits.lyri?`<span>작사 <b>${w.credits.lyri}</b></span>`:''}${w.credits.arr?`<span>편곡 <b>${w.credits.arr}</b></span>`:''}${w.credits.prod?`<span>프로듀서 <b>${w.credits.prod}</b></span>`:''}
     </div></div>`:''}
     ${w.inst?`<div class="ai-sec"><div class="ai-t">가사</div><div class="ai-lyr" style="color:var(--muted)">연주곡 (가사 없음)</div></div>`:(w.lyr?`<div class="ai-sec"><div class="ai-t">가사</div><div class="ai-lyr">${w.lyr.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div></div>`:'')}
-    ${w.dsp&&w.dsp.length?`<div class="ai-sec"><div class="ai-t">유통</div><div class="ai-dsp">${w.dsp.map(function(d){return '<span>'+d+'</span>';}).join('')}</div></div>`:''}
   </div>`:''}
   ${eventStatus(w)}
   <div class="sechd">
@@ -2098,9 +2109,14 @@ function releaseSheet(w){
     <input class="rdate" type="date" id="reldate" value="${R.date}" min="${minRelDate()}">
     <div class="rulen" style="text-align:left;margin:7px 4px 0">유통사 심사 때문에 <b style="color:var(--lemon)">최소 2주 뒤</b>부터 지정할 수 있습니다 · 빠른 날짜 ${minRelDate().replace(/-/g,'.')}</div>
 
-    <div class="rsec">유통</div>
-    <div class="dsps">${['Spotify','Apple Music','Melon','YouTube Music','Genie','Bugs'].map(d=>
-      `<button class="dsp ${R.dsp.includes(d)?'on':''}" data-dsp="${d}">${d}</button>`).join('')}</div>
+    <div class="rsec">공연 이벤트 참여 <em class="opt">선택</em></div>
+    <div class="evpick">
+      <button class="evopt ${!R.event?'on':''}" data-relevent="">나중에 할게요</button>
+      ${ROUNDS.filter(r=>r.cat==='stage'&&r.type==='open').map(r=>`
+        <button class="evopt ${R.event===r.id?'on':''}" data-relevent="${r.id}">
+          <b>${r.nm}</b><small>${r.sub} · 득표 ${r.need} → ${(r.prize||'').replace(/^.*→\s*/,'')}</small></button>`).join('')}
+    </div>
+    <p class="rulen" style="text-align:left;margin:7px 4px 0">참여를 고르면 청취자 투표를 받아요 · 목표 득표를 넘기면 공연이 확정돼요</p>
 
     <div class="relsum">이 작품의 로그 <b>${kept}개</b>가 발매일에 메이킹 필름으로 자동 편집됩니다</div>
     <button class="cta" id="reldone" ${miss.length?'disabled':''}>발매 예약</button>
@@ -2120,7 +2136,6 @@ function relMissing(){
   if(!R.art)   m.push('아트워크');
   if(!R.inst && !R.lyr.trim()) m.push('가사');
   if(!R.comp.trim()) m.push('작곡가');
-  if(!R.dsp.length) m.push('유통사');
   if(!R.date) m.push('발매일');
   return m;
 }
@@ -2548,9 +2563,8 @@ function bind(){
     if(rdt.value < minRelDate()){ rdt.value=minRelDate(); }   /* 2주 룰 */
     S.relForm.date=rdt.value; render();
   };
-  document.querySelectorAll('[data-dsp]').forEach(b=>b.onclick=()=>{
-    const d=b.dataset.dsp;
-    S.relForm.dsp = S.relForm.dsp.includes(d) ? S.relForm.dsp.filter(x=>x!==d) : [...S.relForm.dsp, d];
+  document.querySelectorAll('[data-relevent]').forEach(b=>b.onclick=()=>{
+    S.relForm.event = b.dataset.relevent;   /* 단일 선택 — 공연 이벤트 참여 (없음=빈 문자열) */
     render();
   });
   const rd=document.getElementById('reldone');
@@ -2559,16 +2573,16 @@ function bind(){
     const w=WORKS.find(x=>x.id===S.work);
     const R=S.relForm;
     w.date=R.date.replace(/-/g,'.');
-    w.dsp=R.dsp.slice();
     if(R.art) w.cover=R.art;                 /* 앨범 커버(dataURL) 저장 */
     w.inst=!!R.inst;
     w.lyr=R.inst?'':(R.lyr||'');             /* 가사 */
     w.credits={comp:R.comp||'', lyri:R.lyri||'', arr:R.arr||'', prod:R.prod||''}; /* 크레딧 */
     if(R.audio&&R.audio.dur) w.dur=R.audio.dur;
     w.pending=1;
+    if(R.event){ const r=ROUNDS.find(x=>x.id===R.event); if(r){ applyToEvent(r, w.nm); w.event=R.event; } }
     studioSave();                            /* 새로고침에도 유지 */
     S.rel=false; render();
-    offToast('발매 예약 저장됨');
+    offToast(R.event?'발매 예약 + 이벤트 참여 신청됨':'발매 예약 저장됨');
   };
   /* 카드 탭 → 그 카드부터 슬라이드로 (소리 카드는 탭=재생이라 제외) */
   document.querySelectorAll('[data-slide]').forEach(cd=>cd.onclick=e=>{
