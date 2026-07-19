@@ -1002,6 +1002,8 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
 <!-- 새 로그 작성: 폰에서 capture=카메라 바로 열림. ccam=사진·영상 통합(카메라에서 직접 선택), caudio=데모 -->
 <input type="file" id="ccam" accept="image/*,video/*" capture="environment" style="display:none">
 <input type="file" id="caudio" accept="audio/*" style="display:none">
+<input type="file" id="addphoto" accept="image/*" style="display:none">
+<input type="file" id="adddemo" accept="audio/*" style="display:none">
 
 <!-- 메인앱과 동일 Supabase SDK — 같은 도메인이라 로그인 세션이 자동 공유된다 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -1108,6 +1110,22 @@ function saveSheet(){
       return `<button class="pkrow" data-savein="${p.id}"><span class="pknm"><b>${p.nm}</b><small>${(p.tracks||[]).length}곡</small></span>
         <span style="margin-left:auto;color:${has?'var(--mint)':'var(--muted)'};font-weight:800">${has?'✓ 담김':'＋'}</span></button>`}).join(''):`<div class="pknote" style="padding:10px 0">아직 만든 플레이리스트가 없어요</div>`}
     <button class="newlist" id="svnew" style="margin-top:8px">＋ 새 플레이리스트에 담기</button>
+  </div></div>`;
+}
+/* 로그 ⋯ 액션 메뉴 — 내 글=사진/데모 넣기, 남의 음악=공유/담기 */
+let _attachTo=null;
+function logMenuSheet(){
+  if(!S.logMenu) return '';
+  const M=S.logMenu;
+  const rows = M.kind==='addmedia'
+    ? `<button class="pkrow" data-addkind="ph"><span class="pknm"><b>📷 사진 넣기</b><small>이 글이 사진 위 캡션이 돼요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>
+       <button class="pkrow" data-addkind="snd"><span class="pknm"><b>♪ 데모 넣기</b><small>이 글에 데모(오디오)를 붙여요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>`
+    : `<button class="pkrow" data-omenu="save"><span class="pknm"><b>＋ 내 플레이리스트에 담기</b></span><span style="margin-left:auto;color:var(--mint);font-weight:800">담기</span></button>
+       <button class="pkrow" data-omenu="share"><span class="pknm"><b>⤴ 공유</b><small>링크로 공유하거나 복사</small></span></button>`;
+  return `<div class="cs-bd" id="lmbd"><div class="cs">
+    <div class="cs-hd"><b>${M.kind==='addmedia'?'로그에 넣기':(M.nm||'음악')}</b><button class="cs-x" id="lmx" aria-label="닫기">✕</button></div>
+    ${M.kind==='addmedia'?'':`<div class="cs-trk">🎵 <b>${M.nm||'음악'}</b>${M.by?' · '+M.by:''}</div>`}
+    ${rows}
   </div></div>`;
 }
 /* 비로그인 안내 — 조용히 실패시키지 않고 알려준다 */
@@ -1355,7 +1373,7 @@ const curRound = ()=>ROUNDS.find(r=>r.id===S.round)||ROUNDS[0];
 
 
 let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:'me', round:'jul', lseg:'list', vcat:'music', flist:null, fq:'', flFrom:'mine', list:null, share:false, addlist:false,
-  pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'', auth:false, profileAid:null, saveTrack:null,
+  pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'', auth:false, profileAid:null, saveTrack:null, logMenu:null,
   relForm:{audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', event:''}};
 
 const shape=(s,f,z)=>`<svg viewBox="0 0 24 24" width="${z}" height="${z}" style="overflow:visible"><use href="#${s}" fill="${f}"/></svg>`;
@@ -1703,7 +1721,7 @@ function mine(){
     <div class="bigwv">${waveBars(34)}</div>
     <div class="rmid"><div class="rts">${t.dt?t.dt.replace(/-/g,'.'):''}</div><div class="rcap">${t.nm}</div>
       <span class="sndpill"><em>▶</em><b>${t.demo?'Demo':''}</b></span></div>
-    <button class="edit save" data-savetid="${t.id||''}" data-savenm="${(t.nm||'').replace(/"/g,'&quot;')}" data-saveby="${(prof.who||'').replace(/"/g,'&quot;')}" data-saveaudio="${t.audio||''}" aria-label="담기">⋯</button></div></div>`;
+    <button class="edit mine" data-sharemenu="${t.id||''}" data-snm="${(t.nm||'').replace(/"/g,'&quot;')}" data-sby="${(prof.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" aria-label="공유·담기">⋯</button></div></div>`;
   const _emptyOrLoad = rp ? `<div class="pknote" style="padding:22px 0">아직 올린 게 없어요</div>` : `<div class="pknote" style="padding:22px 0">불러오는 중…</div>`;
   const rpTracks    = rp ? rp.tracks.slice().sort((a,b)=>String(b.dt||'').localeCompare(String(a.dt||''))) : [];  /* 최신이 위로 */
   const artistLog   = rpTracks.length ? rpTracks.map(alogCard).join('') : _emptyOrLoad;
@@ -1723,7 +1741,7 @@ function mine(){
     const w = l.work ? WORKS.find(x=>x.id===l.work) : null;
     const chrome = me
       ? `${w?`<span class="wchip mychip">◆ ${w.nm}</span>`:''}
-         <button class="edit mine" data-logdl="${l.id}" aria-label="받기">⋯</button>`
+         <button class="edit mine" ${l.t==='note'?`data-addmenu="${l.id}"`:`data-logdl="${l.id}"`} aria-label="${l.t==='note'?'넣기':'받기'}">⋯</button>`
       : '';
     if(l.t==='ph') return `<div class="fcard my"><div class="rcard">
       <div class="bgimg" style="background:${l.bg}"></div><div class="grainy"></div>
@@ -2282,6 +2300,34 @@ function downloadLog(id){
   if(!url){ offToast('받을 파일이 없어요 (샘플 로그예요)'); return; }
   _saveFile(url, name);
 }
+/* 글 로그에 사진/데모 붙이기 → 미디어 카드로 (사진=캡션, 데모=데모카드) */
+function attachMedia(id, kind, file){
+  const l=STREAM.find(x=>String(x.id)===String(id)); if(!l){ offToast('로그를 못 찾았어요'); return; }
+  const txt=(l.text||'').trim();
+  if(kind==='ph'){
+    const rd=new FileReader();
+    rd.onload=()=>{ l.t='ph'; l.cap=txt||'사진'; l.bg='center/cover no-repeat url('+rd.result+')'; delete l.text; delete l.tone; studioSave(); render(); offToast('사진을 넣었어요'); };
+    rd.readAsDataURL(file); return;
+  }
+  const apply=au=>{ l.t='snd'; l.nm=txt||'데모'; l.dur=''; l.audio=au; delete l.text; delete l.tone; studioSave(); render(); offToast('데모를 넣었어요'); };
+  if(ME && SBC){
+    (async()=>{ try{
+      const ext=((file.name||'').split('.').pop()||'mp3').toLowerCase().replace(/[^a-z0-9]/g,'')||'mp3';
+      const path=ME.id+'/logs/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
+      const up=await SBC.storage.from('audio').upload(path, file, {contentType:file.type||'audio/mpeg', upsert:false});
+      if(up.error) throw up.error;
+      const pub=SBC.storage.from('audio').getPublicUrl(path);
+      apply((pub&&pub.data&&pub.data.publicUrl)||'');
+    }catch(e){ console.warn('[offlog] 데모 첨부 업로드 실패', e); apply(URL.createObjectURL(file)); } })();
+  } else { apply(URL.createObjectURL(file)); }
+}
+/* 남의 음악 공유 — 네이티브 공유 or 링크 복사 */
+async function offShareTrack(M){
+  const url=location.origin+'/offlog';
+  const title=((M&&M.nm)?M.nm:'음악')+((M&&M.by)?' · '+M.by:'');
+  try{ if(navigator.share){ await navigator.share({title:title, url:url}); } else { await navigator.clipboard.writeText(url); offToast('링크가 복사됐어요'); } }
+  catch(e){ try{ await navigator.clipboard.writeText(url); offToast('링크가 복사됐어요'); }catch(_){ offToast('링크: '+url); } }
+}
 function _anchorDL(href, name){ const a=document.createElement('a'); a.href=href; a.download=name; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove(); }
 /* data:/blob: 는 바로 저장. http(s)(Storage)는 blob으로 받아 실제 저장 — download 속성은 cross-origin이면 무시되므로 */
 function _saveFile(url, name){
@@ -2389,7 +2435,7 @@ function render(){
     if(el)el.scrollIntoView({block:'start'});
   }
   document.getElementById('storyview').innerHTML = S.storyIdx!==null ? storyViewer() : '';
-  document.getElementById('composeview').innerHTML = S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : (S.auth ? authSheet() : (S.saveTrack ? saveSheet() : '')));
+  document.getElementById('composeview').innerHTML = S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : (S.auth ? authSheet() : (S.saveTrack ? saveSheet() : (S.logMenu ? logMenuSheet() : ''))));
   renderMini();
   bind();
   syncStoryAudio();     // 스토리 데모면 실제 소리 재생
@@ -2836,6 +2882,20 @@ function bind(){
     if(!b.dataset.savetid){ offToast('담을 수 없는 곡이에요'); return; }
     S.saveTrack={tid:b.dataset.savetid, nm:b.dataset.savenm, by:b.dataset.saveby, audio:b.dataset.saveaudio}; render();
   });
+  /* 내 글 로그 ⋯ → 사진/데모 넣기 메뉴 · 남의 음악 ⋯ → 공유/담기 메뉴 */
+  document.querySelectorAll('[data-addmenu]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); S.logMenu={kind:'addmedia', id:b.dataset.addmenu}; render(); });
+  document.querySelectorAll('[data-sharemenu]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); S.logMenu={kind:'oshare', id:b.dataset.sharemenu, nm:b.dataset.snm, by:b.dataset.sby, audio:b.dataset.saud}; render(); });
+  if(S.logMenu){
+    const lmbd=document.getElementById('lmbd'), lmx=document.getElementById('lmx');
+    const lmclose=()=>{ S.logMenu=null; render(); };
+    if(lmx)lmx.onclick=lmclose; if(lmbd)lmbd.onclick=e=>{ if(e.target===lmbd)lmclose(); };
+    document.querySelectorAll('[data-addkind]').forEach(b=>b.onclick=()=>{ _attachTo=S.logMenu.id; const k=b.dataset.addkind; S.logMenu=null; render(); const inp=document.getElementById(k==='ph'?'addphoto':'adddemo'); if(inp)inp.click(); });
+    document.querySelectorAll('[data-omenu]').forEach(b=>b.onclick=()=>{ const act=b.dataset.omenu, M=S.logMenu; if(act==='save'){ S.saveTrack={tid:M.id, nm:M.nm, by:M.by, audio:M.audio}; S.logMenu=null; render(); } else { S.logMenu=null; render(); offShareTrack(M); } });
+  }
+  const _addph=document.getElementById('addphoto');
+  if(_addph && !_addph.__b){ _addph.__b=1; _addph.onchange=()=>{ const f=_addph.files&&_addph.files[0]; if(f&&_attachTo){ attachMedia(_attachTo,'ph',f); } _attachTo=null; _addph.value=''; }; }
+  const _addde=document.getElementById('adddemo');
+  if(_addde && !_addde.__b){ _addde.__b=1; _addde.onchange=()=>{ const f=_addde.files&&_addde.files[0]; if(f&&_attachTo){ attachMedia(_attachTo,'snd',f); } _attachTo=null; _addde.value=''; }; }
   document.querySelectorAll('[data-work]').forEach(b=>b.onclick=()=>{S.work=b.dataset.work;S.wf='all';S.view='work';render()});
   document.querySelectorAll('[data-wf]').forEach(b=>b.onclick=()=>{S.wf=b.dataset.wf;render()});
   const wp=document.getElementById('wplaybig');
