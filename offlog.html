@@ -879,6 +879,20 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .ai-lyr{font-family:'Gaegu','Noto Sans KR',sans-serif;font-size:15px;line-height:1.7;color:var(--txt);white-space:pre-wrap}
 .ai-dsp{display:flex;flex-wrap:wrap;gap:6px}
 .ai-dsp span{font-size:11.5px;color:var(--txt);background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:4px 11px}
+/* 실사 아바타 */
+.avimg{display:inline-block;border-radius:50%;background-size:cover;background-position:center;flex-shrink:0;vertical-align:middle}
+.mprof .mpav .avimg{width:76px;height:76px}
+.mprof .mpav .smile{width:76px;height:76px}
+.circ .avimg{width:34px;height:34px}
+/* 로그인 시트 */
+.authbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:13px;padding:13px;font-size:14.5px;font-weight:700;margin-bottom:8px;min-height:48px}
+.authbtn b{display:inline-flex;width:20px;height:20px;align-items:center;justify-content:center;border-radius:50%;background:#fff;color:#000;font-size:12px;font-weight:900}
+.authbtn.kakao b{background:#FEE500;color:#000}
+.authbtn:hover{border-color:var(--mint)}
+.authdiv{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:11.5px;margin:14px 0 10px}
+.authdiv::before,.authdiv::after{content:'';flex:1;height:1px;background:var(--line)}
+.authinput{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--txt);padding:12px 13px;font-size:16px;margin-bottom:8px;font-family:inherit}
+.authinput:focus{outline:2px solid var(--mint)}
 /* 곡 담기 검색창 */
 .pksearch{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--txt);padding:11px 13px;font-size:16px;margin-bottom:8px;font-family:inherit}
 .pksearch:focus{outline:2px solid var(--mint)}
@@ -970,21 +984,79 @@ try{
 
 /* 로그인 유저 로드 + 내 팔로우/반응 상태 미리 받아두기 */
 async function loadMe(){
-  if(!SBC) return null;
+  if(!SBC){ ME=null; return null; }
   try{
     const {data:{user}}=await SBC.auth.getUser();
     if(user){
       const meta=user.user_metadata||{};
-      ME={ id:user.id, name:(meta.name||meta.full_name||(user.email?user.email.split('@')[0]:'나')) };
-      // 내 팔로우
+      let nm=(meta.name||meta.full_name||(user.email?user.email.split('@')[0]:'나'));
+      let av=(meta.avatar_url||meta.picture||''), role='listener';
+      // 내 profiles 행 (이름/아바타/role 정본)
+      try{ const p=await SBC.from('profiles').select('name,avatar_url,role').eq('id',user.id).maybeSingle();
+        if(p&&p.data){ if(p.data.name&&p.data.name!=='익명')nm=p.data.name; if(p.data.avatar_url)av=p.data.avatar_url; if(p.data.role)role=p.data.role; } }catch(_){}
+      if(!av) av='https://i.pravatar.cc/150?u='+user.id;
+      ME={ id:user.id, name:nm, avatar:av, role:role };
+      MYFOLLOWS.clear();
       const f=await SBC.from('follows').select('following_id').eq('follower_id', user.id);
       if(f.data) f.data.forEach(r=>MYFOLLOWS.add(r.following_id));
-      // 내 반응
       const r=await SBC.from('track_reactions').select('track_id,kind').eq('user_id', user.id);
       if(r.data) r.data.forEach(x=>{ (MYREACT[x.track_id]=MYREACT[x.track_id]||new Set()).add(x.kind); });
-    }
+    } else { ME=null; }
   }catch(e){ console.warn('[offlog] loadMe 실패', e); }
   return ME;
+}
+
+/* ── 로그인/로그아웃 (기존 회원 계정, 메인앱과 동일 방식) ── */
+let _authWired=false;
+function wireAuth(){
+  if(_authWired||!SBC)return; _authWired=true;
+  try{ SBC.auth.onAuthStateChange(function(ev){ loadMe().then(function(){ try{render();}catch(_){}}); }); }catch(e){}
+}
+async function loginGoogle(){ if(!SBC)return; try{ await SBC.auth.signInWithOAuth({provider:'google', options:{redirectTo:location.href}}); }catch(e){ offToast('로그인 실패 — 잠시 후 다시'); } }
+async function loginKakao(){ if(!SBC)return; try{ await SBC.auth.signInWithOAuth({provider:'kakao', options:{redirectTo:location.href}}); }catch(e){ offToast('로그인 실패 — 잠시 후 다시'); } }
+async function loginEmail(email,pw){
+  if(!SBC)return; const btn=document.getElementById('authsubmit'); if(btn){btn.disabled=true;btn.textContent='로그인 중…';}
+  try{ const {error}=await SBC.auth.signInWithPassword({email:email, password:pw}); if(error)throw error;
+    await loadMe(); S.auth=false; render(); offToast('로그인됐어요'); }
+  catch(e){ offToast('이메일 또는 비밀번호를 확인하세요'); if(btn){btn.disabled=false;btn.textContent='로그인';} }
+}
+async function logout(){ if(!SBC)return; try{ await SBC.auth.signOut(); }catch(e){} ME=null; MYFOLLOWS.clear(); for(var k in MYREACT)delete MYREACT[k]; render(); offToast('로그아웃됐어요'); }
+
+/* ── 실제 프로필 로드 + 캐시 (공개 읽기) ── */
+let PROFCACHE={};
+async function loadProfile(id){
+  if(!id||!SBC) return null;
+  if(PROFCACHE[id]) return PROFCACHE[id];
+  try{
+    const pr=await SBC.from('profiles').select('id,name,avatar_url,role,sns_instagram,sns_youtube,sns_tiktok').eq('id',id).maybeSingle();
+    const tr=await SBC.from('tracks').select('id,title,audio_url,cover_url,is_demo,created_at,likes_count,project_id').eq('artist_id',id).order('created_at',{ascending:false});
+    const p=pr&&pr.data?pr.data:null;
+    const prof={ id:id, name:(p&&p.name)||'아티스트', avatar:(p&&p.avatar_url)||('https://i.pravatar.cc/150?u='+id),
+      role:(p&&p.role)||'artist', sns:{ig:(p&&p.sns_instagram)||'',yt:(p&&p.sns_youtube)||'',tt:(p&&p.sns_tiktok)||''},
+      tracks:(tr&&tr.data?tr.data:[]).map(function(t){ return {id:t.id, nm:t.title||'무제', audio:t.audio_url||'', cover:(t.cover_url&&/^https?:\/\//.test(t.cover_url))?t.cover_url:'', demo:!!t.is_demo, dt:(t.created_at||'').slice(0,10), likes:t.likes_count||0}; }) };
+    PROFCACHE[id]=prof; return prof;
+  }catch(e){ console.warn('[offlog] loadProfile 실패', e); return null; }
+}
+/* 아바타: 실사 이미지 있으면 이미지, 없으면 기존 색 스마일 */
+function avatarEl(av, color, size){
+  var s=size||44;
+  if(av) return `<span class="avimg" style="width:${s}px;height:${s}px;background-image:url(${av})"></span>`;
+  return smileEl(color||'blue');
+}
+let AIDBYNAME={};   // 아티스트 표시명 → profile id (로더가 채움)
+/* 로그인 시트 (기존 회원 계정) */
+function authSheet(){
+  if(!S.auth) return '';
+  return `<div class="cs-bd" id="authbd"><div class="cs">
+    <div class="cs-hd"><b>로그인</b><button class="cs-x" id="authx" aria-label="닫기">✕</button></div>
+    <p style="color:var(--muted);font-size:12.5px;margin:0 2px 12px">기존 회원 계정으로 로그인하면 내 페이지·팔로우·저장이 연동돼요.</p>
+    <button class="authbtn" id="authgoogle"><b>G</b> Google로 계속</button>
+    <button class="authbtn kakao" id="authkakao"><b>K</b> 카카오로 계속</button>
+    <div class="authdiv"><span>또는 이메일</span></div>
+    <input class="authinput" id="authemail" type="email" autocomplete="username" placeholder="이메일">
+    <input class="authinput" id="authpw" type="password" autocomplete="current-password" placeholder="비밀번호">
+    <button class="cs-post" id="authsubmit" style="margin-top:10px">로그인</button>
+  </div></div>`;
 }
 /* 비로그인 안내 — 조용히 실패시키지 않고 알려준다 */
 let _toastT=null;
@@ -1209,7 +1281,7 @@ const curRound = ()=>ROUNDS.find(r=>r.id===S.round)||ROUNDS[0];
 
 
 let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:'me', round:'jul', lseg:'list', vcat:'music', flist:null, fq:'', flFrom:'mine', list:null, share:false, addlist:false,
-  pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'',
+  pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'', auth:false, profileAid:null,
   relForm:{audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', dsp:[]}};
 
 const shape=(s,f,z)=>`<svg viewBox="0 0 24 24" width="${z}" height="${z}" style="overflow:visible"><use href="#${s}" fill="${f}"/></svg>`;
@@ -1246,7 +1318,7 @@ function storyViewer(){
   return `<div class="svwrap" id="svwrap">
     <div class="svbars">${bars}</div>
     <div class="svhd">
-      <span class="svgo" data-svprof="${s.who}">
+      <span class="svgo" data-svprof="${s.who}" data-paid="${s.aid||''}">
         <span class="smile" style="width:28px;height:28px;background:${c(s.c)}">
           <svg viewBox="0 0 24 24"><path d="M6 13a6 6 0 0 1 12 0" fill="none" stroke="#1a1206" stroke-width="2.2" stroke-linecap="round"/>
           <ellipse cx="9.4" cy="16.6" rx="1.15" ry="1.6" fill="#1a1206"/><ellipse cx="14.6" cy="16.6" rx="1.15" ry="1.6" fill="#1a1206"/></svg></span>
@@ -1286,7 +1358,11 @@ function prevStory(){
    처음 = Trending. 그 다음부터 Following·Trending·For You가 섞여서 랜덤하게 계속 바뀐다. ── */
 function home(){
   const fing=PEOPLE.filter(p=>p.fing).length;
-  return `<div class="hd"><span style="width:34px"></span><div class="brand" style="flex:1;text-align:center">OFFLOG</div>
+  return `<div class="hd">
+    ${ME
+      ? `<button class="circ" id="loginbtn" aria-label="내 페이지" style="padding:0;overflow:hidden">${avatarEl(ME.avatar,'coral',34)}</button>`
+      : `<button class="circ" id="loginbtn" aria-label="로그인"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/></svg></button>`}
+    <div class="brand" style="flex:1;text-align:center">OFFLOG</div>
     <button class="circ people" id="gopeople" aria-label="팔로워 · 팔로잉">
       <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
         <circle cx="9" cy="8" r="3.4"/><path d="M3.2 19.5c0-3.3 2.6-5.6 5.8-5.6s5.8 2.3 5.8 5.6"/>
@@ -1303,8 +1379,14 @@ function renewHome(){
 }
 
 /* 스토리 열의 원을 제외한 모든 이름·아바타가 여기로 온다 */
-function goProfile(who){
-  if(who==='PEEK'){ S.profile='me'; } else { S.profile=who; }
+function goProfile(who, aid){
+  aid = aid || AIDBYNAME[who] || null;
+  if(who==='PEEK' || who==='me' || (ME && (who===ME.name || (aid && aid===ME.id)))){
+    S.profile='me'; S.profileAid=(ME&&ME.id)||null;
+  } else {
+    S.profile=who; S.profileAid=aid;
+    if(aid) loadProfile(aid).then(function(p){ if(S.view==='mine' && S.profileAid===aid) render(); });   // 실제 프로필 도착하면 다시 그림
+  }
   S.seg='log'; S.flist=null; S.mode='feed'; S.view='mine'; render();
 }
 
@@ -1328,7 +1410,7 @@ function buildFeed(){
 function feedCard(t,i){
   if(t.src==='room') return roomCard(t.slot);
 
-  const who=`<div class="rwho" data-prof="${t.who}" style="cursor:pointer">${smileEl(t.c)}${t.who}</div>`;
+  const who=`<div class="rwho" data-prof="${t.who}" data-paid="${t.aid||''}" style="cursor:pointer">${smileEl(t.c)}${t.who}</div>`;
   /* 팔로우 = 카드 우측 상단. 반응 도형 = 카드 위 하단. 전부 카드 위에 얹힌다 */
   const _foned = t.aid && MYFOLLOWS.has(t.aid);   // 저장된 내 팔로우 반영
   const fol = t.src==='follow' ? '' : `<button class="fol ffol${_foned?' on':''}" data-aid="${t.aid||''}">${_foned?'팔로잉':'팔로우'}</button>`;
@@ -1360,7 +1442,7 @@ function slideView(){
   const sl=(t,i)=>{
     const anchor=` id="sl${i}"`;
     const _sfon = t.aid && MYFOLLOWS.has(t.aid);
-    const who=`<div class="slwho"><span data-prof="${t.who}" style="cursor:pointer;display:flex;align-items:center;gap:8px">${dot(t.c)}${t.who||''}</span>
+    const who=`<div class="slwho"><span data-prof="${t.who}" data-paid="${t.aid||''}" style="cursor:pointer;display:flex;align-items:center;gap:8px">${dot(t.c)}${t.who||''}</span>
       ${t.src!=='follow'&&t.src!=='room'?`<button class="slfol${_sfon?' on':''}" data-aid="${t.aid||''}">${_sfon?'팔로잉':'팔로우'}</button>`:''}</div>`;
     const _smine=(t.tid && MYREACT[t.tid])||null;
     const _srb=(emo,sh,col)=>`<button class="shape rbtn${_smine&&_smine.has(emo)?' hit':''}" data-emo="${emo}"${_smine&&_smine.has(emo)?' data-hit="1"':''} aria-label="${emo}">${shape(sh,c(col),26)}</button>`;
@@ -1524,19 +1606,29 @@ const smileEl=col=>`<span class="smile" style="background:${c(col)}">
 
 /* ── 마이 / 아티스트 페이지 ──
    내 페이지 = 도구·＋·수정 전부 여기서. 남의 페이지 = 보기만. */
+function roleKo(r){ return r==='artist'?'아티스트':r==='admin'?'관리자':r==='listener'?'리스너':'아티스트'; }
 function mine(){
   const me   = S.profile==='me';
-  const prof = me ? {who:'PEEK', c:'coral', sub:'서울실용음악고 · 힙합', fer:'1,204', fing:'87'}
-                  : (()=>{ const st=STORIES.find(s=>s.who===S.profile);
-                           return {who:S.profile, c:(st&&st.c)||'blue', sub:'Artist',
-                                   fer:(st&&st.fer)||'312', fing:(st&&st.fing)||'54'}; })();
-  const st   = STORIES.find(s=>s.who===S.profile);
+  const rp   = (!me && S.profileAid) ? PROFCACHE[S.profileAid] : null;   // 실제 아티스트 프로필(공개 읽기)
+  const prof = me
+    ? (ME ? {who:ME.name, avatar:ME.avatar, c:'coral', sub:roleKo(ME.role)} : {who:'게스트', avatar:'', c:'blue', sub:'로그인하고 내 페이지 연동'})
+    : (rp ? {who:rp.name, avatar:rp.avatar, c:'blue', sub:roleKo(rp.role)} : {who:S.profile, avatar:'', c:'blue', sub:'불러오는 중…'});
+  const following = !!(S.profileAid && MYFOLLOWS.has(S.profileAid));
 
-  const works=(me?`<button class="newwork" id="newworkbtn">＋ 새 작품 만들기</button>`:'')+WORKS.map(w=>`<div class="workrow">
+  /* 아티스트 페이지 = 그 사람 실제 곡 */
+  const atrackCard=t=>`<div class="workrow">
+    <div class="wthumb"><div class="bgimg" style="position:absolute;inset:0;background:${t.cover?`center/cover no-repeat url(${t.cover})`:'#22222a'}"></div>
+      <button class="tplay" data-tplay="${t.audio||''}" aria-label="재생">▶</button></div>
+    <div class="winfo"><b>${t.nm}</b><small>${t.demo?'Demo':'Track'}${t.dt?' · '+t.dt.replace(/-/g,'.'):''}</small></div></div>`;
+  const artistBody = rp ? (rp.tracks.length ? rp.tracks.map(atrackCard).join('') : `<div class="pknote" style="padding:22px 0">아직 올린 곡이 없어요</div>`)
+                        : `<div class="pknote" style="padding:22px 0">불러오는 중…</div>`;
+
+  /* 내 작품(스튜디오) */
+  const myworks=(me?`<button class="newwork" id="newworkbtn">＋ 새 작품 만들기</button>`:'')+WORKS.map(w=>`<div class="workrow">
     <div class="wthumb"><div class="bgimg" style="position:absolute;inset:0;background:${w.cover?`center/cover no-repeat url(${w.cover})`:w.bg}"></div>
       <button class="wplay" aria-label="재생">▶</button></div>
     <div class="winfo"><b>${w.nm}</b><small>${w.mine?(w.pending?'발매 예약 '+w.date:(w.date&&w.date!=='작업 중'?'발매 '+w.date:'작업 중')):(w.logs+' Logs · '+w.span)}</small></div>
-    <button class="openst" data-work="${w.id}">${w.mine?'열기':('Collect '+(me?'LOG':'log'))} ›</button></div>`).join('');
+    <button class="openst" data-work="${w.id}">${w.mine?'열기':'Collect LOG'} ›</button></div>`).join('');
 
   /* 녹음 = 즉석. 음원 = 믹스다운 파일 업로드 (Demo 탭이 하던 일) */
   const tools=[['💬','생각'],['🖼','사진'],['🎤','음성'],['📋','메모'],['🎙','녹음'],['♪','음원']];
@@ -1572,20 +1664,22 @@ function mine(){
 
   return `<div class="hd">
     ${me?`<span style="width:34px"></span>`:`<button class="circ" data-v="home" aria-label="뒤로">‹</button>`}
-    <div class="htitle">${prof.who}<small>${me?'내 페이지':'Artist'}</small></div>
+    <div class="htitle">${prof.who}<small>${me?'내 페이지':prof.sub}</small></div>
     <div class="r"><button class="circ" aria-label="공유">⤴</button>
-      ${me?`<button class="circ" aria-label="설정">⋯</button>`:''}</div></div>
-  <div class="mprof"><span data-prof2="${prof.who}">${smileEl(prof.c)}</span>
-    <h3>${prof.who}</h3><p>${prof.sub||'Artist'}</p>
+      ${me&&ME?`<button class="circ" id="mysettings" aria-label="설정">⋯</button>`:''}</div></div>
+  <div class="mprof"><span class="mpav">${avatarEl(prof.avatar, prof.c)}</span>
+    <h3>${prof.who}</h3><p>${prof.sub}</p>
     <div class="fcount">
-      <button class="fc" data-flist="follower"><b>${prof.fer}</b><small>팔로워</small></button>
+      <button class="fc" data-flist="follower"><b>—</b><small>팔로워</small></button>
       <span class="fcdiv"></span>
-      <button class="fc" data-flist="following"><b>${prof.fing}</b><small>팔로잉</small></button></div>
-    ${me?'':`<button class="fol profol ${st&&st.following?'on':''}">${st&&st.following?'팔로잉':'팔로우'}</button>`}</div>
+      <button class="fc" data-flist="following"><b>${me?MYFOLLOWS.size:'—'}</b><small>팔로잉</small></button></div>
+    ${me
+      ? (ME?'':`<button class="fol profol" id="profloginbtn">로그인</button>`)
+      : `<button class="fol profol ${following?'on':''}" id="profolbtn" data-aid="${S.profileAid||''}">${following?'팔로잉':'팔로우'}</button>`}</div>
   <div class="seg">
-    <button class="${S.seg==='log'?'on':''}" data-seg="log">LOG</button>
-    <button class="${S.seg==='works'?'on':''}" data-seg="works">WORKS</button></div>
-  ${S.seg==='works'?works:logs}
+    <button class="${S.seg==='log'?'on':''}" data-seg="log">${me?'LOG':'곡'}</button>
+    <button class="${S.seg==='works'?'on':''}" data-seg="works">${me?'WORKS':'전체'}</button></div>
+  ${me ? (S.seg==='works'?myworks:logs) : artistBody}
   <div style="height:14px"></div>`;
 }
 
@@ -1667,7 +1761,7 @@ function flist(){
     <button class="${isFer?'on':''}" data-flist="follower">팔로워 <b>${PEOPLE.length}</b></button>
     <button class="${isFer?'':'on'}" data-flist="following">팔로잉 <b>${PEOPLE.filter(p=>p.fing).length}</b></button></div>`}
   ${rows.length?rows.map(p=>`<div class="prow">
-    <span class="pgo" data-prof="${p.who}">${smileEl(p.c)}
+    <span class="pgo" data-prof="${p.who}" data-paid="${p.aid||''}">${smileEl(p.c)}
       <span class="pnm"><b>${p.who}</b><small>${p.sub}</small></span></span>
     <button class="fol plfol ${p.fing?'on':''}" data-pfol="${p.who}">${p.fing?'팔로잉':'팔로우'}</button>
   </div>`).join('') : `<div class="pknote" style="padding:36px 0">찾는 아티스트가 없습니다</div>`}
@@ -2145,7 +2239,7 @@ function render(){
     if(el)el.scrollIntoView({block:'start'});
   }
   document.getElementById('storyview').innerHTML = S.storyIdx!==null ? storyViewer() : '';
-  document.getElementById('composeview').innerHTML = S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : '');
+  document.getElementById('composeview').innerHTML = S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : (S.auth ? authSheet() : ''));
   renderMini();
   bind();
   syncStoryAudio();     // 스토리 데모면 실제 소리 재생
@@ -2160,14 +2254,33 @@ function bind(){
   });
   /* 이름·프로필 동그라미 탭 → 그 사람 페이지 (스토리 열의 원은 제외) */
   document.querySelectorAll('[data-prof]').forEach(b=>b.onclick=e=>{
-    e.stopPropagation(); goProfile(b.dataset.prof);
+    e.stopPropagation(); goProfile(b.dataset.prof, b.dataset.paid);
   });
   document.querySelectorAll('[data-prof2]').forEach(b=>b.onclick=e=>{
-    e.stopPropagation(); goProfile(b.dataset.prof2);
+    e.stopPropagation(); goProfile(b.dataset.prof2, b.dataset.paid);
   });
   document.querySelectorAll('[data-svprof]').forEach(b=>b.onclick=e=>{
-    e.stopPropagation(); S.storyIdx=null; try{AUDIO.pause();}catch(_){} goProfile(b.dataset.svprof);
+    e.stopPropagation(); S.storyIdx=null; try{AUDIO.pause();}catch(_){} goProfile(b.dataset.svprof, b.dataset.paid);
   });
+  /* 로그인/계정 */
+  const lgb=document.getElementById('loginbtn');
+  if(lgb)lgb.onclick=()=>{ if(ME){ goProfile('PEEK'); } else { S.auth=true; render(); } };
+  if(S.auth){
+    const abd=document.getElementById('authbd'), ax=document.getElementById('authx');
+    const aclose=()=>{ S.auth=false; render(); };
+    if(abd)abd.onclick=e=>{ if(e.target===abd)aclose(); };
+    if(ax)ax.onclick=aclose;
+    const ag=document.getElementById('authgoogle'); if(ag)ag.onclick=loginGoogle;
+    const ak=document.getElementById('authkakao'); if(ak)ak.onclick=loginKakao;
+    const asub=document.getElementById('authsubmit');
+    if(asub)asub.onclick=()=>{ const em=(document.getElementById('authemail')||{}).value||'', pw=(document.getElementById('authpw')||{}).value||''; if(!em||!pw){offToast('이메일과 비밀번호를 입력하세요');return;} loginEmail(em.trim(),pw); };
+  }
+  const plgn=document.getElementById('profloginbtn'); if(plgn)plgn.onclick=()=>{ S.auth=true; render(); };
+  const mset=document.getElementById('mysettings'); if(mset)mset.onclick=()=>{ if(confirm('로그아웃할까요?'))logout(); };
+  const pfb=document.getElementById('profolbtn');
+  if(pfb)pfb.onclick=()=>{ const aid=pfb.dataset.aid; if(!ME){ needLogin(); return; }
+    const on=pfb.classList.toggle('on'); pfb.textContent=on?'팔로잉':'팔로우';
+    (on?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(!ok){ const bk=pfb.classList.toggle('on'); pfb.textContent=bk?'팔로잉':'팔로우'; } }); };
   /* 팔로워 / 팔로잉 */
   document.querySelectorAll('[data-flist]').forEach(b=>b.onclick=()=>{
     if(S.view!=='flist')S.flFrom='mine';
@@ -2255,10 +2368,7 @@ function bind(){
     if(st)st.following=!!(p&&p.fing);
     render();
   });
-  document.querySelectorAll('.profol').forEach(b=>b.onclick=()=>{
-    const st=STORIES.find(s=>s.who===S.profile);
-    if(st){st.following=!st.following; render()}
-  });
+  /* (프로필 팔로우/로그인 버튼은 위 #profolbtn/#profloginbtn 에서 처리) */
   /* Demo — 음원 파일 올리기 */
   const ap=document.getElementById('apicker');
   if(ap && !ap.__bound){
@@ -2765,8 +2875,10 @@ setInterval(()=>{
         });
       });
     }
+    try{ artists.forEach(function(a){ AIDBYNAME[a]=aidOf(a); }); }catch(e){}   /* 이름→profile id (프로필 페이지 연동) */
   }catch(e){ console.warn('[offlog] real data load failed', e); }
   try{ studioMerge(); }catch(e){}     /* 내가 만든 작품/플레이리스트/로그 복원 */
+  try{ wireAuth(); }catch(e){}        /* 로그인 상태 변화 구독 (OAuth 복귀·로그아웃) */
   try{ renewHome(); }catch(e){}
   render();
 })();
