@@ -862,6 +862,21 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .cs-add:hover{border-color:var(--mint);color:var(--mint)}
 .cs-post{margin-top:12px;width:100%;background:var(--mint);color:#04231d;border:0;border-radius:14px;padding:13px;font-weight:800;font-size:15px;min-height:48px}
 .cs-post:disabled{opacity:.4}
+/* ── Apple-style: 즉각 반응 + 반투명 유리 크롬 (간결·빠르게) ── */
+button,[data-play],[data-slide],[data-story],[data-prof],[data-v],[data-room],
+.av,.rcard,.tool,.fc,.shape,.fab,.cs-add,.cs-post,.fol,.slfol,.fc,.circ{ touch-action:manipulation }
+/* 릴리즈가 아니라 '누르는 즉시' 반응 — 지연 없는 촉감 */
+button,.rcard,.av,.tool,.circ,.fab,.fol,.slfol,.cs-add,.cs-post,.miniplay{ transition:transform .16s cubic-bezier(.22,.61,.36,1) }
+button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
+.fol:active,.slfol:active,.cs-add:active,.cs-post:active,.miniplay:active,
+[data-story]:active,[data-prof]:active,.workrow:active{ transform:scale(.965); transition:transform .09s ease-out }
+.shape{ transition:transform .12s cubic-bezier(.34,1.56,.64,1) }
+.shape:active{ transform:scale(.82) }
+/* 반투명 유리 크롬 — 콘텐츠가 아래로 흐른다 (불투명 막대 대신 재질) */
+.nav{ background:rgba(13,13,16,.72)!important; backdrop-filter:blur(22px) saturate(155%); -webkit-backdrop-filter:blur(22px) saturate(155%); border-top:1px solid rgba(255,255,255,.06) }
+.mini{ backdrop-filter:blur(18px) saturate(150%); -webkit-backdrop-filter:blur(18px) saturate(150%) }
+@media (prefers-reduced-transparency: reduce){ .nav{ background:#0d0d10!important; backdrop-filter:none } .mini{ backdrop-filter:none } }
+
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 
 /* ── 실제 폰 규격 (≤640px): 데스크톱 프리뷰의 핑크 베젤은 유지, 폰에서는 풀스크린 앱 ── */
@@ -1237,12 +1252,8 @@ function home(){
 
 /* 홈에 다시 올 때마다 갱신된다. 버튼 없이, 다녀오면 새 얼굴 */
 function renewHome(){
+  if(window.__resample){ try{ window.__resample(); }catch(e){} }  /* 매번 전체 아티스트에서 새로 샘플 → 트렌드 첫 화면 새 얼굴 */
   S.feed=buildFeed();
-  /* 스토리도 리뉴얼 — 누군가 새로 올렸다 */
-  STORIES.forEach(s=>{ if(Math.random()<0.45) s.seen=false; });
-  const n=Math.floor(Math.random()*STORIES.length);
-  const [moved]=STORIES.splice(n,1);
-  STORIES.unshift(moved);            /* 새로 올린 사람이 앞으로 */
 }
 
 /* 스토리 열의 원을 제외한 모든 이름·아바타가 여기로 온다 */
@@ -2484,19 +2495,28 @@ setInterval(()=>{
     var iFollow=function(name){ var id=aidOf(name); return !!(id&&MYFOLLOWS.has(id)); };            // 내가 팔로우 중?
     await loadMe(); // 로그인 유저 + 내 팔로우/반응 상태를 카드 빌드 전에 확보
 
-    // STORIES = 오디오 있는 아티스트(최대 8), 최근 곡 2개를 스토리 아이템으로
-    var storyArtists=artists.filter(function(a){ return byArtist[a].some(function(t){return t.audio;}); }).slice(0,8);
-    if(storyArtists.length) STORIES=storyArtists.map(function(a){
-      var ts=byArtist[a].slice(0,2);
-      return { who:a, c:colOf(a), aid:aidOf(a), following:iFollow(a), seen:false, items:ts.map(function(t){
-        return t.cover ? {t:'ph', at:tm(t.ts), cap:t.title, bg:'#141418', img:t.cover} : {t:'snd', at:tm(t.ts), cap:t.title, dur:'', audio:t.audio};
-      }) };
-    });
+    var cut=function(s,n){ s=String(s||''); return s.length>n ? s.slice(0,n-1)+'…' : s; };
+    var _shuf=function(a){ var x=a.slice(); for(var i=x.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=x[i];x[i]=x[j];x[j]=t;} return x; };
 
-    // PEOPLE = 아티스트 목록
-    if(artists.length) PEOPLE=artists.slice(0,24).map(function(a){
-      return { who:a, c:colOf(a), aid:aidOf(a), sub:(byArtist[a][0].tags[0]||'Artist'), fing:(iFollow(a)?1:0) };
-    });
+    // ── 매 새로고침마다 전체 아티스트에서 다양하게 재샘플 → (1) 모든 아티스트 노출 (2) 트렌드 첫 화면 새 얼굴 ──
+    function resampleFeed(){
+      var reps=[], seenA={};
+      _shuf(tracks).forEach(function(t){ if(seenA[t.artist])return; seenA[t.artist]=1; reps.push(t); }); // 아티스트당 대표 1곡(랜덤)
+      var mk=function(t){ var o={who:cut(t.artist,18), c:colOf(t.artist), at:tm(t.ts), rx:(t.likes||0), aid:aidOf(t.artist), tid:t.id, t:'snd', audio:t.audio, nm:cut(t.title,20)};
+        o.cap=o.nm; o.sub=cut((t.demo?'Demo':'Track')+(t.tags[0]?' · '+t.tags[0]:''),24); if(t.tags[0])o.tags=t.tags.slice(0,2).map(function(x){return '#'+String(x).replace(/^#/,'');}); return o; };
+      var i=0, take=function(n){ var s=[]; for(var k=0;k<n && reps.length;k++){ s.push(reps[i%reps.length]); i++; } return s; };
+      // 섹션마다 서로 다른 아티스트 (STORIES 8 · TREND 12 · FORYOU 8 · FOLLOW 8 = 최대 36명/뷰, 나머지는 다음 새로고침에)
+      STORIES=take(8).map(function(t){ var a=t.artist, ts=(byArtist[a]||[t]).slice(0,2);
+        return { who:a, c:colOf(a), aid:aidOf(a), following:iFollow(a), seen:false, items:ts.map(function(x){
+          return x.cover ? {t:'ph', at:tm(x.ts), cap:x.title, bg:'#141418', img:x.cover} : {t:'snd', at:tm(x.ts), cap:x.title, dur:'', audio:x.audio}; }) }; });
+      TREND     = take(12).map(mk);
+      FORYOU    = take(8).map(mk);
+      FOLLOWLOG = take(8).map(mk);
+      PEOPLE = _shuf(reps).slice(0,24).map(function(t){ return {who:t.artist, c:colOf(t.artist), aid:aidOf(t.artist), sub:(t.tags[0]||'Artist'), fing:(iFollow(t.artist)?1:0)}; });
+      var f=reps[0]; if(f){ NOWPLAY={label:'발견', cnt:tracks.length, nm:cut(f.title,20), tm:'', src:f.audio}; }
+    }
+    window.__resample=resampleFeed;
+    if(tracks.length) resampleFeed();
 
     // WORKS = 프로젝트(project_id)별 대표 — 로그 수 = 그 프로젝트 곡 수
     var byPid={}; tracks.forEach(function(t){ (byPid[t.pid]=byPid[t.pid]||[]).push(t); });
@@ -2515,36 +2535,7 @@ setInterval(()=>{
       });
     }
 
-    // ── 홈 피드(TREND/FORYOU/FOLLOWLOG)도 실제 트랙으로 — 목업(PEEK 등) 완전 제거 ──
-    var cut=function(s,n){ s=String(s||''); return s.length>n ? s.slice(0,n-1)+'…' : s; };
-    var feedTracks=tracks.slice(0,60);
-    if(feedTracks.length){
-      // TREND = 대표 카드: 오디오→snd, 커버→ph, 그 외→note. 시각·색·반응은 데이터에서.
-      TREND=feedTracks.slice(0,8).map(function(t){
-        var base={who:cut(t.artist,18), c:colOf(t.artist), at:tm(t.ts), rx:(t.likes||0), aid:aidOf(t.artist), tid:t.id};
-        if(t.audio){ base.t='snd'; base.nm=cut(t.title,20); base.sub=cut((t.demo?'Demo':'Track')+(t.tags[0]?' · '+t.tags[0]:''),24); base.tags=t.tags.slice(0,2).map(function(x){return '#'+String(x).replace(/^#/,'');}); base.audio=t.audio; }
-        else if(t.cover){ base.t='ph'; base.cap=cut(t.title,20); base.bg=GRADS[(base.who.length)%GRADS.length]; base.img=t.cover; }
-        else { base.t='note'; base.text=cut(t.title,40); base.tone=(t.tags.length%2?'b':'y'); }
-        return base;
-      });
-      // FORYOU = 오디오 트랙만 (없으면 아무 트랙)
-      var au=feedTracks.filter(function(t){return t.audio;}); if(!au.length) au=feedTracks;
-      FORYOU=au.slice(0,6).map(function(t){
-        return {t:'snd', at:tm(t.ts), nm:cut(t.title,20), who:cut(t.artist,18), c:colOf(t.artist), dur:'', rx:(t.likes||0), audio:t.audio, aid:aidOf(t.artist), tid:t.id};
-      });
-      // FOLLOWLOG = 팔로우한 사람들 로그 — 서로 다른 아티스트 우선
-      var seen={}, fl=[];
-      feedTracks.forEach(function(t){ if(fl.length>=6) return; if(seen[t.artist]) return; seen[t.artist]=1;
-        var idc={aid:aidOf(t.artist), tid:t.id};
-        if(t.audio) fl.push(Object.assign({who:cut(t.artist,18), c:colOf(t.artist), t:'snd', cap:cut(t.title,20), dur:'', at:tm(t.ts), rx:(t.likes||0), audio:t.audio}, idc));
-        else if(t.cover) fl.push(Object.assign({who:cut(t.artist,18), c:colOf(t.artist), t:'ph', cap:cut(t.title,20), at:tm(t.ts), rx:(t.likes||0), bg:GRADS[(t.title.length)%GRADS.length], img:t.cover}, idc));
-        else fl.push(Object.assign({who:cut(t.artist,18), c:colOf(t.artist), t:'note', text:cut(t.title,40), at:tm(t.ts), tone:(t.tags.length%2?'y':'b'), rx:(t.likes||0)}, idc));
-      });
-      if(fl.length) FOLLOWLOG=fl;
-      // 미니 플레이어 = 실제 첫 오디오 트랙, 리스트명 '발견'
-      var first=(au[0]||feedTracks[0]);
-      if(first){ NOWPLAY={label:'발견', cnt:au.length||feedTracks.length, nm:cut(first.title,20), tm:'', src:first.audio}; }
-    }
+    // (홈 피드 TREND/FORYOU/FOLLOWLOG/STORIES/PEOPLE 는 위 resampleFeed()가 매 새로고침마다 생성)
 
     // ── 합주실(ROOM) 시간대 카드도 실제 아티스트 4명으로 ── (PEEK/MINLEE/전아름 목업 제거)
     var roomA=artists.slice(0,4);
