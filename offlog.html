@@ -858,7 +858,9 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .cs-ta{width:100%;min-height:84px;background:var(--card);border:1px solid var(--line);border-radius:14px;
   color:var(--txt);padding:12px;font-size:16px;font-family:'Gaegu','Noto Sans KR',sans-serif;resize:none;line-height:1.5}
 .cs-ta:focus{outline:2px solid var(--mint)}
-.cs-prev{margin-top:10px;border-radius:14px;overflow:hidden;max-height:230px;background:#000}
+.cs-prev{position:relative;margin-top:10px;border-radius:14px;overflow:hidden;max-height:230px;background:#000}
+.cs-rm{position:absolute;top:8px;right:8px;width:30px;height:30px;border:0;border-radius:99px;background:rgba(0,0,0,.6);color:#fff;font-size:14px;backdrop-filter:blur(4px);z-index:2}
+.cs-rm:active{transform:scale(.9)}
 .cs-prev img,.cs-prev video{width:100%;display:block;max-height:230px;object-fit:contain}
 .cs-row{display:flex;gap:8px;margin-top:12px}
 .cs-add{flex:1;background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:11px;font-size:13.5px;min-height:44px}
@@ -870,10 +872,13 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .slsave:active{transform:scale(.95)}
 .cs-trk{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:13px;color:var(--muted);margin-bottom:12px}
 .cs-trk b{color:var(--txt)}
-/* 작성 4탭 (글/사진/영상/음악) + 상단 올리기 버튼 */
-.cs-tabs{display:flex;gap:5px;margin-bottom:11px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px}
-.cs-tab{flex:1;background:none;border:0;color:var(--muted);border-radius:9px;padding:9px 0;font-size:13.5px;font-weight:700;min-height:40px}
-.cs-tab.on{background:var(--mint);color:#04231d}
+/* 한 박스에서 끼워넣기 — 사진·영상·데모 첨부 버튼 행 */
+.cs-attach{display:flex;gap:8px;margin-top:12px}
+.cs-att{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:10px 0;font-size:19px;min-height:56px}
+.cs-att span{font-size:11.5px;color:var(--muted);font-weight:700}
+.cs-att:active{transform:scale(.95)}
+.cs-att.on{border-color:var(--mint);background:rgba(80,230,190,.1)}
+.cs-att.on span{color:var(--mint)}
 .cs-prev.aud{min-height:auto;background:var(--card);border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;padding:20px;color:var(--mint);font-weight:700}
 .composebtn{display:block;width:100%;margin:0 0 14px;background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:14px;padding:14px;font-size:14px;font-weight:800;min-height:48px}
 .composebtn:hover{border-color:var(--mint);color:var(--mint)}
@@ -1116,7 +1121,7 @@ function studioLoad(){
 function studioSave(){
   try{
     var mineWorks=WORKS.filter(function(w){return w.mine;});
-    var myLogs=STREAM.filter(function(l){return l && String(l.id).indexOf('my_')===0 && l.t!=='vid';}); /* 영상은 blob이라 저장 불가(세션 전용) */
+    var myLogs=STREAM.filter(function(l){return l && String(l.id).indexOf('my_')===0 && l.t!=='vid' && !(l.audio&&/^blob:/.test(l.audio));}); /* 영상·미로그인 데모는 blob이라 저장 불가(세션 전용) */
     var myLists=LISTS.filter(function(p){return p.mine;});
     localStorage.setItem(STUDIO_KEY, JSON.stringify({works:mineWorks, lists:myLists, logs:myLogs}));
   }catch(e){ console.warn('[studio] save 실패(용량?)', e); offToast('저장 실패 — 이미지가 너무 클 수 있어요'); }
@@ -1260,6 +1265,14 @@ let STREAM=[
   {id:'l4', t:'snd',  at:'11:00', nm:'허밍', dur:'0:07', side:'l', work:null},
   {id:'l5', t:'note', at:'18:05', text:'드럼은 파리 세션 걸로.\n서울 테이크는 폐기.', tone:'b', rot:1.8, side:'r', work:null},
 ];
+/* 로그 정렬 키 — 최근이 위로. 내가 올린 로그(my_)는 생성시각(ms), 시드는 날짜+시각. */
+function logTs(l){
+  if(!l) return 0;
+  var id=String(l.id||'');
+  if(id.indexOf('my_')===0){ var n=parseInt(id.slice(3),10); if(n) return n; }
+  var t=Date.parse(((l.dt||'2000-01-01')+'T'+(l.at||'00:00')));
+  return isNaN(t)?0:t;
+}
 
 
 /* 투표 라운드 — 두 종류가 있다.
@@ -1700,9 +1713,9 @@ function mine(){
   };
 
   const logs=`
-    ${me?`<button class="composebtn" id="composebtn">＋ 글 · 사진 · 영상 · 음악 올리기</button>`:''}
+    ${me?`<button class="composebtn" id="composebtn">＋ 로그 남기기</button>`:''}
     <div class="stream" id="stream"><div class="ambient"></div>
-      <div class="marks">${STREAM.map(mark).join('')}</div></div>
+      <div class="marks">${STREAM.slice().sort((a,b)=>logTs(b)-logTs(a)).map(mark).join('')}</div></div>
     ${me?`<div class="expire">아직 어느 작품도 아닌 로그 <b>${STREAM.filter(l=>!l.work).length}개</b><br>
         곡이 생기면 그 작품 안에서 담으면 됩니다</div>`:''}`;
 
@@ -2180,43 +2193,56 @@ function syncStoryAudio(){
 /* ── 새 로그 작성 시트 (마이 ＋ / 도구) ── */
 function composeSheet(){
   if(!S.compose) return '';
-  const C=S.compose, mode=C.mode||'글', m=C.media;
-  const prev = m ? (m.kind==='vid' ? `<div class="cs-prev"><video src="${m.url}" controls playsinline></video></div>`
-      : m.kind==='aud' ? `<div class="cs-prev aud"><span>🎵 ${m.name||'오디오 파일'}</span></div>`
-      : `<div class="cs-prev"><img src="${m.url}" alt=""></div>`) : '';
-  const tabs=['글','사진','영상','음악'];
-  const ph = mode==='음악'?'곡 제목':'지금 무슨 생각이에요?';
-  const canPost = mode==='음악' ? !!(m&&ME) : !!((C.text||'').trim() || m);
-  const attach = mode==='사진'?`<button class="cs-add" id="csphoto">📷 사진 고르기</button>`
-    : mode==='영상'?`<button class="cs-add" id="csvideo">🎥 영상 고르기</button>`
-    : mode==='음악'?`<button class="cs-add" id="csaudio">🎵 음악 파일 고르기</button>` : '';
+  const C=S.compose, m=C.media;
+  const prev = m ? (m.kind==='vid' ? `<div class="cs-prev"><video src="${m.url}" controls playsinline></video><button class="cs-rm" id="csrm" aria-label="첨부 삭제">✕</button></div>`
+      : m.kind==='aud' ? `<div class="cs-prev aud"><span>🎵 ${m.name||'데모'}</span><button class="cs-rm" id="csrm" aria-label="첨부 삭제">✕</button></div>`
+      : `<div class="cs-prev"><img src="${m.url}" alt=""><button class="cs-rm" id="csrm" aria-label="첨부 삭제">✕</button></div>`) : '';
+  const canPost = !!((C.text||'').trim() || m);
   return `<div class="cs-bd" id="csbd"><div class="cs">
-    <div class="cs-hd"><b>새 ${mode==='음악'?'음악':'로그'}</b><button class="cs-x" id="csx" aria-label="닫기">✕</button></div>
-    <div class="cs-tabs">${tabs.map(t=>`<button class="cs-tab ${mode===t?'on':''}" data-cmode="${t}">${t}</button>`).join('')}</div>
-    <textarea class="cs-ta" id="csta" placeholder="${ph}">${C.text||''}</textarea>
+    <div class="cs-hd"><b>로그 남기기</b><button class="cs-x" id="csx" aria-label="닫기">✕</button></div>
+    <textarea class="cs-ta" id="csta" placeholder="무슨 생각이에요?  ·  아래에서 사진·영상·데모를 끼워넣을 수 있어요">${C.text||''}</textarea>
     ${prev}
-    ${attach?`<div class="cs-row">${attach}</div>`:''}
-    ${mode==='음악'?`<p style="color:var(--muted);font-size:11.5px;margin:8px 2px 0">${ME?'올리면 발견·내 페이지에 실제 곡으로 올라갑니다.':'음악을 올리려면 로그인이 필요해요.'}</p>`:''}
-    <button class="cs-post" id="cspost"${canPost?'':' disabled'}>${mode==='음악'?'음악 올리기':'올리기'}</button>
+    <div class="cs-attach">
+      <button class="cs-att${m&&m.kind==='ph'?' on':''}" id="csphoto" aria-label="사진 끼워넣기">📷<span>사진</span></button>
+      <button class="cs-att${m&&m.kind==='vid'?' on':''}" id="csvideo" aria-label="영상 끼워넣기">🎥<span>영상</span></button>
+      <button class="cs-att${m&&m.kind==='aud'?' on':''}" id="csaudio" aria-label="데모 끼워넣기">🎵<span>데모</span></button>
+    </div>
+    <button class="cs-post" id="cspost"${canPost?'':' disabled'}>올리기</button>
   </div></div>`;
 }
 function submitCompose(){
   if(!S.compose) return;
-  const C=S.compose, mode=C.mode||'글', txt=(C.text||'').trim(), m=C.media;
-  if(mode==='음악'){ if(!(m&&m.kind==='aud')){offToast('음악 파일을 골라주세요');return;} if(!ME){needLogin();return;} submitMusic(m.file, txt); return; }
+  const C=S.compose, txt=(C.text||'').trim(), m=C.media;
   if(!txt && !m) return;
+  if(m && m.kind==='aud' && ME && SBC && m.file){ uploadDemoLog(m.file, txt); return; } /* 로그인 → 실제 업로드(영구·어디서나 재생) */
+  pushLog(txt, m);
+}
+function pushLog(txt, m, audioUrl){
   const d=new Date(), p=x=>String(x).padStart(2,'0'), now=p(d.getHours())+':'+p(d.getMinutes());
-  const dt=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+  const dt=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()), id='my_'+d.getTime();
   let log;
-  if(m && m.kind==='vid') log={id:'my_'+d.getTime(), t:'vid', at:now, dt:dt, cap:txt, src:m.url, side:'l', work:null};
-  else if(m && m.kind==='ph') log={id:'my_'+d.getTime(), t:'ph',  at:now, dt:dt, cap:txt||'사진', bg:'center/cover no-repeat url('+m.url+')', side:'l', work:null};
-  else                    log={id:'my_'+d.getTime(), t:'note',at:now, dt:dt, text:txt, tone:'y', side:'l', work:null};
+  if(m && m.kind==='vid')      log={id, t:'vid', at:now, dt, cap:txt, src:m.url, side:'l', work:null};
+  else if(m && m.kind==='aud') log={id, t:'snd', at:now, dt, nm:txt||'데모', dur:'', audio:audioUrl||m.url, side:'l', work:null};
+  else if(m && m.kind==='ph')  log={id, t:'ph',  at:now, dt, cap:txt||'사진', bg:'center/cover no-repeat url('+m.url+')', side:'l', work:null};
+  else                         log={id, t:'note',at:now, dt, text:txt, tone:'y', side:'l', work:null};
   STREAM.unshift(log);
   studioSave();
   S.compose=null;
   if(S.view!=='mine' || S.profile!=='me'){ S.view='mine'; S.profile='me'; }
   render();
   offToast('로그를 올렸어요');
+}
+/* 데모(오디오) 로그 — 로그인 아티스트면 Storage에 실제 업로드 후 재생되는 소리 로그로 */
+async function uploadDemoLog(file, txt){
+  const btn=document.getElementById('cspost'); if(btn){btn.disabled=true;btn.textContent='올리는 중…';}
+  try{
+    const ext=((file.name||'').split('.').pop()||'mp3').toLowerCase().replace(/[^a-z0-9]/g,'')||'mp3';
+    const path=ME.id+'/logs/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
+    const up=await SBC.storage.from('audio').upload(path, file, {contentType:file.type||'audio/mpeg', upsert:false});
+    if(up.error) throw up.error;
+    const pub=SBC.storage.from('audio').getPublicUrl(path);
+    pushLog(txt, {kind:'aud'}, (pub&&pub.data&&pub.data.publicUrl)||'');
+  }catch(e){ console.warn('[offlog] 데모 업로드 실패', e); offToast('데모 업로드 실패 — '+((e&&e.message)||'다시 시도')); const b=document.getElementById('cspost'); if(b){b.disabled=false;b.textContent='올리기';} }
 }
 /* 실제 음악 업로드 — Storage(audio) + tracks (로그인 아티스트) */
 async function submitMusic(file, title){
@@ -2352,11 +2378,11 @@ function bind(){
   /* 좌측 상단 프로필/로그인 (마이 진입점) */
   const acc=document.getElementById('acctbtn');
   if(acc)acc.onclick=()=>{ if(ME){ goProfile('PEEK'); } else { S.auth=true; render(); } };
-  /* 하단 ＋ — Work 안이면 발매/작품 액션, 그 외엔 글·사진·영상·음악 작성 */
+  /* 하단 ＋ — Work 안이면 발매/작품 액션, 그 외엔 로그 남기기(글+사진/영상/데모) */
   const npl=document.getElementById('navplus');
   if(npl)npl.onclick=()=>{
     if(S.view==='work'){ const w=WORKS.find(x=>x.id===S.work); if(w&&w.mine){ if(!S.relForm.date)S.relForm.date=minRelDate(); S.rel=true; render(); return; } }
-    S.compose={text:'',media:null,mode:'글'}; render();
+    S.compose={text:'',media:null}; render();
   };
   /* 릴스 탭 — 풀스크린 릴스로 (인스타 릴스처럼) */
   const nrl=document.getElementById('navreels');
@@ -2786,40 +2812,36 @@ function bind(){
     LISTS.unshift({id, nm:w.nm+' 리스트', mine:true, cnt:1, pub:0, cov:[w.id], tracks:[{nm:w.nm, by:w.by, dur:w.dur}]});
     studioSave(); S.addlist=false; S.list=id; S.view='list'; render();
   };
-  /* 4가지 탭(글/사진/영상/음악) 선택 */
-  document.querySelectorAll('[data-cmode]').forEach(b=>b.onclick=()=>{
-    if(!S.compose)S.compose={text:'',media:null};
-    if(S.compose.mode!==b.dataset.cmode){ S.compose.mode=b.dataset.cmode; S.compose.media=null; } render();
-  });
   /* 새 로그 ＋ (FAB / 상단 버튼) → 작성 시트 */
-  document.querySelectorAll('.fab,#composebtn').forEach(b=>b.onclick=()=>{ S.compose={text:'',media:null,mode:'글'}; render(); });
-  /* 작성 시트 컨트롤 (매 렌더 재바인딩) */
+  document.querySelectorAll('.fab,#composebtn').forEach(b=>b.onclick=()=>{ S.compose={text:'',media:null}; render(); });
+  /* 작성 시트 컨트롤 (매 렌더 재바인딩) — 한 박스에서 글 + 사진/영상/데모 끼워넣기 */
   if(S.compose){
     const bd=document.getElementById('csbd'), x=document.getElementById('csx');
-    const ta=document.getElementById('csta'), post=document.getElementById('cspost');
+    const ta=document.getElementById('csta'), post=document.getElementById('cspost'), rm=document.getElementById('csrm');
     const cph=document.getElementById('csphoto'), cvd=document.getElementById('csvideo'), cau=document.getElementById('csaudio');
     const close=()=>{ S.compose=null; render(); };
     if(bd)bd.onclick=e=>{ if(e.target===bd) close(); };
     if(x)x.onclick=close;
-    if(ta)ta.oninput=()=>{ S.compose.text=ta.value; if(post){ const mode=S.compose.mode||'글'; post.disabled = mode==='음악' ? !(S.compose.media&&ME) : !((ta.value||'').trim()||S.compose.media); } };
+    if(ta)ta.oninput=()=>{ S.compose.text=ta.value; if(post) post.disabled = !((ta.value||'').trim()||S.compose.media); };
     if(cph)cph.onclick=()=>{ const el=document.getElementById('cphoto'); if(el)el.click(); };
     if(cvd)cvd.onclick=()=>{ const el=document.getElementById('cvideo'); if(el)el.click(); };
     if(cau)cau.onclick=()=>{ const el=document.getElementById('caudio'); if(el)el.click(); };
+    if(rm)rm.onclick=()=>{ const md=S.compose.media; if(md&&md.url&&/^blob:/.test(md.url)){try{URL.revokeObjectURL(md.url)}catch(_){}} S.compose.media=null; render(); };
     if(post)post.onclick=submitCompose;
   }
-  /* 파일 입력 (1회 바인딩) */
+  /* 파일 입력 (1회 바인딩) — 고르면 그 자리에서 미리보기로 끼워넣는다 */
   const cpho=document.getElementById('cphoto');
   if(cpho && !cpho.__b){ cpho.__b=1; cpho.onchange=()=>{ const f=cpho.files&&cpho.files[0];
-    if(f){ if(!S.compose)S.compose={text:'',media:null,mode:'사진'};
+    if(f){ if(!S.compose)S.compose={text:'',media:null};
       const rd=new FileReader(); rd.onload=()=>{ S.compose.media={kind:'ph',url:rd.result}; render(); }; rd.readAsDataURL(f); }
     cpho.value=''; }; }
   const cvid=document.getElementById('cvideo');
   if(cvid && !cvid.__b){ cvid.__b=1; cvid.onchange=()=>{ const f=cvid.files&&cvid.files[0];
-    if(f){ if(!S.compose)S.compose={text:'',media:null,mode:'영상'}; if(S.compose.media&&S.compose.media.url&&/^blob:/.test(S.compose.media.url||'')){try{URL.revokeObjectURL(S.compose.media.url)}catch(_){}}
+    if(f){ if(!S.compose)S.compose={text:'',media:null}; if(S.compose.media&&S.compose.media.url&&/^blob:/.test(S.compose.media.url||'')){try{URL.revokeObjectURL(S.compose.media.url)}catch(_){}}
       S.compose.media={kind:'vid',url:URL.createObjectURL(f)}; render(); } cvid.value=''; }; }
   const caud=document.getElementById('caudio');
   if(caud && !caud.__b){ caud.__b=1; caud.onchange=()=>{ const f=caud.files&&caud.files[0];
-    if(f){ if(!S.compose)S.compose={text:'',media:null,mode:'음악'}; S.compose.media={kind:'aud',file:f,name:f.name}; render(); } caud.value=''; }; }
+    if(f){ if(!S.compose)S.compose={text:'',media:null}; S.compose.media={kind:'aud',file:f,name:f.name}; render(); } caud.value=''; }; }
   document.querySelectorAll('.play').forEach(p=>p.onclick=e=>{
     e.stopPropagation();
     const box=p.closest('.dplayer')||p.closest('.fy');
