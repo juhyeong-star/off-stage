@@ -742,17 +742,25 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 /* ── 하단 탭 (인스타식 아이콘 5개) ── */
 .nav{position:absolute;left:0;right:0;bottom:0;z-index:20;display:flex;background:rgba(10,10,12,.96);
   backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:10px 0 20px}
-.nav.ig button{flex:1;background:none;border:none;color:var(--txt);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;padding:4px 0;min-height:44px;-webkit-tap-highlight-color:transparent}
-.nav.ig button svg{width:26px;height:26px;opacity:.92}
-.nav.ig button.on svg{color:var(--txt);opacity:1;stroke-width:2.4}
-.nav.ig #navplus svg{color:var(--txt)}
-.nav.ig button:active{transform:scale(.9);transition:transform .08s ease-out}
-.nav.ig button:focus-visible{outline:2px solid var(--mint);border-radius:10px}
-/* 프로필 탭 = 아바타 (인스타 우측 끝) */
-.navav{width:27px;height:27px;border-radius:50%;background:var(--card2) center/cover no-repeat;
-  border:1.5px solid transparent;display:block}
-#navprofile.on .navav{border-color:var(--txt)}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-family:inherit;font-size:9.5px;font-weight:700;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;padding:2px 0;-webkit-tap-highlight-color:transparent}
+.nav button i{font-style:normal;font-size:17px;line-height:1;opacity:.65}
+.nav button.on{color:var(--mint)}
+.nav button.on i{opacity:1}
+.nav button:active{transform:scale(.92);transition:transform .08s ease-out}
+.nav button:focus-visible{outline:2px solid var(--mint);border-radius:8px}
+/* 마이 탭 = 프로필 아바타 (우측) */
+.avimg{display:block;width:19px;height:19px;border-radius:50%;background:var(--card2) center/cover no-repeat;border:1.5px solid transparent}
+.nav button.on i .avimg{border-color:var(--mint)}
+/* 음악 = 하단 가운데 살짝 떠오른 원 */
+.navctr{position:relative}
+.navctr i{width:48px;height:48px;border-radius:50%;background:var(--card2);border:1.5px solid var(--mint);
+  display:flex;align-items:center;justify-content:center;font-size:21px!important;color:var(--mint);
+  margin-top:-16px;opacity:1!important;transition:all .25s;
+  box-shadow:0 0 0 4px var(--bg),0 4px 14px rgba(0,0,0,.6)}
+.navctr:active i{transform:translateY(-2px)}
+.navctr.on i{background:var(--mint);color:#04231d;
+  box-shadow:0 0 0 4px var(--bg),0 0 20px rgba(83,224,200,.55)}
 /* ── 마이: LOG | WORKS ── */
 .mprof{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0 16px;text-align:center}
 .mprof .smile{width:64px;height:64px}
@@ -868,7 +876,7 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .cs-post{margin-top:12px;width:100%;background:var(--mint);color:#04231d;border:0;border-radius:14px;padding:13px;font-weight:800;font-size:15px;min-height:48px}
 .cs-post:disabled{opacity:.4}
 /* 릴스에서 듣던 곡 담기 */
-.slsave{margin-top:14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:#fff;border-radius:99px;padding:9px 20px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;backdrop-filter:blur(6px)}
+.slsave{position:absolute;top:16px;right:58px;z-index:7;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.24);color:#fff;border-radius:99px;padding:8px 15px;font-size:12.5px;font-weight:800;font-family:inherit;cursor:pointer;backdrop-filter:blur(6px)}
 .slsave:active{transform:scale(.95)}
 .cs-trk{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:13px;color:var(--muted);margin-bottom:12px}
 .cs-trk b{color:var(--txt)}
@@ -976,12 +984,10 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
   <div id="storyview"></div>
   <div id="composeview"></div>
   <div id="mini"></div>
-  <div class="nav ig" id="nav">
-    <button data-v="home" aria-label="홈"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.3V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.3"/></svg></button>
-    <button data-v="lists" aria-label="음악"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="18" r="2.5"/><circle cx="17" cy="16" r="2.5"/><path d="M9 18V6l10.5-2v12"/><path d="M9 8l10.5-2"/></svg></button>
-    <button id="navplus" aria-label="올리기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5.5"/><path d="M12 8.3v7.4M8.3 12h7.4"/></svg></button>
-    <button id="navreels" aria-label="릴스"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3.5" width="18" height="17" rx="4.5"/><path d="M3 9h18M8.5 3.5 11 9M14 3.5 16.5 9"/><path d="M10.3 12.4v4.2l3.6-2.1z" fill="currentColor" stroke="none"/></svg></button>
-    <button id="navprofile" aria-label="프로필"><span class="navav"></span></button>
+  <div class="nav" id="nav">
+    <button data-v="home" aria-label="홈"><i>⌂</i>홈</button>
+    <button class="navctr" data-v="lists" aria-label="음악"><i>♪</i></button>
+    <button id="navprofile" aria-label="마이"><i><span class="avimg"></span></i>마이</button>
   </div>
 </div>
 
@@ -1518,11 +1524,12 @@ function slideView(){
       <div class="bgimg" style="background:${t.bg}"></div><div class="grainy"></div>
       ${who}<div class="slmid"><div class="slts">${t.at}</div><div class="slcap">${t.cap}</div></div>${rx}${hint}</div>`;
     if(t.t==='snd') return `<div class="sl snd"${anchor} data-slplay>
-      ${who}<div class="slmid"><div class="slts">${t.at||''}</div>
+      ${who}
+      <button class="slsave" data-savetid="${t.tid||''}" data-savenm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-saveby="${(t.who||'').replace(/"/g,'&quot;')}" data-saveaudio="${t.audio||''}">＋ 담기</button>
+      <div class="slmid"><div class="slts">${t.at||''}</div>
         <div class="slwave">${waveBars(30)}</div>
         <div class="slcap">${t.nm||t.cap}</div>
-        <span class="slpill"><em>▶</em><b>${t.dur||t.sub||''}</b></span>
-        <button class="slsave" data-savetid="${t.tid||''}" data-savenm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-saveby="${(t.who||'').replace(/"/g,'&quot;')}" data-saveaudio="${t.audio||''}">＋ 담기</button></div>${rx}${hint}</div>`;
+        <span class="slpill"><em>▶</em><b>${t.dur||t.sub||''}</b></span></div>${rx}${hint}</div>`;
     return `<div class="sl paper ${t.tone==='b'?'b':''}"${anchor}>
       ${who}<div class="slmid"><div class="slts">${t.at}</div><div class="slnote">${t.text}</div></div>${rx}${hint}</div>`;
   };
@@ -1679,8 +1686,9 @@ function mine(){
     <div class="rmid"><div class="rts">${t.dt?t.dt.replace(/-/g,'.'):''}</div><div class="rcap">${t.nm}</div>
       <span class="sndpill"><em>▶</em><b>${t.demo?'Demo':''}</b></span></div></div></div>`;
   const _emptyOrLoad = rp ? `<div class="pknote" style="padding:22px 0">아직 올린 게 없어요</div>` : `<div class="pknote" style="padding:22px 0">불러오는 중…</div>`;
-  const artistLog   = (rp && rp.tracks.length) ? rp.tracks.map(alogCard).join('') : _emptyOrLoad;
-  const artistWorks = (rp && rp.tracks.length) ? rp.tracks.map(atrackCard).join('') : _emptyOrLoad;
+  const rpTracks    = rp ? rp.tracks.slice().sort((a,b)=>String(b.dt||'').localeCompare(String(a.dt||''))) : [];  /* 최신이 위로 */
+  const artistLog   = rpTracks.length ? rpTracks.map(alogCard).join('') : _emptyOrLoad;
+  const artistWorks = rpTracks.length ? rpTracks.map(atrackCard).join('') : _emptyOrLoad;
 
   /* 내 작품(스튜디오) */
   const myworks=(me?`<button class="newwork" id="newworkbtn">＋ 새 작품 만들기</button>`:'')+WORKS.map(w=>`<div class="workrow">
@@ -2331,12 +2339,10 @@ function render(){
   document.getElementById('screen').scrollTop=0;
   [...document.querySelectorAll('#nav button[data-v]')].forEach(b=>
     b.classList.toggle('on', b.dataset.v===S.view || (S.view==='list'&&b.dataset.v==='lists') || (S.view==='room'&&b.dataset.v==='home')));
-  const npf=document.getElementById('navprofile'), nrl=document.getElementById('navreels');
+  const npf=document.getElementById('navprofile');
   if(npf){ npf.classList.toggle('on', S.view==='mine'&&S.profile==='me');
-    const av=npf.querySelector('.navav');
-    if(av){ if(ME&&ME.avatar){ av.style.backgroundImage=`url(${ME.avatar})`; av.innerHTML=''; }
-      else { av.style.backgroundImage='none'; av.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" style="display:block;margin:5px auto 0"><circle cx="12" cy="8.5" r="3.4"/><path d="M5.5 20c0-3.4 2.9-5.8 6.5-5.8s6.5 2.4 6.5 5.8"/></svg>'; } } }
-  if(nrl) nrl.classList.toggle('on', S.view==='home'&&S.mode==='slide');
+    const av=npf.querySelector('.avimg');
+    if(av) av.style.background = (ME&&ME.avatar) ? `url(${ME.avatar}) center/cover no-repeat` : 'var(--card2)'; }
   document.getElementById('slideview').innerHTML =
     (S.view==='home' && S.mode==='slide') ? slideView() : '';
   if(S.view==='home' && S.mode==='slide' && S.slideAt){
@@ -2378,16 +2384,7 @@ function bind(){
   /* 좌측 상단 프로필/로그인 (마이 진입점) */
   const acc=document.getElementById('acctbtn');
   if(acc)acc.onclick=()=>{ if(ME){ goProfile('PEEK'); } else { S.auth=true; render(); } };
-  /* 하단 ＋ — Work 안이면 발매/작품 액션, 그 외엔 로그 남기기(글+사진/영상/데모) */
-  const npl=document.getElementById('navplus');
-  if(npl)npl.onclick=()=>{
-    if(S.view==='work'){ const w=WORKS.find(x=>x.id===S.work); if(w&&w.mine){ if(!S.relForm.date)S.relForm.date=minRelDate(); S.rel=true; render(); return; } }
-    S.compose={text:'',media:null}; render();
-  };
-  /* 릴스 탭 — 풀스크린 릴스로 (인스타 릴스처럼) */
-  const nrl=document.getElementById('navreels');
-  if(nrl)nrl.onclick=()=>{ S.view='home'; if(!S.feed||!S.feed.length)renewHome(); S.mode='slide'; S.slideAt=0; render(); };
-  /* 프로필 탭 — 우측 끝 아바타 (인스타). 로그인 유저면 내 페이지, 아니면 로그인 */
+  /* 마이 탭 — 우측 아바타. 로그인 유저면 내 페이지, 아니면 로그인 */
   const npf=document.getElementById('navprofile');
   if(npf)npf.onclick=()=>{ if(ME){ goProfile('PEEK'); } else { S.auth=true; render(); } };
   if(S.auth){
