@@ -865,6 +865,11 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .cs-add:hover{border-color:var(--mint);color:var(--mint)}
 .cs-post{margin-top:12px;width:100%;background:var(--mint);color:#04231d;border:0;border-radius:14px;padding:13px;font-weight:800;font-size:15px;min-height:48px}
 .cs-post:disabled{opacity:.4}
+/* 릴스에서 듣던 곡 담기 */
+.slsave{margin-top:14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:#fff;border-radius:99px;padding:9px 20px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;backdrop-filter:blur(6px)}
+.slsave:active{transform:scale(.95)}
+.cs-trk{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:13px;color:var(--muted);margin-bottom:12px}
+.cs-trk b{color:var(--txt)}
 /* 작성 4탭 (글/사진/영상/음악) + 상단 올리기 버튼 */
 .cs-tabs{display:flex;gap:5px;margin-bottom:11px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px}
 .cs-tab{flex:1;background:none;border:0;color:var(--muted);border-radius:9px;padding:9px 0;font-size:13.5px;font-weight:700;min-height:40px}
@@ -1075,6 +1080,19 @@ function authSheet(){
     <input class="authinput" id="authemail" type="email" autocomplete="username" placeholder="이메일">
     <input class="authinput" id="authpw" type="password" autocomplete="current-password" placeholder="비밀번호">
     <button class="cs-post" id="authsubmit" style="margin-top:10px">로그인</button>
+  </div></div>`;
+}
+/* 듣던 곡을 플레이리스트에 담기 (릴스/피드에서 바로) */
+function saveSheet(){
+  if(!S.saveTrack) return '';
+  const t=S.saveTrack, mine=LISTS.filter(p=>p.mine);
+  return `<div class="cs-bd" id="svbd"><div class="cs">
+    <div class="cs-hd"><b>담을 플레이리스트</b><button class="cs-x" id="svx" aria-label="닫기">✕</button></div>
+    <div class="cs-trk">🎵 <b>${t.nm}</b> · ${t.by}</div>
+    ${mine.length?mine.map(p=>{const has=(p.tracks||[]).some(x=>x.tid===t.tid);
+      return `<button class="pkrow" data-savein="${p.id}"><span class="pknm"><b>${p.nm}</b><small>${(p.tracks||[]).length}곡</small></span>
+        <span style="margin-left:auto;color:${has?'var(--mint)':'var(--muted)'};font-weight:800">${has?'✓ 담김':'＋'}</span></button>`}).join(''):`<div class="pknote" style="padding:10px 0">아직 만든 플레이리스트가 없어요</div>`}
+    <button class="newlist" id="svnew" style="margin-top:8px">＋ 새 플레이리스트에 담기</button>
   </div></div>`;
 }
 /* 비로그인 안내 — 조용히 실패시키지 않고 알려준다 */
@@ -1300,7 +1318,7 @@ const curRound = ()=>ROUNDS.find(r=>r.id===S.round)||ROUNDS[0];
 
 
 let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:'me', round:'jul', lseg:'list', vcat:'music', flist:null, fq:'', flFrom:'mine', list:null, share:false, addlist:false,
-  pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'', auth:false, profileAid:null,
+  pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'', auth:false, profileAid:null, saveTrack:null,
   relForm:{audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', event:''}};
 
 const shape=(s,f,z)=>`<svg viewBox="0 0 24 24" width="${z}" height="${z}" style="overflow:visible"><use href="#${s}" fill="${f}"/></svg>`;
@@ -1490,7 +1508,8 @@ function slideView(){
       ${who}<div class="slmid"><div class="slts">${t.at||''}</div>
         <div class="slwave">${waveBars(30)}</div>
         <div class="slcap">${t.nm||t.cap}</div>
-        <span class="slpill"><em>▶</em><b>${t.dur||t.sub||''}</b></span></div>${rx}${hint}</div>`;
+        <span class="slpill"><em>▶</em><b>${t.dur||t.sub||''}</b></span>
+        <button class="slsave" data-savetid="${t.tid||''}" data-savenm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-saveby="${(t.who||'').replace(/"/g,'&quot;')}" data-saveaudio="${t.audio||''}">＋ 담기</button></div>${rx}${hint}</div>`;
     return `<div class="sl paper ${t.tone==='b'?'b':''}"${anchor}>
       ${who}<div class="slmid"><div class="slts">${t.at}</div><div class="slnote">${t.text}</div></div>${rx}${hint}</div>`;
   };
@@ -2299,7 +2318,7 @@ function render(){
     if(el)el.scrollIntoView({block:'start'});
   }
   document.getElementById('storyview').innerHTML = S.storyIdx!==null ? storyViewer() : '';
-  document.getElementById('composeview').innerHTML = S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : (S.auth ? authSheet() : ''));
+  document.getElementById('composeview').innerHTML = S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : (S.auth ? authSheet() : (S.saveTrack ? saveSheet() : '')));
   renderMini();
   bind();
   syncStoryAudio();     // 스토리 데모면 실제 소리 재생
@@ -2675,6 +2694,27 @@ function bind(){
       if(!ok){ const back=b.classList.toggle('on'); b.textContent=back?'팔로잉':'팔로우'; }
     });
   });
+  /* 릴스/피드에서 듣던 곡 담기 */
+  document.querySelectorAll('.slsave').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    if(!b.dataset.savetid){ offToast('담을 수 없는 항목이에요'); return; }
+    S.saveTrack={tid:b.dataset.savetid, nm:b.dataset.savenm, by:b.dataset.saveby, audio:b.dataset.saveaudio};
+    render();
+  });
+  if(S.saveTrack){
+    const svx=document.getElementById('svx'), svbd=document.getElementById('svbd');
+    const svclose=()=>{ S.saveTrack=null; render(); };
+    if(svx)svx.onclick=svclose; if(svbd)svbd.onclick=e=>{ if(e.target===svbd)svclose(); };
+    document.querySelectorAll('[data-savein]').forEach(b=>b.onclick=()=>{
+      const p=LISTS.find(x=>x.id===b.dataset.savein), t=S.saveTrack;
+      if(p&&t){ if(!(p.tracks||[]).some(x=>x.tid===t.tid)){ p.tracks.push({nm:t.nm,by:t.by,dur:'',tid:t.tid,audio:t.audio}); if(!p.mine)p.mine=true; studioSave(); offToast(p.nm+'에 담았어요'); } else { offToast('이미 담겨 있어요'); } }
+      S.saveTrack=null; render();
+    });
+    const svn=document.getElementById('svnew');
+    if(svn)svn.onclick=()=>{ const t=S.saveTrack; const id='p'+Date.now().toString(36);
+      LISTS.unshift({id:id, nm:(t.nm||'새')+' 리스트', mine:true, cnt:1, pub:0, cov:[], tracks:[{nm:t.nm,by:t.by,dur:'',tid:t.tid,audio:t.audio}]});
+      studioSave(); S.saveTrack=null; offToast('새 플레이리스트에 담았어요'); render(); };
+  }
   document.querySelectorAll('[data-room]').forEach(b=>b.onclick=e=>{
     if(e.target.closest('.rbtn,.fol,.play'))return;
     S.slot=SLOTS.indexOf(b.dataset.room); S.view='room'; render();
