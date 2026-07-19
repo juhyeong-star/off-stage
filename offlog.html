@@ -879,6 +879,9 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .ai-lyr{font-family:'Gaegu','Noto Sans KR',sans-serif;font-size:15px;line-height:1.7;color:var(--txt);white-space:pre-wrap}
 .ai-dsp{display:flex;flex-wrap:wrap;gap:6px}
 .ai-dsp span{font-size:11.5px;color:var(--txt);background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:4px 11px}
+/* 곡 담기 검색창 */
+.pksearch{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--txt);padding:11px 13px;font-size:16px;margin-bottom:8px;font-family:inherit}
+.pksearch:focus{outline:2px solid var(--mint)}
 /* 발매 로그 큐레이션 날짜 헤더 */
 .pldate{font-family:'Black Han Sans';font-size:13px;color:var(--txt);margin:12px 2px 6px;padding-top:8px;border-top:1px solid var(--line)}
 .pldate:first-of-type{border-top:0;padding-top:0}
@@ -1206,7 +1209,7 @@ const curRound = ()=>ROUNDS.find(r=>r.id===S.round)||ROUNDS[0];
 
 
 let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:'me', round:'jul', lseg:'list', vcat:'music', flist:null, fq:'', flFrom:'mine', list:null, share:false, addlist:false,
-  pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false,
+  pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'',
   relForm:{audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', dsp:[]}};
 
 const shape=(s,f,z)=>`<svg viewBox="0 0 24 24" width="${z}" height="${z}" style="overflow:visible"><use href="#${s}" fill="${f}"/></svg>`;
@@ -1672,16 +1675,8 @@ function flist(){
 }
 
 /* ── 플레이리스트 — 내가 모은 소리. 공유하면 남이 듣는다 ── */
-let LISTS=[
-  {id:'p1', nm:'새벽 작업용', cnt:12, pub:1, cov:['sr','ml','gj'],
-   tracks:[{nm:'Summer Rain', by:'PEEK', dur:'03:12'},{nm:'Moonlight', by:'PEEK', dur:'02:47'},
-           {nm:'궤적', by:'전아름', dur:'02:58'},{nm:'이런일이 생기면', by:'SMHS', dur:'02:52'}]},
-  {id:'p2', nm:'소름 돋은 데모', cnt:7, pub:0, cov:['ml','gj'],
-   tracks:[{nm:'아애이오우', by:'박승빈', dur:'0:14'},{nm:'싸이코', by:'PEEK', dur:'0:31'},
-           {nm:'허밍', by:'김이든', dur:'0:07'}]},
-  {id:'p3', nm:'레드포인트 후보', cnt:5, pub:1, cov:['sr'],
-   tracks:[{nm:'이런일이 생기면', by:'SMHS', dur:'02:52'},{nm:'궤적', by:'전아름', dur:'02:58'}]},
-];
+let LISTS=[];              /* 가짜 시드 제거 — 내가 만든 플레이리스트만(localStorage 저장) */
+let ALLTRACKS=[];          /* 담을 수 있는 실제 곡 목록 (로더가 채움) */
 /* 커버 색: 내 작품은 WORKS에서, 남의 곡은 여기서. 없으면 중립 회색 */
 const COVERS={gj:'radial-gradient(circle at 35% 30%,#3a5c3e,transparent 60%),radial-gradient(circle at 80% 75%,#1c3a2c,transparent 55%),#0c140e'};
 const covOf=id=>(WORKS.find(w=>w.id===id)||{}).bg||COVERS[id]||'#22222a';
@@ -1804,17 +1799,36 @@ function listDetail(){
       `<i style="background:${covOf(id)};z-index:${3-i};left:${i*22}px"></i>`).join('')}</span>
     <div class="lhinfo">${p.mine?`<input class="lhname" id="listname" value="${(p.nm||'').replace(/"/g,'&quot;')}">`:`<h3>${p.nm}</h3>`}<small>${(ME&&ME.name)||'나'} · ${(p.tracks||[]).length}곡</small>
       <div class="lhbtn"><button class="cta" id="lplay">▶ 전체 재생</button>
-        <button class="savebtn" data-share="${p.id}">⤴ 공유</button></div></div>
+        <button class="savebtn" id="addsongbtn">＋ 곡 담기</button></div></div>
   </div>
   ${p.tracks.length?p.tracks.map((t,i)=>`<div class="trow">
     <span class="tno">${String(i+1).padStart(2,'0')}</span>
-    <button class="tplay" aria-label="재생">▶</button>
+    <button class="tplay" data-tplay="${t.audio||''}" aria-label="재생">▶</button>
     <span class="tnm"><b>${t.nm}</b><small>${t.by}</small></span>
-    <span class="tdur">${t.dur}</span>
-    <button class="tx" data-tx="${i}" aria-label="빼기">✕</button></div>`).join(''):`<div class="pknote" style="padding:18px 0">아직 곡이 없어요 · 작품에서 ＋ 플레이리스트로 담아보세요</div>`}
-  <div class="pknote" style="margin-top:14px">＋ 플레이리스트로 담으면 여기 쌓입니다</div>
+    <span class="tdur">${t.dur||''}</span>
+    <button class="tx" data-tx="${i}" aria-label="빼기">✕</button></div>`).join(''):`<div class="pknote" style="padding:18px 0">아직 곡이 없어요 · 아래 <b>＋ 곡 담기</b>로 발견의 곡을 담아보세요</div>`}
+  ${S.addsong?songPicker(p):''}
   ${S.share?shareSheet(p):''}
   <div style="height:20px"></div>`;
+}
+
+/* 플레이리스트에 담을 곡 고르기 — 발견의 실제 곡 목록에서 */
+function songPicker(p){
+  const q=(S.sq||'').trim().toLowerCase();
+  const have={}; (p.tracks||[]).forEach(t=>{ if(t.tid)have[t.tid]=1; });
+  const list=ALLTRACKS.filter(t=> !q || (t.nm+' '+t.by).toLowerCase().indexOf(q)>-1 );
+  return `<div class="sheet-bd" id="asbd"></div>
+  <div class="pksheet tall">
+    <div class="pkhd"><b>${p.nm}에 곡 담기</b>
+      <button class="pkx" id="asclose" aria-label="닫기">✕</button></div>
+    <input class="pksearch" id="assearch" placeholder="곡·아티스트 검색" value="${(S.sq||'').replace(/"/g,'&quot;')}">
+    ${list.length?list.slice(0,60).map(t=>`<button class="pkrow ${have[t.tid]?'cur':''}" data-addsong="${t.tid}">
+      <span class="plth snd" style="background:${c(t.c||'blue')}">♪</span>
+      <span class="pknm"><b>${t.nm}</b><small>${t.by}</small></span>
+      <span style="margin-left:auto;color:${have[t.tid]?'var(--mint)':'var(--muted)'};font-weight:800">${have[t.tid]?'✓ 담김':'＋'}</span></button>`).join('')
+      : `<div class="pknote" style="padding:20px 0">검색 결과 없음</div>`}
+    <button class="cta" id="asdone">완료 (${(p.tracks||[]).length}곡)</button>
+  </div>`;
 }
 
 /* 무대에 내기 — 어느 라운드에? 신청형만 받는다 */
@@ -2192,12 +2206,34 @@ function bind(){
     if(p.mine)studioSave(); render();
   });
   document.querySelectorAll('.tplay').forEach(b=>b.onclick=()=>{
-    const on=b.classList.contains('on');
-    document.querySelectorAll('.tplay.on').forEach(x=>{x.classList.remove('on');x.textContent='▶'});
-    if(!on){b.classList.add('on'); b.textContent='❙❙'; S.mini.playing=true; renderMini()}
+    const url=b.dataset.tplay;
+    if(url){
+      const same=(CURSRC===url && !AUDIO.paused);
+      document.querySelectorAll('.tplay.on').forEach(x=>{x.classList.remove('on');x.textContent='▶'});
+      if(same){ AUDIO.pause(); S.mini.playing=false; renderMini(); return; }
+      if(CURSRC!==url){ AUDIO.src=url; CURSRC=url; } const pr=AUDIO.play(); if(pr&&pr.catch)pr.catch(()=>{});
+      b.classList.add('on'); b.textContent='❙❙'; S.mini.on=true; S.mini.playing=true; renderMini();
+    } else { offToast('이 곡은 재생 파일이 없어요'); }
   });
   const lp=document.getElementById('lplay');
-  if(lp)lp.onclick=()=>{S.mini.playing=!S.mini.playing; lp.textContent=S.mini.playing?'⏸ 재생 중':'▶ 전체 재생'; renderMini()};
+  if(lp)lp.onclick=()=>{ const p=LISTS.find(x=>x.id===S.list); const first=p&&(p.tracks||[]).find(t=>t.audio);
+    if(first){ if(CURSRC!==first.audio){AUDIO.src=first.audio;CURSRC=first.audio;} const pr=AUDIO.play(); if(pr&&pr.catch)pr.catch(()=>{}); NOWPLAY.nm=first.nm; NOWPLAY.src=first.audio; S.mini.on=true; S.mini.playing=true; renderMini(); }
+    else offToast('재생할 곡이 없어요'); };
+  /* 플레이리스트에 곡 담기 */
+  const asb=document.getElementById('addsongbtn');
+  if(asb)asb.onclick=()=>{ S.addsong=true; S.sq=''; render(); };
+  const asx=document.getElementById('asclose'); if(asx)asx.onclick=()=>{S.addsong=false;render()};
+  const asbd=document.getElementById('asbd');   if(asbd)asbd.onclick=()=>{S.addsong=false;render()};
+  const asd=document.getElementById('asdone');   if(asd)asd.onclick=()=>{S.addsong=false;render()};
+  const ass=document.getElementById('assearch');
+  if(ass)ass.oninput=()=>{ S.sq=ass.value; const q=ass.value.trim().toLowerCase();
+    document.querySelectorAll('[data-addsong]').forEach(row=>{ const txt=(row.textContent||'').toLowerCase(); row.style.display=(!q||txt.indexOf(q)>-1)?'':'none'; }); };
+  document.querySelectorAll('[data-addsong]').forEach(b=>b.onclick=()=>{
+    const p=LISTS.find(x=>x.id===S.list), t=ALLTRACKS.find(x=>x.tid===b.dataset.addsong);
+    if(p&&t){ if((p.tracks||[]).some(x=>x.tid===t.tid)){ p.tracks=p.tracks.filter(x=>x.tid!==t.tid); } /* 다시 누르면 빼기(토글) */
+      else { p.tracks.push({nm:t.nm, by:t.by, dur:t.dur||'', tid:t.tid, audio:t.audio}); }
+      if(!p.mine)p.mine=true; studioSave(); render(); }
+  });
   const gp=document.getElementById('gopeople');
   if(gp)gp.onclick=()=>{S.profile='me'; S.flist='following'; S.fq=''; S.flFrom='home'; S.view='flist'; render()};
   const flb=document.getElementById('flback');
@@ -2649,6 +2685,9 @@ setInterval(()=>{
 
     var cut=function(s,n){ s=String(s||''); return s.length>n ? s.slice(0,n-1)+'…' : s; };
     var _shuf=function(a){ var x=a.slice(); for(var i=x.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=x[i];x[i]=x[j];x[j]=t;} return x; };
+
+    // 플레이리스트에 담을 수 있는 실제 곡 목록
+    ALLTRACKS=tracks.map(function(t){ return {nm:t.title, by:t.artist, dur:'', tid:t.id, audio:t.audio, c:colOf(t.artist)}; });
 
     // ── 매 새로고침마다 전체 아티스트에서 다양하게 재샘플 → (1) 모든 아티스트 노출 (2) 트렌드 첫 화면 새 얼굴 ──
     function resampleFeed(){
