@@ -909,8 +909,14 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .authdiv::before,.authdiv::after{content:'';flex:1;height:1px;background:var(--line)}
 .authinput{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--txt);padding:12px 13px;font-size:16px;margin-bottom:8px;font-family:inherit}
 .authinput:focus{outline:2px solid var(--mint)}
-/* 곡 담기 검색창 */
+/* 곡 담기 검색창 + 미리듣기 행 */
 .pksearch{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--txt);padding:11px 13px;font-size:16px;margin-bottom:8px;font-family:inherit}
+.songrow{display:flex;align-items:center;gap:11px}
+.songplay{width:38px;height:38px;flex-shrink:0;border-radius:50%;background:var(--card2);border:1px solid var(--line);color:var(--mint);font-size:13px;cursor:pointer}
+.songplay.on{background:var(--mint);color:#04231d;border-color:var(--mint)}
+.songrow .pknm{flex:1;min-width:0}
+.songadd{flex-shrink:0;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:99px;padding:7px 13px;font-size:12px;font-weight:800;font-family:inherit;cursor:pointer;min-height:34px}
+.songadd.on{background:var(--mint);border-color:var(--mint);color:#04231d}
 .pksearch:focus{outline:2px solid var(--mint)}
 /* 발매 로그 큐레이션 날짜 헤더 */
 .pldate{font-family:'Black Han Sans';font-size:13px;color:var(--txt);margin:12px 2px 6px;padding-top:8px;border-top:1px solid var(--line)}
@@ -1937,10 +1943,11 @@ function songPicker(p){
     <div class="pkhd"><b>${p.nm}에 곡 담기</b>
       <button class="pkx" id="asclose" aria-label="닫기">✕</button></div>
     <input class="pksearch" id="assearch" placeholder="곡·아티스트 검색" value="${(S.sq||'').replace(/"/g,'&quot;')}">
-    ${list.length?list.slice(0,60).map(t=>`<button class="pkrow ${have[t.tid]?'cur':''}" data-addsong="${t.tid}">
-      <span class="plth snd" style="background:${c(t.c||'blue')}">♪</span>
+    <div class="pknote" style="text-align:left;margin:0 2px 8px;color:var(--muted)">▶ 들어보고 · ＋로 담기</div>
+    ${list.length?list.slice(0,60).map(t=>`<div class="pkrow songrow ${have[t.tid]?'cur':''}" data-tid="${t.tid}">
+      <button class="songplay" data-preview="${t.audio||''}" aria-label="미리듣기">▶</button>
       <span class="pknm"><b>${t.nm}</b><small>${t.by}</small></span>
-      <span style="margin-left:auto;color:${have[t.tid]?'var(--mint)':'var(--muted)'};font-weight:800">${have[t.tid]?'✓ 담김':'＋'}</span></button>`).join('')
+      <button class="songadd ${have[t.tid]?'on':''}" data-addsong="${t.tid}">${have[t.tid]?'✓ 담김':'＋ 담기'}</button></div>`).join('')
       : `<div class="pknote" style="padding:20px 0">검색 결과 없음</div>`}
     <button class="cta" id="asdone">완료 (${(p.tracks||[]).length}곡)</button>
   </div>`;
@@ -2311,6 +2318,14 @@ function bind(){
   document.querySelectorAll('[data-svprof]').forEach(b=>b.onclick=e=>{
     e.stopPropagation(); S.storyIdx=null; try{AUDIO.pause();}catch(_){} goProfile(b.dataset.svprof, b.dataset.paid);
   });
+  /* 헤더 공유 ⤴ — 죽은 버튼이었음. 실제 공유(네이티브 공유 or 링크 복사) */
+  document.querySelectorAll('[aria-label="공유"]:not([data-share])').forEach(b=>b.onclick=async()=>{
+    const url=location.origin+'/offlog', title='OFFLOG';
+    try{
+      if(navigator.share){ await navigator.share({title:title, url:url}); }
+      else { await navigator.clipboard.writeText(url); offToast('링크가 복사됐어요'); }
+    }catch(e){ try{ await navigator.clipboard.writeText(url); offToast('링크가 복사됐어요'); }catch(_){ offToast('링크: '+url); } }
+  });
   /* 좌측 상단 프로필/로그인 (마이 진입점) */
   const acc=document.getElementById('acctbtn');
   if(acc)acc.onclick=()=>{ if(ME){ goProfile('PEEK'); } else { S.auth=true; render(); } };
@@ -2395,12 +2410,26 @@ function bind(){
   const asd=document.getElementById('asdone');   if(asd)asd.onclick=()=>{S.addsong=false;render()};
   const ass=document.getElementById('assearch');
   if(ass)ass.oninput=()=>{ S.sq=ass.value; const q=ass.value.trim().toLowerCase();
-    document.querySelectorAll('[data-addsong]').forEach(row=>{ const txt=(row.textContent||'').toLowerCase(); row.style.display=(!q||txt.indexOf(q)>-1)?'':'none'; }); };
-  document.querySelectorAll('[data-addsong]').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('.songrow').forEach(row=>{ const txt=(row.textContent||'').toLowerCase(); row.style.display=(!q||txt.indexOf(q)>-1)?'':'none'; }); };
+  /* 미리듣기 — 들으면서 고른다 (전역 오디오, 재생/일시정지) */
+  document.querySelectorAll('[data-preview]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation(); const url=b.dataset.preview;
+    if(!url){ offToast('재생 파일이 없어요'); return; }
+    document.querySelectorAll('.songplay.on').forEach(x=>{ if(x!==b){ x.classList.remove('on'); x.textContent='▶'; } });
+    if(CURSRC===url && !AUDIO.paused){ AUDIO.pause(); b.classList.remove('on'); b.textContent='▶'; return; }
+    if(CURSRC!==url){ AUDIO.src=url; CURSRC=url; } const pr=AUDIO.play(); if(pr&&pr.catch)pr.catch(()=>{});
+    b.classList.add('on'); b.textContent='❚❚'; S.mini.on=true; S.mini.playing=true;
+    const rowB=b.closest('.songrow'); if(rowB){ NOWPLAY.nm=rowB.querySelector('b').textContent; NOWPLAY.src=url; }
+  });
+  /* 담기 — 인플레이스 토글(미리듣기 재생 상태 유지) */
+  document.querySelectorAll('[data-addsong]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
     const p=LISTS.find(x=>x.id===S.list), t=ALLTRACKS.find(x=>x.tid===b.dataset.addsong);
-    if(p&&t){ if((p.tracks||[]).some(x=>x.tid===t.tid)){ p.tracks=p.tracks.filter(x=>x.tid!==t.tid); } /* 다시 누르면 빼기(토글) */
-      else { p.tracks.push({nm:t.nm, by:t.by, dur:t.dur||'', tid:t.tid, audio:t.audio}); }
-      if(!p.mine)p.mine=true; studioSave(); render(); }
+    if(!p||!t)return;
+    if((p.tracks||[]).some(x=>x.tid===t.tid)){ p.tracks=p.tracks.filter(x=>x.tid!==t.tid); b.classList.remove('on'); b.textContent='＋ 담기'; }
+    else { p.tracks.push({nm:t.nm, by:t.by, dur:t.dur||'', tid:t.tid, audio:t.audio}); b.classList.add('on'); b.textContent='✓ 담김'; }
+    if(!p.mine)p.mine=true; studioSave();
+    const done=document.getElementById('asdone'); if(done)done.textContent='완료 ('+(p.tracks||[]).length+'곡)';
   });
   const gp=document.getElementById('gopeople');
   if(gp)gp.onclick=()=>{S.profile='me'; S.flist='following'; S.fq=''; S.flFrom='home'; S.view='flist'; render()};
