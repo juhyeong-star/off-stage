@@ -862,6 +862,26 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .cs-add:hover{border-color:var(--mint);color:var(--mint)}
 .cs-post{margin-top:12px;width:100%;background:var(--mint);color:#04231d;border:0;border-radius:14px;padding:13px;font-weight:800;font-size:15px;min-height:48px}
 .cs-post:disabled{opacity:.4}
+/* 새 작품 이름 입력 / 플레이리스트 이름 */
+.cs-name{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--txt);padding:13px;font-size:17px;font-family:'Black Han Sans';letter-spacing:-.01em}
+.cs-name:focus{outline:2px solid var(--mint)}
+.lhname{background:transparent;border:0;border-bottom:1px dashed var(--line);color:var(--txt);font-family:'Black Han Sans';font-size:22px;width:100%;padding:2px 0}
+.lhname:focus{outline:0;border-bottom-color:var(--mint)}
+/* 새 작품 만들기 버튼 (마이 WORKS) */
+.newwork{display:block;width:100%;margin:0 0 12px;background:transparent;border:1.5px dashed var(--line);color:var(--txt);border-radius:16px;padding:15px;font-size:14px;font-weight:700;min-height:48px}
+.newwork:hover{border-color:var(--mint);color:var(--mint)}
+/* 앨범 정보 (Work 상세) */
+.albuminfo{margin:14px 0 4px;display:flex;flex-direction:column;gap:12px}
+.ai-sec{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.ai-t{font-size:11px;font-weight:800;color:var(--mint);letter-spacing:.04em;margin-bottom:7px}
+.ai-cr{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted)}
+.ai-cr b{color:var(--txt);font-weight:700;margin-left:3px}
+.ai-lyr{font-family:'Gaegu','Noto Sans KR',sans-serif;font-size:15px;line-height:1.7;color:var(--txt);white-space:pre-wrap}
+.ai-dsp{display:flex;flex-wrap:wrap;gap:6px}
+.ai-dsp span{font-size:11.5px;color:var(--txt);background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:4px 11px}
+/* 발매 로그 큐레이션 날짜 헤더 */
+.pldate{font-family:'Black Han Sans';font-size:13px;color:var(--txt);margin:12px 2px 6px;padding-top:8px;border-top:1px solid var(--line)}
+.pldate:first-of-type{border-top:0;padding-top:0}
 /* ── Apple-style: 즉각 반응 + 반투명 유리 크롬 (간결·빠르게) ── */
 button,[data-play],[data-slide],[data-story],[data-prof],[data-v],[data-room],
 .av,.rcard,.tool,.fc,.shape,.fab,.cs-add,.cs-post,.fol,.slfol,.fc,.circ{ touch-action:manipulation }
@@ -974,6 +994,29 @@ function offToast(msg){
   clearTimeout(_toastT); _toastT=setTimeout(()=>{el.style.opacity='0';}, 2600);
 }
 function needLogin(){ offToast('로그인하면 저장돼요 — 메인에서 로그인 후 이용하세요'); }
+
+/* ── 창작 스튜디오 로컬 저장 (내가 만든 작품/플레이리스트/로그, 새로고침에도 유지) ── */
+const STUDIO_KEY='offlog:studio:v1';
+function studioLoad(){
+  try{ var s=JSON.parse(localStorage.getItem(STUDIO_KEY)||'{}'); return {works:s.works||[], lists:s.lists||[], logs:s.logs||[]}; }
+  catch(e){ return {works:[], lists:[], logs:[]}; }
+}
+function studioSave(){
+  try{
+    var mineWorks=WORKS.filter(function(w){return w.mine;});
+    var myLogs=STREAM.filter(function(l){return l && String(l.id).indexOf('my_')===0 && l.t!=='vid';}); /* 영상은 blob이라 저장 불가(세션 전용) */
+    var myLists=LISTS.filter(function(p){return p.mine;});
+    localStorage.setItem(STUDIO_KEY, JSON.stringify({works:mineWorks, lists:myLists, logs:myLogs}));
+  }catch(e){ console.warn('[studio] save 실패(용량?)', e); offToast('저장 실패 — 이미지가 너무 클 수 있어요'); }
+}
+function _dedupById(arr){ var seen={}, out=[]; arr.forEach(function(x){ if(!x)return; var k=x.id; if(k!=null&&seen[k])return; if(k!=null)seen[k]=1; out.push(x); }); return out; }
+/* 로더가 만든 샘플 위에 내 저장분을 얹는다 */
+function studioMerge(){
+  var st=studioLoad();
+  if(st.works.length) WORKS=_dedupById(st.works.concat(WORKS));
+  if(st.logs.length)  STREAM=_dedupById(st.logs.concat(STREAM));
+  if(st.lists.length) LISTS=_dedupById(st.lists.concat(LISTS.filter(function(p){return !p.mine;})));
+}
 
 /* ── 실제 쓰기 (RLS: 로그인 유저의 JWT로 통과, 익명은 차단) ── */
 async function followArtist(aid){
@@ -1163,7 +1206,7 @@ const curRound = ()=>ROUNDS.find(r=>r.id===S.round)||ROUNDS[0];
 
 
 let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:'me', round:'jul', lseg:'list', vcat:'music', flist:null, fq:'', flFrom:'mine', list:null, share:false, addlist:false,
-  pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null,
+  pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false,
   relForm:{audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', dsp:[]}};
 
 const shape=(s,f,z)=>`<svg viewBox="0 0 24 24" width="${z}" height="${z}" style="overflow:visible"><use href="#${s}" fill="${f}"/></svg>`;
@@ -1486,11 +1529,11 @@ function mine(){
                                    fer:(st&&st.fer)||'312', fing:(st&&st.fing)||'54'}; })();
   const st   = STORIES.find(s=>s.who===S.profile);
 
-  const works=WORKS.map(w=>`<div class="workrow">
-    <div class="wthumb"><div class="bgimg" style="position:absolute;inset:0;background:${w.bg}"></div>
+  const works=(me?`<button class="newwork" id="newworkbtn">＋ 새 작품 만들기</button>`:'')+WORKS.map(w=>`<div class="workrow">
+    <div class="wthumb"><div class="bgimg" style="position:absolute;inset:0;background:${w.cover?`center/cover no-repeat url(${w.cover})`:w.bg}"></div>
       <button class="wplay" aria-label="재생">▶</button></div>
-    <div class="winfo"><b>${w.nm}</b><small>${w.logs} Logs · ${w.span}</small></div>
-    <button class="openst" data-work="${w.id}">Collect ${me?'LOG':'log'} ›</button></div>`).join('');
+    <div class="winfo"><b>${w.nm}</b><small>${w.mine?(w.pending?'발매 예약 '+w.date:(w.date&&w.date!=='작업 중'?'발매 '+w.date:'작업 중')):(w.logs+' Logs · '+w.span)}</small></div>
+    <button class="openst" data-work="${w.id}">${w.mine?'열기':('Collect '+(me?'LOG':'log'))} ›</button></div>`).join('');
 
   /* 녹음 = 즉석. 음원 = 믹스다운 파일 업로드 (Demo 탭이 하던 일) */
   const tools=[['💬','생각'],['🖼','사진'],['🎤','음성'],['📋','메모'],['🎙','녹음'],['♪','음원']];
@@ -1564,6 +1607,33 @@ function logPuller(w){
       : `<div class="pknote" style="padding:20px 0">담을 로그가 없습니다</div>`}
     <button class="cta" id="pulldone" ${S.sel.length?'':'disabled'}>
       ${S.sel.length?S.sel.length+'개 담기':'로그를 고르세요'}</button>
+  </div>`;
+}
+
+/* 발매용 로그 큐레이션 — 내 전체 로그를 날짜별로 묶어 골라 담는다 (날짜 자동 그룹핑) */
+function releaseLogPicker(w){
+  const pv=l=>
+      l.t==='note' ? `<span class="plth paper">✎</span>`
+    : l.t==='ph'   ? `<span class="plth" style="background:${l.bg||'#141418'}"></span>`
+    : l.t==='vid'  ? `<span class="plth snd">▷</span>`
+    :                `<span class="plth snd">♪</span>`;
+  const nm=l=> l.t==='note' ? (l.text||'').replace(/\n[\s\S]*/,'') : (l.nm||l.cap||'로그');
+  const all=STREAM.slice();
+  const byDt={}; all.forEach(l=>{ const d=l.dt||'zzz'; (byDt[d]=byDt[d]||[]).push(l); });
+  const body = all.length ? Object.keys(byDt).sort().reverse().map(d=>{
+    const label=(d==='zzz')?'날짜 미상':d.replace(/-/g,'.');
+    return `<div class="pldate">${label}</div>${byDt[d].map(l=>`<button class="pkrow plrow ${S.sel.includes(l.id)?'on':''}" data-sel="${l.id}">
+      <span class="plck"></span>${pv(l)}
+      <span class="pknm"><b>${nm(l)}</b><small>${l.at||''}${l.dur?' · '+l.dur:''}</small></span></button>`).join('')}`;
+  }).join('') : `<div class="pknote" style="padding:20px 0">아직 로그가 없어요 · 마이에서 ＋로 로그를 남겨보세요</div>`;
+  return `<div class="sheet-bd" id="rpkbd"></div>
+  <div class="pksheet tall">
+    <div class="pkhd"><b>${w.nm} 발매 로그</b>
+      <button class="pkx" id="rpkclose" aria-label="닫기">✕</button></div>
+    <div class="pkwarn" style="background:rgba(83,224,200,.07);border-color:rgba(83,224,200,.25);color:var(--mint)">
+      전체 로그에서 이 발매에 넣을 것을 고르세요 · 날짜별로 자동 정리됩니다</div>
+    ${body}
+    <button class="cta" id="rpkdone">${S.sel.length?S.sel.length+'개 담기':'담기'}</button>
   </div>`;
 }
 
@@ -1643,7 +1713,7 @@ function lists(){
   ${LISTS.map(p=>`<div class="lrow" data-list="${p.id}">
     <span class="lcov">${p.cov.slice(0,3).map((id,i)=>
       `<i style="background:${covOf(id)};z-index:${3-i};left:${i*9}px"></i>`).join('')}</span>
-    <span class="lnm"><b>${p.nm}</b><small>${p.cnt}곡 ${p.pub?'· 공개':'· 나만'}</small></span>
+    <span class="lnm"><b>${p.nm}</b><small>${(p.tracks||[]).length}곡 ${p.pub?'· 공개':'· 나만'}</small></span>
     <button class="lshare" data-share="${p.id}" aria-label="공유">⤴</button>
   </div>`).join('')}
   <button class="newlist" id="newlist">＋ 새 플레이리스트</button>`}
@@ -1727,21 +1797,21 @@ function recoView(){
 function listDetail(){
   const p=LISTS.find(x=>x.id===S.list);
   return `<div class="hd"><button class="circ" id="ldback" aria-label="뒤로">‹</button>
-    <div class="htitle">${p.nm}<small>${p.cnt}곡 ${p.pub?'· 공개':'· 나만 보기'}</small></div>
+    <div class="htitle">${p.nm}<small>${(p.tracks||[]).length}곡 ${p.pub?'· 공개':'· 나만 보기'}</small></div>
     <div class="r"><button class="circ" data-share="${p.id}" aria-label="공유">⤴</button></div></div>
   <div class="lhero">
     <span class="lcov big">${p.cov.slice(0,3).map((id,i)=>
       `<i style="background:${covOf(id)};z-index:${3-i};left:${i*22}px"></i>`).join('')}</span>
-    <div class="lhinfo"><h3>${p.nm}</h3><small>PEEK · ${p.cnt}곡</small>
+    <div class="lhinfo">${p.mine?`<input class="lhname" id="listname" value="${(p.nm||'').replace(/"/g,'&quot;')}">`:`<h3>${p.nm}</h3>`}<small>${(ME&&ME.name)||'나'} · ${(p.tracks||[]).length}곡</small>
       <div class="lhbtn"><button class="cta" id="lplay">▶ 전체 재생</button>
         <button class="savebtn" data-share="${p.id}">⤴ 공유</button></div></div>
   </div>
-  ${p.tracks.map((t,i)=>`<div class="trow">
+  ${p.tracks.length?p.tracks.map((t,i)=>`<div class="trow">
     <span class="tno">${String(i+1).padStart(2,'0')}</span>
     <button class="tplay" aria-label="재생">▶</button>
     <span class="tnm"><b>${t.nm}</b><small>${t.by}</small></span>
     <span class="tdur">${t.dur}</span>
-    <button class="tx" aria-label="빼기">✕</button></div>`).join('')}
+    <button class="tx" data-tx="${i}" aria-label="빼기">✕</button></div>`).join(''):`<div class="pknote" style="padding:18px 0">아직 곡이 없어요 · 작품에서 ＋ 플레이리스트로 담아보세요</div>`}
   <div class="pknote" style="margin-top:14px">＋ 플레이리스트로 담으면 여기 쌓입니다</div>
   ${S.share?shareSheet(p):''}
   <div style="height:20px"></div>`;
@@ -1771,7 +1841,7 @@ function listPicker(w){
     ${LISTS.map(p=>`<button class="pkrow" data-addto="${p.id}">
       <span class="lcov" style="width:44px;height:34px">${p.cov.slice(0,2).map((id,i)=>
         `<i style="background:${covOf(id)};z-index:${2-i};left:${i*8}px;width:34px;height:34px"></i>`).join('')}</span>
-      <span class="pknm"><b>${p.nm}</b><small>${p.cnt}곡</small></span></button>`).join('')}
+      <span class="pknm"><b>${p.nm}</b><small>${(p.tracks||[]).length}곡</small></span></button>`).join('')}
     <button class="newlist" id="lpnew" style="margin-top:8px">＋ 새 플레이리스트에 담기</button>
   </div>`;
 }
@@ -1816,36 +1886,58 @@ function work(){
     if(!items.length)return '';
     return `<div class="dayhd ${g.rel?'rel':''}"><b>${g.day}</b><small>${g.date}</small></div>${items.map(scard).join('')}`;
   }).join('');
+  /* 내가 만든 작품 = 큐레이션한 발매 로그를 날짜별 타임라인으로 */
+  const logCard=l=>{
+    if(l.t==='snd')return `<div class="rcard snd" data-play${l.audio?` data-audio="${l.audio}"`:''} style="height:150px"><div class="bigwv">${waveBars(28)}</div><div class="rmid"><div class="rts">${l.at||''}</div><div class="rcap">${l.nm||l.cap||''}</div><span class="sndpill"><em>▶</em><b>${l.dur||''}</b></span></div></div>`;
+    if(l.t==='vid')return `<div class="rcard" style="height:180px;overflow:hidden"><video src="${l.src}" controls playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video><div class="rmid" style="pointer-events:none"><div class="rts">${l.at||''}</div>${l.cap?`<div class="rcap">${l.cap}</div>`:''}</div></div>`;
+    if(l.t==='ph')return `<div class="rcard" style="height:180px"><div class="bgimg" style="background:${l.bg||'#141418'}"></div><div class="grainy"></div><div class="rmid"><div class="rts">${l.at||''}</div><div class="rcap">${l.cap||''}</div></div></div>`;
+    return `<div class="rcard paper ${l.tone==='b'?'b':''}" style="height:150px"><div class="rmid"><div class="rts">${l.at||''}</div><div class="rnote">${(l.text||'').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div></div></div>`;
+  };
+  const mineTimeline=()=>{
+    const logs=(w.releaseLogs||[]).map(id=>STREAM.find(l=>l.id===id)).filter(Boolean);
+    if(!logs.length) return `<div class="expire">아직 담은 발매 로그가 없어요 · 아래 <b>발매 로그 고르기</b>로 추가하세요</div>`;
+    const byDt={}; logs.forEach(l=>{ const d=l.dt||'zzz'; (byDt[d]=byDt[d]||[]).push(l); });
+    return Object.keys(byDt).sort().reverse().map(d=>{
+      const label=(d==='zzz')?'날짜 미상':d.replace(/-/g,'.');
+      return `<div class="dayhd"><b>${label}</b><small>${byDt[d].length}개</small></div>${byDt[d].map(logCard).join('')}`;
+    }).join('');
+  };
   return `<div class="hd"><button class="circ" data-v="mine" aria-label="뒤로">‹</button>
-    <div class="htitle">${w.nm}<small>PEEK</small></div>
+    <div class="htitle">${w.nm}<small>${w.by||'나'}</small></div>
     <div class="r"><button class="circ" aria-label="공유">⤴</button></div></div>
   <div class="whero">
-    <div class="wcover upcard"><div class="bgimg" style="background:${w.bg}${S.relForm.art&&w.id===S.work&&w.pending?`;background-image:url(${S.relForm.art});background-size:cover`:''}"></div><div class="grainy"></div>
-      <div class="uphint2" style="bottom:auto;top:12px">🖼 탭해서 앨범 사진 넣기</div>
+    <div class="wcover upcard"><div class="bgimg" style="background:${w.cover?`center/cover no-repeat url(${w.cover})`:w.bg}"></div><div class="grainy"></div>
+      ${w.cover?'':`<div class="uphint2" style="bottom:auto;top:12px">🖼 ${w.mine?'발매하기에서 커버 넣기':'앨범 커버'}</div>`}
       <div class="wmeta"><h2>${w.nm}</h2>
         <small>${w.date==='작업 중'?'작업 중':(w.pending?'발매 예약 '+w.date:'발매 '+w.date)} · ${w.logs} Logs · ${w.span}</small></div></div>
     <div class="wbtns">
       <button class="cta" id="wplaybig">▶ Play</button>
       <button class="savebtn" id="wsave">＋ 플레이리스트</button></div>
-    ${w.by==='PEEK' ? (w.date==='작업 중'
+    ${w.mine ? ((!w.date || w.date==='작업 중')
       ? `<button class="relbtn" id="relbtn">음원 발매하기 <b>▸</b></button>`
-      : w.pending
-      ? `<div class="reldone"><span class="ap-dot" style="background:var(--lemon);box-shadow:0 0 8px var(--lemon)"></span>
-          <b style="color:var(--lemon)">${w.date}</b> 발매 예약됨 · ${(w.dsp||[]).join(' · ')||'유통 심사 중'}
-          <button class="ap-ch" id="relbtn">수정</button></div>`
-      : `<div class="reldone"><span class="ap-dot"></span>${w.date} 발매됨 · Spotify · Apple · Melon</div>`) : ''}
+      : `<div class="reldone"><span class="ap-dot" style="background:var(--lemon);box-shadow:0 0 8px var(--lemon)"></span>
+          <b style="color:var(--lemon)">${w.date}</b> 발매 예약 · ${(w.dsp||[]).join(' · ')||'유통 준비'}
+          <button class="ap-ch" id="relbtn">수정</button></div>`) : ''}
   </div>
+  ${w.mine && (w.cover||w.lyr||(w.credits&&(w.credits.comp||w.credits.lyri||w.credits.arr||w.credits.prod))||(w.dsp&&w.dsp.length)) ? `<div class="albuminfo">
+    ${w.credits&&(w.credits.comp||w.credits.lyri||w.credits.arr||w.credits.prod)?`<div class="ai-sec"><div class="ai-t">크레딧</div><div class="ai-cr">
+      ${w.credits.comp?`<span>작곡 <b>${w.credits.comp}</b></span>`:''}${w.credits.lyri?`<span>작사 <b>${w.credits.lyri}</b></span>`:''}${w.credits.arr?`<span>편곡 <b>${w.credits.arr}</b></span>`:''}${w.credits.prod?`<span>프로듀서 <b>${w.credits.prod}</b></span>`:''}
+    </div></div>`:''}
+    ${w.inst?`<div class="ai-sec"><div class="ai-t">가사</div><div class="ai-lyr" style="color:var(--muted)">연주곡 (가사 없음)</div></div>`:(w.lyr?`<div class="ai-sec"><div class="ai-t">가사</div><div class="ai-lyr">${w.lyr.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div></div>`:'')}
+    ${w.dsp&&w.dsp.length?`<div class="ai-sec"><div class="ai-t">유통</div><div class="ai-dsp">${w.dsp.map(function(d){return '<span>'+d+'</span>';}).join('')}</div></div>`:''}
+  </div>`:''}
   ${eventStatus(w)}
   <div class="sechd">
-    <div class="sec" style="margin:0">The Story</div>
-    ${w.by==='PEEK'?`<button class="pullbtn" id="pullbtn">＋ 로그 담기</button>`:''}</div>
-  <div class="mchips">${chips.map(([k,l])=>`<button class="mchip ${S.wf===k?'on':''}" data-wf="${k}">${l}</button>`).join('')}</div>
-  <div class="daytl">${groups}</div>
-  ${w.id==='ml'?`<div class="expire">이 스토리는 지금도 자라는 중 · <b>91 Logs</b></div>`:''}
-  ${w.by==='PEEK'?`<div class="votecta">
+    <div class="sec" style="margin:0">${w.mine?'발매 로그':'The Story'}</div>
+    ${w.mine?`<button class="pullbtn" id="relpickbtn">＋ 발매 로그 고르기</button>`:''}</div>
+  ${w.mine?'':`<div class="mchips">${chips.map(([k,l])=>`<button class="mchip ${S.wf===k?'on':''}" data-wf="${k}">${l}</button>`).join('')}</div>`}
+  <div class="daytl">${w.mine?mineTimeline():groups}</div>
+  ${(!w.mine&&w.id==='ml')?`<div class="expire">이 스토리는 지금도 자라는 중 · <b>91 Logs</b></div>`:''}
+  ${w.mine?`<div class="votecta">
     <button class="stagebtn full" id="stagebtn">VOTE 신청하기 <b>▸</b></button>
     <small>이 곡을 무대 투표 라운드에 올립니다 · 라운드당 한 곡만</small>
   </div>`:''}
+  ${S.relpick?releaseLogPicker(w):''}
   ${S.pull?logPuller(w):''}
   ${S.stage?stageSheet(w):''}
   ${S.addlist?listPicker(w):''}
@@ -1953,16 +2045,31 @@ function submitCompose(){
   const txt=(S.compose.text||'').trim(), m=S.compose.media;
   if(!txt && !m) return;
   const d=new Date(), p=x=>String(x).padStart(2,'0'), now=p(d.getHours())+':'+p(d.getMinutes());
+  const dt=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());   /* 날짜 — 발매 로그 큐레이션이 날짜별로 묶는다 */
   let log;
-  if(m && m.kind==='vid') log={id:'my_'+d.getTime(), t:'vid', at:now, cap:txt, src:m.url, side:'l', work:null};
-  else if(m)              log={id:'my_'+d.getTime(), t:'ph',  at:now, cap:txt||'사진', bg:'center/cover no-repeat url('+m.url+')', side:'l', work:null};
-  else                    log={id:'my_'+d.getTime(), t:'note',at:now, text:txt, tone:'y', side:'l', work:null};
+  if(m && m.kind==='vid') log={id:'my_'+d.getTime(), t:'vid', at:now, dt:dt, cap:txt, src:m.url, side:'l', work:null};
+  else if(m)              log={id:'my_'+d.getTime(), t:'ph',  at:now, dt:dt, cap:txt||'사진', bg:'center/cover no-repeat url('+m.url+')', side:'l', work:null};
+  else                    log={id:'my_'+d.getTime(), t:'note',at:now, dt:dt, text:txt, tone:'y', side:'l', work:null};
   STREAM.unshift(log);
+  studioSave();
   S.compose=null;
   if(S.view!=='mine' || S.profile!=='me'){ S.view='mine'; S.profile='me'; }
   render();
   offToast('로그를 올렸어요');
 }
+
+/* ── 새 작품(앨범) 만들기 시트 ── */
+function newWorkSheet(){
+  if(!S.newwork) return '';
+  const nm=(S.newwork.nm||'').replace(/"/g,'&quot;');
+  return `<div class="cs-bd" id="nwbd"><div class="cs">
+    <div class="cs-hd"><b>새 작품</b><button class="cs-x" id="nwx" aria-label="닫기">✕</button></div>
+    <input class="cs-name" id="nwname" placeholder="앨범 · 작품 이름" value="${nm}">
+    <p style="color:var(--muted);font-size:12px;margin:8px 2px 0">만든 뒤 '음원 발매하기'에서 커버·가사·크레딧·발매일(최소 2주 뒤)을 넣을 수 있어요.</p>
+    <button class="cs-post" id="nwdone"${(S.newwork.nm||'').trim()?'':' disabled'}>만들기</button>
+  </div></div>`;
+}
+const WGRAD='radial-gradient(circle at 30% 25%,#4a2f66,transparent 60%),radial-gradient(circle at 80% 75%,#173f38,transparent 55%),#101014';
 
 /* ── 미니 플레이어 ── 곡·리스트명은 실제 데이터(NOWPLAY)에서 온다 */
 let NOWPLAY={label:'발견', cnt:0, nm:'', tm:'', src:''};
@@ -2024,7 +2131,7 @@ function render(){
     if(el)el.scrollIntoView({block:'start'});
   }
   document.getElementById('storyview').innerHTML = S.storyIdx!==null ? storyViewer() : '';
-  document.getElementById('composeview').innerHTML = S.compose ? composeSheet() : '';
+  document.getElementById('composeview').innerHTML = S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : '');
   renderMini();
   bind();
   syncStoryAudio();     // 스토리 데모면 실제 소리 재생
@@ -2067,14 +2174,23 @@ function bind(){
   const shc=document.getElementById('shcopy');
   if(shc)shc.onclick=()=>{shc.textContent='✓ 복사됨'; setTimeout(()=>{if(shc)shc.textContent='복사'},1400)};
   document.querySelectorAll('[data-pub]').forEach(b=>b.onclick=()=>{
-    const p=LISTS.find(x=>x.id===b.dataset.pub); if(p)p.pub=p.pub?0:1; render();
+    const p=LISTS.find(x=>x.id===b.dataset.pub); if(p){p.pub=p.pub?0:1; if(p.mine)studioSave();} render();
   });
   const nl=document.getElementById('newlist');
   if(nl)nl.onclick=()=>{
     const id='p'+Date.now().toString(36);
-    LISTS.unshift({id, nm:'새 플레이리스트', cnt:0, pub:0, cov:[], tracks:[]});
-    S.list=id; S.share=false; S.view='list'; render();
+    LISTS.unshift({id, nm:'새 플레이리스트', mine:true, cnt:0, pub:0, cov:[], tracks:[]});
+    studioSave(); S.list=id; S.share=false; S.view='list'; render();
   };
+  /* 플레이리스트 이름 변경 (내 것) */
+  const lnm=document.getElementById('listname');
+  if(lnm)lnm.onchange=()=>{ const p=LISTS.find(x=>x.id===S.list); if(p){p.nm=lnm.value.trim()||'플레이리스트'; if(p.mine)studioSave();} };
+  /* 트랙 빼기 ✕ (기존 죽은 버튼) */
+  document.querySelectorAll('[data-tx]').forEach(b=>b.onclick=()=>{
+    const p=LISTS.find(x=>x.id===S.list); if(!p)return;
+    p.tracks.splice(+b.dataset.tx,1); if(p.cov&&p.cov.length)p.cov=p.cov.slice(0,p.tracks.length);
+    if(p.mine)studioSave(); render();
+  });
   document.querySelectorAll('.tplay').forEach(b=>b.onclick=()=>{
     const on=b.classList.contains('on');
     document.querySelectorAll('.tplay.on').forEach(x=>{x.classList.remove('on');x.textContent='▶'});
@@ -2169,8 +2285,35 @@ function bind(){
     const w=WORKS.find(x=>x.id===S.work);
     S.sel.forEach(id=>{const l=STREAM.find(x=>x.id===id); if(l)l.work=w.id});
     w.logs+=S.sel.length;
+    if(w.mine)studioSave();
     S.pull=false; S.sel=[]; render();
   };
+  /* 발매용 로그 큐레이션 (날짜별) */
+  const rpb=document.getElementById('relpickbtn');
+  if(rpb)rpb.onclick=()=>{ const w=WORKS.find(x=>x.id===S.work); S.sel=((w&&w.releaseLogs)||[]).slice(); S.relpick=true; render(); };
+  const rpx=document.getElementById('rpkclose'); if(rpx)rpx.onclick=()=>{S.relpick=false;S.sel=[];render()};
+  const rpbd=document.getElementById('rpkbd');   if(rpbd)rpbd.onclick=()=>{S.relpick=false;S.sel=[];render()};
+  const rpd=document.getElementById('rpkdone');
+  if(rpd)rpd.onclick=()=>{
+    const w=WORKS.find(x=>x.id===S.work);
+    if(w){ w.releaseLogs=S.sel.slice(); w.logs=w.releaseLogs.length; studioSave(); }
+    S.relpick=false; S.sel=[]; render();
+  };
+  /* 새 작품 만들기 */
+  const nwb=document.getElementById('newworkbtn');
+  if(nwb)nwb.onclick=()=>{ S.newwork={nm:''}; render(); setTimeout(()=>{const el=document.getElementById('nwname'); if(el)el.focus();},60); };
+  if(S.newwork){
+    const nbd=document.getElementById('nwbd'), nx=document.getElementById('nwx'), ninp=document.getElementById('nwname'), ndone=document.getElementById('nwdone');
+    const nclose=()=>{ S.newwork=null; render(); };
+    if(nbd)nbd.onclick=e=>{ if(e.target===nbd)nclose(); };
+    if(nx)nx.onclick=nclose;
+    if(ninp)ninp.oninput=()=>{ S.newwork.nm=ninp.value; if(ndone)ndone.disabled=!ninp.value.trim(); };
+    if(ndone)ndone.onclick=()=>{ const nm=(S.newwork.nm||'').trim(); if(!nm)return;
+      const id='w_'+Date.now().toString(36);
+      WORKS.unshift({id:id, nm:nm, by:(ME&&ME.name)||'나', mine:true, date:'작업 중', logs:0, releaseLogs:[], span:'', dur:'', bg:WGRAD});
+      studioSave(); S.newwork=null; S.work=id; S.wf='all'; S.seg='works'; S.view='work'; render();
+    };
+  }
   /* 발매 — 유통 제출 폼 */
   const sb=document.getElementById('stagebtn');
   if(sb)sb.onclick=()=>{S.stage=true;render()};
@@ -2237,10 +2380,18 @@ function bind(){
   if(rd)rd.onclick=()=>{
     if(relMissing().length)return;
     const w=WORKS.find(x=>x.id===S.work);
-    w.date=S.relForm.date.replace(/-/g,'.');
-    w.dsp=S.relForm.dsp;
+    const R=S.relForm;
+    w.date=R.date.replace(/-/g,'.');
+    w.dsp=R.dsp.slice();
+    if(R.art) w.cover=R.art;                 /* 앨범 커버(dataURL) 저장 */
+    w.inst=!!R.inst;
+    w.lyr=R.inst?'':(R.lyr||'');             /* 가사 */
+    w.credits={comp:R.comp||'', lyri:R.lyri||'', arr:R.arr||'', prod:R.prod||''}; /* 크레딧 */
+    if(R.audio&&R.audio.dur) w.dur=R.audio.dur;
     w.pending=1;
+    studioSave();                            /* 새로고침에도 유지 */
     S.rel=false; render();
+    offToast('발매 예약 저장됨');
   };
   /* 카드 탭 → 그 카드부터 슬라이드로 (소리 카드는 탭=재생이라 제외) */
   document.querySelectorAll('[data-slide]').forEach(cd=>cd.onclick=e=>{
@@ -2347,14 +2498,14 @@ function bind(){
   const lpbd=document.getElementById('lpbd');   if(lpbd)lpbd.onclick=()=>{S.addlist=false;render()};
   document.querySelectorAll('[data-addto]').forEach(b=>b.onclick=()=>{
     const p=LISTS.find(x=>x.id===b.dataset.addto), w=WORKS.find(x=>x.id===S.work);
-    if(p&&w){ p.tracks.push({nm:w.nm, by:w.by, dur:w.dur}); p.cnt++; if(p.cov.length<3)p.cov.push(w.id); }
+    if(p&&w){ p.tracks.push({nm:w.nm, by:w.by, dur:w.dur}); if(p.cov.length<3)p.cov.push(w.id); if(p.mine)studioSave(); }
     S.addlist=false; render();
   });
   const lpn=document.getElementById('lpnew');
   if(lpn)lpn.onclick=()=>{
     const w=WORKS.find(x=>x.id===S.work), id='p'+Date.now().toString(36);
-    LISTS.unshift({id, nm:w.nm+' 리스트', cnt:1, pub:0, cov:[w.id], tracks:[{nm:w.nm, by:w.by, dur:w.dur}]});
-    S.addlist=false; S.list=id; S.view='list'; render();
+    LISTS.unshift({id, nm:w.nm+' 리스트', mine:true, cnt:1, pub:0, cov:[w.id], tracks:[{nm:w.nm, by:w.by, dur:w.dur}]});
+    studioSave(); S.addlist=false; S.list=id; S.view='list'; render();
   };
   /* 도구줄: 사진→카메라, 생각/메모→글 작성 (음성/녹음/음원은 다음 단계) */
   document.querySelectorAll('[data-lt]').forEach(b=>b.onclick=()=>{
@@ -2381,8 +2532,9 @@ function bind(){
   /* 카메라/갤러리 파일 입력 (1회 바인딩) */
   const cpho=document.getElementById('cphoto');
   if(cpho && !cpho.__b){ cpho.__b=1; cpho.onchange=()=>{ const f=cpho.files&&cpho.files[0];
-    if(f){ if(!S.compose)S.compose={text:'',media:null}; if(S.compose.media&&S.compose.media.url){try{URL.revokeObjectURL(S.compose.media.url)}catch(_){}}
-      S.compose.media={kind:'ph',url:URL.createObjectURL(f)}; render(); } cpho.value=''; }; }
+    if(f){ if(!S.compose)S.compose={text:'',media:null};
+      const rd=new FileReader(); rd.onload=()=>{ S.compose.media={kind:'ph',url:rd.result}; render(); }; rd.readAsDataURL(f); /* dataURL → 새로고침에도 남음 */
+    } cpho.value=''; }; }
   const cvid=document.getElementById('cvideo');
   if(cvid && !cvid.__b){ cvid.__b=1; cvid.onchange=()=>{ const f=cvid.files&&cvid.files[0];
     if(f){ if(!S.compose)S.compose={text:'',media:null}; if(S.compose.media&&S.compose.media.url){try{URL.revokeObjectURL(S.compose.media.url)}catch(_){}}
@@ -2530,8 +2682,9 @@ setInterval(()=>{
     var meA=artists.slice().sort(function(a,b){return byArtist[b].length-byArtist[a].length;})[0];
     if(meA){
       STREAM=byArtist[meA].slice(0,8).map(function(t,i){
-        return t.audio ? {id:'l'+i, t:'snd', at:tm(t.ts), nm:t.title, dur:'', side:(i%2?'r':'l'), work:null, audio:t.audio}
-                       : {id:'l'+i, t:'note', at:tm(t.ts), text:'#'+(t.tags[0]||t.title), tone:(i%2?'b':'y'), side:(i%2?'r':'l'), work:null};
+        var dt=(t.ts||'').slice(0,10);   /* 날짜 유지 (발매 로그 날짜별 큐레이션용) */
+        return t.audio ? {id:'l'+i, t:'snd', at:tm(t.ts), dt:dt, nm:t.title, dur:'', side:(i%2?'r':'l'), work:null, audio:t.audio}
+                       : {id:'l'+i, t:'note', at:tm(t.ts), dt:dt, text:'#'+(t.tags[0]||t.title), tone:(i%2?'b':'y'), side:(i%2?'r':'l'), work:null};
       });
     }
 
@@ -2574,6 +2727,7 @@ setInterval(()=>{
       });
     }
   }catch(e){ console.warn('[offlog] real data load failed', e); }
+  try{ studioMerge(); }catch(e){}     /* 내가 만든 작품/플레이리스트/로그 복원 */
   try{ renewHome(); }catch(e){}
   render();
 })();
