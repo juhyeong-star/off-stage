@@ -746,6 +746,8 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .nav button i{font-style:normal;font-size:17px;line-height:1;opacity:.65}
 .nav button.on{color:var(--mint)}
 .nav button.on i{opacity:1}
+.nav button i .avimg{width:19px;height:19px;border:1.5px solid transparent}
+.nav button.on i .avimg{border-color:var(--mint)}
 .nav button:focus-visible{outline:2px solid var(--mint);border-radius:8px}
 /* 내 플레이리스트 — 하단 가운데 */
 .navctr{position:relative}
@@ -966,7 +968,7 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
   <div class="nav" id="nav">
     <button data-v="home"><i>⌂</i>홈</button>
     <button class="navctr" data-v="lists" aria-label="내 플레이리스트"><i>♪</i></button>
-    <button data-v="mine"><i>◉</i>마이</button>
+    <button data-v="mine"><i id="navmyicon">◉</i>마이</button>
   </div>
 </div>
 
@@ -1373,9 +1375,7 @@ function prevStory(){
 function home(){
   const fing=PEOPLE.filter(p=>p.fing).length;
   return `<div class="hd">
-    ${ME
-      ? `<button class="circ" id="loginbtn" aria-label="내 페이지" style="padding:0;overflow:hidden">${avatarEl(ME.avatar,'coral',34)}</button>`
-      : `<button class="circ" id="loginbtn" aria-label="로그인"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/></svg></button>`}
+    <span style="width:34px"></span>
     <div class="brand" style="flex:1;text-align:center">OFFLOG</div>
     <button class="circ people" id="gopeople" aria-label="팔로워 · 팔로잉">
       <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
@@ -2278,6 +2278,8 @@ function render(){
   document.getElementById('screen').scrollTop=0;
   [...document.querySelectorAll('#nav button')].forEach(b=>
     b.classList.toggle('on', b.dataset.v===S.view || (S.view==='work'&&b.dataset.v==='mine') || (S.view==='flist'&&b.dataset.v===S.flFrom) || (S.view==='list'&&b.dataset.v==='lists') || (S.view==='room'&&b.dataset.v==='home')));
+  const nmi=document.getElementById('navmyicon');       /* 마이 탭 = 실제 프로필 사진 */
+  if(nmi) nmi.innerHTML = ME ? avatarEl(ME.avatar,'coral',19) : '◉';
   document.getElementById('slideview').innerHTML =
     (S.view==='home' && S.mode==='slide') ? slideView() : '';
   if(S.view==='home' && S.mode==='slide' && S.slideAt){
@@ -2308,9 +2310,7 @@ function bind(){
   document.querySelectorAll('[data-svprof]').forEach(b=>b.onclick=e=>{
     e.stopPropagation(); S.storyIdx=null; try{AUDIO.pause();}catch(_){} goProfile(b.dataset.svprof, b.dataset.paid);
   });
-  /* 로그인/계정 */
-  const lgb=document.getElementById('loginbtn');
-  if(lgb)lgb.onclick=()=>{ if(ME){ goProfile('PEEK'); } else { S.auth=true; render(); } };
+  /* 로그인/계정 — 진입점은 하단 '마이' 탭(비로그인 시 게스트+로그인 버튼) */
   if(S.auth){
     const abd=document.getElementById('authbd'), ax=document.getElementById('authx');
     const aclose=()=>{ S.auth=false; render(); };
