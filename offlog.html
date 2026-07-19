@@ -1288,7 +1288,7 @@ function feedCard(t,i){
     t.t==='ph'  ? `<div class="rcard" data-slide="${i}">
         <div class="bgimg" style="background:${t.bg}"></div><div class="grainy"></div>
         <div class="rmid"><div class="rts">${t.at}</div><div class="rcap">${t.cap}</div></div>${who}${fol}${rx}</div>`
-  : t.t==='snd' ? `<div class="rcard snd" data-play${t.audio?` data-audio="${t.audio}"`:''}>
+  : t.t==='snd' ? `<div class="rcard snd" data-slide="${i}">
         <div class="bigwv">${waveBars(34)}</div>
         <div class="rmid"><div class="rts">${t.at||''}</div><div class="rcap">${t.nm||t.cap}</div>
           <span class="sndpill"><em>▶</em><b>${t.dur||''}</b></span></div>${who}${fol}${rx}</div>`
@@ -1302,13 +1302,16 @@ function feedCard(t,i){
 function slideView(){
   const sl=(t,i)=>{
     const anchor=` id="sl${i}"`;
+    const _sfon = t.aid && MYFOLLOWS.has(t.aid);
     const who=`<div class="slwho"><span data-prof="${t.who}" style="cursor:pointer;display:flex;align-items:center;gap:8px">${dot(t.c)}${t.who||''}</span>
-      ${t.src!=='follow'&&t.src!=='room'?`<button class="slfol">팔로우</button>`:''}</div>`;
-    const rx=`<div class="slrx">
-      <button class="shape rbtn" data-emo="소름" aria-label="소름">${shape('tri',c('green'),26)}</button>
-      <button class="shape rbtn" data-emo="루프" aria-label="루프">${shape('circle',c('shpink'),26)}</button>
-      <button class="shape rbtn" data-emo="울컥" aria-label="울컥">${shape('diamond',c('blue'),26)}</button>
-      <button class="shape rbtn" data-emo="최고" aria-label="최고">${shape('star',c('yellow'),26)}</button>
+      ${t.src!=='follow'&&t.src!=='room'?`<button class="slfol${_sfon?' on':''}" data-aid="${t.aid||''}">${_sfon?'팔로잉':'팔로우'}</button>`:''}</div>`;
+    const _smine=(t.tid && MYREACT[t.tid])||null;
+    const _srb=(emo,sh,col)=>`<button class="shape rbtn${_smine&&_smine.has(emo)?' hit':''}" data-emo="${emo}"${_smine&&_smine.has(emo)?' data-hit="1"':''} aria-label="${emo}">${shape(sh,c(col),26)}</button>`;
+    const rx=`<div class="slrx" data-tid="${t.tid||''}">
+      ${_srb('소름','tri','green')}
+      ${_srb('루프','circle','shpink')}
+      ${_srb('울컥','diamond','blue')}
+      ${_srb('최고','star','yellow')}
       <span class="rxn" data-n="${t.rx||0}">${t.rx||0}</span></div>`;
     const hint=i===0?`<span class="slhint">⌄</span>`:'';
 
@@ -2235,16 +2238,41 @@ function bind(){
   });
   const sx=document.getElementById('slclose');
   if(sx)sx.onclick=()=>{S.mode='feed';render()};
+  /* 릴스: 현재 화면 슬라이드의 곡을 자동 재생 (스와이프하면 다음 곡으로) */
+  const sw=document.getElementById('slwrap');
+  if(sw){
+    const playCur=()=>{
+      const idx=Math.round(sw.scrollTop/sw.clientHeight);
+      const t=S.feed[idx];
+      // 현재 슬라이드 카드에 재생 표시
+      [...sw.querySelectorAll('.sl.playing')].forEach(x=>{ x.classList.remove('playing'); const em=x.querySelector('.slpill em'); if(em)em.textContent='▶'; });
+      if(t && t.audio){
+        if(CURSRC!==t.audio){ AUDIO.src=t.audio; CURSRC=t.audio; }
+        const p=AUDIO.play(); if(p&&p.catch)p.catch(()=>{});
+        NOWPLAY.nm=(t.nm||t.cap||NOWPLAY.nm); NOWPLAY.src=t.audio; S.mini.on=true; S.mini.playing=true;
+        const cur=document.getElementById('sl'+idx); if(cur){ cur.classList.add('playing'); const em=cur.querySelector('.slpill em'); if(em)em.textContent='⏸'; }
+      } else { AUDIO.pause(); }        // 룸 등 오디오 없는 슬라이드 → 정지
+    };
+    let _swT=null;
+    sw.onscroll=()=>{ clearTimeout(_swT); _swT=setTimeout(playCur, 130); };
+    playCur();                          // 릴스 진입 즉시 현재 곡 재생 (카드 탭=사용자 제스처라 재생 허용)
+  }
+  /* 릴스 슬라이드 탭 = 현재 곡 재생/일시정지 (실제 오디오) */
   document.querySelectorAll('.sl[data-slplay]').forEach(cd=>cd.onclick=e=>{
-    if(e.target.closest('.rbtn,.slfol'))return;
-    const on=cd.classList.toggle('playing');
-    const em=cd.querySelector('.slpill em');
-    if(em)em.textContent=on?'⏸':'▶';
+    if(e.target.closest('.rbtn,.slfol,[data-prof]'))return;
+    if(AUDIO.paused){ const p=AUDIO.play(); if(p&&p.catch)p.catch(()=>{}); S.mini.playing=true; }
+    else { AUDIO.pause(); S.mini.playing=false; }
+    cd.classList.toggle('playing', !AUDIO.paused);
+    const em=cd.querySelector('.slpill em'); if(em)em.textContent=AUDIO.paused?'▶':'⏸';
   });
   document.querySelectorAll('.slfol').forEach(b=>b.onclick=e=>{
     e.stopPropagation();
-    const on=b.classList.toggle('on');
-    b.textContent=on?'팔로잉':'팔로우';
+    const aid=b.dataset.aid;
+    if(!ME){ needLogin(); return; }
+    const on=b.classList.toggle('on'); b.textContent=on?'팔로잉':'팔로우';
+    (on?followArtist(aid):unfollowArtist(aid)).then(ok=>{
+      if(!ok){ const back=b.classList.toggle('on'); b.textContent=back?'팔로잉':'팔로우'; }
+    });
   });
   document.querySelectorAll('[data-room]').forEach(b=>b.onclick=e=>{
     if(e.target.closest('.rbtn,.fol,.play'))return;
@@ -2378,7 +2406,7 @@ function bind(){
   });
   document.querySelectorAll('.rbtn').forEach(r=>r.onclick=e=>{
     e.stopPropagation();
-    const frx=r.closest('.frx'); const tid=frx&&frx.dataset.tid;
+    const frx=r.closest('.frx,.slrx'); const tid=frx&&frx.dataset.tid;
     if(tid && !ME){ needLogin(); return; }           // 진짜 곡 반응인데 비로그인 → 안내(저장은 로그인 필요)
     const was=r.dataset.hit==='1';                    // 토글
     r.dataset.hit=was?'':'1'; r.classList.toggle('hit', !was);
