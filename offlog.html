@@ -226,7 +226,7 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
   border-radius:99px;padding:8px 18px;font-size:13px;color:#fff;cursor:pointer;font-family:inherit;margin-top:8px}
 .slpill b{font-family:'Black Han Sans';font-weight:400;letter-spacing:.5px}
 .slpill em{font-style:normal;color:var(--mint)}
-.slrx{position:absolute;bottom:20px;left:16px;right:16px;z-index:6;display:flex;align-items:center;gap:11px}
+.slrx{display:flex;justify-content:center;align-items:center;gap:11px;margin-top:20px;z-index:6}
 .sl.paper .slrx .rxn{color:rgba(43,36,23,.55)}
 .slroom{display:flex;gap:8px;padding:0 16px;width:100%;z-index:3;position:relative}
 .slroom .rm{width:auto;flex:1;height:190px}
@@ -362,10 +362,11 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .mychip{position:absolute;top:11px;left:11px;z-index:6;background:var(--mint);border:none;color:#04231d;
   border-radius:99px;padding:3px 9px;font-size:9.5px;font-weight:700;line-height:1.5;
   max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.edit.mine{position:absolute;top:9px;right:11px;z-index:6;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);
+.edit.mine,.edit.save{position:absolute;top:9px;right:11px;z-index:6;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);
   border:none;color:#fff;width:26px;height:26px;border-radius:50%;font-size:12px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;letter-spacing:0;opacity:.7;padding:0}
-.edit.mine:hover{opacity:1}
+.edit.mine:hover,.edit.save:hover{opacity:1}
+.edit.mine:active,.edit.save:active{transform:scale(.9)}
 .rcard.paper .edit.mine{background:rgba(43,36,23,.12);color:var(--ink)}
 
 /* ── 피드 카드 — Work 스토리와 같은 문법 ── */
@@ -890,6 +891,19 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .cs-prev.aud{min-height:auto;background:var(--card);border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;padding:20px;color:var(--mint);font-weight:700}
 .composebtn{display:block;width:100%;margin:0 0 14px;background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:14px;padding:14px;font-size:14px;font-weight:800;min-height:48px}
 .composebtn:hover{border-color:var(--mint);color:var(--mint)}
+/* LOG 위 2주 날짜 스트립 — 하루 생활루틴 */
+.daystrip{display:flex;gap:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:2px 2px 12px;margin:0 -2px}
+.daystrip::-webkit-scrollbar{display:none}
+.dchip{flex:0 0 auto;min-width:46px;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative;
+  background:var(--card2);border:1px solid var(--line);color:var(--muted);border-radius:13px;padding:8px 6px 9px;cursor:pointer}
+.dchip em{font-style:normal;font-size:10px;opacity:.8}
+.dchip b{font-family:'Black Han Sans';font-weight:400;font-size:16px;color:var(--txt);line-height:1}
+.dchip.all{justify-content:center;font-size:12px;font-weight:800;color:var(--txt);padding:0 14px}
+.dchip.has::after{content:'';position:absolute;bottom:5px;width:4px;height:4px;border-radius:50%;background:var(--mint)}
+.dchip .dtoday{font-style:normal;font-size:8.5px;color:var(--mint);font-weight:800;margin-top:1px}
+.dchip.on{border-color:var(--mint);background:rgba(80,230,190,.12)}
+.dchip.on b,.dchip.on em{color:var(--mint)}
+.dchip:active{transform:scale(.94)}
 /* 새 작품 이름 입력 / 플레이리스트 이름 */
 .cs-name{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--txt);padding:13px;font-size:17px;font-family:'Black Han Sans';letter-spacing:-.01em}
 .cs-name:focus{outline:2px solid var(--mint)}
@@ -1291,6 +1305,25 @@ function streamOrder(arr){
     return logTs(a)-logTs(b);               /* 나머지는 이른 시간부터(루틴) */
   });
 }
+/* ── 오늘 날짜(YYYY-MM-DD) & 로그의 날짜(없으면 오늘로 취급) ── */
+function todayISO(){ var d=new Date(), p=x=>String(x).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+function logDayOf(l){ return (l&&l.dt) || todayISO(); }
+/* ── LOG 위 2주 날짜 스트립 — 하루 생활루틴을 날짜별로 ── */
+const _WD=['일','월','화','수','목','금','토'];
+function dayStrip(){
+  var today=new Date(), p=x=>String(x).padStart(2,'0');
+  var iso=d=>d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+  var tIso=iso(today);
+  var have={}; STREAM.forEach(function(l){ have[logDayOf(l)]=(have[logDayOf(l)]||0)+1; });
+  var chips='<button class="dchip all'+(!S.logDay?' on':'')+'" data-day="">전체</button>';
+  for(var i=13;i>=0;i--){
+    var d=new Date(today); d.setDate(today.getDate()-i); var di=iso(d);
+    chips+='<button class="dchip'+(S.logDay===di?' on':'')+(have[di]?' has':'')+'" data-day="'+di+'">'
+      +'<em>'+_WD[d.getDay()]+'</em><b>'+d.getDate()+'</b>'
+      +(di===tIso?'<i class="dtoday">오늘</i>':'')+'</button>';
+  }
+  return '<div class="daystrip" id="daystrip">'+chips+'</div>';
+}
 
 
 /* 투표 라운드 — 두 종류가 있다.
@@ -1350,6 +1383,7 @@ const curRound = ()=>ROUNDS.find(r=>r.id===S.round)||ROUNDS[0];
 
 let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:'me', round:'jul', lseg:'list', vcat:'music', flist:null, fq:'', flFrom:'mine', list:null, share:false, addlist:false,
   pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'', auth:false, profileAid:null, saveTrack:null,
+  logDay:null,   /* LOG 날짜 스트립 필터: null=전체, 'YYYY-MM-DD'=그날만 */
   relForm:{audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', event:''}};
 
 const shape=(s,f,z)=>`<svg viewBox="0 0 24 24" width="${z}" height="${z}" style="overflow:visible"><use href="#${s}" fill="${f}"/></svg>`;
@@ -1534,16 +1568,16 @@ function slideView(){
     }
     if(t.t==='ph') return `<div class="sl"${anchor}>
       <div class="bgimg" style="background:${t.bg}"></div><div class="grainy"></div>
-      ${who}<div class="slmid"><div class="slts">${t.at}</div><div class="slcap">${t.cap}</div></div>${rx}${hint}</div>`;
+      ${who}<div class="slmid"><div class="slts">${t.at}</div><div class="slcap">${t.cap}</div>${rx}</div>${hint}</div>`;
     if(t.t==='snd') return `<div class="sl snd"${anchor} data-slplay>
       ${who}
       <button class="slsave" data-savetid="${t.tid||''}" data-savenm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-saveby="${(t.who||'').replace(/"/g,'&quot;')}" data-saveaudio="${t.audio||''}">＋ 담기</button>
       <div class="slmid"><div class="slts">${t.at||''}</div>
         <div class="slwave">${waveBars(30)}</div>
         <div class="slcap">${t.nm||t.cap}</div>
-        <span class="slpill"><em>▶</em><b>${t.dur||t.sub||''}</b></span></div>${rx}${hint}</div>`;
+        <span class="slpill"><em>▶</em><b>${t.dur||t.sub||''}</b></span>${rx}</div>${hint}</div>`;
     return `<div class="sl paper ${t.tone==='b'?'b':''}"${anchor}>
-      ${who}<div class="slmid"><div class="slts">${t.at}</div><div class="slnote">${t.text}</div></div>${rx}${hint}</div>`;
+      ${who}<div class="slmid"><div class="slts">${t.at}</div><div class="slnote">${t.text}</div>${rx}</div>${hint}</div>`;
   };
   return `<div class="slwrap" id="slwrap">
     <button class="slx" id="slclose" aria-label="닫기">✕</button>
@@ -1696,7 +1730,8 @@ function mine(){
   const alogCard=t=>`<div class="fcard"><div class="rcard snd" data-play${t.audio?` data-audio="${t.audio}"`:''}>
     <div class="bigwv">${waveBars(34)}</div>
     <div class="rmid"><div class="rts">${t.dt?t.dt.replace(/-/g,'.'):''}</div><div class="rcap">${t.nm}</div>
-      <span class="sndpill"><em>▶</em><b>${t.demo?'Demo':''}</b></span></div></div></div>`;
+      <span class="sndpill"><em>▶</em><b>${t.demo?'Demo':''}</b></span></div>
+    <button class="edit save" data-savetid="${t.id||''}" data-savenm="${(t.nm||'').replace(/"/g,'&quot;')}" data-saveby="${(prof.who||'').replace(/"/g,'&quot;')}" data-saveaudio="${t.audio||''}" aria-label="담기">⋯</button></div></div>`;
   const _emptyOrLoad = rp ? `<div class="pknote" style="padding:22px 0">아직 올린 게 없어요</div>` : `<div class="pknote" style="padding:22px 0">불러오는 중…</div>`;
   const rpTracks    = rp ? rp.tracks.slice().sort((a,b)=>String(b.dt||'').localeCompare(String(a.dt||''))) : [];  /* 최신이 위로 */
   const artistLog   = rpTracks.length ? rpTracks.map(alogCard).join('') : _emptyOrLoad;
@@ -1716,7 +1751,7 @@ function mine(){
     const w = l.work ? WORKS.find(x=>x.id===l.work) : null;
     const chrome = me
       ? `${w?`<span class="wchip mychip">◆ ${w.nm}</span>`:''}
-         <button class="edit mine" aria-label="수정">⋯</button>`
+         <button class="edit mine" data-logdl="${l.id}" aria-label="받기">⋯</button>`
       : '';
     if(l.t==='ph') return `<div class="fcard my"><div class="rcard">
       <div class="bgimg" style="background:${l.bg}"></div><div class="grainy"></div>
@@ -1732,10 +1767,12 @@ function mine(){
       <div class="rmid"><div class="rts">${l.at}</div><div class="rnote">${l.text}</div></div>${chrome}</div></div>`;
   };
 
+  const _dayStream = (me && S.logDay) ? STREAM.filter(l=>logDayOf(l)===S.logDay) : STREAM;
   const logs=`
+    ${me?dayStrip():''}
     ${me?`<button class="composebtn" id="composebtn">＋ 로그 남기기</button>`:''}
     <div class="stream" id="stream"><div class="ambient"></div>
-      <div class="marks">${streamOrder(STREAM).map(mark).join('')}</div></div>
+      <div class="marks">${streamOrder(_dayStream).map(mark).join('')||`<div class="pknote" style="padding:26px 0">${S.logDay?'이 날의 로그가 없어요':'아직 로그가 없어요'}</div>`}</div></div>
     ${me?`<div class="expire">아직 어느 작품도 아닌 로그 <b>${STREAM.filter(l=>!l.work).length}개</b><br>
         곡이 생기면 그 작품 안에서 담으면 됩니다</div>`:''}`;
 
@@ -2248,6 +2285,7 @@ function pushLog(txt, m, audioUrl){
   SESSION_NEW.add(id);          /* 방금 올린 것 → 맨 위 핀(루틴 피드 위에) */
   studioSave();
   S.compose=null;
+  S.logDay=null;                /* 과거 날짜 필터 켜져 있어도 방금 올린 로그가 보이게 해제 */
   if(S.view!=='mine' || S.profile!=='me'){ S.view='mine'; S.profile='me'; }
   render();
   offToast('로그를 올렸어요');
@@ -2263,6 +2301,26 @@ async function uploadDemoLog(file, txt){
     const pub=SBC.storage.from('audio').getPublicUrl(path);
     pushLog(txt, {kind:'aud'}, (pub&&pub.data&&pub.data.publicUrl)||'');
   }catch(e){ console.warn('[offlog] 데모 업로드 실패', e); offToast('데모 업로드 실패 — '+((e&&e.message)||'다시 시도')); const b=document.getElementById('cspost'); if(b){b.disabled=false;b.textContent='올리기';} }
+}
+/* 내 로그 ⋯ — 그 로그의 음악·데모·사진을 다시 받기(다운로드). 글은 복사 */
+function downloadLog(id){
+  const l=STREAM.find(x=>String(x.id)===String(id)); if(!l){ offToast('로그를 못 찾았어요'); return; }
+  let url='', name='';
+  if(l.t==='snd'){ url=l.audio||''; name=(l.nm||'데모')+'.mp3'; }
+  else if(l.t==='vid'){ url=l.src||''; name=(l.cap||'영상')+'.mp4'; }
+  else if(l.t==='ph'){ url=(String(l.bg||'').match(/url\(["']?(.*?)["']?\)/)||[])[1]||''; name=(l.cap||'사진')+'.jpg'; }
+  else { if(navigator.clipboard){ navigator.clipboard.writeText(l.text||'').then(()=>offToast('글을 복사했어요')).catch(()=>offToast('복사 실패')); } else offToast('복사할 수 없어요'); return; }
+  if(!url){ offToast('받을 파일이 없어요 (샘플 로그예요)'); return; }
+  _saveFile(url, name);
+}
+function _anchorDL(href, name){ const a=document.createElement('a'); a.href=href; a.download=name; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove(); }
+/* data:/blob: 는 바로 저장. http(s)(Storage)는 blob으로 받아 실제 저장 — download 속성은 cross-origin이면 무시되므로 */
+function _saveFile(url, name){
+  if(/^(data:|blob:)/.test(url)){ _anchorDL(url, name); offToast('저장했어요'); return; }
+  offToast('받는 중…');
+  fetch(url).then(function(r){ if(!r.ok) throw 0; return r.blob(); })
+    .then(function(b){ const u=URL.createObjectURL(b); _anchorDL(u, name); setTimeout(function(){URL.revokeObjectURL(u)},5000); offToast('저장했어요'); })
+    .catch(function(){ try{ window.open(url,'_blank','noopener'); }catch(_){}; offToast('새 탭에서 열었어요 — 길게 눌러 저장'); });  /* CORS 막히면 새 탭 폴백 */
 }
 /* 실제 음악 업로드 — Storage(audio) + tracks (로그인 아티스트) */
 async function submitMusic(file, title){
@@ -2802,6 +2860,15 @@ function bind(){
   }
   /* 마이 · Work */
   document.querySelectorAll('[data-seg]').forEach(b=>b.onclick=()=>{S.seg=b.dataset.seg;render()});
+  /* LOG 날짜 스트립 — 날짜 탭 → 그날 로그만, 전체 → 필터 해제 */
+  document.querySelectorAll('[data-day]').forEach(b=>b.onclick=()=>{ S.logDay=b.dataset.day||null; render(); });
+  /* 내 로그 ⋯ → 음악·데모·사진 다시 받기 */
+  document.querySelectorAll('[data-logdl]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); downloadLog(b.dataset.logdl); });
+  /* 타인 로그 ⋯ → 노래 담기(플레이리스트) */
+  document.querySelectorAll('.edit.save').forEach(b=>b.onclick=e=>{ e.stopPropagation();
+    if(!b.dataset.savetid){ offToast('담을 수 없는 곡이에요'); return; }
+    S.saveTrack={tid:b.dataset.savetid, nm:b.dataset.savenm, by:b.dataset.saveby, audio:b.dataset.saveaudio}; render();
+  });
   document.querySelectorAll('[data-work]').forEach(b=>b.onclick=()=>{S.work=b.dataset.work;S.wf='all';S.view='work';render()});
   document.querySelectorAll('[data-wf]').forEach(b=>b.onclick=()=>{S.wf=b.dataset.wf;render()});
   const wp=document.getElementById('wplaybig');
