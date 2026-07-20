@@ -606,6 +606,8 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .mini-btm .nm{font-size:13.5px;font-weight:700;flex:1}
 .mini-btm .tm{font-family:'Black Han Sans';font-size:12px;color:var(--muted)}
 .minilist{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:3px 2px;flex-shrink:0}
+.minimore{background:none;border:none;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;padding:0 3px;flex-shrink:0}
+.minimore:hover{color:var(--mint)}
 .minilist:hover{color:var(--mint)}
 .minilist:focus-visible{outline:2px solid var(--mint);border-radius:5px}
 .miniplay{width:28px;height:28px;border-radius:50%;background:var(--mint);border:none;color:#04231d;font-size:11px;cursor:pointer;flex-shrink:0}
@@ -747,15 +749,15 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 /* ── 하단 탭 (인스타식 아이콘 5개) ── */
 .nav{position:absolute;left:0;right:0;bottom:0;z-index:20;display:flex;background:rgba(10,10,12,.96);
   backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:10px 0 20px}
-.nav button{flex:1;background:none;border:none;color:var(--muted);font-family:inherit;font-size:9.5px;font-weight:700;
-  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;padding:2px 0;-webkit-tap-highlight-color:transparent}
-.nav button i{font-style:normal;font-size:17px;line-height:1;opacity:.65}
+.nav button{flex:1;background:none;border:none;color:var(--muted);font-family:inherit;font-size:11px;font-weight:700;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;padding:2px 0;-webkit-tap-highlight-color:transparent}
+.nav button i{font-style:normal;font-size:24px;line-height:1;opacity:.7}
 .nav button.on{color:var(--mint)}
 .nav button.on i{opacity:1}
 .nav button:active{transform:scale(.92);transition:transform .08s ease-out}
 .nav button:focus-visible{outline:2px solid var(--mint);border-radius:8px}
 /* 마이 탭 = 프로필 아바타 (우측) */
-.avimg{display:block;width:19px;height:19px;border-radius:50%;background:var(--card2) center/cover no-repeat;border:1.5px solid transparent}
+.avimg{display:block;width:27px;height:27px;border-radius:50%;background:var(--card2) center/cover no-repeat;border:1.5px solid transparent}
 .nav button.on i .avimg{border-color:var(--mint)}
 /* 음악 = 하단 가운데 살짝 떠오른 원 */
 .navctr{position:relative}
@@ -995,8 +997,9 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
   <div id="mini"></div>
   <div class="nav" id="nav">
     <button data-v="home" aria-label="홈"><i>⌂</i>홈</button>
-    <button class="navctr" data-v="lists" aria-label="음악"><i>♪</i></button>
     <button id="navprofile" aria-label="마이"><i><span class="avimg"></span></i>마이</button>
+    <button class="navctr" id="navplus" aria-label="로그 남기기"><i>＋</i></button>
+    <button data-v="lists" aria-label="음악"><i>♪</i>음악</button>
   </div>
 </div>
 
@@ -2376,7 +2379,7 @@ function newWorkSheet(){
 const WGRAD='radial-gradient(circle at 30% 25%,#4a2f66,transparent 60%),radial-gradient(circle at 80% 75%,#173f38,transparent 55%),#101014';
 
 /* ── 미니 플레이어 ── 곡·리스트명은 실제 데이터(NOWPLAY)에서 온다 */
-let NOWPLAY={label:'발견', cnt:0, nm:'', tm:'', src:''};
+let NOWPLAY={label:'발견', cnt:0, nm:'', tm:'', src:'', who:'', aid:'', tid:''};
 
 /* ── 실제 오디오 재생 (전역 Audio 1개) ── 재생버튼에 진짜 mp3를 물린다 */
 const AUDIO=new Audio(); AUDIO.preload='none';
@@ -2391,7 +2394,7 @@ function playSrc(url,nm){
   if(!url) return false;
   if(CURSRC!==url){ AUDIO.src=url; CURSRC=url; }
   var p=AUDIO.play(); if(p&&p.catch)p.catch(function(e){console.warn('[audio] play blocked',e);});
-  if(nm) NOWPLAY.nm=nm; NOWPLAY.src=url;
+  if(nm) NOWPLAY.nm=nm; NOWPLAY.src=url; NOWPLAY.who=''; NOWPLAY.aid=''; NOWPLAY.tid='';
   S.mini.on=true; S.mini.playing=true;
   return true;
 }
@@ -2409,7 +2412,8 @@ function renderMini(){
     ? `<div class="mini ${S.mini.playing?'playing':''}">
         <div class="mini-top"><span>${_lab}</span><button id="mx" aria-label="닫기">✕</button></div>
         <div class="mini-btm"><button class="miniplay" id="mp" aria-label="재생">${S.mini.playing?'⏸':'▶'}</button>
-          <span class="nm">${NOWPLAY.nm}</span><span class="tm">${NOWPLAY.tm||''}</span>
+          <span class="nm"${(NOWPLAY.aid||NOWPLAY.who)?' id="mnm" style="cursor:pointer"':''}>${NOWPLAY.nm}</span><span class="tm">${NOWPLAY.tm||''}</span>
+          ${(NOWPLAY.aid||NOWPLAY.tid)?`<button class="minimore" id="mmore" aria-label="공유·담기·팔로우">⋯</button>`:''}
           <button class="minilist" id="mlist" aria-label="재생목록">☰</button></div></div>` : '';
   const mp=document.getElementById('mp'), mx=document.getElementById('mx'), ml=document.getElementById('mlist');
   if(mp)mp.onclick=()=>{
@@ -2419,6 +2423,9 @@ function renderMini(){
   };
   if(mx)mx.onclick=()=>{ S.mini.on=false; AUDIO.pause(); S.mini.playing=false; _clearPlayingUI(); renderMini(); };
   if(ml)ml.onclick=()=>{S.list='p1'; S.share=false; S.view='list'; render()};
+  const mnm=document.getElementById('mnm'), mmore=document.getElementById('mmore');
+  if(mnm)mnm.onclick=()=>{ if(NOWPLAY.who||NOWPLAY.aid) goProfile(NOWPLAY.who, NOWPLAY.aid); };
+  if(mmore)mmore.onclick=e=>{ e.stopPropagation(); S.logMenu={kind:'oshare', id:NOWPLAY.tid||'', nm:NOWPLAY.nm, by:NOWPLAY.who, audio:NOWPLAY.src, aid:NOWPLAY.aid||''}; render(); };
 }
 
 /* ── 렌더 ── */
@@ -2452,6 +2459,13 @@ function bind(){
     if(S.view==='mine'){S.profile='me'; S.flist=null; if(S.seg==='list')S.seg='log'}
     render();
   });
+  /* 하단 가운데 ＋ — 언제든 빠른 로그. WORK 컨텍스트면 새 작품(제목), 아니면 카메라/사진/데모 */
+  const nplus=document.getElementById('navplus');
+  if(nplus)nplus.onclick=()=>{
+    const workCtx=(S.view==='work')||(S.view==='mine'&&S.profile==='me'&&S.seg==='works');
+    if(workCtx){ S.newwork={nm:''}; render(); setTimeout(()=>{const el=document.getElementById('nwname'); if(el)el.focus();},60); }
+    else { S.compose={text:'',media:null}; render(); }
+  };
   /* 이름·프로필 동그라미 탭 → 그 사람 페이지 (스토리 열의 원은 제외) */
   document.querySelectorAll('[data-prof]').forEach(b=>b.onclick=e=>{
     e.stopPropagation(); goProfile(b.dataset.prof, b.dataset.paid);
@@ -2848,6 +2862,8 @@ function bind(){
       const capEl=cd.querySelector('.rcap');
       const nm=(capEl&&capEl.textContent)||NOWPLAY.nm;
       const playing=toggleSrc(url, nm);
+      const mb=cd.querySelector('[data-sharemenu]');
+      if(mb){ NOWPLAY.who=mb.dataset.sby||''; NOWPLAY.aid=mb.dataset.said||''; NOWPLAY.tid=mb.dataset.sharemenu||''; }
       cd.classList.toggle('playing', playing);
       const em=cd.querySelector('.sndpill em'); if(em)em.textContent=playing?'⏸':'▶';
       renderMini();
