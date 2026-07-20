@@ -877,8 +877,8 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .cs-post{margin-top:12px;width:100%;background:var(--mint);color:#04231d;border:0;border-radius:14px;padding:13px;font-weight:800;font-size:15px;min-height:48px}
 .cs-post:disabled{opacity:.4}
 /* 릴스에서 듣던 곡 담기 */
-.slsave{position:absolute;top:16px;right:58px;z-index:7;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.24);color:#fff;border-radius:99px;padding:8px 15px;font-size:12.5px;font-weight:800;font-family:inherit;cursor:pointer;backdrop-filter:blur(6px)}
-.slsave:active{transform:scale(.95)}
+.sldots{position:absolute;top:15px;right:60px;z-index:7;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(6px)}
+.sldots:active{transform:scale(.9)}
 .cs-trk{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:13px;color:var(--muted);margin-bottom:12px}
 .cs-trk b{color:var(--txt)}
 /* 한 박스에서 끼워넣기 — 사진·영상·데모 첨부 버튼 행 */
@@ -1561,11 +1561,11 @@ function slideView(){
       ${who}<div class="slmid"><div class="slts">${t.at}</div><div class="slcap">${t.cap}</div>${rx}</div>${hint}</div>`;
     if(t.t==='snd') return `<div class="sl snd"${anchor} data-slplay>
       ${who}
-      <button class="slsave" data-savetid="${t.tid||''}" data-savenm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-saveby="${(t.who||'').replace(/"/g,'&quot;')}" data-saveaudio="${t.audio||''}">＋ 담기</button>
-      <div class="slmid"><div class="slts">${t.at||''}</div>
-        <div class="slwave">${waveBars(30)}</div>
+      <button class="sldots" data-savetid="${t.tid||''}" data-savenm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-saveby="${(t.who||'').replace(/"/g,'&quot;')}" data-saveaudio="${t.audio||''}" aria-label="담기">⋯</button>
+      <div class="slmid">
+        <div class="slts">${t.at||''}</div>
         <div class="slcap">${t.nm||t.cap}</div>
-        <span class="slpill"><em>▶</em><b>${t.dur||t.sub||''}</b></span>${rx}</div>${hint}</div>`;
+        <div class="slwave">${waveBars(30)}</div>${rx}</div>${hint}</div>`;
     return `<div class="sl paper ${t.tone==='b'?'b':''}"${anchor}>
       ${who}<div class="slmid"><div class="slts">${t.at}</div><div class="slnote">${t.text}</div>${rx}</div>${hint}</div>`;
   };
@@ -2787,7 +2787,7 @@ function bind(){
   }
   /* 릴스 슬라이드 탭 = 현재 곡 재생/일시정지 (실제 오디오) */
   document.querySelectorAll('.sl[data-slplay]').forEach(cd=>cd.onclick=e=>{
-    if(e.target.closest('.rbtn,.slfol,[data-prof]'))return;
+    if(e.target.closest('.rbtn,.slfol,.sldots,[data-prof]'))return;
     if(AUDIO.paused){ const p=AUDIO.play(); if(p&&p.catch)p.catch(()=>{}); S.mini.playing=true; }
     else { AUDIO.pause(); S.mini.playing=false; }
     cd.classList.toggle('playing', !AUDIO.paused);
@@ -2803,7 +2803,7 @@ function bind(){
     });
   });
   /* 릴스/피드에서 듣던 곡 담기 */
-  document.querySelectorAll('.slsave').forEach(b=>b.onclick=e=>{
+  document.querySelectorAll('.sldots').forEach(b=>b.onclick=e=>{
     e.stopPropagation();
     if(!b.dataset.savetid){ offToast('담을 수 없는 항목이에요'); return; }
     S.saveTrack={tid:b.dataset.savetid, nm:b.dataset.savenm, by:b.dataset.saveby, audio:b.dataset.saveaudio};
