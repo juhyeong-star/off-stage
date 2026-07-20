@@ -963,11 +963,13 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
 
 /* ── 실제 폰 규격 (≤640px): 데스크톱 프리뷰의 핑크 베젤은 유지, 폰에서는 풀스크린 앱 ── */
 @media (max-width:640px){
-  body{display:block;padding:0;min-height:100vh;min-height:100dvh;background:var(--bg)}
+  /* 뷰포트에 완전 고정 — 잡고 드래그해도 앱(목업) 전체가 안 밀리고 내부 .screen만 스크롤 */
+  html{overflow:hidden;overscroll-behavior:none;height:100%}
+  body{display:block;padding:0;position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;background:var(--bg)}
   /* 목업 프레임(핑크 베젤·라운드·그림자) 벗기고 화면을 꽉 채움 */
-  .phone{max-width:none;width:100%;border:0;border-radius:0;box-shadow:none;height:100vh;height:100dvh}
-  /* 840px 고정 → 뷰포트에 묶어 기기별 높이 대응(dvh=주소창 변화 반영) */
-  .screen{height:100%;padding-bottom:calc(120px + env(safe-area-inset-bottom))}
+  .phone{max-width:none;width:100%;border:0;border-radius:0;box-shadow:none;height:100%}
+  /* 뷰포트에 묶어 기기별 높이 대응 — 내부만 스크롤(스크롤 체이닝/바운스 차단) */
+  .screen{height:100%;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:calc(120px + env(safe-area-inset-bottom))}
   /* iOS 홈바(34px)와 겹치지 않게 하단 네비/미니 안전영역 확보 */
   .nav{padding-bottom:max(18px, env(safe-area-inset-bottom))}
   .mini{bottom:calc(74px + env(safe-area-inset-bottom))}
