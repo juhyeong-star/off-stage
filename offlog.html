@@ -212,6 +212,8 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
   padding:4px 11px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:3px}
 .slfol.on{background:var(--mint);color:#04231d}
 .slfol:focus-visible{outline:2px solid #fff}
+.slmore{background:rgba(0,0,0,.4);backdrop-filter:blur(4px);border:none;color:#fff;font-size:16px;line-height:1;border-radius:99px;padding:4px 11px;cursor:pointer;opacity:.92;flex-shrink:0}
+.slmore:active{transform:scale(.92)}
 .slmid{position:relative;z-index:3;text-align:center;padding:0 34px;width:100%}
 .slts{font-family:'Black Han Sans';font-size:46px;letter-spacing:1px;color:#fff;text-shadow:0 2px 20px rgba(0,0,0,.8)}
 .sl.snd .slts{font-size:34px;color:rgba(255,255,255,.55);text-shadow:none}
@@ -427,6 +429,8 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .svfol:focus-visible{outline:2px solid #fff}
 .svclose{margin-left:auto;background:none;border:none;color:#fff;font-size:19px;cursor:pointer;padding:4px;opacity:.85;flex-shrink:0}
 .svclose:focus-visible{outline:2px solid #fff;border-radius:6px}
+.svmore{margin-left:auto;background:none;border:none;color:#fff;font-size:19px;line-height:1;cursor:pointer;padding:4px 6px;opacity:.85;flex-shrink:0}
+.svmore:active{transform:scale(.9)}
 .svbody{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .svbg{position:absolute;inset:0;background-size:cover;background-position:center}
 .svtap{position:absolute;top:0;bottom:0;width:32%;z-index:5;background:none;border:none;padding:0}
@@ -1120,7 +1124,8 @@ function logMenuSheet(){
   const rows = M.kind==='addmedia'
     ? `<button class="pkrow" data-addkind="ph"><span class="pknm"><b>📷 사진 넣기</b><small>이 글이 사진 위 캡션이 돼요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>
        <button class="pkrow" data-addkind="snd"><span class="pknm"><b>♪ 데모 넣기</b><small>이 글에 데모(오디오)를 붙여요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>`
-    : `<button class="pkrow" data-omenu="save"><span class="pknm"><b>＋ 내 플레이리스트에 담기</b></span><span style="margin-left:auto;color:var(--mint);font-weight:800">담기</span></button>
+    : `${M.aid?`<button class="pkrow" data-omenu="follow"><span class="pknm"><b>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'✓ 팔로잉':'＋ 팔로우'}</b><small>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'탭하면 팔로우 해제':(M.by||'이 아티스트')+' 팔로우하기'}</small></span></button>`:''}
+       <button class="pkrow" data-omenu="save"><span class="pknm"><b>＋ 내 플레이리스트에 담기</b></span><span style="margin-left:auto;color:var(--mint);font-weight:800">담기</span></button>
        <button class="pkrow" data-omenu="share"><span class="pknm"><b>⤴ 공유</b><small>링크로 공유하거나 복사</small></span></button>`;
   return `<div class="cs-bd" id="lmbd"><div class="cs">
     <div class="cs-hd"><b>${M.kind==='addmedia'?'로그에 넣기':(M.nm||'음악')}</b><button class="cs-x" id="lmx" aria-label="닫기">✕</button></div>
@@ -1416,7 +1421,7 @@ function storyViewer(){
           <ellipse cx="9.4" cy="16.6" rx="1.15" ry="1.6" fill="#1a1206"/><ellipse cx="14.6" cy="16.6" rx="1.15" ry="1.6" fill="#1a1206"/></svg></span>
         <b>${s.who}</b></span>
       <span class="tm">${it.at}</span>
-      ${!s.following?`<button class="svfol" id="svfolbtn">팔로우</button>`:''}
+      <button class="svmore" data-sharemenu="${it.tid||''}" data-snm="${(it.cap||s.who||'').replace(/"/g,'&quot;')}" data-sby="${(s.who||'').replace(/"/g,'&quot;')}" data-saud="${it.audio||''}" data-said="${s.aid||''}" aria-label="공유·담기·팔로우">⋯</button>
       <button class="svclose" id="svclose" aria-label="닫기">✕</button></div>
     <div class="svbody">${content}
       <button class="svtap l" id="svtapl" aria-label="이전"></button>
@@ -1501,8 +1506,8 @@ function feedCard(t,i){
 
   const who=`<div class="rwho" data-prof="${t.who}" data-paid="${t.aid||''}" style="cursor:pointer">${smileEl(t.c)}${t.who}</div>`;
   /* 팔로우 = 카드 우측 상단. 반응 도형 = 카드 위 하단. 전부 카드 위에 얹힌다 */
-  const _foned = t.aid && MYFOLLOWS.has(t.aid);   // 저장된 내 팔로우 반영
-  const fol = t.src==='follow' ? '' : `<button class="fol ffol${_foned?' on':''}" data-aid="${t.aid||''}">${_foned?'팔로잉':'팔로우'}</button>`;
+  /* 액션은 ⋯ 하나로 통합 (공유·담기·팔로우) — 우측 상단 */
+  const fol = `<button class="edit mine" data-sharemenu="${t.tid||''}" data-snm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-sby="${(t.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" data-said="${t.aid||''}" aria-label="공유·담기·팔로우">⋯</button>`;
   const _mine = (t.tid && MYREACT[t.tid]) || null;  // 저장된 내 반응
   const _rb=(emo,sh,col)=>`<button class="shape rbtn${_mine&&_mine.has(emo)?' hit':''}" data-emo="${emo}"${_mine&&_mine.has(emo)?' data-hit="1"':''} aria-label="${emo}">${shape(sh,c(col),22)}</button>`;
   const rx=`<div class="frx" data-tid="${t.tid||''}">
@@ -1530,9 +1535,8 @@ function feedCard(t,i){
 function slideView(){
   const sl=(t,i)=>{
     const anchor=` id="sl${i}"`;
-    const _sfon = t.aid && MYFOLLOWS.has(t.aid);
     const who=`<div class="slwho"><span data-prof="${t.who}" data-paid="${t.aid||''}" style="cursor:pointer;display:flex;align-items:center;gap:8px">${dot(t.c)}${t.who||''}</span>
-      ${t.src!=='follow'&&t.src!=='room'?`<button class="slfol${_sfon?' on':''}" data-aid="${t.aid||''}">${_sfon?'팔로잉':'팔로우'}</button>`:''}</div>`;
+      <button class="slmore" data-sharemenu="${t.tid||''}" data-snm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-sby="${(t.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" data-said="${t.aid||''}" aria-label="공유·담기·팔로우">⋯</button></div>`;
     const _smine=(t.tid && MYREACT[t.tid])||null;
     const _srb=(emo,sh,col)=>`<button class="shape rbtn${_smine&&_smine.has(emo)?' hit':''}" data-emo="${emo}"${_smine&&_smine.has(emo)?' data-hit="1"':''} aria-label="${emo}">${shape(sh,c(col),26)}</button>`;
     const rx=`<div class="slrx" data-tid="${t.tid||''}">
@@ -1721,7 +1725,7 @@ function mine(){
     <div class="bigwv">${waveBars(34)}</div>
     <div class="rmid"><div class="rts">${t.dt?t.dt.replace(/-/g,'.'):''}</div><div class="rcap">${t.nm}</div>
       <span class="sndpill"><em>▶</em><b>${t.demo?'Demo':''}</b></span></div>
-    <button class="edit mine" data-sharemenu="${t.id||''}" data-snm="${(t.nm||'').replace(/"/g,'&quot;')}" data-sby="${(prof.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" aria-label="공유·담기">⋯</button></div></div>`;
+    <button class="edit mine" data-sharemenu="${t.id||''}" data-snm="${(t.nm||'').replace(/"/g,'&quot;')}" data-sby="${(prof.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" data-said="${S.profileAid||''}" aria-label="공유·담기·팔로우">⋯</button></div></div>`;
   const _emptyOrLoad = rp ? `<div class="pknote" style="padding:22px 0">아직 올린 게 없어요</div>` : `<div class="pknote" style="padding:22px 0">불러오는 중…</div>`;
   const rpTracks    = rp ? rp.tracks.slice().sort((a,b)=>String(b.dt||'').localeCompare(String(a.dt||''))) : [];  /* 최신이 위로 */
   const artistLog   = rpTracks.length ? rpTracks.map(alogCard).join('') : _emptyOrLoad;
@@ -2884,13 +2888,13 @@ function bind(){
   });
   /* 내 글 로그 ⋯ → 사진/데모 넣기 메뉴 · 남의 음악 ⋯ → 공유/담기 메뉴 */
   document.querySelectorAll('[data-addmenu]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); S.logMenu={kind:'addmedia', id:b.dataset.addmenu}; render(); });
-  document.querySelectorAll('[data-sharemenu]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); S.logMenu={kind:'oshare', id:b.dataset.sharemenu, nm:b.dataset.snm, by:b.dataset.sby, audio:b.dataset.saud}; render(); });
+  document.querySelectorAll('[data-sharemenu]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); S.logMenu={kind:'oshare', id:b.dataset.sharemenu, nm:b.dataset.snm, by:b.dataset.sby, audio:b.dataset.saud, aid:b.dataset.said||''}; render(); });
   if(S.logMenu){
     const lmbd=document.getElementById('lmbd'), lmx=document.getElementById('lmx');
     const lmclose=()=>{ S.logMenu=null; render(); };
     if(lmx)lmx.onclick=lmclose; if(lmbd)lmbd.onclick=e=>{ if(e.target===lmbd)lmclose(); };
     document.querySelectorAll('[data-addkind]').forEach(b=>b.onclick=()=>{ _attachTo=S.logMenu.id; const k=b.dataset.addkind; S.logMenu=null; render(); const inp=document.getElementById(k==='ph'?'addphoto':'adddemo'); if(inp)inp.click(); });
-    document.querySelectorAll('[data-omenu]').forEach(b=>b.onclick=()=>{ const act=b.dataset.omenu, M=S.logMenu; if(act==='save'){ S.saveTrack={tid:M.id, nm:M.nm, by:M.by, audio:M.audio}; S.logMenu=null; render(); } else { S.logMenu=null; render(); offShareTrack(M); } });
+    document.querySelectorAll('[data-omenu]').forEach(b=>b.onclick=()=>{ const act=b.dataset.omenu, M=S.logMenu; if(act==='save'){ S.saveTrack={tid:M.id, nm:M.nm, by:M.by, audio:M.audio}; S.logMenu=null; render(); } else if(act==='follow'){ const aid=M.aid; S.logMenu=null; if(!ME){ render(); needLogin(); return; } const willFollow=!MYFOLLOWS.has(aid); (willFollow?followArtist(aid):unfollowArtist(aid)).then(()=>{ offToast(willFollow?'팔로우했어요':'팔로우 해제했어요'); render(); }); render(); } else { S.logMenu=null; render(); offShareTrack(M); } });
   }
   const _addph=document.getElementById('addphoto');
   if(_addph && !_addph.__b){ _addph.__b=1; _addph.onchange=()=>{ const f=_addph.files&&_addph.files[0]; if(f&&_attachTo){ attachMedia(_attachTo,'ph',f); } _attachTo=null; _addph.value=''; }; }
