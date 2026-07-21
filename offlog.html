@@ -19,7 +19,7 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
   font-family:'Noto Sans KR',sans-serif;-webkit-font-smoothing:antialiased}
 .phone{width:100%;max-width:400px;background:var(--bg);color:var(--txt);border-radius:44px;border:3px solid var(--pink);
   box-shadow:0 0 0 1px rgba(255,95,224,.35),0 0 38px rgba(255,95,224,.35);overflow:hidden;position:relative}
-.screen{padding:16px 14px 120px;height:840px;overflow-y:auto;scrollbar-width:none}
+.screen{padding:16px 14px 150px;height:840px;overflow-y:auto;scrollbar-width:none}
 .screen::-webkit-scrollbar{display:none}
 
 /* ── 헤더 ── */
@@ -599,18 +599,18 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 
 /* ── 미니 플레이어 ── */
 .mini{position:absolute;left:14px;right:14px;bottom:74px;z-index:19;background:rgba(28,28,32,.96);backdrop-filter:blur(10px);
-  border:1px solid var(--line);border-radius:16px;padding:10px 12px}
-.mini-top{display:flex;align-items:center;justify-content:space-between;font-size:10.5px;color:var(--mint);font-weight:700}
-.mini-top button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px}
-.mini-btm{display:flex;align-items:center;gap:9px;margin-top:5px}
-.mini-btm .nm{font-size:13.5px;font-weight:700;flex:1}
-.mini-btm .tm{font-family:'Black Han Sans';font-size:12px;color:var(--muted)}
-.minilist{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:3px 2px;flex-shrink:0}
-.minimore{background:none;border:none;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;padding:0 3px;flex-shrink:0}
+  border:1px solid var(--line);border-radius:18px;padding:13px 15px}
+.mini-top{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--mint);font-weight:700}
+.mini-top button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px}
+.mini-btm{display:flex;align-items:center;gap:11px;margin-top:7px}
+.mini-btm .nm{font-size:15px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini-btm .tm{font-family:'Black Han Sans';font-size:13px;color:var(--muted)}
+.minilist{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:3px 2px;flex-shrink:0}
+.minimore{background:none;border:none;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:0 3px;flex-shrink:0}
 .minimore:hover{color:var(--mint)}
 .minilist:hover{color:var(--mint)}
 .minilist:focus-visible{outline:2px solid var(--mint);border-radius:5px}
-.miniplay{width:28px;height:28px;border-radius:50%;background:var(--mint);border:none;color:#04231d;font-size:11px;cursor:pointer;flex-shrink:0}
+.miniplay{width:36px;height:36px;border-radius:50%;background:var(--mint);border:none;color:#04231d;font-size:14px;cursor:pointer;flex-shrink:0}
 
 /* ── 로그 — 자유 스트림 ── */
 /* 남기는 도구: 폼이 아니라 손닿는 자리에 놓인 것들 */
@@ -969,7 +969,7 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
   /* 목업 프레임(핑크 베젤·라운드·그림자) 벗기고 화면을 꽉 채움 */
   .phone{max-width:none;width:100%;border:0;border-radius:0;box-shadow:none;height:100%}
   /* 뷰포트에 묶어 기기별 높이 대응 — 내부만 스크롤(스크롤 체이닝/바운스 차단) */
-  .screen{height:100%;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:calc(120px + env(safe-area-inset-bottom))}
+  .screen{height:100%;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:calc(158px + env(safe-area-inset-bottom))}
   /* iOS 홈바(34px)와 겹치지 않게 하단 네비/미니 안전영역 확보 */
   .nav{padding-bottom:max(18px, env(safe-area-inset-bottom))}
   .mini{bottom:calc(74px + env(safe-area-inset-bottom))}
@@ -999,9 +999,9 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
   <div id="mini"></div>
   <div class="nav" id="nav">
     <button data-v="home" aria-label="홈"><i>⌂</i>홈</button>
-    <button id="navprofile" aria-label="마이"><i><span class="avimg"></span></i>마이</button>
-    <button class="navctr" id="navplus" aria-label="로그 남기기"><i>＋</i></button>
     <button data-v="lists" aria-label="음악"><i>♪</i>음악</button>
+    <button class="navctr" id="navplus" aria-label="로그 남기기"><i>＋</i></button>
+    <button id="navprofile" aria-label="마이"><i><span class="avimg"></span></i>마이</button>
   </div>
 </div>
 
