@@ -1063,11 +1063,34 @@ async function loadMe(){
   return ME;
 }
 
+/* 내 페이지 LOG = 내 곡이어야 한다.
+   (로더는 '곡이 제일 많은 아티스트'를 me로 삼아 STREAM을 만들기 때문에, 로그인하면 여기서 내 것으로 교체) */
+async function loadMyStream(){
+  if(!ME||!ME.id||!SBC) return false;
+  try{
+    const mt=await SBC.from('tracks').select('id,title,audio_url,created_at')
+      .eq('artist_id',ME.id).order('created_at',{ascending:false}).limit(60);
+    const rows=(mt&&mt.data)?mt.data:[];
+    const mine=rows.map(function(x,i){
+      const ts=x.created_at||'', dt=ts.slice(0,10), at=ts.slice(11,16);
+      return x.audio_url
+        ? {id:'sb_'+x.id, t:'snd', at:at, dt:dt, nm:x.title||'무제', dur:'', side:(i%2?'r':'l'), work:null, audio:x.audio_url}
+        : {id:'sb_'+x.id, t:'note', at:at, dt:dt, text:x.title||'', tone:(i%2?'b':'y'), side:(i%2?'r':'l'), work:null};
+    });
+    /* 기기에 저장한 내 로그(my_)는 남기고, 데모 시드는 내 실제 곡으로 교체 */
+    const myLocal=STREAM.filter(function(l){ return String(l.id).indexOf('my_')===0; });
+    STREAM=_dedupById(myLocal.concat(mine));
+    return true;
+  }catch(e){ console.warn('[offlog] 내 로그 로드 실패', e); return false; }
+}
+
 /* ── 로그인/로그아웃 (기존 회원 계정, 메인앱과 동일 방식) ── */
 let _authWired=false;
 function wireAuth(){
   if(_authWired||!SBC)return; _authWired=true;
-  try{ SBC.auth.onAuthStateChange(function(ev){ loadMe().then(function(){ try{render();}catch(_){}}); }); }catch(e){}
+  try{ SBC.auth.onAuthStateChange(function(ev){
+    loadMe().then(function(){ return loadMyStream(); }).then(function(){ try{render();}catch(_){}});
+  }); }catch(e){}
 }
 async function loginGoogle(){ if(!SBC)return; try{ await SBC.auth.signInWithOAuth({provider:'google', options:{redirectTo:location.href}}); }catch(e){ offToast('로그인 실패 — 잠시 후 다시'); } }
 async function loginKakao(){ if(!SBC)return; try{ await SBC.auth.signInWithOAuth({provider:'kakao', options:{redirectTo:location.href}}); }catch(e){ offToast('로그인 실패 — 잠시 후 다시'); } }
@@ -3186,7 +3209,7 @@ setInterval(()=>{
     }).slice(0,12);
     if(wl.length) WORKS=wl;
 
-    // STREAM = 로그 스트림(mine) — 곡 많은 아티스트를 'me'로 삼아 진짜 로그처럼
+    // STREAM = 로그 스트림(mine) — 비로그인일 때만 '곡 많은 아티스트'로 데모를 채운다
     var meA=artists.slice().sort(function(a,b){return byArtist[b].length-byArtist[a].length;})[0];
     if(meA){
       STREAM=byArtist[meA].slice(0,8).map(function(t,i){
@@ -3195,6 +3218,8 @@ setInterval(()=>{
                        : {id:'l'+i, t:'note', at:tm(t.ts), dt:dt, text:'#'+(t.tags[0]||t.title), tone:(i%2?'b':'y'), side:(i%2?'r':'l'), work:null};
       });
     }
+    // 로그인했다면 내 페이지 LOG 는 반드시 '내 곡'으로 (남의 곡이 내 페이지에 뜨던 문제)
+    await loadMyStream();
 
     // (홈 피드 TREND/FORYOU/FOLLOWLOG/STORIES/PEOPLE 는 위 resampleFeed()가 매 새로고침마다 생성)
 
