@@ -1051,10 +1051,13 @@ async function loadMe(){
       if(!av) av='https://i.pravatar.cc/150?u='+user.id;
       ME={ id:user.id, name:nm, avatar:av, role:role };
       MYFOLLOWS.clear();
-      const f=await SBC.from('follows').select('following_id').eq('follower_id', user.id);
-      if(f.data) f.data.forEach(r=>MYFOLLOWS.add(r.following_id));
-      const r=await SBC.from('track_reactions').select('track_id,kind').eq('user_id', user.id);
-      if(r.data) r.data.forEach(x=>{ (MYREACT[x.track_id]=MYREACT[x.track_id]||new Set()).add(x.kind); });
+      /* 실제 DB 컬럼은 followed_id (following_id 아님) */
+      const f=await SBC.from('follows').select('followed_id').eq('follower_id', user.id);
+      if(f.data) f.data.forEach(r=>MYFOLLOWS.add(r.followed_id));
+      try{ const mc=await followCounts(user.id); ME.followers=mc.followers; }catch(_){}   /* 내 팔로워 실제 수 */
+      /* track_reactions 테이블은 아직 없음 → 없으면 조용히 통과(세션 내 반응만) */
+      try{ const r=await SBC.from('track_reactions').select('track_id,kind').eq('user_id', user.id);
+        if(r&&r.data) r.data.forEach(x=>{ (MYREACT[x.track_id]=MYREACT[x.track_id]||new Set()).add(x.kind); }); }catch(_){}
     } else { ME=null; }
   }catch(e){ console.warn('[offlog] loadMe 실패', e); }
   return ME;
@@ -1078,6 +1081,18 @@ async function logout(){ if(!SBC)return; try{ await SBC.auth.signOut(); }catch(e
 
 /* ── 실제 프로필 로드 + 캐시 (공개 읽기) ── */
 let PROFCACHE={};
+/* 실제 팔로워/팔로잉 수 — follows(follower_id, followed_id) 에서 집계. 못 세면 null(가짜 숫자 금지) */
+async function followCounts(id){
+  const out={followers:null, following:null};
+  if(!id||!SBC) return out;
+  try{
+    const a=await SBC.from('follows').select('follower_id',{count:'exact',head:true}).eq('followed_id',id);
+    if(a && typeof a.count==='number') out.followers=a.count;
+    const b=await SBC.from('follows').select('followed_id',{count:'exact',head:true}).eq('follower_id',id);
+    if(b && typeof b.count==='number') out.following=b.count;
+  }catch(e){ console.warn('[offlog] followCounts 실패', e); }
+  return out;
+}
 async function loadProfile(id){
   if(!id||!SBC) return null;
   if(PROFCACHE[id]) return PROFCACHE[id];
@@ -1085,8 +1100,10 @@ async function loadProfile(id){
     const pr=await SBC.from('profiles').select('id,name,avatar_url,role,sns_instagram,sns_youtube,sns_tiktok').eq('id',id).maybeSingle();
     const tr=await SBC.from('tracks').select('id,title,audio_url,cover_url,is_demo,created_at,likes_count,project_id').eq('artist_id',id).order('created_at',{ascending:false});
     const p=pr&&pr.data?pr.data:null;
+    const fc=await followCounts(id);   /* 실제 팔로워/팔로잉 수 */
     const prof={ id:id, name:(p&&p.name)||'아티스트', avatar:(p&&p.avatar_url)||('https://i.pravatar.cc/150?u='+id),
       role:(p&&p.role)||'artist', sns:{ig:(p&&p.sns_instagram)||'',yt:(p&&p.sns_youtube)||'',tt:(p&&p.sns_tiktok)||''},
+      followers:fc.followers, following:fc.following,
       tracks:(tr&&tr.data?tr.data:[]).map(function(t){ return {id:t.id, nm:t.title||'무제', audio:t.audio_url||'', cover:(t.cover_url&&/^https?:\/\//.test(t.cover_url))?t.cover_url:'', demo:!!t.is_demo, dt:(t.created_at||'').slice(0,10), likes:t.likes_count||0}; }) };
     PROFCACHE[id]=prof; return prof;
   }catch(e){ console.warn('[offlog] loadProfile 실패', e); return null; }
@@ -1182,7 +1199,7 @@ async function followArtist(aid){
   if(!aid){ return false; }
   if(!ME){ needLogin(); return false; }
   try{
-    const {error}=await SBC.from('follows').insert({follower_id:ME.id, following_id:aid});
+    const {error}=await SBC.from('follows').insert({follower_id:ME.id, followed_id:aid});
     if(error && error.code!=='23505'){ throw error; }   // 23505=이미 있음 → 무시
     MYFOLLOWS.add(aid); return true;
   }catch(e){ console.warn('[offlog] follow 실패', e); offToast('저장 실패 — 잠시 후 다시'); return false; }
@@ -1191,7 +1208,7 @@ async function unfollowArtist(aid){
   if(!aid){ return false; }
   if(!ME){ needLogin(); return false; }
   try{
-    const {error}=await SBC.from('follows').delete().eq('follower_id',ME.id).eq('following_id',aid);
+    const {error}=await SBC.from('follows').delete().eq('follower_id',ME.id).eq('followed_id',aid);
     if(error) throw error;
     MYFOLLOWS.delete(aid); return true;
   }catch(e){ console.warn('[offlog] unfollow 실패', e); offToast('저장 실패 — 잠시 후 다시'); return false; }
@@ -1200,15 +1217,21 @@ async function toggleReact(tid, kind){
   if(!tid){ return; }
   if(!ME){ needLogin(); return; }
   const set=MYREACT[tid]=MYREACT[tid]||new Set();
+  const had=set.has(kind);
+  if(had) set.delete(kind); else set.add(kind);   /* 화면은 즉시 반영 */
   try{
-    if(set.has(kind)){
+    if(had){
       const {error}=await SBC.from('track_reactions').delete().eq('user_id',ME.id).eq('track_id',tid).eq('kind',kind);
-      if(error) throw error; set.delete(kind);
+      if(error) throw error;
     }else{
       const {error}=await SBC.from('track_reactions').insert({user_id:ME.id, track_id:tid, kind:kind});
-      if(error && error.code!=='23505') throw error; set.add(kind);
+      if(error && error.code!=='23505') throw error;
     }
-  }catch(e){ console.warn('[offlog] react 실패', e); offToast('저장 실패 — 잠시 후 다시'); }
+  }catch(e){
+    /* track_reactions 테이블이 아직 없으면(PGRST205/404) 저장만 못 할 뿐, 세션 반응은 유지 */
+    if(e && (e.code==='PGRST205' || e.code==='42P01')) { console.info('[offlog] 반응 저장 보류 — track_reactions 테이블 없음'); return; }
+    console.warn('[offlog] react 실패', e); offToast('반응 저장 실패 — 잠시 후 다시');
+  }
 }
 
 /* 스토리 — 원 = 아티스트. 탭하면 그 사람이 방금 올린 로그가 전체화면으로 재생된다.
@@ -1785,9 +1808,9 @@ function mine(){
   <div class="mprof"><span class="mpav">${avatarEl(prof.avatar, prof.c)}</span>
     <h3>${prof.who}</h3><p>${prof.sub}</p>
     <div class="fcount">
-      <button class="fc" data-flist="follower"><b>—</b><small>팔로워</small></button>
+      <button class="fc" data-flist="follower"><b>${me?((ME&&ME.followers!=null)?ME.followers:'—'):((rp&&rp.followers!=null)?rp.followers:'—')}</b><small>팔로워</small></button>
       <span class="fcdiv"></span>
-      <button class="fc" data-flist="following"><b>${me?MYFOLLOWS.size:'—'}</b><small>팔로잉</small></button></div>
+      <button class="fc" data-flist="following"><b>${me?MYFOLLOWS.size:((rp&&rp.following!=null)?rp.following:'—')}</b><small>팔로잉</small></button></div>
     ${me
       ? (ME?'':`<button class="fol profol" id="profloginbtn">로그인</button>`)
       : `<button class="fol profol ${following?'on':''}" id="profolbtn" data-aid="${S.profileAid||''}">${following?'팔로잉':'팔로우'}</button>`}</div>
