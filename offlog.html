@@ -1118,6 +1118,8 @@ async function followCounts(id){
 }
 /* 실제 팔로워/팔로잉 목록 — follows + profiles 로 진짜 사람을 가져온다 (목업 PEOPLE 대체) */
 const FLCACHE={};   /* key: id|kind → [{id,who,sub,avatar,aid}] */
+/* 팔로우/언팔로우하면 목록·수치가 바뀌므로 캐시를 비운다(다음 진입 때 실제 값 재조회) */
+function flcacheClear(){ for(var k in FLCACHE) delete FLCACHE[k]; }
 async function loadFollowList(id, kind){
   const key=id+'|'+kind;
   if(FLCACHE[key]) return FLCACHE[key];
@@ -1244,7 +1246,7 @@ async function followArtist(aid){
   try{
     const {error}=await SBC.from('follows').insert({follower_id:ME.id, followed_id:aid});
     if(error && error.code!=='23505'){ throw error; }   // 23505=이미 있음 → 무시
-    MYFOLLOWS.add(aid); return true;
+    MYFOLLOWS.add(aid); flcacheClear(); return true;
   }catch(e){ console.warn('[offlog] follow 실패', e); offToast('저장 실패 — 잠시 후 다시'); return false; }
 }
 async function unfollowArtist(aid){
@@ -1253,7 +1255,7 @@ async function unfollowArtist(aid){
   try{
     const {error}=await SBC.from('follows').delete().eq('follower_id',ME.id).eq('followed_id',aid);
     if(error) throw error;
-    MYFOLLOWS.delete(aid); return true;
+    MYFOLLOWS.delete(aid); flcacheClear(); return true;
   }catch(e){ console.warn('[offlog] unfollow 실패', e); offToast('저장 실패 — 잠시 후 다시'); return false; }
 }
 async function toggleReact(tid, kind){
@@ -1958,7 +1960,7 @@ function flist(){
             return `<div class="prow">
     <span class="pgo" data-prof="${(p.who||'').replace(/"/g,'&quot;')}" data-paid="${p.aid||''}">${avatarEl(p.avatar, p.c)}
       <span class="pnm"><b>${p.who}</b><small>${p.sub||''}</small></span></span>
-    ${mine?'':`<button class="fol plfol ${on?'on':''}" data-pfol="${p.aid}">${on?'팔로잉':'팔로우'}</button>`}
+    ${mine?'':`<button class="fol plfol ${on?'on':''}" data-aid="${p.aid}">${on?'팔로잉':'팔로우'}</button>`}
   </div>`;}).join('')
         : `<div class="pknote" style="padding:36px 0">${q?'찾는 아티스트가 없습니다':(isFer?'아직 팔로워가 없어요':'아직 팔로우한 사람이 없어요')}</div>`;
 
@@ -2695,20 +2697,7 @@ function bind(){
     if(el){el.focus(); el.setSelectionRange(pos,pos)}
   };
   const fqx=document.getElementById('fqx'); if(fqx)fqx.onclick=()=>{S.fq='';render()};
-  /* 팔로워/팔로잉 목록의 팔로우 버튼 — 실제 Supabase 저장(data-pfol = 상대 profile id) */
-  document.querySelectorAll('[data-pfol]').forEach(b=>b.onclick=async e=>{
-    e.stopPropagation();
-    const aid=b.dataset.pfol;
-    if(!aid){ return; }
-    if(!ME){ needLogin(); return; }
-    const on=!MYFOLLOWS.has(aid);
-    b.classList.toggle('on', on); b.textContent = on?'팔로잉':'팔로우';   /* 즉시 반응 */
-    const ok = await (on ? followArtist(aid) : unfollowArtist(aid));
-    if(!ok){ b.classList.toggle('on', !on); b.textContent = !on?'팔로잉':'팔로우'; return; }
-    for(var k in FLCACHE) delete FLCACHE[k];   /* 목록·수치 다시 불러오게 */
-    if(ME){ try{ const c=await followCounts(ME.id); ME.followers=c.followers; }catch(_){} }
-    render();
-  });
+  /* (팔로워/팔로잉 목록의 팔로우 버튼도 .fol 공통 핸들러가 처리 — data-aid 계약 하나로 통일) */
   /* (프로필 팔로우/로그인 버튼은 위 #profolbtn/#profloginbtn 에서 처리) */
   /* Demo — 음원 파일 올리기 */
   const ap=document.getElementById('apicker');
