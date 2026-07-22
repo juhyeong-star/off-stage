@@ -771,6 +771,37 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .navctr:active i{transform:translateY(-2px)}
 .navctr.on i{background:var(--mint);color:#04231d;
   box-shadow:0 0 0 4px var(--bg),0 0 20px rgba(83,224,200,.55)}
+/* ── 하단 가운데: camera | logs 슬라이딩 토글 (＋ 자리) ── */
+.navseg{flex:1.9;align-self:center;position:relative;display:flex;align-items:center;
+  background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:3px;margin:0 5px;height:36px}
+.nsgpill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);
+  border-radius:99px;background:var(--mint);transition:transform .26s cubic-bezier(.22,.61,.36,1)}
+.navseg.logs .nsgpill{transform:translateX(100%)}
+/* .nav button 규칙(세로정렬·민트 on색)을 이겨야 해서 .nav 로 한 단계 더 좁힌다 */
+.nav .nsg{position:relative;z-index:1;flex:1;background:none;border:0;color:var(--muted);
+  display:flex;flex-direction:row;align-items:center;justify-content:center;gap:0;
+  font-family:inherit;font-size:12px;font-weight:800;padding:0;height:100%;min-height:0;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:color .2s}
+.nav .nsg.on{color:#04231d}
+.nav .nsg:active{transform:scale(.94)}
+/* ── 앱 안 촬영 화면 ── */
+.camview{position:absolute;left:0;right:0;top:0;bottom:64px;z-index:45;background:#000;overflow:hidden}
+.camvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+.camvid.mirror{transform:scaleX(-1)}
+.camx{position:absolute;top:14px;right:14px;z-index:6;width:38px;height:38px;border-radius:50%;
+  background:rgba(0,0,0,.5);border:0;color:#fff;font-size:17px;backdrop-filter:blur(6px);cursor:pointer}
+.cambar{position:absolute;left:0;right:0;bottom:22px;z-index:6;display:flex;align-items:center;justify-content:center;gap:36px}
+.camshot{width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.18);border:5px solid #fff;cursor:pointer;transition:transform .12s}
+.camshot:active{transform:scale(.92)}
+.camshot.rec{background:#ff4d4d;border-color:#ffb3b3}
+.camsub{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.25);color:#fff;font-size:18px;cursor:pointer;backdrop-filter:blur(6px)}
+.camsub:active{transform:scale(.9)}
+.camhint{position:absolute;left:0;right:0;bottom:106px;z-index:6;text-align:center;
+  color:rgba(255,255,255,.72);font-size:11.5px;text-shadow:0 1px 6px rgba(0,0,0,.8)}
+.camerr{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;color:#fff;text-align:center;padding:0 34px;font-size:13.5px;line-height:1.6}
+.camerr .cs-post{max-width:240px}
 /* ── 마이: LOG | WORKS ── */
 .mprof{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0 16px;text-align:center}
 .mprof .smile{width:64px;height:64px}
@@ -1000,11 +1031,14 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
   <div id="slideview"></div>
   <div id="storyview"></div>
   <div id="composeview"></div>
+  <div id="camview"></div>
   <div id="mini"></div>
   <div class="nav" id="nav">
     <button data-v="home" aria-label="홈"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.3V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.3"/></svg></i>홈</button>
     <button data-v="lists" aria-label="음악"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="18" r="2.6"/><circle cx="17" cy="16" r="2.6"/><path d="M9.1 18V6.2l10.5-2v11.6"/><path d="M9.1 8.4l10.5-2"/></svg></i>음악</button>
-    <button class="navctr" id="navplus" aria-label="로그 남기기"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13"/></svg></i></button>
+    <div class="navseg logs" id="navseg"><span class="nsgpill" id="nsgpill"></span>
+      <button class="nsg" data-cam="cam">camera</button>
+      <button class="nsg on" data-cam="logs">logs</button></div>
     <button id="navprofile" aria-label="마이"><i><span class="avimg"></span></i>마이</button>
   </div>
 </div>
@@ -1456,6 +1490,7 @@ const curRound = ()=>ROUNDS.find(r=>r.id===S.round)||ROUNDS[0];
 
 let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:'me', round:'jul', lseg:'list', vcat:'music', flist:null, fq:'', flFrom:'mine', list:null, share:false, addlist:false,
   pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'', auth:false, profileAid:null, saveTrack:null, logMenu:null,
+  cam:false,     /* 하단 camera|logs 토글 — true면 앱 안 촬영 화면 */
   relForm:{audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', event:''}};
 
 const shape=(s,f,z)=>`<svg viewBox="0 0 24 24" width="${z}" height="${z}" style="overflow:visible"><use href="#${s}" fill="${f}"/></svg>`;
@@ -2526,6 +2561,88 @@ function renderMini(){
   if(mmore)mmore.onclick=e=>{ e.stopPropagation(); S.logMenu={kind:'oshare', id:NOWPLAY.tid||'', nm:NOWPLAY.nm, by:NOWPLAY.who, audio:NOWPLAY.src, aid:NOWPLAY.aid||''}; render(); };
 }
 
+/* ── 앱 안 촬영 화면 (getUserMedia) — 하단 camera 탭 ──
+   탭 = 사진, 길게 = 영상. 권한 거부/미지원이면 폰 기본 카메라로 폴백. */
+let CAMSTREAM=null, CAMFACING='user', CAMREC=null, CAMCHUNKS=[], CAMHOLD=null, CAMERR='';
+function camView(){
+  if(!S.cam) return '';
+  if(CAMERR) return `<div class="camview">
+    <button class="camx" id="camx" aria-label="닫기">✕</button>
+    <div class="camerr"><div>${CAMERR}</div>
+      <button class="cs-post" id="camfallback">폰 카메라로 찍기</button></div></div>`;
+  return `<div class="camview">
+    <video class="camvid${CAMFACING==='user'?' mirror':''}" id="camvid" autoplay playsinline muted></video>
+    <button class="camx" id="camx" aria-label="닫기">✕</button>
+    <div class="camhint">탭 = 사진 · 길게 누르면 영상</div>
+    <div class="cambar">
+      <button class="camsub" id="camdemo" aria-label="데모 올리기">♪</button>
+      <button class="camshot" id="camshot" aria-label="촬영"></button>
+      <button class="camsub" id="camflip" aria-label="앞뒤 전환">⟳</button>
+    </div></div>`;
+}
+function stopCam(){
+  try{ if(CAMSTREAM) CAMSTREAM.getTracks().forEach(function(t){ try{t.stop()}catch(_){} }); }catch(_){}
+  CAMSTREAM=null;
+}
+async function startCam(){
+  CAMERR='';
+  try{
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw {name:'NotSupported'};
+    stopCam();
+    CAMSTREAM=await navigator.mediaDevices.getUserMedia({video:{facingMode:CAMFACING}, audio:true});
+    if(!S.cam){ stopCam(); return; }           /* 그 사이 닫혔으면 정리 */
+    const v=document.getElementById('camvid');
+    if(v){ v.srcObject=CAMSTREAM; const p=v.play(); if(p&&p.catch)p.catch(function(){}); }
+  }catch(e){
+    CAMERR = (e&&e.name==='NotAllowedError')
+      ? '카메라 권한이 거부됐어요. 브라우저 설정에서 허용하거나, 아래로 폰 카메라를 열 수 있어요.'
+      : '이 브라우저에서는 앱 안 촬영을 쓸 수 없어요. 아래로 폰 카메라를 열 수 있어요.';
+    try{ render(); }catch(_){}
+  }
+}
+function closeCam(){
+  if(CAMREC){ try{CAMREC.stop()}catch(_){} CAMREC=null; }
+  stopCam(); S.cam=false; render();
+}
+/* 사진 — 현재 프레임을 캔버스로 (셀피는 거울 보정) */
+function camShot(){
+  const v=document.getElementById('camvid');
+  if(!v || !v.videoWidth){ offToast('아직 카메라가 준비 안 됐어요'); return; }
+  try{
+    const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight;
+    const g=c.getContext('2d');
+    if(CAMFACING==='user'){ g.translate(c.width,0); g.scale(-1,1); }
+    g.drawImage(v,0,0,c.width,c.height);
+    const url=c.toDataURL('image/jpeg',0.86);
+    stopCam(); S.cam=false;
+    S.compose={text:'', media:{kind:'ph', url:url}};   /* 바로 글 쓰고 올리기 */
+    render();
+  }catch(e){ console.warn('[offlog] 촬영 실패', e); offToast('촬영 실패 — 다시 시도해 주세요'); }
+}
+/* 영상 — 길게 누르는 동안 녹화 */
+function camRecStart(){
+  if(!CAMSTREAM || CAMREC || typeof MediaRecorder==='undefined') return;
+  try{
+    CAMCHUNKS=[];
+    CAMREC=new MediaRecorder(CAMSTREAM);
+    CAMREC.ondataavailable=function(e){ if(e.data && e.data.size) CAMCHUNKS.push(e.data); };
+    CAMREC.onstop=function(){
+      const blob=new Blob(CAMCHUNKS, {type:(CAMCHUNKS[0]&&CAMCHUNKS[0].type)||'video/mp4'});
+      CAMREC=null; CAMCHUNKS=[];
+      stopCam(); S.cam=false;
+      S.compose={text:'', media:{kind:'vid', url:URL.createObjectURL(blob)}};
+      render();
+    };
+    CAMREC.start();
+    const b=document.getElementById('camshot'); if(b)b.classList.add('rec');
+  }catch(e){ console.warn('[offlog] 녹화 불가', e); CAMREC=null; offToast('이 기기에서 영상 녹화를 쓸 수 없어요'); }
+}
+function camRecStop(){
+  const b=document.getElementById('camshot'); if(b)b.classList.remove('rec');
+  if(CAMREC){ try{ CAMREC.stop(); }catch(_){ CAMREC=null; } }
+}
+async function camFlip(){ CAMFACING=(CAMFACING==='user')?'environment':'user'; render(); await startCam(); }
+
 /* ── 렌더 ── */
 function render(){
   document.getElementById('body').innerHTML =
@@ -2545,6 +2662,13 @@ function render(){
   }
   document.getElementById('storyview').innerHTML = S.storyIdx!==null ? storyViewer() : '';
   document.getElementById('composeview').innerHTML = S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : (S.auth ? authSheet() : (S.saveTrack ? saveSheet() : (S.logMenu ? logMenuSheet() : ''))));
+  /* 촬영 화면 + 하단 camera|logs 토글 상태 */
+  const _cv=document.getElementById('camview');
+  if(_cv) _cv.innerHTML = S.cam ? camView() : '';
+  if(!S.cam && CAMSTREAM) stopCam();            /* 화면을 떠나면 카메라 반드시 끈다 */
+  const _ns=document.getElementById('navseg');
+  if(_ns){ _ns.classList.toggle('logs', !S.cam);
+    _ns.querySelectorAll('.nsg').forEach(function(b){ b.classList.toggle('on', (b.dataset.cam==='cam')===!!S.cam); }); }
   renderMini();
   bind();
   syncStoryAudio();     // 스토리 데모면 실제 소리 재생
@@ -2558,12 +2682,7 @@ function bind(){
     render();
   });
   /* 하단 가운데 ＋ — 언제든 빠른 로그. WORK 컨텍스트면 새 작품(제목), 아니면 카메라/사진/데모 */
-  const nplus=document.getElementById('navplus');
-  if(nplus)nplus.onclick=()=>{
-    const workCtx=(S.view==='work')||(S.view==='mine'&&S.profile==='me'&&S.seg==='works');
-    if(workCtx){ S.newwork={nm:''}; render(); setTimeout(()=>{const el=document.getElementById('nwname'); if(el)el.focus();},60); }
-    else { S.compose={text:'',media:null}; render(); }
-  };
+  /* (하단 ＋ 는 camera|logs 토글로 교체됨 — 작성은 마이의 '＋ 로그 남기기', 새 작품은 WORK 탭 버튼) */
   /* 이름·프로필 동그라미 탭 → 그 사람 페이지 (스토리 열의 원은 제외) */
   document.querySelectorAll('[data-prof]').forEach(b=>b.onclick=e=>{
     e.stopPropagation(); goProfile(b.dataset.prof, b.dataset.paid);
@@ -2604,6 +2723,28 @@ function bind(){
   if(pfb)pfb.onclick=()=>{ const aid=pfb.dataset.aid; if(!ME){ needLogin(); return; }
     const on=pfb.classList.toggle('on'); pfb.textContent=on?'팔로잉':'팔로우';
     (on?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(!ok){ const bk=pfb.classList.toggle('on'); pfb.textContent=bk?'팔로잉':'팔로우'; } }); };
+  /* 하단 camera | logs 토글 */
+  document.querySelectorAll('[data-cam]').forEach(b=>b.onclick=()=>{
+    if(b.dataset.cam==='cam'){ if(S.cam)return; S.cam=true; render(); startCam(); }
+    else { if(!S.cam)return; closeCam(); }
+  });
+  /* 촬영 화면 컨트롤 */
+  if(S.cam){
+    const cx=document.getElementById('camx');   if(cx)cx.onclick=closeCam;
+    const cf=document.getElementById('camflip'); if(cf)cf.onclick=camFlip;
+    const cd=document.getElementById('camdemo');
+    if(cd)cd.onclick=()=>{ closeCam(); const el=document.getElementById('caudio'); if(el)el.click(); };  /* 데모는 파일 선택 */
+    const fb=document.getElementById('camfallback');
+    if(fb)fb.onclick=()=>{ closeCam(); const el=document.getElementById('ccam'); if(el)el.click(); };     /* 권한 거부 시 폰 카메라 */
+    const cs=document.getElementById('camshot');
+    if(cs){
+      let held=false;
+      cs.onpointerdown=e=>{ e.preventDefault(); held=false; clearTimeout(CAMHOLD);
+        CAMHOLD=setTimeout(function(){ held=true; camRecStart(); }, 380); };       /* 길게 = 영상 */
+      cs.onpointerup=()=>{ clearTimeout(CAMHOLD); if(held){ camRecStop(); } else { camShot(); } };  /* 탭 = 사진 */
+      cs.onpointercancel=()=>{ clearTimeout(CAMHOLD); if(held) camRecStop(); };
+    }
+  }
   /* 팔로워 / 팔로잉 */
   document.querySelectorAll('[data-flist]').forEach(b=>b.onclick=()=>{
     if(S.view!=='flist')S.flFrom='mine';
