@@ -27,8 +27,9 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .brand{font-family:'Fredoka';font-weight:600;font-size:17px;letter-spacing:.14em;color:var(--mint)}
 .htitle{font-size:15px;font-weight:700;flex:1;text-align:center}
 .htitle small{display:block;font-size:10.5px;color:var(--muted);font-weight:400;margin-top:1px}
-.circ{width:34px;height:34px;border-radius:50%;background:var(--card2);border:none;color:var(--txt);font-size:14px;
+.circ{width:38px;height:38px;border-radius:50%;background:var(--card2);border:none;color:var(--txt);font-size:15px;
   display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;flex-shrink:0}
+.circ:active{transform:scale(.92)}
 .circ:focus-visible{outline:2px solid var(--pink)}
 .loginpill{background:transparent;border:1px solid var(--mint);color:var(--mint);border-radius:99px;padding:0 13px;height:34px;font-size:12px;font-weight:800;font-family:inherit;cursor:pointer;flex-shrink:0}
 .hd .r{display:flex;gap:7px}
@@ -212,8 +213,7 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
   padding:4px 11px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:3px}
 .slfol.on{background:var(--mint);color:#04231d}
 .slfol:focus-visible{outline:2px solid #fff}
-.slmore{background:rgba(0,0,0,.4);backdrop-filter:blur(4px);border:none;color:#fff;font-size:16px;line-height:1;border-radius:99px;padding:4px 11px;cursor:pointer;opacity:.92;flex-shrink:0}
-.slmore:active{transform:scale(.92)}
+/* (.slmore 는 우측 상단 .sldots 로 통합 — 제거) */
 .slmid{position:relative;z-index:3;text-align:center;padding:0 34px;width:100%}
 .slts{font-family:'Black Han Sans';font-size:46px;letter-spacing:1px;color:#fff;text-shadow:0 2px 20px rgba(0,0,0,.8)}
 .sl.snd .slts{font-size:34px;color:rgba(255,255,255,.55);text-shadow:none}
@@ -235,11 +235,15 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .slhint{position:absolute;bottom:64px;left:50%;transform:translateX(-50%);z-index:6;color:rgba(255,255,255,.3);
   font-size:19px;animation:bounce 1.8s ease-in-out infinite;pointer-events:none}
 @keyframes bounce{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,5px)}}
-.slx{position:absolute;top:14px;right:14px;z-index:8;width:34px;height:34px;border-radius:50%;
-  background:rgba(0,0,0,.5);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.18);
-  color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  font-family:inherit;line-height:1}
-.slx:focus-visible{outline:2px solid #fff}
+/* 오버레이 위 원형 버튼 = 전부 같은 크기(42px). 닫기·담기 등 어디서나 동일하게 */
+.slx,.camx,.sldots{position:absolute;top:14px;z-index:8;width:42px;height:42px;border-radius:50%;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.16);color:#fff;font-size:17px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-family:inherit;line-height:1;padding:0}
+.slx,.camx{right:14px}
+.sldots{right:66px}                                   /* ✕ 왼쪽에 나란히 */
+.slx:active,.camx:active,.sldots:active{transform:scale(.92)}
+.slx:focus-visible,.camx:focus-visible,.sldots:focus-visible{outline:2px solid #fff}
 
 .showhint{font-size:10.5px;color:#55555d;text-align:center;margin-top:10px}
 
@@ -788,14 +792,14 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .camview{position:absolute;left:0;right:0;top:0;bottom:64px;z-index:45;background:#000;overflow:hidden}
 .camvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 .camvid.mirror{transform:scaleX(-1)}
-.camx{position:absolute;top:14px;right:14px;z-index:6;width:38px;height:38px;border-radius:50%;
-  background:rgba(0,0,0,.5);border:0;color:#fff;font-size:17px;backdrop-filter:blur(6px);cursor:pointer}
+/* .camx 는 위 .slx,.camx,.sldots 공통 규칙(42px)을 그대로 쓴다 */
 .cambar{position:absolute;left:0;right:0;bottom:22px;z-index:6;display:flex;align-items:center;justify-content:center;gap:36px}
 .camshot{width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.18);border:5px solid #fff;cursor:pointer;transition:transform .12s}
 .camshot:active{transform:scale(.92)}
 .camshot.rec{background:#ff4d4d;border-color:#ffb3b3}
-.camsub{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.14);
-  border:1px solid rgba(255,255,255,.25);color:#fff;font-size:18px;cursor:pointer;backdrop-filter:blur(6px)}
+.camsub{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.25);color:#fff;font-size:19px;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;padding:0;backdrop-filter:blur(6px)}
 .camsub:active{transform:scale(.9)}
 .camhint{position:absolute;left:0;right:0;bottom:106px;z-index:6;text-align:center;
   color:rgba(255,255,255,.72);font-size:11.5px;text-shadow:0 1px 6px rgba(0,0,0,.8)}
@@ -903,7 +907,9 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 @keyframes csup{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .cs-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .cs-hd b{font-family:'Black Han Sans';font-size:16px}
-.cs-x{background:none;border:0;color:var(--muted);font-size:18px;min-width:44px;min-height:44px}
+.cs-x{width:38px;height:38px;border-radius:50%;background:var(--card);border:1px solid var(--line);
+  color:var(--muted);font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
+.cs-x:active{transform:scale(.92)}
 .cs-ta{width:100%;min-height:84px;background:var(--card);border:1px solid var(--line);border-radius:14px;
   color:var(--txt);padding:12px;font-size:16px;font-family:'Gaegu','Noto Sans KR',sans-serif;resize:none;line-height:1.5}
 .cs-ta:focus{outline:2px solid var(--mint)}
@@ -917,8 +923,7 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .cs-post{margin-top:12px;width:100%;background:var(--mint);color:#04231d;border:0;border-radius:14px;padding:13px;font-weight:800;font-size:15px;min-height:48px}
 .cs-post:disabled{opacity:.4}
 /* 릴스에서 듣던 곡 담기 */
-.sldots{position:absolute;top:15px;right:60px;z-index:7;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(6px)}
-.sldots:active{transform:scale(.9)}
+/* .sldots(릴스 담기 ⋯) 는 위 공통 원형 규칙(42px, ✕ 왼쪽)을 그대로 쓴다 */
 .cs-trk{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:13px;color:var(--muted);margin-bottom:12px}
 .cs-trk b{color:var(--txt)}
 /* 한 박스에서 끼워넣기 — 사진·영상·데모 첨부 버튼 행 */
@@ -1647,8 +1652,9 @@ function feedCard(t,i){
 function slideView(){
   const sl=(t,i)=>{
     const anchor=` id="sl${i}"`;
-    const who=`<div class="slwho"><span data-prof="${t.who}" data-paid="${t.aid||''}" style="cursor:pointer;display:flex;align-items:center;gap:8px">${dot(t.c)}${t.who||''}</span>
-      <button class="slmore" data-sharemenu="${t.tid||''}" data-snm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-sby="${(t.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" data-said="${t.aid||''}" aria-label="공유·담기·팔로우">⋯</button></div>`;
+    const who=`<div class="slwho"><span data-prof="${t.who}" data-paid="${t.aid||''}" style="cursor:pointer;display:flex;align-items:center;gap:8px">${dot(t.c)}${t.who||''}</span></div>`;
+    /* ⋯ 는 하나로 — 우측 상단 ✕ 옆. 공유·담기·팔로우를 다 담는다 */
+    const moreBtn=`<button class="sldots" data-sharemenu="${t.tid||''}" data-snm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-sby="${(t.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" data-said="${t.aid||''}" aria-label="공유·담기·팔로우">⋯</button>`;
     const _smine=(t.tid && MYREACT[t.tid])||null;
     const _srb=(emo,sh,col)=>`<button class="shape rbtn${_smine&&_smine.has(emo)?' hit':''}" data-emo="${emo}"${_smine&&_smine.has(emo)?' data-hit="1"':''} aria-label="${emo}">${shape(sh,c(col),26)}</button>`;
     const rx=`<div class="slrx" data-tid="${t.tid||''}">
@@ -1674,16 +1680,15 @@ function slideView(){
     }
     if(t.t==='ph') return `<div class="sl"${anchor}>
       <div class="bgimg" style="background:${t.bg}"></div><div class="grainy"></div>
-      ${who}<div class="slmid"><div class="slts">${t.at}</div><div class="slcap">${t.cap}</div>${rx}</div>${hint}</div>`;
+      ${who}${moreBtn}<div class="slmid"><div class="slts">${t.at}</div><div class="slcap">${t.cap}</div>${rx}</div>${hint}</div>`;
     if(t.t==='snd') return `<div class="sl snd"${anchor} data-slplay>
-      ${who}
-      <button class="sldots" data-savetid="${t.tid||''}" data-savenm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-saveby="${(t.who||'').replace(/"/g,'&quot;')}" data-saveaudio="${t.audio||''}" aria-label="담기">⋯</button>
+      ${who}${moreBtn}
       <div class="slmid">
         <div class="slts">${t.at||''}</div>
         <div class="slcap">${t.nm||t.cap}</div>
         <div class="slwave">${waveBars(30)}</div>${rx}</div>${hint}</div>`;
     return `<div class="sl paper ${t.tone==='b'?'b':''}"${anchor}>
-      ${who}<div class="slmid"><div class="slts">${t.at}</div><div class="slnote">${t.text}</div>${rx}</div>${hint}</div>`;
+      ${who}${moreBtn}<div class="slmid"><div class="slts">${t.at}</div><div class="slnote">${t.text}</div>${rx}</div>${hint}</div>`;
   };
   return `<div class="slwrap" id="slwrap">
     <button class="slx" id="slclose" aria-label="닫기">✕</button>
@@ -3052,13 +3057,7 @@ function bind(){
       if(!ok){ const back=b.classList.toggle('on'); b.textContent=back?'팔로잉':'팔로우'; }
     });
   });
-  /* 릴스/피드에서 듣던 곡 담기 */
-  document.querySelectorAll('.sldots').forEach(b=>b.onclick=e=>{
-    e.stopPropagation();
-    if(!b.dataset.savetid){ offToast('담을 수 없는 항목이에요'); return; }
-    S.saveTrack={tid:b.dataset.savetid, nm:b.dataset.savenm, by:b.dataset.saveby, audio:b.dataset.saveaudio};
-    render();
-  });
+  /* (릴스 담기는 우측 상단 ⋯ = [data-sharemenu] 메뉴의 '담기'로 통합) */
   if(S.saveTrack){
     const svx=document.getElementById('svx'), svbd=document.getElementById('svbd');
     const svclose=()=>{ S.saveTrack=null; render(); };
