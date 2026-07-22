@@ -1093,6 +1093,26 @@ async function followCounts(id){
   }catch(e){ console.warn('[offlog] followCounts 실패', e); }
   return out;
 }
+/* 실제 팔로워/팔로잉 목록 — follows + profiles 로 진짜 사람을 가져온다 (목업 PEOPLE 대체) */
+const FLCACHE={};   /* key: id|kind → [{id,who,sub,avatar,aid}] */
+async function loadFollowList(id, kind){
+  const key=id+'|'+kind;
+  if(FLCACHE[key]) return FLCACHE[key];
+  if(!id||!SBC) return [];
+  try{
+    /* follower = 나를 팔로우한 사람 / following = 내가 팔로우한 사람 */
+    const whereCol = kind==='follower' ? 'followed_id' : 'follower_id';
+    const pickCol  = kind==='follower' ? 'follower_id' : 'followed_id';
+    const f=await SBC.from('follows').select(pickCol).eq(whereCol, id).limit(300);
+    const ids=[...new Set((f&&f.data?f.data:[]).map(r=>r[pickCol]).filter(Boolean))];
+    if(!ids.length){ FLCACHE[key]=[]; return []; }
+    const p=await SBC.from('profiles').select('id,name,avatar_url,role').in('id', ids);
+    const rows=(p&&p.data?p.data:[]).map(function(x){
+      return { id:x.id, aid:x.id, who:x.name||'익명', avatar:x.avatar_url||'', sub:roleKo(x.role)||'', c:'blue' };
+    });
+    FLCACHE[key]=rows; return rows;
+  }catch(e){ console.warn('[offlog] loadFollowList 실패', e); return []; }
+}
 async function loadProfile(id){
   if(!id||!SBC) return null;
   if(PROFCACHE[id]) return PROFCACHE[id];
@@ -1884,25 +1904,51 @@ let PEOPLE=[
   {who:'현수윤', c:'purple', sub:'일렉트로닉', fing:0},
 ];
 
+/* 팔로워/팔로잉 목록 — 전부 실제 follows+profiles 데이터 (하드코딩 PEEK/목업 없음) */
 function flist(){
   const isFer = S.flist==='follower';
   const q = (S.fq||'').trim().toLowerCase();
-  let rows = isFer ? PEOPLE : PEOPLE.filter(p=>p.fing);
-  if(q) rows = PEOPLE.filter(p=>p.who.toLowerCase().includes(q) || p.sub.toLowerCase().includes(q));
+  const meView = S.profile==='me';
+  const targetId = meView ? (ME?ME.id:'') : (S.profileAid||'');
+  const rp = (!meView && S.profileAid) ? PROFCACHE[S.profileAid] : null;
+  const title = meView ? (ME?ME.name:'내 페이지') : ((rp&&rp.name)||S.profile);
+
+  /* 캐시에 없으면 비동기로 실제 목록을 불러오고, 오면 다시 그린다 */
+  const key = targetId+'|'+S.flist;
+  const cached = targetId ? FLCACHE[key] : null;
+  if(targetId && !cached){ loadFollowList(targetId, S.flist).then(function(){ try{ if(S.view==='flist') render(); }catch(_){} }); }
+
+  let rows = cached || [];
+  if(q) rows = rows.filter(p=>((p.who||'').toLowerCase().includes(q) || (p.sub||'').toLowerCase().includes(q)));
+
+  const ferN  = meView ? ((ME&&ME.followers!=null)?ME.followers:'—') : ((rp&&rp.followers!=null)?rp.followers:'—');
+  const fingN = meView ? MYFOLLOWS.size : ((rp&&rp.following!=null)?rp.following:'—');
+
+  const body = !targetId
+    ? `<div class="pknote" style="padding:36px 0">${meView?'로그인하면 내 팔로워를 볼 수 있어요':'불러올 수 없어요'}</div>`
+    : (cached===null||cached===undefined)
+      ? `<div class="pknote" style="padding:36px 0">불러오는 중…</div>`
+      : rows.length
+        ? rows.map(p=>{
+            const on = MYFOLLOWS.has(p.aid);
+            const mine = ME && p.aid===ME.id;
+            return `<div class="prow">
+    <span class="pgo" data-prof="${(p.who||'').replace(/"/g,'&quot;')}" data-paid="${p.aid||''}">${avatarEl(p.avatar, p.c)}
+      <span class="pnm"><b>${p.who}</b><small>${p.sub||''}</small></span></span>
+    ${mine?'':`<button class="fol plfol ${on?'on':''}" data-pfol="${p.aid}">${on?'팔로잉':'팔로우'}</button>`}
+  </div>`;}).join('')
+        : `<div class="pknote" style="padding:36px 0">${q?'찾는 아티스트가 없습니다':(isFer?'아직 팔로워가 없어요':'아직 팔로우한 사람이 없어요')}</div>`;
+
   return `<div class="hd"><button class="circ" id="flback" aria-label="뒤로">‹</button>
-    <div class="htitle">${S.profile==='me'?'PEEK':S.profile}<small>${q?'검색':isFer?'팔로워':'팔로잉'}</small></div>
+    <div class="htitle">${title}<small>${q?'검색':isFer?'팔로워':'팔로잉'}</small></div>
     <span style="width:34px"></span></div>
   <div class="srch"><span class="srchi">⌕</span>
     <input id="fq" value="${S.fq||''}" placeholder="아티스트 찾기">
     ${q?`<button class="srchx" id="fqx" aria-label="지우기">✕</button>`:''}</div>
   ${q?'':`<div class="seg">
-    <button class="${isFer?'on':''}" data-flist="follower">팔로워 <b>${PEOPLE.length}</b></button>
-    <button class="${isFer?'':'on'}" data-flist="following">팔로잉 <b>${PEOPLE.filter(p=>p.fing).length}</b></button></div>`}
-  ${rows.length?rows.map(p=>`<div class="prow">
-    <span class="pgo" data-prof="${p.who}" data-paid="${p.aid||''}">${smileEl(p.c)}
-      <span class="pnm"><b>${p.who}</b><small>${p.sub}</small></span></span>
-    <button class="fol plfol ${p.fing?'on':''}" data-pfol="${p.who}">${p.fing?'팔로잉':'팔로우'}</button>
-  </div>`).join('') : `<div class="pknote" style="padding:36px 0">찾는 아티스트가 없습니다</div>`}
+    <button class="${isFer?'on':''}" data-flist="follower">팔로워 <b>${ferN}</b></button>
+    <button class="${isFer?'':'on'}" data-flist="following">팔로잉 <b>${fingN}</b></button></div>`}
+  ${body}
   <div style="height:20px"></div>`;
 }
 
@@ -2626,12 +2672,18 @@ function bind(){
     if(el){el.focus(); el.setSelectionRange(pos,pos)}
   };
   const fqx=document.getElementById('fqx'); if(fqx)fqx.onclick=()=>{S.fq='';render()};
-  document.querySelectorAll('[data-pfol]').forEach(b=>b.onclick=e=>{
+  /* 팔로워/팔로잉 목록의 팔로우 버튼 — 실제 Supabase 저장(data-pfol = 상대 profile id) */
+  document.querySelectorAll('[data-pfol]').forEach(b=>b.onclick=async e=>{
     e.stopPropagation();
-    const p=PEOPLE.find(x=>x.who===b.dataset.pfol);
-    if(p)p.fing=p.fing?0:1;
-    const st=STORIES.find(x=>x.who===b.dataset.pfol);
-    if(st)st.following=!!(p&&p.fing);
+    const aid=b.dataset.pfol;
+    if(!aid){ return; }
+    if(!ME){ needLogin(); return; }
+    const on=!MYFOLLOWS.has(aid);
+    b.classList.toggle('on', on); b.textContent = on?'팔로잉':'팔로우';   /* 즉시 반응 */
+    const ok = await (on ? followArtist(aid) : unfollowArtist(aid));
+    if(!ok){ b.classList.toggle('on', !on); b.textContent = !on?'팔로잉':'팔로우'; return; }
+    for(var k in FLCACHE) delete FLCACHE[k];   /* 목록·수치 다시 불러오게 */
+    if(ME){ try{ const c=await followCounts(ME.id); ME.followers=c.followers; }catch(_){} }
     render();
   });
   /* (프로필 팔로우/로그인 버튼은 위 #profolbtn/#profloginbtn 에서 처리) */
