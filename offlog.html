@@ -174,6 +174,17 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
   border-radius:13px;padding:13px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 12px 8px}
 .stagebtn:focus-visible{outline:2px solid #fff}
 /* VOTE 신청 — 로그 스트림과 분리된 하단 독립 CTA. 스토리를 다 보고 난 뒤의 자리 */
+/* 마이 ⋯ 계정 메뉴 항목 */
+.mmi{display:flex;align-items:center;gap:13px;width:100%;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;padding:14px;margin-top:9px;color:var(--txt);font-family:inherit;text-align:left;cursor:pointer}
+.mmi:active{transform:scale(.98)}
+.mmi .mmic{width:34px;height:34px;flex-shrink:0;border-radius:50%;background:var(--card2);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+.mmi .mmt{display:flex;flex-direction:column;gap:1px}
+.mmi .mmt b{font-size:14px;font-weight:800}
+.mmi .mmt small{font-size:11px;color:var(--muted)}
+.mmi.danger .mmt b{color:#ff6b6b}
+.mmi.danger .mmic{color:#ff6b6b;border-color:rgba(255,107,107,.3)}
 /* LOG · VOTE 나란한 두 카드 (같은 크기) */
 .lvrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 6px}
 .lvcard{display:flex;flex-direction:column;align-items:flex-start;gap:3px;background:var(--card2);border:1px solid var(--line);
@@ -1545,6 +1556,7 @@ let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:
   pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'', auth:false, profileAid:null, saveTrack:null, logMenu:null,
   cam:false,     /* true면 앱 안 촬영 화면 */
   homeTab:'logs',/* Home 섹션 — logs|rel|vote|follow. 좌우 스와이프로 전환 */
+  myMenu:false,  /* 마이 헤더 ⋯ 메뉴 (공유·로그아웃) */
   relNew:null,   /* '새 릴리스' 모드일 때 임시로 만든 work id (취소 시 정리) */
   relForm:{title:'', audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', event:''}};
 
@@ -1866,6 +1878,15 @@ let WORKS=[
   bg:'radial-gradient(circle at 65% 20%,#4a3a7e,transparent 55%),radial-gradient(circle at 20% 85%,#1c2a5c,transparent 60%),#0e0c18'},
 ];
 
+/* 마이 헤더 ⋯ 메뉴 — 공유·로그아웃 등 모든 계정 기능은 여기 하나로 */
+function myMenuSheet(){
+  if(!S.myMenu) return '';
+  return `<div class="cs-bd" id="mmbd"><div class="cs">
+    <div class="cs-hd"><b>${(ME&&ME.name)||'내 계정'}</b><button class="cs-x" id="mmx" aria-label="닫기">✕</button></div>
+    <button class="mmi" id="mmshare"><span class="mmic">⤴</span><span class="mmt"><b>공유하기</b><small>내 페이지 링크 보내기</small></span></button>
+    <button class="mmi danger" id="mmlogout"><span class="mmic">⎋</span><span class="mmt"><b>로그아웃</b><small>${(ME&&ME.name)||''} 에서 나가기</small></span></button>
+  </div></div>`;
+}
 /* LOG · VOTE 나란히 — 같은 크기 두 카드. 투표는 로그가 있어야 열린다 */
 function lvRow(w){
   const nLogs=(w.releaseLogs||[]).length;
@@ -1985,8 +2006,9 @@ function mine(){
   return `<div class="hd">
     ${me?`<span style="width:34px"></span>`:`<button class="circ" data-v="home" aria-label="뒤로">‹</button>`}
     <div class="htitle">${prof.who}<small>${me?'내 페이지':prof.sub}</small></div>
-    <div class="r"><button class="circ" aria-label="공유">⤴</button>
-      ${me&&ME?`<button class="circ" id="mysettings" aria-label="설정">⋯</button>`:''}</div></div>
+    <div class="r">${me&&ME
+      ? `<button class="circ" id="mysettings" aria-label="메뉴">⋯</button>`
+      : `<button class="circ" aria-label="공유">⤴</button>`}</div></div>
   <div class="mprof"><span class="mpav">${avatarEl(prof.avatar, prof.c)}</span>
     <h3>${prof.who}</h3><p>${prof.sub}</p>
     <div class="fcount">
@@ -2763,7 +2785,7 @@ function render(){
     if(el)el.scrollIntoView({block:'start'});
   }
   document.getElementById('storyview').innerHTML = S.storyIdx!==null ? storyViewer() : '';
-  document.getElementById('composeview').innerHTML = S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : (S.auth ? authSheet() : (S.saveTrack ? saveSheet() : (S.logMenu ? logMenuSheet() : ''))));
+  document.getElementById('composeview').innerHTML = S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : (S.auth ? authSheet() : (S.saveTrack ? saveSheet() : (S.logMenu ? logMenuSheet() : (S.myMenu ? myMenuSheet() : '')))));
   /* 촬영 화면 + 하단 camera|logs 토글 상태 */
   const _cv=document.getElementById('camview');
   if(_cv) _cv.innerHTML = S.cam ? camView() : '';
@@ -2820,7 +2842,21 @@ function bind(){
     if(asub)asub.onclick=()=>{ const em=(document.getElementById('authemail')||{}).value||'', pw=(document.getElementById('authpw')||{}).value||''; if(!em||!pw){offToast('이메일과 비밀번호를 입력하세요');return;} loginEmail(em.trim(),pw); };
   }
   const plgn=document.getElementById('profloginbtn'); if(plgn)plgn.onclick=()=>{ S.auth=true; render(); };
-  const mset=document.getElementById('mysettings'); if(mset)mset.onclick=()=>{ if(confirm('로그아웃할까요?'))logout(); };
+  /* 마이 헤더 ⋯ → 계정 메뉴(공유·로그아웃) */
+  const mset=document.getElementById('mysettings'); if(mset)mset.onclick=()=>{ S.myMenu=true; render(); };
+  if(S.myMenu){
+    const mmbd=document.getElementById('mmbd'), mmx=document.getElementById('mmx');
+    const mmClose=()=>{ S.myMenu=false; render(); };
+    if(mmbd)mmbd.onclick=e=>{ if(e.target===mmbd) mmClose(); };
+    if(mmx)mmx.onclick=mmClose;
+    const mms=document.getElementById('mmshare');
+    if(mms)mms.onclick=async()=>{ S.myMenu=false; render();
+      const url=location.origin+'/offlog', title='OFFLOG';
+      try{ if(navigator.share){ await navigator.share({title, url}); } else { await navigator.clipboard.writeText(url); offToast('링크가 복사됐어요'); } }
+      catch(e){ try{ await navigator.clipboard.writeText(url); offToast('링크가 복사됐어요'); }catch(_){ offToast('링크: '+url); } } };
+    const mml=document.getElementById('mmlogout');
+    if(mml)mml.onclick=()=>{ S.myMenu=false; logout(); };
+  }
   const pfb=document.getElementById('profolbtn');
   if(pfb)pfb.onclick=()=>{ const aid=pfb.dataset.aid; if(!ME){ needLogin(); return; }
     const on=pfb.classList.toggle('on'); pfb.textContent=on?'팔로잉':'팔로우';
