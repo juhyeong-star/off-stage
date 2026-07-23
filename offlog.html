@@ -377,6 +377,33 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 
 /* ── 피드 카드 — Work 스토리와 같은 문법 ── */
 .fcard{margin-bottom:16px;position:relative}
+/* ── Home 캐러셀 — 세로 스크롤 + 줄마다 좌우 스와이프 ── */
+.hsec{margin-bottom:20px}
+.hhd{display:flex;align-items:baseline;gap:8px;font-family:'Black Han Sans';font-size:15px;letter-spacing:.02em;margin:0 2px 10px}
+.hhd small{font-family:'Noto Sans KR',sans-serif;font-size:10.5px;color:var(--muted);font-weight:400}
+.hscroll{display:flex;gap:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+  scroll-snap-type:x mandatory;padding:2px 2px 4px;margin:0 -2px}
+.hscroll::-webkit-scrollbar{display:none}
+.hitem{flex:0 0 82%;max-width:305px;scroll-snap-align:start}
+.hitem .fcard{margin-bottom:0}
+/* Releases 타일 */
+.reltile{flex:0 0 128px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:flex-start;gap:3px;
+  background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:12px;height:118px;
+  color:var(--txt);font-family:inherit;cursor:pointer;text-align:left;overflow:hidden}
+.reltile .relwv{display:flex;align-items:center;gap:2px;height:26px;margin-bottom:5px}
+.reltile .relwv i{width:3px;border-radius:1.5px;background:var(--mint);opacity:.75;height:calc(var(--h)*.26px);min-height:3px}
+.reltile b{font-size:12.5px;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.reltile small{font-size:10.5px;color:var(--muted)}
+.reltile:active{transform:scale(.97)}
+/* Vote 타일 */
+.votetile{flex:0 0 178px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:flex-start;gap:4px;
+  background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:13px;height:118px;
+  color:var(--txt);font-family:inherit;cursor:pointer;text-align:left;overflow:hidden}
+.votetile em{font-style:normal;font-size:10px;color:var(--lemon);font-weight:800}
+.votetile b{font-size:13.5px;font-weight:800;line-height:1.3}
+.votetile small{font-size:10.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.votetile .voten{margin-top:auto;font-size:10.5px;color:var(--mint);font-weight:700}
+.votetile:active{transform:scale(.97)}
 .fcard .rcard{margin-bottom:0}
 .fcard .pop{left:13px;bottom:44px}
 
@@ -789,7 +816,7 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .nav .nsg.on{color:#04231d}
 .nav .nsg:active{transform:scale(.94)}
 /* ── 앱 안 촬영 화면 ── */
-.camview{position:absolute;left:0;right:0;top:0;bottom:64px;z-index:45;background:#000;overflow:hidden}
+.camview{position:absolute;left:0;right:0;top:0;bottom:64px;z-index:70;background:#000;overflow:hidden}
 .camvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 .camvid.mirror{transform:scaleX(-1)}
 /* .camx 는 위 .slx,.camx,.sldots 공통 규칙(42px)을 그대로 쓴다 */
@@ -806,6 +833,12 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .camerr{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:14px;color:#fff;text-align:center;padding:0 34px;font-size:13.5px;line-height:1.6}
 .camerr .cs-post{max-width:240px}
+/* 마이 → 내 플레이리스트 진입 (음악 탭이 하단에서 빠져 여기로) */
+.myplrow{display:flex;align-items:center;justify-content:space-between;width:100%;margin:0 0 12px;
+  background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:13px 15px;
+  color:var(--txt);font-size:13.5px;font-weight:800;font-family:inherit;cursor:pointer}
+.myplrow span{color:var(--muted);font-weight:700}
+.myplrow:active{transform:scale(.99)}
 /* ── 마이: LOG | WORKS ── */
 .mprof{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0 16px;text-align:center}
 .mprof .smile{width:64px;height:64px}
@@ -1039,12 +1072,9 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
   <div id="camview"></div>
   <div id="mini"></div>
   <div class="nav" id="nav">
-    <button data-v="home" aria-label="홈"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.3V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.3"/></svg></i>홈</button>
-    <button data-v="lists" aria-label="음악"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="18" r="2.6"/><circle cx="17" cy="16" r="2.6"/><path d="M9.1 18V6.2l10.5-2v11.6"/><path d="M9.1 8.4l10.5-2"/></svg></i>음악</button>
-    <div class="navseg logs" id="navseg"><span class="nsgpill" id="nsgpill"></span>
-      <button class="nsg" data-cam="cam">camera</button>
-      <button class="nsg on" data-cam="logs">logs</button></div>
-    <button id="navprofile" aria-label="마이"><i><span class="avimg"></span></i>마이</button>
+    <button data-v="home" aria-label="Home"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.3V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.3"/></svg></i>Home</button>
+    <button class="navctr" id="navplus" aria-label="Log 남기기"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13"/></svg></i></button>
+    <button id="navprofile" aria-label="My"><i><span class="avimg"></span></i>My</button>
   </div>
 </div>
 
@@ -1570,8 +1600,27 @@ function prevStory(){
 
 /* ── 홈 — 탭 없음. 하나의 알고리즘 피드.
    처음 = Trending. 그 다음부터 Following·Trending·For You가 섞여서 랜덤하게 계속 바뀐다. ── */
+/* ── Home — 세로 스크롤 + 각 줄은 좌우 스와이프 (Logs · Releases · Vote · Following) ── */
 function home(){
   const fing=PEOPLE.filter(p=>p.fing).length;
+
+  /* 📷 Logs — 기존 피드 카드를 옆으로 넘긴다. 탭=릴스(전체화면) 그대로 */
+  const logsRow = `<div class="hscroll">${S.feed.map((t,i)=>`<div class="hitem">${feedCard(t,i)}</div>`).join('')}</div>`;
+
+  /* 🎵 Releases — 실제 발매곡 타일. 탭=재생 */
+  const rel = ALLTRACKS.slice(0,14);
+  const relRow = rel.length
+    ? `<div class="hscroll">${rel.map(t=>`<button class="reltile tplay" data-tplay="${t.audio||''}">
+        <span class="relwv">${waveBars(9)}</span>
+        <b>${t.nm}</b><small>${t.by}</small></button>`).join('')}</div>`
+    : `<div class="pknote" style="padding:14px 2px">불러오는 중…</div>`;
+
+  /* 🗳 Vote — 라운드 카드. 탭=투표 화면 */
+  const voteRow = `<div class="hscroll">${ROUNDS.map(r=>`<button class="votetile" data-goround="${r.id}">
+      <em>${r.cat==='music'?'🎵':'🎤'} ${r.type==='curated'?'큐레이션':'오픈'}</em>
+      <b>${r.nm}</b><small>${r.sub||''}</small>
+      <span class="voten">${(r.cands||[]).length}팀 참여</span></button>`).join('')}</div>`;
+
   return `<div class="hd">
     <div class="brand" style="flex:1;text-align:left;font-size:19px;letter-spacing:.02em">OFFLOG</div>
     <button class="circ people" id="gopeople" aria-label="팔로워 · 팔로잉">
@@ -1579,8 +1628,10 @@ function home(){
         <circle cx="9" cy="8" r="3.4"/><path d="M3.2 19.5c0-3.3 2.6-5.6 5.8-5.6s5.8 2.3 5.8 5.6"/>
         <path d="M16.4 5.2a3.4 3.4 0 0 1 0 5.7"/><path d="M18 14.4c2 .7 3.3 2.6 3.3 5.1"/></svg>
       ${fing?`<span class="pdot"></span>`:''}</button></div>
-  ${storyRow()}
-  ${S.feed.map(feedCard).join('')}`;
+  <div class="hsec"><div class="hhd">📷 Logs<small>← 넘겨보기</small></div>${logsRow}</div>
+  <div class="hsec"><div class="hhd">🎵 Releases<small>탭하면 재생</small></div>${relRow}</div>
+  <div class="hsec"><div class="hhd">🗳 Vote<small>무대를 여는 투표</small></div>${voteRow}</div>
+  <div class="hsec"><div class="hhd">⭐ Following</div>${storyRow()}</div>`;
 }
 
 /* 홈에 다시 올 때마다 갱신된다. 버튼 없이, 다녀오면 새 얼굴 */
@@ -1849,7 +1900,7 @@ function mine(){
   const artistWorks = rpTracks.length ? rpTracks.map(atrackCard).join('') : _emptyOrLoad;
 
   /* 내 작품(스튜디오) */
-  const myworks=(me?`<button class="newwork" id="newworkbtn">＋ 새 작품 만들기</button>`:'')+WORKS.map(w=>`<div class="workrow">
+  const myworks=(me?`<button class="newwork" id="newworkbtn">＋ 새 릴리스 만들기</button>`:'')+WORKS.map(w=>`<div class="workrow">
     <div class="wthumb"><div class="bgimg" style="position:absolute;inset:0;background:${w.cover?`center/cover no-repeat url(${w.cover})`:w.bg}"></div>
       <button class="wplay" aria-label="재생">▶</button></div>
     <div class="winfo"><b>${w.nm}</b><small>${w.mine?(w.pending?'발매 예약 '+w.date:(w.date&&w.date!=='작업 중'?'발매 '+w.date:'작업 중')):(w.logs+' Logs · '+w.span)}</small></div>
@@ -1899,9 +1950,10 @@ function mine(){
     ${me
       ? (ME?'':`<button class="fol profol" id="profloginbtn">로그인</button>`)
       : `<button class="fol profol ${following?'on':''}" id="profolbtn" data-aid="${S.profileAid||''}">${following?'팔로잉':'팔로우'}</button>`}</div>
+  ${me?`<button class="myplrow" data-v="lists">🎵 내 플레이리스트<span>›</span></button>`:''}
   <div class="seg">
     <button class="${S.seg==='log'?'on':''}" data-seg="log">LOG</button>
-    <button class="${S.seg==='works'?'on':''}" data-seg="works">WORK</button></div>
+    <button class="${S.seg==='works'?'on':''}" data-seg="works">RELEASES</button></div>
   ${me ? (S.seg==='works'?myworks:logs) : (S.seg==='works'?artistWorks:artistLog)}
   <div style="height:14px"></div>`;
 }
@@ -2620,7 +2672,7 @@ function camShot(){
     g.drawImage(v,0,0,c.width,c.height);
     const url=c.toDataURL('image/jpeg',0.86);
     stopCam(); S.cam=false;
-    S.compose={text:'', media:{kind:'ph', url:url}};   /* 바로 글 쓰고 올리기 */
+    S.compose={text:(S.compose&&S.compose.text)||'', media:{kind:'ph', url:url}};   /* 쓰던 글은 유지하고 사진만 끼움 */
     render();
   }catch(e){ console.warn('[offlog] 촬영 실패', e); offToast('촬영 실패 — 다시 시도해 주세요'); }
 }
@@ -2635,7 +2687,7 @@ function camRecStart(){
       const blob=new Blob(CAMCHUNKS, {type:(CAMCHUNKS[0]&&CAMCHUNKS[0].type)||'video/mp4'});
       CAMREC=null; CAMCHUNKS=[];
       stopCam(); S.cam=false;
-      S.compose={text:'', media:{kind:'vid', url:URL.createObjectURL(blob)}};
+      S.compose={text:(S.compose&&S.compose.text)||'', media:{kind:'vid', url:URL.createObjectURL(blob)}};
       render();
     };
     CAMREC.start();
@@ -2728,11 +2780,9 @@ function bind(){
   if(pfb)pfb.onclick=()=>{ const aid=pfb.dataset.aid; if(!ME){ needLogin(); return; }
     const on=pfb.classList.toggle('on'); pfb.textContent=on?'팔로잉':'팔로우';
     (on?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(!ok){ const bk=pfb.classList.toggle('on'); pfb.textContent=bk?'팔로잉':'팔로우'; } }); };
-  /* 하단 camera | logs 토글 */
-  document.querySelectorAll('[data-cam]').forEach(b=>b.onclick=()=>{
-    if(b.dataset.cam==='cam'){ if(S.cam)return; S.cam=true; render(); startCam(); }
-    else { if(!S.cam)return; closeCam(); }
-  });
+  /* 하단 가운데 ➕ = Log 남기기 (글·사진·영상·데모 한 시트에서) */
+  const nplus=document.getElementById('navplus');
+  if(nplus)nplus.onclick=()=>{ if(!S.compose)S.compose={text:'',media:null}; S.cam=false; render(); };
   /* 촬영 화면 컨트롤 */
   if(S.cam){
     const cx=document.getElementById('camx');   if(cx)cx.onclick=closeCam;
@@ -2865,6 +2915,8 @@ function bind(){
   }
   /* ♪ 세그먼트: LIST | 투표 */
   document.querySelectorAll('[data-lseg]').forEach(b=>b.onclick=()=>{S.lseg=b.dataset.lseg;render()});
+  /* Home Vote 타일 → 그 라운드 투표 화면 */
+  document.querySelectorAll('[data-goround]').forEach(b=>b.onclick=()=>{ S.round=b.dataset.goround; S.view='lists'; S.lseg='vote'; render(); });
   document.querySelectorAll('[data-vcat]').forEach(b=>b.onclick=()=>{S.vcat=b.dataset.vcat;render()});
   /* 후보 카드 탭 → 그 아티스트의 log로 들어간다 */
   document.querySelectorAll('[data-goart]').forEach(b=>b.onclick=e=>{
@@ -3180,7 +3232,7 @@ function bind(){
     if(bd)bd.onclick=e=>{ if(e.target===bd) close(); };
     if(x)x.onclick=close;
     if(ta)ta.oninput=()=>{ S.compose.text=ta.value; if(post) post.disabled = !((ta.value||'').trim()||S.compose.media); };
-    if(cam)cam.onclick=()=>{ const el=document.getElementById('ccam'); if(el)el.click(); };
+    if(cam)cam.onclick=()=>{ S.cam=true; render(); startCam(); };   /* 앱 안 촬영 화면 (글은 유지, 권한 없으면 폰 카메라 폴백) */
     if(cau)cau.onclick=()=>{ const el=document.getElementById('caudio'); if(el)el.click(); };
     if(rm)rm.onclick=()=>{ const md=S.compose.media; if(md&&md.url&&/^blob:/.test(md.url)){try{URL.revokeObjectURL(md.url)}catch(_){}} S.compose.media=null; render(); };
     if(post)post.onclick=submitCompose;
