@@ -174,6 +174,19 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
   border-radius:13px;padding:13px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;margin:0 12px 8px}
 .stagebtn:focus-visible{outline:2px solid #fff}
 /* VOTE 신청 — 로그 스트림과 분리된 하단 독립 CTA. 스토리를 다 보고 난 뒤의 자리 */
+/* LOG · VOTE 나란한 두 카드 (같은 크기) */
+.lvrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 6px}
+.lvcard{display:flex;flex-direction:column;align-items:flex-start;gap:3px;background:var(--card2);border:1px solid var(--line);
+  border-radius:16px;padding:14px;min-height:104px;color:var(--txt);font-family:inherit;text-align:left;cursor:pointer}
+.lvcard .lvic{font-size:20px;line-height:1}
+.lvcard b{font-family:'Black Han Sans';font-size:15px;letter-spacing:.03em;margin-top:2px}
+.lvcard small{font-size:11px;color:var(--muted)}
+.lvcard .lvcta{margin-top:auto;font-size:11.5px;font-weight:800;color:var(--mint)}
+.lvcard:active{transform:scale(.98)}
+.lvcard.vote .lvcta{color:var(--lemon)}
+.lvcard.vote.off{opacity:.55;cursor:not-allowed}
+.lvcard.vote.off .lvcta{color:var(--muted)}
+.lvcard.vote.ok{border-color:var(--lemon);background:rgba(255,243,166,.06)}
 .votecta{margin:18px 0 8px;text-align:center}
 .votecta .stagebtn.full{width:100%;margin:0}
 .votecta small{display:block;margin-top:9px;font-size:10.5px;color:var(--muted)}
@@ -1532,7 +1545,8 @@ let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:
   pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'', auth:false, profileAid:null, saveTrack:null, logMenu:null,
   cam:false,     /* true면 앱 안 촬영 화면 */
   homeTab:'logs',/* Home 섹션 — logs|rel|vote|follow. 좌우 스와이프로 전환 */
-  relForm:{audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', event:''}};
+  relNew:null,   /* '새 릴리스' 모드일 때 임시로 만든 work id (취소 시 정리) */
+  relForm:{title:'', audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', event:''}};
 
 const shape=(s,f,z)=>`<svg viewBox="0 0 24 24" width="${z}" height="${z}" style="overflow:visible"><use href="#${s}" fill="${f}"/></svg>`;
 const waveBars=n=>[...Array(n)].map((_,i)=>`<i style="--h:${22+Math.round(Math.random()*72)};--d:${i}"></i>`).join('');
@@ -1852,6 +1866,23 @@ let WORKS=[
   bg:'radial-gradient(circle at 65% 20%,#4a3a7e,transparent 55%),radial-gradient(circle at 20% 85%,#1c2a5c,transparent 60%),#0e0c18'},
 ];
 
+/* LOG · VOTE 나란히 — 같은 크기 두 카드. 투표는 로그가 있어야 열린다 */
+function lvRow(w){
+  const nLogs=(w.releaseLogs||[]).length;
+  const r=ROUNDS.find(x=>x.applied===w.nm);
+  const mine=r&&r.cands.find(x=>x.me); const v=(mine&&mine.v)||0;
+  const confirmed=!!(r&&r.need&&v>=r.need);
+  const voteSub = !r ? '아직 미참여' : confirmed ? '🎉 공연 확정' : (r.need? '득표 '+v+'/'+r.need : '참여 중');
+  const canVote = nLogs>0;
+  return `<div class="lvrow">
+    <button class="lvcard" id="lvlog"><span class="lvic">📷</span><b>LOG</b>
+      <small>${nLogs?nLogs+'개 담김':'아직 없음'}</small>
+      <span class="lvcta">＋ 로그 고르기</span></button>
+    <button class="lvcard vote${canVote?'':' off'}${confirmed?' ok':''}" id="lvvote"${canVote?'':' disabled'}><span class="lvic">🗳</span><b>VOTE</b>
+      <small>${canVote?voteSub:'로그가 있어야 참여'}</small>
+      <span class="lvcta">${canVote?(r?'투표 현황 ›':'투표 참여하기'):'🔒 잠김'}</span></button>
+  </div>`;
+}
 /* 참여 중인 이벤트 — 한 줄이면 된다. 자세한 건 투표 탭이 할 일 */
 function eventStatus(w){
   const r = ROUNDS.find(x=>x.applied===w.nm);
@@ -2350,17 +2381,12 @@ function work(){
     </div></div>`:''}
     ${w.inst?`<div class="ai-sec"><div class="ai-t">가사</div><div class="ai-lyr" style="color:var(--muted)">연주곡 (가사 없음)</div></div>`:(w.lyr?`<div class="ai-sec"><div class="ai-t">가사</div><div class="ai-lyr">${w.lyr.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div></div>`:'')}
   </div>`:''}
-  ${eventStatus(w)}
+  ${w.mine?lvRow(w):eventStatus(w)}
   <div class="sechd">
-    <div class="sec" style="margin:0">${w.mine?'발매 로그':'The Story'}</div>
-    ${w.mine?`<button class="pullbtn" id="relpickbtn">＋ 발매 로그 고르기</button>`:''}</div>
+    <div class="sec" style="margin:0">${w.mine?'음원 로그':'The Story'}</div></div>
   ${w.mine?'':`<div class="mchips">${chips.map(([k,l])=>`<button class="mchip ${S.wf===k?'on':''}" data-wf="${k}">${l}</button>`).join('')}</div>`}
   <div class="daytl">${w.mine?mineTimeline():groups}</div>
   ${(!w.mine&&w.id==='ml')?`<div class="expire">이 스토리는 지금도 자라는 중 · <b>91 Logs</b></div>`:''}
-  ${w.mine?`<div class="votecta">
-    <button class="stagebtn full" id="stagebtn">VOTE 신청하기 <b>▸</b></button>
-    <small>이 곡을 무대 투표 라운드에 올립니다 · 라운드당 한 곡만</small>
-  </div>`:''}
   ${S.relpick?releaseLogPicker(w):''}
   ${S.pull?logPuller(w):''}
   ${S.stage?stageSheet(w):''}
@@ -2377,8 +2403,11 @@ function releaseSheet(w){
   const miss=relMissing();
   return `<div class="sheet-bd" id="relbd"></div>
   <div class="pksheet tall">
-    <div class="pkhd"><b>발매 설정</b><span class="pksub">유통 제출</span>
+    <div class="pkhd"><b>음원 발매</b><span class="pksub">유통 제출</span>
       <button class="pkx" id="relclose" aria-label="닫기">✕</button></div>
+
+    <div class="rsec">제목</div>
+    <input class="cs-name" id="reltitle" value="${(R.title||'').replace(/"/g,'&quot;')}" placeholder="곡 제목">
 
     <div class="rsec">음원</div>
     <button class="ubox ${R.audio?'on':''}" id="relaudio">
@@ -2431,6 +2460,7 @@ function minRelDate(){
 /* 유통사가 반려하는 것들 */
 function relMissing(){
   const R=S.relForm, m=[];
+  if(!R.title||!R.title.trim()) m.push('제목');
   if(!R.audio) m.push('음원');
   if(!R.art)   m.push('아트워크');
   if(!R.inst && !R.lyr.trim()) m.push('가사');
@@ -3018,6 +3048,11 @@ function bind(){
     if(w.mine)studioSave();
     S.pull=false; S.sel=[]; render();
   };
+  /* LOG · VOTE 나란한 두 카드 */
+  const lvl=document.getElementById('lvlog');
+  if(lvl)lvl.onclick=()=>{ const w=WORKS.find(x=>x.id===S.work); S.sel=((w&&w.releaseLogs)||[]).slice(); S.relpick=true; render(); };
+  const lvv=document.getElementById('lvvote');
+  if(lvv)lvv.onclick=()=>{ const w=WORKS.find(x=>x.id===S.work); if(!((w&&w.releaseLogs)||[]).length){ offToast('로그를 먼저 담아야 투표에 참여할 수 있어요'); return; } S.stage=true; render(); };
   /* 발매용 로그 큐레이션 (날짜별) */
   const rpb=document.getElementById('relpickbtn');
   if(rpb)rpb.onclick=()=>{ const w=WORKS.find(x=>x.id===S.work); S.sel=((w&&w.releaseLogs)||[]).slice(); S.relpick=true; render(); };
@@ -3029,10 +3064,17 @@ function bind(){
     if(w){ w.releaseLogs=S.sel.slice(); w.logs=w.releaseLogs.length; studioSave(); }
     S.relpick=false; S.sel=[]; render();
   };
-  /* 새 작품 만들기 */
+  /* 새 릴리스 = 한 번에 발매창 (작품을 먼저 만드는 단계 없이 제목부터 바로) */
   const nwb=document.getElementById('newworkbtn');
-  if(nwb)nwb.onclick=()=>{ S.newwork={nm:''}; render(); setTimeout(()=>{const el=document.getElementById('nwname'); if(el)el.focus();},60); };
-  if(S.newwork){
+  if(nwb)nwb.onclick=()=>{
+    const id='w_'+Date.now().toString(36);
+    WORKS.unshift({id:id, nm:'', by:(ME&&ME.name)||'나', mine:true, date:'작업 중', logs:0, releaseLogs:[], span:'', dur:'', bg:WGRAD});
+    S.relNew=id; S.work=id; S.wf='all'; S.seg='works'; S.view='work';
+    S.relForm={title:'', audio:null, art:null, inst:false, lyr:'', comp:(ME&&ME.name)||'PEEK', lyri:'', arr:'', prod:'', date:minRelDate(), event:''};
+    S.rel=true; render();
+    setTimeout(()=>{const el=document.getElementById('reltitle'); if(el)el.focus();},80);
+  };
+  if(S.newwork){   /* (레거시 새 작품 시트 — 이제 newworkbtn은 발매창을 열어 여기로 안 옴) */
     const nbd=document.getElementById('nwbd'), nx=document.getElementById('nwx'), ninp=document.getElementById('nwname'), ndone=document.getElementById('nwdone');
     const nclose=()=>{ S.newwork=null; render(); };
     if(nbd)nbd.onclick=e=>{ if(e.target===nbd)nclose(); };
@@ -3057,10 +3099,21 @@ function bind(){
   const rb=document.getElementById('relbtn');
   if(rb)rb.onclick=()=>{
     if(!S.relForm.date)S.relForm.date=minRelDate();
+    const w=WORKS.find(x=>x.id===S.work); if(w&&w.nm&&!S.relForm.title)S.relForm.title=w.nm;  /* 기존 작품이면 제목 채움 */
     S.rel=true; render();
   };
-  const rx=document.getElementById('relclose'); if(rx)rx.onclick=()=>{S.rel=false;render()};
-  const rbd=document.getElementById('relbd');   if(rbd)rbd.onclick=()=>{S.rel=false;render()};
+  /* 발매창 닫기 — '새 릴리스'에서 발매 안 하고 닫으면 임시 작품 정리 */
+  const _relClose=()=>{
+    if(S.relNew){ const i=WORKS.findIndex(x=>x.id===S.relNew), w=WORKS[i];
+      if(w && (!w.date || w.date==='작업 중')){ WORKS.splice(i,1); S.view='mine'; S.work=(WORKS[0]||{}).id; }
+      S.relNew=null; }
+    S.rel=false; render();
+  };
+  const rtt=document.getElementById('reltitle');
+  if(rtt)rtt.oninput=()=>{ S.relForm.title=rtt.value; const btn=document.getElementById('reldone'),mn=relMissing();
+    if(btn)btn.disabled=mn.length>0; const el=document.querySelector('.missn'); if(el)el.textContent=mn.length?mn.join(' · ')+' 필요':''; };
+  const rx=document.getElementById('relclose'); if(rx)rx.onclick=_relClose;
+  const rbd=document.getElementById('relbd');   if(rbd)rbd.onclick=_relClose;
 
   /* 음원 업로드 */
   const ra=document.getElementById('relaudio');
@@ -3110,6 +3163,8 @@ function bind(){
     if(relMissing().length)return;
     const w=WORKS.find(x=>x.id===S.work);
     const R=S.relForm;
+    if(R.title&&R.title.trim()) w.nm=R.title.trim();   /* 제목 = 작품 이름 */
+    S.relNew=null;                           /* 발매 완료 → 임시 작품 유지 */
     w.date=R.date.replace(/-/g,'.');
     if(R.art) w.cover=R.art;                 /* 앨범 커버(dataURL) 저장 */
     w.inst=!!R.inst;
