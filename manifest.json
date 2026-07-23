@@ -1,0 +1,16 @@
+{
+  "name": "OFFLOG — Off-Stage",
+  "short_name": "OFFLOG",
+  "description": "아티스트의 데모, 기록, 감성이 모이는 곳",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "lang": "ko",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
