@@ -402,6 +402,10 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 /* ── 피드 카드 — Work 스토리와 같은 문법 ── */
 .fcard{margin-bottom:16px;position:relative}
 /* ── Home — 한 화면에 한 섹션, 좌우 스와이프로 전환 (탭 없음, 얇은 표시선만) ── */
+/* 뷰 전환 페이드 — 빠르고 부드럽게(150ms). transform/opacity만 써서 가벼움 */
+#body.vin{animation:vin .15s ease-out}
+@keyframes vin{from{opacity:.35;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){ #body.vin{animation:vinf .12s ease-out} @keyframes vinf{from{opacity:.4}to{opacity:1}} }
 /* 스와이프 위치 표시 — iOS식 작은 점만 (화살표·라벨 없음) */
 .hsdots{display:flex;justify-content:center;gap:5px;margin:12px 0}
 .hsdots i{width:5px;height:5px;border-radius:50%;background:var(--line);transition:all .22s}
@@ -420,10 +424,14 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .relcov em{font-family:'Black Han Sans';font-size:40px;color:rgba(255,255,255,.16);font-style:normal}
 .relplay{position:absolute;right:9px;bottom:9px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.55);
   backdrop-filter:blur(6px);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;font-style:normal}
-.reltile b{font-size:13px;font-weight:700;line-height:1.25;padding:0 2px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-.reltile small{font-size:11px;color:var(--muted);padding:0 2px}
-.reltile:active .relcov{transform:scale(.97)}
-.relcov{transition:transform .12s ease}
+.relcov{border:0;padding:0;cursor:pointer;width:100%;transition:transform .12s ease}
+.relcov:active{transform:scale(.97)}
+.reltitle{background:none;border:0;padding:2px 2px 0;text-align:left;color:var(--txt);font-family:inherit;
+  font-size:13px;font-weight:700;line-height:1.25;cursor:pointer;display:block;width:100%;
+  display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.relartist{background:none;border:0;padding:0 2px;text-align:left;color:var(--muted);font-family:inherit;
+  font-size:11px;cursor:pointer;display:block;width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.reltitle:active,.relartist:active{opacity:.6}
 /* Vote 타일 */
 .votetile{flex:0 0 178px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:flex-start;gap:4px;
   background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:13px;height:118px;
@@ -1067,11 +1075,12 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
   /* 뷰포트에 완전 고정 — 잡고 드래그해도 앱(목업) 전체가 안 밀리고 내부 .screen만 스크롤 */
   html{overflow:hidden;overscroll-behavior:none;height:100%}
   /* 100dvh = 사파리 주소창이 보일 때의 '실제 보이는 높이'. 100%면 주소창 뒤로 하단이 잘린다 */
-  body{display:block;padding:0;position:fixed;inset:0;height:100dvh;overflow:hidden;overscroll-behavior:none;background:var(--bg)}
+  /* touch-action:none = 몸통(body)은 손가락 팬에 절대 안 밀린다. 스크롤은 .screen만 */
+  body{display:block;padding:0;position:fixed;inset:0;height:100dvh;overflow:hidden;overscroll-behavior:none;touch-action:none;background:var(--bg)}
   /* 목업 프레임(핑크 베젤·라운드·그림자) 벗기고 화면을 꽉 채움 */
-  .phone{max-width:none;width:100%;border:0;border-radius:0;box-shadow:none;height:100dvh}
-  /* 뷰포트에 묶어 기기별 높이 대응 — 내부만 스크롤(스크롤 체이닝/바운스 차단) */
-  .screen{height:100%;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:calc(148px + env(safe-area-inset-bottom))}
+  .phone{max-width:none;width:100%;border:0;border-radius:0;box-shadow:none;height:100dvh;overflow:hidden}
+  /* 세로 스크롤만 허용(pan-y) → 가로로 끌어도 화면이 안 따라 움직임. 스크롤 체이닝/바운스 차단 */
+  .screen{height:100%;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;overflow-x:hidden;touch-action:pan-y;padding-bottom:calc(148px + env(safe-area-inset-bottom))}
   /* iOS 홈바(34px)와 겹치지 않게 하단 네비/미니 안전영역 확보 */
   .nav{padding-bottom:max(18px, env(safe-area-inset-bottom))}
   .mini{bottom:calc(74px + env(safe-area-inset-bottom))}
@@ -1635,6 +1644,7 @@ function prevStory(){
 /* ── Home — 한 화면에 한 섹션. 좌우 스와이프(또는 상단 칩)로 Logs·Releases·Vote·Following 전환 ── */
 const HOMETABS=[['logs','📷 Logs'],['rel','🎵 Releases'],['vote','🗳 Vote'],['follow','⭐ Following']];
 let HOMEIN=0;   /* 방금 넘어온 방향(+1 다음 / -1 이전) — 새 섹션 입장 애니메이션용 */
+let _lastView='';   /* 직전 뷰 — 뷰 바뀔 때만 전환 페이드 */
 /* 커버 없을 때 채우는 앨범 느낌 그라데이션 (아티스트 색 기반) */
 function relGrad(col){ const h=c(col)||'#3a3a44'; return 'radial-gradient(circle at 30% 25%,'+h+'55,transparent 62%),radial-gradient(circle at 78% 82%,'+h+'33,transparent 58%),#15151b'; }
 function home(){
@@ -1648,9 +1658,10 @@ function home(){
   } else if(cur==='rel'){
     const rel=ALLTRACKS.slice(0,20);
     bodyC=rel.length
-      ? `<div class="relgrid">${rel.map(t=>`<button class="reltile" data-relgo="${(t.by||'').replace(/"/g,'&quot;')}" data-relaid="${t.aid||''}" data-relaudio="${t.audio||''}">
-          <span class="relcov" style="background:${t.cover?`center/cover no-repeat url(${t.cover})`:relGrad(t.c)}">${t.cover?'':`<em>${(t.nm||'♪').slice(0,1)}</em>`}<i class="relplay" data-relplay="${t.audio||''}">▶</i></span>
-          <b>${t.nm}</b><small>${t.by}</small></button>`).join('')}</div>`
+      ? `<div class="relgrid">${rel.map(t=>{const by=(t.by||'').replace(/"/g,'&quot;');const nm=(t.nm||'').replace(/"/g,'&quot;');return `<div class="reltile">
+          <button class="relcov" data-relplay="${t.audio||''}" data-relnm="${nm}" aria-label="재생" style="background:${t.cover?`center/cover no-repeat url(${t.cover})`:relGrad(t.c)}">${t.cover?'':`<em>${(t.nm||'♪').slice(0,1)}</em>`}<i class="relplay">▶</i></button>
+          <button class="reltitle" data-rellog="${by}" data-relaid="${t.aid||''}">${t.nm}</button>
+          <button class="relartist" data-relgo="${by}" data-relaid="${t.aid||''}">${t.by} ›</button></div>`;}).join('')}</div>`
       : `<div class="pknote" style="padding:30px 0">불러오는 중…</div>`;
   } else if(cur==='vote'){
     bodyC=ROUNDS.map(r=>`<button class="votetile vfull" data-goround="${r.id}">
@@ -1884,7 +1895,6 @@ function myMenuSheet(){
   return `<div class="cs-bd" id="mmbd"><div class="cs">
     <div class="cs-hd"><b>${(ME&&ME.name)||'내 계정'}</b><button class="cs-x" id="mmx" aria-label="닫기">✕</button></div>
     <button class="mmi" id="mmshare"><span class="mmic">⤴</span><span class="mmt"><b>공유하기</b><small>내 페이지 링크 보내기</small></span></button>
-    <button class="mmi danger" id="mmlogout"><span class="mmic">⎋</span><span class="mmt"><b>로그아웃</b><small>${(ME&&ME.name)||''} 에서 나가기</small></span></button>
   </div></div>`;
 }
 /* LOG · VOTE 나란히 — 같은 크기 두 카드. 투표는 로그가 있어야 열린다 */
@@ -2769,8 +2779,11 @@ async function camFlip(){ CAMFACING=(CAMFACING==='user')?'environment':'user'; r
 
 /* ── 렌더 ── */
 function render(){
-  document.getElementById('body').innerHTML =
+  const _bodyEl=document.getElementById('body');
+  _bodyEl.innerHTML =
     S.view==='home'?home():S.view==='room'?roomFull():S.view==='work'?work():S.view==='flist'?flist():S.view==='lists'?lists():S.view==='list'?listDetail():mine();
+  /* 화면(뷰)이 바뀔 때만 짧은 페이드-인 → 전환이 부드럽고 빠르게 느껴짐 */
+  if(S.view!==_lastView){ _lastView=S.view; _bodyEl.classList.remove('vin'); void _bodyEl.offsetWidth; _bodyEl.classList.add('vin'); }
   document.getElementById('screen').scrollTop=0;
   [...document.querySelectorAll('#nav button[data-v]')].forEach(b=>
     b.classList.toggle('on', b.dataset.v===S.view || (S.view==='list'&&b.dataset.v==='lists') || (S.view==='room'&&b.dataset.v==='home')));
@@ -2854,8 +2867,6 @@ function bind(){
       const url=location.origin+'/offlog', title='OFFLOG';
       try{ if(navigator.share){ await navigator.share({title, url}); } else { await navigator.clipboard.writeText(url); offToast('링크가 복사됐어요'); } }
       catch(e){ try{ await navigator.clipboard.writeText(url); offToast('링크가 복사됐어요'); }catch(_){ offToast('링크: '+url); } } };
-    const mml=document.getElementById('mmlogout');
-    if(mml)mml.onclick=()=>{ S.myMenu=false; logout(); };
   }
   const pfb=document.getElementById('profolbtn');
   if(pfb)pfb.onclick=()=>{ const aid=pfb.dataset.aid; if(!ME){ needLogin(); return; }
@@ -2998,11 +3009,12 @@ function bind(){
   document.querySelectorAll('[data-lseg]').forEach(b=>b.onclick=()=>{S.lseg=b.dataset.lseg;render()});
   /* Home Vote 타일 → 그 라운드 투표 화면 */
   document.querySelectorAll('[data-goround]').forEach(b=>b.onclick=()=>{ S.round=b.dataset.goround; S.view='lists'; S.lseg='vote'; render(); });
-  /* Releases 타일: 커버의 ▶ = 바로 재생 / 타일 = 그 음원의 로그(아티스트 페이지)로 */
+  /* Releases 타일 3분할 — 커버=재생 · 제목=음원 로그 · 이름=아티스트 페이지 */
   document.querySelectorAll('[data-relplay]').forEach(b=>b.onclick=e=>{ e.stopPropagation();
     const url=b.dataset.relplay; if(!url){ offToast('음원이 아직 없어요'); return; }
-    const nm=(b.closest('.reltile').querySelector('b')||{}).textContent||''; playSrc(url,nm); renderMini(); });
-  document.querySelectorAll('[data-relgo]').forEach(b=>b.onclick=()=>{ goProfile(b.dataset.relgo, b.dataset.relaid||null); });
+    playSrc(url, b.dataset.relnm||''); renderMini(); });
+  document.querySelectorAll('[data-rellog]').forEach(b=>b.onclick=()=>{ goProfile(b.dataset.rellog, b.dataset.relaid||null); });   /* 제목 → 그 음원의 로그(아티스트 페이지 LOG) */
+  document.querySelectorAll('[data-relgo]').forEach(b=>b.onclick=()=>{ goProfile(b.dataset.relgo, b.dataset.relaid||null); });      /* 이름 → 아티스트 페이지 */
   /* Home 섹션 전환 — 손가락 1:1 추적 + 끝 러버밴딩 + 관성 커밋 (apple-design §1·2·7·9) */
   const _hgo=(d)=>{ const order=HOMETABS.map(t=>t[0]); let i=order.indexOf(S.homeTab||'logs')+d;
     if(i<0)i=order.length-1; if(i>=order.length)i=0; HOMEIN=d; S.homeTab=order[i]; render(); };
@@ -3474,6 +3486,7 @@ setInterval(()=>{
 
 /* ── 실제 데이터 주입 — 디자인/구성은 v34 그대로, 목업만 진짜 음악/아티스트로 교체 ── */
 (async function loadReal(){
+  try{ studioMerge(); renewHome(); render(); }catch(e){}   /* 즉시 첫 화면(시드+로컬) — 네트워크 안 기다림. 실제 데이터는 아래에서 채워 다시 그림 */
   try{
     var SB='https://vayzhmaggwpkbsrrsdqt.supabase.co';
     var KEY='sb_publishable_1PxNV0BGL7Wy_strTMqnbA_pCBCsOPG';
