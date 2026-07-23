@@ -2214,6 +2214,88 @@
     }
   };
 
+  // ── demon'thly (이달의 데모 투표) — Supabase-backed. sql/demonthly.sql 실행 후 활성화.
+  //    테이블 없으면 fetch가 빈 결과/에러를 삼켜 기능이 조용히 숨겨짐(graceful).
+  window.Demonthly = {
+    async listEvents(activeOnly) {
+      if (!window.supabase) return [];
+      let q = window.supabase.from('demonthly_events').select('*').order('created_at', { ascending: false }).limit(50);
+      if (activeOnly) q = q.eq('status', 'active');
+      const { data, error } = await q;
+      if (error) { console.warn('[Demonthly] listEvents', error.message); return []; }
+      return data || [];
+    },
+    async activeEvent() {
+      if (!window.supabase) return null;
+      const { data, error } = await window.supabase.from('demonthly_events')
+        .select('*').eq('status', 'active').order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (error) { console.warn('[Demonthly] activeEvent', error.message); return null; }
+      return data || null;
+    },
+    async createEvent(opts) {
+      if (!window.supabase) throw new Error('연결이 필요해요');
+      const { data: { user } } = await window.supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요해요');
+      if (typeof window.ensureProfileRow === 'function') { try { await window.ensureProfileRow(); } catch (_) {} }
+      const payload = { name: (opts.name || '').slice(0, 120), month: opts.month || null, status: 'active', ends_at: opts.endsAt || null, created_by: user.id };
+      const { data, error } = await window.supabase.from('demonthly_events').insert(payload).select().single();
+      if (error) throw error;
+      return data;
+    },
+    async setStatus(eventId, status) {
+      if (!window.supabase) throw new Error('연결이 필요해요');
+      const { data, error } = await window.supabase.from('demonthly_events').update({ status: status }).eq('id', eventId).select().single();
+      if (error) throw error;
+      return data;
+    },
+    async deleteEvent(eventId) {
+      if (!window.supabase) throw new Error('연결이 필요해요');
+      const { data: { user } } = await window.supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요해요');
+      const { data, error } = await window.supabase.from('demonthly_events').delete().eq('id', eventId).eq('created_by', user.id).select();
+      if (error) throw error;
+      if (!data || !data.length) throw new Error('삭제 권한이 없거나 이벤트를 찾을 수 없어요 (dm_events_delete 정책 확인)');
+      return true;
+    },
+    // 데모를 이벤트에 참여 등록(업로드 시). 이미 있으면 무시(upsert).
+    async addEntry(eventId, track) {
+      if (!window.supabase || !eventId || !track) return null;
+      const { data: { user } } = await window.supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요해요');
+      const payload = { event_id: eventId, track_id: String(track.id), track_title: track.title || null, artist_name: track.artist || (window.__currentUser && window.__currentUser.name) || null, created_by: user.id };
+      const { data, error } = await window.supabase.from('demonthly_entries').upsert(payload, { onConflict: 'event_id,track_id' }).select().single();
+      if (error) throw error;
+      return data;
+    },
+    // 이벤트의 참여 데모 + 득표수(집계) + 내 표.
+    async listEntries(eventId) {
+      if (!window.supabase || !eventId) return { entries: [], myVote: null };
+      let myId = null;
+      try { const { data: { user } } = await window.supabase.auth.getUser(); myId = user ? user.id : null; } catch (_) {}
+      const [eRes, vRes] = await Promise.all([
+        window.supabase.from('demonthly_entries').select('track_id,track_title,artist_name').eq('event_id', eventId),
+        window.supabase.from('demonthly_votes').select('track_id,voter_id').eq('event_id', eventId)
+      ]);
+      if (eRes.error) { console.warn('[Demonthly] listEntries', eRes.error.message); return { entries: [], myVote: null }; }
+      const votes = vRes.data || [];
+      const tally = {}; votes.forEach(function (v) { tally[v.track_id] = (tally[v.track_id] || 0) + 1; });
+      let myVote = null; if (myId) { var mv = votes.find(function (v) { return v.voter_id === myId; }); myVote = mv ? mv.track_id : null; }
+      const entries = (eRes.data || []).map(function (e) { return { trackId: e.track_id, title: e.track_title, artist: e.artist_name, votes: tally[e.track_id] || 0 }; })
+        .sort(function (a, b) { return b.votes - a.votes; });
+      return { entries: entries, myVote: myVote };
+    },
+    // 한 표(이벤트당 한 표 — 옮기면 upsert).
+    async vote(eventId, trackId) {
+      if (!window.supabase) throw new Error('연결이 필요해요');
+      const { data: { user } } = await window.supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요해요');
+      const payload = { event_id: eventId, track_id: String(trackId), voter_id: user.id };
+      const { data, error } = await window.supabase.from('demonthly_votes').upsert(payload, { onConflict: 'event_id,voter_id' }).select().single();
+      if (error) throw error;
+      return data;
+    }
+  };
+
   // ── DM — 1:1 메시지 (Supabase-backed) ────────────────────────────────
   window.DM = {
     // Resolve an artist name to their profile id (needed when opening DM by

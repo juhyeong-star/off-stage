@@ -18974,6 +18974,17 @@ window.renderAdmin = async function () {
       <h1 style="margin-bottom: 12px;"><i class="ri-dashboard-2-fill text-brand"></i> 관리자 대시보드</h1>
       <p style="color: var(--text-secondary); margin-bottom: 32px;">사용자·트랙·포스트잇을 관리할 수 있어요. 삭제·역할변경은 되돌릴 수 없으니 주의하세요.</p>
 
+      <div class="admin-section" style="margin-bottom: 36px;">
+        <h2 class="admin-section-title"><i class="ri-trophy-fill" style="color:#FFD54F;"></i> demon'thly 이벤트 <span style="font-size:12px;color:var(--text-secondary);font-weight:400;">이달의 데모 투표</span></h2>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
+          <input type="text" id="dm-ev-name" placeholder="이벤트 이름 (예: 2026년 6월 이달의 데모)" style="flex:1; min-width:220px; background:#222; color:#fff; border:1px solid var(--divider); border-radius:6px; padding:9px 12px; font-size:13px;">
+          <input type="month" id="dm-ev-month" style="background:#222; color:#fff; border:1px solid var(--divider); border-radius:6px; padding:8px; font-size:13px;">
+          <input type="date" id="dm-ev-ends" title="마감일(선택)" style="background:#222; color:#fff; border:1px solid var(--divider); border-radius:6px; padding:8px; font-size:13px;">
+          <button class="btn-primary" style="padding:9px 18px;" onclick="_dmCreateEvent()">+ 이벤트 생성</button>
+        </div>
+        <div class="admin-list" id="dm-ev-list"><div class="admin-empty">불러오는 중…</div></div>
+      </div>
+
       ${statsSectionHtml}
 
       <div class="admin-section" style="margin-top: 40px;">
@@ -19029,6 +19040,49 @@ window.renderAdmin = async function () {
       </div>
     </div>
   `;
+  try { setTimeout(function () { if (window._dmAdminRender) window._dmAdminRender(); }, 0); } catch (_) {}
+};
+
+// ── demon'thly 이벤트 관리 (관리자 탭) — window.Demonthly(Supabase) 사용. sql/demonthly.sql 필요. ──
+window._dmAdminRender = async function () {
+  var el = document.getElementById('dm-ev-list'); if (!el) return;
+  if (!window.Demonthly) { el.innerHTML = '<div class="admin-empty">Demonthly 접근층 없음</div>'; return; }
+  var events = [];
+  try { events = await window.Demonthly.listEvents(); }
+  catch (e) { el.innerHTML = '<div class="admin-empty">이벤트 불러오기 실패 — sql/demonthly.sql 실행했나요? (' + ((e && e.message) || e) + ')</div>'; return; }
+  if (!events.length) { el.innerHTML = '<div class="admin-empty">아직 이벤트가 없어요. 위에서 만들어보세요.</div>'; return; }
+  var esc = function (s) { return (s == null ? '' : String(s)).replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+  el.innerHTML = events.map(function (ev) {
+    var on = ev.status === 'active';
+    var badge = on ? '<span style="background:#2ec77a;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">진행중</span>'
+                   : '<span style="background:#555;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;">마감</span>';
+    var ends = ev.ends_at ? ' · 마감 ' + new Date(ev.ends_at).toLocaleDateString('ko') : '';
+    return '<div class="admin-row"><div class="admin-row-body"><div class="admin-row-title">' + esc(ev.name) + ' ' + badge + '</div>'
+      + '<div class="admin-row-meta">' + esc(ev.month || '') + ends + '</div></div>'
+      + '<button class="admin-chip" onclick="_dmToggleEventStatus(\'' + ev.id + '\',\'' + (on ? 'closed' : 'active') + '\')">' + (on ? '마감' : '다시 열기') + '</button>'
+      + '<button class="admin-del-btn" onclick="_dmDeleteEvent(\'' + ev.id + '\')"><i class="ri-delete-bin-line"></i></button></div>';
+  }).join('');
+};
+window._dmCreateEvent = async function () {
+  var name = ((document.getElementById('dm-ev-name') || {}).value || '').trim();
+  var month = (document.getElementById('dm-ev-month') || {}).value || '';
+  var ends = (document.getElementById('dm-ev-ends') || {}).value || '';
+  if (!name) { if (typeof showToast === 'function') showToast('이벤트 이름을 입력해주세요'); return; }
+  try {
+    await window.Demonthly.createEvent({ name: name, month: month || null, endsAt: ends ? new Date(ends + 'T23:59:59').toISOString() : null });
+    if (typeof showToast === 'function') showToast('이벤트 생성됐어요 🗳️');
+    var n = document.getElementById('dm-ev-name'); if (n) n.value = '';
+    window._dmAdminRender();
+  } catch (e) { alert('생성 실패: ' + ((e && e.message) || e)); }
+};
+window._dmToggleEventStatus = async function (id, status) {
+  try { await window.Demonthly.setStatus(id, status); window._dmAdminRender(); }
+  catch (e) { alert('실패: ' + ((e && e.message) || e)); }
+};
+window._dmDeleteEvent = async function (id) {
+  if (!confirm('이 이벤트를 삭제할까요? (참여·투표도 함께 삭제)')) return;
+  try { await window.Demonthly.deleteEvent(id); if (typeof showToast === 'function') showToast('삭제됐어요'); window._dmAdminRender(); }
+  catch (e) { alert('삭제 실패: ' + ((e && e.message) || e)); }
 };
 
 window.adminFilterTracks = function() {
