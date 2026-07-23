@@ -386,6 +386,9 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .hsdots{display:flex;gap:5px}
 .hsdots i{width:5px;height:5px;border-radius:50%;background:var(--line);transition:all .2s}
 .hsdots i.on{background:var(--mint);width:16px;border-radius:3px}
+/* 스와이프 콘텐츠 — 가로는 내가, 세로 스크롤은 브라우저가 (직접 조작 1:1) */
+#hswipe{touch-action:pan-y;will-change:transform,opacity}
+@media (prefers-reduced-motion:reduce){ #hswipe{transition:opacity .18s ease!important;transform:none!important} }
 .relgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .relgrid .reltile{flex:none;width:100%;height:auto;min-height:118px}
 .votetile.vfull{flex:none;width:100%;height:auto;min-height:106px;margin-bottom:10px}
@@ -1606,6 +1609,7 @@ function prevStory(){
    처음 = Trending. 그 다음부터 Following·Trending·For You가 섞여서 랜덤하게 계속 바뀐다. ── */
 /* ── Home — 한 화면에 한 섹션. 좌우 스와이프(또는 상단 칩)로 Logs·Releases·Vote·Following 전환 ── */
 const HOMETABS=[['logs','📷 Logs'],['rel','🎵 Releases'],['vote','🗳 Vote'],['follow','⭐ Following']];
+let HOMEIN=0;   /* 방금 넘어온 방향(+1 다음 / -1 이전) — 새 섹션 입장 애니메이션용 */
 function home(){
   const fing=PEOPLE.filter(p=>p.fing).length;
   const cur=S.homeTab||'logs';
@@ -2931,20 +2935,41 @@ function bind(){
   document.querySelectorAll('[data-lseg]').forEach(b=>b.onclick=()=>{S.lseg=b.dataset.lseg;render()});
   /* Home Vote 타일 → 그 라운드 투표 화면 */
   document.querySelectorAll('[data-goround]').forEach(b=>b.onclick=()=>{ S.round=b.dataset.goround; S.view='lists'; S.lseg='vote'; render(); });
-  /* Home 섹션 전환 — 좌우 스와이프 + ‹ › 화살표 (탭 칩 없음) */
+  /* Home 섹션 전환 — 손가락 1:1 추적 + 끝 러버밴딩 + 관성 커밋 (apple-design §1·2·7·9) */
   const _hgo=(d)=>{ const order=HOMETABS.map(t=>t[0]); let i=order.indexOf(S.homeTab||'logs')+d;
-    if(i<0)i=order.length-1; if(i>=order.length)i=0; S.homeTab=order[i]; render(); };
+    if(i<0)i=order.length-1; if(i>=order.length)i=0; HOMEIN=d; S.homeTab=order[i]; render(); };
   document.querySelectorAll('[data-hgo]').forEach(b=>b.onclick=()=>_hgo(+b.dataset.hgo));
   const hsw=document.getElementById('hswipe');
   if(hsw){
-    let _hx=null,_hy=0;
-    hsw.ontouchstart=e=>{ if(e.target.closest('.rmrow,.stories')){_hx=null;return;}  /* 내부 가로스크롤과 충돌 방지 */
-      _hx=e.touches[0].clientX; _hy=e.touches[0].clientY; };
-    hsw.ontouchend=e=>{
-      if(_hx===null)return;
-      const dx=e.changedTouches[0].clientX-_hx, dy=e.changedTouches[0].clientY-_hy;
-      if(Math.abs(dx)>60 && Math.abs(dx)>Math.abs(dy)*1.4){ _hgo(dx<0?1:-1); }   /* 왼쪽=다음, 오른쪽=이전 */
-    };
+    /* 방금 넘어온 섹션은 온 방향 반대편에서 미끄러져 들어온다 (공간 일관성) */
+    if(HOMEIN){ const from=HOMEIN>0?1:-1; HOMEIN=0;
+      hsw.style.transition='none'; hsw.style.transform='translateX('+(from*46)+'px)'; hsw.style.opacity='0';
+      requestAnimationFrame(()=>{ hsw.style.transition='transform .34s cubic-bezier(.22,.61,.36,1),opacity .26s';
+        hsw.style.transform='translateX(0)'; hsw.style.opacity='1'; }); }
+    let sx=0,sy=0,drag=false,lock=0,w=1;   /* lock: 0=미정 1=가로 -1=세로 */
+    const order=()=>HOMETABS.map(t=>t[0]);
+    hsw.ontouchstart=e=>{ if(e.target.closest('.rmrow,.stories,.hscroll,.relgrid')){drag=false;return;}
+      const t=e.touches[0]; sx=t.clientX; sy=t.clientY; drag=true; lock=0; w=hsw.offsetWidth||360;
+      hsw.style.transition='none'; };
+    hsw.ontouchmove=e=>{ if(!drag)return; const t=e.touches[0]; let dx=t.clientX-sx, dy=t.clientY-sy;
+      if(!lock){ if(Math.abs(dx)<7&&Math.abs(dy)<7)return; lock=Math.abs(dx)>Math.abs(dy)?1:-1; if(lock<0){drag=false;hsw.style.transform='';return;} }
+      const i=order().indexOf(S.homeTab||'logs'), edge=(dx>0&&i===0)||(dx<0&&i===order().length-1);
+      if(edge) dx*=0.34;                                   /* 양 끝에서는 저항 (러버밴딩) */
+      hsw.style.transform='translateX('+dx+'px)';
+      hsw.style.opacity=String(1-Math.min(Math.abs(dx)/w,1)*0.4); };  /* 진행 방향 힌트 */
+    hsw.ontouchend=e=>{ if(!drag){return;} drag=false;
+      if(lock!==1){ hsw.style.transform='';hsw.style.opacity='';return; }
+      const dx=e.changedTouches[0].clientX-sx, i=order().indexOf(S.homeTab||'logs');
+      const edge=(dx>0&&i===0)||(dx<0&&i===order().length-1);
+      if(Math.abs(dx)>w*0.26 && !edge){                    /* 커밋: 온 방향으로 마저 밀어내고 다음 섹션 */
+        const out=dx<0?-w:w;
+        hsw.style.transition='transform .16s ease-out,opacity .16s ease-out';
+        hsw.style.transform='translateX('+out+'px)'; hsw.style.opacity='0';
+        setTimeout(()=>_hgo(dx<0?1:-1),140);
+      } else {                                             /* 취소: 제자리로 스프링백 */
+        hsw.style.transition='transform .3s cubic-bezier(.22,.61,.36,1),opacity .24s';
+        hsw.style.transform='translateX(0)'; hsw.style.opacity='1';
+      } };
   }
   document.querySelectorAll('[data-vcat]').forEach(b=>b.onclick=()=>{S.vcat=b.dataset.vcat;render()});
   /* 후보 카드 탭 → 그 아티스트의 log로 들어간다 */
