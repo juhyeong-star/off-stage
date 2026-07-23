@@ -377,15 +377,17 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 
 /* ── 피드 카드 — Work 스토리와 같은 문법 ── */
 .fcard{margin-bottom:16px;position:relative}
-/* ── Home 캐러셀 — 세로 스크롤 + 줄마다 좌우 스와이프 ── */
-.hsec{margin-bottom:20px}
-.hhd{display:flex;align-items:baseline;gap:8px;font-family:'Black Han Sans';font-size:15px;letter-spacing:.02em;margin:0 2px 10px}
-.hhd small{font-family:'Noto Sans KR',sans-serif;font-size:10.5px;color:var(--muted);font-weight:400}
-.hscroll{display:flex;gap:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
-  scroll-snap-type:x mandatory;padding:2px 2px 4px;margin:0 -2px}
-.hscroll::-webkit-scrollbar{display:none}
-.hitem{flex:0 0 82%;max-width:305px;scroll-snap-align:start}
-.hitem .fcard{margin-bottom:0}
+/* ── Home — 한 화면에 한 섹션, 좌우 스와이프/칩으로 전환 ── */
+.htabs{display:flex;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 0 14px;padding:2px 0}
+.htabs::-webkit-scrollbar{display:none}
+.htab{flex-shrink:0;background:var(--card2);border:1px solid var(--line);color:var(--muted);border-radius:99px;
+  padding:8px 14px;font-size:12.5px;font-weight:800;font-family:inherit;cursor:pointer;min-height:36px}
+.htab.on{background:var(--mint);border-color:var(--mint);color:#04231d}
+.htab:active{transform:scale(.95)}
+.hswhint{margin-left:auto;flex-shrink:0;font-size:10px;color:var(--muted);padding-right:2px}
+.relgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.relgrid .reltile{flex:none;width:100%;height:auto;min-height:118px}
+.votetile.vfull{flex:none;width:100%;height:auto;min-height:106px;margin-bottom:10px}
 /* Releases 타일 */
 .reltile{flex:0 0 128px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:flex-start;gap:3px;
   background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:12px;height:118px;
@@ -1525,7 +1527,8 @@ const curRound = ()=>ROUNDS.find(r=>r.id===S.round)||ROUNDS[0];
 
 let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:'me', round:'jul', lseg:'list', vcat:'music', flist:null, fq:'', flFrom:'mine', list:null, share:false, addlist:false,
   pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'', auth:false, profileAid:null, saveTrack:null, logMenu:null,
-  cam:false,     /* 하단 camera|logs 토글 — true면 앱 안 촬영 화면 */
+  cam:false,     /* true면 앱 안 촬영 화면 */
+  homeTab:'logs',/* Home 섹션 — logs|rel|vote|follow. 좌우 스와이프로 전환 */
   relForm:{audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', event:''}};
 
 const shape=(s,f,z)=>`<svg viewBox="0 0 24 24" width="${z}" height="${z}" style="overflow:visible"><use href="#${s}" fill="${f}"/></svg>`;
@@ -1600,26 +1603,32 @@ function prevStory(){
 
 /* ── 홈 — 탭 없음. 하나의 알고리즘 피드.
    처음 = Trending. 그 다음부터 Following·Trending·For You가 섞여서 랜덤하게 계속 바뀐다. ── */
-/* ── Home — 세로 스크롤 + 각 줄은 좌우 스와이프 (Logs · Releases · Vote · Following) ── */
+/* ── Home — 한 화면에 한 섹션. 좌우 스와이프(또는 상단 칩)로 Logs·Releases·Vote·Following 전환 ── */
+const HOMETABS=[['logs','📷 Logs'],['rel','🎵 Releases'],['vote','🗳 Vote'],['follow','⭐ Following']];
 function home(){
   const fing=PEOPLE.filter(p=>p.fing).length;
+  const cur=S.homeTab||'logs';
 
-  /* 📷 Logs — 기존 피드 카드를 옆으로 넘긴다. 탭=릴스(전체화면) 그대로 */
-  const logsRow = `<div class="hscroll">${S.feed.map((t,i)=>`<div class="hitem">${feedCard(t,i)}</div>`).join('')}</div>`;
-
-  /* 🎵 Releases — 실제 발매곡 타일. 탭=재생 */
-  const rel = ALLTRACKS.slice(0,14);
-  const relRow = rel.length
-    ? `<div class="hscroll">${rel.map(t=>`<button class="reltile tplay" data-tplay="${t.audio||''}">
-        <span class="relwv">${waveBars(9)}</span>
-        <b>${t.nm}</b><small>${t.by}</small></button>`).join('')}</div>`
-    : `<div class="pknote" style="padding:14px 2px">불러오는 중…</div>`;
-
-  /* 🗳 Vote — 라운드 카드. 탭=투표 화면 */
-  const voteRow = `<div class="hscroll">${ROUNDS.map(r=>`<button class="votetile" data-goround="${r.id}">
-      <em>${r.cat==='music'?'🎵':'🎤'} ${r.type==='curated'?'큐레이션':'오픈'}</em>
-      <b>${r.nm}</b><small>${r.sub||''}</small>
-      <span class="voten">${(r.cands||[]).length}팀 참여</span></button>`).join('')}</div>`;
+  let bodyC='';
+  if(cur==='logs'){
+    /* 기존처럼 — 한 줄에 카드 하나, 세로 스크롤. 탭=릴스 */
+    bodyC=S.feed.map(feedCard).join('');
+  } else if(cur==='rel'){
+    const rel=ALLTRACKS.slice(0,20);
+    bodyC=rel.length
+      ? `<div class="relgrid">${rel.map(t=>`<button class="reltile tplay" data-tplay="${t.audio||''}">
+          <span class="relwv">${waveBars(9)}</span><b>${t.nm}</b><small>${t.by}</small></button>`).join('')}</div>`
+      : `<div class="pknote" style="padding:30px 0">불러오는 중…</div>`;
+  } else if(cur==='vote'){
+    bodyC=ROUNDS.map(r=>`<button class="votetile vfull" data-goround="${r.id}">
+        <em>${r.cat==='music'?'🎵':'🎤'} ${r.type==='curated'?'큐레이션':'오픈'}</em>
+        <b>${r.nm}</b><small>${r.sub||''}</small>
+        <span class="voten">${(r.cands||[]).length}팀 참여 · 투표하러 가기 ›</span></button>`).join('');
+  } else {
+    /* Following — 팔로우한 아티스트 원 + 그들의 로그 */
+    const ff=S.feed.map((t,i)=>t.src==='follow'?feedCard(t,i):'').join('');
+    bodyC=storyRow()+(ff||`<div class="pknote" style="padding:30px 0">팔로우한 아티스트의 새 로그가 아직 없어요</div>`);
+  }
 
   return `<div class="hd">
     <div class="brand" style="flex:1;text-align:left;font-size:19px;letter-spacing:.02em">OFFLOG</div>
@@ -1628,10 +1637,9 @@ function home(){
         <circle cx="9" cy="8" r="3.4"/><path d="M3.2 19.5c0-3.3 2.6-5.6 5.8-5.6s5.8 2.3 5.8 5.6"/>
         <path d="M16.4 5.2a3.4 3.4 0 0 1 0 5.7"/><path d="M18 14.4c2 .7 3.3 2.6 3.3 5.1"/></svg>
       ${fing?`<span class="pdot"></span>`:''}</button></div>
-  <div class="hsec"><div class="hhd">📷 Logs<small>← 넘겨보기</small></div>${logsRow}</div>
-  <div class="hsec"><div class="hhd">🎵 Releases<small>탭하면 재생</small></div>${relRow}</div>
-  <div class="hsec"><div class="hhd">🗳 Vote<small>무대를 여는 투표</small></div>${voteRow}</div>
-  <div class="hsec"><div class="hhd">⭐ Following</div>${storyRow()}</div>`;
+  <div class="htabs">${HOMETABS.map(t=>`<button class="htab${cur===t[0]?' on':''}" data-htab="${t[0]}">${t[1]}</button>`).join('')}
+    <span class="hswhint">← 스와이프</span></div>
+  <div id="hswipe">${bodyC}</div>`;
 }
 
 /* 홈에 다시 올 때마다 갱신된다. 버튼 없이, 다녀오면 새 얼굴 */
@@ -2917,6 +2925,23 @@ function bind(){
   document.querySelectorAll('[data-lseg]').forEach(b=>b.onclick=()=>{S.lseg=b.dataset.lseg;render()});
   /* Home Vote 타일 → 그 라운드 투표 화면 */
   document.querySelectorAll('[data-goround]').forEach(b=>b.onclick=()=>{ S.round=b.dataset.goround; S.view='lists'; S.lseg='vote'; render(); });
+  /* Home 섹션 전환 — 칩 탭 + 콘텐츠 좌우 스와이프 */
+  document.querySelectorAll('[data-htab]').forEach(b=>b.onclick=()=>{ S.homeTab=b.dataset.htab; render(); });
+  const hsw=document.getElementById('hswipe');
+  if(hsw){
+    let _hx=null,_hy=0;
+    hsw.ontouchstart=e=>{ if(e.target.closest('.rmrow,.stories')){_hx=null;return;}  /* 내부 가로스크롤과 충돌 방지 */
+      _hx=e.touches[0].clientX; _hy=e.touches[0].clientY; };
+    hsw.ontouchend=e=>{
+      if(_hx===null)return;
+      const dx=e.changedTouches[0].clientX-_hx, dy=e.changedTouches[0].clientY-_hy;
+      if(Math.abs(dx)>60 && Math.abs(dx)>Math.abs(dy)*1.4){
+        const order=HOMETABS.map(t=>t[0]); let i=order.indexOf(S.homeTab||'logs');
+        i+=(dx<0?1:-1); if(i<0)i=order.length-1; if(i>=order.length)i=0;   /* 끝에서 순환 */
+        S.homeTab=order[i]; render();
+      }
+    };
+  }
   document.querySelectorAll('[data-vcat]').forEach(b=>b.onclick=()=>{S.vcat=b.dataset.vcat;render()});
   /* 후보 카드 탭 → 그 아티스트의 log로 들어간다 */
   document.querySelectorAll('[data-goart]').forEach(b=>b.onclick=e=>{
