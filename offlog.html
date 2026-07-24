@@ -10,7 +10,7 @@
   --bg:#000; --card:#161618; --card2:#1F1F23; --line:#2A2A2E;
   --txt:#F5F5F2; --muted:#8A8A90;
   --pink:#FF5FE0; --mint:#53E0C8; --lemon:#FFE94A;
-  --paper:#FFF3A6; --paper2:#CFEBFF; --ink:#2B2417;
+  --paper:#FFF3A6; --paper2:#CFEBFF; --paper3:#FBD3E4; --ink:#2B2417;
   --green:#9FE84C; --shpink:#F06CB4; --coral:#E8695A;
   --blue:#7B8BE8; --yellow:#F2C94C; --purple:#B48CE8;
 }
@@ -585,6 +585,7 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .rcard.snd{cursor:pointer;background:linear-gradient(160deg,#17171d,#0e0e13)}
 .rcard.paper{background:var(--paper)}
 .rcard.paper.b{background:var(--paper2)}
+.rcard.paper.p{background:var(--paper3)}
 .rcard.empty{height:150px}
 .rcard .bgimg{position:absolute;inset:0;background-size:cover;background-position:center}
 .grainy{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);
@@ -2028,22 +2029,29 @@ function mine(){
   /* 피드·Work 스토리와 같은 카드 문법. 안 기울고, 시각이 카드 중앙에 */
   const mark=l=>{
     const w = l.work ? WORKS.find(x=>x.id===l.work) : null;
+    /* 프로필(내 아바타+이름) — 샘플 카드처럼 카드마다 얹는다 */
+    const who = `<div class="rwho">${avatarEl(prof.avatar, prof.c||'coral', 22)}${prof.who}</div>`;
+    /* 좋아요 = 도형 반응 (소름·루프·울컥·최고 + 개수) */
+    const _mine=(l.tid && MYREACT[l.tid])||null;
+    const _rb=(emo,sh,col)=>`<button class="shape rbtn${_mine&&_mine.has(emo)?' hit':''}" data-emo="${emo}"${l.tid?` data-tid="${l.tid}"`:''} aria-label="${emo}">${shape(sh,c(col),22)}</button>`;
+    const rx = `<div class="frx" data-tid="${l.tid||''}">${_rb('소름','tri','green')}${_rb('루프','circle','shpink')}${_rb('울컥','diamond','blue')}${_rb('최고','star','yellow')}<span class="rxn">${l.rx||0}</span></div>`;
     const chrome = me
       ? `${w?`<span class="wchip mychip">◆ ${w.nm}</span>`:''}
          <button class="edit mine" ${l.t==='note'?`data-addmenu="${l.id}"`:`data-logdl="${l.id}"`} aria-label="${l.t==='note'?'넣기':'받기'}">⋯</button>`
       : '';
     if(l.t==='ph') return `<div class="fcard my"><div class="rcard">
       <div class="bgimg" style="background:${l.bg}"></div><div class="grainy"></div>
-      <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${l.cap}</div></div>${chrome}</div></div>`;
+      <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${l.cap}</div></div>${who}${rx}${chrome}</div></div>`;
     if(l.t==='snd') return `<div class="fcard my"><div class="rcard snd" data-play${l.audio?` data-audio="${l.audio}"`:''}>
       <div class="bigwv">${waveBars(34)}</div>
       <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${l.nm}</div>
-        <span class="sndpill"><em>▶</em><b>${l.dur}</b></span></div>${chrome}</div></div>`;
+        <span class="sndpill"><em>▶</em><b>${l.dur}</b></span></div>${who}${rx}${chrome}</div></div>`;
     if(l.t==='vid') return `<div class="fcard my"><div class="rcard" style="overflow:hidden">
       <video src="${l.src}" controls playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>
-      <div class="rmid" style="pointer-events:none"><div class="rts">${l.at}</div>${l.cap?`<div class="rcap">${l.cap}</div>`:''}</div>${chrome}</div></div>`;
-    return `<div class="fcard my"><div class="rcard paper ${l.tone==='b'?'b':''}">
-      <div class="rmid"><div class="rts">${l.at}</div><div class="rnote">${l.text}</div></div>${chrome}</div></div>`;
+      <div class="rmid" style="pointer-events:none"><div class="rts">${l.at}</div>${l.cap?`<div class="rcap">${l.cap}</div>`:''}</div>${who}${rx}${chrome}</div></div>`;
+    const tc = l.tone==='b'?'b':l.tone==='p'?'p':'';   /* 포스트잇 색: 노랑/하늘/핑크 */
+    return `<div class="fcard my"><div class="rcard paper ${tc}">
+      <div class="rmid"><div class="rts">${l.at}</div><div class="rnote">${l.text}</div></div>${who}${rx}${chrome}</div></div>`;
   };
 
   const logs=`
@@ -2610,7 +2618,8 @@ function pushLog(txt, m, audioUrl){
   if(m && m.kind==='vid')      log={id, t:'vid', at:now, dt, cap:txt, src:m.url, side:'l', work:null};
   else if(m && m.kind==='aud') log={id, t:'snd', at:now, dt, nm:txt||'데모', dur:'', audio:audioUrl||m.url, side:'l', work:null};
   else if(m && m.kind==='ph')  log={id, t:'ph',  at:now, dt, cap:txt||'사진', bg:'center/cover no-repeat url('+m.url+')', side:'l', work:null};
-  else                         log={id, t:'note',at:now, dt, text:txt, tone:'y', side:'l', work:null};
+  else{ const _tone=['y','b','p'][STREAM.filter(x=>x&&x.t==='note').length%3];   /* 포스트잇 색을 노랑→하늘→핑크로 번갈아 */
+                               log={id, t:'note',at:now, dt, text:txt, tone:_tone, side:'l', work:null}; }
   STREAM.unshift(log);
   SESSION_NEW.add(id);          /* 방금 올린 것 → 맨 위 핀(루틴 피드 위에) */
   studioSave();
