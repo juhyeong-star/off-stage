@@ -1610,7 +1610,11 @@ let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:
   relForm:{title:'', audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', event:''}};
 
 const shape=(s,f,z)=>`<svg viewBox="0 0 24 24" width="${z}" height="${z}" style="overflow:visible"><use href="#${s}" fill="${f}"/></svg>`;
-const waveBars=n=>[...Array(n)].map((_,i)=>`<i style="--h:${22+Math.round(Math.random()*72)};--d:${i}"></i>`).join('');
+/* 파형 — 결정론적. 렌더 안 호출 순번(_wb)을 시드로 → 같은 카드는 늘 같은 모양(재렌더에도 안 흔들림) */
+let _wb=0;
+const waveBars=n=>{ let s=((++_wb)*2654435761)&0x7fffffff; if(!s)s=1;
+  const rnd=()=>{ s=(s*1103515245+12345)&0x7fffffff; return s/0x7fffffff; };
+  return [...Array(n)].map((_,i)=>`<i style="--h:${22+Math.round(rnd()*72)};--d:${i}"></i>`).join(''); };
 const dot=col=>`<span class="dot" style="background:${c(col)}"></span>`;
 
 /* ── 스토리 열 (아웃라인 상단 고정) — 팔로우 중 + 발견 가능한 아티스트 ── */
@@ -2854,6 +2858,7 @@ async function camFlip(){ CAMFACING=(CAMFACING==='user')?'environment':'user'; r
 
 /* ── 렌더 ── */
 function render(){
+  _wb=0;   /* 파형 시드 순번 리셋 — 매 렌더 같은 카드가 같은 파형이 되도록 */
   const _bodyEl=document.getElementById('body');
   _bodyEl.innerHTML =
     S.view==='home'?home():S.view==='room'?roomFull():S.view==='work'?work():S.view==='flist'?flist():S.view==='account'?accountView():S.view==='lists'?lists():S.view==='list'?listDetail():mine();
@@ -3078,10 +3083,11 @@ function bind(){
       const meta={name:f.name, size:(f.size/1048576).toFixed(1)+'MB',
                   title:f.name.replace(/\.[^.]+$/,''), dur:''};
       S.relForm.audio=meta;
-      const a=new Audio(URL.createObjectURL(f));
+      const _u=URL.createObjectURL(f); const a=new Audio(_u);
       a.onloadedmetadata=()=>{
         const s=Math.round(a.duration);
         meta.dur=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+        try{URL.revokeObjectURL(_u)}catch(_){}   /* 메타 읽었으면 해제(누수 방지) */
         render();
       };
       render();
