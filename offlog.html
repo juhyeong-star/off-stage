@@ -1048,6 +1048,14 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .authbtn b{display:inline-flex;width:20px;height:20px;align-items:center;justify-content:center;border-radius:50%;background:#fff;color:#000;font-size:12px;font-weight:900}
 .authbtn.kakao b{background:#FEE500;color:#000}
 .authbtn:hover{border-color:var(--mint)}
+/* 로그인 잠금 / 스플래시 — 앱·하단바까지 전부 덮는다 */
+.lockwrap{position:absolute;inset:0;z-index:60;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
+.lockmid{width:100%;max-width:320px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.lockmid.lockauth{align-items:stretch;text-align:left}
+.locklogo{font-family:'Fredoka','Black Han Sans',sans-serif;font-weight:600;font-size:30px;color:var(--mint);letter-spacing:.03em;text-align:center}
+.locksub{color:var(--muted);font-size:13px;margin:6px 0 20px;text-align:center}
+.lockspin{width:26px;height:26px;margin-top:18px;border-radius:50%;border:2.5px solid var(--line);border-top-color:var(--mint);animation:lspin .7s linear infinite}
+@keyframes lspin{to{transform:rotate(360deg)}}
 .authdiv{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:11.5px;margin:14px 0 10px}
 .authdiv::before,.authdiv::after{content:'';flex:1;height:1px;background:var(--line)}
 .authinput{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--txt);padding:12px 13px;font-size:16px;margin-bottom:8px;font-family:inherit}
@@ -1120,6 +1128,7 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
   <div id="composeview"></div>
   <div id="camview"></div>
   <div id="mini"></div>
+  <div id="lockview"></div>
   <div class="nav" id="nav">
     <button data-v="home" aria-label="Home"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.3V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.3"/></svg></i>Home</button>
     <button class="navctr" id="navplus" aria-label="Log 남기기"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13"/></svg></i></button>
@@ -1155,8 +1164,9 @@ try{
 }catch(e){ console.warn('[offlog] supabase client init 실패', e); }
 
 /* 로그인 유저 로드 + 내 팔로우/반응 상태 미리 받아두기 */
+let AUTHREADY=false;   /* 로그인 여부 확인 완료 — 그 전엔 스플래시, 확인 후 !ME면 잠금 */
 async function loadMe(){
-  if(!SBC){ ME=null; return null; }
+  if(!SBC){ ME=null; AUTHREADY=true; return null; }
   try{
     const {data:{user}}=await SBC.auth.getUser();
     if(user){
@@ -1179,6 +1189,7 @@ async function loadMe(){
         if(r&&r.data) r.data.forEach(x=>{ (MYREACT[x.track_id]=MYREACT[x.track_id]||new Set()).add(x.kind); }); }catch(_){}
     } else { ME=null; }
   }catch(e){ console.warn('[offlog] loadMe 실패', e); }
+  AUTHREADY=true;    /* 로그인 확인 끝 — 이제 !ME면 잠금 화면 */
   return ME;
 }
 
@@ -1280,13 +1291,29 @@ function avatarEl(av, color, size){
 }
 let AIDBYNAME={};   // 아티스트 표시명 → profile id (로더가 채움)
 /* 로그인 시트 (기존 회원 계정) */
+/* 로그인 확인 전 — 잠깐 보이는 스플래시 (앱 내용 노출 안 함) */
+function splashScreen(){
+  return `<div class="lockwrap"><div class="lockmid">
+    <div class="locklogo">OFFLOG</div><div class="lockspin"></div></div></div>`;
+}
+/* 로그인 잠금 — 로그인해야 앱을 쓸 수 있다. 닫기 없음(비회원은 못 들어옴) */
+function lockScreen(){
+  return `<div class="lockwrap"><div class="lockmid lockauth">
+    <div class="locklogo">OFFLOG</div>
+    <p class="locksub">로그인하고 시작하기</p>
+    <button class="authbtn" id="authgoogle"><b>G</b> Google로 계속</button>
+    <div class="authdiv"><span>또는 이메일</span></div>
+    <input class="authinput" id="authemail" type="email" autocomplete="username" placeholder="이메일">
+    <input class="authinput" id="authpw" type="password" autocomplete="current-password" placeholder="비밀번호">
+    <button class="cs-post" id="authsubmit" style="margin-top:10px">로그인</button>
+  </div></div>`;
+}
 function authSheet(){
   if(!S.auth) return '';
   return `<div class="cs-bd" id="authbd"><div class="cs">
     <div class="cs-hd"><b>로그인</b><button class="cs-x" id="authx" aria-label="닫기">✕</button></div>
     <p style="color:var(--muted);font-size:12.5px;margin:0 2px 12px">기존 회원 계정으로 로그인하면 내 페이지·팔로우·저장이 연동돼요.</p>
     <button class="authbtn" id="authgoogle"><b>G</b> Google로 계속</button>
-    <button class="authbtn kakao" id="authkakao"><b>K</b> 카카오로 계속</button>
     <div class="authdiv"><span>또는 이메일</span></div>
     <input class="authinput" id="authemail" type="email" autocomplete="username" placeholder="이메일">
     <input class="authinput" id="authpw" type="password" autocomplete="current-password" placeholder="비밀번호">
@@ -2845,6 +2872,9 @@ function render(){
   const _ns=document.getElementById('navseg');
   if(_ns){ _ns.classList.toggle('logs', !S.cam);
     _ns.querySelectorAll('.nsg').forEach(function(b){ b.classList.toggle('on', (b.dataset.cam==='cam')===!!S.cam); }); }
+  /* 로그인 잠금 오버레이 — 확인 전=스플래시, 확인 후 비로그인=잠금, 로그인=없음 */
+  const _lv=document.getElementById('lockview');
+  if(_lv) _lv.innerHTML = !AUTHREADY ? splashScreen() : (!ME ? lockScreen() : '');
   renderMini();
   bind();
   syncStoryAudio();     // 스토리 데모면 실제 소리 재생
@@ -2888,11 +2918,11 @@ function bind(){
     const aclose=()=>{ S.auth=false; render(); };
     if(abd)abd.onclick=e=>{ if(e.target===abd)aclose(); };
     if(ax)ax.onclick=aclose;
-    const ag=document.getElementById('authgoogle'); if(ag)ag.onclick=loginGoogle;
-    const ak=document.getElementById('authkakao'); if(ak)ak.onclick=loginKakao;
-    const asub=document.getElementById('authsubmit');
-    if(asub)asub.onclick=()=>{ const em=(document.getElementById('authemail')||{}).value||'', pw=(document.getElementById('authpw')||{}).value||''; if(!em||!pw){offToast('이메일과 비밀번호를 입력하세요');return;} loginEmail(em.trim(),pw); };
   }
+  /* 인증 버튼 — 로그인 시트와 잠금 화면 양쪽에서 동작(id 기반) */
+  const ag=document.getElementById('authgoogle'); if(ag)ag.onclick=loginGoogle;
+  const asub=document.getElementById('authsubmit');
+  if(asub)asub.onclick=()=>{ const em=(document.getElementById('authemail')||{}).value||'', pw=(document.getElementById('authpw')||{}).value||''; if(!em||!pw){offToast('이메일과 비밀번호를 입력하세요');return;} loginEmail(em.trim(),pw); };
   const plgn=document.getElementById('profloginbtn'); if(plgn)plgn.onclick=()=>{ S.auth=true; render(); };
   /* 내 정보 페이지 로그아웃 */
   const aclo=document.getElementById('aclogout'); if(aclo)aclo.onclick=()=>{ if(confirm('로그아웃할까요?')){ S.view='mine'; logout(); } };
@@ -3530,6 +3560,8 @@ setInterval(()=>{
 /* ── 실제 데이터 주입 — 디자인/구성은 v34 그대로, 목업만 진짜 음악/아티스트로 교체 ── */
 (async function loadReal(){
   try{ studioMerge(); renewHome(); render(); }catch(e){}   /* 즉시 첫 화면(시드+로컬) — 네트워크 안 기다림. 실제 데이터는 아래에서 채워 다시 그림 */
+  try{ loadMe().then(function(){ try{render();}catch(_){}}); }catch(e){}   /* 로그인 상태 즉시 확인(잠금 판단) */
+  setTimeout(function(){ if(!AUTHREADY){ AUTHREADY=true; try{render();}catch(_){}} }, 2500);   /* 안전장치: 확인 지연돼도 스플래시가 안 멈춤 */
   try{
     var SB='https://vayzhmaggwpkbsrrsdqt.supabase.co';
     var KEY='sb_publishable_1PxNV0BGL7Wy_strTMqnbA_pCBCsOPG';
