@@ -2889,9 +2889,12 @@ function render(){
   const _bodyEl=document.getElementById('body');
   _bodyEl.innerHTML =
     S.view==='home'?home():S.view==='room'?roomFull():S.view==='work'?work():S.view==='flist'?flist():S.view==='account'?accountView():S.view==='lists'?lists():S.view==='list'?listDetail():mine();
-  /* 화면(뷰)이 바뀔 때만 짧은 페이드-인 → 전환이 부드럽고 빠르게 느껴짐 */
-  if(S.view!==_lastView){ _lastView=S.view; _bodyEl.classList.remove('vin'); void _bodyEl.offsetWidth; _bodyEl.classList.add('vin'); }
-  document.getElementById('screen').scrollTop=0;
+  /* 화면(뷰)이 실제로 바뀔 때만 짧은 페이드-인 + 스크롤 맨 위로 → 전환이 부드럽고 빠르게 느껴짐.
+     같은 화면 안(예: 발매 시트에서 옵션 하나 고를 때)은 render()가 다시 불려도
+     스크롤 위치가 유지돼야 한다 — 안 그러면 조작할 때마다 화면이 맨 위로 튕겨 보인다. */
+  const _viewKey=S.view+'|'+(S.homeTab||'')+'|'+(S.work||'')+'|'+(S.profile||'');
+  if(_viewKey!==_lastView){ _lastView=_viewKey; _bodyEl.classList.remove('vin'); void _bodyEl.offsetWidth; _bodyEl.classList.add('vin');
+    document.getElementById('screen').scrollTop=0; }
   [...document.querySelectorAll('#nav button[data-v]')].forEach(b=>
     b.classList.toggle('on', b.dataset.v===S.view || (S.view==='list'&&b.dataset.v==='lists') || (S.view==='room'&&b.dataset.v==='home')));
   const npf=document.getElementById('navprofile');
