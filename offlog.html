@@ -425,6 +425,27 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .hsdots .hsdot{background:none;border:0;padding:8px 4px;cursor:pointer;display:flex;align-items:center;-webkit-tap-highlight-color:transparent}
 .hsdots i{width:5px;height:5px;border-radius:50%;background:var(--line);transition:all .22s;pointer-events:none}
 .hsdots i.on{background:var(--mint);width:15px;border-radius:3px}
+/* 홈 월별 캘린더(SETLOG 스타일) — 날짜 탭하면 그날 나+맞팔친구 로그만 */
+.calmon{background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:12px 12px 14px;margin:2px 0 10px;-webkit-tap-highlight-color:transparent}
+.cmhd{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:12px;position:relative}
+.cmnav{background:none;border:0;color:var(--muted);font-size:22px;line-height:1;cursor:pointer;padding:0 8px}
+.cmnav:active{color:var(--mint)}
+.cmlabel{font-family:'Black Han Sans';font-size:15px;letter-spacing:.5px}
+.cmclear{position:absolute;right:0;background:none;border:1px solid var(--line);color:var(--muted);border-radius:10px;font-size:11px;padding:4px 10px;cursor:pointer}
+.cmgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cmwd{margin-bottom:5px}
+.cmw{text-align:center;font-size:10.5px;color:var(--muted);padding:1px 0}
+.cmw.sun{color:#e88}
+.cmw.sat{color:#88b6e8}
+.cmday{min-height:34px;display:flex;align-items:center;justify-content:center;position:relative;background:none;border:0;cursor:pointer;border-radius:9px;padding:0}
+.cmday b{font-family:'Black Han Sans';font-weight:400;font-size:13px;color:var(--txt);line-height:1}
+.cmday.empty{visibility:hidden}
+.cmday.has::after{content:'';position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--mint)}
+.cmday.today b{color:var(--mint)}
+.cmday.sel{background:var(--mint)}
+.cmday.sel b{color:#0c0c0f}
+.cmday.sel.has::after{background:#0c0c0f}
+.cmday:active{transform:scale(.9)}
 /* 스와이프 콘텐츠 — 가로는 내가, 세로 스크롤은 브라우저가 (직접 조작 1:1) */
 #hswipe{touch-action:pan-y;will-change:transform,opacity}
 @media (prefers-reduced-motion:reduce){ #hswipe{transition:opacity .18s ease!important;transform:none!important} }
@@ -606,6 +627,8 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .rmid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
   z-index:4;text-align:center;padding:0 44px;pointer-events:none}
 .rts{font-family:'Black Han Sans';font-size:32px;letter-spacing:1px;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.8)}
+.rdt{font-family:'Black Han Sans';font-size:11px;letter-spacing:.3px;margin-top:1px;color:rgba(255,255,255,.6);text-shadow:0 1px 8px rgba(0,0,0,.8)}
+.rcard.paper .rdt{color:rgba(43,36,23,.42);text-shadow:none}
 .rcap{font-size:13px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.85);margin-top:1px}
 .rcard.empty .rts{color:rgba(255,255,255,.075);text-shadow:none}
 .rcard.paper .rts{color:rgba(43,36,23,.35);text-shadow:none;font-size:15px;margin-bottom:7px}
@@ -687,7 +710,10 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .mini-top{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--mint);font-weight:700}
 .mini-top button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px}
 .mini-btm{display:flex;align-items:center;gap:10px;margin-top:4px}
-.mini-btm .nm{font-size:14px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini-nmwrap{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:1px}
+.mini-btm .nm{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2}
+.mini-btm .who{font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2}
+.mini-btm .who:active{opacity:.5}
 .mini-btm .tm{font-family:'Black Han Sans';font-size:13px;color:var(--muted)}
 .minilist{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:3px 2px;flex-shrink:0}
 .minimore{background:none;border:none;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:0 3px;flex-shrink:0}
@@ -1045,8 +1071,9 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .ai-dsp span{font-size:11.5px;color:var(--txt);background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:4px 11px}
 /* 실사 아바타 */
 .avimg{display:inline-block;border-radius:50%;background-size:cover;background-position:center;flex-shrink:0;vertical-align:middle}
-.mprof .mpav .avimg{width:76px;height:76px}
-.mprof .mpav .smile{width:76px;height:76px}
+.mprof .mpav .avimg{width:92px;height:92px;border:2px solid rgba(255,255,255,.12)}
+.mprof .mpav .smile{width:92px;height:92px}
+.mprof .mpav .smile svg{width:54px;height:54px}
 .circ .avimg{width:34px;height:34px}
 /* 로그인 시트 */
 .authbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:13px;padding:13px;font-size:14.5px;font-weight:700;margin-bottom:8px;min-height:48px}
@@ -1177,6 +1204,7 @@ try{
 
 /* 로그인 유저 로드 + 내 팔로우/반응 상태 미리 받아두기 */
 let AUTHREADY=false;   /* 로그인 여부 확인 완료 — 그 전엔 스플래시, 확인 후 !ME면 잠금 */
+let DATAREADY=false;   /* 실제 트랙 데이터 도착 완료 — 그 전엔 스플래시 유지(시드 목업이 진짜처럼 새는 걸 막음) */
 async function loadMe(){
   if(!SBC){ ME=null; AUTHREADY=true; return null; }
   try{
@@ -1185,24 +1213,24 @@ async function loadMe(){
       const meta=user.user_metadata||{};
       let nm=(meta.name||meta.full_name||(user.email?user.email.split('@')[0]:'나'));
       let av=(meta.avatar_url||meta.picture||''), role='listener', sns={ig:'',yt:'',tt:''}, bio='';
-      // 내 profiles 행 (이름/아바타/role/SNS/소개 정본)
-      try{ const p=await SBC.from('profiles').select('name,avatar_url,role,sns_instagram,sns_youtube,sns_tiktok,bio').eq('id',user.id).maybeSingle();
-        if(p&&p.data){ if(p.data.name&&p.data.name!=='익명')nm=p.data.name; if(p.data.avatar_url)av=p.data.avatar_url; if(p.data.role)role=p.data.role;
-          sns={ig:p.data.sns_instagram||'',yt:p.data.sns_youtube||'',tt:p.data.sns_tiktok||''}; bio=p.data.bio||''; } }catch(_){}
+      MYFOLLOWS.clear(); MYFOLLOWERS.clear();
+      /* 서로 독립적인 5개 쿼리를 병렬로 (기존엔 순차 → 최대 7왕복). 하나 실패해도 나머지는 살린다 */
+      const _q=p=>Promise.resolve(p).then(x=>x,()=>null);
+      const [pR,fR,fbR,mcR,trR]=await Promise.all([
+        _q(SBC.from('profiles').select('name,avatar_url,role,sns_instagram,sns_youtube,sns_tiktok,bio').eq('id',user.id).maybeSingle()),
+        _q(SBC.from('follows').select('followed_id').eq('follower_id', user.id)),            /* 내가 팔로우 */
+        _q(SBC.from('follows').select('follower_id').eq('followed_id', user.id)),            /* 나를 팔로우(맞팔용) */
+        _q(followCounts(user.id)),
+        _q(SBC.from('track_reactions').select('track_id,kind').eq('user_id', user.id))
+      ]);
+      if(pR&&pR.data){ const d=pR.data; if(d.name&&d.name!=='익명')nm=d.name; if(d.avatar_url)av=d.avatar_url; if(d.role)role=d.role;
+        sns={ig:d.sns_instagram||'',yt:d.sns_youtube||'',tt:d.sns_tiktok||''}; bio=d.bio||''; }
       if(!av) av='https://i.pravatar.cc/150?u='+user.id;
       ME={ id:user.id, name:nm, avatar:av, role:role, email:user.email||'', joined:(user.created_at||'').slice(0,10), sns:sns, bio:bio };
-      MYFOLLOWS.clear();
-      /* 실제 DB 컬럼은 followed_id (following_id 아님) */
-      const f=await SBC.from('follows').select('followed_id').eq('follower_id', user.id);
-      if(f.data) f.data.forEach(r=>MYFOLLOWS.add(r.followed_id));
-      /* 역방향 — 나를 팔로우한 사람들 (맞팔 판정용) */
-      MYFOLLOWERS.clear();
-      try{ const fb=await SBC.from('follows').select('follower_id').eq('followed_id', user.id);
-        if(fb.data) fb.data.forEach(r=>MYFOLLOWERS.add(r.follower_id)); }catch(_){}
-      try{ const mc=await followCounts(user.id); ME.followers=mc.followers; }catch(_){}   /* 내 팔로워 실제 수 */
-      /* track_reactions 테이블은 아직 없음 → 없으면 조용히 통과(세션 내 반응만) */
-      try{ const r=await SBC.from('track_reactions').select('track_id,kind').eq('user_id', user.id);
-        if(r&&r.data) r.data.forEach(x=>{ (MYREACT[x.track_id]=MYREACT[x.track_id]||new Set()).add(x.kind); }); }catch(_){}
+      if(fR&&fR.data) fR.data.forEach(r=>MYFOLLOWS.add(r.followed_id));
+      if(fbR&&fbR.data) fbR.data.forEach(r=>MYFOLLOWERS.add(r.follower_id));
+      if(mcR) ME.followers=mcR.followers;
+      if(trR&&trR.data) trR.data.forEach(x=>{ (MYREACT[x.track_id]=MYREACT[x.track_id]||new Set()).add(x.kind); });   /* track_reactions 없으면 trR=null → 조용히 통과 */
     } else { ME=null; }
   }catch(e){ console.warn('[offlog] loadMe 실패', e); }
   AUTHREADY=true;    /* 로그인 확인 끝 — 이제 !ME면 잠금 화면 */
@@ -1255,9 +1283,11 @@ async function followCounts(id){
   const out={followers:null, following:null};
   if(!id||!SBC) return out;
   try{
-    const a=await SBC.from('follows').select('follower_id',{count:'exact',head:true}).eq('followed_id',id);
+    const [a,b]=await Promise.all([   /* 두 count 쿼리 병렬 */
+      SBC.from('follows').select('follower_id',{count:'exact',head:true}).eq('followed_id',id),
+      SBC.from('follows').select('followed_id',{count:'exact',head:true}).eq('follower_id',id)
+    ]);
     if(a && typeof a.count==='number') out.followers=a.count;
-    const b=await SBC.from('follows').select('followed_id',{count:'exact',head:true}).eq('follower_id',id);
     if(b && typeof b.count==='number') out.following=b.count;
   }catch(e){ console.warn('[offlog] followCounts 실패', e); }
   return out;
@@ -1288,10 +1318,13 @@ async function loadProfile(id){
   if(!id||!SBC) return null;
   if(PROFCACHE[id]) return PROFCACHE[id];
   try{
-    const pr=await SBC.from('profiles').select('id,name,avatar_url,role,sns_instagram,sns_youtube,sns_tiktok').eq('id',id).maybeSingle();
-    const tr=await SBC.from('tracks').select('id,title,audio_url,cover_url,is_demo,created_at,likes_count,project_id').eq('artist_id',id).order('created_at',{ascending:false});
+    /* profiles·tracks·followCounts 를 병렬로 → 과거 자료 진입 지연을 4왕복→1왕복 수준으로 */
+    const [pr,tr,fc]=await Promise.all([
+      SBC.from('profiles').select('id,name,avatar_url,role,sns_instagram,sns_youtube,sns_tiktok').eq('id',id).maybeSingle(),
+      SBC.from('tracks').select('id,title,audio_url,cover_url,is_demo,created_at,likes_count,project_id').eq('artist_id',id).order('created_at',{ascending:false}),
+      followCounts(id)
+    ]);
     const p=pr&&pr.data?pr.data:null;
-    const fc=await followCounts(id);   /* 실제 팔로워/팔로잉 수 */
     const prof={ id:id, name:(p&&p.name)||'아티스트', avatar:(p&&p.avatar_url)||('https://i.pravatar.cc/150?u='+id),
       role:(p&&p.role)||'artist', sns:{ig:(p&&p.sns_instagram)||'',yt:(p&&p.sns_youtube)||'',tt:(p&&p.sns_tiktok)||''},
       followers:fc.followers, following:fc.following,
@@ -1623,6 +1656,8 @@ let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:
   pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'', auth:false, profileAid:null, saveTrack:null, logMenu:null,
   cam:false,     /* true면 앱 안 촬영 화면 */
   homeTab:'logs',/* Home 섹션 — logs|rel|vote|follow. 좌우 스와이프로 전환 */
+  calDate:null,  /* 홈 캘린더 필터: null=전체, 'YYYY-MM-DD'=그날 나+맞팔친구 로그만. 같은 날 재탭=해제 */
+  calMonth:null, /* 캘린더에 표시 중인 달 'YYYY-MM' (null=이번 달) */
   myMenu:false,  /* 마이 헤더 ⋯ 메뉴 (공유·로그아웃) */
   relNew:null,   /* '새 릴리스' 모드일 때 임시로 만든 work id (취소 시 정리) */
   relForm:{title:'', audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', event:''}};
@@ -1707,16 +1742,58 @@ function prevStory(){
 const HOMETABS=[['logs','📷 Logs'],['rel','🎵 Releases'],['vote','🗳 Vote'],['follow','⭐ Following']];
 let HOMEIN=0;   /* 방금 넘어온 방향(+1 다음 / -1 이전) — 새 섹션 입장 애니메이션용 */
 let _lastView='';   /* 직전 뷰 — 뷰 바뀔 때만 전환 페이드 */
+let _lastSheet='';  /* 직전에 열려 있던 시트 — 같은 시트가 계속 열려 있으면 슬라이드업 애니메이션을 다시 재생하지 않는다(클릭할 때마다 화면이 튀는 문제) */
 /* 커버 없을 때 채우는 앨범 느낌 그라데이션 (아티스트 색 기반) */
 function relGrad(col){ const h=c(col)||'#3a3a44'; return 'radial-gradient(circle at 30% 25%,'+h+'55,transparent 62%),radial-gradient(circle at 78% 82%,'+h+'33,transparent 58%),#15151b'; }
+/* ── 홈 캘린더(날짜 스트립) — 날짜를 탭하면 그날 나 + 맞팔 친구들이 올린 로그만 ── */
+function _isoDay(d){ const p=x=>String(x).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+function myLogAsFeedItem(l){   /* 내 STREAM 로그 → 피드 카드 모양으로 어댑트 */
+  return {src:'me', who:(ME&&ME.name)||'나', c:'coral', aid:(ME&&ME.id)||null,
+    t:l.t, at:l.at, dt:l.dt, cap:l.cap||l.nm||l.text, nm:l.nm, text:l.text,
+    bg:l.bg, tone:l.tone, dur:l.dur, audio:l.audio, tid:l.tid||null, rx:l.rx||0};
+}
+function logsOnDate(dateStr){   /* 그날 = 내 로그 + 맞팔 친구 로그 (시간순) */
+  const idx=(window.__calIndex&&window.__calIndex())||{};
+  const friends=(idx[dateStr]||[]).slice();
+  const mine=(typeof STREAM!=='undefined'?STREAM:[]).filter(l=>l.dt===dateStr).map(myLogAsFeedItem);
+  return mine.concat(friends).sort((a,b)=>(a.at||'').localeCompare(b.at||''));
+}
+/* 월별 캘린더(그리드) — SETLOG 스타일. 로그 있는 날엔 점, 오늘/선택 강조 */
+function calMonth(){
+  const today=new Date(), tIso=_isoDay(today);
+  const ym = S.calMonth || tIso.slice(0,7);              /* 표시 중인 달 */
+  const yy=+ym.slice(0,4), mm=+ym.slice(5,7);
+  const startDow=new Date(yy, mm-1, 1).getDay();          /* 1일의 요일(0=일) */
+  const dim=new Date(yy, mm, 0).getDate();                /* 그 달 일수 */
+  const idx=(window.__calIndex&&window.__calIndex())||{};
+  const have={}; (typeof STREAM!=='undefined'?STREAM:[]).forEach(l=>{ if(l.dt)have[l.dt]=1; });
+  Object.keys(idx).forEach(d=>{ if((idx[d]||[]).length)have[d]=1; });
+  const WD=['일','월','화','수','목','금','토'];
+  let cells='';
+  for(let i=0;i<startDow;i++) cells+=`<span class="cmday empty"></span>`;
+  for(let d=1;d<=dim;d++){ const di=ym+'-'+String(d).padStart(2,'0');
+    const cls=['cmday']; if(di===tIso)cls.push('today'); if(S.calDate===di)cls.push('sel'); if(have[di])cls.push('has');
+    cells+=`<button class="${cls.join(' ')}" data-caldate="${di}"><b>${d}</b></button>`; }
+  return `<div class="calmon">
+    <div class="cmhd"><button class="cmnav" data-calmo="-1" aria-label="이전 달">‹</button>
+      <span class="cmlabel">${yy}년 ${mm}월</span>
+      <button class="cmnav" data-calmo="1" aria-label="다음 달">›</button>
+      ${S.calDate?`<button class="cmclear" data-caldate="">전체</button>`:''}</div>
+    <div class="cmgrid cmwd">${WD.map((w,i)=>`<span class="cmw${i===0?' sun':i===6?' sat':''}">${w}</span>`).join('')}</div>
+    <div class="cmgrid">${cells}</div>
+  </div>`;
+}
 function home(){
   const fing=PEOPLE.filter(p=>p.fing).length;
   const cur=S.homeTab||'logs';
 
   let bodyC='';
   if(cur==='logs'){
-    /* 기존처럼 — 한 줄에 카드 하나, 세로 스크롤. 탭=릴스 */
-    bodyC=S.feed.map(feedCard).join('') || `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">아직 <b>서로 맞팔</b>한 친구가 없어요.<br><b style="color:var(--mint)">발견</b>에서 아티스트를 팔로우하고<br>그 친구도 나를 팔로우하면<br>여기에 로그가 떠요.</div>`;
+    /* 한 줄에 카드 하나, 세로 스크롤. 캘린더 날짜를 골랐으면 그날 나+맞팔친구 로그만 */
+    const list = S.calDate ? logsOnDate(S.calDate) : S.feed;
+    bodyC = list.map(feedCard).join('') || (S.calDate
+      ? `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">이 날은 나도 <b>맞팔 친구</b>도<br>올린 로그가 없어요.</div>`
+      : `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">아직 <b>서로 맞팔</b>한 친구가 없어요.<br><b style="color:var(--mint)">발견</b>에서 아티스트를 팔로우하고<br>그 친구도 나를 팔로우하면<br>여기에 로그가 떠요.</div>`);
   } else if(cur==='rel'){
     const rel=ALLTRACKS.slice(0,20);
     bodyC=rel.length
@@ -1744,6 +1821,7 @@ function home(){
         <path d="M16.4 5.2a3.4 3.4 0 0 1 0 5.7"/><path d="M18 14.4c2 .7 3.3 2.6 3.3 5.1"/></svg>
       ${fing?`<span class="pdot"></span>`:''}</button></div>
   ${storyRow()}
+  ${calMonth()}
   <div class="hsdots">${HOMETABS.map(t=>`<button class="hsdot" data-hgoto="${t[0]}" aria-label="${t[1]}"><i class="${cur===t[0]?'on':''}"></i></button>`).join('')}</div>
   <div id="hswipe">${bodyC}</div>`;
 }
@@ -1799,17 +1877,18 @@ function feedCard(t,i){
       ${_rb('울컥','diamond','blue')}
       ${_rb('최고','star','yellow')}
       <span class="rxn" data-n="${t.rx||0}">${t.rx||0}</span></div>`;
+  const dtb = t.dt?`<div class="rdt">${esc(String(t.dt).slice(5).replace('-','.'))}</div>`:'';
 
   const body =
     t.t==='ph'  ? `<div class="rcard" data-slide="${i}">
         <div class="bgimg" style="background:${t.bg}"></div><div class="grainy"></div>
-        <div class="rmid"><div class="rts">${t.at}</div><div class="rcap">${esc(t.cap)}</div></div>${who}${fol}${rx}</div>`
+        <div class="rmid"><div class="rts">${t.at}</div>${dtb}<div class="rcap">${esc(t.cap)}</div></div>${who}${fol}${rx}</div>`
   : t.t==='snd' ? `<div class="rcard snd" data-slide="${i}">
         <div class="bigwv">${waveBars(34)}</div>
-        <div class="rmid"><div class="rts">${t.at||''}</div><div class="rcap">${t.nm||t.cap}</div>
+        <div class="rmid"><div class="rts">${t.at||''}</div>${dtb}<div class="rcap">${t.nm||t.cap}</div>
           <span class="sndpill"><em>▶</em><b>${t.dur||''}</b></span></div>${who}${fol}${rx}</div>`
   :               `<div class="rcard paper ${t.tone==='b'?'b':''}" data-slide="${i}">
-        <div class="rmid"><div class="rts">${t.at}</div><div class="rnote">${esc(t.text)}</div></div>${who}${fol}${rx}</div>`;
+        <div class="rmid"><div class="rts">${t.at}</div>${dtb}<div class="rnote">${esc(t.text)}</div></div>${who}${fol}${rx}</div>`;
 
   return `<div class="fcard">${body}</div>`;
 }
@@ -2041,7 +2120,7 @@ function mine(){
   const artistWorks = rpTracks.length ? rpTracks.map(atrackCard).join('') : _emptyOrLoad;
 
   /* 내 작품(스튜디오) */
-  const myworks=(me?`<button class="newwork" id="newworkbtn">＋ 새 릴리스 만들기</button>`:'')+WORKS.map(w=>`<div class="workrow">
+  const myworks=(me?`<button class="newwork" id="newworkbtn">＋ 음원 발매</button>`:'')+WORKS.map(w=>`<div class="workrow">
     <div class="wthumb"><div class="bgimg" style="position:absolute;inset:0;background:${w.cover?`center/cover no-repeat url(${w.cover})`:w.bg}"></div>
       <button class="wplay" aria-label="재생">▶</button></div>
     <div class="winfo"><b>${esc(w.nm)}</b><small>${w.mine?(w.pending?'발매 예약 '+w.date:(w.date&&w.date!=='작업 중'?'발매 '+w.date:'작업 중')):(w.logs+' Logs · '+w.span)}</small></div>
@@ -2058,23 +2137,25 @@ function mine(){
     const _mine=(l.tid && MYREACT[l.tid])||null;
     const _rb=(emo,sh,col)=>`<button class="shape rbtn${_mine&&_mine.has(emo)?' hit':''}" data-emo="${emo}"${l.tid?` data-tid="${l.tid}"`:''} aria-label="${emo}">${shape(sh,c(col),22)}</button>`;
     const rx = `<div class="frx" data-tid="${l.tid||''}">${_rb('소름','tri','green')}${_rb('루프','circle','shpink')}${_rb('울컥','diamond','blue')}${_rb('최고','star','yellow')}<span class="rxn" data-n="${l.rx||0}">${l.rx||0}</span></div>`;
+    /* 업로드 날짜 뱃지 (시각 아래) — 예: 07.20 */
+    const dtb = l.dt?`<div class="rdt">${esc(String(l.dt).slice(5).replace('-','.'))}</div>`:'';
     const chrome = me
       ? `${w?`<span class="wchip mychip">◆ ${esc(w.nm)}</span>`:''}
          <button class="edit mine" ${l.t==='note'?`data-addmenu="${l.id}"`:`data-logdl="${l.id}"`} aria-label="${l.t==='note'?'넣기':'받기'}">⋯</button>`
       : '';
     if(l.t==='ph') return `<div class="fcard my"><div class="rcard">
       <div class="bgimg" style="background:${l.bg}"></div><div class="grainy"></div>
-      <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${esc(l.cap)}</div></div>${who}${rx}${chrome}</div></div>`;
+      <div class="rmid"><div class="rts">${l.at}</div>${dtb}<div class="rcap">${esc(l.cap)}</div></div>${who}${rx}${chrome}</div></div>`;
     if(l.t==='snd') return `<div class="fcard my"><div class="rcard snd" data-play${l.audio?` data-audio="${l.audio}"`:''}>
       <div class="bigwv">${waveBars(34)}</div>
-      <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${esc(l.nm)}</div>
+      <div class="rmid"><div class="rts">${l.at}</div>${dtb}<div class="rcap">${esc(l.nm)}</div>
         <span class="sndpill"><em>▶</em><b>${l.dur}</b></span></div>${who}${rx}${chrome}</div></div>`;
     if(l.t==='vid') return `<div class="fcard my"><div class="rcard" style="overflow:hidden">
       <video src="${l.src}" controls playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>
-      <div class="rmid" style="pointer-events:none"><div class="rts">${l.at}</div>${l.cap?`<div class="rcap">${esc(l.cap)}</div>`:''}</div>${who}${rx}${chrome}</div></div>`;
+      <div class="rmid" style="pointer-events:none"><div class="rts">${l.at}</div>${dtb}${l.cap?`<div class="rcap">${esc(l.cap)}</div>`:''}</div>${who}${rx}${chrome}</div></div>`;
     const tc = l.tone==='b'?'b':l.tone==='p'?'p':'';   /* 포스트잇 색: 노랑/하늘/핑크 */
     return `<div class="fcard my"><div class="rcard paper ${tc}">
-      <div class="rmid"><div class="rts">${l.at}</div><div class="rnote">${esc(l.text)}</div></div>${who}${rx}${chrome}</div></div>`;
+      <div class="rmid"><div class="rts">${l.at}</div>${dtb}<div class="rnote">${esc(l.text)}</div></div>${who}${rx}${chrome}</div></div>`;
   };
 
   const logs=`
@@ -2086,11 +2167,11 @@ function mine(){
 
   return `<div class="hd">
     ${me?`<span style="width:34px"></span>`:`<button class="circ" data-v="home" aria-label="뒤로">‹</button>`}
-    <div class="htitle">${esc(prof.who)}<small>${me?'내 페이지':prof.sub}</small></div>
+    <div class="htitle">${me?'':esc(prof.who)}<small>${me?'내 페이지':prof.sub}</small></div>
     <div class="r">${me&&ME
       ? `<button class="circ" id="mysettings" aria-label="메뉴">⋯</button>`
       : `<button class="circ" aria-label="공유">⤴</button>`}</div></div>
-  <div class="mprof"><span class="mpav">${avatarEl(prof.avatar, prof.c)}</span>
+  <div class="mprof"><span class="mpav">${avatarEl(prof.avatar, prof.c, 92)}</span>
     <h3>${esc(prof.who)}</h3><p>${esc(prof.sub)}</p>
     <div class="fcount">
       <button class="fc" data-flist="follower"><b>${me?((ME&&ME.followers!=null)?ME.followers:'—'):((rp&&rp.followers!=null)?rp.followers:'—')}</b><small>팔로워</small></button>
@@ -2102,7 +2183,7 @@ function mine(){
   ${me?`<button class="myplrow" data-v="lists">🎵 내 플레이리스트<span>›</span></button>`:''}
   <div class="seg">
     <button class="${S.seg==='log'?'on':''}" data-seg="log">LOG</button>
-    <button class="${S.seg==='works'?'on':''}" data-seg="works">RELEASES</button></div>
+    <button class="${S.seg==='works'?'on':''}" data-seg="works">MUSIC</button></div>
   ${me ? (S.seg==='works'?myworks:logs) : (S.seg==='works'?artistWorks:artistLog)}
   <div style="height:14px"></div>`;
 }
@@ -2185,7 +2266,7 @@ function accountView(){
   const sns=ME.sns||{}, snsRow=(lab,val,pre)=>val?`<div class="acrow"><span class="ack">${lab}</span><span class="acv">${pre||''}${esc(val)}</span></div>`:'';
   return `<div class="hd"><button class="circ" data-v="mine" aria-label="뒤로">‹</button>
     <div class="htitle">내 정보<small>계정 · 설정</small></div><span style="width:38px"></span></div>
-  <div class="mprof" style="padding-top:6px"><span class="mpav">${avatarEl(ME.avatar,'coral')}</span>
+  <div class="mprof" style="padding-top:6px"><span class="mpav">${avatarEl(ME.avatar,'coral', 92)}</span>
     <h3>${esc(ME.name)}</h3><p>${roleKo(ME.role)}</p></div>
   ${ME.bio?`<div class="acbio">${ME.bio.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`:''}
   <div class="acsec">계정</div>
@@ -2218,23 +2299,39 @@ function flist(){
   let rows = cached || [];
   if(q) rows = rows.filter(p=>((p.who||'').toLowerCase().includes(q) || (p.sub||'').toLowerCase().includes(q)));
 
+  /* 검색 중이면 — 아직 팔로우 관계가 없어 목록에 안 뜨는 아티스트도 전체에서 찾아 보여준다(발견/팔로우) */
+  let extra = [];
+  if(q){
+    const known = new Set(rows.map(p=>p.aid).filter(Boolean));
+    extra = allArtists().filter(p => p.aid && !known.has(p.aid) && !(ME && p.aid===ME.id)
+      && (p.who||'').toLowerCase().includes(q)).slice(0,30);
+  }
+
   const ferN  = meView ? ((ME&&ME.followers!=null)?ME.followers:'—') : ((rp&&rp.followers!=null)?rp.followers:'—');
   const fingN = meView ? MYFOLLOWS.size : ((rp&&rp.following!=null)?rp.following:'—');
 
-  const body = !targetId
-    ? `<div class="pknote" style="padding:36px 0">${meView?'로그인하면 내 팔로워를 볼 수 있어요':'불러올 수 없어요'}</div>`
-    : (cached===null||cached===undefined)
-      ? `<div class="pknote" style="padding:36px 0">불러오는 중…</div>`
-      : rows.length
-        ? rows.map(p=>{
-            const on = MYFOLLOWS.has(p.aid);
-            const mine = ME && p.aid===ME.id;
-            return `<div class="prow">
-    <span class="pgo" data-prof="${(p.who||'').replace(/"/g,'&quot;')}" data-paid="${p.aid||''}">${avatarEl(p.avatar, p.c)}
-      <span class="pnm"><b>${p.who}</b><small>${p.sub||''}</small></span></span>
-    ${mine?'':`<button class="fol plfol ${on?'on':''}" data-aid="${p.aid}">${on?'팔로잉':'팔로우'}</button>`}
-  </div>`;}).join('')
-        : `<div class="pknote" style="padding:36px 0">${q?'찾는 아티스트가 없습니다':(isFer?'아직 팔로워가 없어요':'아직 팔로우한 사람이 없어요')}</div>`;
+  const prowOf = p => { const on=MYFOLLOWS.has(p.aid), mine=ME&&p.aid===ME.id;
+    return `<div class="prow">
+    <span class="pgo" data-prof="${esc(p.who)}" data-paid="${p.aid||''}">${avatarEl(p.avatar, p.c)}
+      <span class="pnm"><b>${esc(p.who)}</b><small>${esc(p.sub||'')}</small></span></span>
+    ${mine?'':`<button class="fol plfol ${on?'on':''}" data-aid="${p.aid||''}">${on?'팔로잉':'팔로우'}</button>`}
+  </div>`; };
+  const extraBody = extra.length
+    ? `<div class="pldate" style="margin-top:14px">발견 · 새로 팔로우</div>${extra.map(prowOf).join('')}` : '';
+
+  let body;
+  if(!targetId){
+    body = `<div class="pknote" style="padding:36px 0">${meView?'로그인하면 내 팔로워를 볼 수 있어요':'불러올 수 없어요'}</div>`;
+  } else if(q){
+    /* 검색 중 — 관계 목록 로딩과 무관하게 매칭 결과(관계 내 + 발견)를 바로 보여준다 */
+    body = (rows.length || extra.length)
+      ? rows.map(prowOf).join('') + extraBody
+      : ((cached===null||cached===undefined) ? `<div class="pknote" style="padding:36px 0">불러오는 중…</div>` : `<div class="pknote" style="padding:36px 0">찾는 아티스트가 없습니다</div>`);
+  } else if(cached===null||cached===undefined){
+    body = `<div class="pknote" style="padding:36px 0">불러오는 중…</div>`;
+  } else {
+    body = rows.length ? rows.map(prowOf).join('') : `<div class="pknote" style="padding:36px 0">${isFer?'아직 팔로워가 없어요':'아직 팔로우한 사람이 없어요'}</div>`;
+  }
 
   return `<div class="hd"><button class="circ" id="flback" aria-label="뒤로">‹</button>
     <div class="htitle">${title}<small>${q?'검색':isFer?'팔로워':'팔로잉'}</small></div>
@@ -2255,6 +2352,13 @@ let ALLTRACKS=[];          /* 담을 수 있는 실제 곡 목록 (로더가 채
 /* 커버 색: 내 작품은 WORKS에서, 남의 곡은 여기서. 없으면 중립 회색 */
 const COVERS={gj:'radial-gradient(circle at 35% 30%,#3a5c3e,transparent 60%),radial-gradient(circle at 80% 75%,#1c3a2c,transparent 55%),#0c140e'};
 const covOf=id=>(WORKS.find(w=>w.id===id)||{}).bg||COVERS[id]||'#22222a';
+/* 전체 아티스트 디렉토리 (곡이 1개 이상 있는 아티스트) — 팔로우 검색용. ALLTRACKS에서 중복 제거 */
+function allArtists(){
+  const seen={}, out=[];
+  ALLTRACKS.forEach(t=>{ const key=t.aid||t.by; if(!key||seen[key])return; seen[key]=1;
+    out.push({who:t.by, aid:t.aid||null, c:t.c, sub:'Artist'}); });
+  return out;
+}
 
 /* 후보 아티스트의 최근 생각 — 펼치면 보인다 */
 const ARTLOGS={
@@ -2787,7 +2891,11 @@ function renderMini(){
     ? `<div class="mini ${S.mini.playing?'playing':''}">
         <div class="mini-top"><span>${esc(_lab)}</span><button id="mx" aria-label="닫기">✕</button></div>
         <div class="mini-btm"><button class="miniplay" id="mp" aria-label="재생">${S.mini.playing?'⏸':'▶'}</button>
-          <span class="nm"${(NOWPLAY.aid||NOWPLAY.who)?' id="mnm" style="cursor:pointer"':''}>${esc(NOWPLAY.nm)}</span><span class="tm">${NOWPLAY.tm||''}</span>
+          <div class="mini-nmwrap">
+            <span class="nm">${esc(NOWPLAY.nm)}</span>
+            ${NOWPLAY.who?`<span class="who" id="mwho" style="cursor:pointer">${esc(NOWPLAY.who)} ›</span>`:''}
+          </div>
+          <span class="tm">${NOWPLAY.tm||''}</span>
           ${(NOWPLAY.aid||NOWPLAY.tid)?`<button class="minimore" id="mmore" aria-label="공유·담기·팔로우">⋯</button>`:''}</div></div>` : '';
   const mp=document.getElementById('mp'), mx=document.getElementById('mx');
   if(mp)mp.onclick=()=>{
@@ -2796,8 +2904,8 @@ function renderMini(){
     renderMini();
   };
   if(mx)mx.onclick=()=>{ S.mini.on=false; AUDIO.pause(); S.mini.playing=false; _clearPlayingUI(); renderMini(); };
-  const mnm=document.getElementById('mnm'), mmore=document.getElementById('mmore');
-  if(mnm)mnm.onclick=()=>{ if(NOWPLAY.who||NOWPLAY.aid) goProfile(NOWPLAY.who, NOWPLAY.aid); };
+  const mwho=document.getElementById('mwho'), mmore=document.getElementById('mmore');
+  if(mwho)mwho.onclick=()=>{ if(NOWPLAY.who||NOWPLAY.aid) goProfile(NOWPLAY.who, NOWPLAY.aid); };
   if(mmore)mmore.onclick=e=>{ e.stopPropagation(); S.logMenu={kind:'oshare', id:NOWPLAY.tid||'', nm:NOWPLAY.nm, by:NOWPLAY.who, audio:NOWPLAY.src, aid:NOWPLAY.aid||''}; render(); };
 }
 
@@ -2895,6 +3003,11 @@ function render(){
   const _viewKey=S.view+'|'+(S.homeTab||'')+'|'+(S.work||'')+'|'+(S.profile||'');
   if(_viewKey!==_lastView){ _lastView=_viewKey; _bodyEl.classList.remove('vin'); void _bodyEl.offsetWidth; _bodyEl.classList.add('vin');
     document.getElementById('screen').scrollTop=0; }
+  /* 시트(발매·로그담기 등) 슬라이드업 애니메이션은 '처음 열릴 때'만 — 같은 시트가 열린 채 옵션을 고를 때마다
+     다시 재생돼 화면이 튀던 문제 해결. 시트가 그대로면 animation 제거 */
+  const _sheetKey = S.rel?'rel':S.relpick?'relpick':S.pull?'pull':S.stage?'stage':S.addlist?'addlist':'';
+  if(_sheetKey && _sheetKey===_lastSheet){ const _sh=_bodyEl.querySelector('.pksheet'); if(_sh)_sh.style.animation='none'; }
+  _lastSheet=_sheetKey;
   [...document.querySelectorAll('#nav button[data-v]')].forEach(b=>
     b.classList.toggle('on', b.dataset.v===S.view || (S.view==='list'&&b.dataset.v==='lists') || (S.view==='room'&&b.dataset.v==='home')));
   const npf=document.getElementById('navprofile');
@@ -2918,7 +3031,7 @@ function render(){
     _ns.querySelectorAll('.nsg').forEach(function(b){ b.classList.toggle('on', (b.dataset.cam==='cam')===!!S.cam); }); }
   /* 로그인 잠금 오버레이 — 확인 전=스플래시, 확인 후 비로그인=잠금, 로그인=없음 */
   const _lv=document.getElementById('lockview');
-  if(_lv) _lv.innerHTML = !AUTHREADY ? splashScreen() : (!ME ? lockScreen() : '');
+  if(_lv) _lv.innerHTML = !(AUTHREADY&&DATAREADY) ? splashScreen() : (!ME ? lockScreen() : '');
   renderMini();
   bind();
   syncStoryAudio();     // 스토리 데모면 실제 소리 재생
@@ -3058,7 +3171,7 @@ function bind(){
   });
   const lp=document.getElementById('lplay');
   if(lp)lp.onclick=()=>{ const p=LISTS.find(x=>x.id===S.list); const first=p&&(p.tracks||[]).find(t=>t.audio);
-    if(first){ if(CURSRC!==first.audio){AUDIO.src=first.audio;CURSRC=first.audio;} const pr=AUDIO.play(); if(pr&&pr.catch)pr.catch(()=>{}); NOWPLAY.nm=first.nm; NOWPLAY.src=first.audio; S.mini.on=true; S.mini.playing=true; renderMini(); }
+    if(first){ if(CURSRC!==first.audio){AUDIO.src=first.audio;CURSRC=first.audio;} const pr=AUDIO.play(); if(pr&&pr.catch)pr.catch(()=>{}); NOWPLAY.nm=first.nm; NOWPLAY.src=first.audio; NOWPLAY.who=first.by||''; NOWPLAY.aid=first.aid||''; NOWPLAY.tid=first.tid||''; S.mini.on=true; S.mini.playing=true; renderMini(); }
     else offToast('재생할 곡이 없어요'); };
   /* 플레이리스트에 곡 담기 */
   const asb=document.getElementById('addsongbtn');
@@ -3141,6 +3254,13 @@ function bind(){
   /* 점(dots) 탭 = 그 섹션으로 바로 (스와이프 안 될 때의 대체 수단) */
   document.querySelectorAll('[data-hgoto]').forEach(b=>b.onclick=()=>{ const to=b.dataset.hgoto, order=HOMETABS.map(t=>t[0]), ci=order.indexOf(S.homeTab||'logs'), ti=order.indexOf(to);
     if(ti<0||ti===ci)return; HOMEIN=ti>ci?1:-1; S.homeTab=to; render(); });
+  /* 캘린더 날짜 탭 → 그날 나+맞팔친구 로그만. 같은 날 다시 탭하면 해제. logs 섹션으로 이동 */
+  document.querySelectorAll('[data-caldate]').forEach(b=>b.onclick=()=>{ const d=b.dataset.caldate||null;
+    S.calDate=(S.calDate===d)?null:d; S.homeTab='logs'; render(); });
+  /* 캘린더 이전/다음 달 */
+  document.querySelectorAll('[data-calmo]').forEach(b=>b.onclick=()=>{ const dir=+b.dataset.calmo;
+    const base=(S.calMonth||_isoDay(new Date()).slice(0,7)); let yy=+base.slice(0,4), mm=+base.slice(5,7)+dir;
+    if(mm<1){mm=12;yy--;} if(mm>12){mm=1;yy++;} S.calMonth=yy+'-'+String(mm).padStart(2,'0'); render(); });
   const hsw=document.getElementById('hswipe');
   if(hsw){
     /* 방금 넘어온 섹션은 온 방향 반대편에서 미끄러져 들어온다 (공간 일관성) */
@@ -3374,7 +3494,7 @@ function bind(){
       if(t && t.audio){
         if(CURSRC!==t.audio){ AUDIO.src=t.audio; CURSRC=t.audio; }
         const p=AUDIO.play(); if(p&&p.catch)p.catch(()=>{});
-        NOWPLAY.nm=(t.nm||t.cap||NOWPLAY.nm); NOWPLAY.src=t.audio; S.mini.on=true; S.mini.playing=true;
+        NOWPLAY.nm=(t.nm||t.cap||NOWPLAY.nm); NOWPLAY.src=t.audio; NOWPLAY.who=t.who||''; NOWPLAY.aid=t.aid||''; NOWPLAY.tid=t.tid||''; S.mini.on=true; S.mini.playing=true;
         const cur=document.getElementById('sl'+idx); if(cur){ cur.classList.add('playing'); const em=cur.querySelector('.slpill em'); if(em)em.textContent='⏸'; }
       } else { AUDIO.pause(); }        // 룸 등 오디오 없는 슬라이드 → 정지
     };
@@ -3618,9 +3738,11 @@ setInterval(()=>{
 
 /* ── 실제 데이터 주입 — 디자인/구성은 v34 그대로, 목업만 진짜 음악/아티스트로 교체 ── */
 (async function loadReal(){
-  try{ studioMerge(); renewHome(); render(); }catch(e){}   /* 즉시 첫 화면(시드+로컬) — 네트워크 안 기다림. 실제 데이터는 아래에서 채워 다시 그림 */
-  try{ loadMe().then(function(){ try{render();}catch(_){}}); }catch(e){}   /* 로그인 상태 즉시 확인(잠금 판단) */
-  setTimeout(function(){ if(!AUTHREADY){ AUTHREADY=true; try{render();}catch(_){}} }, 2500);   /* 안전장치: 확인 지연돼도 스플래시가 안 멈춤 */
+  try{ studioMerge(); renewHome(); render(); }catch(e){}   /* 즉시 첫 화면(로컬) — 네트워크 안 기다림. 실제 데이터는 아래에서 채워 다시 그림. 스플래시가 DATAREADY까지 덮고 있어 시드 목업은 노출 안 됨 */
+  /* 로그인 상태 즉시 확인(잠금 판단). 프로미스를 저장해 아래에서 재사용 → loadMe 중복 호출 제거 */
+  let _meP=null; try{ _meP=loadMe().then(function(){ try{render();}catch(_){}}); }catch(e){}
+  setTimeout(function(){ if(!AUTHREADY){ AUTHREADY=true; try{render();}catch(_){}} }, 2500);   /* 안전장치: 로그인 확인 지연돼도 잠금 판단 진행 */
+  setTimeout(function(){ if(!DATAREADY){ DATAREADY=true; try{render();}catch(_){}} }, 4500);   /* 안전장치: 네트워크가 아주 느려도 4.5s 뒤엔 있는 걸로 보여줌 */
   try{
     var SB='https://vayzhmaggwpkbsrrsdqt.supabase.co';
     var KEY='sb_publishable_1PxNV0BGL7Wy_strTMqnbA_pCBCsOPG';
@@ -3650,7 +3772,7 @@ setInterval(()=>{
     var iFollow=function(name){ var id=aidOf(name); return !!(id&&MYFOLLOWS.has(id)); };            // 내가 팔로우 중?
     var released=new Set(); tracks.forEach(function(t){ if(t.artistId) released.add(t.artistId); }); // 곡을 발매한(트랙 있는) 아티스트
     var isFriend=function(name){ var id=aidOf(name); return !!(id && MYFOLLOWS.has(id) && MYFOLLOWERS.has(id) && released.has(id)); }; // 서로 맞팔 + 발매
-    await loadMe(); // 로그인 유저 + 내 팔로우/반응 상태를 카드 빌드 전에 확보
+    try{ await _meP; }catch(_){}  // 위에서 이미 시작한 loadMe 완료만 기다림(중복 호출 X). 내 팔로우/반응 상태를 카드 빌드 전에 확보
 
     var cut=function(s,n){ s=String(s||''); return s.length>n ? s.slice(0,n-1)+'…' : s; };
     var _shuf=function(a){ var x=a.slice(); for(var i=x.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=x[i];x[i]=x[j];x[j]=t;} return x; };
@@ -3658,12 +3780,18 @@ setInterval(()=>{
     // 플레이리스트에 담을 수 있는 실제 곡 목록
     ALLTRACKS=tracks.map(function(t){ return {nm:t.title, by:t.artist, dur:'', tid:t.id, audio:t.audio, c:colOf(t.artist), cover:t.cover||'', aid:t.artistId||null}; });
 
+    // 피드 카드 1장 데이터 (트랙 → 카드) — resampleFeed 와 calIndex(캘린더)가 공유
+    var mk=function(t){ var o={who:cut(t.artist,18), c:colOf(t.artist), at:tm(t.ts), dt:(t.ts||'').slice(0,10), rx:(t.likes||0), aid:aidOf(t.artist), tid:t.id, t:'snd', audio:t.audio, nm:cut(t.title,20)};
+      o.cap=o.nm; o.sub=cut((t.demo?'Demo':'Track')+(t.tags[0]?' · '+t.tags[0]:''),24); if(t.tags[0])o.tags=t.tags.slice(0,2).map(function(x){return '#'+String(x).replace(/^#/,'');}); return o; };
+    // 날짜별 인덱스 (맞팔+발매 친구의 모든 트랙을 YYYY-MM-DD 로 그룹) — 홈 캘린더용. 전역 노출
+    function calIndex(){ var byDate={};
+      tracks.forEach(function(t){ if(!isFriend(t.artist))return; var d=(t.ts||'').slice(0,10); if(!d)return; (byDate[d]=byDate[d]||[]).push(mk(t)); });
+      return byDate; }
+    window.__calIndex=calIndex;
     // ── 매 새로고침마다 전체 아티스트에서 다양하게 재샘플 → (1) 모든 아티스트 노출 (2) 트렌드 첫 화면 새 얼굴 ──
     function resampleFeed(){
       var reps=[], seenA={};
       _shuf(tracks).forEach(function(t){ if(seenA[t.artist])return; seenA[t.artist]=1; reps.push(t); }); // 아티스트당 대표 1곡(랜덤)
-      var mk=function(t){ var o={who:cut(t.artist,18), c:colOf(t.artist), at:tm(t.ts), rx:(t.likes||0), aid:aidOf(t.artist), tid:t.id, t:'snd', audio:t.audio, nm:cut(t.title,20)};
-        o.cap=o.nm; o.sub=cut((t.demo?'Demo':'Track')+(t.tags[0]?' · '+t.tags[0]:''),24); if(t.tags[0])o.tags=t.tags.slice(0,2).map(function(x){return '#'+String(x).replace(/^#/,'');}); return o; };
       // ── 메인(스토리·로그 피드)은 "서로 맞팔 + 발매한 친구"만 (요청: 우선 맞팔만 노출) ──
       var mreps = reps.filter(function(t){ return isFriend(t.artist); });
       var i=0, take=function(n){ var s=[]; for(var k=0;k<n && mreps.length;k++){ s.push(mreps[i%mreps.length]); i++; } return s; };
@@ -3679,6 +3807,7 @@ setInterval(()=>{
     }
     window.__resample=resampleFeed;
     if(tracks.length) resampleFeed();
+    DATAREADY=true;   /* 실제 트랙 데이터 준비 완료 → 이제 스플래시를 걷어도 됨(진짜 콘텐츠만 노출) */
 
     // WORKS = 프로젝트(project_id)별 대표 — 로그 수 = 그 프로젝트 곡 수
     var byPid={}; tracks.forEach(function(t){ (byPid[t.pid]=byPid[t.pid]||[]).push(t); });
@@ -3739,7 +3868,7 @@ setInterval(()=>{
       });
     }
     try{ artists.forEach(function(a){ AIDBYNAME[a]=aidOf(a); }); }catch(e){}   /* 이름→profile id (프로필 페이지 연동) */
-  }catch(e){ console.warn('[offlog] real data load failed', e); }
+  }catch(e){ console.warn('[offlog] real data load failed', e); DATAREADY=true; }   /* 실패해도 스플래시는 걷는다(무한 로딩 방지) */
   try{ studioMerge(); }catch(e){}     /* 내가 만든 작품/플레이리스트/로그 복원 */
   try{ wireAuth(); }catch(e){}        /* 로그인 상태 변화 구독 (OAuth 복귀·로그아웃) */
   try{ renewHome(); }catch(e){}
