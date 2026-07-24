@@ -2034,7 +2034,7 @@ function mine(){
     /* 좋아요 = 도형 반응 (소름·루프·울컥·최고 + 개수) */
     const _mine=(l.tid && MYREACT[l.tid])||null;
     const _rb=(emo,sh,col)=>`<button class="shape rbtn${_mine&&_mine.has(emo)?' hit':''}" data-emo="${emo}"${l.tid?` data-tid="${l.tid}"`:''} aria-label="${emo}">${shape(sh,c(col),22)}</button>`;
-    const rx = `<div class="frx" data-tid="${l.tid||''}">${_rb('소름','tri','green')}${_rb('루프','circle','shpink')}${_rb('울컥','diamond','blue')}${_rb('최고','star','yellow')}<span class="rxn">${l.rx||0}</span></div>`;
+    const rx = `<div class="frx" data-tid="${l.tid||''}">${_rb('소름','tri','green')}${_rb('루프','circle','shpink')}${_rb('울컥','diamond','blue')}${_rb('최고','star','yellow')}<span class="rxn" data-n="${l.rx||0}">${l.rx||0}</span></div>`;
     const chrome = me
       ? `${w?`<span class="wchip mychip">◆ ${w.nm}</span>`:''}
          <button class="edit mine" ${l.t==='note'?`data-addmenu="${l.id}"`:`data-logdl="${l.id}"`} aria-label="${l.t==='note'?'넣기':'받기'}">⋯</button>`
@@ -3524,7 +3524,7 @@ function bind(){
     const was=r.dataset.hit==='1';                    // 토글
     r.dataset.hit=was?'':'1'; r.classList.toggle('hit', !was);
     const n=(frx||r.parentElement).querySelector('.rxn');
-    if(n){ n.dataset.n=Math.max(0,(+n.dataset.n)+(was?-1:1)); n.textContent=n.dataset.n; }
+    if(n){ const cur=parseInt(n.dataset.n,10)||0; n.dataset.n=Math.max(0,cur+(was?-1:1)); n.textContent=n.dataset.n; }
     if(!was){                                          // 추가할 때만 +1 팝
       const box=r.closest('.fcard')||r.closest('.log')||r.closest('.dplayer')||r.closest('.svbody')||r.closest('.sl');
       if(box){ const p=document.createElement('span'); p.className='pop'; p.textContent=r.dataset.emo+' +1';
