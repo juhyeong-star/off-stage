@@ -1150,6 +1150,11 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 const V=getComputedStyle(document.documentElement), c=n=>V.getPropertyValue('--'+n).trim();
+/* HTML 이스케이프 — DB/유저 문자열을 innerHTML에 넣기 전 반드시 통과(저장형 XSS 차단) */
+const _ESC={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,ch=>_ESC[ch]); }
+/* 이미지 URL 안전 검사 — http(s) 또는 data:image 만 허용(CSS url()/attr 이스케이프 breakout 차단) */
+function safeUrl(u){ u=String(u==null?'':u); return (/^https?:\/\//.test(u)||/^data:image\//.test(u)) && !/["'()\\<>\s]/.test(u) ? u : ''; }
 
 /* ── 로그인 세션 (메인앱 회원 그대로) + 실제 쓰기 클라이언트 ── */
 const SB_URL='https://vayzhmaggwpkbsrrsdqt.supabase.co';
@@ -1286,8 +1291,8 @@ async function loadProfile(id){
 }
 /* 아바타: 실사 이미지 있으면 이미지, 없으면 기존 색 스마일 */
 function avatarEl(av, color, size){
-  var s=size||44;
-  if(av) return `<span class="avimg" style="width:${s}px;height:${s}px;background-image:url(${av})"></span>`;
+  var s=size||44, u=safeUrl(av);   /* url() breakout·속성 이탈 차단: 검증된 URL만 */
+  if(u) return `<span class="avimg" style="width:${s}px;height:${s}px;background-image:url(${u})"></span>`;
   return smileEl(color||'blue');
 }
 let AIDBYNAME={};   // 아티스트 표시명 → profile id (로더가 채움)
@@ -1327,9 +1332,9 @@ function saveSheet(){
   const t=S.saveTrack, mine=LISTS.filter(p=>p.mine);
   return `<div class="cs-bd" id="svbd"><div class="cs">
     <div class="cs-hd"><b>담을 플레이리스트</b><button class="cs-x" id="svx" aria-label="닫기">✕</button></div>
-    <div class="cs-trk">🎵 <b>${t.nm}</b> · ${t.by}</div>
+    <div class="cs-trk">🎵 <b>${esc(t.nm)}</b> · ${esc(t.by)}</div>
     ${mine.length?mine.map(p=>{const has=(p.tracks||[]).some(x=>x.tid===t.tid);
-      return `<button class="pkrow" data-savein="${p.id}"><span class="pknm"><b>${p.nm}</b><small>${(p.tracks||[]).length}곡</small></span>
+      return `<button class="pkrow" data-savein="${p.id}"><span class="pknm"><b>${esc(p.nm)}</b><small>${(p.tracks||[]).length}곡</small></span>
         <span style="margin-left:auto;color:${has?'var(--mint)':'var(--muted)'};font-weight:800">${has?'✓ 담김':'＋'}</span></button>`}).join(''):`<div class="pknote" style="padding:10px 0">아직 만든 플레이리스트가 없어요</div>`}
     <button class="newlist" id="svnew" style="margin-top:8px">＋ 새 플레이리스트에 담기</button>
   </div></div>`;
@@ -1422,6 +1427,9 @@ async function toggleReact(tid, kind){
   }catch(e){
     /* track_reactions 테이블이 아직 없으면(PGRST205/404) 저장만 못 할 뿐, 세션 반응은 유지 */
     if(e && (e.code==='PGRST205' || e.code==='42P01')) { console.info('[offlog] 반응 저장 보류 — track_reactions 테이블 없음'); return; }
+    /* 진짜 실패 → 낙관적 토글 되돌리고 화면 복구(DB와 어긋나지 않게) */
+    if(had) set.add(kind); else set.delete(kind);
+    if(typeof render==='function') render();
     console.warn('[offlog] react 실패', e); offToast('반응 저장 실패 — 잠시 후 다시');
   }
 }
@@ -1639,9 +1647,9 @@ function storyViewer(){
   }).join('');
   const content =
     it.t==='ph'  ? `<div class="svbg" style="background:${it.bg}"></div><div class="grainy"></div>
-                     <div class="svmid"><div class="svcap">${it.cap}</div></div>`
+                     <div class="svmid"><div class="svcap">${esc(it.cap)}</div></div>`
     : it.t==='snd' ? `<div class="svmid"><div class="svts">${it.at}</div>
-                        <div class="svwave">${waveBars(28)}</div><div class="svcap">${it.cap}</div>
+                        <div class="svwave">${waveBars(28)}</div><div class="svcap">${esc(it.cap)}</div>
                         <div class="svpill">▶ ${it.dur}</div></div>`
     :               `<div class="svnote ${it.tone==='b'?'b':''}"><p>${it.text}</p></div>`;
   return `<div class="svwrap" id="svwrap">
@@ -1704,13 +1712,13 @@ function home(){
     bodyC=rel.length
       ? `<div class="relgrid">${rel.map(t=>{const by=(t.by||'').replace(/"/g,'&quot;');const nm=(t.nm||'').replace(/"/g,'&quot;');return `<div class="reltile">
           <button class="relcov" data-relplay="${t.audio||''}" data-relnm="${nm}" aria-label="재생" style="background:${t.cover?`center/cover no-repeat url(${t.cover})`:relGrad(t.c)}">${t.cover?'':`<em>${(t.nm||'♪').slice(0,1)}</em>`}<i class="relplay">▶</i></button>
-          <button class="reltitle" data-rellog="${by}" data-relaid="${t.aid||''}">${t.nm}</button>
-          <button class="relartist" data-relgo="${by}" data-relaid="${t.aid||''}">${t.by} ›</button></div>`;}).join('')}</div>`
+          <button class="reltitle" data-rellog="${by}" data-relaid="${t.aid||''}">${esc(t.nm)}</button>
+          <button class="relartist" data-relgo="${by}" data-relaid="${t.aid||''}">${esc(t.by)} ›</button></div>`;}).join('')}</div>`
       : `<div class="pknote" style="padding:30px 0">불러오는 중…</div>`;
   } else if(cur==='vote'){
     bodyC=ROUNDS.map(r=>`<button class="votetile vfull" data-goround="${r.id}">
         <em>${r.cat==='music'?'🎵':'🎤'} ${r.type==='curated'?'큐레이션':'오픈'}</em>
-        <b>${r.nm}</b><small>${r.sub||''}</small>
+        <b>${esc(r.nm)}</b><small>${r.sub||''}</small>
         <span class="voten">${(r.cands||[]).length}팀 참여 · 투표하러 가기 ›</span></button>`).join('');
   } else {
     /* Following — 팔로우한 아티스트들의 로그 (원은 위 하이라이트 줄에) */
@@ -1768,7 +1776,7 @@ function buildFeed(){
 function feedCard(t,i){
   if(t.src==='room') return roomCard(t.slot);
 
-  const who=`<div class="rwho" data-prof="${t.who}" data-paid="${t.aid||''}" style="cursor:pointer">${smileEl(t.c)}${t.who}</div>`;
+  const who=`<div class="rwho" data-prof="${esc(t.who)}" data-paid="${t.aid||''}" style="cursor:pointer">${smileEl(t.c)}${esc(t.who)}</div>`;
   /* 팔로우 = 카드 우측 상단. 반응 도형 = 카드 위 하단. 전부 카드 위에 얹힌다 */
   /* 액션은 ⋯ 하나로 통합 (공유·담기·팔로우) — 우측 상단 */
   const fol = `<button class="edit mine" data-sharemenu="${t.tid||''}" data-snm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-sby="${(t.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" data-said="${t.aid||''}" aria-label="공유·담기·팔로우">⋯</button>`;
@@ -1784,13 +1792,13 @@ function feedCard(t,i){
   const body =
     t.t==='ph'  ? `<div class="rcard" data-slide="${i}">
         <div class="bgimg" style="background:${t.bg}"></div><div class="grainy"></div>
-        <div class="rmid"><div class="rts">${t.at}</div><div class="rcap">${t.cap}</div></div>${who}${fol}${rx}</div>`
+        <div class="rmid"><div class="rts">${t.at}</div><div class="rcap">${esc(t.cap)}</div></div>${who}${fol}${rx}</div>`
   : t.t==='snd' ? `<div class="rcard snd" data-slide="${i}">
         <div class="bigwv">${waveBars(34)}</div>
         <div class="rmid"><div class="rts">${t.at||''}</div><div class="rcap">${t.nm||t.cap}</div>
           <span class="sndpill"><em>▶</em><b>${t.dur||''}</b></span></div>${who}${fol}${rx}</div>`
   :               `<div class="rcard paper ${t.tone==='b'?'b':''}" data-slide="${i}">
-        <div class="rmid"><div class="rts">${t.at}</div><div class="rnote">${t.text}</div></div>${who}${fol}${rx}</div>`;
+        <div class="rmid"><div class="rts">${t.at}</div><div class="rnote">${esc(t.text)}</div></div>${who}${fol}${rx}</div>`;
 
   return `<div class="fcard">${body}</div>`;
 }
@@ -1799,7 +1807,7 @@ function feedCard(t,i){
 function slideView(){
   const sl=(t,i)=>{
     const anchor=` id="sl${i}"`;
-    const who=`<div class="slwho"><span data-prof="${t.who}" data-paid="${t.aid||''}" style="cursor:pointer;display:flex;align-items:center;gap:8px">${dot(t.c)}${t.who||''}</span></div>`;
+    const who=`<div class="slwho"><span data-prof="${esc(t.who)}" data-paid="${t.aid||''}" style="cursor:pointer;display:flex;align-items:center;gap:8px">${dot(t.c)}${t.who||''}</span></div>`;
     /* ⋯ 는 하나로 — 우측 상단 ✕ 옆. 공유·담기·팔로우를 다 담는다 */
     const moreBtn=`<button class="sldots" data-sharemenu="${t.tid||''}" data-snm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-sby="${(t.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" data-said="${t.aid||''}" aria-label="공유·담기·팔로우">⋯</button>`;
     const _smine=(t.tid && MYREACT[t.tid])||null;
@@ -1815,10 +1823,10 @@ function slideView(){
     if(t.src==='room'){
       const rows=ROOM[t.slot];
       const mini=r=>{
-        if(r.t==='empty') return `<div class="rm empty"><span class="rmw">${r.who}</span><span class="rmts">${t.slot}</span></div>`;
-        if(r.t==='ph')  return `<div class="rm" style="background:${r.bg}"><span class="rmw">${r.who}</span><span class="rmts on">${t.slot}</span></div>`;
-        if(r.t==='snd') return `<div class="rm snd"><div class="rmwv">${waveBars(12)}</div><span class="rmw">${r.who}</span><span class="rmts on">${t.slot}</span></div>`;
-        return `<div class="rm paper"><span class="rmw" style="color:${c('ink')}">${r.who}</span><span class="rmnote">${r.text}</span></div>`;
+        if(r.t==='empty') return `<div class="rm empty"><span class="rmw">${esc(r.who)}</span><span class="rmts">${t.slot}</span></div>`;
+        if(r.t==='ph')  return `<div class="rm" style="background:${r.bg}"><span class="rmw">${esc(r.who)}</span><span class="rmts on">${t.slot}</span></div>`;
+        if(r.t==='snd') return `<div class="rm snd"><div class="rmwv">${waveBars(12)}</div><span class="rmw">${esc(r.who)}</span><span class="rmts on">${t.slot}</span></div>`;
+        return `<div class="rm paper"><span class="rmw" style="color:${c('ink')}">${esc(r.who)}</span><span class="rmnote">${esc(r.text)}</span></div>`;
       };
       return `<div class="sl"${anchor} data-room="${t.slot}">
         <div class="slwho"><b style="font-family:'Black Han Sans';font-size:17px">${t.slot}</b>
@@ -1827,7 +1835,7 @@ function slideView(){
     }
     if(t.t==='ph') return `<div class="sl"${anchor}>
       <div class="bgimg" style="background:${t.bg}"></div><div class="grainy"></div>
-      ${who}${moreBtn}<div class="slmid"><div class="slts">${t.at}</div><div class="slcap">${t.cap}</div>${rx}</div>${hint}</div>`;
+      ${who}${moreBtn}<div class="slmid"><div class="slts">${t.at}</div><div class="slcap">${esc(t.cap)}</div>${rx}</div>${hint}</div>`;
     if(t.t==='snd') return `<div class="sl snd"${anchor} data-slplay>
       ${who}${moreBtn}
       <div class="slmid">
@@ -1835,7 +1843,7 @@ function slideView(){
         <div class="slcap">${t.nm||t.cap}</div>
         <div class="slwave">${waveBars(30)}</div>${rx}</div>${hint}</div>`;
     return `<div class="sl paper ${t.tone==='b'?'b':''}"${anchor}>
-      ${who}${moreBtn}<div class="slmid"><div class="slts">${t.at}</div><div class="slnote">${t.text}</div>${rx}</div>${hint}</div>`;
+      ${who}${moreBtn}<div class="slmid"><div class="slts">${t.at}</div><div class="slnote">${esc(t.text)}</div>${rx}</div>${hint}</div>`;
   };
   return `<div class="slwrap" id="slwrap">
     <button class="slx" id="slclose" aria-label="닫기">✕</button>
@@ -1846,10 +1854,10 @@ function roomCard(slot){
   const rows=ROOM[slot];
   const shot=rows.filter(r=>r.t!=='empty').length;
   const mini=r=>{
-    if(r.t==='empty') return `<div class="rm empty"><span class="rmw">${r.who}</span><span class="rmts">${slot}</span></div>`;
-    if(r.t==='ph')  return `<div class="rm" style="background:${r.bg}"><span class="rmw">${r.who}</span><span class="rmts on">${slot}</span></div>`;
-    if(r.t==='snd') return `<div class="rm snd"><div class="rmwv">${waveBars(14)}</div><span class="rmw">${r.who}</span><span class="rmts on">${slot}</span></div>`;
-    return `<div class="rm paper"><span class="rmw" style="color:${c('ink')}">${r.who}</span><span class="rmnote">${r.text}</span></div>`;
+    if(r.t==='empty') return `<div class="rm empty"><span class="rmw">${esc(r.who)}</span><span class="rmts">${slot}</span></div>`;
+    if(r.t==='ph')  return `<div class="rm" style="background:${r.bg}"><span class="rmw">${esc(r.who)}</span><span class="rmts on">${slot}</span></div>`;
+    if(r.t==='snd') return `<div class="rm snd"><div class="rmwv">${waveBars(14)}</div><span class="rmw">${esc(r.who)}</span><span class="rmts on">${slot}</span></div>`;
+    return `<div class="rm paper"><span class="rmw" style="color:${c('ink')}">${esc(r.who)}</span><span class="rmnote">${esc(r.text)}</span></div>`;
   };
   return `<div class="log roomfeed" data-room="${slot}">
     <div class="log-hd"><b style="font-family:'Black Han Sans';font-size:15px">${slot}</b>
@@ -1870,7 +1878,7 @@ function roomFull(){
 
   /* 남의 로그다. 반응은 되지만 담기·수정은 안 된다 */
   const chrome=r=>`
-      <div class="rwho" data-prof="${r.who}" style="cursor:pointer">${smile(r.c)}${r.who}</div>
+      <div class="rwho" data-prof="${esc(r.who)}" style="cursor:pointer">${smile(r.c)}${esc(r.who)}</div>
       ${r.bub?`<div class="rbub">${smile(r.bub.c)}<span class="bb">${r.bub.txt}</span></div>`:''}
       ${r.t!=='empty'?`<button class="rheart ${r.heart?'on':''}" aria-label="하트">❤️</button>
       <button class="rreply" aria-label="답장">↰</button>`:''}`;
@@ -1890,7 +1898,7 @@ function roomFull(){
         <span class="sndpill"><em>▶</em><b>${r.dur}</b></span></div>${chrome(r)}</div>`;
 
     return `<div class="rcard paper ${r.tone==='b'?'b':''}">
-      <div class="rmid"><div class="rts">${slot}</div><div class="rnote">${r.text}</div></div>${chrome(r)}</div>`;
+      <div class="rmid"><div class="rts">${slot}</div><div class="rnote">${esc(r.text)}</div></div>${chrome(r)}</div>`;
   };
 
   return `<div class="hd"><button class="circ" data-v="home" aria-label="뒤로">‹</button>
@@ -1967,10 +1975,10 @@ function eventStatus(w){
   const v=(mine&&mine.v)||0;
   const confirmed = r.need && v>=r.need;
   if(confirmed) return `<div class="evstat one confirmed">
-    <span class="evbadge confirmed">🎉 공연 확정</span><b>${r.nm}</b>
+    <span class="evbadge confirmed">🎉 공연 확정</span><b>${esc(r.nm)}</b>
     <span class="evcd">득표 ${v}/${r.need}</span></div>`;
   return `<div class="evstat one">
-    <span class="evbadge">◆ 참여 중</span><b>${r.nm}</b>
+    <span class="evbadge">◆ 참여 중</span><b>${esc(r.nm)}</b>
     <span class="evcd" data-cd="${r.id}">${r.need?v+'/'+r.need+'표':''}</span></div>`;
 }
 
@@ -2010,10 +2018,10 @@ function mine(){
   const atrackCard=t=>`<div class="workrow">
     <div class="wthumb"><div class="bgimg" style="position:absolute;inset:0;background:${t.cover?`center/cover no-repeat url(${t.cover})`:'#22222a'}"></div>
       <button class="tplay" data-tplay="${t.audio||''}" aria-label="재생">▶</button></div>
-    <div class="winfo"><b>${t.nm}</b><small>${t.demo?'Demo':'Track'}${t.dt?' · '+t.dt.replace(/-/g,'.'):''}</small></div></div>`;
+    <div class="winfo"><b>${esc(t.nm)}</b><small>${t.demo?'Demo':'Track'}${t.dt?' · '+t.dt.replace(/-/g,'.'):''}</small></div></div>`;
   const alogCard=t=>`<div class="fcard"><div class="rcard snd" data-play${t.audio?` data-audio="${t.audio}"`:''}>
     <div class="bigwv">${waveBars(34)}</div>
-    <div class="rmid"><div class="rts">${t.dt?t.dt.replace(/-/g,'.'):''}</div><div class="rcap">${t.nm}</div>
+    <div class="rmid"><div class="rts">${t.dt?t.dt.replace(/-/g,'.'):''}</div><div class="rcap">${esc(t.nm)}</div>
       <span class="sndpill"><em>▶</em><b>${t.demo?'Demo':''}</b></span></div>
     <button class="edit mine" data-sharemenu="${t.id||''}" data-snm="${(t.nm||'').replace(/"/g,'&quot;')}" data-sby="${(prof.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" data-said="${S.profileAid||''}" aria-label="공유·담기·팔로우">⋯</button></div></div>`;
   const _emptyOrLoad = rp ? `<div class="pknote" style="padding:22px 0">아직 올린 게 없어요</div>` : `<div class="pknote" style="padding:22px 0">불러오는 중…</div>`;
@@ -2025,7 +2033,7 @@ function mine(){
   const myworks=(me?`<button class="newwork" id="newworkbtn">＋ 새 릴리스 만들기</button>`:'')+WORKS.map(w=>`<div class="workrow">
     <div class="wthumb"><div class="bgimg" style="position:absolute;inset:0;background:${w.cover?`center/cover no-repeat url(${w.cover})`:w.bg}"></div>
       <button class="wplay" aria-label="재생">▶</button></div>
-    <div class="winfo"><b>${w.nm}</b><small>${w.mine?(w.pending?'발매 예약 '+w.date:(w.date&&w.date!=='작업 중'?'발매 '+w.date:'작업 중')):(w.logs+' Logs · '+w.span)}</small></div>
+    <div class="winfo"><b>${esc(w.nm)}</b><small>${w.mine?(w.pending?'발매 예약 '+w.date:(w.date&&w.date!=='작업 중'?'발매 '+w.date:'작업 중')):(w.logs+' Logs · '+w.span)}</small></div>
     <button class="openst" data-work="${w.id}">${w.mine?'열기':'Collect LOG'} ›</button></div>`).join('');
 
   /* 녹음 = 즉석. 음원 = 믹스다운 파일 업로드 (Demo 탭이 하던 일) */
@@ -2034,28 +2042,28 @@ function mine(){
   const mark=l=>{
     const w = l.work ? WORKS.find(x=>x.id===l.work) : null;
     /* 프로필(내 아바타+이름) — 샘플 카드처럼 카드마다 얹는다 */
-    const who = `<div class="rwho">${avatarEl(prof.avatar, prof.c||'coral', 22)}${prof.who}</div>`;
+    const who = `<div class="rwho">${avatarEl(prof.avatar, prof.c||'coral', 22)}${esc(prof.who)}</div>`;
     /* 좋아요 = 도형 반응 (소름·루프·울컥·최고 + 개수) */
     const _mine=(l.tid && MYREACT[l.tid])||null;
     const _rb=(emo,sh,col)=>`<button class="shape rbtn${_mine&&_mine.has(emo)?' hit':''}" data-emo="${emo}"${l.tid?` data-tid="${l.tid}"`:''} aria-label="${emo}">${shape(sh,c(col),22)}</button>`;
     const rx = `<div class="frx" data-tid="${l.tid||''}">${_rb('소름','tri','green')}${_rb('루프','circle','shpink')}${_rb('울컥','diamond','blue')}${_rb('최고','star','yellow')}<span class="rxn" data-n="${l.rx||0}">${l.rx||0}</span></div>`;
     const chrome = me
-      ? `${w?`<span class="wchip mychip">◆ ${w.nm}</span>`:''}
+      ? `${w?`<span class="wchip mychip">◆ ${esc(w.nm)}</span>`:''}
          <button class="edit mine" ${l.t==='note'?`data-addmenu="${l.id}"`:`data-logdl="${l.id}"`} aria-label="${l.t==='note'?'넣기':'받기'}">⋯</button>`
       : '';
     if(l.t==='ph') return `<div class="fcard my"><div class="rcard">
       <div class="bgimg" style="background:${l.bg}"></div><div class="grainy"></div>
-      <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${l.cap}</div></div>${who}${rx}${chrome}</div></div>`;
+      <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${esc(l.cap)}</div></div>${who}${rx}${chrome}</div></div>`;
     if(l.t==='snd') return `<div class="fcard my"><div class="rcard snd" data-play${l.audio?` data-audio="${l.audio}"`:''}>
       <div class="bigwv">${waveBars(34)}</div>
-      <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${l.nm}</div>
+      <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${esc(l.nm)}</div>
         <span class="sndpill"><em>▶</em><b>${l.dur}</b></span></div>${who}${rx}${chrome}</div></div>`;
     if(l.t==='vid') return `<div class="fcard my"><div class="rcard" style="overflow:hidden">
       <video src="${l.src}" controls playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>
-      <div class="rmid" style="pointer-events:none"><div class="rts">${l.at}</div>${l.cap?`<div class="rcap">${l.cap}</div>`:''}</div>${who}${rx}${chrome}</div></div>`;
+      <div class="rmid" style="pointer-events:none"><div class="rts">${l.at}</div>${l.cap?`<div class="rcap">${esc(l.cap)}</div>`:''}</div>${who}${rx}${chrome}</div></div>`;
     const tc = l.tone==='b'?'b':l.tone==='p'?'p':'';   /* 포스트잇 색: 노랑/하늘/핑크 */
     return `<div class="fcard my"><div class="rcard paper ${tc}">
-      <div class="rmid"><div class="rts">${l.at}</div><div class="rnote">${l.text}</div></div>${who}${rx}${chrome}</div></div>`;
+      <div class="rmid"><div class="rts">${l.at}</div><div class="rnote">${esc(l.text)}</div></div>${who}${rx}${chrome}</div></div>`;
   };
 
   const logs=`
@@ -2067,12 +2075,12 @@ function mine(){
 
   return `<div class="hd">
     ${me?`<span style="width:34px"></span>`:`<button class="circ" data-v="home" aria-label="뒤로">‹</button>`}
-    <div class="htitle">${prof.who}<small>${me?'내 페이지':prof.sub}</small></div>
+    <div class="htitle">${esc(prof.who)}<small>${me?'내 페이지':prof.sub}</small></div>
     <div class="r">${me&&ME
       ? `<button class="circ" id="mysettings" aria-label="메뉴">⋯</button>`
       : `<button class="circ" aria-label="공유">⤴</button>`}</div></div>
   <div class="mprof"><span class="mpav">${avatarEl(prof.avatar, prof.c)}</span>
-    <h3>${prof.who}</h3><p>${prof.sub}</p>
+    <h3>${esc(prof.who)}</h3><p>${esc(prof.sub)}</p>
     <div class="fcount">
       <button class="fc" data-flist="follower"><b>${me?((ME&&ME.followers!=null)?ME.followers:'—'):((rp&&rp.followers!=null)?rp.followers:'—')}</b><small>팔로워</small></button>
       <span class="fcdiv"></span>
@@ -2099,7 +2107,7 @@ function logPuller(w){
   const nm=l=> l.t==='note' ? l.text.replace(/\n.*/,'') : l.t==='ph' ? l.cap : l.nm;
   return `<div class="sheet-bd" id="plbd"></div>
   <div class="pksheet">
-    <div class="pkhd"><b>${w.nm}에 담을 로그</b>
+    <div class="pkhd"><b>${esc(w.nm)}에 담을 로그</b>
       <button class="pkx" id="plclose" aria-label="닫기">✕</button></div>
     <div class="pkwarn" style="background:rgba(83,224,200,.07);border-color:rgba(83,224,200,.25);color:var(--mint)">
       작업 기간 <b>${w.span}</b> 안의 아직 어느 작품도 아닌 로그입니다</div>
@@ -2130,7 +2138,7 @@ function releaseLogPicker(w){
   }).join('') : `<div class="pknote" style="padding:20px 0">아직 로그가 없어요 · 마이에서 ＋로 로그를 남겨보세요</div>`;
   return `<div class="sheet-bd" id="rpkbd"></div>
   <div class="pksheet tall">
-    <div class="pkhd"><b>${w.nm} 발매 로그</b>
+    <div class="pkhd"><b>${esc(w.nm)} 발매 로그</b>
       <button class="pkx" id="rpkclose" aria-label="닫기">✕</button></div>
     <div class="pkwarn" style="background:rgba(83,224,200,.07);border-color:rgba(83,224,200,.25);color:var(--mint)">
       전체 로그에서 이 발매에 넣을 것을 고르세요 · 날짜별로 자동 정리됩니다</div>
@@ -2157,12 +2165,12 @@ function accountView(){
   if(!ME){ return `<div class="hd"><button class="circ" data-v="mine" aria-label="뒤로">‹</button>
     <div class="htitle">내 정보</div><span style="width:38px"></span></div>
     <div class="pknote" style="padding:40px 0">로그인이 필요해요</div>`; }
-  const row=(k,v)=>v?`<div class="acrow"><span class="ack">${k}</span><span class="acv">${v}</span></div>`:'';
-  const sns=ME.sns||{}, snsRow=(lab,val,pre)=>val?`<div class="acrow"><span class="ack">${lab}</span><span class="acv">${pre||''}${val}</span></div>`:'';
+  const row=(k,v)=>v?`<div class="acrow"><span class="ack">${k}</span><span class="acv">${esc(v)}</span></div>`:'';
+  const sns=ME.sns||{}, snsRow=(lab,val,pre)=>val?`<div class="acrow"><span class="ack">${lab}</span><span class="acv">${pre||''}${esc(val)}</span></div>`:'';
   return `<div class="hd"><button class="circ" data-v="mine" aria-label="뒤로">‹</button>
     <div class="htitle">내 정보<small>계정 · 설정</small></div><span style="width:38px"></span></div>
   <div class="mprof" style="padding-top:6px"><span class="mpav">${avatarEl(ME.avatar,'coral')}</span>
-    <h3>${ME.name}</h3><p>${roleKo(ME.role)}</p></div>
+    <h3>${esc(ME.name)}</h3><p>${roleKo(ME.role)}</p></div>
   ${ME.bio?`<div class="acbio">${ME.bio.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`:''}
   <div class="acsec">계정</div>
   <div class="accard">
@@ -2259,7 +2267,7 @@ function lists(){
   ${LISTS.map(p=>`<div class="lrow" data-list="${p.id}">
     <span class="lcov">${p.cov.slice(0,3).map((id,i)=>
       `<i style="background:${covOf(id)};z-index:${3-i};left:${i*9}px"></i>`).join('')}</span>
-    <span class="lnm"><b>${p.nm}</b><small>${(p.tracks||[]).length}곡 ${p.pub?'· 공개':'· 나만'}</small></span>
+    <span class="lnm"><b>${esc(p.nm)}</b><small>${(p.tracks||[]).length}곡 ${p.pub?'· 공개':'· 나만'}</small></span>
     <button class="lshare" data-share="${p.id}" aria-label="공유">⤴</button>
   </div>`).join('')}
   <button class="newlist" id="newlist">＋ 새 플레이리스트</button>`}
@@ -2281,7 +2289,7 @@ function voteHub(){
     const max=Math.max(...r.cands.map(x=>x.v))||1;
     const shown=[...r.cands].map((d,i)=>({...d,_i:i})).sort((a,b)=>b.v-a.v).slice(0,20);
     return `<div class="rhead">
-      <div class="rtitle">${r.type==='curated'?'<i>✦</i>':''}${r.nm}
+      <div class="rtitle">${r.type==='curated'?'<i>✦</i>':''}${esc(r.nm)}
         <span class="rcd" data-cd="${r.id}">—</span></div>
       <div class="rwhat">${r.what}</div>
       <div class="rprize">${r.prize} · 참가 ${r.cands.length}명</div></div>
@@ -2343,19 +2351,19 @@ function recoView(){
 function listDetail(){
   const p=LISTS.find(x=>x.id===S.list);
   return `<div class="hd"><button class="circ" id="ldback" aria-label="뒤로">‹</button>
-    <div class="htitle">${p.nm}<small>${(p.tracks||[]).length}곡 ${p.pub?'· 공개':'· 나만 보기'}</small></div>
+    <div class="htitle">${esc(p.nm)}<small>${(p.tracks||[]).length}곡 ${p.pub?'· 공개':'· 나만 보기'}</small></div>
     <div class="r"><button class="circ" data-share="${p.id}" aria-label="공유">⤴</button></div></div>
   <div class="lhero">
     <span class="lcov big">${p.cov.slice(0,3).map((id,i)=>
       `<i style="background:${covOf(id)};z-index:${3-i};left:${i*22}px"></i>`).join('')}</span>
-    <div class="lhinfo">${p.mine?`<input class="lhname" id="listname" value="${(p.nm||'').replace(/"/g,'&quot;')}">`:`<h3>${p.nm}</h3>`}<small>${(ME&&ME.name)||'나'} · ${(p.tracks||[]).length}곡</small>
+    <div class="lhinfo">${p.mine?`<input class="lhname" id="listname" value="${(p.nm||'').replace(/"/g,'&quot;')}">`:`<h3>${esc(p.nm)}</h3>`}<small>${(ME&&ME.name)||'나'} · ${(p.tracks||[]).length}곡</small>
       <div class="lhbtn"><button class="cta" id="lplay">▶ 전체 재생</button>
         <button class="savebtn" id="addsongbtn">＋ 곡 담기</button></div></div>
   </div>
   ${p.tracks.length?p.tracks.map((t,i)=>`<div class="trow">
     <span class="tno">${String(i+1).padStart(2,'0')}</span>
     <button class="tplay" data-tplay="${t.audio||''}" aria-label="재생">▶</button>
-    <span class="tnm"><b>${t.nm}</b><small>${t.by}</small></span>
+    <span class="tnm"><b>${esc(t.nm)}</b><small>${esc(t.by)}</small></span>
     <span class="tdur">${t.dur||''}</span>
     <button class="tx" data-tx="${i}" aria-label="빼기">✕</button></div>`).join(''):`<div class="pknote" style="padding:18px 0">아직 곡이 없어요 · 아래 <b>＋ 곡 담기</b>로 발견의 곡을 담아보세요</div>`}
   ${S.addsong?songPicker(p):''}
@@ -2370,13 +2378,13 @@ function songPicker(p){
   const list=ALLTRACKS.filter(t=> !q || (t.nm+' '+t.by).toLowerCase().indexOf(q)>-1 );
   return `<div class="sheet-bd" id="asbd"></div>
   <div class="pksheet tall">
-    <div class="pkhd"><b>${p.nm}에 곡 담기</b>
+    <div class="pkhd"><b>${esc(p.nm)}에 곡 담기</b>
       <button class="pkx" id="asclose" aria-label="닫기">✕</button></div>
     <input class="pksearch" id="assearch" placeholder="곡·아티스트 검색" value="${(S.sq||'').replace(/"/g,'&quot;')}">
     <div class="pknote" style="text-align:left;margin:0 2px 8px;color:var(--muted)">▶ 들어보고 · ＋로 담기</div>
     ${list.length?list.slice(0,60).map(t=>`<div class="pkrow songrow ${have[t.tid]?'cur':''}" data-tid="${t.tid}">
       <button class="songplay" data-preview="${t.audio||''}" aria-label="미리듣기">▶</button>
-      <span class="pknm"><b>${t.nm}</b><small>${t.by}</small></span>
+      <span class="pknm"><b>${esc(t.nm)}</b><small>${esc(t.by)}</small></span>
       <button class="songadd ${have[t.tid]?'on':''}" data-addsong="${t.tid}">${have[t.tid]?'✓ 담김':'＋ 담기'}</button></div>`).join('')
       : `<div class="pknote" style="padding:20px 0">검색 결과 없음</div>`}
     <button class="cta" id="asdone">완료 (${(p.tracks||[]).length}곡)</button>
@@ -2388,11 +2396,11 @@ function stageSheet(w){
   const open=ROUNDS.filter(r=>r.type==='open');
   return `<div class="sheet-bd" id="stbd"></div>
   <div class="pksheet">
-    <div class="pkhd"><b>${w.nm}을 낼 무대</b>
+    <div class="pkhd"><b>${esc(w.nm)}을 낼 무대</b>
       <button class="pkx" id="stclose" aria-label="닫기">✕</button></div>
     ${open.map(r=>`<button class="pkrow ${r.applied===w.nm?'cur':''}" data-stage="${r.id}">
       <span class="pkth" style="background:var(--card2);display:flex;align-items:center;justify-content:center;color:var(--lemon)">◆</span>
-      <span class="pknm"><b>${r.nm}</b><small>${r.sub} · ${r.prize}</small></span>
+      <span class="pknm"><b>${esc(r.nm)}</b><small>${esc(r.sub)} · ${r.prize}</small></span>
       ${r.applied?`<span class="pkcur">${r.applied===w.nm?'신청 중':r.applied+' →교체'}</span>`:''}</button>`).join('')}
     <div class="pknote">라운드당 한 곡만. 교체하면 득표는 0부터 다시 시작합니다</div>
   </div>`;
@@ -2402,12 +2410,12 @@ function stageSheet(w){
 function listPicker(w){
   return `<div class="sheet-bd" id="lpbd"></div>
   <div class="pksheet">
-    <div class="pkhd"><b>${w.nm}을 담을 곳</b>
+    <div class="pkhd"><b>${esc(w.nm)}을 담을 곳</b>
       <button class="pkx" id="lpclose" aria-label="닫기">✕</button></div>
     ${LISTS.map(p=>`<button class="pkrow" data-addto="${p.id}">
       <span class="lcov" style="width:44px;height:34px">${p.cov.slice(0,2).map((id,i)=>
         `<i style="background:${covOf(id)};z-index:${2-i};left:${i*8}px;width:34px;height:34px"></i>`).join('')}</span>
-      <span class="pknm"><b>${p.nm}</b><small>${(p.tracks||[]).length}곡</small></span></button>`).join('')}
+      <span class="pknm"><b>${esc(p.nm)}</b><small>${(p.tracks||[]).length}곡</small></span></button>`).join('')}
     <button class="newlist" id="lpnew" style="margin-top:8px">＋ 새 플레이리스트에 담기</button>
   </div>`;
 }
@@ -2416,7 +2424,7 @@ function listPicker(w){
 function shareSheet(p){
   return `<div class="sheet-bd" id="shbd"></div>
   <div class="pksheet">
-    <div class="pkhd"><b>${p.nm} 공유</b>
+    <div class="pkhd"><b>${esc(p.nm)} 공유</b>
       <button class="pkx" id="shclose" aria-label="닫기">✕</button></div>
     <div class="shlink"><span>offlog.app/l/${p.id}</span><button class="shcopy" id="shcopy">복사</button></div>
     <button class="pkrow" data-pub="${p.id}">
@@ -2435,7 +2443,7 @@ function work(){
   const chips=[['all','전체'],['demo','Demo'],['pic','사진'],['vid','영상'],['idea','아이디어'],['voice','보이스'],['note','노트']];
   const scard=r=>{
     /* 작품 스토리 안 = 이미 담긴 것들. 뱃지 불필요 */
-    const chrome=`<div class="rwho" data-prof="${r.who}" style="cursor:pointer">${smileEl(r.c)}${r.who}</div>`;
+    const chrome=`<div class="rwho" data-prof="${esc(r.who)}" style="cursor:pointer">${smileEl(r.c)}${esc(r.who)}</div>`;
     if(r.t==='ph')return `<div class="rcard upcard" style="height:180px">
       <div class="bgimg" style="background:${r.bg}"></div><div class="grainy"></div>
       <div class="rmid"><div class="rts">${r.at}</div><div class="rcap">${r.cap}</div></div>
@@ -2455,7 +2463,7 @@ function work(){
   /* 내가 만든 작품 = 큐레이션한 발매 로그를 날짜별 타임라인으로 */
   const logCard=l=>{
     if(l.t==='snd')return `<div class="rcard snd" data-play${l.audio?` data-audio="${l.audio}"`:''} style="height:150px"><div class="bigwv">${waveBars(28)}</div><div class="rmid"><div class="rts">${l.at||''}</div><div class="rcap">${l.nm||l.cap||''}</div><span class="sndpill"><em>▶</em><b>${l.dur||''}</b></span></div></div>`;
-    if(l.t==='vid')return `<div class="rcard" style="height:180px;overflow:hidden"><video src="${l.src}" controls playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video><div class="rmid" style="pointer-events:none"><div class="rts">${l.at||''}</div>${l.cap?`<div class="rcap">${l.cap}</div>`:''}</div></div>`;
+    if(l.t==='vid')return `<div class="rcard" style="height:180px;overflow:hidden"><video src="${l.src}" controls playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video><div class="rmid" style="pointer-events:none"><div class="rts">${l.at||''}</div>${l.cap?`<div class="rcap">${esc(l.cap)}</div>`:''}</div></div>`;
     if(l.t==='ph')return `<div class="rcard" style="height:180px"><div class="bgimg" style="background:${l.bg||'#141418'}"></div><div class="grainy"></div><div class="rmid"><div class="rts">${l.at||''}</div><div class="rcap">${l.cap||''}</div></div></div>`;
     return `<div class="rcard paper ${l.tone==='b'?'b':''}" style="height:150px"><div class="rmid"><div class="rts">${l.at||''}</div><div class="rnote">${(l.text||'').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div></div></div>`;
   };
@@ -2469,12 +2477,12 @@ function work(){
     }).join('');
   };
   return `<div class="hd"><button class="circ" data-v="mine" aria-label="뒤로">‹</button>
-    <div class="htitle">${w.nm}<small>${w.by||'나'}</small></div>
+    <div class="htitle">${esc(w.nm)}<small>${w.by||'나'}</small></div>
     <div class="r"><button class="circ" aria-label="공유">⤴</button></div></div>
   <div class="whero">
     <div class="wcover upcard"><div class="bgimg" style="background:${w.cover?`center/cover no-repeat url(${w.cover})`:w.bg}"></div><div class="grainy"></div>
       ${w.cover?'':`<div class="uphint2" style="bottom:auto;top:12px">🖼 ${w.mine?'발매하기에서 커버 넣기':'앨범 커버'}</div>`}
-      <div class="wmeta"><h2>${w.nm}</h2>
+      <div class="wmeta"><h2>${esc(w.nm)}</h2>
         <small>${w.date==='작업 중'?'작업 중':(w.pending?'발매 예약 '+w.date:'발매 '+w.date)} · ${w.logs} Logs · ${w.span}</small></div></div>
     <div class="wbtns">
       <button class="cta" id="wplaybig">▶ Play</button>
@@ -2487,7 +2495,7 @@ function work(){
   </div>
   ${w.mine && (w.cover||w.lyr||(w.credits&&(w.credits.comp||w.credits.lyri||w.credits.arr||w.credits.prod))) ? `<div class="albuminfo">
     ${w.credits&&(w.credits.comp||w.credits.lyri||w.credits.arr||w.credits.prod)?`<div class="ai-sec"><div class="ai-t">크레딧</div><div class="ai-cr">
-      ${w.credits.comp?`<span>작곡 <b>${w.credits.comp}</b></span>`:''}${w.credits.lyri?`<span>작사 <b>${w.credits.lyri}</b></span>`:''}${w.credits.arr?`<span>편곡 <b>${w.credits.arr}</b></span>`:''}${w.credits.prod?`<span>프로듀서 <b>${w.credits.prod}</b></span>`:''}
+      ${w.credits.comp?`<span>작곡 <b>${esc(w.credits.comp)}</b></span>`:''}${w.credits.lyri?`<span>작사 <b>${esc(w.credits.lyri)}</b></span>`:''}${w.credits.arr?`<span>편곡 <b>${esc(w.credits.arr)}</b></span>`:''}${w.credits.prod?`<span>프로듀서 <b>${esc(w.credits.prod)}</b></span>`:''}
     </div></div>`:''}
     ${w.inst?`<div class="ai-sec"><div class="ai-t">가사</div><div class="ai-lyr" style="color:var(--muted)">연주곡 (가사 없음)</div></div>`:(w.lyr?`<div class="ai-sec"><div class="ai-t">가사</div><div class="ai-lyr">${w.lyr.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div></div>`:'')}
   </div>`:''}
@@ -2552,7 +2560,7 @@ function releaseSheet(w){
       <button class="evopt ${!R.event?'on':''}" data-relevent="">나중에 할게요</button>
       ${ROUNDS.filter(r=>r.cat==='stage'&&r.type==='open').map(r=>`
         <button class="evopt ${R.event===r.id?'on':''}" data-relevent="${r.id}">
-          <b>${r.nm}</b><small>${r.sub} · 득표 ${r.need} → ${(r.prize||'').replace(/^.*→\s*/,'')}</small></button>`).join('')}
+          <b>${esc(r.nm)}</b><small>${esc(r.sub)} · 득표 ${r.need} → ${(r.prize||'').replace(/^.*→\s*/,'')}</small></button>`).join('')}
     </div>
     <p class="rulen" style="text-align:left;margin:7px 4px 0">참여를 고르면 청취자 투표를 받아요 · 목표 득표를 넘기면 공연이 확정돼요</p>
 
@@ -2758,9 +2766,9 @@ function renderMini(){
   const _lab=NOWPLAY.label+(NOWPLAY.cnt?' · '+NOWPLAY.cnt+'곡':'');
   m.innerHTML = (S.mini.on && NOWPLAY.nm && !(S.view==='home'&&S.mode==='slide'))
     ? `<div class="mini ${S.mini.playing?'playing':''}">
-        <div class="mini-top"><span>${_lab}</span><button id="mx" aria-label="닫기">✕</button></div>
+        <div class="mini-top"><span>${esc(_lab)}</span><button id="mx" aria-label="닫기">✕</button></div>
         <div class="mini-btm"><button class="miniplay" id="mp" aria-label="재생">${S.mini.playing?'⏸':'▶'}</button>
-          <span class="nm"${(NOWPLAY.aid||NOWPLAY.who)?' id="mnm" style="cursor:pointer"':''}>${NOWPLAY.nm}</span><span class="tm">${NOWPLAY.tm||''}</span>
+          <span class="nm"${(NOWPLAY.aid||NOWPLAY.who)?' id="mnm" style="cursor:pointer"':''}>${esc(NOWPLAY.nm)}</span><span class="tm">${NOWPLAY.tm||''}</span>
           ${(NOWPLAY.aid||NOWPLAY.tid)?`<button class="minimore" id="mmore" aria-label="공유·담기·팔로우">⋯</button>`:''}</div></div>` : '';
   const mp=document.getElementById('mp'), mx=document.getElementById('mx');
   if(mp)mp.onclick=()=>{
@@ -3090,6 +3098,7 @@ function bind(){
         try{URL.revokeObjectURL(_u)}catch(_){}   /* 메타 읽었으면 해제(누수 방지) */
         render();
       };
+      a.onerror=()=>{ try{URL.revokeObjectURL(_u)}catch(_){} };   /* 디코드 실패해도 누수 방지 */
       render();
     };
   }
@@ -3178,7 +3187,7 @@ function bind(){
   });
   const pd=document.getElementById('pulldone');
   if(pd)pd.onclick=()=>{
-    const w=WORKS.find(x=>x.id===S.work);
+    const w=WORKS.find(x=>x.id===S.work); if(!w){S.pull=false;S.sel=[];render();return;}
     S.sel.forEach(id=>{const l=STREAM.find(x=>x.id===id); if(l)l.work=w.id});
     w.logs+=S.sel.length;
     if(w.mine)studioSave();
@@ -3229,6 +3238,7 @@ function bind(){
   const stbd=document.getElementById('stbd');   if(stbd)stbd.onclick=()=>{S.stage=false;render()};
   document.querySelectorAll('[data-stage]').forEach(b=>b.onclick=()=>{
     const r=ROUNDS.find(x=>x.id===b.dataset.stage), w=WORKS.find(x=>x.id===S.work);
+    if(!w){S.stage=false;render();return;}
     applyToEvent(r, w.nm);
     S.stage=false; render();
   });
@@ -3297,7 +3307,7 @@ function bind(){
   const rd=document.getElementById('reldone');
   if(rd)rd.onclick=()=>{
     if(relMissing().length)return;
-    const w=WORKS.find(x=>x.id===S.work);
+    const w=WORKS.find(x=>x.id===S.work); if(!w){S.rel=false;render();return;}
     const R=S.relForm;
     if(R.title&&R.title.trim()) w.nm=R.title.trim();   /* 제목 = 작품 이름 */
     S.relNew=null;                           /* 발매 완료 → 임시 작품 유지 */
@@ -3440,7 +3450,7 @@ function bind(){
     const lmclose=()=>{ S.logMenu=null; render(); };
     if(lmx)lmx.onclick=lmclose; if(lmbd)lmbd.onclick=e=>{ if(e.target===lmbd)lmclose(); };
     document.querySelectorAll('[data-addkind]').forEach(b=>b.onclick=()=>{ _attachTo=S.logMenu.id; const k=b.dataset.addkind; S.logMenu=null; render(); const inp=document.getElementById(k==='ph'?'addphoto':'adddemo'); if(inp)inp.click(); });
-    document.querySelectorAll('[data-omenu]').forEach(b=>b.onclick=()=>{ const act=b.dataset.omenu, M=S.logMenu; if(act==='save'){ S.saveTrack={tid:M.id, nm:M.nm, by:M.by, audio:M.audio}; S.logMenu=null; render(); } else if(act==='follow'){ const aid=M.aid; S.logMenu=null; if(!ME){ render(); needLogin(); return; } const willFollow=!MYFOLLOWS.has(aid); (willFollow?followArtist(aid):unfollowArtist(aid)).then(()=>{ offToast(willFollow?'팔로우했어요':'팔로우 해제했어요'); render(); }); render(); } else { S.logMenu=null; render(); offShareTrack(M); } });
+    document.querySelectorAll('[data-omenu]').forEach(b=>b.onclick=()=>{ const act=b.dataset.omenu, M=S.logMenu; if(act==='save'){ S.saveTrack={tid:M.id, nm:M.nm, by:M.by, audio:M.audio}; S.logMenu=null; render(); } else if(act==='follow'){ const aid=M.aid; S.logMenu=null; if(!ME){ render(); needLogin(); return; } const willFollow=!MYFOLLOWS.has(aid); (willFollow?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(ok) offToast(willFollow?'팔로우했어요':'팔로우 해제했어요'); render(); }); render(); } else { S.logMenu=null; render(); offShareTrack(M); } });
   }
   const _addph=document.getElementById('addphoto');
   if(_addph && !_addph.__b){ _addph.__b=1; _addph.onchange=()=>{ const f=_addph.files&&_addph.files[0]; if(f&&_attachTo){ attachMedia(_attachTo,'ph',f); } _attachTo=null; _addph.value=''; }; }
@@ -3462,6 +3472,7 @@ function bind(){
   const lpn=document.getElementById('lpnew');
   if(lpn)lpn.onclick=()=>{
     const w=WORKS.find(x=>x.id===S.work), id='p'+Date.now().toString(36);
+    if(!w){S.addlist=false;render();return;}
     LISTS.unshift({id, nm:w.nm+' 리스트', mine:true, cnt:1, pub:0, cov:[w.id], tracks:[{nm:w.nm, by:w.by, dur:w.dur}]});
     studioSave(); S.addlist=false; S.list=id; S.view='list'; render();
   };
@@ -3475,7 +3486,7 @@ function bind(){
     const bd=document.getElementById('csbd'), x=document.getElementById('csx');
     const ta=document.getElementById('csta'), post=document.getElementById('cspost'), rm=document.getElementById('csrm');
     const cam=document.getElementById('cscam'), cau=document.getElementById('csaudio');
-    const close=()=>{ S.compose=null; render(); };
+    const close=()=>{ const md=S.compose&&S.compose.media; if(md&&md.url&&/^blob:/.test(md.url||'')){try{URL.revokeObjectURL(md.url)}catch(_){}} S.compose=null; render(); };
     if(bd)bd.onclick=e=>{ if(e.target===bd) close(); };
     if(x)x.onclick=close;
     if(ta)ta.oninput=()=>{ S.compose.text=ta.value; if(post) post.disabled = !((ta.value||'').trim()||S.compose.media); };
