@@ -80,7 +80,7 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 /* ── 곡 선택 시트 ── */
 .sheet-bd{position:absolute;inset:0;z-index:44;background:rgba(0,0,0,.6);backdrop-filter:blur(2px)}
 .pksheet{position:absolute;left:0;right:0;bottom:0;z-index:45;background:var(--card2);
-  border-top:1px solid var(--line);border-radius:24px 24px 0 0;padding:16px 14px 26px;
+  border-top:1px solid var(--line);border-radius:24px 24px 0 0;padding:16px 14px calc(26px + env(safe-area-inset-bottom));
   animation:up .3s cubic-bezier(.34,1.3,.64,1)}
 @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .pkhd{display:flex;align-items:center;margin-bottom:12px}
@@ -226,8 +226,11 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .evopt.on{border-color:var(--mint);background:rgba(83,224,200,.08)}
 .evopt.on b{color:var(--mint)}
 .evopt:focus-visible{outline:2px solid var(--mint)}
-.relsum{font-size:11.5px;color:var(--muted);text-align:center;margin:18px 0 12px;line-height:1.5}
+.relsum{font-size:11.5px;color:var(--muted);text-align:center;margin:12px 0 12px;line-height:1.5}
 .relsum b{color:var(--mint)}
+.rellogsel{max-height:240px;overflow-y:auto;margin:4px 0 2px;border:1px solid var(--line);border-radius:14px;padding:4px;scrollbar-width:none}
+.rellogsel::-webkit-scrollbar{display:none}
+.rellogsel .pldate:first-child{margin-top:2px}
 .profol{margin:8px 0 0;font-size:11.5px;padding:6px 18px}
 .profol.on{background:var(--mint);color:#04231d}
 
@@ -418,8 +421,9 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 @keyframes vin{from{opacity:.35;transform:translateY(5px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){ #body.vin{animation:vinf .12s ease-out} @keyframes vinf{from{opacity:.4}to{opacity:1}} }
 /* 스와이프 위치 표시 — iOS식 작은 점만 (화살표·라벨 없음) */
-.hsdots{display:flex;justify-content:center;gap:5px;margin:12px 0}
-.hsdots i{width:5px;height:5px;border-radius:50%;background:var(--line);transition:all .22s}
+.hsdots{display:flex;justify-content:center;gap:2px;margin:8px 0 12px}
+.hsdots .hsdot{background:none;border:0;padding:8px 4px;cursor:pointer;display:flex;align-items:center;-webkit-tap-highlight-color:transparent}
+.hsdots i{width:5px;height:5px;border-radius:50%;background:var(--line);transition:all .22s;pointer-events:none}
 .hsdots i.on{background:var(--mint);width:15px;border-radius:3px}
 /* 스와이프 콘텐츠 — 가로는 내가, 세로 스크롤은 브라우저가 (직접 조작 1:1) */
 #hswipe{touch-action:pan-y;will-change:transform,opacity}
@@ -1100,7 +1104,8 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
   /* 목업 프레임(핑크 베젤·라운드·그림자) 벗기고 화면을 꽉 채움 */
   .phone{max-width:none;width:100%;border:0;border-radius:0;box-shadow:none;height:100dvh;overflow:hidden}
   /* 세로 스크롤만 허용(pan-y) → 가로로 끌어도 화면이 안 따라 움직임. 스크롤 체이닝/바운스 차단 */
-  .screen{height:100%;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;overflow-x:hidden;touch-action:pan-y;padding-bottom:calc(148px + env(safe-area-inset-bottom))}
+  .screen{height:100%;overscroll-behavior:contain;overflow-x:hidden;touch-action:pan-y;padding-bottom:calc(148px + env(safe-area-inset-bottom))}
+  /* -webkit-overflow-scrolling:touch 제거 — iOS에서 .screen이 stacking context가 되어 발매 시트(z45)가 뮤직바(z19)/nav(z20) 아래로 깔리던 문제. iOS13+는 이 속성 없이도 관성 스크롤 정상 */
   /* iOS 홈바(34px)와 겹치지 않게 하단 네비/미니 안전영역 확보 */
   .nav{padding-bottom:max(18px, env(safe-area-inset-bottom))}
   .mini{bottom:calc(74px + env(safe-area-inset-bottom))}
@@ -1162,6 +1167,7 @@ const SB_KEY='sb_publishable_1PxNV0BGL7Wy_strTMqnbA_pCBCsOPG';
 let SBC=null;               // 인증 클라이언트 (RLS용 JWT 자동 첨부)
 let ME=null;                // 현재 로그인 유저 {id,name}
 const MYFOLLOWS=new Set();  // 내가 팔로우한 artist profile id
+const MYFOLLOWERS=new Set();  // 나를 팔로우한 사람(followed_id=ME) — 맞팔(서로 팔로우) 판정용
 const MYREACT={};           // track_id -> Set(kind)
 try{
   if(window.supabase && window.supabase.createClient){
@@ -1189,6 +1195,10 @@ async function loadMe(){
       /* 실제 DB 컬럼은 followed_id (following_id 아님) */
       const f=await SBC.from('follows').select('followed_id').eq('follower_id', user.id);
       if(f.data) f.data.forEach(r=>MYFOLLOWS.add(r.followed_id));
+      /* 역방향 — 나를 팔로우한 사람들 (맞팔 판정용) */
+      MYFOLLOWERS.clear();
+      try{ const fb=await SBC.from('follows').select('follower_id').eq('followed_id', user.id);
+        if(fb.data) fb.data.forEach(r=>MYFOLLOWERS.add(r.follower_id)); }catch(_){}
       try{ const mc=await followCounts(user.id); ME.followers=mc.followers; }catch(_){}   /* 내 팔로워 실제 수 */
       /* track_reactions 테이블은 아직 없음 → 없으면 조용히 통과(세션 내 반응만) */
       try{ const r=await SBC.from('track_reactions').select('track_id,kind').eq('user_id', user.id);
@@ -1236,7 +1246,7 @@ async function loginEmail(email,pw){
     await loadMe(); S.auth=false; render(); offToast('로그인됐어요'); }
   catch(e){ offToast('이메일 또는 비밀번호를 확인하세요'); if(btn){btn.disabled=false;btn.textContent='로그인';} }
 }
-async function logout(){ if(!SBC)return; try{ await SBC.auth.signOut(); }catch(e){} ME=null; MYFOLLOWS.clear(); for(var k in MYREACT)delete MYREACT[k]; render(); offToast('로그아웃됐어요'); }
+async function logout(){ if(!SBC)return; try{ await SBC.auth.signOut(); }catch(e){} ME=null; MYFOLLOWS.clear(); MYFOLLOWERS.clear(); for(var k in MYREACT)delete MYREACT[k]; render(); offToast('로그아웃됐어요'); }
 
 /* ── 실제 프로필 로드 + 캐시 (공개 읽기) ── */
 let PROFCACHE={};
@@ -1706,7 +1716,7 @@ function home(){
   let bodyC='';
   if(cur==='logs'){
     /* 기존처럼 — 한 줄에 카드 하나, 세로 스크롤. 탭=릴스 */
-    bodyC=S.feed.map(feedCard).join('');
+    bodyC=S.feed.map(feedCard).join('') || `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">아직 <b>서로 맞팔</b>한 친구가 없어요.<br><b style="color:var(--mint)">발견</b>에서 아티스트를 팔로우하고<br>그 친구도 나를 팔로우하면<br>여기에 로그가 떠요.</div>`;
   } else if(cur==='rel'){
     const rel=ALLTRACKS.slice(0,20);
     bodyC=rel.length
@@ -1734,7 +1744,7 @@ function home(){
         <path d="M16.4 5.2a3.4 3.4 0 0 1 0 5.7"/><path d="M18 14.4c2 .7 3.3 2.6 3.3 5.1"/></svg>
       ${fing?`<span class="pdot"></span>`:''}</button></div>
   ${storyRow()}
-  <div class="hsdots" aria-hidden="true">${HOMETABS.map(t=>`<i class="${cur===t[0]?'on':''}"></i>`).join('')}</div>
+  <div class="hsdots">${HOMETABS.map(t=>`<button class="hsdot" data-hgoto="${t[0]}" aria-label="${t[1]}"><i class="${cur===t[0]?'on':''}"></i></button>`).join('')}</div>
   <div id="hswipe">${bodyC}</div>`;
 }
 
@@ -1763,12 +1773,13 @@ function shuffle(a){
   return x;
 }
 function buildFeed(){
+  /* 메인 피드 = 서로 맞팔한 친구의 로그만 (TREND/FORYOU/FOLLOW 는 맞팔 풀에서 생성됨).
+     합주실(room) 카드는 맞팔이 아닌 아티스트가 섞일 수 있어 메인에서 제외 — 합주실 뷰에서 따로 본다 */
   const trend  = TREND.map(t=>({src:'trend', ...t}));
   const foryou = FORYOU.map(f=>({src:'foryou', ...f}));
-  const rooms  = SLOTS.map(s=>({src:'room', slot:s}));
   const follow = FOLLOWLOG.map(f=>({src:'follow', ...f}));
   const head   = shuffle(trend).slice(0,1);                  /* 처음 = Trending */
-  const rest   = shuffle([...trend.filter(t=>t!==head[0]), ...foryou, ...rooms, ...follow]);
+  const rest   = shuffle([...trend.filter(t=>t!==head[0]), ...foryou, ...follow]);
   return [...head, ...rest];
 }
 
@@ -2121,7 +2132,8 @@ function logPuller(w){
 }
 
 /* 발매용 로그 큐레이션 — 내 전체 로그를 날짜별로 묶어 골라 담는다 (날짜 자동 그룹핑) */
-function releaseLogPicker(w){
+/* 발매용 로그 선택 행 — 발매 시트와 별도 피커가 공유 (STREAM 을 날짜별로 묶어 data-sel 토글 버튼으로) */
+function relLogRows(){
   const pv=l=>
       l.t==='note' ? `<span class="plth paper">✎</span>`
     : l.t==='ph'   ? `<span class="plth" style="background:${l.bg||'#141418'}"></span>`
@@ -2129,13 +2141,17 @@ function releaseLogPicker(w){
     :                `<span class="plth snd">♪</span>`;
   const nm=l=> l.t==='note' ? (l.text||'').replace(/\n[\s\S]*/,'') : (l.nm||l.cap||'로그');
   const all=STREAM.slice();
+  if(!all.length) return `<div class="pknote" style="padding:20px 0">아직 로그가 없어요 · 마이에서 ＋로 로그를 남겨보세요</div>`;
   const byDt={}; all.forEach(l=>{ const d=l.dt||'zzz'; (byDt[d]=byDt[d]||[]).push(l); });
-  const body = all.length ? Object.keys(byDt).sort().reverse().map(d=>{
+  return Object.keys(byDt).sort().reverse().map(d=>{
     const label=(d==='zzz')?'날짜 미상':d.replace(/-/g,'.');
     return `<div class="pldate">${label}</div>${byDt[d].map(l=>`<button class="pkrow plrow ${S.sel.includes(l.id)?'on':''}" data-sel="${l.id}">
       <span class="plck"></span>${pv(l)}
-      <span class="pknm"><b>${nm(l)}</b><small>${l.at||''}${l.dur?' · '+l.dur:''}</small></span></button>`).join('')}`;
-  }).join('') : `<div class="pknote" style="padding:20px 0">아직 로그가 없어요 · 마이에서 ＋로 로그를 남겨보세요</div>`;
+      <span class="pknm"><b>${esc(nm(l))}</b><small>${l.at||''}${l.dur?' · '+l.dur:''}</small></span></button>`).join('')}`;
+  }).join('');
+}
+function releaseLogPicker(w){
+  const body = relLogRows();
   return `<div class="sheet-bd" id="rpkbd"></div>
   <div class="pksheet tall">
     <div class="pkhd"><b>${esc(w.nm)} 발매 로그</b>
@@ -2517,7 +2533,7 @@ function work(){
 /* 발매 = 유통사 제출. 아트워크·가사·크레딧이 없으면 반려된다.
    발매일은 심사 기간 때문에 최소 2주 뒤부터. */
 function releaseSheet(w){
-  const R=S.relForm, kept=STREAM.filter(l=>l.work===w.id).length;
+  const R=S.relForm;
   const miss=relMissing();
   return `<div class="sheet-bd" id="relbd"></div>
   <div class="pksheet tall">
@@ -2564,7 +2580,10 @@ function releaseSheet(w){
     </div>
     <p class="rulen" style="text-align:left;margin:7px 4px 0">참여를 고르면 청취자 투표를 받아요 · 목표 득표를 넘기면 공연이 확정돼요</p>
 
-    <div class="relsum">이 작품의 로그 <b>${kept}개</b>가 발매일에 메이킹 필름으로 자동 편집됩니다</div>
+    <div class="rsec">이 발매에 넣을 로그 <em class="opt">탭해서 선택</em></div>
+    <div class="rellogsel">${relLogRows()}</div>
+
+    <div class="relsum">${S.sel.length?`선택한 로그 <b>${S.sel.length}개</b>가 발매일에 메이킹 필름으로 자동 편집됩니다`:'넣을 로그를 골라주세요 (선택 안 하면 로그 없이 발매)'}</div>
     <button class="cta" id="reldone" ${miss.length?'disabled':''}>발매 예약</button>
     ${miss.length?`<div class="missn">${miss.join(' · ')} 필요</div>`:''}
   </div>`;
@@ -3116,6 +3135,9 @@ function bind(){
   const _hgo=(d)=>{ const order=HOMETABS.map(t=>t[0]); let i=order.indexOf(S.homeTab||'logs')+d;
     if(i<0)i=order.length-1; if(i>=order.length)i=0; HOMEIN=d; S.homeTab=order[i]; render(); };
   document.querySelectorAll('[data-hgo]').forEach(b=>b.onclick=()=>_hgo(+b.dataset.hgo));
+  /* 점(dots) 탭 = 그 섹션으로 바로 (스와이프 안 될 때의 대체 수단) */
+  document.querySelectorAll('[data-hgoto]').forEach(b=>b.onclick=()=>{ const to=b.dataset.hgoto, order=HOMETABS.map(t=>t[0]), ci=order.indexOf(S.homeTab||'logs'), ti=order.indexOf(to);
+    if(ti<0||ti===ci)return; HOMEIN=ti>ci?1:-1; S.homeTab=to; render(); });
   const hsw=document.getElementById('hswipe');
   if(hsw){
     /* 방금 넘어온 섹션은 온 방향 반대편에서 미끄러져 들어온다 (공간 일관성) */
@@ -3125,7 +3147,7 @@ function bind(){
         hsw.style.transform='translateX(0)'; hsw.style.opacity='1'; }); }
     let sx=0,sy=0,drag=false,lock=0,w=1;   /* lock: 0=미정 1=가로 -1=세로 */
     const order=()=>HOMETABS.map(t=>t[0]);
-    hsw.ontouchstart=e=>{ if(e.target.closest('.rmrow,.stories,.hscroll,.relgrid')){drag=false;return;}
+    hsw.ontouchstart=e=>{ if(e.target.closest('.rmrow,.stories,.hscroll')){drag=false;return;}
       const t=e.touches[0]; sx=t.clientX; sy=t.clientY; drag=true; lock=0; w=hsw.offsetWidth||360;
       hsw.style.transition='none'; };
     hsw.ontouchmove=e=>{ if(!drag)return; const t=e.touches[0]; let dx=t.clientX-sx, dy=t.clientY-sy;
@@ -3181,9 +3203,12 @@ function bind(){
   const plx=document.getElementById('plclose'); if(plx)plx.onclick=()=>{S.pull=false;S.sel=[];render()};
   const plbd=document.getElementById('plbd');   if(plbd)plbd.onclick=()=>{S.pull=false;S.sel=[];render()};
   document.querySelectorAll('[data-sel]').forEach(b=>b.onclick=()=>{
-    const id=b.dataset.sel;
-    S.sel = S.sel.includes(id) ? S.sel.filter(x=>x!==id) : [...S.sel, id];
-    render();
+    const id=b.dataset.sel, on=!S.sel.includes(id);
+    S.sel = on ? [...S.sel, id] : S.sel.filter(x=>x!==id);
+    /* 전체 render 대신 이 행만 토글 + 카운트 갱신 → 시트 스크롤 위치 유지 */
+    b.classList.toggle('on', on);
+    const cta=document.getElementById('rpkdone'); if(cta) cta.textContent = S.sel.length? S.sel.length+'개 담기':'담기';
+    const rs=document.querySelector('.relsum'); if(rs) rs.innerHTML = S.sel.length?`선택한 로그 <b>${S.sel.length}개</b>가 발매일에 메이킹 필름으로 자동 편집됩니다`:'넣을 로그를 골라주세요 (선택 안 하면 로그 없이 발매)';
   });
   const pd=document.getElementById('pulldone');
   if(pd)pd.onclick=()=>{
@@ -3216,6 +3241,7 @@ function bind(){
     WORKS.unshift({id:id, nm:'', by:(ME&&ME.name)||'나', mine:true, date:'작업 중', logs:0, releaseLogs:[], span:'', dur:'', bg:WGRAD});
     S.relNew=id; S.work=id; S.wf='all'; S.seg='works'; S.view='work';
     S.relForm={title:'', audio:null, art:null, inst:false, lyr:'', comp:(ME&&ME.name)||'PEEK', lyri:'', arr:'', prod:'', date:minRelDate(), event:''};
+    S.sel=[];   /* 새 릴리스 — 넣을 로그 선택 비움 */
     S.rel=true; render();
     setTimeout(()=>{const el=document.getElementById('reltitle'); if(el)el.focus();},80);
   };
@@ -3246,6 +3272,7 @@ function bind(){
   if(rb)rb.onclick=()=>{
     if(!S.relForm.date)S.relForm.date=minRelDate();
     const w=WORKS.find(x=>x.id===S.work); if(w&&w.nm&&!S.relForm.title)S.relForm.title=w.nm;  /* 기존 작품이면 제목 채움 */
+    S.sel=((w&&w.releaseLogs)||[]).slice();   /* 이미 담긴 로그를 선택 상태로 */
     S.rel=true; render();
   };
   /* 발매창 닫기 — '새 릴리스'에서 발매 안 하고 닫으면 임시 작품 정리 */
@@ -3253,6 +3280,7 @@ function bind(){
     if(S.relNew){ const i=WORKS.findIndex(x=>x.id===S.relNew), w=WORKS[i];
       if(w && (!w.date || w.date==='작업 중')){ WORKS.splice(i,1); S.view='mine'; S.work=(WORKS[0]||{}).id; }
       S.relNew=null; }
+    S.sel=[];   /* 공용 선택 상태 정리 (logPuller/stage 와 충돌 방지) */
     S.rel=false; render();
   };
   const rtt=document.getElementById('reltitle');
@@ -3317,6 +3345,8 @@ function bind(){
     w.lyr=R.inst?'':(R.lyr||'');             /* 가사 */
     w.credits={comp:R.comp||'', lyri:R.lyri||'', arr:R.arr||'', prod:R.prod||''}; /* 크레딧 */
     if(R.audio&&R.audio.dur) w.dur=R.audio.dur;
+    w.releaseLogs=(S.sel||[]).slice();       /* 발매 시트에서 고른 로그 저장 */
+    w.logs=w.releaseLogs.length;
     w.pending=1;
     if(R.event){ const r=ROUNDS.find(x=>x.id===R.event); if(r){ applyToEvent(r, w.nm); w.event=R.event; } }
     studioSave();                            /* 새로고침에도 유지 */
@@ -3615,6 +3645,8 @@ setInterval(()=>{
     var artists=Object.keys(byArtist);
     var aidOf=function(name){ var ts=byArtist[name]; return (ts&&ts[0]&&ts[0].artistId)||null; }; // 아티스트명 → profile id
     var iFollow=function(name){ var id=aidOf(name); return !!(id&&MYFOLLOWS.has(id)); };            // 내가 팔로우 중?
+    var released=new Set(); tracks.forEach(function(t){ if(t.artistId) released.add(t.artistId); }); // 곡을 발매한(트랙 있는) 아티스트
+    var isFriend=function(name){ var id=aidOf(name); return !!(id && MYFOLLOWS.has(id) && MYFOLLOWERS.has(id) && released.has(id)); }; // 서로 맞팔 + 발매
     await loadMe(); // 로그인 유저 + 내 팔로우/반응 상태를 카드 빌드 전에 확보
 
     var cut=function(s,n){ s=String(s||''); return s.length>n ? s.slice(0,n-1)+'…' : s; };
@@ -3629,8 +3661,10 @@ setInterval(()=>{
       _shuf(tracks).forEach(function(t){ if(seenA[t.artist])return; seenA[t.artist]=1; reps.push(t); }); // 아티스트당 대표 1곡(랜덤)
       var mk=function(t){ var o={who:cut(t.artist,18), c:colOf(t.artist), at:tm(t.ts), rx:(t.likes||0), aid:aidOf(t.artist), tid:t.id, t:'snd', audio:t.audio, nm:cut(t.title,20)};
         o.cap=o.nm; o.sub=cut((t.demo?'Demo':'Track')+(t.tags[0]?' · '+t.tags[0]:''),24); if(t.tags[0])o.tags=t.tags.slice(0,2).map(function(x){return '#'+String(x).replace(/^#/,'');}); return o; };
-      var i=0, take=function(n){ var s=[]; for(var k=0;k<n && reps.length;k++){ s.push(reps[i%reps.length]); i++; } return s; };
-      // 섹션마다 서로 다른 아티스트 (STORIES 8 · TREND 12 · FORYOU 8 · FOLLOW 8 = 최대 36명/뷰, 나머지는 다음 새로고침에)
+      // ── 메인(스토리·로그 피드)은 "서로 맞팔 + 발매한 친구"만 (요청: 우선 맞팔만 노출) ──
+      var mreps = reps.filter(function(t){ return isFriend(t.artist); });
+      var i=0, take=function(n){ var s=[]; for(var k=0;k<n && mreps.length;k++){ s.push(mreps[i%mreps.length]); i++; } return s; };
+      // 섹션마다 서로 다른 아티스트 (STORIES 8 · TREND 12 · FORYOU 8 · FOLLOW 8) — 맞팔 풀에서. PEOPLE(발견)만 전체 유지
       STORIES=take(8).map(function(t){ var a=t.artist, ts=(byArtist[a]||[t]).slice(0,2);
         return { who:a, c:colOf(a), aid:aidOf(a), following:iFollow(a), seen:false, items:ts.map(function(x){
           return x.cover ? {t:'ph', at:tm(x.ts), cap:x.title, bg:'#141418', img:x.cover} : {t:'snd', at:tm(x.ts), cap:x.title, dur:'', audio:x.audio}; }) }; });
