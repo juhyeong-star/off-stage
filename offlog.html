@@ -3292,26 +3292,32 @@ function bind(){
       hsw.style.transition='none'; hsw.style.transform='translateX('+(from*46)+'px)'; hsw.style.opacity='0';
       requestAnimationFrame(()=>{ hsw.style.transition='transform .34s cubic-bezier(.22,.61,.36,1),opacity .26s';
         hsw.style.transform='translateX(0)'; hsw.style.opacity='1'; }); }
-    let sx=0,sy=0,drag=false,lock=0,w=1;   /* lock: 0=미정 1=가로 -1=세로 */
+    let sx=0,sy=0,drag=false,lock=0,w=1,lastX=0,lastT=0,vx=0;   /* lock: 0=미정 1=가로 -1=세로. vx=px/ms(속도) */
     const order=()=>HOMETABS.map(t=>t[0]);
     hsw.ontouchstart=e=>{ if(e.target.closest('.rmrow,.stories,.hscroll')){drag=false;return;}
       const t=e.touches[0]; sx=t.clientX; sy=t.clientY; drag=true; lock=0; w=hsw.offsetWidth||360;
+      lastX=t.clientX; lastT=e.timeStamp||performance.now(); vx=0;
       hsw.style.transition='none'; };
     hsw.ontouchmove=e=>{ if(!drag)return; const t=e.touches[0]; let dx=t.clientX-sx, dy=t.clientY-sy;
-      if(!lock){ if(Math.abs(dx)<7&&Math.abs(dy)<7)return; lock=Math.abs(dx)>Math.abs(dy)?1:-1; if(lock<0){drag=false;hsw.style.transform='';return;} }
+      if(!lock){ if(Math.abs(dx)<6&&Math.abs(dy)<6)return; lock=Math.abs(dx)>Math.abs(dy)?1:-1; if(lock<0){drag=false;hsw.style.transform='';return;} }
+      const now=e.timeStamp||performance.now(), ddt=now-lastT; if(ddt>0){ vx=0.7*vx+0.3*((t.clientX-lastX)/ddt); }  /* 최근 속도(지수평활) */
+      lastX=t.clientX; lastT=now;
       const i=order().indexOf(S.homeTab||'logs'), edge=(dx>0&&i===0)||(dx<0&&i===order().length-1);
       if(edge) dx*=0.34;                                   /* 양 끝에서는 저항 (러버밴딩) */
       hsw.style.transform='translateX('+dx+'px)';
       hsw.style.opacity=String(1-Math.min(Math.abs(dx)/w,1)*0.4); };  /* 진행 방향 힌트 */
     hsw.ontouchend=e=>{ if(!drag){return;} drag=false;
       if(lock!==1){ hsw.style.transform='';hsw.style.opacity='';return; }
-      const dx=e.changedTouches[0].clientX-sx, i=order().indexOf(S.homeTab||'logs');
-      const edge=(dx>0&&i===0)||(dx<0&&i===order().length-1);
-      if(Math.abs(dx)>w*0.2 && !edge){                     /* 커밋: 화면 20%만 밀어도 넘어간다(더 쉽게) */
-        const out=dx<0?-w:w;
-        hsw.style.transition='transform .16s ease-out,opacity .16s ease-out';
+      const dx=e.changedTouches[0].clientX-sx, i=order().indexOf(S.homeTab||'logs'), lastI=order().length-1;
+      const flick=Math.abs(vx)>0.32;                       /* 빠르게 튕기면(플릭) 거리가 짧아도 넘어간다 — 인스타/틱톡 느낌 */
+      const dir = flick ? (vx<0?1:-1) : (dx<0?1:-1);       /* dir>0=다음 섹션, dir<0=이전 섹션 */
+      const dirEdge = (dir>0&&i===lastI)||(dir<0&&i===0);  /* 다음인데 마지막 / 이전인데 처음 = 끝(넘김 금지) */
+      if((Math.abs(dx)>w*0.17 || flick) && !dirEdge){      /* 커밋: 화면 17%만 밀거나 살짝 튕기면 넘어간다 */
+        const out=dir>0?-w:w;
+        const dur = flick ? Math.max(0.11, Math.min(0.2, (w-Math.abs(dx))/Math.abs(vx)/1000)) : 0.16;  /* 속도에 맞춘 마무리 시간 */
+        hsw.style.transition='transform '+dur+'s cubic-bezier(.25,.7,.3,1),opacity '+dur+'s ease-out';
         hsw.style.transform='translateX('+out+'px)'; hsw.style.opacity='0';
-        setTimeout(()=>_hgo(dx<0?1:-1),140);
+        setTimeout(()=>_hgo(dir),Math.round(dur*1000*0.82));
       } else {                                             /* 취소: 제자리로 스프링백 */
         hsw.style.transition='transform .3s cubic-bezier(.22,.61,.36,1),opacity .24s';
         hsw.style.transform='translateX(0)'; hsw.style.opacity='1';
