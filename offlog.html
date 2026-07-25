@@ -197,9 +197,9 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .mmi.danger .mmt b{color:#ff6b6b}
 .mmi.danger .mmic{color:#ff6b6b;border-color:rgba(255,107,107,.3)}
 /* LOG · VOTE 나란한 두 카드 (같은 크기) */
-.lvrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 6px}
-.lvcard{display:flex;flex-direction:column;align-items:flex-start;gap:3px;background:var(--card2);border:1px solid var(--line);
-  border-radius:16px;padding:14px;min-height:104px;color:var(--txt);font-family:inherit;text-align:left;cursor:pointer}
+.lvrow{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:16px 0 6px}
+.lvcard{display:flex;flex-direction:column;align-items:flex-start;gap:3px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+  border-radius:14px;padding:13px;min-height:94px;color:var(--txt);font-family:inherit;text-align:left;cursor:pointer}
 .lvcard .lvic{font-size:20px;line-height:1}
 .lvcard b{font-family:'Black Han Sans';font-size:15px;letter-spacing:.03em;margin-top:2px}
 .lvcard small{font-size:11px;color:var(--muted)}
@@ -991,6 +991,38 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .evbadge.confirmed{background:var(--lemon);color:#2b2417;border-color:var(--lemon)}
 
 /* ── Work — 음악이 위, 그 아래 모든 로그 ── */
+/* ── 발매·아티스트 상세 — Spotify / YT Music 식(박스 대신 커버 + 색 그라데이션 + 큰 재생) ── */
+.whero2{position:relative;padding:6px 2px 8px;margin:0 0 4px}
+.whero2::before{content:'';position:absolute;top:-70px;left:-16px;right:-16px;height:360px;z-index:0;pointer-events:none;
+  background:radial-gradient(120% 78% at 50% 0, var(--acc,#3a3a44), transparent 60%);opacity:.30}
+.wcov2{position:relative;z-index:1;width:62%;max-width:220px;aspect-ratio:1;margin:8px auto 18px;border-radius:14px;
+  box-shadow:0 18px 44px rgba(0,0,0,.55);background-color:#141418;background-size:cover;background-position:center;
+  display:flex;align-items:center;justify-content:center}
+.wcov2.empty{border:1px dashed rgba(255,255,255,.16)}
+.wcov-hint{text-align:center;font-size:21px;color:var(--muted);line-height:1.55}
+.wtitle2{position:relative;z-index:1;font-family:'Archivo Black','Black Han Sans',sans-serif;font-size:25px;line-height:1.12;letter-spacing:-.01em;margin:0 4px 7px;word-break:break-word}
+.wsub2{position:relative;z-index:1;display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 4px 16px;font-size:13px;color:var(--muted)}
+.wartist{background:none;border:0;color:var(--txt);font-weight:700;font-size:13px;cursor:pointer;padding:0}
+.wartist:active{opacity:.55}
+.wsub2 .wdot{opacity:.45}
+.wactions{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;margin:0 2px}
+.wicons{display:flex;gap:2px}
+.wicon{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;color:var(--muted);cursor:pointer;padding:5px 11px;min-width:50px;-webkit-tap-highlight-color:transparent}
+.wicon span{font-size:19px;line-height:1}
+.wicon i{font-style:normal;font-size:10.5px}
+.wicon.acc{color:var(--lemon)}
+.wicon:active{transform:scale(.9)}
+.wplay2{width:56px;height:56px;border-radius:50%;background:var(--mint);border:0;color:#07110e;font-size:22px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(80,230,190,.42);flex-shrink:0}
+.wplay2:active{transform:scale(.93)}
+.wrelbar{position:relative;z-index:1;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin:16px 4px 0}
+.wrelbar b{color:var(--lemon)}
+.wrelbar .relx{margin-left:auto;background:none;border:1px solid var(--line);color:var(--muted);border-radius:9px;font-size:11px;padding:4px 11px;cursor:pointer}
+.wsec{border-top:1px solid var(--line);padding:14px 4px 2px;margin-top:10px}
+.wsec-t{font-size:11px;font-weight:800;color:var(--mint);letter-spacing:.04em;margin-bottom:8px}
+.wcredits{display:flex;flex-wrap:wrap;gap:7px 16px;font-size:13px;color:var(--muted)}
+.wcredits b{color:var(--txt);font-weight:700}
+.wlyr{font-family:'Gaegu','Noto Sans KR',sans-serif;font-size:15px;line-height:1.75;color:var(--txt);white-space:pre-wrap}
 .whero{border-radius:24px;overflow:hidden;border:1px solid var(--line);margin-bottom:6px}
 .wcover{height:210px;position:relative;cursor:pointer}
 .wcover .bgimg{position:absolute;inset:0;background-size:cover;background-position:center}
@@ -2615,29 +2647,37 @@ function work(){
       return `<div class="dayhd"><b>${label}</b><small>${byDt[d].length}개</small></div>${byDt[d].map(logCard).join('')}`;
     }).join('');
   };
+  /* 커버/아티스트 기반 강조색 (Spotify처럼 위에서 아래로 번지는 색) */
+  const _PAL=['coral','blue','green','yellow','purple','shpink','mint'];
+  let _ah=0; const _as=String(w.by||w.nm||''); for(let k=0;k<_as.length;k++)_ah=(_ah*31+_as.charCodeAt(k))|0;
+  const acc=c(_PAL[Math.abs(_ah)%_PAL.length])||'#3a3a44';
+  const working=(!w.date || w.date==='작업 중');
+  const relTxt=working?'작업 중':(w.pending?'발매 예약 '+w.date:(w.date?'발매 '+w.date:'미발매'));
+  const _cov=safeUrl(w.cover);
   return `<div class="hd"><button class="circ" data-v="mine" aria-label="뒤로">‹</button>
-    <div class="htitle">${esc(w.nm)}<small>${w.by||'나'}</small></div>
+    <div class="htitle"></div>
     <div class="r"><button class="circ" aria-label="공유">⤴</button></div></div>
-  <div class="whero">
-    <div class="wcover upcard"><div class="bgimg" style="background:${w.cover?`center/cover no-repeat url(${w.cover})`:w.bg}"></div><div class="grainy"></div>
-      ${w.cover?'':`<div class="uphint2" style="bottom:auto;top:12px">🖼 ${w.mine?'발매하기에서 커버 넣기':'앨범 커버'}</div>`}
-      <div class="wmeta"><h2>${esc(w.nm)}</h2>
-        <small>${w.date==='작업 중'?'작업 중':(w.pending?'발매 예약 '+w.date:'발매 '+w.date)} · ${w.logs} Logs · ${w.span}</small></div></div>
-    <div class="wbtns">
-      <button class="cta" id="wplaybig">▶ Play</button>
-      <button class="savebtn" id="wsave">＋ 플레이리스트</button></div>
-    ${w.mine ? ((!w.date || w.date==='작업 중')
-      ? `<button class="relbtn" id="relbtn">음원 발매하기 <b>▸</b></button>`
-      : `<div class="reldone"><span class="ap-dot" style="background:var(--lemon);box-shadow:0 0 8px var(--lemon)"></span>
-          <b style="color:var(--lemon)">${w.date}</b> 발매 예약
-          <button class="ap-ch" id="relbtn">수정</button></div>`) : ''}
+  <div class="whero2" style="--acc:${acc}">
+    <div class="wcov2 ${_cov?'':'empty'}" style="${_cov?`background-image:url(${_cov})`:'background:'+w.bg}">
+      ${_cov?'':`<span class="wcov-hint">🖼<br>${w.mine?'발매에서 커버':'커버'}</span>`}</div>
+    <h1 class="wtitle2">${esc(w.nm)}</h1>
+    <div class="wsub2"><button class="wartist" data-prof="${esc(w.by||'나')}">${esc(w.by||'나')}</button>
+      <span class="wdot">·</span><span>${relTxt}</span>
+      ${w.logs?`<span class="wdot">·</span><span>${w.logs} Logs</span>`:''}</div>
+    <div class="wactions">
+      <div class="wicons">
+        <button class="wicon" id="wsave" aria-label="플레이리스트에 담기"><span>＋</span><i>담기</i></button>
+        <button class="wicon" aria-label="공유"><span>⤴</span><i>공유</i></button>
+        ${w.mine ? (working
+          ? `<button class="wicon acc" id="relbtn" aria-label="음원 발매"><span>◎</span><i>발매</i></button>`
+          : `<button class="wicon" id="relbtn" aria-label="발매 정보 수정"><span>✎</span><i>수정</i></button>`) : ''}
+      </div>
+      <button class="wplay2" id="wplaybig" aria-label="재생">▶</button>
+    </div>
+    ${w.mine && !working && w.date ? `<div class="wrelbar"><span class="ap-dot" style="background:var(--lemon);box-shadow:0 0 8px var(--lemon)"></span><b>${w.date}</b> 발매 예약</div>`:''}
   </div>
-  ${w.mine && (w.cover||w.lyr||(w.credits&&(w.credits.comp||w.credits.lyri||w.credits.arr||w.credits.prod))) ? `<div class="albuminfo">
-    ${w.credits&&(w.credits.comp||w.credits.lyri||w.credits.arr||w.credits.prod)?`<div class="ai-sec"><div class="ai-t">크레딧</div><div class="ai-cr">
-      ${w.credits.comp?`<span>작곡 <b>${esc(w.credits.comp)}</b></span>`:''}${w.credits.lyri?`<span>작사 <b>${esc(w.credits.lyri)}</b></span>`:''}${w.credits.arr?`<span>편곡 <b>${esc(w.credits.arr)}</b></span>`:''}${w.credits.prod?`<span>프로듀서 <b>${esc(w.credits.prod)}</b></span>`:''}
-    </div></div>`:''}
-    ${w.inst?`<div class="ai-sec"><div class="ai-t">가사</div><div class="ai-lyr" style="color:var(--muted)">연주곡 (가사 없음)</div></div>`:(w.lyr?`<div class="ai-sec"><div class="ai-t">가사</div><div class="ai-lyr">${w.lyr.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div></div>`:'')}
-  </div>`:''}
+  ${w.mine && w.credits&&(w.credits.comp||w.credits.lyri||w.credits.arr||w.credits.prod) ? `<div class="wsec"><div class="wsec-t">크레딧</div><div class="wcredits">${w.credits.comp?`<span>작곡 <b>${esc(w.credits.comp)}</b></span>`:''}${w.credits.lyri?`<span>작사 <b>${esc(w.credits.lyri)}</b></span>`:''}${w.credits.arr?`<span>편곡 <b>${esc(w.credits.arr)}</b></span>`:''}${w.credits.prod?`<span>프로듀서 <b>${esc(w.credits.prod)}</b></span>`:''}</div></div>`:''}
+  ${w.mine && (w.inst || w.lyr) ? `<div class="wsec"><div class="wsec-t">가사</div><div class="wlyr"${w.inst?' style="color:var(--muted)"':''}>${w.inst?'연주곡 (가사 없음)':w.lyr.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div></div>`:''}
   ${w.mine?lvRow(w):eventStatus(w)}
   <div class="sechd">
     <div class="sec" style="margin:0">${w.mine?'음원 로그':'The Story'}</div></div>
@@ -3642,7 +3682,7 @@ function bind(){
   document.querySelectorAll('[data-work]').forEach(b=>b.onclick=()=>{S.work=b.dataset.work;S.wf='all';S.view='work';render()});
   document.querySelectorAll('[data-wf]').forEach(b=>b.onclick=()=>{S.wf=b.dataset.wf;render()});
   const wp=document.getElementById('wplaybig');
-  if(wp)wp.onclick=()=>{wp.textContent=wp.textContent.startsWith('▶')?'⏸ Playing':'▶ Play'};
+  if(wp)wp.onclick=()=>{ const on=wp.textContent.trim()==='▶'; wp.textContent=on?'⏸':'▶'; wp.classList.toggle('on',on); };
   const wsv=document.getElementById('wsave');
   if(wsv)wsv.onclick=()=>{S.addlist=true;render()};
   const lpx=document.getElementById('lpclose'); if(lpx)lpx.onclick=()=>{S.addlist=false;render()};
