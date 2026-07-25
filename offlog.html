@@ -326,6 +326,11 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .crow2.top .cshape{filter:drop-shadow(0 0 8px rgba(255,233,74,.55))}
 .chd{display:flex;align-items:center;gap:10px;padding:11px 12px;cursor:pointer}
 .cshape{flex-shrink:0;display:flex;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+/* 투표 후보 프로필 — 육각형 도형이 아니라 실제 원형 아바타 */
+.cav{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.45)}
+.cav .avimg,.cav .smile{width:34px;height:34px;border-radius:50%}
+.cav .smile svg{width:22px;height:22px}
+.cav.first{box-shadow:0 0 0 2px var(--lemon),0 2px 8px rgba(0,0,0,.45)}
 .cplay{width:30px;height:30px;border-radius:50%;background:transparent;border:1.5px solid var(--mint);
   color:var(--mint);font-size:10px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
 .cplay.on{background:var(--mint);color:#04231d}
@@ -1451,6 +1456,15 @@ function avatarEl(av, color, size){
   return smileEl(color||'blue');
 }
 let AIDBYNAME={};   // 아티스트 표시명 → profile id (로더가 채움)
+let AVBYNAME={};    // 아티스트 표시명 → 실제 아바타 URL (로더가 채움)
+/* 이름으로 아바타 찾기 — 없으면 캐시된 프로필에서, 그래도 없으면 빈 값(색 아바타로 폴백) */
+function avOf(name){
+  if(!name) return '';
+  if(AVBYNAME[name]) return AVBYNAME[name];
+  var id=AIDBYNAME[name];
+  if(id && PROFCACHE[id] && PROFCACHE[id].avatar) return PROFCACHE[id].avatar;
+  return '';
+}
 /* 로그인 시트 (기존 회원 계정) */
 /* 로그인 확인 전 — 잠깐 보이는 스플래시 (앱 내용 노출 안 함) */
 function splashScreen(){
@@ -2702,7 +2716,7 @@ function voteHub(){
         : `<span class="cprev empty">아직 공개된 로그가 없습니다</span>`;
       return `<div class="crow2 ${d.voted?'voted':''} ${top?'top':''}" data-goart="${who}">
         <div class="chd">
-          <span class="cshape">${shape(d.s,c(d.c),26)}</span>
+          <span class="cav">${avatarEl(avOf(who), d.c, 34)}</span>
           <button class="cplay" data-cp aria-label="재생">▶</button>
           <span class="cinfo">
             <span class="cttl"><b>${d.t[0]}</b>${top?'<i class="toptag">⬡ 추천</i>':''}${d.me?'<i class="mytag">내 곡</i>':''}</span>
@@ -2736,7 +2750,7 @@ function recoView(){
       : `<span class="cprev empty">아직 공개된 로그가 없습니다</span>`;
     return `<div class="crow2 ${i===0?'top':''}" data-goart="${who}">
       <div class="chd">
-        <span class="cshape">${shape('hex', i===0?c('lemon'):c((st(who)||{}).c||'blue'), 28)}</span>
+        <span class="cav${i===0?' first':''}">${avatarEl(avOf(who), (st(who)||{}).c||'blue', 34)}</span>
         <span class="cinfo">
           <span class="cttl"><b>${who}</b>${i===0?'<i class="toptag">⬡ 1위</i>':''}</span>
           <small>log 보기 ›</small>
@@ -4162,6 +4176,7 @@ setInterval(()=>{
     var tracks=rows.map(function(x){ return {
       id:x.id, title:x.title||'무제', artist:(x.profiles&&x.profiles.name)||'익명',
       artistId:(x.profiles&&x.profiles.id)||null,
+      artistAv:(x.profiles&&x.profiles.avatar_url)||'',
       tags:Array.isArray(x.tags)?x.tags:[], audio:x.audio_url||'',
       cover:(x.cover_url&&/^https?:\/\//.test(x.cover_url))?x.cover_url:'',
       demo:!!x.is_demo, pid:x.project_id||('p_'+x.id), ts:x.created_at, likes:(x.likes_count||0)
@@ -4272,7 +4287,8 @@ setInterval(()=>{
         });
       });
     }
-    try{ artists.forEach(function(a){ AIDBYNAME[a]=aidOf(a); }); }catch(e){}   /* 이름→profile id (프로필 페이지 연동) */
+    try{ artists.forEach(function(a){ AIDBYNAME[a]=aidOf(a);
+      var _t=(byArtist[a]||[])[0]; if(_t&&_t.artistAv) AVBYNAME[a]=_t.artistAv; }); }catch(e){}   /* 이름→profile id·아바타 (프로필 연동) */
   }catch(e){ console.warn('[offlog] real data load failed', e); DATAREADY=true; }   /* 실패해도 스플래시는 걷는다(무한 로딩 방지) */
   try{ studioMerge(); }catch(e){}     /* 내가 만든 작품/플레이리스트/로그 복원 */
   try{ wireAuth(); }catch(e){}        /* 로그인 상태 변화 구독 (OAuth 복귀·로그아웃) */
