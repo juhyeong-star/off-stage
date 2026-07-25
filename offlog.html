@@ -2297,7 +2297,7 @@ function mine(){
     <div class="wthumb"><div class="bgimg" style="position:absolute;inset:0;background:${w.cover?`center/cover no-repeat url(${w.cover})`:w.bg}"></div>
       <button class="wplay" aria-label="재생">▶</button></div>
     <div class="winfo"><b>${esc(w.nm)}</b><small>${w.mine?(w.pending?'발매 예약 '+w.date:(w.date&&w.date!=='작업 중'?'발매 '+w.date:'작업 중')):(w.logs+' Logs · '+w.span)}</small></div>
-    <button class="openst" data-work="${w.id}">${w.mine?'열기':'Collect LOG'} ›</button></div>`).join('');
+    <button class="openst" data-work="${w.id}">${w.mine?'열기':'History'} ›</button></div>`).join('');
 
   /* 녹음 = 즉석. 음원 = 믹스다운 파일 업로드 (Demo 탭이 하던 일) */
   const tools=[['💬','생각'],['🖼','사진'],['🎤','음성'],['📋','메모'],['🎙','녹음'],['♪','음원']];
@@ -2334,9 +2334,7 @@ function mine(){
   const logs=`
     ${me?`<button class="composebtn" id="composebtn"><span class="cplus">＋</span><span class="clabel">로그 남기기</span></button>`:''}
     <div class="stream" id="stream"><div class="ambient"></div>
-      <div class="marks">${streamOrder(STREAM).map(mark).join('')||`<div class="pknote" style="padding:26px 0">아직 로그가 없어요</div>`}</div></div>
-    ${me?`<div class="expire">아직 어느 작품도 아닌 로그 <b>${STREAM.filter(l=>!l.work).length}개</b><br>
-        곡이 생기면 그 작품 안에서 담으면 됩니다</div>`:''}`;
+      <div class="marks">${streamOrder(STREAM).map(mark).join('')||`<div class="pknote" style="padding:26px 0">아직 로그가 없어요</div>`}</div></div>`;
 
   return `<div class="hd">
     ${me?`<span style="width:34px"></span>`:`<button class="circ" data-v="home" aria-label="뒤로">‹</button>`}
