@@ -428,11 +428,15 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 #body.vin{animation:vin .15s ease-out}
 @keyframes vin{from{opacity:.35;transform:translateY(5px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){ #body.vin{animation:vinf .12s ease-out} @keyframes vinf{from{opacity:.4}to{opacity:1}} }
-/* 스와이프 위치 표시 — iOS식 작은 점만 (화살표·라벨 없음) */
-.hsdots{display:flex;justify-content:center;gap:2px;margin:8px 0 12px}
-.hsdots .hsdot{background:none;border:0;padding:8px 4px;cursor:pointer;display:flex;align-items:center;-webkit-tap-highlight-color:transparent}
-.hsdots i{width:5px;height:5px;border-radius:50%;background:var(--line);transition:all .22s;pointer-events:none}
-.hsdots i.on{background:var(--mint);width:15px;border-radius:3px}
+/* 홈 섹션 이름 — 점 대신 텍스트 라벨(발견 · 무대 · 로그). 탭하면 이동, 스와이프도 병행 */
+.hstabs{display:flex;justify-content:center;align-items:center;gap:6px;margin:6px 0 12px}
+.hstab{background:none;border:0;padding:7px 13px;border-radius:99px;cursor:pointer;
+  font-family:inherit;font-size:13.5px;font-weight:700;color:var(--muted);
+  -webkit-tap-highlight-color:transparent;transition:color .18s,background .18s}
+.hstab.on{color:var(--mint);background:rgba(83,224,200,.10)}
+.hstab:active{transform:scale(.94)}
+/* 무대 카드 D-day */
+.vdday{position:absolute;top:12px;right:13px;font-family:'Black Han Sans';font-size:11px;color:var(--lemon);letter-spacing:.3px}
 /* 홈 월별 캘린더(SETLOG 스타일) — 날짜 탭하면 그날 나+맞팔친구 로그만 */
 .calmon{margin:2px 0 8px;-webkit-tap-highlight-color:transparent}
 .calmon.open{background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:10px 12px 12px}
@@ -467,7 +471,7 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 @media (prefers-reduced-motion:reduce){ #hswipe{transition:opacity .18s ease!important;transform:none!important} }
 .relgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .relgrid .reltile{flex:none;width:100%;height:auto;min-height:118px}
-.votetile.vfull{flex:none;width:100%;height:auto;min-height:106px;margin-bottom:10px}
+.votetile.vfull{flex:none;width:100%;height:auto;min-height:106px;margin-bottom:10px;position:relative}
 /* Releases 타일 — 앨범 커버 + 제목 (탭하면 로그로) */
 .reltile{display:flex;flex-direction:column;align-items:stretch;gap:6px;background:none;border:0;padding:0;
   color:var(--txt);font-family:inherit;cursor:pointer;text-align:left;overflow:hidden}
@@ -1764,7 +1768,7 @@ function streamOrder(arr){
    open    = 아티스트가 신청해서 후보가 된다. 득표가 무대를 연다.   */
 let ROUNDS=[
   {id:'jul', nm:'7월 발매 음악', cat:'music', type:'curated', by:'OFFLOG 선정',
-   sub:'이번 달 나온 곡 중에서', prize:'1위 → 8월 메인 배너 + 플레이리스트 상단',
+   sub:'이번 달 나온 곡 중에서', prize:'상위 20곡이 이번 달 플레이리스트에 실립니다', slot:20, minVotes:10, perUser:3,
    what:'이번 달 발매된 곡 중 최고를 뽑는 라운드입니다',
    end:Date.now()+6*864e5+12*36e5+33*6e4, applied:null,
    cands:[
@@ -1776,8 +1780,8 @@ let ROUNDS=[
      {t:['도자기','조예만'], s:'circle', c:'coral', v:31, x:8, y:58, bd:'7.3s'},
    ]},
   {id:'rp', nm:'레드 포인트', cat:'stage', type:'open', by:'신청 받는 중',
-   sub:'레드포인트 200석', prize:'득표 500 → 단독 공연', need:500,
-   what:'이기면 레드포인트(200석 공연장)에서 단독 공연을 엽니다',
+   sub:'레드포인트 200석 · 90분', prize:'1위가 레드포인트 단독 공연을 가져갑니다', slot:1, minVotes:10, perUser:3,
+   what:'1위가 레드포인트(200석 공연장)에서 단독 공연을 엽니다',
    end:Date.now()+14*864e5+14*36e5+48*6e4, applied:'Summer Rain',
    cands:[
      {me:1, t:['Summer Rain','PEEK'], s:'circle', c:'coral', v:210, x:33, y:60, bd:'7.2s'},
@@ -1790,8 +1794,8 @@ let ROUNDS=[
      {t:['이런일이 생기면','SMHS'], s:'circle', c:'shpink', v:19, x:33, y:56, bd:'7.2s'},
    ]},
   {id:'gh', nm:'8월 공감홀 쇼케이스', cat:'stage', type:'open', by:'신청 받는 중',
-   sub:'공감홀 60석', prize:'득표 100 → 쇼케이스 무대', need:100,
-   what:'이기면 공감홀(60석 소극장)에서 쇼케이스 무대에 섭니다',
+   sub:'공감홀 60석 · 60분', prize:'상위 4팀이 8월 공감홀 무대에 오릅니다', slot:4, minVotes:10, perUser:3,
+   what:'상위 4팀이 공감홀(60석 소극장) 쇼케이스 무대에 섭니다',
    end:Date.now()+32*864e5+3*36e5+11*6e4, applied:null,
    cands:[
      {t:['허밍','김이든'], s:'hex', c:'yellow', v:14, x:30, y:8, bd:'7.2s'},
@@ -1799,7 +1803,7 @@ let ROUNDS=[
      {t:['미로','MINLEE'], s:'star', c:'blue', v:9, x:14, y:44, bd:'7.9s'},
    ]},
   {id:'sep', nm:'9월 공연 음원', cat:'music', type:'curated', by:'OFFLOG 선정',
-   sub:'9월 무대에 올릴 곡', prize:'상위 5곡 → 9월 합동 공연 셋리스트',
+   sub:'9월 무대에 올릴 곡', prize:'상위 5곡이 9월 합동 공연 셋리스트에 오릅니다', slot:5, minVotes:10, perUser:3,
    what:'상위 5곡이 9월 합동 공연 셋리스트에 오릅니다',
    end:Date.now()+21*864e5+7*36e5+2*6e4, applied:null,
    cands:[
@@ -1811,13 +1815,40 @@ let ROUNDS=[
 ];
 const curRound = ()=>ROUNDS.find(r=>r.id===S.round)||ROUNDS[0];
 
+/* ── 선발 규칙: 절대 득표가 아니라 좌석 수 기준 상위 N팀 ──
+   150명 규모에서 '득표 500'은 도달 불가라 아무도 무대를 못 얻는다.
+   좌석이 정하는 순위로 바꾼다. 최소 자격선(minVotes) 미만은 순위에서 제외. */
+function slotN(r){ return (r&&r.slot)||1; }
+function minVotes(r){ return (r&&r.minVotes!=null)?r.minVotes:10; }
+function slotLine(r){
+  if(!r) return '';
+  const n=slotN(r);
+  if(r.cat==='music') return '상위 '+n+'곡이 선정됩니다';
+  return n===1 ? '1위가 무대를 가져갑니다' : ('상위 '+n+'팀이 무대에 오릅니다');
+}
+/* 자격선 넘긴 후보만 득표순 정렬 → 순위 배열 */
+function ranked(r){
+  const mv=minVotes(r);
+  return ((r&&r.cands)||[]).filter(c=>(c.v||0)>=mv).sort((a,b)=>(b.v||0)-(a.v||0));
+}
+/* 이 후보가 선발권 안인가 */
+function inSlot(r, cand){
+  const rk=ranked(r), i=rk.indexOf(cand);
+  return i>=0 && i<slotN(r);
+}
+/* 내 순위 (자격선 미달이면 null) */
+function myRank(r){
+  const rk=ranked(r), me=rk.find(c=>c.me);
+  return me ? rk.indexOf(me)+1 : null;
+}
+
 /* 내 곡 — LOG의 소리와 WORKS의 음원 전부. 신청은 여기서 고른다 */
 
 
 let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:'me', round:'jul', lseg:'list', vcat:'music', flist:null, fq:'', flFrom:'mine', list:null, share:false, addlist:false,
   pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'', auth:false, profileAid:null, saveTrack:null, logMenu:null,
   cam:false,     /* true면 앱 안 촬영 화면 */
-  homeTab:'logs',/* Home 섹션 — logs|rel|vote|follow. 좌우 스와이프로 전환 */
+  homeTab:'rel', /* Home 섹션 — rel(발견)|vote(무대)|logs(로그). 첫 진입은 발견 */
   calDate:null,  /* 홈 캘린더 필터: null=전체, 'YYYY-MM-DD'=그날 나+맞팔친구 로그만. 같은 날 재탭=해제 */
   calMonth:null, /* 캘린더에 표시 중인 달 'YYYY-MM' (null=이번 달) */
   calOpen:false, /* 홈 캘린더 펼침 여부 — 기본 접힘(로그가 바로 보이게). 얇은 바만 노출 */
@@ -1902,7 +1933,8 @@ function prevStory(){
 /* ── 홈 — 탭 없음. 하나의 알고리즘 피드.
    처음 = Trending. 그 다음부터 Following·Trending·For You가 섞여서 랜덤하게 계속 바뀐다. ── */
 /* ── Home — 한 화면에 한 섹션. 좌우 스와이프(또는 상단 칩)로 Logs·Releases·Vote·Following 전환 ── */
-const HOMETABS=[['logs','📷 Logs'],['rel','🎵 Releases'],['vote','🗳 Vote'],['follow','⭐ Following']];
+/* 홈 3페이지 — 발견(첫 진입) · 무대 · 로그. 첫 화면이 절대 비지 않게 발견을 맨 앞에 둔다 */
+const HOMETABS=[['rel','발견'],['vote','무대'],['logs','로그']];
 let HOMEIN=0;   /* 방금 넘어온 방향(+1 다음 / -1 이전) — 새 섹션 입장 애니메이션용 */
 let _lastView='';   /* 직전 뷰 — 뷰 바뀔 때만 전환 페이드 */
 let _lastSheet='';  /* 직전에 열려 있던 시트 — 같은 시트가 계속 열려 있으면 슬라이드업 애니메이션을 다시 재생하지 않는다(클릭할 때마다 화면이 튀는 문제) */
@@ -1958,15 +1990,15 @@ function calMonth(){
 }
 function home(){
   const fing=PEOPLE.filter(p=>p.fing).length;
-  const cur=S.homeTab||'logs';
+  const cur=S.homeTab||'rel';
 
   let bodyC='';
   if(cur==='logs'){
-    /* 한 줄에 카드 하나, 세로 스크롤. 캘린더 날짜를 골랐으면 그날 나+맞팔친구 로그만 */
+    /* 팔로우한 사람들의 공개 로그. 캘린더 날짜를 골랐으면 그날 것만 */
     const list = S.calDate ? logsOnDate(S.calDate) : S.feed;
     bodyC = list.map(feedCard).join('') || (S.calDate
-      ? `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">이 날은 나도 <b>맞팔 친구</b>도<br>올린 로그가 없어요.</div>`
-      : `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">아직 <b>서로 맞팔</b>한 친구가 없어요.<br><b style="color:var(--mint)">발견</b>에서 아티스트를 팔로우하고<br>그 친구도 나를 팔로우하면<br>여기에 로그가 떠요.</div>`);
+      ? `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">이 날은 올라온 로그가 없어요.</div>`
+      : `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">아직 팔로우한 사람의 로그가 없어요.<br><b style="color:var(--mint)">발견</b>에서 아티스트를 팔로우해 보세요.</div>`);
   } else if(cur==='rel'){
     const rel=ALLTRACKS.slice(0,20);
     bodyC=rel.length
@@ -1975,15 +2007,13 @@ function home(){
           <button class="reltitle" data-rellog="${by}" data-relaid="${t.aid||''}">${esc(t.nm)}</button>
           <button class="relartist" data-relgo="${by}" data-relaid="${t.aid||''}">${esc(t.by)} ›</button></div>`;}).join('')}</div>`
       : `<div class="pknote" style="padding:30px 0">불러오는 중…</div>`;
-  } else if(cur==='vote'){
+  } else {
+    /* 무대 — 이벤트/투표. 마감 카운트다운 + 좌석 기반 선발 문구 */
     bodyC=ROUNDS.map(r=>`<button class="votetile vfull" data-goround="${r.id}">
         <em>${r.cat==='music'?'🎵':'🎤'} ${r.type==='curated'?'큐레이션':'오픈'}</em>
-        <b>${esc(r.nm)}</b><small>${r.sub||''}</small>
+        <span class="vdday" data-cd="${r.id}">D-</span>
+        <b>${esc(r.nm)}</b><small>${esc(slotLine(r))}</small>
         <span class="voten">${(r.cands||[]).length}팀 참여 · 투표하러 가기 ›</span></button>`).join('');
-  } else {
-    /* Following — 팔로우한 아티스트들의 로그 (원은 위 하이라이트 줄에) */
-    const ff=S.feed.map((t,i)=>t.src==='follow'?feedCard(t,i):'').join('');
-    bodyC=ff||`<div class="pknote" style="padding:30px 0">팔로우한 아티스트의 새 로그가 아직 없어요</div>`;
   }
 
   return `<div class="hd">
@@ -1995,7 +2025,7 @@ function home(){
       ${fing?`<span class="pdot"></span>`:''}</button></div>
   ${storyRow()}
   ${calMonth()}
-  <div class="hsdots">${HOMETABS.map(t=>`<button class="hsdot" data-hgoto="${t[0]}" aria-label="${t[1]}"><i class="${cur===t[0]?'on':''}"></i></button>`).join('')}</div>
+  <div class="hstabs">${HOMETABS.map(t=>`<button class="hstab${cur===t[0]?' on':''}" data-hgoto="${t[0]}">${t[1]}</button>`).join('')}</div>
   <div id="hswipe">${bodyC}</div>`;
 }
 
@@ -2218,8 +2248,11 @@ function lvRow(w){
   const nLogs=(w.releaseLogs||[]).length;
   const r=ROUNDS.find(x=>x.applied===w.nm);
   const mine=r&&r.cands.find(x=>x.me); const v=(mine&&mine.v)||0;
-  const confirmed=!!(r&&r.need&&v>=r.need);
-  const voteSub = !r ? '아직 미참여' : confirmed ? '🎉 공연 확정' : (r.need? '득표 '+v+'/'+r.need : '참여 중');
+  const rank=r?myRank(r):null;
+  const confirmed=!!(r&&mine&&inSlot(r,mine));          /* 선발권(상위 N) 안이면 확정 */
+  const voteSub = !r ? '아직 미참여'
+    : confirmed ? '🎉 무대 확정 · '+rank+'위'
+    : (rank ? rank+'위 · '+slotN(r)+'위까지 무대' : '10표 이상부터 순위에 들어가요');
   const canVote = nLogs>0;
   return `<div class="lvrow">
     <button class="lvcard" id="lvlog"><span class="lvic">📷</span><b>LOG</b>
@@ -2236,13 +2269,14 @@ function eventStatus(w){
   if(!r) return '';
   const mine=r.cands.find(x=>x.me);
   const v=(mine&&mine.v)||0;
-  const confirmed = r.need && v>=r.need;
+  const rank=myRank(r);
+  const confirmed = !!(mine && inSlot(r,mine));
   if(confirmed) return `<div class="evstat one confirmed">
-    <span class="evbadge confirmed">🎉 공연 확정</span><b>${esc(r.nm)}</b>
-    <span class="evcd">득표 ${v}/${r.need}</span></div>`;
+    <span class="evbadge confirmed">🎉 무대 확정</span><b>${esc(r.nm)}</b>
+    <span class="evcd">${rank}위 · ${v}표</span></div>`;
   return `<div class="evstat one">
     <span class="evbadge">◆ 참여 중</span><b>${esc(r.nm)}</b>
-    <span class="evcd" data-cd="${r.id}">${r.need?v+'/'+r.need+'표':''}</span></div>`;
+    <span class="evcd" data-cd="${r.id}">${rank?rank+'위 · '+slotN(r)+'위까지':'10표 이상부터'}</span></div>`;
 }
 
 /* Summer Rain의 스토리 — 음악 아래에 펼쳐지는 6개월. 전부 더미 */
@@ -2859,9 +2893,9 @@ function releaseSheet(w){
       <button class="evopt ${!R.event?'on':''}" data-relevent="">나중에 할게요</button>
       ${ROUNDS.filter(r=>r.cat==='stage'&&r.type==='open').map(r=>`
         <button class="evopt ${R.event===r.id?'on':''}" data-relevent="${r.id}">
-          <b>${esc(r.nm)}</b><small>${esc(r.sub)} · 득표 ${r.need} → ${(r.prize||'').replace(/^.*→\s*/,'')}</small></button>`).join('')}
+          <b>${esc(r.nm)}</b><small>${esc(r.sub)} · ${esc(slotLine(r))}</small></button>`).join('')}
     </div>
-    <p class="rulen" style="text-align:left;margin:7px 4px 0">참여를 고르면 청취자 투표를 받아요 · 목표 득표를 넘기면 공연이 확정돼요</p>
+    <p class="rulen" style="text-align:left;margin:7px 4px 0">참여를 고르면 청취자 투표를 받아요 · 순위 안에 들면 무대가 확정돼요</p>
 
     <div class="rsec">이 발매에 넣을 로그 <em class="opt">탭해서 선택</em></div>
     <div class="rellogsel">${relLogRows()}</div>
@@ -3954,9 +3988,12 @@ setInterval(()=>{
   document.querySelectorAll('[data-cd]').forEach(el=>{
     const r=ROUNDS.find(x=>x.id===el.dataset.cd); if(!r)return;
     const t=Math.max(0,r.end-Date.now());
-    el.textContent=`D-${Math.floor(t/864e5)} `+
-      [Math.floor(t%864e5/36e5),Math.floor(t%36e5/6e4),Math.floor(t%6e4/1e3)]
-        .map(x=>String(x).padStart(2,'0')).join(':');
+    /* 무대 카드의 작은 배지는 D-12 만, 상세 화면은 시:분:초까지 */
+    el.textContent = el.classList.contains('vdday')
+      ? `D-${Math.floor(t/864e5)}`
+      : `D-${Math.floor(t/864e5)} `+
+        [Math.floor(t%864e5/36e5),Math.floor(t%36e5/6e4),Math.floor(t%6e4/1e3)]
+          .map(x=>String(x).padStart(2,'0')).join(':');
   });
 },1000);
 
@@ -3995,7 +4032,9 @@ setInterval(()=>{
     var aidOf=function(name){ var ts=byArtist[name]; return (ts&&ts[0]&&ts[0].artistId)||null; }; // 아티스트명 → profile id
     var iFollow=function(name){ var id=aidOf(name); return !!(id&&MYFOLLOWS.has(id)); };            // 내가 팔로우 중?
     var released=new Set(); tracks.forEach(function(t){ if(t.artistId) released.add(t.artistId); }); // 곡을 발매한(트랙 있는) 아티스트
-    var isFriend=function(name){ var id=aidOf(name); return !!(id && MYFOLLOWS.has(id) && MYFOLLOWERS.has(id) && released.has(id)); }; // 서로 맞팔 + 발매
+    /* P0-1 개정판: 맞팔 게이트 제거. 팔로우는 단방향 — 내가 팔로우하면 그 사람 공개 로그가 보인다.
+       (공개 범위는 게시물이 아니라 계정 설정 account_visibility 가 정한다) */
+    var isFriend=function(name){ var id=aidOf(name); return !!(id && MYFOLLOWS.has(id)); };
     try{ await _meP; }catch(_){}  // 위에서 이미 시작한 loadMe 완료만 기다림(중복 호출 X). 내 팔로우/반응 상태를 카드 빌드 전에 확보
 
     var cut=function(s,n){ s=String(s||''); return s.length>n ? s.slice(0,n-1)+'…' : s; };
