@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>OFFLOG — 시안 v34</title>
+<title>OFFLOG — 기록이 무대가 되는 곳</title>
+<meta name="description" content="창작 과정을 기록하고, 투표로 무대에 오르고, 음원으로 발매합니다.">
+<meta property="og:title" content="OFFLOG — 기록이 무대가 되는 곳">
+<meta property="og:description" content="창작 과정을 기록하고, 투표로 무대에 오르고, 음원으로 발매합니다.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://onoff-stage.com/offlog">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="OFFLOG — 기록이 무대가 되는 곳">
+<meta name="twitter:description" content="창작 과정을 기록하고, 투표로 무대에 오르고, 음원으로 발매합니다.">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Black+Han+Sans&family=Gaegu:wght@700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -1463,7 +1471,22 @@ function studioSave(){
     var myLogs=STREAM.filter(function(l){return l && String(l.id).indexOf('my_')===0 && l.t!=='vid' && !(l.audio&&/^blob:/.test(l.audio));}); /* 영상·미로그인 데모는 blob이라 저장 불가(세션 전용) */
     var myLists=LISTS.filter(function(p){return p.mine;});
     localStorage.setItem(STUDIO_KEY, JSON.stringify({works:mineWorks, lists:myLists, logs:myLogs}));
-  }catch(e){ console.warn('[studio] save 실패(용량?)', e); offToast('저장 실패 — 이미지가 너무 클 수 있어요'); }
+  }catch(e){
+    /* 용량 초과 — 예전엔 여기서 저장이 통째로 실패해 로그가 전부 날아갔다.
+       이제는 무거운 사진 원본(dataURL)만 버리고 글·구조는 반드시 남긴다.
+       (사진은 서버에 올라가 있으면 media URL 로 그대로 다시 보인다) */
+    try{
+      var slim=(myLogs||[]).map(function(l){
+        var o=Object.assign({},l);
+        if(o.bg && /url\(\s*["']?data:/.test(o.bg)) o.bg = o.media ? 'center/cover no-repeat url('+o.media+')' : '#141418';
+        if(o.audio && /^data:/.test(o.audio)) o.audio = o.media||'';
+        return o;
+      });
+      localStorage.setItem(STUDIO_KEY, JSON.stringify({works:mineWorks, lists:myLists, logs:slim}));
+      console.warn('[studio] 용량 초과 — 사진 원본은 빼고 저장했습니다', e);
+      if(!(ME&&SBC)) offToast('사진은 로그인해야 영구 저장돼요');
+    }catch(e2){ console.warn('[studio] save 실패', e2); offToast('저장 공간이 부족해요 — 오래된 로그를 정리해 주세요'); }
+  }
 }
 function _dedupById(arr){ var seen={}, out=[]; arr.forEach(function(x){ if(!x)return; var k=x.id; if(k!=null&&seen[k])return; if(k!=null)seen[k]=1; out.push(x); }); return out; }
 /* 로더가 만든 샘플 위에 내 저장분을 얹는다 */
@@ -1472,6 +1495,105 @@ function studioMerge(){
   if(st.works.length) WORKS=_dedupById(st.works.concat(WORKS));
   if(st.logs.length)  STREAM=_dedupById(st.logs.concat(STREAM));
   if(st.lists.length) LISTS=_dedupById(st.lists.concat(LISTS.filter(function(p){return !p.mine;})));
+}
+
+/* ── 로그 영구 저장 (사진·메모·영상) ────────────────────────────────
+   전에는 localStorage 에만 저장해서 기기를 바꾸거나 캐시를 지우면 사라졌고,
+   사진을 base64 로 넣다가 용량 한도를 넘으면 저장이 통째로 실패했다.
+   이제: 사진은 줄여서 Storage 에 올리고, 로그는 logs 테이블에 저장한다.
+   (supabase/logs.sql 미실행이면 예전처럼 이 기기에만 저장 — 조용히 폴백) */
+let LOGSTABLE=true;    /* logs 테이블 사용 가능 여부 (없으면 false로 내려가고 로컬만) */
+
+/* 사진을 화면에 충분한 크기로 줄이고 JPEG로 압축 — 원본 base64가 저장을 깨뜨리던 문제 해결 */
+function shrinkImage(file, maxPx, quality){
+  return new Promise(function(res){
+    try{
+      const u=URL.createObjectURL(file), img=new Image();
+      img.onload=function(){
+        const m=maxPx||1280, s=Math.min(1, m/Math.max(img.width,img.height));
+        const w=Math.max(1,Math.round(img.width*s)), h=Math.max(1,Math.round(img.height*s));
+        const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        try{ cv.getContext('2d').drawImage(img,0,0,w,h); res(cv.toDataURL('image/jpeg', quality||0.72)); }
+        catch(_){ res(''); }
+        try{URL.revokeObjectURL(u)}catch(_){}
+      };
+      img.onerror=function(){ try{URL.revokeObjectURL(u)}catch(_){} res(''); };
+      img.src=u;
+    }catch(_){ res(''); }
+  });
+}
+/* 사진·영상 원본을 Storage에 올리고 공개 URL을 돌려준다 (로그인 필요) */
+async function uploadLogMedia(file, kind){
+  if(!ME||!SBC||!file) return '';
+  try{
+    const ext=((file.name||'').split('.').pop()||(kind==='vid'?'mp4':'jpg')).toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+    const path=ME.id+'/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
+    const up=await SBC.storage.from('log-media').upload(path, file, {contentType:file.type||'application/octet-stream', upsert:false});
+    if(up.error) throw up.error;
+    const pub=SBC.storage.from('log-media').getPublicUrl(path);
+    return (pub&&pub.data&&pub.data.publicUrl)||'';
+  }catch(e){ console.warn('[offlog] 미디어 업로드 실패(로컬로 유지)', e); return ''; }
+}
+/* 로그 1건을 서버에 저장. 성공하면 log.sid(서버 id)를 붙인다 */
+async function saveLogRemote(log){
+  if(!ME||!SBC||!LOGSTABLE||!log||log.sid) return null;
+  try{
+    const r=await SBC.from('logs').insert({
+      author_id:ME.id, kind:log.t, text:log.text||null,
+      caption:log.cap||log.nm||null, media_url:log.media||null,
+      duration:log.dur||null, tone:log.tone||null,
+      visibility:log.vis||'private', work_id:log.work||null
+    }).select('id').maybeSingle();
+    if(r.error) throw r.error;
+    if(r.data&&r.data.id){ log.sid=r.data.id; try{studioSave()}catch(_){} return r.data.id; }
+    return null;
+  }catch(e){
+    if(e&&(e.code==='PGRST205'||e.code==='42P01')){ LOGSTABLE=false;
+      console.info('[offlog] logs 테이블이 없어 이 기기에만 저장됩니다 — supabase/logs.sql 실행 필요'); return null; }
+    console.warn('[offlog] 로그 서버 저장 실패', e); return null;
+  }
+}
+/* 서버에 저장된 내 로그 → STREAM 아이템으로 */
+function _rowToLog(x){
+  const ts=x.created_at||'', p=s=>s;
+  const base={id:'sv_'+x.id, sid:x.id, at:ts.slice(11,16), dt:ts.slice(0,10),
+              vis:x.visibility||'private', side:'l', work:x.work_id||null};
+  if(x.kind==='ph')  return Object.assign(base,{t:'ph',  cap:x.caption||'사진', media:x.media_url||'',
+                        bg:x.media_url?('center/cover no-repeat url('+x.media_url+')'):'#141418'});
+  if(x.kind==='vid') return Object.assign(base,{t:'vid', cap:x.caption||'', media:x.media_url||'', src:x.media_url||''});
+  if(x.kind==='snd') return Object.assign(base,{t:'snd', nm:x.caption||'데모', dur:x.duration||'', media:x.media_url||'', audio:x.media_url||''});
+  return Object.assign(base,{t:'note', text:x.text||'', tone:x.tone||'y'});
+}
+/* 로그인하면 서버의 내 로그를 불러와 합친다 (기기가 바뀌어도 보이게) */
+async function loadMyLogs(){
+  if(!ME||!SBC||!LOGSTABLE) return false;
+  try{
+    const r=await SBC.from('logs').select('id,kind,text,caption,media_url,duration,tone,visibility,work_id,created_at')
+      .eq('author_id',ME.id).order('created_at',{ascending:false}).limit(200);
+    if(r.error) throw r.error;
+    const rows=(r.data||[]).map(_rowToLog);
+    if(rows.length){
+      const have={}; rows.forEach(function(l){ have[l.sid]=1; });
+      const localOnly=STREAM.filter(function(l){ return l && !(l.sid&&have[l.sid]); });
+      STREAM=_dedupById(rows.concat(localOnly));
+    }
+    return true;
+  }catch(e){
+    if(e&&(e.code==='PGRST205'||e.code==='42P01')){ LOGSTABLE=false; return false; }
+    console.warn('[offlog] 내 로그 불러오기 실패', e); return false;
+  }
+}
+/* 이 기기에만 있던 예전 로그를 서버로 한 번 올린다 (유실 방지) */
+async function migrateLocalLogs(){
+  if(!ME||!SBC||!LOGSTABLE) return;
+  const pend=STREAM.filter(function(l){ return l && !l.sid && String(l.id).indexOf('my_')===0; });
+  for(const l of pend){
+    if(!LOGSTABLE) break;
+    if(l.t==='ph' && !l.media){          /* 예전 사진은 dataURL 뿐 → 그대로 두고 텍스트만 보존 */
+      const m=/url\((.*?)\)/.exec(l.bg||''); if(m&&/^https?:/.test(m[1])) l.media=m[1];
+    }
+    await saveLogRemote(l);
+  }
 }
 
 /* ── 실제 쓰기 (RLS: 로그인 유저의 JWT로 통과, 익명은 차단) ── */
@@ -2810,10 +2932,11 @@ function pushLog(txt, m, audioUrl){
   const dt=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()), id='my_'+d.getTime();
   let log;
   if(m && m.kind==='vid')      log={id, t:'vid', at:now, dt, cap:txt, src:m.url, side:'l', work:null};
-  else if(m && m.kind==='aud') log={id, t:'snd', at:now, dt, nm:txt||'데모', dur:'', audio:audioUrl||m.url, side:'l', work:null};
+  else if(m && m.kind==='aud') log={id, t:'snd', at:now, dt, nm:txt||'데모', dur:'', audio:audioUrl||m.url, media:audioUrl||'', side:'l', work:null};
   else if(m && m.kind==='ph')  log={id, t:'ph',  at:now, dt, cap:txt||'사진', bg:'center/cover no-repeat url('+m.url+')', side:'l', work:null};
   else{ const _tone=['y','b','p'][STREAM.filter(x=>x&&x.t==='note').length%3];   /* 포스트잇 색을 노랑→하늘→핑크로 번갈아 */
                                log={id, t:'note',at:now, dt, text:txt, tone:_tone, side:'l', work:null}; }
+  log.vis='private';            /* 로그는 기본 나만 보기 (곡은 공개) */
   STREAM.unshift(log);
   SESSION_NEW.add(id);          /* 방금 올린 것 → 맨 위 핀(루틴 피드 위에) */
   studioSave();
@@ -2821,6 +2944,22 @@ function pushLog(txt, m, audioUrl){
   if(S.view!=='mine' || S.profile!=='me'){ S.view='mine'; S.profile='me'; }
   render();
   offToast('로그를 올렸어요');
+  /* 서버에 영구 저장 — 사진·영상 원본은 Storage로 올리고 URL만 남긴다 */
+  (async function(){
+    try{
+      if(!ME||!SBC) return;                       /* 비로그인 → 이 기기에만 */
+      if(m && m.file && (m.kind==='ph'||m.kind==='vid')){
+        const url=await uploadLogMedia(m.file, m.kind);
+        if(url){ log.media=url;
+          if(log.t==='ph') log.bg='center/cover no-repeat url('+url+')';
+          if(log.t==='vid') log.src=url;
+          try{studioSave()}catch(_){}
+          try{render()}catch(_){}
+        }
+      }
+      await saveLogRemote(log);
+    }catch(e){ console.warn('[offlog] 로그 저장 후처리 실패', e); }
+  })();
 }
 /* 데모(오디오) 로그 — 로그인 아티스트면 Storage에 실제 업로드 후 재생되는 소리 로그로 */
 async function uploadDemoLog(file, txt){
@@ -2850,9 +2989,19 @@ function attachMedia(id, kind, file){
   const l=STREAM.find(x=>String(x.id)===String(id)); if(!l){ offToast('로그를 못 찾았어요'); return; }
   const txt=(l.text||'').trim();
   if(kind==='ph'){
-    const rd=new FileReader();
-    rd.onload=()=>{ l.t='ph'; l.cap=txt||'사진'; l.bg='center/cover no-repeat url('+rd.result+')'; delete l.text; delete l.tone; studioSave(); render(); offToast('사진을 넣었어요'); };
-    rd.readAsDataURL(file); return;
+    /* 원본 base64는 저장 용량을 넘겨 저장이 통째로 실패한다 → 줄여서 넣고, 원본은 서버로 */
+    shrinkImage(file).then(function(small){
+      l.t='ph'; l.cap=txt||'사진'; l.bg='center/cover no-repeat url('+(small||'')+')';
+      delete l.text; delete l.tone; studioSave(); render(); offToast('사진을 넣었어요');
+      (async function(){ try{
+        const url=await uploadLogMedia(file,'ph');
+        if(url){ l.media=url; l.bg='center/cover no-repeat url('+url+')'; studioSave(); render(); }
+        if(l.sid && ME && SBC && LOGSTABLE){
+          try{ await SBC.from('logs').update({kind:'ph', caption:l.cap, media_url:l.media||null, text:null, tone:null}).eq('id',l.sid); }catch(_){}
+        } else { await saveLogRemote(l); }
+      }catch(e){ console.warn('[offlog] 사진 첨부 서버 반영 실패', e); } })();
+    });
+    return;
   }
   const apply=au=>{ l.t='snd'; l.nm=txt||'데모'; l.dur=''; l.audio=au; delete l.text; delete l.tone; studioSave(); render(); offToast('데모를 넣었어요'); };
   if(ME && SBC){
@@ -3016,14 +3165,20 @@ function camShot(){
   const v=document.getElementById('camvid');
   if(!v || !v.videoWidth){ offToast('아직 카메라가 준비 안 됐어요'); return; }
   try{
-    const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight;
+    /* 센서 해상도 그대로 담으면 용량이 커서 저장이 실패한다 — 긴 변 1280px로 제한 */
+    const s=Math.min(1, 1280/Math.max(v.videoWidth, v.videoHeight));
+    const c=document.createElement('canvas');
+    c.width=Math.max(1,Math.round(v.videoWidth*s)); c.height=Math.max(1,Math.round(v.videoHeight*s));
     const g=c.getContext('2d');
     if(CAMFACING==='user'){ g.translate(c.width,0); g.scale(-1,1); }
     g.drawImage(v,0,0,c.width,c.height);
-    const url=c.toDataURL('image/jpeg',0.86);
+    const url=c.toDataURL('image/jpeg',0.72);
     stopCam(); S.cam=false;
     S.compose={text:(S.compose&&S.compose.text)||'', media:{kind:'ph', url:url}};   /* 쓰던 글은 유지하고 사진만 끼움 */
     render();
+    /* 업로드용 원본(파일) 도 만들어 둔다 — 서버에 올라가면 어느 기기에서나 보인다 */
+    try{ if(c.toBlob) c.toBlob(function(b){ if(b && S.compose && S.compose.media && S.compose.media.kind==='ph'){
+      S.compose.media.file=new File([b],'cam_'+Date.now()+'.jpg',{type:'image/jpeg'}); } }, 'image/jpeg', 0.82); }catch(_){}
   }catch(e){ console.warn('[offlog] 촬영 실패', e); offToast('촬영 실패 — 다시 시도해 주세요'); }
 }
 /* 영상 — 길게 누르는 동안 녹화 */
@@ -3723,8 +3878,9 @@ function bind(){
   if(ccam && !ccam.__b){ ccam.__b=1; ccam.onchange=()=>{ const f=ccam.files&&ccam.files[0];
     if(f){ if(!S.compose)S.compose={text:'',media:null};
       const md=S.compose.media; if(md&&md.url&&/^blob:/.test(md.url||'')){try{URL.revokeObjectURL(md.url)}catch(_){}}
-      if(/^video\//.test(f.type||'')){ S.compose.media={kind:'vid',url:URL.createObjectURL(f)}; render(); }
-      else { const rd=new FileReader(); rd.onload=()=>{ S.compose.media={kind:'ph',url:rd.result}; render(); }; rd.readAsDataURL(f); } }
+      if(/^video\//.test(f.type||'')){ S.compose.media={kind:'vid',url:URL.createObjectURL(f), file:f}; render(); }
+      /* 사진은 줄여서 담는다(원본 base64가 저장 용량을 넘겨 저장 자체가 실패하던 문제). 원본은 업로드용으로 보관 */
+      else { shrinkImage(f).then(function(small){ S.compose.media={kind:'ph', url:small||URL.createObjectURL(f), file:f}; render(); }); } }
     ccam.value=''; }; }
   const caud=document.getElementById('caudio');
   if(caud && !caud.__b){ caud.__b=1; caud.onchange=()=>{ const f=caud.files&&caud.files[0];
@@ -3898,6 +4054,9 @@ setInterval(()=>{
     }
     // 로그인했다면 내 페이지 LOG 는 반드시 '내 곡'으로 (남의 곡이 내 페이지에 뜨던 문제)
     await loadMyStream();
+    /* 서버에 저장된 내 로그(사진·메모·영상)를 불러오고, 이 기기에만 있던 예전 로그는 서버로 올린다 */
+    try{ await loadMyLogs(); }catch(e){}
+    try{ migrateLocalLogs(); }catch(e){}
 
     // (홈 피드 TREND/FORYOU/FOLLOWLOG/STORIES/PEOPLE 는 위 resampleFeed()가 매 새로고침마다 생성)
 
