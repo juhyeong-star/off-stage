@@ -486,8 +486,16 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
   font-size:13px;font-weight:700;line-height:1.25;cursor:pointer;display:block;width:100%;
   display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
 .relartist{background:none;border:0;padding:0 2px;text-align:left;color:var(--muted);font-family:inherit;
-  font-size:11px;cursor:pointer;display:block;width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  font-size:11.5px;font-weight:600;cursor:pointer;display:block;width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.relartist:hover{color:var(--txt);text-decoration:underline;text-underline-offset:2px}
 .reltitle:active,.relartist:active{opacity:.6}
+/* 발매일 — 제목·아티스트 아래 작게 (Spotify/YT Music 식 메타 줄) */
+.reldate{display:block;padding:1px 2px 0;font-family:'Black Han Sans';font-size:10.5px;letter-spacing:.3px;color:rgba(255,255,255,.34)}
+/* 커버 위 DEMO 뱃지 */
+.reldemo{position:absolute;left:8px;top:8px;font-family:'Black Han Sans';font-size:9px;letter-spacing:.5px;
+  color:#07110e;background:var(--mint);border-radius:5px;padding:2px 6px}
+.relcov{box-shadow:0 6px 18px rgba(0,0,0,.42)}
+.reltile{gap:5px}
 /* Vote 타일 */
 .votetile{flex:0 0 178px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:flex-start;gap:4px;
   background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:13px;height:118px;
@@ -735,6 +743,19 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .mini-btm .who{font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2}
 .mini-btm .who:active{opacity:.5}
 .mini-btm .tm{font-family:'Black Han Sans';font-size:13px;color:var(--muted)}
+/* 공유 버튼 */
+.minish{background:none;border:0;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 4px;line-height:1}
+.minish:active{color:var(--mint);transform:scale(.9)}
+/* 시크바 — 탭·드래그로 중간부터 듣기 */
+.mini-seek{display:flex;align-items:center;gap:8px;margin-top:7px}
+.mtime{font-family:'Black Han Sans';font-size:10px;color:var(--muted);min-width:30px;text-align:center;flex-shrink:0}
+.mbar{position:relative;flex:1;height:16px;display:flex;align-items:center;cursor:pointer;touch-action:none}
+.mbar::before{content:'';position:absolute;left:0;right:0;height:3px;border-radius:2px;background:rgba(255,255,255,.13)}
+.mbuf{position:absolute;left:0;height:3px;border-radius:2px;background:rgba(255,255,255,.20);width:0}
+.mfill{position:absolute;left:0;height:3px;border-radius:2px;background:var(--mint);width:0}
+.mknob{position:absolute;left:0;width:10px;height:10px;border-radius:50%;background:var(--mint);
+  transform:translateX(-50%);box-shadow:0 1px 5px rgba(0,0,0,.5);transition:width .12s,height .12s}
+.mbar:active .mknob{width:14px;height:14px}
 .minilist{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:3px 2px;flex-shrink:0}
 .minimore{background:none;border:none;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:0 3px;flex-shrink:0}
 .minimore:hover{color:var(--mint)}
@@ -2048,12 +2069,18 @@ function home(){
       ? `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">이 날은 올라온 로그가 없어요.</div>`
       : `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">아직 팔로우한 사람의 로그가 없어요.<br><b style="color:var(--mint)">발견</b>에서 아티스트를 팔로우해 보세요.</div>`);
   } else if(cur==='rel'){
-    const rel=ALLTRACKS.slice(0,20);
+    const rel=ALLTRACKS.slice(0,24);
     bodyC=rel.length
-      ? `<div class="relgrid">${rel.map(t=>{const by=(t.by||'').replace(/"/g,'&quot;');const nm=(t.nm||'').replace(/"/g,'&quot;');return `<div class="reltile">
-          <button class="relcov" data-relplay="${t.audio||''}" data-relnm="${nm}" aria-label="재생" style="background:${t.cover?`center/cover no-repeat url(${t.cover})`:relGrad(t.c)}">${t.cover?'':`<em>${(t.nm||'♪').slice(0,1)}</em>`}<i class="relplay">▶</i></button>
-          <button class="reltitle" data-rellog="${by}" data-relaid="${t.aid||''}">${esc(t.nm)}</button>
-          <button class="relartist" data-relgo="${by}" data-relaid="${t.aid||''}">${esc(t.by)} ›</button></div>`;}).join('')}</div>`
+      ? `<div class="relgrid">${rel.map(t=>{
+          const by=(t.by||'').replace(/"/g,'&quot;'), nm=(t.nm||'').replace(/"/g,'&quot;');
+          const dts=t.dt?String(t.dt).replace(/-/g,'.'):'';
+          return `<div class="reltile">
+          <button class="relcov" data-relplay="${t.audio||''}" data-relnm="${nm}" data-relby="${by}" data-relaid="${t.aid||''}" data-reltid="${t.tid||''}" aria-label="${nm} 재생"
+            style="background:${t.cover?`center/cover no-repeat url(${t.cover})`:relGrad(t.c)}">${t.cover?'':`<em>${(t.nm||'♪').slice(0,1)}</em>`}
+            ${t.demo?`<span class="reldemo">DEMO</span>`:''}<i class="relplay">▶</i></button>
+          <button class="reltitle" data-rellog="${by}" data-relaid="${t.aid||''}" title="${nm}">${esc(t.nm)}</button>
+          <button class="relartist" data-relgo="${by}" data-relaid="${t.aid||''}">${esc(t.by)}</button>
+          ${dts?`<span class="reldate">${esc(dts)}</span>`:''}</div>`;}).join('')}</div>`
       : `<div class="pknote" style="padding:30px 0">불러오는 중…</div>`;
   } else {
     /* 무대 — 이벤트/투표. 마감 카운트다운 + 좌석 기반 선발 문구 */
@@ -3150,6 +3177,11 @@ let NOWPLAY={label:'발견', cnt:0, nm:'', tm:'', src:'', who:'', aid:'', tid:''
 
 /* ── 실제 오디오 재생 (전역 Audio 1개) ── 재생버튼에 진짜 mp3를 물린다 */
 const AUDIO=new Audio(); AUDIO.preload='none';
+/* 음악바 시간·막대 갱신 (드래그 중에는 손가락 우선) */
+AUDIO.addEventListener('timeupdate', function(){ if(!_seekDrag) paintSeek(); });
+AUDIO.addEventListener('loadedmetadata', function(){ paintSeek(); });
+AUDIO.addEventListener('progress', function(){ if(!_seekDrag) paintSeek(); });
+AUDIO.addEventListener('ended', function(){ S.mini.playing=false; try{renderMini()}catch(_){} });
 let CURSRC='';
 function _clearPlayingUI(){
   document.querySelectorAll('.rcard.playing').forEach(function(x){
@@ -3183,8 +3215,13 @@ function renderMini(){
             <span class="nm">${esc(NOWPLAY.nm)}</span>
             ${NOWPLAY.who?`<span class="who" id="mwho" style="cursor:pointer">${esc(NOWPLAY.who)} ›</span>`:''}
           </div>
-          <span class="tm">${NOWPLAY.tm||''}</span>
-          ${(NOWPLAY.aid||NOWPLAY.tid)?`<button class="minimore" id="mmore" aria-label="공유·담기·팔로우">⋯</button>`:''}</div></div>` : '';
+          <button class="minish" id="msh" aria-label="공유">⤴</button>
+          ${(NOWPLAY.aid||NOWPLAY.tid)?`<button class="minimore" id="mmore" aria-label="공유·담기·팔로우">⋯</button>`:''}</div>
+        <div class="mini-seek">
+          <span class="mtime" id="mcur">0:00</span>
+          <div class="mbar" id="mbar" role="slider" aria-label="재생 위치"><i class="mbuf" id="mbuf"></i><i class="mfill" id="mfill"></i><b class="mknob" id="mknob"></b></div>
+          <span class="mtime" id="mdur">0:00</span>
+        </div></div>` : '';
   const mp=document.getElementById('mp'), mx=document.getElementById('mx');
   if(mp)mp.onclick=()=>{
     if(!AUDIO.paused){ AUDIO.pause(); S.mini.playing=false; _clearPlayingUI(); }
@@ -3195,6 +3232,40 @@ function renderMini(){
   const mwho=document.getElementById('mwho'), mmore=document.getElementById('mmore');
   if(mwho)mwho.onclick=()=>{ if(NOWPLAY.who||NOWPLAY.aid) goProfile(NOWPLAY.who, NOWPLAY.aid); };
   if(mmore)mmore.onclick=e=>{ e.stopPropagation(); S.logMenu={kind:'oshare', id:NOWPLAY.tid||'', nm:NOWPLAY.nm, by:NOWPLAY.who, audio:NOWPLAY.src, aid:NOWPLAY.aid||''}; render(); };
+  const msh=document.getElementById('msh');
+  if(msh)msh.onclick=e=>{ e.stopPropagation(); offShareTrack({nm:NOWPLAY.nm, by:NOWPLAY.who, audio:NOWPLAY.src, id:NOWPLAY.tid||''}); };
+  bindSeek();
+}
+/* ── 음악바 시크(중간 듣기) + 시간 표시 ──
+   막대를 탭하거나 끌면 그 지점부터 재생된다. 드래그 중에는 시간이 손가락을 따라간다. */
+function _mmss(s){ s=Math.max(0,Math.floor(s||0)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+let _seekDrag=false;
+function paintSeek(ratio){
+  const fill=document.getElementById('mfill'), knob=document.getElementById('mknob'),
+        cur=document.getElementById('mcur'), dur=document.getElementById('mdur'), buf=document.getElementById('mbuf');
+  if(!fill) return;
+  const d=isFinite(AUDIO.duration)?AUDIO.duration:0;
+  const r=Math.min(1,Math.max(0, ratio!=null?ratio : (d? AUDIO.currentTime/d : 0)));
+  fill.style.width=(r*100)+'%'; if(knob) knob.style.left=(r*100)+'%';
+  if(cur) cur.textContent=_mmss(ratio!=null ? r*d : AUDIO.currentTime);
+  if(dur) dur.textContent=d?_mmss(d):'--:--';
+  if(buf){ try{ const b=AUDIO.buffered; buf.style.width=(b&&b.length&&d)?((b.end(b.length-1)/d)*100)+'%':'0%'; }catch(_){ } }
+}
+function bindSeek(){
+  const bar=document.getElementById('mbar'); if(!bar) return;
+  paintSeek();
+  const ratioAt=e=>{ const r=bar.getBoundingClientRect(), x=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
+    return Math.min(1,Math.max(0, x/(r.width||1))); };
+  const seekTo=r=>{ const d=isFinite(AUDIO.duration)?AUDIO.duration:0; if(d){ AUDIO.currentTime=r*d; } paintSeek(); };
+  const move=e=>{ if(!_seekDrag)return; e.preventDefault(); paintSeek(ratioAt(e)); };
+  const up=e=>{ if(!_seekDrag)return; _seekDrag=false; seekTo(ratioAt(e.changedTouches?{clientX:e.changedTouches[0].clientX}:e));
+    document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up);
+    document.removeEventListener('touchmove',move); document.removeEventListener('touchend',up); };
+  const down=e=>{ if(!isFinite(AUDIO.duration)||!AUDIO.duration){ offToast('아직 불러오는 중이에요'); return; }
+    _seekDrag=true; paintSeek(ratioAt(e));
+    document.addEventListener('mousemove',move); document.addEventListener('mouseup',up);
+    document.addEventListener('touchmove',move,{passive:false}); document.addEventListener('touchend',up); };
+  bar.onmousedown=down; bar.ontouchstart=down;
 }
 
 /* ── 앱 안 촬영 화면 (getUserMedia) — 하단 camera 탭 ──
@@ -3558,7 +3629,10 @@ function bind(){
   /* Releases 타일 3분할 — 커버=재생 · 제목=음원 로그 · 이름=아티스트 페이지 */
   document.querySelectorAll('[data-relplay]').forEach(b=>b.onclick=e=>{ e.stopPropagation();
     const url=b.dataset.relplay; if(!url){ offToast('음원이 아직 없어요'); return; }
-    playSrc(url, b.dataset.relnm||''); renderMini(); });
+    playSrc(url, b.dataset.relnm||'');
+    /* 아티스트·트랙 정보도 함께 — 음악바에 이름이 뜨고, 눌러서 아티스트로 갈 수 있게 */
+    NOWPLAY.who=b.dataset.relby||''; NOWPLAY.aid=b.dataset.relaid||''; NOWPLAY.tid=b.dataset.reltid||'';
+    renderMini(); });
   document.querySelectorAll('[data-rellog]').forEach(b=>b.onclick=()=>{ goProfile(b.dataset.rellog, b.dataset.relaid||null); });   /* 제목 → 그 음원의 로그(아티스트 페이지 LOG) */
   document.querySelectorAll('[data-relgo]').forEach(b=>b.onclick=()=>{ goProfile(b.dataset.relgo, b.dataset.relaid||null); });      /* 이름 → 아티스트 페이지 */
   /* Home 섹션 전환 — 손가락 1:1 추적 + 끝 러버밴딩 + 관성 커밋 (apple-design §1·2·7·9) */
@@ -4106,7 +4180,7 @@ setInterval(()=>{
     var _shuf=function(a){ var x=a.slice(); for(var i=x.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=x[i];x[i]=x[j];x[j]=t;} return x; };
 
     // 플레이리스트에 담을 수 있는 실제 곡 목록
-    ALLTRACKS=tracks.map(function(t){ return {nm:t.title, by:t.artist, dur:'', tid:t.id, audio:t.audio, c:colOf(t.artist), cover:t.cover||'', aid:t.artistId||null}; });
+    ALLTRACKS=tracks.map(function(t){ return {nm:t.title, by:t.artist, dur:'', tid:t.id, audio:t.audio, c:colOf(t.artist), cover:t.cover||'', aid:t.artistId||null, dt:(t.ts||'').slice(0,10), demo:!!t.demo}; });
 
     // 피드 카드 1장 데이터 (트랙 → 카드) — resampleFeed 와 calIndex(캘린더)가 공유
     var mk=function(t){ var o={who:cut(t.artist,18), c:colOf(t.artist), at:tm(t.ts), dt:(t.ts||'').slice(0,10), rx:(t.likes||0), aid:aidOf(t.artist), tid:t.id, t:'snd', audio:t.audio, nm:cut(t.title,20)};
