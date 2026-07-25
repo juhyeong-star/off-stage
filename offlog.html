@@ -426,21 +426,29 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .hsdots i{width:5px;height:5px;border-radius:50%;background:var(--line);transition:all .22s;pointer-events:none}
 .hsdots i.on{background:var(--mint);width:15px;border-radius:3px}
 /* 홈 월별 캘린더(SETLOG 스타일) — 날짜 탭하면 그날 나+맞팔친구 로그만 */
-.calmon{background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:12px 12px 14px;margin:2px 0 10px;-webkit-tap-highlight-color:transparent}
-.cmhd{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:12px;position:relative}
+.calmon{margin:2px 0 8px;-webkit-tap-highlight-color:transparent}
+.calmon.open{background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:10px 12px 12px}
+/* 접힘 — 얇은 바 */
+.cmbar{width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:9px 14px;cursor:pointer;color:var(--txt)}
+.cmbar .cmlabel{font-family:'Black Han Sans';font-size:13.5px;letter-spacing:.4px}
+.cmchev{color:var(--muted);font-size:11px}
+.cmclearbar{width:100%;margin-top:6px;background:none;border:1px solid var(--line);color:var(--mint);border-radius:11px;font-size:12px;padding:7px;cursor:pointer}
+/* 펼침 — 그리드 */
+.cmhd{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:10px;position:relative}
 .cmnav{background:none;border:0;color:var(--muted);font-size:22px;line-height:1;cursor:pointer;padding:0 8px}
 .cmnav:active{color:var(--mint)}
 .cmlabel{font-family:'Black Han Sans';font-size:15px;letter-spacing:.5px}
+.cmtoggle{background:none;border:0;color:var(--txt);cursor:pointer}
 .cmclear{position:absolute;right:0;background:none;border:1px solid var(--line);color:var(--muted);border-radius:10px;font-size:11px;padding:4px 10px;cursor:pointer}
 .cmgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-.cmwd{margin-bottom:5px}
-.cmw{text-align:center;font-size:10.5px;color:var(--muted);padding:1px 0}
+.cmwd{margin-bottom:4px}
+.cmw{text-align:center;font-size:10px;color:var(--muted);padding:1px 0}
 .cmw.sun{color:#e88}
 .cmw.sat{color:#88b6e8}
-.cmday{min-height:34px;display:flex;align-items:center;justify-content:center;position:relative;background:none;border:0;cursor:pointer;border-radius:9px;padding:0}
-.cmday b{font-family:'Black Han Sans';font-weight:400;font-size:13px;color:var(--txt);line-height:1}
+.cmday{min-height:29px;display:flex;align-items:center;justify-content:center;position:relative;background:none;border:0;cursor:pointer;border-radius:8px;padding:0}
+.cmday b{font-family:'Black Han Sans';font-weight:400;font-size:12.5px;color:var(--txt);line-height:1}
 .cmday.empty{visibility:hidden}
-.cmday.has::after{content:'';position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--mint)}
+.cmday.has::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:3.5px;height:3.5px;border-radius:50%;background:var(--mint)}
 .cmday.today b{color:var(--mint)}
 .cmday.sel{background:var(--mint)}
 .cmday.sel b{color:#0c0c0f}
@@ -627,8 +635,8 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .rmid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
   z-index:4;text-align:center;padding:0 44px;pointer-events:none}
 .rts{font-family:'Black Han Sans';font-size:32px;letter-spacing:1px;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.8)}
-.rdt{font-family:'Black Han Sans';font-size:11px;letter-spacing:.3px;margin-top:1px;color:rgba(255,255,255,.6);text-shadow:0 1px 8px rgba(0,0,0,.8)}
-.rcard.paper .rdt{color:rgba(43,36,23,.42);text-shadow:none}
+/* 날짜 라벨 — 카드(박스) 밖, 카드 사이 gap에 왼쪽 정렬로 (타임라인 날짜) */
+.fdt{display:block;font-family:'Black Han Sans';font-size:12px;letter-spacing:.5px;color:rgba(255,255,255,.5);margin:2px 0 5px 6px;line-height:1}
 .rcap{font-size:13px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.85);margin-top:1px}
 .rcard.empty .rts{color:rgba(255,255,255,.075);text-shadow:none}
 .rcard.paper .rts{color:rgba(43,36,23,.35);text-shadow:none;font-size:15px;margin-bottom:7px}
@@ -1658,6 +1666,7 @@ let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:
   homeTab:'logs',/* Home 섹션 — logs|rel|vote|follow. 좌우 스와이프로 전환 */
   calDate:null,  /* 홈 캘린더 필터: null=전체, 'YYYY-MM-DD'=그날 나+맞팔친구 로그만. 같은 날 재탭=해제 */
   calMonth:null, /* 캘린더에 표시 중인 달 'YYYY-MM' (null=이번 달) */
+  calOpen:false, /* 홈 캘린더 펼침 여부 — 기본 접힘(로그가 바로 보이게). 얇은 바만 노출 */
   myMenu:false,  /* 마이 헤더 ⋯ 메뉴 (공유·로그아웃) */
   relNew:null,   /* '새 릴리스' 모드일 때 임시로 만든 work id (취소 시 정리) */
   relForm:{title:'', audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', event:''}};
@@ -1743,6 +1752,7 @@ const HOMETABS=[['logs','📷 Logs'],['rel','🎵 Releases'],['vote','🗳 Vote'
 let HOMEIN=0;   /* 방금 넘어온 방향(+1 다음 / -1 이전) — 새 섹션 입장 애니메이션용 */
 let _lastView='';   /* 직전 뷰 — 뷰 바뀔 때만 전환 페이드 */
 let _lastSheet='';  /* 직전에 열려 있던 시트 — 같은 시트가 계속 열려 있으면 슬라이드업 애니메이션을 다시 재생하지 않는다(클릭할 때마다 화면이 튀는 문제) */
+let _lastScrollKey='';  /* 스크롤을 맨 위로 리셋할 기준(뷰 + 섹션) */
 /* 커버 없을 때 채우는 앨범 느낌 그라데이션 (아티스트 색 기반) */
 function relGrad(col){ const h=c(col)||'#3a3a44'; return 'radial-gradient(circle at 30% 25%,'+h+'55,transparent 62%),radial-gradient(circle at 78% 82%,'+h+'33,transparent 58%),#15151b'; }
 /* ── 홈 캘린더(날짜 스트립) — 날짜를 탭하면 그날 나 + 맞팔 친구들이 올린 로그만 ── */
@@ -1758,13 +1768,22 @@ function logsOnDate(dateStr){   /* 그날 = 내 로그 + 맞팔 친구 로그 (�
   const mine=(typeof STREAM!=='undefined'?STREAM:[]).filter(l=>l.dt===dateStr).map(myLogAsFeedItem);
   return mine.concat(friends).sort((a,b)=>(a.at||'').localeCompare(b.at||''));
 }
-/* 월별 캘린더(그리드) — SETLOG 스타일. 로그 있는 날엔 점, 오늘/선택 강조 */
+/* 월별 캘린더(그리드) — SETLOG 스타일. 기본은 얇은 바로 접혀 있고(로그가 바로 보이게),
+   탭하면 펼쳐진다. 로그 있는 날엔 점, 오늘/선택 강조 */
 function calMonth(){
   const today=new Date(), tIso=_isoDay(today);
-  const ym = S.calMonth || tIso.slice(0,7);              /* 표시 중인 달 */
+  const ym = S.calMonth || tIso.slice(0,7);
   const yy=+ym.slice(0,4), mm=+ym.slice(5,7);
-  const startDow=new Date(yy, mm-1, 1).getDay();          /* 1일의 요일(0=일) */
-  const dim=new Date(yy, mm, 0).getDate();                /* 그 달 일수 */
+  const sel = S.calDate?' · '+S.calDate.slice(5).replace('-','.'):'';
+  /* 접힘 — 얇은 바만. 그리드/인덱스 계산도 안 함(가벼움) */
+  if(!S.calOpen){
+    return `<div class="calmon">
+      <button class="cmbar" data-caltoggle="1"><span class="cmlabel">🗓 ${yy}년 ${mm}월${sel}</span><span class="cmchev">▾</span></button>
+      ${S.calDate?`<button class="cmclearbar" data-caldate="">전체 보기 ✕</button>`:''}</div>`;
+  }
+  /* 펼침 — 달력 그리드 */
+  const startDow=new Date(yy, mm-1, 1).getDay();
+  const dim=new Date(yy, mm, 0).getDate();
   const idx=(window.__calIndex&&window.__calIndex())||{};
   const have={}; (typeof STREAM!=='undefined'?STREAM:[]).forEach(l=>{ if(l.dt)have[l.dt]=1; });
   Object.keys(idx).forEach(d=>{ if((idx[d]||[]).length)have[d]=1; });
@@ -1774,9 +1793,9 @@ function calMonth(){
   for(let d=1;d<=dim;d++){ const di=ym+'-'+String(d).padStart(2,'0');
     const cls=['cmday']; if(di===tIso)cls.push('today'); if(S.calDate===di)cls.push('sel'); if(have[di])cls.push('has');
     cells+=`<button class="${cls.join(' ')}" data-caldate="${di}"><b>${d}</b></button>`; }
-  return `<div class="calmon">
+  return `<div class="calmon open">
     <div class="cmhd"><button class="cmnav" data-calmo="-1" aria-label="이전 달">‹</button>
-      <span class="cmlabel">${yy}년 ${mm}월</span>
+      <button class="cmlabel cmtoggle" data-caltoggle="1">${yy}년 ${mm}월 ▴</button>
       <button class="cmnav" data-calmo="1" aria-label="다음 달">›</button>
       ${S.calDate?`<button class="cmclear" data-caldate="">전체</button>`:''}</div>
     <div class="cmgrid cmwd">${WD.map((w,i)=>`<span class="cmw${i===0?' sun':i===6?' sat':''}">${w}</span>`).join('')}</div>
@@ -1877,20 +1896,20 @@ function feedCard(t,i){
       ${_rb('울컥','diamond','blue')}
       ${_rb('최고','star','yellow')}
       <span class="rxn" data-n="${t.rx||0}">${t.rx||0}</span></div>`;
-  const dtb = t.dt?`<div class="rdt">${esc(String(t.dt).slice(5).replace('-','.'))}</div>`:'';
+  const dtb = t.dt?`<div class="fdt">${esc(String(t.dt).slice(5).replace('-','.'))}</div>`:'';
 
   const body =
     t.t==='ph'  ? `<div class="rcard" data-slide="${i}">
         <div class="bgimg" style="background:${t.bg}"></div><div class="grainy"></div>
-        <div class="rmid"><div class="rts">${t.at}</div>${dtb}<div class="rcap">${esc(t.cap)}</div></div>${who}${fol}${rx}</div>`
+        <div class="rmid"><div class="rts">${t.at}</div><div class="rcap">${esc(t.cap)}</div></div>${who}${fol}${rx}</div>`
   : t.t==='snd' ? `<div class="rcard snd" data-slide="${i}">
         <div class="bigwv">${waveBars(34)}</div>
-        <div class="rmid"><div class="rts">${t.at||''}</div>${dtb}<div class="rcap">${t.nm||t.cap}</div>
+        <div class="rmid"><div class="rts">${t.at||''}</div><div class="rcap">${t.nm||t.cap}</div>
           <span class="sndpill"><em>▶</em><b>${t.dur||''}</b></span></div>${who}${fol}${rx}</div>`
   :               `<div class="rcard paper ${t.tone==='b'?'b':''}" data-slide="${i}">
-        <div class="rmid"><div class="rts">${t.at}</div>${dtb}<div class="rnote">${esc(t.text)}</div></div>${who}${fol}${rx}</div>`;
+        <div class="rmid"><div class="rts">${t.at}</div><div class="rnote">${esc(t.text)}</div></div>${who}${fol}${rx}</div>`;
 
-  return `<div class="fcard">${body}</div>`;
+  return `<div class="fcard">${dtb}${body}</div>`;
 }
 
 /* ── 슬라이드 뷰 — 같은 피드, 한 화면에 하나씩. 위아래로 넘긴다 ── */
@@ -2137,25 +2156,25 @@ function mine(){
     const _mine=(l.tid && MYREACT[l.tid])||null;
     const _rb=(emo,sh,col)=>`<button class="shape rbtn${_mine&&_mine.has(emo)?' hit':''}" data-emo="${emo}"${l.tid?` data-tid="${l.tid}"`:''} aria-label="${emo}">${shape(sh,c(col),22)}</button>`;
     const rx = `<div class="frx" data-tid="${l.tid||''}">${_rb('소름','tri','green')}${_rb('루프','circle','shpink')}${_rb('울컥','diamond','blue')}${_rb('최고','star','yellow')}<span class="rxn" data-n="${l.rx||0}">${l.rx||0}</span></div>`;
-    /* 업로드 날짜 뱃지 (시각 아래) — 예: 07.20 */
-    const dtb = l.dt?`<div class="rdt">${esc(String(l.dt).slice(5).replace('-','.'))}</div>`:'';
+    /* 업로드 날짜 라벨 — 카드 위 gap에 (예: 07.20) */
+    const dtb = l.dt?`<div class="fdt">${esc(String(l.dt).slice(5).replace('-','.'))}</div>`:'';
     const chrome = me
       ? `${w?`<span class="wchip mychip">◆ ${esc(w.nm)}</span>`:''}
          <button class="edit mine" ${l.t==='note'?`data-addmenu="${l.id}"`:`data-logdl="${l.id}"`} aria-label="${l.t==='note'?'넣기':'받기'}">⋯</button>`
       : '';
-    if(l.t==='ph') return `<div class="fcard my"><div class="rcard">
+    if(l.t==='ph') return `<div class="fcard my">${dtb}<div class="rcard">
       <div class="bgimg" style="background:${l.bg}"></div><div class="grainy"></div>
-      <div class="rmid"><div class="rts">${l.at}</div>${dtb}<div class="rcap">${esc(l.cap)}</div></div>${who}${rx}${chrome}</div></div>`;
-    if(l.t==='snd') return `<div class="fcard my"><div class="rcard snd" data-play${l.audio?` data-audio="${l.audio}"`:''}>
+      <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${esc(l.cap)}</div></div>${who}${rx}${chrome}</div></div>`;
+    if(l.t==='snd') return `<div class="fcard my">${dtb}<div class="rcard snd" data-play${l.audio?` data-audio="${l.audio}"`:''}>
       <div class="bigwv">${waveBars(34)}</div>
-      <div class="rmid"><div class="rts">${l.at}</div>${dtb}<div class="rcap">${esc(l.nm)}</div>
+      <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${esc(l.nm)}</div>
         <span class="sndpill"><em>▶</em><b>${l.dur}</b></span></div>${who}${rx}${chrome}</div></div>`;
-    if(l.t==='vid') return `<div class="fcard my"><div class="rcard" style="overflow:hidden">
+    if(l.t==='vid') return `<div class="fcard my">${dtb}<div class="rcard" style="overflow:hidden">
       <video src="${l.src}" controls playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>
-      <div class="rmid" style="pointer-events:none"><div class="rts">${l.at}</div>${dtb}${l.cap?`<div class="rcap">${esc(l.cap)}</div>`:''}</div>${who}${rx}${chrome}</div></div>`;
+      <div class="rmid" style="pointer-events:none"><div class="rts">${l.at}</div>${l.cap?`<div class="rcap">${esc(l.cap)}</div>`:''}</div>${who}${rx}${chrome}</div></div>`;
     const tc = l.tone==='b'?'b':l.tone==='p'?'p':'';   /* 포스트잇 색: 노랑/하늘/핑크 */
-    return `<div class="fcard my"><div class="rcard paper ${tc}">
-      <div class="rmid"><div class="rts">${l.at}</div>${dtb}<div class="rnote">${esc(l.text)}</div></div>${who}${rx}${chrome}</div></div>`;
+    return `<div class="fcard my">${dtb}<div class="rcard paper ${tc}">
+      <div class="rmid"><div class="rts">${l.at}</div><div class="rnote">${esc(l.text)}</div></div>${who}${rx}${chrome}</div></div>`;
   };
 
   const logs=`
@@ -3000,9 +3019,12 @@ function render(){
   /* 화면(뷰)이 실제로 바뀔 때만 짧은 페이드-인 + 스크롤 맨 위로 → 전환이 부드럽고 빠르게 느껴짐.
      같은 화면 안(예: 발매 시트에서 옵션 하나 고를 때)은 render()가 다시 불려도
      스크롤 위치가 유지돼야 한다 — 안 그러면 조작할 때마다 화면이 맨 위로 튕겨 보인다. */
-  const _viewKey=S.view+'|'+(S.homeTab||'')+'|'+(S.work||'')+'|'+(S.profile||'');
-  if(_viewKey!==_lastView){ _lastView=_viewKey; _bodyEl.classList.remove('vin'); void _bodyEl.offsetWidth; _bodyEl.classList.add('vin');
-    document.getElementById('screen').scrollTop=0; }
+  /* 전체 화면 페이드(.vin)는 '진짜 뷰 전환'에만 — 홈 섹션 좌우 스와이프는 #hswipe 자체 슬라이드만
+     쓰고 전체 페이드는 안 쓴다(스와이프마다 스토리·캘린더까지 깜빡여 무겁게 느껴지던 문제). */
+  const _viewKey=S.view+'|'+(S.work||'')+'|'+(S.profile||'');
+  if(_viewKey!==_lastView){ _lastView=_viewKey; _bodyEl.classList.remove('vin'); void _bodyEl.offsetWidth; _bodyEl.classList.add('vin'); }
+  const _scrollKey=_viewKey+'|'+(S.homeTab||'');   /* 스크롤은 섹션 전환에도 맨 위로 */
+  if(_scrollKey!==_lastScrollKey){ _lastScrollKey=_scrollKey; document.getElementById('screen').scrollTop=0; }
   /* 시트(발매·로그담기 등) 슬라이드업 애니메이션은 '처음 열릴 때'만 — 같은 시트가 열린 채 옵션을 고를 때마다
      다시 재생돼 화면이 튀던 문제 해결. 시트가 그대로면 animation 제거 */
   const _sheetKey = S.rel?'rel':S.relpick?'relpick':S.pull?'pull':S.stage?'stage':S.addlist?'addlist':'';
@@ -3254,9 +3276,11 @@ function bind(){
   /* 점(dots) 탭 = 그 섹션으로 바로 (스와이프 안 될 때의 대체 수단) */
   document.querySelectorAll('[data-hgoto]').forEach(b=>b.onclick=()=>{ const to=b.dataset.hgoto, order=HOMETABS.map(t=>t[0]), ci=order.indexOf(S.homeTab||'logs'), ti=order.indexOf(to);
     if(ti<0||ti===ci)return; HOMEIN=ti>ci?1:-1; S.homeTab=to; render(); });
-  /* 캘린더 날짜 탭 → 그날 나+맞팔친구 로그만. 같은 날 다시 탭하면 해제. logs 섹션으로 이동 */
+  /* 캘린더 펼치기/접기 */
+  document.querySelectorAll('[data-caltoggle]').forEach(b=>b.onclick=()=>{ S.calOpen=!S.calOpen; render(); });
+  /* 캘린더 날짜 탭 → 그날 나+맞팔친구 로그만. 같은 날 다시 탭하면 해제. 날짜 고르면 접어서 로그가 바로 보이게 */
   document.querySelectorAll('[data-caldate]').forEach(b=>b.onclick=()=>{ const d=b.dataset.caldate||null;
-    S.calDate=(S.calDate===d)?null:d; S.homeTab='logs'; render(); });
+    S.calDate=(S.calDate===d)?null:d; S.homeTab='logs'; if(d)S.calOpen=false; render(); });
   /* 캘린더 이전/다음 달 */
   document.querySelectorAll('[data-calmo]').forEach(b=>b.onclick=()=>{ const dir=+b.dataset.calmo;
     const base=(S.calMonth||_isoDay(new Date()).slice(0,7)); let yy=+base.slice(0,4), mm=+base.slice(5,7)+dir;
@@ -3283,7 +3307,7 @@ function bind(){
       if(lock!==1){ hsw.style.transform='';hsw.style.opacity='';return; }
       const dx=e.changedTouches[0].clientX-sx, i=order().indexOf(S.homeTab||'logs');
       const edge=(dx>0&&i===0)||(dx<0&&i===order().length-1);
-      if(Math.abs(dx)>w*0.26 && !edge){                    /* 커밋: 온 방향으로 마저 밀어내고 다음 섹션 */
+      if(Math.abs(dx)>w*0.2 && !edge){                     /* 커밋: 화면 20%만 밀어도 넘어간다(더 쉽게) */
         const out=dx<0?-w:w;
         hsw.style.transition='transform .16s ease-out,opacity .16s ease-out';
         hsw.style.transform='translateX('+out+'px)'; hsw.style.opacity='0';
