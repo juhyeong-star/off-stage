@@ -1132,6 +1132,11 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .authbtn b{display:inline-flex;width:20px;height:20px;align-items:center;justify-content:center;border-radius:50%;background:#fff;color:#000;font-size:12px;font-weight:900}
 .authbtn.kakao b{background:#FEE500;color:#000}
 .authbtn:hover{border-color:var(--mint)}
+/* 로그인 ↔ 회원가입 전환 · 비밀번호 찾기 */
+.authalt{margin-top:14px;text-align:center;font-size:12.5px;color:var(--muted);line-height:1.7}
+.authlink{background:none;border:0;padding:0 2px;color:var(--mint);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.authlink:active{opacity:.6}
+.authsep{opacity:.4;margin:0 5px}
 /* 로그인 잠금 / 스플래시 — 앱·하단바까지 전부 덮는다 */
 .lockwrap{position:absolute;inset:0;z-index:60;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
 .lockmid{width:100%;max-width:320px;display:flex;flex-direction:column;align-items:center;text-align:center}
@@ -1326,7 +1331,41 @@ async function loginEmail(email,pw){
     await loadMe(); S.auth=false; render(); offToast('로그인됐어요'); }
   catch(e){ offToast('이메일 또는 비밀번호를 확인하세요'); if(btn){btn.disabled=false;btn.textContent='로그인';} }
 }
-async function logout(){ if(!SBC)return; try{ await SBC.auth.signOut(); }catch(e){} ME=null; MYFOLLOWS.clear(); MYFOLLOWERS.clear(); for(var k in MYREACT)delete MYREACT[k]; render(); offToast('로그아웃됐어요'); }
+/* 회원가입 — 이메일/비밀번호. 가입 직후 profiles 행에 이름을 심는다(없으면 만든다) */
+async function signupEmail(email, pw, name){
+  if(!SBC)return;
+  const btn=document.getElementById('authsubmit'); if(btn){btn.disabled=true;btn.textContent='가입 중…';}
+  try{
+    if((pw||'').length<6) throw {message:'비밀번호는 6자 이상이어야 해요'};
+    const {data,error}=await SBC.auth.signUp({email:email, password:pw, options:{data:{name:name||''}}});
+    if(error)throw error;
+    const u=data&&data.user;
+    /* 이메일 확인이 켜져 있으면 세션이 아직 없다 — 확인 메일 안내로 끝낸다 */
+    if(u && !(data.session)){
+      S.auth=false; S.authMode='login'; render();
+      offToast('확인 메일을 보냈어요 — 메일에서 인증 후 로그인해 주세요');
+      return;
+    }
+    if(u && name){ try{ await SBC.from('profiles').upsert({id:u.id, name:name}, {onConflict:'id'}); }catch(_){ } }
+    await loadMe(); S.auth=false; render(); offToast('가입 완료 — 반가워요!');
+  }catch(e){
+    const m=(e&&e.message)||'';
+    offToast(/already|registered|exists/i.test(m) ? '이미 가입된 이메일이에요 — 로그인해 주세요'
+           : /6/.test(m)&&/비밀번호/.test(m) ? m
+           : /password/i.test(m) ? '비밀번호는 6자 이상이어야 해요'
+           : '가입 실패 — '+(m||'다시 시도해 주세요'));
+    if(btn){btn.disabled=false;btn.textContent='가입하기';}
+  }
+}
+/* 비밀번호 재설정 메일 */
+async function resetPw(email){
+  if(!SBC)return;
+  if(!email){ offToast('이메일을 먼저 입력해 주세요'); return; }
+  try{ const {error}=await SBC.auth.resetPasswordForEmail(email, {redirectTo:location.href}); if(error)throw error;
+    offToast('비밀번호 재설정 메일을 보냈어요'); }
+  catch(e){ offToast('메일 발송 실패 — 이메일을 확인해 주세요'); }
+}
+async function logout(){ if(!SBC)return; try{ await SBC.auth.signOut(); }catch(e){} ME=null; MYFOLLOWS.clear(); MYFOLLOWERS.clear(); for(var k in MYREACT)delete MYREACT[k]; STREAM=STREAM.filter(function(l){return !(l&&(l.sid||String(l.id).indexOf('sv_')===0));}); S.view='home'; render(); offToast('로그아웃됐어요'); }
 
 /* ── 실제 프로필 로드 + 캐시 (공개 읽기) ── */
 let PROFCACHE={};
@@ -1398,27 +1437,35 @@ function splashScreen(){
     <div class="locklogo">OFFLOG</div><div class="lockspin"></div></div></div>`;
 }
 /* 로그인 잠금 — 로그인해야 앱을 쓸 수 있다. 닫기 없음(비회원은 못 들어옴) */
+/* 로그인/회원가입 공용 폼 — 잠금 화면과 시트가 같은 마크업을 쓴다 */
+function authForm(){
+  const su = S.authMode==='signup';
+  return `<button class="authbtn" id="authgoogle"><b>G</b> Google로 ${su?'가입':'계속'}</button>
+    <div class="authdiv"><span>또는 이메일</span></div>
+    ${su?`<input class="authinput" id="authname" type="text" autocomplete="name" placeholder="이름 (아티스트명)">`:''}
+    <input class="authinput" id="authemail" type="email" autocomplete="username" placeholder="이메일">
+    <input class="authinput" id="authpw" type="password" autocomplete="${su?'new-password':'current-password'}" placeholder="비밀번호${su?' (6자 이상)':''}">
+    <button class="cs-post" id="authsubmit" style="margin-top:10px">${su?'가입하기':'로그인'}</button>
+    <div class="authalt">
+      ${su ? `이미 계정이 있나요? <button class="authlink" data-authmode="login">로그인</button>`
+           : `처음이신가요? <button class="authlink" data-authmode="signup">회원가입</button>
+              <span class="authsep">·</span><button class="authlink" id="authforgot">비밀번호 찾기</button>`}
+    </div>`;
+}
 function lockScreen(){
+  const su = S.authMode==='signup';
   return `<div class="lockwrap"><div class="lockmid lockauth">
     <div class="locklogo">OFFLOG</div>
-    <p class="locksub">로그인하고 시작하기</p>
-    <button class="authbtn" id="authgoogle"><b>G</b> Google로 계속</button>
-    <div class="authdiv"><span>또는 이메일</span></div>
-    <input class="authinput" id="authemail" type="email" autocomplete="username" placeholder="이메일">
-    <input class="authinput" id="authpw" type="password" autocomplete="current-password" placeholder="비밀번호">
-    <button class="cs-post" id="authsubmit" style="margin-top:10px">로그인</button>
+    <p class="locksub">${su?'계정 만들고 시작하기':'로그인하고 시작하기'}</p>
+    ${authForm()}
   </div></div>`;
 }
 function authSheet(){
   if(!S.auth) return '';
   return `<div class="cs-bd" id="authbd"><div class="cs">
-    <div class="cs-hd"><b>로그인</b><button class="cs-x" id="authx" aria-label="닫기">✕</button></div>
-    <p style="color:var(--muted);font-size:12.5px;margin:0 2px 12px">기존 회원 계정으로 로그인하면 내 페이지·팔로우·저장이 연동돼요.</p>
-    <button class="authbtn" id="authgoogle"><b>G</b> Google로 계속</button>
-    <div class="authdiv"><span>또는 이메일</span></div>
-    <input class="authinput" id="authemail" type="email" autocomplete="username" placeholder="이메일">
-    <input class="authinput" id="authpw" type="password" autocomplete="current-password" placeholder="비밀번호">
-    <button class="cs-post" id="authsubmit" style="margin-top:10px">로그인</button>
+    <div class="cs-hd"><b>${S.authMode==='signup'?'회원가입':'로그인'}</b><button class="cs-x" id="authx" aria-label="닫기">✕</button></div>
+    <p style="color:var(--muted);font-size:12.5px;margin:0 2px 12px">${S.authMode==='signup'?'계정을 만들면 로그·곡이 계정에 저장돼 어느 기기에서나 보여요.':'로그인하면 내 페이지·팔로우·저장이 연동돼요.'}</p>
+    ${authForm()}
   </div></div>`;
 }
 /* 듣던 곡을 플레이리스트에 담기 (릴스/피드에서 바로) */
@@ -1852,6 +1899,7 @@ let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:
   calDate:null,  /* 홈 캘린더 필터: null=전체, 'YYYY-MM-DD'=그날 나+맞팔친구 로그만. 같은 날 재탭=해제 */
   calMonth:null, /* 캘린더에 표시 중인 달 'YYYY-MM' (null=이번 달) */
   calOpen:false, /* 홈 캘린더 펼침 여부 — 기본 접힘(로그가 바로 보이게). 얇은 바만 노출 */
+  authMode:'login', /* 로그인 화면 모드 — login | signup */
   myMenu:false,  /* 마이 헤더 ⋯ 메뉴 (공유·로그아웃) */
   relNew:null,   /* '새 릴리스' 모드일 때 임시로 만든 work id (취소 시 정리) */
   relForm:{title:'', audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', event:''}};
@@ -3328,7 +3376,24 @@ function bind(){
   /* 인증 버튼 — 로그인 시트와 잠금 화면 양쪽에서 동작(id 기반) */
   const ag=document.getElementById('authgoogle'); if(ag)ag.onclick=loginGoogle;
   const asub=document.getElementById('authsubmit');
-  if(asub)asub.onclick=()=>{ const em=(document.getElementById('authemail')||{}).value||'', pw=(document.getElementById('authpw')||{}).value||''; if(!em||!pw){offToast('이메일과 비밀번호를 입력하세요');return;} loginEmail(em.trim(),pw); };
+  if(asub)asub.onclick=()=>{
+    const em=((document.getElementById('authemail')||{}).value||'').trim();
+    const pw=(document.getElementById('authpw')||{}).value||'';
+    if(!em||!pw){offToast('이메일과 비밀번호를 입력하세요');return;}
+    if(S.authMode==='signup'){
+      const nm=((document.getElementById('authname')||{}).value||'').trim();
+      if(!nm){ offToast('이름(아티스트명)을 입력해 주세요'); return; }
+      signupEmail(em, pw, nm);
+    } else loginEmail(em, pw);
+  };
+  /* 로그인 ↔ 회원가입 전환 */
+  document.querySelectorAll('[data-authmode]').forEach(b=>b.onclick=()=>{ S.authMode=b.dataset.authmode; render(); });
+  /* 비밀번호 찾기 */
+  const afg=document.getElementById('authforgot');
+  if(afg)afg.onclick=()=>{ resetPw(((document.getElementById('authemail')||{}).value||'').trim()); };
+  /* 엔터로 제출 */
+  ['authemail','authpw','authname'].forEach(function(id){ const el=document.getElementById(id);
+    if(el)el.onkeydown=e=>{ if(e.key==='Enter'&&asub)asub.click(); }; });
   const plgn=document.getElementById('profloginbtn'); if(plgn)plgn.onclick=()=>{ S.auth=true; render(); };
   /* 내 정보 페이지 로그아웃 */
   const aclo=document.getElementById('aclogout'); if(aclo)aclo.onclick=()=>{ if(confirm('로그아웃할까요?')){ S.view='mine'; logout(); } };
