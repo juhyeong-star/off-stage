@@ -144,7 +144,7 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .cta:disabled{opacity:.35;cursor:default}
 
 /* ── 발매 ── */
-.pksheet.tall{max-height:76%;overflow-y:auto;scrollbar-width:none;overscroll-behavior:contain}
+.pksheet.tall{max-height:76%;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;scrollbar-width:none;overscroll-behavior:contain}   /* overflow-x·pan-y = 시트가 좌우로 끌리던 것 고정(세로만) */
 .pksheet.tall::-webkit-scrollbar{display:none}
 .pksub{font-size:10px;color:var(--muted);margin-left:7px}
 .rsec{font-size:11px;color:var(--muted);font-weight:700;margin:15px 4px 8px}
@@ -1580,18 +1580,45 @@ function offToast(msg){
 }
 function needLogin(){ offToast('로그인하면 저장돼요 — 메인에서 로그인 후 이용하세요'); }
 
-/* ── 창작 스튜디오 로컬 저장 (내가 만든 작품/플레이리스트/로그, 새로고침에도 유지) ── */
-const STUDIO_KEY='offlog:studio:v1';
+/* ── 창작 스튜디오 로컬 저장 (내가 만든 작품/플레이리스트/로그, 새로고침에도 유지) ──
+   ⚠️계정별 분리(2026-07-27): 예전엔 공용 키 하나라 같은 브라우저에서 계정을 바꾸면
+   서로 덮어써서 "업로드/재로그인 때마다 삭제되는" 문제가 났다. 이제 키 = 계정 uid 별,
+   로그인 전엔 :anon. 첫 로그인 때 옛 공용키·anon 키 데이터를 내 키로 입양(studioAdopt). */
+const STUDIO_KEY_BASE='offlog:studio:v1';
+function studioKey(){ return STUDIO_KEY_BASE + ':' + ((typeof ME!=='undefined' && ME && ME.id) || 'anon'); }
 function studioLoad(){
-  try{ var s=JSON.parse(localStorage.getItem(STUDIO_KEY)||'{}'); return {works:s.works||[], lists:s.lists||[], logs:s.logs||[]}; }
+  try{
+    var raw=localStorage.getItem(studioKey());
+    if(raw==null) raw=localStorage.getItem(STUDIO_KEY_BASE);   /* 옛 공용키 읽기 폴백(입양 전) */
+    var s=JSON.parse(raw||'{}'); return {works:s.works||[], lists:s.lists||[], logs:s.logs||[]};
+  }
   catch(e){ return {works:[], lists:[], logs:[]}; }
+}
+/* 로그인 확정 직후 1회 — 옛 공용키 + anon 키의 내 창작물을 내 계정 키로 흡수하고 옛 키 제거 */
+function studioAdopt(){
+  if(!(typeof ME!=='undefined' && ME && ME.id)) return;
+  try{
+    var legacy=localStorage.getItem(STUDIO_KEY_BASE);
+    var anon=localStorage.getItem(STUDIO_KEY_BASE+':anon');
+    if(legacy==null && anon==null) return;
+    var cur; try{ cur=JSON.parse(localStorage.getItem(studioKey())||'{}'); }catch(_){ cur={}; }
+    cur={works:cur.works||[], lists:cur.lists||[], logs:cur.logs||[]};
+    [legacy,anon].forEach(function(raw){ if(!raw)return; try{ var s=JSON.parse(raw);
+      cur.works=_dedupById(cur.works.concat(s.works||[]));
+      cur.lists=_dedupById(cur.lists.concat(s.lists||[]));
+      cur.logs =_dedupById(cur.logs.concat(s.logs ||[]));
+    }catch(_){}});
+    localStorage.setItem(studioKey(), JSON.stringify(cur));
+    localStorage.removeItem(STUDIO_KEY_BASE);
+    localStorage.removeItem(STUDIO_KEY_BASE+':anon');
+  }catch(e){ console.warn('[studio] adopt 실패', e); }
 }
 function studioSave(){
   try{
     var mineWorks=WORKS.filter(function(w){return w.mine;});
     var myLogs=STREAM.filter(function(l){return l && String(l.id).indexOf('my_')===0 && l.t!=='vid' && !(l.audio&&/^blob:/.test(l.audio));}); /* 영상·미로그인 데모는 blob이라 저장 불가(세션 전용) */
     var myLists=LISTS.filter(function(p){return p.mine;});
-    localStorage.setItem(STUDIO_KEY, JSON.stringify({works:mineWorks, lists:myLists, logs:myLogs}));
+    localStorage.setItem(studioKey(), JSON.stringify({works:mineWorks, lists:myLists, logs:myLogs}));
   }catch(e){
     /* 용량 초과 — 예전엔 여기서 저장이 통째로 실패해 로그가 전부 날아갔다.
        이제는 무거운 사진 원본(dataURL)만 버리고 글·구조는 반드시 남긴다.
@@ -1603,7 +1630,7 @@ function studioSave(){
         if(o.audio && /^data:/.test(o.audio)) o.audio = o.media||'';
         return o;
       });
-      localStorage.setItem(STUDIO_KEY, JSON.stringify({works:mineWorks, lists:myLists, logs:slim}));
+      localStorage.setItem(studioKey(), JSON.stringify({works:mineWorks, lists:myLists, logs:slim}));
       console.warn('[studio] 용량 초과 — 사진 원본은 빼고 저장했습니다', e);
       if(!(ME&&SBC)) offToast('사진은 로그인해야 영구 저장돼요');
     }catch(e2){ console.warn('[studio] save 실패', e2); offToast('저장 공간이 부족해요 — 오래된 로그를 정리해 주세요'); }
@@ -1864,10 +1891,10 @@ function logTs(l){
   var t=Date.parse(((l.dt||'2000-01-01')+'T'+(l.at||'00:00')));
   return isNaN(t)?0:t;
 }
-/* 이번 세션에 내가 방금 올린 로그 id — 하루 루틴은 이른 시간부터(위→아래) 보되,
-   방금 올린 건 즉시 확인되도록 맨 위로 핀한다. */
+/* 이번 세션에 내가 방금 올린 로그 id — 최신순이라 자연히 맨 위지만,
+   시계 오차 등으로 밀리지 않게 핀도 유지한다. */
 const SESSION_NEW=new Set();
-/* 내 페이지 로그 순서: (1) 방금 올린 것 = 맨 위(최신부터) → (2) 나머지 = 이른 시간부터(데일리 루틴) */
+/* 내 페이지 로그 순서 = 최신순(2026-07-03 요청). 방금 올린 것 핀 → 나머지도 최신부터 */
 function streamOrder(arr){
   return arr.slice().sort(function(a,b){
     var pa=SESSION_NEW.has(a.id), pb=SESSION_NEW.has(b.id);
@@ -2068,11 +2095,11 @@ function myLogAsFeedItem(l){   /* 내 STREAM 로그 → 피드 카드 모양으�
     t:l.t, at:l.at, dt:l.dt, cap:l.cap||l.nm||l.text, nm:l.nm, text:l.text,
     bg:l.bg, tone:l.tone, dur:l.dur, audio:l.audio, tid:l.tid||null, rx:l.rx||0};
 }
-function logsOnDate(dateStr){   /* 그날 = 내 로그 + 맞팔 친구 로그 (시간순) */
+function logsOnDate(dateStr){   /* 그날 = 내 로그 + 맞팔 친구 로그 (최신순) */
   const idx=(window.__calIndex&&window.__calIndex())||{};
   const friends=(idx[dateStr]||[]).slice();
   const mine=(typeof STREAM!=='undefined'?STREAM:[]).filter(l=>l.dt===dateStr).map(myLogAsFeedItem);
-  return mine.concat(friends).sort((a,b)=>(a.at||'').localeCompare(b.at||''));
+  return mine.concat(friends).sort((a,b)=>(b.at||'').localeCompare(a.at||''));
 }
 /* 월별 캘린더(그리드) — SETLOG 스타일. 기본은 얇은 바로 접혀 있고(로그가 바로 보이게),
    탭하면 펼쳐진다. 로그 있는 날엔 점, 오늘/선택 강조 */
@@ -2181,13 +2208,17 @@ function shuffle(a){
 }
 function buildFeed(){
   /* 메인 피드 = 서로 맞팔한 친구의 로그만 (TREND/FORYOU/FOLLOW 는 맞팔 풀에서 생성됨).
-     합주실(room) 카드는 맞팔이 아닌 아티스트가 섞일 수 있어 메인에서 제외 — 합주실 뷰에서 따로 본다 */
+     합주실(room) 카드는 맞팔이 아닌 아티스트가 섞일 수 있어 메인에서 제외 — 합주실 뷰에서 따로 본다.
+     순서 = 최신순(2026-07-03 요청) — 셔플·트렌딩 헤드 대신 dt+at 내림차순. 같은 곡이
+     trend/foryou/follow 에 겹치면 정렬 시 나란히 보이므로 중복 1개만 남긴다. */
   const trend  = TREND.map(t=>({src:'trend', ...t}));
   const foryou = FORYOU.map(f=>({src:'foryou', ...f}));
   const follow = FOLLOWLOG.map(f=>({src:'follow', ...f}));
-  const head   = shuffle(trend).slice(0,1);                  /* 처음 = Trending */
-  const rest   = shuffle([...trend.filter(t=>t!==head[0]), ...foryou, ...follow]);
-  return [...head, ...rest];
+  const seen=new Set();
+  const key=x=>String(x.dt||'')+' '+String(x.at||'');
+  return [...trend, ...foryou, ...follow]
+    .filter(x=>{ const k=x.tid||((x.who||'')+'|'+(x.nm||x.cap||'')+'|'+(x.at||'')); if(seen.has(k))return false; seen.add(k); return true; })
+    .sort((a,b)=>key(b).localeCompare(key(a)));
 }
 
 /* Work 스토리 카드와 같은 문법. 안 기울고, 시각이 카드 중앙에 있고, 미디어가 카드를 채운다 */
@@ -4425,6 +4456,7 @@ setInterval(()=>{
     // 로그인했다면 내 페이지 LOG 는 반드시 '내 곡'으로 (남의 곡이 내 페이지에 뜨던 문제)
     await loadMyStream();
     /* 서버에 저장된 내 로그(사진·메모·영상)를 불러오고, 이 기기에만 있던 예전 로그는 서버로 올린다 */
+    try{ studioAdopt(); }catch(e){}     /* 옛 공용키·anon 캐시를 내 계정 키로 1회 입양(계정별 분리) */
     try{ await loadMyLogs(); }catch(e){}
     try{ migrateLocalLogs(); }catch(e){}
 
