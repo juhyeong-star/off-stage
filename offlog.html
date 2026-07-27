@@ -1305,10 +1305,21 @@ try{
 /* 로그인 유저 로드 + 내 팔로우/반응 상태 미리 받아두기 */
 let AUTHREADY=false;   /* 로그인 여부 확인 완료 — 그 전엔 스플래시, 확인 후 !ME면 잠금 */
 let DATAREADY=false;   /* 실제 트랙 데이터 도착 완료 — 그 전엔 스플래시 유지(시드 목업이 진짜처럼 새는 걸 막음) */
+/* 저장된 로그인 세션이 기기에 있는가 — 네트워크 없이 즉시 판단.
+   이게 true면 "로그인한 사람"이므로 잠금 화면을 띄우면 안 된다(다시 로그인하라고 하면 안 됨). */
+function hasStoredSession(){
+  try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i);
+    if(k && /^sb-.*-auth-token$/.test(k) && localStorage.getItem(k)) return true; } }catch(_){}
+  return false;
+}
 async function loadMe(){
   if(!SBC){ ME=null; AUTHREADY=true; return null; }
   try{
-    const {data:{user}}=await SBC.auth.getUser();
+    /* 저장된 세션을 먼저 로컬에서 읽는다(네트워크 왕복 없음).
+       getUser()만 쓰면 통신이 느리거나 끊겼을 때 로그인이 풀린 것처럼 보인다. */
+    let user=null;
+    try{ const s=await SBC.auth.getSession(); user=(s&&s.data&&s.data.session&&s.data.session.user)||null; }catch(_){}
+    if(!user){ try{ const u=await SBC.auth.getUser(); user=(u&&u.data&&u.data.user)||null; }catch(_){} }
     if(user){
       const meta=user.user_metadata||{};
       let nm=(meta.name||meta.full_name||(user.email?user.email.split('@')[0]:'나'));
@@ -1331,7 +1342,14 @@ async function loadMe(){
       if(fbR&&fbR.data) fbR.data.forEach(r=>MYFOLLOWERS.add(r.follower_id));
       if(mcR) ME.followers=mcR.followers;
       if(trR&&trR.data) trR.data.forEach(x=>{ (MYREACT[x.track_id]=MYREACT[x.track_id]||new Set()).add(x.kind); });   /* track_reactions 없으면 trR=null → 조용히 통과 */
-    } else { ME=null; }
+    } else {
+      ME=null;
+      /* 세션 토큰은 남아 있는데 유저를 못 얻었다 = 만료·무효 → 찌꺼기를 지워야 잠금 화면이 정상적으로 뜬다
+         (안 지우면 "불러오는 중" 스플래시에 갇힌다) */
+      if(hasStoredSession()){ try{ await SBC.auth.signOut({scope:'local'}); }catch(_){
+        try{ for(var i=localStorage.length-1;i>=0;i--){ var k=localStorage.key(i);
+          if(k && /^sb-.*-auth-token$/.test(k)) localStorage.removeItem(k); } }catch(__){} } }
+    }
   }catch(e){ console.warn('[offlog] loadMe 실패', e); }
   AUTHREADY=true;    /* 로그인 확인 끝 — 이제 !ME면 잠금 화면 */
   return ME;
@@ -3524,7 +3542,10 @@ function render(){
     _ns.querySelectorAll('.nsg').forEach(function(b){ b.classList.toggle('on', (b.dataset.cam==='cam')===!!S.cam); }); }
   /* 로그인 잠금 오버레이 — 확인 전=스플래시, 확인 후 비로그인=잠금, 로그인=없음 */
   const _lv=document.getElementById('lockview');
-  if(_lv) _lv.innerHTML = !(AUTHREADY&&DATAREADY) ? splashScreen() : (!ME ? lockScreen() : '');
+  /* 잠금은 "확실히 로그인 안 한 사람"에게만. 기기에 세션이 남아 있으면 아직 불러오는 중이므로 스플래시를 유지한다
+     — 한 번 로그인하면 로그아웃 전까지 다시 묻지 않는다 */
+  if(_lv) _lv.innerHTML = !(AUTHREADY&&DATAREADY) ? splashScreen()
+    : (ME ? '' : (hasStoredSession() ? splashScreen() : lockScreen()));
   renderMini();
   bind();
   syncStoryAudio();     // 스토리 데모면 실제 소리 재생
@@ -4310,7 +4331,10 @@ setInterval(()=>{
   try{ studioMerge(); renewHome(); render(); }catch(e){}   /* 즉시 첫 화면(로컬) — 네트워크 안 기다림. 실제 데이터는 아래에서 채워 다시 그림. 스플래시가 DATAREADY까지 덮고 있어 시드 목업은 노출 안 됨 */
   /* 로그인 상태 즉시 확인(잠금 판단). 프로미스를 저장해 아래에서 재사용 → loadMe 중복 호출 제거 */
   let _meP=null; try{ _meP=loadMe().then(function(){ try{render();}catch(_){}}); }catch(e){}
-  setTimeout(function(){ if(!AUTHREADY){ AUTHREADY=true; try{render();}catch(_){}} }, 2500);   /* 안전장치: 로그인 확인 지연돼도 잠금 판단 진행 */
+  /* 안전장치 — 단, 기기에 세션이 저장돼 있으면 서둘러 잠그지 않는다.
+     (로그인해 둔 사람에게 통신이 느리다는 이유로 다시 로그인하라고 하면 안 된다) */
+  setTimeout(function(){ if(!AUTHREADY && !hasStoredSession()){ AUTHREADY=true; try{render();}catch(_){}} }, 2500);
+  setTimeout(function(){ if(!AUTHREADY){ AUTHREADY=true; try{render();}catch(_){}} }, 12000);   /* 최후 안전장치 */
   setTimeout(function(){ if(!DATAREADY){ DATAREADY=true; try{render();}catch(_){}} }, 4500);   /* 안전장치: 네트워크가 아주 느려도 4.5s 뒤엔 있는 걸로 보여줌 */
   try{
     var SB='https://vayzhmaggwpkbsrrsdqt.supabase.co';
