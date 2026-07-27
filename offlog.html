@@ -2551,20 +2551,23 @@ function mine(){
     <div class="r">${me&&ME
       ? `<button class="circ" id="mysettings" aria-label="메뉴">⋯</button>`
       : `<button class="circ" aria-label="공유">⤴</button>`}</div></div>
-  <div class="mprof"><span class="mpav">${avatarEl(prof.avatar, prof.c, 92)}</span>
+  <div class="mprof">${me&&ME
+      ? `<button class="mpav avedit" id="acavbtn" aria-label="프로필 사진 바꾸기">${avatarEl(prof.avatar, prof.c, 92)}<span class="avcam">📷</span></button><input type="file" id="acavfile" accept="image/*" hidden>`
+      : `<span class="mpav">${avatarEl(prof.avatar, prof.c, 92)}</span>`}
     <h3>${esc(prof.who)}</h3><p>${esc(prof.sub)}</p>
     <div class="fcount">
       <button class="fc" data-flist="follower"><b>${me?((ME&&ME.followers!=null)?ME.followers:'—'):((rp&&rp.followers!=null)?rp.followers:'—')}</b><small>팔로워</small></button>
       <span class="fcdiv"></span>
       <button class="fc" data-flist="following"><b>${me?MYFOLLOWS.size:((rp&&rp.following!=null)?rp.following:'—')}</b><small>팔로잉</small></button></div>
     ${me
-      ? (ME?'':`<button class="fol profol" id="profloginbtn">로그인</button>`)
+      ? (ME?`<button class="acedit" id="acedit">프로필 수정</button>`:`<button class="fol profol" id="profloginbtn">로그인</button>`)
       : `<button class="fol profol ${following?'on':''}" id="profolbtn" data-aid="${S.profileAid||''}">${following?'팔로잉':'팔로우'}</button>`}</div>
   ${me?`<button class="myplrow" data-v="lists">🎵 내 플레이리스트<span>›</span></button>`:''}
   <div class="seg">
     <button class="${S.seg==='log'?'on':''}" data-seg="log">LOG</button>
     <button class="${S.seg==='works'?'on':''}" data-seg="works">MUSIC</button></div>
   ${me ? (S.seg==='works'?myworks:logs) : (S.seg==='works'?artistWorks:artistLog)}
+  ${me&&S.editProf?profEditSheet():''}
   <div style="height:14px"></div>`;
 }
 
