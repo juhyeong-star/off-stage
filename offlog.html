@@ -1556,9 +1556,11 @@ let _attachTo=null;
 function logMenuSheet(){
   if(!S.logMenu) return '';
   const M=S.logMenu;
+  const _ml = M.kind==='addmedia' ? (typeof STREAM!=='undefined'?STREAM:[]).find(x=>x&&x.id===M.id) : null;
   const rows = M.kind==='addmedia'
     ? `<button class="pkrow" data-addkind="ph"><span class="pknm"><b>📷 사진 넣기</b><small>이 글이 사진 위 캡션이 돼요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>
-       <button class="pkrow" data-addkind="snd"><span class="pknm"><b>♪ 데모 넣기</b><small>이 글에 데모(오디오)를 붙여요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>`
+       <button class="pkrow" data-addkind="snd"><span class="pknm"><b>♪ 데모 넣기</b><small>이 글에 데모(오디오)를 붙여요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>
+       ${_ml?`<button class="pkrow" data-logvis="${M.id}"><span class="pknm"><b>${_ml.vis==='public'?'🔓 공개 로그':'🔒 나만 보기'}</b><small>${_ml.work?'발매·무대에 담긴 로그는 항상 공개예요':(_ml.vis==='public'?'탭하면 나만 보기로 바꿔요':'탭하면 공개로 — 팔로워 피드에 보여요')}</small></span><span style="margin-left:auto;color:var(--mint);font-weight:800">${_ml.vis==='public'?'공개':'비공개'}</span></button>`:''}`
     : `${M.aid?`<button class="pkrow" data-omenu="follow"><span class="pknm"><b>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'✓ 팔로잉':'＋ 팔로우'}</b><small>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'탭하면 팔로우 해제':(M.by||'이 아티스트')+' 팔로우하기'}</small></span></button>`:''}
        <button class="pkrow" data-omenu="save"><span class="pknm"><b>＋ 내 플레이리스트에 담기</b></span><span style="margin-left:auto;color:var(--mint);font-weight:800">담기</span></button>
        <button class="pkrow" data-omenu="share"><span class="pknm"><b>⤴ 공유</b><small>링크로 공유하거나 복사</small></span></button>`;
@@ -3198,6 +3200,10 @@ function composeSheet(){
       <button class="cs-att${m&&(m.kind==='ph'||m.kind==='vid')?' on':''}" id="cscam" aria-label="카메라">📷<span>카메라</span></button>
       <button class="cs-att${m&&m.kind==='aud'?' on':''}" id="csaudio" aria-label="데모">🎵<span>데모</span></button>
     </div>
+    <div class="cs-attach" style="margin-top:0">
+      <button class="cs-att${(C.vis||'private')!=='public'?' on':''}" id="csvpriv" aria-label="나만 보기">🔒<span>나만 보기</span></button>
+      <button class="cs-att${C.vis==='public'?' on':''}" id="csvpub" aria-label="공개">🔓<span>공개</span></button>
+    </div>
     <button class="cs-post" id="cspost"${canPost?'':' disabled'}>올리기</button>
   </div></div>`;
 }
@@ -3217,7 +3223,7 @@ function pushLog(txt, m, audioUrl){
   else if(m && m.kind==='ph')  log={id, t:'ph',  at:now, dt, cap:txt||'사진', bg:'center/cover no-repeat url('+m.url+')', side:'l', work:null};
   else{ const _tone=['y','b','p'][STREAM.filter(x=>x&&x.t==='note').length%3];   /* 포스트잇 색을 노랑→하늘→핑크로 번갈아 */
                                log={id, t:'note',at:now, dt, text:txt, tone:_tone, side:'l', work:null}; }
-  log.vis='private';            /* 로그는 기본 나만 보기 (곡은 공개) */
+  log.vis=(S.compose&&S.compose.vis==='public')?'public':'private';   /* 작성 시트에서 선택 (기본 나만 보기) */
   STREAM.unshift(log);
   SESSION_NEW.add(id);          /* 방금 올린 것 → 맨 위 핀(루틴 피드 위에) */
   studioSave();
@@ -4223,6 +4229,18 @@ function bind(){
     const lmclose=()=>{ S.logMenu=null; render(); };
     if(lmx)lmx.onclick=lmclose; if(lmbd)lmbd.onclick=e=>{ if(e.target===lmbd)lmclose(); };
     document.querySelectorAll('[data-addkind]').forEach(b=>b.onclick=()=>{ _attachTo=S.logMenu.id; const k=b.dataset.addkind; S.logMenu=null; render(); const inp=document.getElementById(k==='ph'?'addphoto':'adddemo'); if(inp)inp.click(); });
+    /* 로그 공개/비공개 전환 — 발매·무대에 담긴 로그는 항상 공개(정책) */
+    document.querySelectorAll('[data-logvis]').forEach(b=>b.onclick=async()=>{
+      const l=(typeof STREAM!=='undefined'?STREAM:[]).find(x=>x&&x.id===b.dataset.logvis); if(!l) return;
+      if(l.work){ offToast('발매·무대에 담긴 로그는 항상 공개예요'); return; }
+      const v=(l.vis==='public')?'private':'public', prev=l.vis;
+      l.vis=v; S.logMenu=null; render();
+      try{
+        if(l.sid && ME && SBC && LOGSTABLE){ const r=await SBC.from('logs').update({visibility:v}).eq('id',l.sid); if(r.error)throw r.error; }
+        studioSave();
+        offToast(v==='public'?'공개로 바꿨어요 — 팔로워 피드에 보여요':'나만 보기로 바꿨어요');
+      }catch(e){ l.vis=prev; studioSave(); render(); console.warn('[offlog] 공개범위 변경 실패', e); offToast('변경 실패 — 잠시 후 다시'); }
+    });
     document.querySelectorAll('[data-omenu]').forEach(b=>b.onclick=()=>{ const act=b.dataset.omenu, M=S.logMenu; if(act==='save'){ S.saveTrack={tid:M.id, nm:M.nm, by:M.by, audio:M.audio}; S.logMenu=null; render(); } else if(act==='follow'){ const aid=M.aid; S.logMenu=null; if(!ME){ render(); needLogin(); return; } const willFollow=!MYFOLLOWS.has(aid); (willFollow?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(ok) offToast(willFollow?'팔로우했어요':'팔로우 해제했어요'); render(); }); render(); } else { S.logMenu=null; render(); offShareTrack(M); } });
   }
   const _addph=document.getElementById('addphoto');
@@ -4266,6 +4284,10 @@ function bind(){
     if(cam)cam.onclick=()=>{ S.cam=true; render(); startCam(); };   /* 앱 안 촬영 화면 (글은 유지, 권한 없으면 폰 카메라 폴백) */
     if(cau)cau.onclick=()=>{ const el=document.getElementById('caudio'); if(el)el.click(); };
     if(rm)rm.onclick=()=>{ const md=S.compose.media; if(md&&md.url&&/^blob:/.test(md.url)){try{URL.revokeObjectURL(md.url)}catch(_){}} S.compose.media=null; render(); };
+    /* 공개 범위 선택 — 🔒 나만 보기(기본) / 🔓 공개 */
+    const vpr=document.getElementById('csvpriv'), vpu=document.getElementById('csvpub');
+    if(vpr)vpr.onclick=()=>{ S.compose.vis='private'; render(); };
+    if(vpu)vpu.onclick=()=>{ S.compose.vis='public'; render(); };
     if(post)post.onclick=submitCompose;
   }
   /* 카메라 입력(1회 바인딩) — 찍은 게 영상이면 영상 로그, 사진이면 사진 로그로 자동 판별 */
