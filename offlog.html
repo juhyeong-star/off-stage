@@ -146,6 +146,24 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 /* ── 발매 ── */
 .pksheet.tall{max-height:76%;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;scrollbar-width:none;overscroll-behavior:contain}   /* overflow-x·pan-y = 시트가 좌우로 끌리던 것 고정(세로만) */
 .pksheet.tall::-webkit-scrollbar{display:none}
+/* 📊 활동 분석표 (요청 10) */
+.statsbtn{display:flex;align-items:center;gap:8px;width:100%;margin:0 0 10px;background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:16px;padding:11px 14px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;text-align:left}
+.statsbtn span{font-size:10.5px;color:var(--muted);font-weight:400;margin-left:auto}
+.statsbtn:active{transform:scale(.985)}
+.stsum{display:flex;gap:7px;margin:4px 0 12px}
+.stcell{flex:1;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:10px 4px;text-align:center}
+.stcell b{font-size:19px;display:block;line-height:1.15}
+.stcell b em{font-style:normal;font-size:12px}
+.stcell small{font-size:10.5px;color:var(--muted)}
+.stbrow{display:flex;align-items:center;gap:9px;margin:6px 0}
+.stblab{flex:0 0 76px;font-size:12px}
+.stbtrack{flex:1;height:10px;border-radius:6px;background:var(--card);overflow:hidden}
+.stbtrack i{display:block;height:100%;border-radius:6px;background:var(--mint)}
+.stbnum{flex:0 0 26px;text-align:right;font-size:12px}
+.stwk{display:flex;gap:6px;align-items:flex-end;height:86px;padding:4px 2px 0}
+.stwb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end}
+.stwb i{width:100%;max-width:26px;border-radius:6px 6px 2px 2px;background:var(--mint);display:block}
+.stwb small{font-size:10px;color:var(--muted)}
 .pksub{font-size:10px;color:var(--muted);margin-left:7px}
 .rsec{font-size:11px;color:var(--muted);font-weight:700;margin:15px 4px 8px}
 .rsec:first-of-type{margin-top:4px}
@@ -1653,6 +1671,7 @@ function studioMerge(){
    이제: 사진은 줄여서 Storage 에 올리고, 로그는 logs 테이블에 저장한다.
    (supabase/logs.sql 미실행이면 예전처럼 이 기기에만 저장 — 조용히 폴백) */
 let LOGSTABLE=true;    /* logs 테이블 사용 가능 여부 (없으면 false로 내려가고 로컬만) */
+let LOGSACT=true;      /* logs.activity 컬럼 가능 여부 (supabase/logs_activity.sql 미실행이면 false로 내려가고 활동태그는 이 기기에만) */
 
 /* 사진을 화면에 충분한 크기로 줄이고 JPEG로 압축 — 원본 base64가 저장을 깨뜨리던 문제 해결 */
 function shrinkImage(file, maxPx, quality){
@@ -1688,18 +1707,23 @@ async function uploadLogMedia(file, kind){
 async function saveLogRemote(log){
   if(!ME||!SBC||!LOGSTABLE||!log||log.sid) return null;
   try{
-    const r=await SBC.from('logs').insert({
+    const p={
       author_id:ME.id, kind:log.t, text:log.text||null,
       caption:log.cap||log.nm||null, media_url:log.media||null,
       duration:log.dur||null, tone:log.tone||null,
       visibility:log.vis||'private', work_id:log.work||null
-    }).select('id').maybeSingle();
+    };
+    if(LOGSACT && log.act) p.activity=log.act;   /* 활동 태그 — 컬럼 있으면 함께 저장 */
+    const r=await SBC.from('logs').insert(p).select('id').maybeSingle();
     if(r.error) throw r.error;
     if(r.data&&r.data.id){ log.sid=r.data.id; try{studioSave()}catch(_){} return r.data.id; }
     return null;
   }catch(e){
     if(e&&(e.code==='PGRST205'||e.code==='42P01')){ LOGSTABLE=false;
       console.info('[offlog] logs 테이블이 없어 이 기기에만 저장됩니다 — supabase/logs.sql 실행 필요'); return null; }
+    if(LOGSACT && e && /activity/i.test(String(e.message||''))){ LOGSACT=false;
+      console.info('[offlog] logs.activity 컬럼이 없어 활동태그는 이 기기에만 — supabase/logs_activity.sql 실행 필요');
+      const l2=Object.assign({},log); delete l2.sid; return saveLogRemote(l2).then(function(id){ if(id)log.sid=id; return id; }); }
     console.warn('[offlog] 로그 서버 저장 실패', e); return null;
   }
 }
@@ -1707,7 +1731,7 @@ async function saveLogRemote(log){
 function _rowToLog(x){
   const ts=x.created_at||'', p=s=>s;
   const base={id:'sv_'+x.id, sid:x.id, at:ts.slice(11,16), dt:ts.slice(0,10),
-              vis:x.visibility||'private', side:'l', work:x.work_id||null};
+              vis:x.visibility||'private', side:'l', work:x.work_id||null, act:x.activity||null};
   if(x.kind==='ph')  return Object.assign(base,{t:'ph',  cap:x.caption||'사진', media:x.media_url||'',
                         bg:x.media_url?('center/cover no-repeat url('+x.media_url+')'):'#141418'});
   if(x.kind==='vid') return Object.assign(base,{t:'vid', cap:x.caption||'', media:x.media_url||'', src:x.media_url||''});
@@ -1718,7 +1742,8 @@ function _rowToLog(x){
 async function loadMyLogs(){
   if(!ME||!SBC||!LOGSTABLE) return false;
   try{
-    const r=await SBC.from('logs').select('id,kind,text,caption,media_url,duration,tone,visibility,work_id,created_at')
+    const cols='id,kind,text,caption,media_url,duration,tone,visibility,work_id,created_at'+(LOGSACT?',activity':'');
+    const r=await SBC.from('logs').select(cols)
       .eq('author_id',ME.id).order('created_at',{ascending:false}).limit(200);
     if(r.error) throw r.error;
     const rows=(r.data||[]).map(_rowToLog);
@@ -1730,6 +1755,7 @@ async function loadMyLogs(){
     return true;
   }catch(e){
     if(e&&(e.code==='PGRST205'||e.code==='42P01')){ LOGSTABLE=false; return false; }
+    if(LOGSACT && e && /activity/i.test(String(e.message||''))){ LOGSACT=false; return loadMyLogs(); }
     console.warn('[offlog] 내 로그 불러오기 실패', e); return false;
   }
 }
@@ -2404,6 +2430,45 @@ function logVisLocked(l){
   const w=(typeof WORKS!=='undefined'?WORKS:[]).find(x=>x&&x.id===l.work);
   return !!(w&&(w.pending||w.event));
 }
+/* ── 📊 로그 활동 분석표 (요청 10) — 내 로그(로컬+서버 병합)에서 즉석 계산 ── */
+function logStatsSheet(){
+  const L=(typeof STREAM!=='undefined'?STREAM:[]).filter(l=>l&&logTs(l)>0);
+  const now=Date.now(), D=864e5;
+  const in30L=L.filter(l=>now-logTs(l)<30*D);
+  const in7=L.filter(l=>now-logTs(l)<7*D).length, in30=in30L.length;
+  /* 연속 기록 — 오늘(아직 안 썼으면 어제)부터 거꾸로 하루라도 로그가 있으면 이어짐 */
+  const days=new Set(L.map(l=>l.dt).filter(Boolean));
+  const iso=x=>{const p=n=>String(n).padStart(2,'0');return x.getFullYear()+'-'+p(x.getMonth()+1)+'-'+p(x.getDate());};
+  let streak=0, sd=new Date();
+  if(!days.has(iso(sd))) sd.setDate(sd.getDate()-1);
+  while(days.has(iso(sd))){ streak++; sd.setDate(sd.getDate()-1); }
+  const ACT=[['prac','🎸 연습','var(--mint)'],['show','🎤 공연','var(--pink)'],['work','🎧 작업','var(--blue)'],['etc','📌 기타','var(--yellow)'],[null,'미분류','#5a5a62']];
+  const actCnt=ACT.map(a=>in30L.filter(l=>(l.act||null)===a[0]).length);
+  const actMax=Math.max.apply(null,actCnt.concat([1]));
+  const KND=[['note','✎ 글'],['ph','📷 사진'],['vid','🎬 영상'],['snd','♪ 데모']];
+  const kndCnt=KND.map(k=>in30L.filter(l=>l.t===k[0]).length);
+  const kndMax=Math.max.apply(null,kndCnt.concat([1]));
+  const wk=[]; for(let i=7;i>=0;i--){ const a=now-(i+1)*7*D, b=now-i*7*D; wk.push(L.filter(l=>{const t=logTs(l);return t>a&&t<=b;}).length); }
+  const wkMax=Math.max.apply(null,wk.concat([1]));
+  const bar=(lab,cnt,max,col)=>`<div class="stbrow"><span class="stblab">${lab}</span><span class="stbtrack"><i style="width:${Math.round(cnt/max*100)}%;background:${col||'var(--mint)'}"></i></span><b class="stbnum">${cnt}</b></div>`;
+  return `<div class="sheet-bd" id="lsbd"></div>
+  <div class="pksheet tall">
+    <div class="pkhd"><b>📊 활동 분석</b><span class="pksub">최근 30일 기준</span><button class="pkx" id="lsclose" aria-label="닫기">✕</button></div>
+    <div class="stsum">
+      <div class="stcell"><b>${in7}</b><small>이번 주</small></div>
+      <div class="stcell"><b>${in30}</b><small>30일</small></div>
+      <div class="stcell"><b>${streak}<em>일</em></b><small>연속 기록</small></div>
+      <div class="stcell"><b>${L.length}</b><small>전체</small></div>
+    </div>
+    <div class="rsec">활동별</div>
+    ${ACT.map((a,i)=>bar(a[1],actCnt[i],actMax,a[2])).join('')}
+    <div class="rsec">종류별</div>
+    ${KND.map((k,i)=>bar(k[1],kndCnt[i],kndMax)).join('')}
+    <div class="rsec">주별 추이 <em class="opt">최근 8주</em></div>
+    <div class="stwk">${wk.map(c=>`<span class="stwb"><i style="height:${Math.max(6,Math.round(c/wkMax*100))}%"></i><small>${c}</small></span>`).join('')}</div>
+    <p class="rulen" style="text-align:left;margin:10px 4px 0">로그 올릴 때 🎸연습·🎤공연·🎧작업·📌기타 태그를 고르면 여기에 분류돼요</p>
+  </div>`;
+}
 /* 비공개 계정이면 밖으로 나간다는 걸 먼저 알린다 (되돌리기 어려운 행동이라 확인 필요) */
 function confirmGoPublic(what){
   if(!ME || (ME.vis||'public')!=='private') return true;
@@ -2552,6 +2617,7 @@ function mine(){
 
   const logs=`
     ${me?`<button class="composebtn" id="composebtn"><span class="cplus">＋</span><span class="clabel">로그 남기기</span></button>`:''}
+    ${me?`<button class="statsbtn" id="logstats">📊 활동 분석<span>연습 · 공연 · 작업 기록 한눈에</span></button>`:''}
     <div class="stream" id="stream"><div class="ambient"></div>
       <div class="marks">${streamOrder(STREAM).map(mark).join('')||`<div class="pknote" style="padding:26px 0">아직 로그가 없어요</div>`}</div></div>`;
 
@@ -2578,6 +2644,7 @@ function mine(){
     <button class="${S.seg==='works'?'on':''}" data-seg="works">MUSIC</button></div>
   ${me ? (S.seg==='works'?myworks:logs) : (S.seg==='works'?artistWorks:artistLog)}
   ${me&&S.editProf?profEditSheet():''}
+  ${me&&S.logStats?logStatsSheet():''}
   <div style="height:14px"></div>`;
 }
 
@@ -3212,6 +3279,9 @@ function composeSheet(){
       <button class="cs-att${(C.vis||'private')!=='public'?' on':''}" id="csvpriv" aria-label="나만 보기">🔒<span>나만 보기</span></button>
       <button class="cs-att${C.vis==='public'?' on':''}" id="csvpub" aria-label="공개">🔓<span>공개</span></button>
     </div>
+    <div class="cs-attach" style="margin-top:0">
+      ${[['prac','🎸','연습'],['show','🎤','공연'],['work','🎧','작업'],['etc','📌','기타']].map(a=>`<button class="cs-att${C.act===a[0]?' on':''}" data-csact="${a[0]}" aria-label="${a[2]}">${a[1]}<span>${a[2]}</span></button>`).join('')}
+    </div>
     <button class="cs-post" id="cspost"${canPost?'':' disabled'}>올리기</button>
   </div></div>`;
 }
@@ -3232,6 +3302,7 @@ function pushLog(txt, m, audioUrl){
   else{ const _tone=['y','b','p'][STREAM.filter(x=>x&&x.t==='note').length%3];   /* 포스트잇 색을 노랑→하늘→핑크로 번갈아 */
                                log={id, t:'note',at:now, dt, text:txt, tone:_tone, side:'l', work:null}; }
   log.vis=(S.compose&&S.compose.vis==='public')?'public':'private';   /* 작성 시트에서 선택 (기본 나만 보기) */
+  log.act=(S.compose&&S.compose.act)||null;                            /* 활동 태그(연습/공연/작업/기타) — 분석표용 */
   STREAM.unshift(log);
   SESSION_NEW.add(id);          /* 방금 올린 것 → 맨 위 핀(루틴 피드 위에) */
   studioSave();
@@ -3566,7 +3637,7 @@ function render(){
   _lastSheet=_sheetKey;
   /* 시트·오버레이가 떠 있으면 뒤 화면 스크롤을 잠근다 — 안 그러면 시트를 만질 때 배경이 같이 밀린다 */
   const _scr=document.getElementById('screen');
-  if(_scr) _scr.classList.toggle('locked', !!(_sheetKey || S.compose || S.logMenu || S.myMenu || S.auth || S.saveTrack || S.cam || S.editProf || S.newwork || S.storyIdx!==null));
+  if(_scr) _scr.classList.toggle('locked', !!(_sheetKey || S.compose || S.logMenu || S.myMenu || S.auth || S.saveTrack || S.cam || S.editProf || S.newwork || S.logStats || S.storyIdx!==null));
   [...document.querySelectorAll('#nav button[data-v]')].forEach(b=>
     b.classList.toggle('on', b.dataset.v===S.view || (S.view==='list'&&b.dataset.v==='lists') || (S.view==='room'&&b.dataset.v==='home')));
   const npf=document.getElementById('navprofile');
@@ -3685,6 +3756,14 @@ function bind(){
     ['ig','yt','tt'].forEach(function(k){ const el=document.getElementById('pe'+k); if(el)el.oninput=()=>{ S.editProf[k]=el.value; }; });
     document.querySelectorAll('[data-perole]').forEach(b=>b.onclick=()=>{ S.editProf.role=b.dataset.perole; render(); });
     const pd=document.getElementById('pedone'); if(pd)pd.onclick=saveProfile;
+  }
+  /* 📊 활동 분석 시트 열기/닫기 */
+  const lst=document.getElementById('logstats'); if(lst)lst.onclick=()=>{ S.logStats=true; render(); };
+  if(S.logStats){
+    const lsb=document.getElementById('lsbd'), lsx=document.getElementById('lsclose');
+    const lsc=()=>{ S.logStats=false; render(); };
+    if(lsb)lsb.onclick=e=>{ if(e.target===lsb)lsc(); };
+    if(lsx)lsx.onclick=lsc;
   }
   /* 마이 헤더 ⋯ → 계정 메뉴 */
   const mset=document.getElementById('mysettings'); if(mset)mset.onclick=()=>{ S.myMenu=true; render(); };
@@ -4300,6 +4379,8 @@ function bind(){
     const vpr=document.getElementById('csvpriv'), vpu=document.getElementById('csvpub');
     if(vpr)vpr.onclick=()=>{ S.compose.vis='private'; render(); };
     if(vpu)vpu.onclick=()=>{ S.compose.vis='public'; render(); };
+    /* 활동 태그(연습/공연/작업/기타) — 같은 칩 다시 누르면 해제 */
+    document.querySelectorAll('[data-csact]').forEach(b=>b.onclick=()=>{ S.compose.act=(S.compose.act===b.dataset.csact)?null:b.dataset.csact; render(); });
     if(post)post.onclick=submitCompose;
   }
   /* 카메라 입력(1회 바인딩) — 찍은 게 영상이면 영상 로그, 사진이면 사진 로그로 자동 판별 */
