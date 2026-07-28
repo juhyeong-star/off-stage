@@ -4376,12 +4376,16 @@ function bind(){
     if(cam)cam.onclick=()=>{ S.cam=true; render(); startCam(); };   /* 앱 안 촬영 화면 (글은 유지, 권한 없으면 폰 카메라 폴백) */
     if(cau)cau.onclick=()=>{ const el=document.getElementById('caudio'); if(el)el.click(); };
     if(rm)rm.onclick=()=>{ const md=S.compose.media; if(md&&md.url&&/^blob:/.test(md.url)){try{URL.revokeObjectURL(md.url)}catch(_){}} S.compose.media=null; render(); };
-    /* 공개 범위 선택 — 🔒 나만 보기(기본) / 🔓 공개 */
+    /* 공개 범위·활동 태그 칩 — render() 대신 제자리 클래스만 토글.
+       (재렌더하면 시트 슬라이드업 애니메이션이 다시 재생돼 '내려갔다 올라오는' 튐 + 입력 포커스 유실) */
     const vpr=document.getElementById('csvpriv'), vpu=document.getElementById('csvpub');
-    if(vpr)vpr.onclick=()=>{ S.compose.vis='private'; render(); };
-    if(vpu)vpu.onclick=()=>{ S.compose.vis='public'; render(); };
+    if(vpr)vpr.onclick=()=>{ S.compose.vis='private'; vpr.classList.add('on'); if(vpu)vpu.classList.remove('on'); };
+    if(vpu)vpu.onclick=()=>{ S.compose.vis='public'; vpu.classList.add('on'); if(vpr)vpr.classList.remove('on'); };
     /* 활동 태그(연습/공연/작업/기타) — 같은 칩 다시 누르면 해제 */
-    document.querySelectorAll('[data-csact]').forEach(b=>b.onclick=()=>{ S.compose.act=(S.compose.act===b.dataset.csact)?null:b.dataset.csact; render(); });
+    document.querySelectorAll('[data-csact]').forEach(b=>b.onclick=()=>{
+      S.compose.act=(S.compose.act===b.dataset.csact)?null:b.dataset.csact;
+      document.querySelectorAll('[data-csact]').forEach(x=>x.classList.toggle('on', S.compose.act===x.dataset.csact));
+    });
     if(post)post.onclick=submitCompose;
   }
   /* 카메라 입력(1회 바인딩) — 찍은 게 영상이면 영상 로그, 사진이면 사진 로그로 자동 판별 */
