@@ -1579,7 +1579,7 @@ function logMenuSheet(){
   const rows = M.kind==='addmedia'
     ? `<button class="pkrow" data-addkind="ph"><span class="pknm"><b>📷 사진 넣기</b><small>이 글이 사진 위 캡션이 돼요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>
        <button class="pkrow" data-addkind="snd"><span class="pknm"><b>♪ 데모 넣기</b><small>이 글에 데모(오디오)를 붙여요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>
-       ${_ml?`<button class="pkrow" data-logvis="${M.id}"><span class="pknm"><b>${_ml.vis==='public'?'🔓 공개 로그':'🔒 나만 보기'}</b><small>${logVisLocked(_ml)?'무대·발매에 낸 로그는 항상 공개예요':(_ml.vis==='public'?'탭하면 나만 보기로 바꿔요':'탭하면 공개로 — 팔로워 피드에 보여요')}</small></span><span style="margin-left:auto;color:var(--mint);font-weight:800">${_ml.vis==='public'?'공개':'비공개'}</span></button>`:''}`
+       ${_ml?`<button class="pkrow" data-logvis="${M.id}"><span class="pknm"><b>${_ml.vis==='public'?'🔓 공개 로그':'🔒 비공개'}</b><small>${logVisLocked(_ml)?'무대·발매에 낸 로그는 항상 공개예요':(_ml.vis==='public'?'탭하면 비공개로 바꿔요':'탭하면 공개로 — 팔로워 피드에 보여요')}</small></span><span style="margin-left:auto;color:var(--mint);font-weight:800">${_ml.vis==='public'?'공개':'비공개'}</span></button>`:''}`
     : `${M.aid?`<button class="pkrow" data-omenu="follow"><span class="pknm"><b>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'✓ 팔로잉':'＋ 팔로우'}</b><small>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'탭하면 팔로우 해제':(M.by||'이 아티스트')+' 팔로우하기'}</small></span></button>`:''}
        <button class="pkrow" data-omenu="save"><span class="pknm"><b>＋ 내 플레이리스트에 담기</b></span><span style="margin-left:auto;color:var(--mint);font-weight:800">담기</span></button>
        <button class="pkrow" data-omenu="share"><span class="pknm"><b>⤴ 공유</b><small>링크로 공유하거나 복사</small></span></button>`;
@@ -3277,7 +3277,7 @@ function composeSheet(){
       <button class="cs-att${m&&m.kind==='aud'?' on':''}" id="csaudio" aria-label="데모">🎵<span>데모</span></button>
     </div>
     <div class="cs-attach" style="margin-top:0">
-      <button class="cs-att${(C.vis||'private')!=='public'?' on':''}" id="csvpriv" aria-label="나만 보기">🔒<span>나만 보기</span></button>
+      <button class="cs-att${(C.vis||'private')!=='public'?' on':''}" id="csvpriv" aria-label="비공개">🔒<span>비공개</span></button>
       <button class="cs-att${C.vis==='public'?' on':''}" id="csvpub" aria-label="공개">🔓<span>공개</span></button>
     </div>
     <div class="cs-attach" style="margin-top:0">
@@ -4330,7 +4330,7 @@ function bind(){
       try{
         if(l.sid && ME && SBC && LOGSTABLE){ const r=await SBC.from('logs').update({visibility:v}).eq('id',l.sid); if(r.error)throw r.error; }
         studioSave();
-        offToast(v==='public'?'공개로 바꿨어요 — 팔로워 피드에 보여요':'나만 보기로 바꿨어요');
+        offToast(v==='public'?'공개로 바꿨어요 — 팔로워 피드에 보여요':'비공개로 바꿨어요');
       }catch(e){ l.vis=prev; studioSave(); render(); console.warn('[offlog] 공개범위 변경 실패', e); offToast('변경 실패 — 잠시 후 다시'); }
     });
     document.querySelectorAll('[data-omenu]').forEach(b=>b.onclick=()=>{ const act=b.dataset.omenu, M=S.logMenu; if(act==='save'){ S.saveTrack={tid:M.id, nm:M.nm, by:M.by, audio:M.audio}; S.logMenu=null; render(); } else if(act==='follow'){ const aid=M.aid; S.logMenu=null; if(!ME){ render(); needLogin(); return; } const willFollow=!MYFOLLOWS.has(aid); (willFollow?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(ok) offToast(willFollow?'팔로우했어요':'팔로우 해제했어요'); render(); }); render(); } else { S.logMenu=null; render(); offShareTrack(M); } });
