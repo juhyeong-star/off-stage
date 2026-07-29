@@ -1212,9 +1212,6 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .authbtn:hover{border-color:var(--mint)}
 /* 로그인 ↔ 회원가입 전환 · 비밀번호 찾기 */
 .authalt{margin-top:14px;text-align:center;font-size:12.5px;color:var(--muted);line-height:1.7}
-/* 앱에서 소셜 로그인을 내렸을 때의 안내 (IS_APP_WEBVIEW 주석 참고) */
-.authhint{margin:14px 2px 0;padding-top:12px;border-top:1px solid var(--line);
-  text-align:center;font-size:11.5px;color:var(--muted);line-height:1.65}
 .authlink{background:none;border:0;padding:0 2px;color:var(--mint);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .authlink:active{opacity:.6}
 .authsep{opacity:.4;margin:0 5px}
@@ -1339,20 +1336,6 @@ try{
     SBC=window.supabase.createClient(SB_URL, SB_KEY, {auth:{persistSession:true, autoRefreshToken:true}});
   }
 }catch(e){ console.warn('[offlog] supabase client init 실패', e); }
-
-/* ── 앱(웹뷰) 안인가 ────────────────────────────────────────────────
-   iOS 웹뷰의 UA 는 모바일 사파리와 달리 'Safari/' 토큰이 없다. 이걸로 구분한다.
-   이 앱을 감싼 웹뷰는 WKUIDelegate 가 구현돼 있지 않아 대화상자·팝업이 전부 무시된다.
-   그래서 애플·구글 로그인이 인증 도중 멈춘다(사파리에선 같은 코드가 정상 동작).
-   웹사이트 코드로는 못 고치는 부분이라, 앱 안에서는 이메일 로그인만 보여준다.
-   → 앱이 제3자 로그인 서비스를 쓰지 않게 되므로 앱스토어 4.8 요건도 해당되지 않는다.
-   앱 껍데기가 WKUIDelegate + ASWebAuthenticationSession 을 구현하면 이 분기를 지우면 된다. */
-function isAppWebView(ua){
-  ua=String(ua||'');
-  var ios=/iPad|iPhone|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
-  return ios && !/Safari\//.test(ua);
-}
-let IS_APP_WEBVIEW = isAppWebView(navigator.userAgent);
 
 /* 로그인 유저 로드 + 내 팔로우/반응 상태 미리 받아두기 */
 let AUTHREADY=false;   /* 로그인 여부 확인 완료 — 그 전엔 스플래시, 확인 후 !ME면 잠금 */
@@ -1598,8 +1581,7 @@ function splashScreen(){
 /* 로그인/회원가입 공용 폼 — 잠금 화면과 시트가 같은 마크업을 쓴다 */
 function authForm(){
   const su = S.authMode==='signup';
-  /* 앱(웹뷰) 안에서는 소셜 로그인을 내린다 — IS_APP_WEBVIEW 주석 참고 */
-  const social = IS_APP_WEBVIEW ? '' :
+  const social =
     `<button class="authbtn apple" id="authapple"><svg viewBox="0 0 384 512" aria-hidden="true"><path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg> Apple로 ${su?'가입':'계속'}</button>
     <button class="authbtn" id="authgoogle"><b>G</b> Google로 ${su?'가입':'계속'}</button>
     <div class="authdiv"><span>또는 이메일</span></div>`;
@@ -1612,8 +1594,7 @@ function authForm(){
       ${su ? `이미 계정이 있나요? <button class="authlink" data-authmode="login">로그인</button>`
            : `처음이신가요? <button class="authlink" data-authmode="signup">회원가입</button>
               <span class="authsep">·</span><button class="authlink" id="authforgot">비밀번호 찾기</button>`}
-    </div>
-    ${(IS_APP_WEBVIEW && !su) ? `<p class="authhint">구글로 가입하셨다면 '비밀번호 찾기'로 비밀번호를 정한 뒤 로그인해 주세요.</p>` : ''}`;
+    </div>`;
 }
 function lockScreen(){
   const su = S.authMode==='signup';
