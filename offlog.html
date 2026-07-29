@@ -1462,7 +1462,15 @@ async function resetPw(email){
     offToast('비밀번호 재설정 메일을 보냈어요'); }
   catch(e){ offToast('메일 발송 실패 — 이메일을 확인해 주세요'); }
 }
-async function logout(){ if(!SBC)return; try{ await SBC.auth.signOut(); }catch(e){} ME=null; MYFOLLOWS.clear(); MYFOLLOWERS.clear(); for(var k in MYREACT)delete MYREACT[k]; STREAM=STREAM.filter(function(l){return !(l&&(l.sid||String(l.id).indexOf('sv_')===0));}); S.view='home'; render(); offToast('로그아웃됐어요'); }
+/* 기기에 저장된 로그인 토큰을 지운다.
+   signOut() 은 서버 호출이 실패하면 로컬 세션을 안 지우고 그냥 끝나는 경우가 있다. 그러면
+   hasStoredSession() 이 계속 true 라서 렌더 게이트가 잠금화면 대신 스플래시(로딩 스피너)에 머물고,
+   사용자에겐 "로그아웃이 안 된다"로 보인다. 그래서 서버 호출 성패와 무관하게 여기서 확실히 지운다. */
+function _clearStoredSession(){
+  try{ for(var i=localStorage.length-1;i>=0;i--){ var k=localStorage.key(i);
+    if(k && /^sb-.*-auth-token/.test(k)) localStorage.removeItem(k); } }catch(_){}
+}
+async function logout(){ if(!SBC)return; try{ await SBC.auth.signOut(); }catch(e){ console.warn('[offlog] signOut 실패 — 로컬 세션은 지운다', e); } _clearStoredSession(); ME=null; MYFOLLOWS.clear(); MYFOLLOWERS.clear(); for(var k in MYREACT)delete MYREACT[k]; STREAM=STREAM.filter(function(l){return !(l&&(l.sid||String(l.id).indexOf('sv_')===0));}); S.view='home'; render(); offToast('로그아웃됐어요'); }
 
 /* ── 실제 프로필 로드 + 캐시 (공개 읽기) ── */
 let PROFCACHE={};
