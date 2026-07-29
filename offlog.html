@@ -1607,6 +1607,39 @@ function logMenuSheet(){
     ${rows}
   </div></div>`;
 }
+/* ── 앱 진단 화면 — 잠금화면 로고를 5번 탭하면 열린다 ──────────────────
+   iOS 앱은 이 사이트를 웹뷰로 감싼 것이라 앱 안에서는 개발자도구를 열 수 없다.
+   구글 로그인이 앱에서만 실패하는(앱스토어 2.1(a)) 원인을 좁히려면
+   앱 안에서 UA·저장소·세션 상태를 직접 봐야 해서 넣었다. 일반 사용자에겐 보이지 않는다. */
+let _diagTaps=0, _diagTimer=null;
+function showDiag(){
+  let store='OK';
+  try{ localStorage.setItem('_d','1'); localStorage.removeItem('_d'); }
+  catch(e){ store='막힘 ('+(e&&e.name||'?')+')'; }
+  let sess='없음';
+  try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i);
+    if(k&&/^sb-.*-auth-token$/.test(k)) sess='있음'; } }catch(_){}
+  const rows=[
+    ['UA', navigator.userAgent||''],
+    ['주소', location.href],
+    ['저장소', store],
+    ['저장된 세션', sess],
+    ['플로우', (SBC&&SBC.auth&&SBC.auth.flowType)||'?'],
+    ['standalone', String(navigator.standalone)],
+    ['터치포인트', String(navigator.maxTouchPoints)],
+    ['화면', window.innerWidth+'×'+window.innerHeight]
+  ];
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;inset:0;z-index:99999;background:#0c0c0e;color:#eee;padding:22px 18px;'
+    +'font:12px/1.7 ui-monospace,Menlo,monospace;overflow:auto;word-break:break-all;'
+    +'-webkit-user-select:text;user-select:text';
+  el.innerHTML='<b style="color:#5EEAD4;font-size:15px">OFFLOG 진단</b>'
+    +'<p style="color:#888;font-size:11px;margin:6px 0 16px">이 화면을 캡처해서 보내주세요. 아무 곳이나 탭하면 닫힙니다.</p>'
+    +rows.map(r=>'<div style="margin-bottom:11px"><b style="color:#5EEAD4">'+esc(r[0])+'</b><br>'+esc(r[1])+'</div>').join('');
+  el.onclick=()=>el.remove();
+  document.body.appendChild(el);
+}
+
 /* 비로그인 안내 — 조용히 실패시키지 않고 알려준다 */
 let _toastT=null;
 function offToast(msg){
@@ -3729,6 +3762,12 @@ function bind(){
     if(ax)ax.onclick=aclose;
   }
   /* 인증 버튼 — 로그인 시트와 잠금 화면 양쪽에서 동작(id 기반) */
+  /* 로고 5번 탭 → 진단 화면 (앱 안에서 원인 파악용, showDiag 주석 참고) */
+  const _lgo=document.querySelector('.locklogo');
+  if(_lgo) _lgo.onclick=()=>{
+    clearTimeout(_diagTimer); _diagTimer=setTimeout(()=>{_diagTaps=0;},1500);
+    if(++_diagTaps>=5){ _diagTaps=0; showDiag(); }
+  };
   const aa=document.getElementById('authapple'); if(aa)aa.onclick=loginApple;
   const ag=document.getElementById('authgoogle'); if(ag)ag.onclick=loginGoogle;
   const asub=document.getElementById('authsubmit');
