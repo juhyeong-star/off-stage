@@ -802,7 +802,15 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .minimore:hover{color:var(--mint)}
 .minilist:hover{color:var(--mint)}
 .minilist:focus-visible{outline:2px solid var(--mint);border-radius:5px}
-.miniplay{width:32px;height:32px;border-radius:50%;background:var(--mint);border:none;color:#04231d;font-size:13px;cursor:pointer;flex-shrink:0}
+/* ▶ / ⏸ 를 문자로 쓰면 iOS 가 이모지로 그려버려서 color 지정이 무시된다
+   (민트 원 안에 검은 사각형처럼 보임). 그래서 도형으로 직접 그린다. */
+.miniplay{width:32px;height:32px;border-radius:50%;background:var(--mint);border:none;color:#04231d;
+  font-size:0;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.miniplay::before{content:'';display:block;width:9px;height:10px;background:currentColor;
+  clip-path:polygon(0 0,100% 50%,0 100%);margin-left:2px}   /* 삼각형은 살짝 우측이 중앙으로 보인다 */
+/* 재생 중 = 일시정지(두 줄). .mini 래퍼에 붙는 playing 클래스를 그대로 쓴다 */
+.mini.playing .miniplay::before{clip-path:none;margin-left:0;
+  background:linear-gradient(to right,currentColor 0 36%,transparent 36% 64%,currentColor 64% 100%)}
 
 /* ── 로그 — 자유 스트림 ── */
 /* 남기는 도구: 폼이 아니라 손닿는 자리에 놓인 것들 */
@@ -1086,8 +1094,13 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .wicon i{font-style:normal;font-size:10.5px}
 .wicon.acc{color:var(--lemon)}
 .wicon:active{transform:scale(.9)}
-.wplay2{width:56px;height:56px;border-radius:50%;background:var(--mint);border:0;color:#07110e;font-size:22px;cursor:pointer;
+/* 아이콘은 문자 대신 도형 — ⏸ 는 iOS 가 이모지로 그려서 color 가 무시된다(.miniplay 주석 참고) */
+.wplay2{width:56px;height:56px;border-radius:50%;background:var(--mint);border:0;color:#07110e;font-size:0;cursor:pointer;
   display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(80,230,190,.42);flex-shrink:0}
+.wplay2::before{content:'';display:block;width:16px;height:18px;background:currentColor;
+  clip-path:polygon(0 0,100% 50%,0 100%);margin-left:3px}
+.wplay2.on::before{clip-path:none;margin-left:0;
+  background:linear-gradient(to right,currentColor 0 34%,transparent 34% 66%,currentColor 66% 100%)}
 .wplay2:active{transform:scale(.93)}
 .wrelbar{position:relative;z-index:1;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin:16px 4px 0}
 .wrelbar b{color:var(--lemon)}
@@ -1698,7 +1711,7 @@ function offConfirm(msg, okLabel){
    앱 안에서 UA·저장소·세션 상태를 직접 봐야 해서 넣었다. 일반 사용자에겐 보이지 않는다. */
 /* 배포 표시 — 앱(웹뷰)이 최신 코드를 받았는지 진단 화면에서 바로 확인하려고 둔다.
    ⚠️ 배포할 때마다 이 값을 갱신할 것. 안 그러면 "고쳤는데 안 바뀐다"를 판별할 수 없다. */
-const BUILD='2026-07-30 #3 · 슬라이드 전체화면(하단바 덮음) + 재생버튼 민트채움';
+const BUILD='2026-07-30 #4 · 하단재생바 아이콘 이모지→도형 (민트+검정)';
 let _diagTaps=0, _diagTimer=null;
 /* env(safe-area-inset-*) 의 실제 픽셀값 — 앱에서만 0이 아니다. 재는 방법이 이것뿐이다(JS로 직접 못 읽음) */
 function _envInset(side){
@@ -3320,7 +3333,7 @@ function work(){
           ? `<button class="wicon acc" id="relbtn" aria-label="음원 발매"><span>◎</span><i>발매</i></button>`
           : `<button class="wicon" id="relbtn" aria-label="발매 정보 수정"><span>✎</span><i>수정</i></button>`) : ''}
       </div>
-      <button class="wplay2" id="wplaybig" aria-label="재생">▶</button>
+      <button class="wplay2" id="wplaybig" aria-label="재생"></button>
     </div>
     ${w.mine && !working && w.date ? `<div class="wrelbar"><span class="ap-dot" style="background:var(--lemon);box-shadow:0 0 8px var(--lemon)"></span><b>${w.date}</b> 발매 예약</div>`:''}
   </div>
@@ -3637,7 +3650,7 @@ function renderMini(){
   m.innerHTML = (S.mini.on && NOWPLAY.nm && !(S.view==='home'&&S.mode==='slide'))
     ? `<div class="mini ${S.mini.playing?'playing':''}">
         <div class="mini-top"><span>${esc(_lab)}</span><button id="mx" aria-label="닫기">✕</button></div>
-        <div class="mini-btm"><button class="miniplay" id="mp" aria-label="재생">${S.mini.playing?'⏸':'▶'}</button>
+        <div class="mini-btm"><button class="miniplay" id="mp" aria-label="${S.mini.playing?'일시정지':'재생'}"></button>
           <div class="mini-nmwrap">
             <span class="nm">${esc(NOWPLAY.nm)}</span>
             ${NOWPLAY.who?`<span class="who" id="mwho" style="cursor:pointer">${esc(NOWPLAY.who)} ›</span>`:''}
@@ -4517,7 +4530,8 @@ function bind(){
   document.querySelectorAll('[data-work]').forEach(b=>b.onclick=()=>{S.work=b.dataset.work;S.wf='all';S.view='work';render()});
   document.querySelectorAll('[data-wf]').forEach(b=>b.onclick=()=>{S.wf=b.dataset.wf;render()});
   const wp=document.getElementById('wplaybig');
-  if(wp)wp.onclick=()=>{ const on=wp.textContent.trim()==='▶'; wp.textContent=on?'⏸':'▶'; wp.classList.toggle('on',on); };
+  /* 상태는 .on 클래스로만 — 아이콘이 도형이라 textContent 로 판단할 수 없다 */
+  if(wp)wp.onclick=()=>{ wp.classList.toggle('on'); };
   const wsv=document.getElementById('wsave');
   if(wsv)wsv.onclick=()=>{S.addlist=true;render()};
   const lpx=document.getElementById('lpclose'); if(lpx)lpx.onclick=()=>{S.addlist=false;render()};
