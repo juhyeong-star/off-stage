@@ -694,7 +694,18 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .sndpill{display:inline-flex;align-items:center;gap:6px;margin-top:10px;background:rgba(0,0,0,.55);
   border:1px solid rgba(255,255,255,.16);border-radius:99px;padding:5px 13px;font-size:11px;color:#fff}
 .sndpill b{font-family:'Black Han Sans';font-weight:400;letter-spacing:.5px}
-.sndpill em{font-style:normal;color:var(--mint);font-size:10px}
+/* 재생/일시정지는 글꼴 글리프(▶ ⏸) 대신 도형으로 그린다.
+   글리프는 글꼴마다 세로 위치가 달라서 "Demo" 글자 중심과 안 맞았다 — 실측으로 ▶ 는 1px,
+   ⏸ 는 2.5px 어긋났고 값이 달라서 CSS 로 한 번에 보정할 수 없었다.
+   도형은 기하학적으로 중앙에 놓이므로 두 상태 모두 정확히 맞는다.
+   상태 전환은 .on 클래스로 한다(예전엔 em.textContent 를 바꿨다). */
+.sndpill em{font-style:normal;color:var(--mint);font-size:0;line-height:0;
+  display:inline-flex;align-items:center;justify-content:center;width:8px;height:10px}
+.sndpill em::before{content:'';display:block;width:7px;height:8px;background:currentColor;
+  clip-path:polygon(0 0,100% 50%,0 100%)}
+/* 재생 중 = 일시정지(두 줄) */
+.sndpill em.on::before{clip-path:none;
+  background:linear-gradient(to right,currentColor 0 36%,transparent 36% 64%,currentColor 64% 100%)}
 
 .uphint2{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:6;background:rgba(0,0,0,.55);
   border:1px dashed rgba(255,255,255,.35);color:#ddd;font-size:10px;border-radius:99px;padding:3px 10px;white-space:nowrap}
@@ -3554,7 +3565,7 @@ let CURSRC='';
 function _clearPlayingUI(){
   document.querySelectorAll('.rcard.playing').forEach(function(x){
     x.classList.remove('playing');
-    var em=x.querySelector('.sndpill em'); if(em)em.textContent='▶';
+    var em=x.querySelector('.sndpill em'); if(em)em.classList.remove('on');
   });
 }
 function playSrc(url,nm){
@@ -4391,12 +4402,12 @@ function bind(){
       const mb=cd.querySelector('[data-sharemenu]');
       if(mb){ NOWPLAY.who=mb.dataset.sby||''; NOWPLAY.aid=mb.dataset.said||''; NOWPLAY.tid=mb.dataset.sharemenu||''; }
       cd.classList.toggle('playing', playing);
-      const em=cd.querySelector('.sndpill em'); if(em)em.textContent=playing?'⏸':'▶';
+      const em=cd.querySelector('.sndpill em'); if(em)em.classList.toggle('on', !!playing);
       renderMini();
     } else {
       /* 오디오 URL 없는 카드 → 기존 애니메이션만 */
       const on=cd.classList.toggle('playing');
-      const em=cd.querySelector('.sndpill em'); if(em)em.textContent=on?'⏸':'▶';
+      const em=cd.querySelector('.sndpill em'); if(em)em.classList.toggle('on', !!on);
     }
   });
   /* 사진 카드: 탭하면 갤러리에서 진짜 사진 넣기 */
