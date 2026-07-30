@@ -702,13 +702,13 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
    ⏸ 는 2.5px 어긋났고 값이 달라서 CSS 로 한 번에 보정할 수 없었다.
    도형은 기하학적으로 중앙에 놓이므로 두 상태 모두 정확히 맞는다.
    상태 전환은 .on 클래스로 한다(예전엔 em.textContent 를 바꿨다). */
+/* 민트 채움 + 검은 아이콘 — 하단 재생바(.miniplay)와 같은 방식 */
 .sndpill em{font-style:normal;font-size:0;line-height:0;flex-shrink:0;
-  width:28px;height:28px;border-radius:50%;background:transparent;border:1.5px solid var(--mint);
-  color:var(--mint);display:inline-flex;align-items:center;justify-content:center}
+  width:28px;height:28px;border-radius:50%;background:var(--mint);border:0;
+  color:#04231d;display:inline-flex;align-items:center;justify-content:center}
 .sndpill em::before{content:'';display:block;width:8px;height:9px;background:currentColor;
   clip-path:polygon(0 0,100% 50%,0 100%);margin-left:1.5px}   /* 삼각형은 광학적으로 살짝 우측이 중앙으로 보인다 */
-/* 재생 중 = 민트로 채우고 일시정지(두 줄) — .cplay/.tplay/.songplay 와 같은 규칙 */
-.sndpill em.on{background:var(--mint);color:#04231d}
+/* 재생 중 = 일시정지(두 줄) */
 .sndpill em.on::before{clip-path:none;margin-left:0;
   background:linear-gradient(to right,currentColor 0 36%,transparent 36% 64%,currentColor 64% 100%)}
 
@@ -1288,10 +1288,13 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
   .screen{padding-top:calc(16px + env(safe-area-inset-top))}
   .slwho{top:calc(16px + env(safe-area-inset-top))}
   .slx,.camx,.sldots{top:calc(14px + env(safe-area-inset-top))}
-  /* 전체화면 오버레이가 하단바 자리로 비워두는 64px 은 안전영역을 안 쳤다.
-     하단바는 padding-bottom 이 env 만큼 커지므로(0일 때 81px → 34px 기기에서 97px)
-     64px 만 비우면 하단바 위쪽이 이 검은 컨테이너에 덮여 잘려 보인다(z-index 40·70 > nav 20). */
-  .slwrap,.camview{bottom:calc(64px + env(safe-area-inset-bottom))}
+  /* 슬라이드는 화면 전체를 덮는다 — 하단바까지. (기본 z-index 40 이 nav 20 보다 위)
+     예전엔 bottom:64px 로 하단바 자리를 남겨서, 안전영역이 커진 기기에서 하단바가
+     위쪽만 덮여 잘려 보였다. 어차피 여기선 하단바가 필요 없으니 통째로 덮는다.
+     닫기는 슬라이드마다 있는 우측 상단 ✕. */
+  .slwrap{bottom:0}
+  /* 카메라는 자체 하단 컨트롤이 있어 통째로 덮으면 안 된다 — 하단바 자리만 정확히 비운다 */
+  .camview{bottom:calc(64px + env(safe-area-inset-bottom))}
   /* -webkit-overflow-scrolling:touch 제거 — iOS에서 .screen이 stacking context가 되어 발매 시트(z45)가 뮤직바(z19)/nav(z20) 아래로 깔리던 문제. iOS13+는 이 속성 없이도 관성 스크롤 정상 */
   /* iOS 홈바(34px)와 겹치지 않게 하단 네비/미니 안전영역 확보 */
   .nav{padding-bottom:max(18px, env(safe-area-inset-bottom))}
@@ -1695,7 +1698,7 @@ function offConfirm(msg, okLabel){
    앱 안에서 UA·저장소·세션 상태를 직접 봐야 해서 넣었다. 일반 사용자에겐 보이지 않는다. */
 /* 배포 표시 — 앱(웹뷰)이 최신 코드를 받았는지 진단 화면에서 바로 확인하려고 둔다.
    ⚠️ 배포할 때마다 이 값을 갱신할 것. 안 그러면 "고쳤는데 안 바뀐다"를 판별할 수 없다. */
-const BUILD='2026-07-30 #2 · 슬라이드·카메라 하단 잘림 수정';
+const BUILD='2026-07-30 #3 · 슬라이드 전체화면(하단바 덮음) + 재생버튼 민트채움';
 let _diagTaps=0, _diagTimer=null;
 /* env(safe-area-inset-*) 의 실제 픽셀값 — 앱에서만 0이 아니다. 재는 방법이 이것뿐이다(JS로 직접 못 읽음) */
 function _envInset(side){
