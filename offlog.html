@@ -1715,7 +1715,7 @@ function offConfirm(msg, okLabel){
    앱 안에서 UA·저장소·세션 상태를 직접 봐야 해서 넣었다. 일반 사용자에겐 보이지 않는다. */
 /* 배포 표시 — 앱(웹뷰)이 최신 코드를 받았는지 진단 화면에서 바로 확인하려고 둔다.
    ⚠️ 배포할 때마다 이 값을 갱신할 것. 안 그러면 "고쳤는데 안 바뀐다"를 판별할 수 없다. */
-const BUILD='2026-07-30 #6 · 업로드 실패 안내 + 파일 크기 제한';
+const BUILD='2026-07-30 #7 · 사진 압축 + 전송 재시도 + 실패분 자동 재전송';
 let _diagTaps=0, _diagTimer=null;
 /* env(safe-area-inset-*) 의 실제 픽셀값 — 앱에서만 0이 아니다. 재는 방법이 이것뿐이다(JS로 직접 못 읽음) */
 function _envInset(side){
@@ -1880,6 +1880,31 @@ function shrinkImage(file, maxPx, quality){
     }catch(_){ res(''); }
   });
 }
+/* dataURL → Blob. 줄인 사진을 올리거나, 저장돼 있던 미리보기를 나중에 다시 보낼 때 쓴다 */
+function dataUrlToBlob(d){
+  try{
+    const m=/^data:([^;]+);base64,(.*)$/.exec(String(d||'')); if(!m) return null;
+    const bin=atob(m[2]), a=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i);
+    return new Blob([a], {type:m[1]});
+  }catch(_){ return null; }
+}
+/* 일시적인 통신 실패는 다시 하면 대체로 된다 — 한 번 실패하고 포기하지 않는다.
+   크기 초과·권한 문제는 다시 해도 같은 결과라 즉시 포기한다. */
+async function retryUp(fn, tries){
+  let last;
+  for(let i=0;i<(tries||3);i++){
+    try{ return await fn(); }
+    catch(e){
+      last=e;
+      const msg=String((e&&e.message)||'')+' '+String((e&&e.statusCode)||'');
+      if(/exceed|too large|payload|413|401|403|policy|not allowed|mime/i.test(msg)) throw e;
+      await new Promise(function(r){ setTimeout(r, 700*(i+1)); });
+    }
+  }
+  throw last;
+}
+
 /* 업로드 크기 상한 — Supabase Storage 버킷 기본 상한이 50MB 라 그 아래로 잡는다.
    넘으면 업로드가 그냥 실패하는데 예전엔 사용자에게 아무 표시가 없어서
    "올렸는데 사진만 없다"가 됐다. 아이폰 영상은 수십~수백 MB 라 특히 자주 걸린다.
@@ -1897,16 +1922,27 @@ function tooBigToUpload(file, kind){
 async function uploadLogMedia(file, kind){
   if(!ME||!SBC||!file) return '';
   try{
+    /* 사진은 올리기 전에 줄인다 — 예전엔 원본(아이폰 사진 5MB 내외)을 그대로 올려서
+       느린 회선에서 자주 실패했다. shrinkImage 는 화면 표시용에만 쓰이고 있었다. */
+    if(kind==='ph'){
+      const small=await shrinkImage(file, 1600, 0.82);
+      const b=small?dataUrlToBlob(small):null;
+      if(b && b.size < file.size) file=new File([b], 'p'+Date.now()+'.jpg', {type:'image/jpeg'});
+    }
     const ext=((file.name||'').split('.').pop()||(kind==='vid'?'mp4':'jpg')).toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
     const path=ME.id+'/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
-    const up=await SBC.storage.from('log-media').upload(path, file, {contentType:file.type||'application/octet-stream', upsert:false});
-    if(up.error) throw up.error;
+    /* upsert:true — 재시도가 "이미 있다"로 실패하지 않게. 경로에 시각+난수가 있어 충돌 위험은 없다 */
+    const up=await retryUp(async function(){
+      const r=await SBC.storage.from('log-media').upload(path, file, {contentType:file.type||'application/octet-stream', upsert:true});
+      if(r.error) throw r.error;
+      return r;
+    });
     const pub=SBC.storage.from('log-media').getPublicUrl(path);
     return (pub&&pub.data&&pub.data.publicUrl)||'';
   }catch(e){ console.warn('[offlog] 미디어 업로드 실패(로컬로 유지)', e); return ''; }
 }
 /* 로그 1건을 서버에 저장. 성공하면 log.sid(서버 id)를 붙인다 */
-async function saveLogRemote(log){
+async function saveLogRemote(log, quiet){
   if(!ME||!SBC||!LOGSTABLE||!log||log.sid) return null;
   try{
     const p={
@@ -1916,8 +1952,11 @@ async function saveLogRemote(log){
       visibility:log.vis||'private', work_id:log.work||null
     };
     if(LOGSACT && log.act) p.activity=log.act;   /* 활동 태그 — 컬럼 있으면 함께 저장 */
-    const r=await SBC.from('logs').insert(p).select('id').maybeSingle();
-    if(r.error) throw r.error;
+    const r=await retryUp(async function(){
+      const x=await SBC.from('logs').insert(p).select('id').maybeSingle();
+      if(x.error) throw x.error;
+      return x;
+    });
     if(r.data&&r.data.id){ log.sid=r.data.id; try{studioSave()}catch(_){} return r.data.id; }
     return null;
   }catch(e){
@@ -1925,13 +1964,56 @@ async function saveLogRemote(log){
       console.info('[offlog] logs 테이블이 없어 이 기기에만 저장됩니다 — supabase/logs.sql 실행 필요'); return null; }
     if(LOGSACT && e && /activity/i.test(String(e.message||''))){ LOGSACT=false;
       console.info('[offlog] logs.activity 컬럼이 없어 활동태그는 이 기기에만 — supabase/logs_activity.sql 실행 필요');
-      const l2=Object.assign({},log); delete l2.sid; return saveLogRemote(l2).then(function(id){ if(id)log.sid=id; return id; }); }
-    /* 조용히 넘기면 화면상 저장된 것처럼 보이는데 실제로는 이 기기에만 남는다 → 반드시 알린다 */
+      const l2=Object.assign({},log); delete l2.sid; return saveLogRemote(l2, quiet).then(function(id){ if(id)log.sid=id; return id; }); }
+    /* 여기까지 왔으면 재시도(retryUp)도 실패한 것. 로그는 기기에 남아 있고
+       syncPendingLogs 가 앱을 열 때·연결이 돌아올 때 자동으로 다시 보낸다.
+       quiet = 그 배경 재시도에서 온 호출이므로 토스트를 띄우지 않는다. */
     console.warn('[offlog] 로그 서버 저장 실패', e);
-    offToast('로그가 이 기기에만 저장됐어요 — 연결을 확인하고 다시 올려주세요');
+    if(!quiet) offToast('아직 서버에 저장되지 않았어요 — 연결되면 자동으로 다시 올립니다');
     return null;
   }
 }
+/* 서버에 못 올라간 내 로그를 자동으로 다시 보낸다.
+   실패를 안내만 하면 사용자가 직접 다시 올려야 한다 — 앱을 열 때와 연결이 돌아올 때 조용히 재시도한다.
+   File 객체는 저장해둘 수 없으므로, 사진은 기기에 남아 있는 미리보기(data:)를 올려서 살린다.
+   sid 가 없는 my_ 로그 = 아직 서버에 없는 것. */
+let _syncing=false;
+async function syncPendingLogs(){
+  if(_syncing || !ME || !SBC || !LOGSTABLE) return 0;
+  if(navigator.onLine===false) return 0;
+  _syncing=true;
+  let done=0;
+  try{
+    const pend=STREAM.filter(function(l){ return l && String(l.id).indexOf('my_')===0 && !l.sid; });
+    for(let i=0;i<pend.length;i++){
+      const l=pend[i];
+      /* 사진이 서버에 없으면 저장된 미리보기를 올려서 다른 기기에서도 보이게 한다 */
+      if(!l.media && l.t==='ph'){
+        /* bg 에 이미 서버 URL 이 들어있는 경우(예전 구현이 처리하던 케이스)는 그것만 옮긴다 */
+        const http=(String(l.bg||'').match(/url\(["']?(https?:[^"')]+)/)||[])[1]||'';
+        if(http) l.media=http;
+        const d=http?'':(String(l.bg||'').match(/url\(["']?(data:[^"')]+)/)||[])[1]||'';
+        const b=d?dataUrlToBlob(d):null;
+        if(b){
+          const f=new File([b],'r'+Date.now()+'.jpg',{type:b.type||'image/jpeg'});
+          const url=await uploadLogMedia(f,'ph');
+          if(url){ l.media=url; l.bg='center/cover no-repeat url('+url+')'; }
+        }
+      }
+      if(await saveLogRemote(l, true)) done++;
+    }
+    if(done){
+      try{studioSave()}catch(_){}
+      try{render()}catch(_){}
+      offToast(done+'개 로그를 서버에 저장했어요');
+    }
+  }catch(e){ console.warn('[offlog] 보류 로그 동기화 실패', e); }
+  finally{ _syncing=false; }
+  return done;
+}
+/* 연결이 돌아오면 바로 다시 시도 */
+try{ window.addEventListener('online', function(){ setTimeout(syncPendingLogs, 800); }); }catch(_){}
+
 /* 서버에 저장된 내 로그 → STREAM 아이템으로 */
 function _rowToLog(x){
   const ts=x.created_at||'', p=s=>s;
@@ -1965,17 +2047,10 @@ async function loadMyLogs(){
   }
 }
 /* 이 기기에만 있던 예전 로그를 서버로 한 번 올린다 (유실 방지) */
-async function migrateLocalLogs(){
-  if(!ME||!SBC||!LOGSTABLE) return;
-  const pend=STREAM.filter(function(l){ return l && !l.sid && String(l.id).indexOf('my_')===0; });
-  for(const l of pend){
-    if(!LOGSTABLE) break;
-    if(l.t==='ph' && !l.media){          /* 예전 사진은 dataURL 뿐 → 그대로 두고 텍스트만 보존 */
-      const m=/url\((.*?)\)/.exec(l.bg||''); if(m&&/^https?:/.test(m[1])) l.media=m[1];
-    }
-    await saveLogRemote(l);
-  }
-}
+/* syncPendingLogs 로 합쳤다. 예전 구현은 (1) 사진이 dataURL 뿐이면 포기해서 사진이 사라졌고,
+   (2) 부팅 때 한 번만 돌았고, (3) 로그마다 실패 안내가 떠서 여러 개면 토스트가 쏟아졌다.
+   지금은 사진을 Storage 로 올려 살리고, 연결이 돌아올 때도 조용히 다시 시도한다. */
+async function migrateLocalLogs(){ return syncPendingLogs(); }
 
 /* ── 실제 쓰기 (RLS: 로그인 유저의 JWT로 통과, 익명은 차단) ── */
 async function followArtist(aid){
@@ -3550,8 +3625,11 @@ async function uploadDemoLog(file, txt){
   try{
     const ext=((file.name||'').split('.').pop()||'mp3').toLowerCase().replace(/[^a-z0-9]/g,'')||'mp3';
     const path=ME.id+'/logs/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
-    const up=await SBC.storage.from('audio').upload(path, file, {contentType:file.type||'audio/mpeg', upsert:false});
-    if(up.error) throw up.error;
+    const up=await retryUp(async function(){
+      const r=await SBC.storage.from('audio').upload(path, file, {contentType:file.type||'audio/mpeg', upsert:true});
+      if(r.error) throw r.error;
+      return r;
+    });
     const pub=SBC.storage.from('audio').getPublicUrl(path);
     pushLog(txt, {kind:'aud'}, (pub&&pub.data&&pub.data.publicUrl)||'');
   }catch(e){ console.warn('[offlog] 데모 업로드 실패', e); offToast('데모 업로드 실패 — '+((e&&e.message)||'다시 시도')); const b=document.getElementById('cspost'); if(b){b.disabled=false;b.textContent='올리기';} }
@@ -3594,8 +3672,11 @@ function attachMedia(id, kind, file){
     (async()=>{ try{
       const ext=((file.name||'').split('.').pop()||'mp3').toLowerCase().replace(/[^a-z0-9]/g,'')||'mp3';
       const path=ME.id+'/logs/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
-      const up=await SBC.storage.from('audio').upload(path, file, {contentType:file.type||'audio/mpeg', upsert:false});
-      if(up.error) throw up.error;
+      const up=await retryUp(async function(){
+        const r=await SBC.storage.from('audio').upload(path, file, {contentType:file.type||'audio/mpeg', upsert:true});
+        if(r.error) throw r.error;
+        return r;
+      });
       const pub=SBC.storage.from('audio').getPublicUrl(path);
       apply((pub&&pub.data&&pub.data.publicUrl)||'');
     }catch(e){
@@ -3639,8 +3720,11 @@ async function submitMusic(file, title){
   try{
     const ext=((file.name||'').split('.').pop()||'mp3').toLowerCase().replace(/[^a-z0-9]/g,'')||'mp3';
     const path=ME.id+'/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
-    const up=await SBC.storage.from('audio').upload(path, file, {contentType:file.type||'audio/mpeg', upsert:false});
-    if(up.error) throw up.error;
+    const up=await retryUp(async function(){
+      const r=await SBC.storage.from('audio').upload(path, file, {contentType:file.type||'audio/mpeg', upsert:true});
+      if(r.error) throw r.error;
+      return r;
+    });
     const pub=SBC.storage.from('audio').getPublicUrl(path);
     const url=(pub&&pub.data&&pub.data.publicUrl)||'';
     const ins=await SBC.from('tracks').insert({artist_id:ME.id, title:title||'무제', audio_url:url, is_demo:false}).select('id').maybeSingle();
