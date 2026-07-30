@@ -1689,6 +1689,9 @@ function offConfirm(msg, okLabel){
    iOS 앱은 이 사이트를 웹뷰로 감싼 것이라 앱 안에서는 개발자도구를 열 수 없다.
    구글 로그인이 앱에서만 실패하는(앱스토어 2.1(a)) 원인을 좁히려면
    앱 안에서 UA·저장소·세션 상태를 직접 봐야 해서 넣었다. 일반 사용자에겐 보이지 않는다. */
+/* 배포 표시 — 앱(웹뷰)이 최신 코드를 받았는지 진단 화면에서 바로 확인하려고 둔다.
+   ⚠️ 배포할 때마다 이 값을 갱신할 것. 안 그러면 "고쳤는데 안 바뀐다"를 판별할 수 없다. */
+const BUILD='2026-07-30 · 재생버튼 원형 + 슬라이드마다 ✕ + 진단 버전표시';
 let _diagTaps=0, _diagTimer=null;
 /* env(safe-area-inset-*) 의 실제 픽셀값 — 앱에서만 0이 아니다. 재는 방법이 이것뿐이다(JS로 직접 못 읽음) */
 function _envInset(side){
@@ -1709,10 +1712,17 @@ function showDiag(){
   /* 레이아웃 실측 — 하단바가 화면 밖으로 넘치는지, 안전영역이 실제로 들어오는지 */
   const _nav=document.getElementById('nav'), _scr=document.getElementById('screen');
   const nv=_nav?_nav.getBoundingClientRect():null, sc=_scr?getComputedStyle(_scr):null;
+  /* 재생 버튼이 실제로 어떤 요소인지 화면에서 직접 집계 — 어떤 걸 고쳐야 하는지 특정하려고 */
+  const _btns=[];
+  ['.sndpill em','.cplay','.tplay','.songplay','.miniplay','.wplay','.wplay2','.relplay','.svpill'].forEach(s=>{
+    const n=document.querySelectorAll(s).length; if(n) _btns.push(s+'×'+n);
+  });
   const rows=[
+    ['배포 버전', BUILD],
     ['UA', navigator.userAgent||''],
     ['주소', location.href],
     ['화면', window.innerWidth+'×'+window.innerHeight],
+    ['이 화면의 재생버튼', _btns.length?_btns.join('  ·  '):'없음'],
     ['안전영역 위/아래', _envInset('top')+'px / '+_envInset('bottom')+'px'+
       (_envInset('top')===0&&_envInset('bottom')===0?'  ⚠️ 둘 다 0 = 앱이 안전영역 값을 안 넘겨줌':'')],
     ['하단바(nav)', nv?('높이 '+Math.round(nv.height)+' · 아래끝 '+Math.round(nv.bottom)+
