@@ -1308,6 +1308,10 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
   .slwrap{bottom:0}
   /* 카메라는 자체 하단 컨트롤이 있어 통째로 덮으면 안 된다 — 하단바 자리만 정확히 비운다 */
   .camview{bottom:calc(64px + env(safe-area-inset-bottom))}
+  /* 스토리 화면 — 세로 flex 의 첫 요소(진행바)를 안전영역만큼 내리면 헤더까지 같이 내려간다.
+     안 하면 이름·시간이 상태바(시계·배터리)와 겹친다. 아래는 반응 버튼이 홈바에 닿지 않게. */
+  .svbars{padding-top:calc(10px + env(safe-area-inset-top))}
+  .svwrap{padding-bottom:env(safe-area-inset-bottom)}
   /* -webkit-overflow-scrolling:touch 제거 — iOS에서 .screen이 stacking context가 되어 발매 시트(z45)가 뮤직바(z19)/nav(z20) 아래로 깔리던 문제. iOS13+는 이 속성 없이도 관성 스크롤 정상 */
   /* iOS 홈바(34px)와 겹치지 않게 하단 네비/미니 안전영역 확보 */
   .nav{padding-bottom:max(18px, env(safe-area-inset-bottom))}
@@ -1711,7 +1715,7 @@ function offConfirm(msg, okLabel){
    앱 안에서 UA·저장소·세션 상태를 직접 봐야 해서 넣었다. 일반 사용자에겐 보이지 않는다. */
 /* 배포 표시 — 앱(웹뷰)이 최신 코드를 받았는지 진단 화면에서 바로 확인하려고 둔다.
    ⚠️ 배포할 때마다 이 값을 갱신할 것. 안 그러면 "고쳤는데 안 바뀐다"를 판별할 수 없다. */
-const BUILD='2026-07-30 #4 · 하단재생바 아이콘 이모지→도형 (민트+검정)';
+const BUILD='2026-07-30 #5 · 스토리 헤더 상태바 겹침 수정';
 let _diagTaps=0, _diagTimer=null;
 /* env(safe-area-inset-*) 의 실제 픽셀값 — 앱에서만 0이 아니다. 재는 방법이 이것뿐이다(JS로 직접 못 읽음) */
 function _envInset(side){
