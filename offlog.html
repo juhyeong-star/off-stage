@@ -1715,7 +1715,7 @@ function offConfirm(msg, okLabel){
    앱 안에서 UA·저장소·세션 상태를 직접 봐야 해서 넣었다. 일반 사용자에겐 보이지 않는다. */
 /* 배포 표시 — 앱(웹뷰)이 최신 코드를 받았는지 진단 화면에서 바로 확인하려고 둔다.
    ⚠️ 배포할 때마다 이 값을 갱신할 것. 안 그러면 "고쳤는데 안 바뀐다"를 판별할 수 없다. */
-const BUILD='2026-07-30 #5 · 스토리 헤더 상태바 겹침 수정';
+const BUILD='2026-07-30 #6 · 업로드 실패 안내 + 파일 크기 제한';
 let _diagTaps=0, _diagTimer=null;
 /* env(safe-area-inset-*) 의 실제 픽셀값 — 앱에서만 0이 아니다. 재는 방법이 이것뿐이다(JS로 직접 못 읽음) */
 function _envInset(side){
@@ -1834,6 +1834,13 @@ function studioSave(){
       });
       localStorage.setItem(studioKey(), JSON.stringify({works:mineWorks, lists:myLists, logs:slim}));
       console.warn('[studio] 용량 초과 — 사진 원본은 빼고 저장했습니다', e);
+      /* 서버 URL(media)이 있으면 손실이 없다. 없는 것만 실제로 지워지므로 그때만 알린다
+         (예전엔 조용히 회색 칸으로 바뀌어서 사용자가 사라진 걸 나중에 알았다) */
+      var lost=(myLogs||[]).filter(function(l){
+        return (l.bg && String(l.bg).indexOf('data:')>-1 && !l.media)
+            || (l.audio && String(l.audio).indexOf('data:')===0 && !l.media);
+      }).length;
+      if(lost) offToast('저장 공간이 부족해 사진·소리 '+lost+'개가 이 기기에서 지워졌어요 — 로그인하면 서버에 보관됩니다');
       if(!(ME&&SBC)) offToast('사진은 로그인해야 영구 저장돼요');
     }catch(e2){ console.warn('[studio] save 실패', e2); offToast('저장 공간이 부족해요 — 오래된 로그를 정리해 주세요'); }
   }
@@ -1873,6 +1880,19 @@ function shrinkImage(file, maxPx, quality){
     }catch(_){ res(''); }
   });
 }
+/* 업로드 크기 상한 — Supabase Storage 버킷 기본 상한이 50MB 라 그 아래로 잡는다.
+   넘으면 업로드가 그냥 실패하는데 예전엔 사용자에게 아무 표시가 없어서
+   "올렸는데 사진만 없다"가 됐다. 아이폰 영상은 수십~수백 MB 라 특히 자주 걸린다.
+   호출부에서 먼저 이걸 확인하고, true 면 업로드를 시도하지 않는다(안내는 여기서 띄운다). */
+const MAX_UP={ph:10*1024*1024, vid:45*1024*1024, aud:45*1024*1024};
+function tooBigToUpload(file, kind){
+  const lim=MAX_UP[kind]||MAX_UP.vid;
+  if(!file || file.size<=lim) return false;
+  const nm=kind==='ph'?'사진':(kind==='aud'?'음원':'영상');
+  offToast(nm+'이 너무 커요 ('+(file.size/1048576).toFixed(1)+'MB) — '+Math.round(lim/1048576)+'MB 이하로 올려주세요');
+  return true;
+}
+
 /* 사진·영상 원본을 Storage에 올리고 공개 URL을 돌려준다 (로그인 필요) */
 async function uploadLogMedia(file, kind){
   if(!ME||!SBC||!file) return '';
@@ -1906,7 +1926,10 @@ async function saveLogRemote(log){
     if(LOGSACT && e && /activity/i.test(String(e.message||''))){ LOGSACT=false;
       console.info('[offlog] logs.activity 컬럼이 없어 활동태그는 이 기기에만 — supabase/logs_activity.sql 실행 필요');
       const l2=Object.assign({},log); delete l2.sid; return saveLogRemote(l2).then(function(id){ if(id)log.sid=id; return id; }); }
-    console.warn('[offlog] 로그 서버 저장 실패', e); return null;
+    /* 조용히 넘기면 화면상 저장된 것처럼 보이는데 실제로는 이 기기에만 남는다 → 반드시 알린다 */
+    console.warn('[offlog] 로그 서버 저장 실패', e);
+    offToast('로그가 이 기기에만 저장됐어요 — 연결을 확인하고 다시 올려주세요');
+    return null;
   }
 }
 /* 서버에 저장된 내 로그 → STREAM 아이템으로 */
@@ -2605,7 +2628,9 @@ async function publishLogs(ids){
   const sids=ids.map(function(id){ const l=STREAM.find(x=>x.id===id); return l&&l.sid; }).filter(Boolean);
   if(ME&&SBC&&LOGSTABLE&&sids.length){
     try{ const r=await SBC.from('logs').update({visibility:'public'}).in('id', sids); if(r.error)throw r.error; }
-    catch(e){ console.warn('[offlog] 로그 공개 전환 실패(서버) — 로컬은 공개됨', e); }
+    /* 화면엔 공개로 보이는데 서버는 비공개 → 무대·투표에서 안 보일 수 있으므로 반드시 알린다 */
+    catch(e){ console.warn('[offlog] 로그 공개 전환 실패(서버) — 로컬은 공개됨', e);
+      offToast('로그 공개가 서버에 반영되지 않았어요 — 연결 확인 후 다시 시도해 주세요'); }
   }
   return n;
 }
@@ -2981,6 +3006,7 @@ async function saveProfile(){
 /* 프로필 사진 변경 — Storage(log-media)에 올리고 profiles.avatar_url 갱신 */
 async function saveAvatar(file){
   if(!ME||!SBC||!file){ needLogin(); return; }
+  if(tooBigToUpload(file,'ph')) return;
   offToast('사진 올리는 중…');
   try{
     const url=await uploadLogMedia(file,'ph');
@@ -3500,12 +3526,17 @@ function pushLog(txt, m, audioUrl){
     try{
       if(!ME||!SBC) return;                       /* 비로그인 → 이 기기에만 */
       if(m && m.file && (m.kind==='ph'||m.kind==='vid')){
-        const url=await uploadLogMedia(m.file, m.kind);
+        /* 크기 초과는 tooBigToUpload 가 이유를 알려준다. 그 외 실패는 여기서 알린다 —
+           조용히 넘기면 로그는 저장됐는데 사진만 사라진 상태가 된다(다른 기기에서 안 보임). */
+        const okSize=!tooBigToUpload(m.file, m.kind);
+        const url=okSize ? await uploadLogMedia(m.file, m.kind) : '';
         if(url){ log.media=url;
           if(log.t==='ph') log.bg='center/cover no-repeat url('+url+')';
           if(log.t==='vid') log.src=url;
           try{studioSave()}catch(_){}
           try{render()}catch(_){}
+        } else if(okSize){
+          offToast((m.kind==='vid'?'영상':'사진')+'을 서버에 올리지 못했어요 — 이 기기에만 남습니다');
         }
       }
       await saveLogRemote(log);
@@ -3514,6 +3545,7 @@ function pushLog(txt, m, audioUrl){
 }
 /* 데모(오디오) 로그 — 로그인 아티스트면 Storage에 실제 업로드 후 재생되는 소리 로그로 */
 async function uploadDemoLog(file, txt){
+  if(tooBigToUpload(file,'aud')) return;
   const btn=document.getElementById('cspost'); if(btn){btn.disabled=true;btn.textContent='올리는 중…';}
   try{
     const ext=((file.name||'').split('.').pop()||'mp3').toLowerCase().replace(/[^a-z0-9]/g,'')||'mp3';
@@ -3545,8 +3577,10 @@ function attachMedia(id, kind, file){
       l.t='ph'; l.cap=txt||'사진'; l.bg='center/cover no-repeat url('+(small||'')+')';
       delete l.text; delete l.tone; studioSave(); render(); offToast('사진을 넣었어요');
       (async function(){ try{
-        const url=await uploadLogMedia(file,'ph');
+        const okSize=!tooBigToUpload(file,'ph');
+        const url=okSize ? await uploadLogMedia(file,'ph') : '';
         if(url){ l.media=url; l.bg='center/cover no-repeat url('+url+')'; studioSave(); render(); }
+        else if(okSize) offToast('사진을 서버에 올리지 못했어요 — 이 기기에만 남습니다');
         if(l.sid && ME && SBC && LOGSTABLE){
           try{ await SBC.from('logs').update({kind:'ph', caption:l.cap, media_url:l.media||null, text:null, tone:null}).eq('id',l.sid); }catch(_){}
         } else { await saveLogRemote(l); }
@@ -3556,6 +3590,7 @@ function attachMedia(id, kind, file){
   }
   const apply=au=>{ l.t='snd'; l.nm=txt||'데모'; l.dur=''; l.audio=au; delete l.text; delete l.tone; studioSave(); render(); offToast('데모를 넣었어요'); };
   if(ME && SBC){
+    if(tooBigToUpload(file,'aud')) return;
     (async()=>{ try{
       const ext=((file.name||'').split('.').pop()||'mp3').toLowerCase().replace(/[^a-z0-9]/g,'')||'mp3';
       const path=ME.id+'/logs/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
@@ -3563,7 +3598,13 @@ function attachMedia(id, kind, file){
       if(up.error) throw up.error;
       const pub=SBC.storage.from('audio').getPublicUrl(path);
       apply((pub&&pub.data&&pub.data.publicUrl)||'');
-    }catch(e){ console.warn('[offlog] 데모 첨부 업로드 실패', e); apply(URL.createObjectURL(file)); } })();
+    }catch(e){
+      /* blob 주소는 이 세션에서만 유효하다 — 앱을 닫으면 소리가 사라진다.
+         지금 들어보는 건 되게 하되, 임시라는 걸 반드시 알린다(예전엔 조용히 넘어갔다). */
+      console.warn('[offlog] 데모 첨부 업로드 실패', e);
+      apply(URL.createObjectURL(file));
+      offToast('데모를 서버에 올리지 못했어요 — 지금만 들을 수 있으니 다시 올려주세요');
+    } })();
   } else { apply(URL.createObjectURL(file)); }
 }
 /* 남의 음악 공유 — 네이티브 공유 or 링크 복사 */
@@ -3580,11 +3621,20 @@ function _saveFile(url, name){
   offToast('받는 중…');
   fetch(url).then(function(r){ if(!r.ok) throw 0; return r.blob(); })
     .then(function(b){ const u=URL.createObjectURL(b); _anchorDL(u, name); setTimeout(function(){URL.revokeObjectURL(u)},5000); offToast('저장했어요'); })
-    .catch(function(){ try{ window.open(url,'_blank','noopener'); }catch(_){}; offToast('새 탭에서 열었어요 — 길게 눌러 저장'); });  /* CORS 막히면 새 탭 폴백 */
+    /* 예전엔 CORS 로 막히면 window.open 으로 새 탭에 열었다. 앱(웹뷰)에는 탭이 없어서
+       같은 화면에 파일이 로드되고 앱을 벗어나 버린다 → 링크 복사로 대체한다. */
+    .catch(function(){
+      try{ if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(url);
+        offToast('바로 저장이 안 돼요 — 링크를 복사했으니 브라우저에서 열어 저장해 주세요'); return;
+      } }catch(_){}
+      offToast('저장에 실패했어요 — 잠시 후 다시 시도해 주세요');
+    });
 }
 /* 실제 음악 업로드 — Storage(audio) + tracks (로그인 아티스트) */
 async function submitMusic(file, title){
   if(!ME||!SBC){ needLogin(); return; }
+  if(tooBigToUpload(file,'aud')) return;
   const btn=document.getElementById('cspost'); if(btn){btn.disabled=true;btn.textContent='올리는 중…';}
   try{
     const ext=((file.name||'').split('.').pop()||'mp3').toLowerCase().replace(/[^a-z0-9]/g,'')||'mp3';
