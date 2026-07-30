@@ -1278,6 +1278,11 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
   .phone{max-width:none;width:100%;border:0;border-radius:0;box-shadow:none;height:100dvh;overflow:hidden}
   /* 세로 스크롤만 허용(pan-y) → 가로로 끌어도 화면이 안 따라 움직임. 스크롤 체이닝/바운스 차단 */
   .screen{height:100%;overscroll-behavior:contain;overflow-x:hidden;touch-action:pan-y;padding-bottom:calc(148px + env(safe-area-inset-bottom))}
+  /* 앱이 화면 전체(상태바·홈바 아래까지)를 덮는다 — ContentView.swift 의 .ignoresSafeArea().
+     그래서 가려지지 않을 만큼을 여기서 확보한다. 브라우저에선 env(...)가 0이라 값이 그대로 유지된다. */
+  .screen{padding-top:calc(16px + env(safe-area-inset-top))}
+  .slwho{top:calc(16px + env(safe-area-inset-top))}
+  .slx,.camx,.sldots{top:calc(14px + env(safe-area-inset-top))}
   /* -webkit-overflow-scrolling:touch 제거 — iOS에서 .screen이 stacking context가 되어 발매 시트(z45)가 뮤직바(z19)/nav(z20) 아래로 깔리던 문제. iOS13+는 이 속성 없이도 관성 스크롤 정상 */
   /* iOS 홈바(34px)와 겹치지 않게 하단 네비/미니 안전영역 확보 */
   .nav{padding-bottom:max(18px, env(safe-area-inset-bottom))}
