@@ -1288,6 +1288,10 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
   .screen{padding-top:calc(16px + env(safe-area-inset-top))}
   .slwho{top:calc(16px + env(safe-area-inset-top))}
   .slx,.camx,.sldots{top:calc(14px + env(safe-area-inset-top))}
+  /* 전체화면 오버레이가 하단바 자리로 비워두는 64px 은 안전영역을 안 쳤다.
+     하단바는 padding-bottom 이 env 만큼 커지므로(0일 때 81px → 34px 기기에서 97px)
+     64px 만 비우면 하단바 위쪽이 이 검은 컨테이너에 덮여 잘려 보인다(z-index 40·70 > nav 20). */
+  .slwrap,.camview{bottom:calc(64px + env(safe-area-inset-bottom))}
   /* -webkit-overflow-scrolling:touch 제거 — iOS에서 .screen이 stacking context가 되어 발매 시트(z45)가 뮤직바(z19)/nav(z20) 아래로 깔리던 문제. iOS13+는 이 속성 없이도 관성 스크롤 정상 */
   /* iOS 홈바(34px)와 겹치지 않게 하단 네비/미니 안전영역 확보 */
   .nav{padding-bottom:max(18px, env(safe-area-inset-bottom))}
@@ -1691,7 +1695,7 @@ function offConfirm(msg, okLabel){
    앱 안에서 UA·저장소·세션 상태를 직접 봐야 해서 넣었다. 일반 사용자에겐 보이지 않는다. */
 /* 배포 표시 — 앱(웹뷰)이 최신 코드를 받았는지 진단 화면에서 바로 확인하려고 둔다.
    ⚠️ 배포할 때마다 이 값을 갱신할 것. 안 그러면 "고쳤는데 안 바뀐다"를 판별할 수 없다. */
-const BUILD='2026-07-30 · 재생버튼 원형 + 슬라이드마다 ✕ + 진단 버전표시';
+const BUILD='2026-07-30 #2 · 슬라이드·카메라 하단 잘림 수정';
 let _diagTaps=0, _diagTimer=null;
 /* env(safe-area-inset-*) 의 실제 픽셀값 — 앱에서만 0이 아니다. 재는 방법이 이것뿐이다(JS로 직접 못 읽음) */
 function _envInset(side){
