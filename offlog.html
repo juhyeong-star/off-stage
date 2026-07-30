@@ -691,20 +691,25 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .bigwv{position:absolute;left:14px;right:14px;top:46px;bottom:42px;display:flex;align-items:center;gap:2px;z-index:2}
 .bigwv i{flex:1;border-radius:1.5px;background:#3a3a44;height:calc(var(--h)*1%);transform-origin:center;min-height:2px}
 .rcard.playing .bigwv i{background:var(--mint);animation:wv 1s ease-in-out infinite;animation-delay:calc(var(--d)*-.09s)}
-.sndpill{display:inline-flex;align-items:center;gap:6px;margin-top:10px;background:rgba(0,0,0,.55);
-  border:1px solid rgba(255,255,255,.16);border-radius:99px;padding:5px 13px;font-size:11px;color:#fff}
-.sndpill b{font-family:'Black Han Sans';font-weight:400;letter-spacing:.5px}
+/* 알약(pill) 배경을 벗겼다 — 앱의 다른 재생 버튼(.cplay/.tplay/.songplay)은 모두 원형이라
+   이것만 알약이어서 이질적이었다. 배경이 없어진 대신 글자에 그림자를 줘서 파형 위에서도 읽힌다. */
+.sndpill{display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:none;border:0;
+  padding:0;font-size:11px;color:#fff}
+.sndpill b{font-family:'Black Han Sans';font-weight:400;letter-spacing:.5px;
+  text-shadow:0 1px 6px rgba(0,0,0,.85)}
 /* 재생/일시정지는 글꼴 글리프(▶ ⏸) 대신 도형으로 그린다.
    글리프는 글꼴마다 세로 위치가 달라서 "Demo" 글자 중심과 안 맞았다 — 실측으로 ▶ 는 1px,
    ⏸ 는 2.5px 어긋났고 값이 달라서 CSS 로 한 번에 보정할 수 없었다.
    도형은 기하학적으로 중앙에 놓이므로 두 상태 모두 정확히 맞는다.
    상태 전환은 .on 클래스로 한다(예전엔 em.textContent 를 바꿨다). */
-.sndpill em{font-style:normal;color:var(--mint);font-size:0;line-height:0;
-  display:inline-flex;align-items:center;justify-content:center;width:8px;height:10px}
-.sndpill em::before{content:'';display:block;width:7px;height:8px;background:currentColor;
-  clip-path:polygon(0 0,100% 50%,0 100%)}
-/* 재생 중 = 일시정지(두 줄) */
-.sndpill em.on::before{clip-path:none;
+.sndpill em{font-style:normal;font-size:0;line-height:0;flex-shrink:0;
+  width:28px;height:28px;border-radius:50%;background:transparent;border:1.5px solid var(--mint);
+  color:var(--mint);display:inline-flex;align-items:center;justify-content:center}
+.sndpill em::before{content:'';display:block;width:8px;height:9px;background:currentColor;
+  clip-path:polygon(0 0,100% 50%,0 100%);margin-left:1.5px}   /* 삼각형은 광학적으로 살짝 우측이 중앙으로 보인다 */
+/* 재생 중 = 민트로 채우고 일시정지(두 줄) — .cplay/.tplay/.songplay 와 같은 규칙 */
+.sndpill em.on{background:var(--mint);color:#04231d}
+.sndpill em.on::before{clip-path:none;margin-left:0;
   background:linear-gradient(to right,currentColor 0 36%,transparent 36% 64%,currentColor 64% 100%)}
 
 .uphint2{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:6;background:rgba(0,0,0,.55);
@@ -2431,6 +2436,9 @@ function slideView(){
     const who=`<div class="slwho"><span data-prof="${esc(t.who)}" data-paid="${t.aid||''}" style="cursor:pointer;display:flex;align-items:center;gap:8px">${dot(t.c)}${t.who||''}</span></div>`;
     /* ⋯ 는 하나로 — 우측 상단 ✕ 옆. 공유·담기·팔로우를 다 담는다 */
     const moreBtn=`<button class="sldots" data-sharemenu="${t.tid||''}" data-snm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-sby="${(t.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" data-said="${t.aid||''}" aria-label="공유·담기·팔로우">⋯</button>`;
+    /* ✕ 는 슬라이드마다 넣는다. 예전엔 스크롤되는 바깥(.slwrap)에 하나만 있어서
+       슬라이드를 넘기면 ✕ 가 같이 스크롤돼 사라졌다(닫을 방법이 없어짐). */
+    const closeBtn=`<button class="slx" aria-label="닫기">✕</button>`;
     const _smine=(t.tid && MYREACT[t.tid])||null;
     const _srb=(emo,sh,col)=>`<button class="shape rbtn${_smine&&_smine.has(emo)?' hit':''}" data-emo="${emo}"${_smine&&_smine.has(emo)?' data-hit="1"':''} aria-label="${emo}">${shape(sh,c(col),26)}</button>`;
     const rx=`<div class="slrx" data-tid="${t.tid||''}">
@@ -2456,18 +2464,18 @@ function slideView(){
     }
     if(t.t==='ph') return `<div class="sl"${anchor}>
       <div class="bgimg" style="background:${t.bg}"></div><div class="grainy"></div>
-      ${who}${moreBtn}<div class="slmid"><div class="slts">${t.at}</div><div class="slcap">${esc(t.cap)}</div>${rx}</div>${hint}</div>`;
+      ${who}${moreBtn}${closeBtn}<div class="slmid"><div class="slts">${t.at}</div><div class="slcap">${esc(t.cap)}</div>${rx}</div>${hint}</div>`;
     if(t.t==='snd') return `<div class="sl snd"${anchor} data-slplay>
-      ${who}${moreBtn}
+      ${who}${moreBtn}${closeBtn}
       <div class="slmid">
         <div class="slts">${t.at||''}</div>
         <div class="slcap">${t.nm||t.cap}</div>
         <div class="slwave">${waveBars(30)}</div>${rx}</div>${hint}</div>`;
     return `<div class="sl paper ${t.tone==='b'?'b':''}"${anchor}>
-      ${who}${moreBtn}<div class="slmid"><div class="slts">${t.at}</div><div class="slnote">${esc(t.text)}</div>${rx}</div>${hint}</div>`;
+      ${who}${moreBtn}${closeBtn}<div class="slmid"><div class="slts">${t.at}</div><div class="slnote">${esc(t.text)}</div>${rx}</div>${hint}</div>`;
   };
+  /* ✕ 는 여기가 아니라 슬라이드 안에 있다(closeBtn) — 여기 두면 스크롤에 밀려 사라진다 */
   return `<div class="slwrap" id="slwrap">
-    <button class="slx" id="slclose" aria-label="닫기">✕</button>
     ${S.feed.map((t,i)=>sl(t,i)).join('')}</div>`;
 }
 /* 같은 시각 카드 — 셋로그 룸이 피드 안에 들어온 형태. 탭하면 전체 룸 */
@@ -4349,8 +4357,8 @@ function bind(){
     if(e.target.closest('.rbtn,.fol,.rwho,[data-prof]'))return;
     S.mode='slide'; S.slideAt=+cd.dataset.slide; render();
   });
-  const sx=document.getElementById('slclose');
-  if(sx)sx.onclick=()=>{S.mode='feed';render()};
+  /* ✕ 가 슬라이드마다 하나씩이라 id 대신 클래스로 전부 연결한다 */
+  document.querySelectorAll('.slx').forEach(sx=>{ sx.onclick=()=>{S.mode='feed';render()}; });
   /* 릴스: 현재 화면 슬라이드의 곡을 자동 재생 (스와이프하면 다음 곡으로) */
   const sw=document.getElementById('slwrap');
   if(sw){
@@ -4372,7 +4380,7 @@ function bind(){
   }
   /* 릴스 슬라이드 탭 = 현재 곡 재생/일시정지 (실제 오디오) */
   document.querySelectorAll('.sl[data-slplay]').forEach(cd=>cd.onclick=e=>{
-    if(e.target.closest('.rbtn,.slfol,.sldots,[data-prof]'))return;
+    if(e.target.closest('.rbtn,.slfol,.sldots,.slx,[data-prof]'))return;   /* .slx = 닫기(슬라이드 안으로 옮김) */
     if(AUDIO.paused){ const p=AUDIO.play(); if(p&&p.catch)p.catch(()=>{}); S.mini.playing=true; }
     else { AUDIO.pause(); S.mini.playing=false; }
     cd.classList.toggle('playing', !AUDIO.paused);
