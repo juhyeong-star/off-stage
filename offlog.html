@@ -1685,6 +1685,15 @@ function offConfirm(msg, okLabel){
    구글 로그인이 앱에서만 실패하는(앱스토어 2.1(a)) 원인을 좁히려면
    앱 안에서 UA·저장소·세션 상태를 직접 봐야 해서 넣었다. 일반 사용자에겐 보이지 않는다. */
 let _diagTaps=0, _diagTimer=null;
+/* env(safe-area-inset-*) 의 실제 픽셀값 — 앱에서만 0이 아니다. 재는 방법이 이것뿐이다(JS로 직접 못 읽음) */
+function _envInset(side){
+  try{
+    const p=document.createElement('div');
+    p.style.cssText='position:fixed;left:-9999px;top:0;width:1px;height:env(safe-area-inset-'+side+',0px)';
+    document.body.appendChild(p);
+    const h=p.getBoundingClientRect().height; p.remove(); return Math.round(h);
+  }catch(_){ return -1; }
+}
 function showDiag(){
   let store='OK';
   try{ localStorage.setItem('_d','1'); localStorage.removeItem('_d'); }
@@ -1692,15 +1701,24 @@ function showDiag(){
   let sess='없음';
   try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i);
     if(k&&/^sb-.*-auth-token$/.test(k)) sess='있음'; } }catch(_){}
+  /* 레이아웃 실측 — 하단바가 화면 밖으로 넘치는지, 안전영역이 실제로 들어오는지 */
+  const _nav=document.getElementById('nav'), _scr=document.getElementById('screen');
+  const nv=_nav?_nav.getBoundingClientRect():null, sc=_scr?getComputedStyle(_scr):null;
   const rows=[
     ['UA', navigator.userAgent||''],
     ['주소', location.href],
-    ['저장소', store],
-    ['저장된 세션', sess],
+    ['화면', window.innerWidth+'×'+window.innerHeight],
+    ['안전영역 위/아래', _envInset('top')+'px / '+_envInset('bottom')+'px'+
+      (_envInset('top')===0&&_envInset('bottom')===0?'  ⚠️ 둘 다 0 = 앱이 안전영역 값을 안 넘겨줌':'')],
+    ['하단바(nav)', nv?('높이 '+Math.round(nv.height)+' · 아래끝 '+Math.round(nv.bottom)+
+      ' · 화면밖으로 '+Math.round(nv.bottom-window.innerHeight)+'px'+
+      (nv.bottom-window.innerHeight>1?'  ⚠️ 잘림':'  ✅')):'없음'],
+    ['screen 여백 위/아래', sc?(sc.paddingTop+' / '+sc.paddingBottom):'없음'],
+    ['스크롤', _scr?(_scr.scrollHeight>_scr.clientHeight+1?'가능':'내용이 화면보다 짧음')+
+      ' · 잠금 '+(_scr.classList.contains('locked')?'⚠️걸림':'없음'):'없음'],
+    ['저장소 / 세션', store+' / '+sess],
     ['플로우', (SBC&&SBC.auth&&SBC.auth.flowType)||'?'],
-    ['standalone', String(navigator.standalone)],
-    ['터치포인트', String(navigator.maxTouchPoints)],
-    ['화면', window.innerWidth+'×'+window.innerHeight]
+    ['standalone / 터치', String(navigator.standalone)+' / '+navigator.maxTouchPoints]
   ];
   const el=document.createElement('div');
   el.style.cssText='position:fixed;inset:0;z-index:99999;background:#0c0c0e;color:#eee;padding:22px 18px;'
@@ -3835,12 +3853,13 @@ function bind(){
     if(ax)ax.onclick=aclose;
   }
   /* 인증 버튼 — 로그인 시트와 잠금 화면 양쪽에서 동작(id 기반) */
-  /* 로고 5번 탭 → 진단 화면 (앱 안에서 원인 파악용, showDiag 주석 참고) */
-  const _lgo=document.querySelector('.locklogo');
-  if(_lgo) _lgo.onclick=()=>{
+  /* OFFLOG 글자 5번 탭 → 진단 화면 (앱 안에서 원인 파악용, showDiag 주석 참고).
+     잠금화면 로고와 홈 헤더 워드마크 둘 다 — 로그인 후에도 열 수 있어야 레이아웃을 볼 수 있다. */
+  const _diagTap=()=>{
     clearTimeout(_diagTimer); _diagTimer=setTimeout(()=>{_diagTaps=0;},1500);
     if(++_diagTaps>=5){ _diagTaps=0; showDiag(); }
   };
+  document.querySelectorAll('.locklogo, .brand').forEach(el=>{ el.onclick=_diagTap; });
   const aa=document.getElementById('authapple'); if(aa)aa.onclick=loginApple;
   const ag=document.getElementById('authgoogle'); if(ag)ag.onclick=loginGoogle;
   const asub=document.getElementById('authsubmit');
