@@ -1853,7 +1853,7 @@ function offConfirm(msg, okLabel){
    앱 안에서 UA·저장소·세션 상태를 직접 봐야 해서 넣었다. 일반 사용자에겐 보이지 않는다. */
 /* 배포 표시 — 앱(웹뷰)이 최신 코드를 받았는지 진단 화면에서 바로 확인하려고 둔다.
    ⚠️ 배포할 때마다 이 값을 갱신할 것. 안 그러면 "고쳤는데 안 바뀐다"를 판별할 수 없다. */
-const BUILD='2026-07-30 #11 · 구글 계정 선택 + 로그아웃 캐시 정리';
+const BUILD='2026-07-30 #12 · 아티스트 찾기 렉 수정';
 let _diagTaps=0, _diagTimer=null;
 /* env(safe-area-inset-*) 의 실제 픽셀값 — 앱에서만 0이 아니다. 재는 방법이 이것뿐이다(JS로 직접 못 읽음) */
 function _envInset(side){
@@ -2018,6 +2018,23 @@ async function toggleBlock(aid, who){
     if(e&&(e.code==='PGRST205'||e.code==='42P01')){ SAFETYTABLE=false; return; }
     offToast('차단이 서버에 저장되지 않았어요 — 이 기기에서만 적용됩니다');
   }
+}
+
+/* 아티스트 찾기 입력 — 글자마다 render() 를 부르면 앱 전체를 다시 그리고 모든 핸들러를
+   다시 붙여서 타이핑이 눈에 띄게 밀린다. 잠깐 모았다가 한 번만 그린다.
+   한글은 조합 중(ㄱ→가→강)에도 input 이 계속 발생하고, 그때 입력창을 다시 그리면
+   조합이 깨지므로 조합이 끝날 때까지 미룬다. */
+let _fqT=null, _fqComposing=false;
+function _fqSchedule(){
+  clearTimeout(_fqT);
+  _fqT=setTimeout(function(){
+    if(_fqComposing){ _fqSchedule(); return; }
+    const el0=document.getElementById('fq');
+    const pos=el0?el0.selectionStart:null;
+    render();
+    const el=document.getElementById('fq');
+    if(el){ el.focus(); if(pos!=null){ try{ el.setSelectionRange(pos,pos); }catch(_){} } }
+  }, 180);
 }
 
 /* 비로그인 안내 — 조용히 실패시키지 않고 알려준다 */
@@ -3434,10 +3451,14 @@ let ALLTRACKS=[];          /* 담을 수 있는 실제 곡 목록 (로더가 채
 const COVERS={gj:'radial-gradient(circle at 35% 30%,#3a5c3e,transparent 60%),radial-gradient(circle at 80% 75%,#1c3a2c,transparent 55%),#0c140e'};
 const covOf=id=>(WORKS.find(w=>w.id===id)||{}).bg||COVERS[id]||'#22222a';
 /* 전체 아티스트 디렉토리 (곡이 1개 이상 있는 아티스트) — 팔로우 검색용. ALLTRACKS에서 중복 제거 */
+/* 검색 중에는 render() 마다 불리므로 결과를 재사용한다 (곡 목록이 바뀌면 다시 만든다) */
+let _artCache=null, _artCacheLen=-1;
 function allArtists(){
+  if(_artCache && _artCacheLen===ALLTRACKS.length) return _artCache;
   const seen={}, out=[];
   ALLTRACKS.forEach(t=>{ const key=t.aid||t.by; if(!key||seen[key])return; seen[key]=1;
     out.push({who:t.by, aid:t.aid||null, c:t.c, sub:'Artist'}); });
+  _artCache=out; _artCacheLen=ALLTRACKS.length;
   return out;
 }
 
@@ -4513,13 +4534,12 @@ function bind(){
   const flb=document.getElementById('flback');
   if(flb)flb.onclick=()=>{S.view=S.flFrom; S.flist=null; S.fq=''; render()};
   const fq=document.getElementById('fq');
-  if(fq)fq.oninput=()=>{
-    S.fq=fq.value;
-    const pos=fq.selectionStart;
-    render();
-    const el=document.getElementById('fq');
-    if(el){el.focus(); el.setSelectionRange(pos,pos)}
-  };
+  if(fq && !fq.__b){                       /* 조합 이벤트는 이 입력창에 한 번만 붙인다 */
+    fq.__b=1;
+    fq.addEventListener('compositionstart', function(){ _fqComposing=true; });
+    fq.addEventListener('compositionend',   function(){ _fqComposing=false; _fqSchedule(); });
+  }
+  if(fq)fq.oninput=()=>{ S.fq=fq.value; _fqSchedule(); };   /* 즉시 render() 하지 않는다 — _fqSchedule 주석 참고 */
   const fqx=document.getElementById('fqx'); if(fqx)fqx.onclick=()=>{S.fq='';render()};
   /* (팔로워/팔로잉 목록의 팔로우 버튼도 .fol 공통 핸들러가 처리 — data-aid 계약 하나로 통일) */
   /* (프로필 팔로우/로그인 버튼은 위 #profolbtn/#profloginbtn 에서 처리) */
