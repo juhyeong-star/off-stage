@@ -1853,7 +1853,7 @@ function offConfirm(msg, okLabel){
    앱 안에서 UA·저장소·세션 상태를 직접 봐야 해서 넣었다. 일반 사용자에겐 보이지 않는다. */
 /* 배포 표시 — 앱(웹뷰)이 최신 코드를 받았는지 진단 화면에서 바로 확인하려고 둔다.
    ⚠️ 배포할 때마다 이 값을 갱신할 것. 안 그러면 "고쳤는데 안 바뀐다"를 판별할 수 없다. */
-const BUILD='2026-07-30 #13 · 차단이 목록·검색·스토리에도 적용';
+const BUILD='2026-07-30 #14 · 아티스트 검색 입력창 튐 수정';
 let _diagTaps=0, _diagTimer=null;
 /* env(safe-area-inset-*) 의 실제 픽셀값 — 앱에서만 0이 아니다. 재는 방법이 이것뿐이다(JS로 직접 못 읽음) */
 function _envInset(side){
@@ -2024,17 +2024,12 @@ async function toggleBlock(aid, who){
    다시 붙여서 타이핑이 눈에 띄게 밀린다. 잠깐 모았다가 한 번만 그린다.
    한글은 조합 중(ㄱ→가→강)에도 input 이 계속 발생하고, 그때 입력창을 다시 그리면
    조합이 깨지므로 조합이 끝날 때까지 미룬다. */
-let _fqT=null, _fqComposing=false;
+let _fqT=null;
 function _fqSchedule(){
   clearTimeout(_fqT);
-  _fqT=setTimeout(function(){
-    if(_fqComposing){ _fqSchedule(); return; }
-    const el0=document.getElementById('fq');
-    const pos=el0?el0.selectionStart:null;
-    render();
-    const el=document.getElementById('fq');
-    if(el){ el.focus(); if(pos!=null){ try{ el.setSelectionRange(pos,pos); }catch(_){} } }
-  }, 180);
+  /* 목록만 갈아끼우므로 입력창은 그대로다 — 포커스·커서·한글 조합이 전혀 흔들리지 않는다.
+     그래서 조합 중인지 볼 필요도 없고, 간격도 짧게 둘 수 있다. */
+  _fqT=setTimeout(refreshFlist, 120);
 }
 
 /* 비로그인 안내 — 조용히 실패시키지 않고 알려준다 */
@@ -3397,12 +3392,35 @@ function flist(){
   const cached = targetId ? FLCACHE[key] : null;
   if(targetId && !cached){ loadFollowList(targetId, S.flist).then(function(){ try{ if(S.view==='flist') render(); }catch(_){} }); }
 
-  /* 차단·신고한 사람은 팔로우 목록에서도 보이면 안 된다 (Guideline 1.2).
-     예전엔 홈 피드에만 필터를 걸어서 여기와 검색 결과에는 그대로 남아 있었다. */
+  const ferN  = meView ? ((ME&&ME.followers!=null)?ME.followers:'—') : ((rp&&rp.followers!=null)?rp.followers:'—');
+  const fingN = meView ? MYFOLLOWS.size : ((rp&&rp.following!=null)?rp.following:'—');
+  const body  = flistBody();
+
+  return `<div class="hd"><button class="circ" id="flback" aria-label="뒤로">‹</button>
+    <div class="htitle">${title}<small>${q?'검색':isFer?'팔로워':'팔로잉'}</small></div>
+    <span style="width:34px"></span></div>
+  <div class="srch"><span class="srchi">⌕</span>
+    <input id="fq" value="${S.fq||''}" placeholder="아티스트 찾기">
+    ${q?`<button class="srchx" id="fqx" aria-label="지우기">✕</button>`:''}</div>
+  <div class="seg" id="flseg" style="${q?'display:none':''}">
+    <button class="${isFer?'on':''}" data-flist="follower">팔로워 <b>${ferN}</b></button>
+    <button class="${isFer?'':'on'}" data-flist="following">팔로잉 <b>${fingN}</b></button></div>
+  <div id="flbody">${body}</div>
+  <div style="height:20px"></div>`;
+}
+/* 목록 본문만 만든다 — 전체 화면(flist)과 검색 중 부분 갱신(refreshFlist)이 함께 쓴다 */
+function flistBody(){
+  const isFer = S.flist==='follower';
+  const q = (S.fq||'').trim().toLowerCase();
+  const meView = S.profile==='me';
+  const targetId = meView ? (ME?ME.id:'') : (S.profileAid||'');
+  const cached = targetId ? FLCACHE[targetId+'|'+S.flist] : null;
+
+  /* 차단·신고한 사람은 팔로우 목록에서도 보이면 안 된다 (Guideline 1.2) */
   let rows = (cached || []).filter(p=>!isHiddenItem(p));
   if(q) rows = rows.filter(p=>((p.who||'').toLowerCase().includes(q) || (p.sub||'').toLowerCase().includes(q)));
 
-  /* 검색 중이면 — 아직 팔로우 관계가 없어 목록에 안 뜨는 아티스트도 전체에서 찾아 보여준다(발견/팔로우) */
+  /* 검색 중이면 — 아직 팔로우 관계가 없어 목록에 안 뜨는 아티스트도 전체에서 찾아 보여준다 */
   let extra = [];
   if(q){
     const known = new Set(rows.map(p=>p.aid).filter(Boolean));
@@ -3410,9 +3428,6 @@ function flist(){
       && !isHiddenItem(p)                                   /* 차단한 사람은 검색에도 안 뜬다 */
       && (p.who||'').toLowerCase().includes(q)).slice(0,30);
   }
-
-  const ferN  = meView ? ((ME&&ME.followers!=null)?ME.followers:'—') : ((rp&&rp.followers!=null)?rp.followers:'—');
-  const fingN = meView ? MYFOLLOWS.size : ((rp&&rp.following!=null)?rp.following:'—');
 
   const prowOf = p => { const on=MYFOLLOWS.has(p.aid), mine=ME&&p.aid===ME.id;
     return `<div class="prow">
@@ -3423,31 +3438,46 @@ function flist(){
   const extraBody = extra.length
     ? `<div class="pldate" style="margin-top:14px">발견 · 새로 팔로우</div>${extra.map(prowOf).join('')}` : '';
 
-  let body;
-  if(!targetId){
-    body = `<div class="pknote" style="padding:36px 0">${meView?'로그인하면 내 팔로워를 볼 수 있어요':'불러올 수 없어요'}</div>`;
-  } else if(q){
+  if(!targetId) return `<div class="pknote" style="padding:36px 0">${meView?'로그인하면 내 팔로워를 볼 수 있어요':'불러올 수 없어요'}</div>`;
+  if(q){
     /* 검색 중 — 관계 목록 로딩과 무관하게 매칭 결과(관계 내 + 발견)를 바로 보여준다 */
-    body = (rows.length || extra.length)
+    return (rows.length || extra.length)
       ? rows.map(prowOf).join('') + extraBody
       : ((cached===null||cached===undefined) ? `<div class="pknote" style="padding:36px 0">불러오는 중…</div>` : `<div class="pknote" style="padding:36px 0">찾는 아티스트가 없습니다</div>`);
-  } else if(cached===null||cached===undefined){
-    body = `<div class="pknote" style="padding:36px 0">불러오는 중…</div>`;
-  } else {
-    body = rows.length ? rows.map(prowOf).join('') : `<div class="pknote" style="padding:36px 0">${isFer?'아직 팔로워가 없어요':'아직 팔로우한 사람이 없어요'}</div>`;
   }
+  if(cached===null||cached===undefined) return `<div class="pknote" style="padding:36px 0">불러오는 중…</div>`;
+  return rows.length ? rows.map(prowOf).join('') : `<div class="pknote" style="padding:36px 0">${isFer?'아직 팔로워가 없어요':'아직 팔로우한 사람이 없어요'}</div>`;
+}
 
-  return `<div class="hd"><button class="circ" id="flback" aria-label="뒤로">‹</button>
-    <div class="htitle">${title}<small>${q?'검색':isFer?'팔로워':'팔로잉'}</small></div>
-    <span style="width:34px"></span></div>
-  <div class="srch"><span class="srchi">⌕</span>
-    <input id="fq" value="${S.fq||''}" placeholder="아티스트 찾기">
-    ${q?`<button class="srchx" id="fqx" aria-label="지우기">✕</button>`:''}</div>
-  ${q?'':`<div class="seg">
-    <button class="${isFer?'on':''}" data-flist="follower">팔로워 <b>${ferN}</b></button>
-    <button class="${isFer?'':'on'}" data-flist="following">팔로잉 <b>${fingN}</b></button></div>`}
-  ${body}
-  <div style="height:20px"></div>`;
+/* 검색 결과만 다시 그린다 — 입력창(#fq)은 절대 건드리지 않는다.
+   예전엔 글자마다 render() 를 불러 입력창이 통째로 새로 만들어졌다. 그러면 한글 조합 중이던
+   글자가 확정돼 커서가 다음 칸으로 넘어가 버린다(iOS 웹뷰는 조합 이벤트가 늦게 와서
+   조합 중인지 판단할 수도 없었다). 그래서 목록만 갈아끼우고 그 안의 버튼만 다시 연결한다. */
+function refreshFlist(){
+  const el=document.getElementById('flbody');
+  if(!el || S.view!=='flist') return;
+  el.innerHTML=flistBody();
+  const q=(S.fq||'').trim();
+  const seg=document.getElementById('flseg'); if(seg) seg.style.display=q?'none':'';
+  const lab=document.querySelector('.htitle small'); if(lab) lab.textContent=q?'검색':(S.flist==='follower'?'팔로워':'팔로잉');
+  /* 지우기(✕) 버튼은 검색어가 있을 때만 — 입력창은 그대로 두고 버튼만 넣고 뺀다 */
+  const row=document.querySelector('.srch'); let x=document.getElementById('fqx');
+  if(q && !x && row){ x=document.createElement('button'); x.className='srchx'; x.id='fqx';
+    x.setAttribute('aria-label','지우기'); x.textContent='✕'; row.appendChild(x); }
+  if(!q && x){ x.remove(); x=null; }
+  if(x) x.onclick=()=>{ S.fq=''; const i=document.getElementById('fq'); if(i)i.value=''; refreshFlist(); };
+  /* 새로 만든 행의 버튼만 연결 — bind() 전체를 부르면 스토리 뷰어 리스너가 누적된다 */
+  el.querySelectorAll('[data-prof]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); goProfile(b.dataset.prof, b.dataset.paid); });
+  el.querySelectorAll('.fol').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    const aid=b.dataset.aid;
+    if(!ME){ needLogin(); return; }
+    const on=b.classList.toggle('on');
+    b.textContent=on?'팔로잉':'팔로우';
+    (on?followArtist(aid):unfollowArtist(aid)).then(ok=>{
+      if(!ok){ const back=b.classList.toggle('on'); b.textContent=back?'팔로잉':'팔로우'; }
+    });
+  });
 }
 
 /* ── 플레이리스트 — 내가 모은 소리. 공유하면 남이 듣는다 ── */
@@ -4539,14 +4569,11 @@ function bind(){
   if(gp)gp.onclick=()=>{S.profile='me'; S.flist='following'; S.fq=''; S.flFrom='home'; S.view='flist'; render()};
   const flb=document.getElementById('flback');
   if(flb)flb.onclick=()=>{S.view=S.flFrom; S.flist=null; S.fq=''; render()};
+  /* 입력창은 render() 로 다시 만들지 않는다 — 목록만 갈아끼운다(_fqSchedule → refreshFlist) */
   const fq=document.getElementById('fq');
-  if(fq && !fq.__b){                       /* 조합 이벤트는 이 입력창에 한 번만 붙인다 */
-    fq.__b=1;
-    fq.addEventListener('compositionstart', function(){ _fqComposing=true; });
-    fq.addEventListener('compositionend',   function(){ _fqComposing=false; _fqSchedule(); });
-  }
-  if(fq)fq.oninput=()=>{ S.fq=fq.value; _fqSchedule(); };   /* 즉시 render() 하지 않는다 — _fqSchedule 주석 참고 */
-  const fqx=document.getElementById('fqx'); if(fqx)fqx.onclick=()=>{S.fq='';render()};
+  if(fq)fq.oninput=()=>{ S.fq=fq.value; _fqSchedule(); };
+  const fqx=document.getElementById('fqx');
+  if(fqx)fqx.onclick=()=>{ S.fq=''; if(fq)fq.value=''; refreshFlist(); };
   /* (팔로워/팔로잉 목록의 팔로우 버튼도 .fol 공통 핸들러가 처리 — data-aid 계약 하나로 통일) */
   /* (프로필 팔로우/로그인 버튼은 위 #profolbtn/#profloginbtn 에서 처리) */
   /* Demo — 음원 파일 올리기 */
