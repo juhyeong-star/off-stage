@@ -1853,7 +1853,7 @@ function offConfirm(msg, okLabel){
    앱 안에서 UA·저장소·세션 상태를 직접 봐야 해서 넣었다. 일반 사용자에겐 보이지 않는다. */
 /* 배포 표시 — 앱(웹뷰)이 최신 코드를 받았는지 진단 화면에서 바로 확인하려고 둔다.
    ⚠️ 배포할 때마다 이 값을 갱신할 것. 안 그러면 "고쳤는데 안 바뀐다"를 판별할 수 없다. */
-const BUILD='2026-07-30 #12 · 아티스트 찾기 렉 수정';
+const BUILD='2026-07-30 #13 · 차단이 목록·검색·스토리에도 적용';
 let _diagTaps=0, _diagTimer=null;
 /* env(safe-area-inset-*) 의 실제 픽셀값 — 앱에서만 0이 아니다. 재는 방법이 이것뿐이다(JS로 직접 못 읽음) */
 function _envInset(side){
@@ -2590,6 +2590,9 @@ const dot=col=>`<span class="dot" style="background:${c(col)}"></span>`;
 /* ── 스토리 열 (아웃라인 상단 고정) — 팔로우 중 + 발견 가능한 아티스트 ── */
 function storyRow(){
   return `<div class="avrow">${STORIES.map((s,i)=>{
+    /* 차단한 사람의 스토리는 숨긴다. data-story 가 배열 위치를 그대로 쓰므로
+       걸러내지 말고 빈 문자열을 돌려 인덱스를 유지한다. */
+    if(isHiddenItem(s)) return '';
     const ring = !s.following ? 'discover' : (s.seen ? 'seen' : 'new');
     return `<button class="av ${!s.following?'discover':''}" data-story="${i}" aria-label="${s.who} 스토리 보기">
       <div class="av-ring ${ring}"><div class="av-in" style="background:${c(s.c)}">${s.who[0]}
@@ -2724,7 +2727,7 @@ function home(){
       ? `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">이 날은 올라온 로그가 없어요.</div>`
       : `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">아직 팔로우한 사람의 로그가 없어요.<br><b style="color:var(--mint)">MUSIC</b>에서 아티스트를 팔로우해 보세요.</div>`);
   } else if(cur==='rel'){
-    const rel=ALLTRACKS.slice(0,24);
+    const rel=ALLTRACKS.filter(t=>!isHiddenItem(t)).slice(0,24);   /* 차단·신고분 제외 */
     bodyC=rel.length
       ? `<div class="relgrid">${rel.map(t=>{
           const by=(t.by||'').replace(/"/g,'&quot;'), nm=(t.nm||'').replace(/"/g,'&quot;');
@@ -3394,7 +3397,9 @@ function flist(){
   const cached = targetId ? FLCACHE[key] : null;
   if(targetId && !cached){ loadFollowList(targetId, S.flist).then(function(){ try{ if(S.view==='flist') render(); }catch(_){} }); }
 
-  let rows = cached || [];
+  /* 차단·신고한 사람은 팔로우 목록에서도 보이면 안 된다 (Guideline 1.2).
+     예전엔 홈 피드에만 필터를 걸어서 여기와 검색 결과에는 그대로 남아 있었다. */
+  let rows = (cached || []).filter(p=>!isHiddenItem(p));
   if(q) rows = rows.filter(p=>((p.who||'').toLowerCase().includes(q) || (p.sub||'').toLowerCase().includes(q)));
 
   /* 검색 중이면 — 아직 팔로우 관계가 없어 목록에 안 뜨는 아티스트도 전체에서 찾아 보여준다(발견/팔로우) */
@@ -3402,6 +3407,7 @@ function flist(){
   if(q){
     const known = new Set(rows.map(p=>p.aid).filter(Boolean));
     extra = allArtists().filter(p => p.aid && !known.has(p.aid) && !(ME && p.aid===ME.id)
+      && !isHiddenItem(p)                                   /* 차단한 사람은 검색에도 안 뜬다 */
       && (p.who||'').toLowerCase().includes(q)).slice(0,30);
   }
 
@@ -3597,7 +3603,7 @@ function listDetail(){
 function songPicker(p){
   const q=(S.sq||'').trim().toLowerCase();
   const have={}; (p.tracks||[]).forEach(t=>{ if(t.tid)have[t.tid]=1; });
-  const list=ALLTRACKS.filter(t=> !q || (t.nm+' '+t.by).toLowerCase().indexOf(q)>-1 );
+  const list=ALLTRACKS.filter(t=> !isHiddenItem(t) && (!q || (t.nm+' '+t.by).toLowerCase().indexOf(q)>-1) );   /* 차단·신고분 제외 */
   return `<div class="sheet-bd" id="asbd"></div>
   <div class="pksheet tall">
     <div class="pkhd"><b>${esc(p.nm)}에 곡 담기</b>
