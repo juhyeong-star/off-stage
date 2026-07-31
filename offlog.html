@@ -213,6 +213,8 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .aclogout{width:100%;margin-top:22px;background:transparent;border:1px solid rgba(255,107,107,.35);color:#ff6b6b;
   border-radius:14px;padding:14px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;min-height:50px}
 .aclogout:active{transform:scale(.98)}
+/* 신고·차단처럼 되돌리기 어려운 항목은 붉게 — 실수로 누르지 않게 */
+.pkrow.danger .pknm b{color:#ff8a8a}
 /* 계정 삭제 — 되돌릴 수 없는 동작이라 로그아웃보다 약하게 보이되 찾을 수는 있게 */
 .acdel{width:100%;margin-top:10px;background:none;border:0;color:rgba(255,107,107,.75);
   border-radius:14px;padding:12px;font-size:13px;font-weight:700;font-family:inherit;
@@ -1246,6 +1248,20 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .authbtn.apple:hover{border-color:#fff;opacity:.92}
 .authbtn:hover{border-color:var(--mint)}
 /* 로그인 ↔ 회원가입 전환 · 비밀번호 찾기 */
+/* 이용약관 동의 (앱스토어 Guideline 1.2 — 가입 전 무관용 원칙 동의) */
+.agree{display:flex;align-items:flex-start;gap:9px;margin-top:12px;padding:0 2px}
+.agree input[type=checkbox]{width:19px;height:19px;flex-shrink:0;margin-top:1px;accent-color:var(--mint)}
+.agree label{font-size:11.5px;color:var(--muted);line-height:1.55;cursor:pointer}
+.agree label b{color:var(--txt);font-weight:700}
+.agreelink{display:block;margin:7px 0 0 30px;font-size:11.5px}
+.agreenote{margin:12px 2px 0;font-size:11.5px;color:var(--muted);line-height:1.6;text-align:center}
+/* 약관은 잠금화면(z-index 60) 위에 떠야 한다 — 가입 전에 읽을 수 있어야 하므로 */
+#tmbd{z-index:65}
+.cs.tall{max-height:82%;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain}
+.tmbody{font-size:12.5px;color:var(--muted);line-height:1.75;padding:0 2px 6px}
+.tmbody h4{font-size:13px;color:var(--txt);font-weight:800;margin:15px 0 5px}
+.tmbody h4:first-child{margin-top:2px}
+.tmbody b{color:var(--txt)}
 .authalt{margin-top:14px;text-align:center;font-size:12.5px;color:var(--muted);line-height:1.7}
 .authlink{background:none;border:0;padding:0 2px;color:var(--mint);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .authlink:active{opacity:.6}
@@ -1382,6 +1398,42 @@ let ME=null;                // 현재 로그인 유저 {id,name}
 const MYFOLLOWS=new Set();  // 내가 팔로우한 artist profile id
 const MYFOLLOWERS=new Set();  // 나를 팔로우한 사람(followed_id=ME) — 맞팔(서로 팔로우) 판정용
 const MYREACT={};           // track_id -> Set(kind)
+/* ── 안전장치 (앱스토어 Guideline 1.2) ──────────────────────────────
+   차단한 사람의 콘텐츠는 즉시 사라져야 하고, 신고가 쌓이면 자동으로 감춰져야 한다.
+   supabase/safety.sql 의 blocks·reports·hidden_targets() 를 쓴다. */
+const MYBLOCKS=new Set();   // 내가 차단한 사람 (auth user id)
+const MYREPORTS=new Set();  // 내가 신고한 대상 'kind:id' — 신고한 순간 내 화면에서 감춘다
+const HIDDEN=new Set();     // 여러 명이 신고해 자동 숨김된 대상 'kind:id' (모두에게)
+let SAFETYTABLE=true;       // safety.sql 미실행이면 false 로 내려가고 조용히 통과
+
+function tKey(kind, id){ return String(kind||'')+':'+String(id||''); }
+/* 감춰야 하는 항목인가 — 피드·발견·슬라이드 어디서나 같은 기준을 쓴다 */
+function isHiddenItem(it){
+  if(!it) return false;
+  const aid=it.aid||it.artist_id||it.said||null;
+  if(aid && MYBLOCKS.has(aid)) return true;
+  const id=it.tid||it.id||null;
+  if(!id) return false;
+  const a=tKey('track',id), b=tKey('log',id);
+  return MYREPORTS.has(a)||MYREPORTS.has(b)||HIDDEN.has(a)||HIDDEN.has(b);
+}
+/* 자동 숨김 목록 — 로그인 전에도 적용돼야 하므로 따로 불러온다 */
+async function loadHidden(){
+  if(!SBC||!SAFETYTABLE) return;
+  try{
+    const r=await SBC.rpc('hidden_targets');
+    if(r.error) throw r.error;
+    HIDDEN.clear();
+    (r.data||[]).forEach(function(x){ HIDDEN.add(tKey(x.target_kind, x.target_id)); });
+  }catch(e){
+    if(e&&(e.code==='PGRST202'||/hidden_targets/i.test(String(e.message||'')))){
+      SAFETYTABLE=false;
+      console.info('[offlog] safety.sql 미실행 — 신고·차단은 이 기기에서만 동작합니다');
+      return;
+    }
+    console.warn('[offlog] 숨김 목록 로드 실패', e);
+  }
+}
 try{
   if(window.supabase && window.supabase.createClient){
     SBC=window.supabase.createClient(SB_URL, SB_KEY, {auth:{persistSession:true, autoRefreshToken:true}});
@@ -1413,12 +1465,14 @@ async function loadMe(){
       MYFOLLOWS.clear(); MYFOLLOWERS.clear();
       /* 서로 독립적인 5개 쿼리를 병렬로 (기존엔 순차 → 최대 7왕복). 하나 실패해도 나머지는 살린다 */
       const _q=p=>Promise.resolve(p).then(x=>x,()=>null);
-      const [pR,fR,fbR,mcR,trR]=await Promise.all([
+      const [pR,fR,fbR,mcR,trR,bkR,rpR]=await Promise.all([
         _q(SBC.from('profiles').select('name,avatar_url,role,sns_instagram,sns_youtube,sns_tiktok,bio,account_visibility').eq('id',user.id).maybeSingle()),
         _q(SBC.from('follows').select('followed_id').eq('follower_id', user.id)),            /* 내가 팔로우 */
         _q(SBC.from('follows').select('follower_id').eq('followed_id', user.id)),            /* 나를 팔로우(맞팔용) */
         _q(followCounts(user.id)),
-        _q(SBC.from('track_reactions').select('track_id,kind').eq('user_id', user.id))
+        _q(SBC.from('track_reactions').select('track_id,kind').eq('user_id', user.id)),
+        _q(SBC.from('blocks').select('blocked_id').eq('blocker_id', user.id)),            /* 차단 목록 */
+        _q(SBC.from('reports').select('target_kind,target_id').eq('reporter_id', user.id)) /* 내가 낸 신고 */
       ]);
       if(pR&&pR.data){ const d=pR.data; if(d.name&&d.name!=='익명')nm=d.name; if(d.avatar_url)av=d.avatar_url; if(d.role)role=d.role;
         sns={ig:d.sns_instagram||'',yt:d.sns_youtube||'',tt:d.sns_tiktok||''}; bio=d.bio||''; if(d.account_visibility)vis=d.account_visibility; }
@@ -1429,6 +1483,11 @@ async function loadMe(){
       if(fbR&&fbR.data) fbR.data.forEach(r=>MYFOLLOWERS.add(r.follower_id));
       if(mcR) ME.followers=mcR.followers;
       if(trR&&trR.data) trR.data.forEach(x=>{ (MYREACT[x.track_id]=MYREACT[x.track_id]||new Set()).add(x.kind); });   /* track_reactions 없으면 trR=null → 조용히 통과 */
+      /* 차단·신고 — safety.sql 미실행이면 null 이라 조용히 통과한다 */
+      MYBLOCKS.clear(); MYREPORTS.clear();
+      if(bkR&&bkR.data) bkR.data.forEach(function(x){ MYBLOCKS.add(x.blocked_id); });
+      if(rpR&&rpR.data) rpR.data.forEach(function(x){ MYREPORTS.add(tKey(x.target_kind, x.target_id)); });
+      if(bkR===null && rpR===null) SAFETYTABLE=false;
     } else {
       ME=null;
       /* 세션 토큰은 남아 있는데 유저를 못 얻었다 = 만료·무효 → 찌꺼기를 지워야 잠금 화면이 정상적으로 뜬다
@@ -1670,6 +1729,13 @@ function authForm(){
     ${su?`<input class="authinput" id="authname" type="text" autocomplete="name" placeholder="이름 (아티스트명)">`:''}
     <input class="authinput" id="authemail" type="email" autocomplete="username" placeholder="이메일">
     <input class="authinput" id="authpw" type="password" autocomplete="${su?'new-password':'current-password'}" placeholder="비밀번호${su?' (6자 이상)':''}">
+    ${su
+      ? `<div class="agree">
+           <input type="checkbox" id="authagree">
+           <label for="authagree">만 14세 이상이며 <b>이용약관</b>에 동의합니다. 부적절한 콘텐츠와 괴롭힘에는 <b>무관용 원칙</b>이 적용됩니다.</label>
+         </div>
+         <button type="button" class="authlink agreelink" id="opnterms">약관 전문 보기</button>`
+      : `<p class="agreenote">계속하면 <button type="button" class="authlink" id="opnterms">이용약관</button>에 동의하는 것으로 봅니다.</p>`}
     <button class="cs-post" id="authsubmit" style="margin-top:10px">${su?'가입하기':'로그인'}</button>
     <div class="authalt">
       ${su ? `이미 계정이 있나요? <button class="authlink" data-authmode="login">로그인</button>`
@@ -1718,7 +1784,10 @@ function logMenuSheet(){
        ${_ml?`<button class="pkrow" data-logvis="${M.id}"><span class="pknm"><b>${_ml.vis==='public'?'🔓 공개 로그':'🔒 비공개'}</b><small>${logVisLocked(_ml)?'무대·발매에 낸 로그는 항상 공개예요':(_ml.vis==='public'?'탭하면 비공개로 바꿔요':'탭하면 공개로 — 팔로워 피드에 보여요')}</small></span><span style="margin-left:auto;color:var(--mint);font-weight:800">${_ml.vis==='public'?'공개':'비공개'}</span></button>`:''}`
     : `${M.aid?`<button class="pkrow" data-omenu="follow"><span class="pknm"><b>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'✓ 팔로잉':'＋ 팔로우'}</b><small>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'탭하면 팔로우 해제':(M.by||'이 아티스트')+' 팔로우하기'}</small></span></button>`:''}
        <button class="pkrow" data-omenu="save"><span class="pknm"><b>＋ 내 플레이리스트에 담기</b></span><span style="margin-left:auto;color:var(--mint);font-weight:800">담기</span></button>
-       <button class="pkrow" data-omenu="share"><span class="pknm"><b>⤴ 공유</b><small>링크로 공유하거나 복사</small></span></button>`;
+       <button class="pkrow" data-omenu="share"><span class="pknm"><b>⤴ 공유</b><small>링크로 공유하거나 복사</small></span></button>
+       <!-- 앱스토어 Guideline 1.2 — 신고·차단은 콘텐츠에서 바로 닿을 수 있어야 한다 -->
+       <button class="pkrow danger" data-omenu="report"><span class="pknm"><b>신고</b><small>부적절한 내용이면 알려주세요</small></span></button>
+       ${M.aid && !(ME&&M.aid===ME.id) ? `<button class="pkrow danger" data-omenu="block"><span class="pknm"><b>${MYBLOCKS.has(M.aid)?'차단 해제':'차단'}</b><small>${MYBLOCKS.has(M.aid)?'다시 볼 수 있게 합니다':'이 사람의 글이 바로 안 보이게 됩니다'}</small></span></button>`:''}`;
   return `<div class="cs-bd" id="lmbd"><div class="cs">
     <div class="cs-hd"><b>${M.kind==='addmedia'?'로그에 넣기':(M.nm||'음악')}</b><button class="cs-x" id="lmx" aria-label="닫기">✕</button></div>
     ${M.kind==='addmedia'?'':`<div class="cs-trk">🎵 <b>${M.nm||'음악'}</b>${M.by?' · '+M.by:''}</div>`}
@@ -1751,7 +1820,7 @@ function offConfirm(msg, okLabel){
    앱 안에서 UA·저장소·세션 상태를 직접 봐야 해서 넣었다. 일반 사용자에겐 보이지 않는다. */
 /* 배포 표시 — 앱(웹뷰)이 최신 코드를 받았는지 진단 화면에서 바로 확인하려고 둔다.
    ⚠️ 배포할 때마다 이 값을 갱신할 것. 안 그러면 "고쳤는데 안 바뀐다"를 판별할 수 없다. */
-const BUILD='2026-07-30 #8 · 계정 탈퇴 기능 (앱스토어 5.1.1(v))';
+const BUILD='2026-07-30 #9 · UGC 안전장치 (약관·필터·신고·차단·자동숨김)';
 let _diagTaps=0, _diagTimer=null;
 /* env(safe-area-inset-*) 의 실제 픽셀값 — 앱에서만 0이 아니다. 재는 방법이 이것뿐이다(JS로 직접 못 읽음) */
 function _envInset(side){
@@ -1804,6 +1873,118 @@ function showDiag(){
     +rows.map(r=>'<div style="margin-bottom:11px"><b style="color:#5EEAD4">'+esc(r[0])+'</b><br>'+esc(r[1])+'</div>').join('');
   el.onclick=()=>el.remove();
   document.body.appendChild(el);
+}
+
+/* 이용약관 (Guideline 1.2 — 가입 전에 무관용 원칙에 동의받아야 한다) */
+function termsSheet(){
+  if(!S.terms) return '';
+  return `<div class="cs-bd" id="tmbd"><div class="cs tall">
+    <div class="cs-hd"><b>이용약관</b><button class="cs-x" id="tmx" aria-label="닫기">✕</button></div>
+    <div class="tmbody">
+      <h4>1. 무관용 원칙</h4>
+      <p>OFFLOG는 부적절한 콘텐츠와 괴롭히는 이용자에 대해 <b>무관용 원칙</b>을 적용합니다.
+         아래에 해당하는 콘텐츠는 신고 접수 후 <b>24시간 안에</b> 삭제되며, 반복하거나 정도가 심하면
+         계정 이용이 영구히 중단됩니다.</p>
+      <h4>2. 금지되는 콘텐츠</h4>
+      <p>· 욕설·비하·차별·괴롭힘<br>· 선정적이거나 폭력적인 내용<br>· 타인의 저작물 무단 게시<br>
+         · 스팸·광고·사기<br>· 타인의 개인정보 게시<br>· 그 밖에 법령을 위반하는 내용</p>
+      <h4>3. 신고와 차단</h4>
+      <p>모든 글과 음악에는 신고 기능이 있습니다. 다른 이용자를 차단하면 그 사람의 콘텐츠가
+         즉시 보이지 않습니다. 여러 명이 신고한 콘텐츠는 자동으로 숨겨집니다.</p>
+      <h4>4. 내가 올린 것에 대한 책임</h4>
+      <p>올린 콘텐츠에 대한 책임은 올린 사람에게 있습니다. 본인이 만들었거나 올릴 권리가 있는 것만 올려주세요.</p>
+      <h4>5. 계정과 데이터</h4>
+      <p>언제든지 <b>My → 계정 → 계정 삭제</b>에서 계정과 올린 데이터를 완전히 삭제할 수 있습니다.</p>
+      <h4>6. 문의</h4>
+      <p>신고·문의: whichday@naver.com</p>
+    </div>
+  </div></div>`;
+}
+
+/* 금칙어 필터 (Guideline 1.2 — 부적절한 콘텐츠를 걸러내는 수단).
+   완벽한 차단은 불가능하지만 명백한 욕설·비하는 올라가기 전에 막는다.
+   띄어쓰기·문장부호·같은 글자 반복 같은 흔한 우회는 정규화해서 함께 잡는다. */
+const BADWORDS=['시발','씨발','ㅅㅂ','병신','ㅂㅅ','좆','새끼','씹','지랄','개새','미친놈','미친년',
+  '창녀','걸레','엠창','느금','꺼져','죽어라','tlqkf','fuck','shit','bitch','asshole','cunt','nigger'];
+function _normText(s){
+  return String(s||'').toLowerCase()
+    .replace(/\s+/g,'')
+    .replace(/[.,!?~*_\-·…"'`^]/g,'')
+    .replace(/(.)\1{1,}/g,'$1');     /* 시발!!! · 씨이이발 같은 반복 축약 */
+}
+function badWordIn(text){
+  if(!text) return '';
+  const n=_normText(text);
+  for(let i=0;i<BADWORDS.length;i++){
+    const w=_normText(BADWORDS[i]);
+    if(w && n.indexOf(w)>-1) return BADWORDS[i];
+  }
+  return '';
+}
+
+/* ── 신고 · 차단 (앱스토어 Guideline 1.2) ──────────────────────────
+   신고: 사유를 고르면 reports 에 남고, 내 화면에서는 즉시 감춰진다.
+         서로 다른 3명이 신고하면 hidden_targets() 가 잡아 모두에게서 감춰진다.
+   차단: blocks 에 남고, 그 사람 콘텐츠가 피드에서 바로 사라진다. */
+const REPORT_REASONS=[
+  ['spam','스팸·광고'],
+  ['abuse','욕설·괴롭힘'],
+  ['sexual','선정적인 내용'],
+  ['violence','폭력적인 내용'],
+  ['copyright','저작권 침해'],
+  ['etc','기타']
+];
+function reportSheet(){
+  if(!S.report) return '';
+  const R=S.report;
+  return `<div class="cs-bd" id="rpbd"><div class="cs">
+    <div class="cs-hd"><b>신고하기</b><button class="cs-x" id="rpx" aria-label="닫기">✕</button></div>
+    <p style="color:var(--muted);font-size:12.5px;margin:0 2px 12px">${esc(R.nm||'이 콘텐츠')}를 신고합니다. 사유를 골라주세요.</p>
+    ${REPORT_REASONS.map(r=>`<button class="pkrow" data-rpreason="${r[0]}"><span class="pknm"><b>${esc(r[1])}</b></span></button>`).join('')}
+    <p class="rulen" style="text-align:left;margin:12px 4px 0">신고하면 이 콘텐츠는 내 화면에서 바로 사라집니다. 여러 명이 신고하면 모두에게서 숨겨지고, 운영자가 24시간 안에 확인합니다.</p>
+  </div></div>`;
+}
+async function submitReport(reason){
+  const R=S.report; if(!R) return;
+  const kind=R.kind||'track', id=String(R.id||'');
+  S.report=null;
+  /* 내 화면에서는 서버 응답을 기다리지 않고 바로 감춘다 */
+  if(id) MYREPORTS.add(tKey(kind,id));
+  render();
+  if(!ME||!SBC||!SAFETYTABLE){ offToast('신고를 접수했어요 — 이 콘텐츠는 이제 안 보입니다'); return; }
+  try{
+    const r=await SBC.from('reports').insert({
+      reporter_id:ME.id, target_kind:kind, target_id:id||null,
+      target_user:R.aid||null, reason:reason||'etc'
+    });
+    if(r.error) throw r.error;
+    offToast('신고했어요 — 운영자가 확인합니다');
+  }catch(e){
+    console.warn('[offlog] 신고 저장 실패', e);
+    if(e&&(e.code==='PGRST205'||e.code==='42P01')){ SAFETYTABLE=false;
+      offToast('신고를 접수했어요 — 이 콘텐츠는 이제 안 보입니다'); return; }
+    offToast('신고가 서버에 저장되지 않았어요 — 이 기기에서는 숨겨집니다');
+  }
+}
+async function toggleBlock(aid, who){
+  if(!aid) return;
+  if(ME && aid===ME.id){ offToast('자기 자신은 차단할 수 없어요'); return; }
+  const on=MYBLOCKS.has(aid);
+  if(!on && !await offConfirm((who||'이 사람')+'을(를) 차단할까요?\n이 사람의 글이 바로 안 보이게 됩니다.','차단')) return;
+  /* 화면부터 즉시 반영 — 차단은 바로 사라져야 한다 */
+  if(on) MYBLOCKS.delete(aid); else MYBLOCKS.add(aid);
+  S.logMenu=null; render();
+  offToast(on?'차단을 해제했어요':'차단했어요 — 이제 이 사람의 글이 보이지 않습니다');
+  if(!ME||!SBC||!SAFETYTABLE) return;
+  try{
+    const r = on ? await SBC.from('blocks').delete().eq('blocker_id',ME.id).eq('blocked_id',aid)
+                 : await SBC.from('blocks').insert({blocker_id:ME.id, blocked_id:aid});
+    if(r.error) throw r.error;
+  }catch(e){
+    console.warn('[offlog] 차단 저장 실패', e);
+    if(e&&(e.code==='PGRST205'||e.code==='42P01')){ SAFETYTABLE=false; return; }
+    offToast('차단이 서버에 저장되지 않았어요 — 이 기기에서만 적용됩니다');
+  }
 }
 
 /* 비로그인 안내 — 조용히 실패시키지 않고 알려준다 */
@@ -2343,6 +2524,8 @@ let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:
   authMode:'login', /* 로그인 화면 모드 — login | signup */
   editProf:null, /* 프로필 수정 시트 (열려 있으면 {name,role,bio,ig,yt,tt}) */
   myMenu:false,  /* 마이 헤더 ⋯ 메뉴 (공유·로그아웃) */
+  report:null,   /* 신고 시트 {kind,id,aid,nm} (Guideline 1.2) */
+  terms:false,   /* 이용약관 전문 시트 */
   relNew:null,   /* '새 릴리스' 모드일 때 임시로 만든 work id (취소 시 정리) */
   relForm:{title:'', audio:null, art:null, inst:false, lyr:'', comp:'PEEK', lyri:'', arr:'', prod:'', date:'', event:''}};
 
@@ -2561,6 +2744,7 @@ function buildFeed(){
   const seen=new Set();
   const key=x=>String(x.dt||'')+' '+String(x.at||'');
   return [...trend, ...foryou, ...follow]
+    .filter(x=>!isHiddenItem(x))   /* 차단한 사람·신고된 콘텐츠는 피드에서 즉시 사라진다 (Guideline 1.2) */
     .filter(x=>{ const k=x.tid||((x.who||'')+'|'+(x.nm||x.cap||'')+'|'+(x.at||'')); if(seen.has(k))return false; seen.add(k); return true; })
     .sort((a,b)=>key(b).localeCompare(key(a)));
 }
@@ -3618,6 +3802,8 @@ function submitCompose(){
   pushLog(txt, m);
 }
 function pushLog(txt, m, audioUrl){
+  /* 부적절한 표현은 올라가기 전에 막는다 (Guideline 1.2 — 필터링 수단) */
+  if(badWordIn(txt)){ offToast('부적절한 표현이 있어 올릴 수 없어요 — 문구를 고쳐주세요'); return; }
   const d=new Date(), p=x=>String(x).padStart(2,'0'), now=p(d.getHours())+':'+p(d.getMinutes());
   const dt=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()), id='my_'+d.getTime();
   let log;
@@ -3995,7 +4181,7 @@ function render(){
   _lastSheet=_sheetKey;
   /* 시트·오버레이가 떠 있으면 뒤 화면 스크롤을 잠근다 — 안 그러면 시트를 만질 때 배경이 같이 밀린다 */
   const _scr=document.getElementById('screen');
-  if(_scr) _scr.classList.toggle('locked', !!(_sheetKey || S.compose || S.logMenu || S.myMenu || S.auth || S.saveTrack || S.cam || S.editProf || S.newwork || S.logStats || S.storyIdx!==null));
+  if(_scr) _scr.classList.toggle('locked', !!(_sheetKey || S.compose || S.logMenu || S.myMenu || S.auth || S.saveTrack || S.report || S.cam || S.editProf || S.newwork || S.logStats || S.storyIdx!==null));
   [...document.querySelectorAll('#nav button[data-v]')].forEach(b=>
     b.classList.toggle('on', b.dataset.v===S.view || (S.view==='list'&&b.dataset.v==='lists') || (S.view==='room'&&b.dataset.v==='home')));
   const npf=document.getElementById('navprofile');
@@ -4009,7 +4195,8 @@ function render(){
     if(el)el.scrollIntoView({block:'start'});
   }
   document.getElementById('storyview').innerHTML = S.storyIdx!==null ? storyViewer() : '';
-  document.getElementById('composeview').innerHTML = S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : (S.auth ? authSheet() : (S.saveTrack ? saveSheet() : (S.logMenu ? logMenuSheet() : (S.myMenu ? myMenuSheet() : '')))));
+  /* 약관은 로그인 시트·잠금화면 위에 떠야 하므로 가장 앞에서 판정한다 */
+  document.getElementById('composeview').innerHTML = S.terms ? termsSheet() : (S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : (S.auth ? authSheet() : (S.saveTrack ? saveSheet() : (S.report ? reportSheet() : (S.logMenu ? logMenuSheet() : (S.myMenu ? myMenuSheet() : '')))))));
   /* 촬영 화면 + 하단 camera|logs 토글 상태 */
   const _cv=document.getElementById('camview');
   if(_cv) _cv.innerHTML = S.cam ? camView() : '';
@@ -4075,8 +4262,23 @@ function bind(){
     if(++_diagTaps>=5){ _diagTaps=0; showDiag(); }
   };
   document.querySelectorAll('.locklogo, .brand').forEach(el=>{ el.onclick=_diagTap; });
-  const aa=document.getElementById('authapple'); if(aa)aa.onclick=loginApple;
-  const ag=document.getElementById('authgoogle'); if(ag)ag.onclick=loginGoogle;
+  /* 이용약관 — 잠금화면·로그인 시트 어디서나 열 수 있어야 한다 */
+  const opt=document.getElementById('opnterms'); if(opt)opt.onclick=()=>{ S.terms=true; render(); };
+  if(S.terms){
+    const tmbd=document.getElementById('tmbd'), tmx=document.getElementById('tmx');
+    const tmclose=()=>{ S.terms=false; render(); };
+    if(tmbd)tmbd.onclick=e=>{ if(e.target===tmbd)tmclose(); };
+    if(tmx)tmx.onclick=tmclose;
+  }
+  /* 소셜 가입도 약관 동의가 먼저다 (가입 모드일 때만 검사 — 로그인은 기존 사용자) */
+  const _agreeOk=()=>{
+    if(S.authMode!=='signup') return true;
+    const ag=document.getElementById('authagree');
+    if(ag && ag.checked) return true;
+    offToast('이용약관에 동의해야 가입할 수 있어요'); return false;
+  };
+  const aa=document.getElementById('authapple'); if(aa)aa.onclick=()=>{ if(_agreeOk()) loginApple(); };
+  const ag=document.getElementById('authgoogle'); if(ag)ag.onclick=()=>{ if(_agreeOk()) loginGoogle(); };
   const asub=document.getElementById('authsubmit');
   if(asub)asub.onclick=()=>{
     const em=((document.getElementById('authemail')||{}).value||'').trim();
@@ -4085,6 +4287,9 @@ function bind(){
     if(S.authMode==='signup'){
       const nm=((document.getElementById('authname')||{}).value||'').trim();
       if(!nm){ offToast('이름(아티스트명)을 입력해 주세요'); return; }
+      /* 앱스토어 Guideline 1.2 — 가입 전에 무관용 원칙 약관에 동의받아야 한다 */
+      const ag=document.getElementById('authagree');
+      if(!ag||!ag.checked){ offToast('이용약관에 동의해야 가입할 수 있어요'); return; }
       signupEmail(em, pw, nm);
     } else loginEmail(em, pw);
   };
@@ -4699,7 +4904,17 @@ function bind(){
         offToast(v==='public'?'공개로 바꿨어요 — 팔로워 피드에 보여요':'비공개로 바꿨어요');
       }catch(e){ l.vis=prev; studioSave(); render(); console.warn('[offlog] 공개범위 변경 실패', e); offToast('변경 실패 — 잠시 후 다시'); }
     });
-    document.querySelectorAll('[data-omenu]').forEach(b=>b.onclick=()=>{ const act=b.dataset.omenu, M=S.logMenu; if(act==='save'){ S.saveTrack={tid:M.id, nm:M.nm, by:M.by, audio:M.audio}; S.logMenu=null; render(); } else if(act==='follow'){ const aid=M.aid; S.logMenu=null; if(!ME){ render(); needLogin(); return; } const willFollow=!MYFOLLOWS.has(aid); (willFollow?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(ok) offToast(willFollow?'팔로우했어요':'팔로우 해제했어요'); render(); }); render(); } else { S.logMenu=null; render(); offShareTrack(M); } });
+    document.querySelectorAll('[data-omenu]').forEach(b=>b.onclick=()=>{ const act=b.dataset.omenu, M=S.logMenu; if(act==='save'){ S.saveTrack={tid:M.id, nm:M.nm, by:M.by, audio:M.audio}; S.logMenu=null; render(); } else if(act==='follow'){ const aid=M.aid; S.logMenu=null; if(!ME){ render(); needLogin(); return; } const willFollow=!MYFOLLOWS.has(aid); (willFollow?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(ok) offToast(willFollow?'팔로우했어요':'팔로우 해제했어요'); render(); }); render(); } else if(act==='report'){ S.logMenu=null; S.report={kind:'track', id:M.id, aid:M.aid||null, nm:M.nm||''}; render(); }
+      else if(act==='block'){ toggleBlock(M.aid, M.by); }
+      else { S.logMenu=null; render(); offShareTrack(M); } });
+  }
+  /* 신고 시트 — 사유를 고르면 접수되고 내 화면에서 바로 사라진다 */
+  if(S.report){
+    const rpbd=document.getElementById('rpbd'), rpx=document.getElementById('rpx');
+    const rpclose=()=>{ S.report=null; render(); };
+    if(rpbd)rpbd.onclick=e=>{ if(e.target===rpbd)rpclose(); };
+    if(rpx)rpx.onclick=rpclose;
+    document.querySelectorAll('[data-rpreason]').forEach(b=>b.onclick=()=>submitReport(b.dataset.rpreason));
   }
   const _addph=document.getElementById('addphoto');
   if(_addph && !_addph.__b){ _addph.__b=1; _addph.onchange=()=>{ const f=_addph.files&&_addph.files[0]; if(f&&_attachTo){ attachMedia(_attachTo,'ph',f); } _attachTo=null; _addph.value=''; }; }
@@ -4993,6 +5208,8 @@ setInterval(()=>{
   }catch(e){ console.warn('[offlog] real data load failed', e); DATAREADY=true; }   /* 실패해도 스플래시는 걷는다(무한 로딩 방지) */
   try{ studioMerge(); }catch(e){}     /* 내가 만든 작품/플레이리스트/로그 복원 */
   try{ wireAuth(); }catch(e){}        /* 로그인 상태 변화 구독 (OAuth 복귀·로그아웃) */
+  /* 여러 명이 신고해 자동 숨김된 콘텐츠 목록 — 로그인 전에도 적용돼야 한다 (Guideline 1.2) */
+  try{ loadHidden().then(function(){ try{render()}catch(_){} }); }catch(e){}
   try{ renewHome(); }catch(e){}
   render();
 })();
