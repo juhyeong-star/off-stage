@@ -213,6 +213,12 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .aclogout{width:100%;margin-top:22px;background:transparent;border:1px solid rgba(255,107,107,.35);color:#ff6b6b;
   border-radius:14px;padding:14px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;min-height:50px}
 .aclogout:active{transform:scale(.98)}
+/* 계정 삭제 — 되돌릴 수 없는 동작이라 로그아웃보다 약하게 보이되 찾을 수는 있게 */
+.acdel{width:100%;margin-top:10px;background:none;border:0;color:rgba(255,107,107,.75);
+  border-radius:14px;padding:12px;font-size:13px;font-weight:700;font-family:inherit;
+  cursor:pointer;min-height:44px;text-decoration:underline;text-underline-offset:3px}
+.acdel:active{opacity:.6}
+.acdelnote{text-align:center;font-size:11px;color:var(--muted);line-height:1.6;margin:2px 8px 0}
 /* 마이 ⋯ 계정 메뉴 항목 */
 .mmi{display:flex;align-items:center;gap:13px;width:100%;background:var(--card);border:1px solid var(--line);
   border-radius:14px;padding:14px;margin-top:9px;color:var(--txt);font-family:inherit;text-align:left;cursor:pointer}
@@ -1530,6 +1536,36 @@ function _clearStoredSession(){
 }
 async function logout(){ if(!SBC)return; try{ await SBC.auth.signOut(); }catch(e){ console.warn('[offlog] signOut 실패 — 로컬 세션은 지운다', e); } _clearStoredSession(); ME=null; MYFOLLOWS.clear(); MYFOLLOWERS.clear(); for(var k in MYREACT)delete MYREACT[k]; STREAM=STREAM.filter(function(l){return !(l&&(l.sid||String(l.id).indexOf('sv_')===0));}); S.view='home'; render(); offToast('로그아웃됐어요'); }
 
+/* 계정 삭제 — 앱스토어 5.1.1(v). 가입할 수 있는 앱은 앱 안에서 계정을 지울 수 있어야 하고,
+   '비활성화'가 아니라 데이터가 실제로 지워져야 한다.
+   서버의 delete_my_account() 가 본인 데이터를 전부 지운다(supabase/delete-account.sql 실행 필요).
+   되돌릴 수 없는 동작이라 두 번 확인한다. */
+async function deleteAccount(){
+  if(!SBC||!ME) return;
+  if(!await offConfirm('계정을 삭제하면 올린 로그·곡·사진이 모두 사라집니다.\n되돌릴 수 없어요. 계속할까요?','계속')) return;
+  if(!await offConfirm('정말 삭제할까요?\n이 작업은 취소할 수 없습니다.','삭제')) return;
+  offToast('계정을 삭제하는 중…');
+  try{
+    const r=await SBC.rpc('delete_my_account');
+    if(r && r.error) throw r.error;
+    /* 서버에서 계정이 사라졌으니 이 기기의 흔적도 지운다 (studioKey 는 ME.id 를 쓰므로 먼저) */
+    try{ localStorage.removeItem(studioKey()); }catch(_){}
+    try{ await SBC.auth.signOut(); }catch(_){}
+    _clearStoredSession();
+    ME=null; MYFOLLOWS.clear(); MYFOLLOWERS.clear();
+    for(var k in MYREACT) delete MYREACT[k];
+    STREAM=STREAM.filter(function(l){ return !(l && (l.sid || String(l.id).indexOf('my_')===0)); });
+    S.view='home'; render();
+    offToast('계정이 삭제됐어요');
+  }catch(e){
+    console.warn('[offlog] 계정 삭제 실패', e);
+    const m=String((e&&e.message)||'')+' '+String((e&&e.code)||'');
+    if(/delete_my_account|PGRST202|does not exist/i.test(m))
+      offToast('삭제 기능이 서버에 아직 없어요 — supabase/delete-account.sql 을 실행해 주세요');
+    else offToast('계정 삭제에 실패했어요 — 잠시 후 다시 시도해 주세요');
+  }
+}
+
 /* ── 실제 프로필 로드 + 캐시 (공개 읽기) ── */
 let PROFCACHE={};
 /* 실제 팔로워/팔로잉 수 — follows(follower_id, followed_id) 에서 집계. 못 세면 null(가짜 숫자 금지) */
@@ -1715,7 +1751,7 @@ function offConfirm(msg, okLabel){
    앱 안에서 UA·저장소·세션 상태를 직접 봐야 해서 넣었다. 일반 사용자에겐 보이지 않는다. */
 /* 배포 표시 — 앱(웹뷰)이 최신 코드를 받았는지 진단 화면에서 바로 확인하려고 둔다.
    ⚠️ 배포할 때마다 이 값을 갱신할 것. 안 그러면 "고쳤는데 안 바뀐다"를 판별할 수 없다. */
-const BUILD='2026-07-30 #7 · 사진 압축 + 전송 재시도 + 실패분 자동 재전송';
+const BUILD='2026-07-30 #8 · 계정 탈퇴 기능 (앱스토어 5.1.1(v))';
 let _diagTaps=0, _diagTimer=null;
 /* env(safe-area-inset-*) 의 실제 픽셀값 — 앱에서만 0이 아니다. 재는 방법이 이것뿐이다(JS로 직접 못 읽음) */
 function _envInset(side){
@@ -3039,6 +3075,9 @@ function accountView(){
     ${snsRow('Instagram', sns.ig, '@')}${snsRow('YouTube', sns.yt)}${snsRow('TikTok', sns.tt, '@')}
   </div>`:''}
   <button class="aclogout" id="aclogout">로그아웃</button>
+  <!-- 앱스토어 5.1.1(v) — 가입할 수 있는 앱은 앱 안에서 계정을 지울 수 있어야 한다 -->
+  <button class="acdel" id="acdel">계정 삭제</button>
+  <p class="acdelnote">계정을 삭제하면 올린 로그·곡·사진이 모두 사라지고 되돌릴 수 없어요.</p>
   <div style="height:24px"></div>
   ${S.editProf?profEditSheet():''}`;
 }
@@ -4060,6 +4099,7 @@ function bind(){
   const plgn=document.getElementById('profloginbtn'); if(plgn)plgn.onclick=()=>{ S.auth=true; render(); };
   /* 내 정보 페이지 로그아웃 */
   const aclo=document.getElementById('aclogout'); if(aclo)aclo.onclick=async ()=>{ if(await offConfirm('로그아웃할까요?','로그아웃')){ S.view='mine'; logout(); } };
+  const acdl=document.getElementById('acdel'); if(acdl)acdl.onclick=deleteAccount;
   /* 프로필 수정 열기 */
   const aced=document.getElementById('acedit');
   if(aced)aced.onclick=()=>{ const s=(ME&&ME.sns)||{};
