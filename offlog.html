@@ -1218,6 +1218,14 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 /* 새 작품 만들기 버튼 (마이 WORKS) */
 .newwork{display:block;width:100%;margin:0 0 12px;background:transparent;border:1.5px dashed var(--line);color:var(--txt);border-radius:16px;padding:15px;font-size:14px;font-weight:700;min-height:48px}
 .newwork:hover{border-color:var(--mint);color:var(--mint)}
+/* 음원 발매 / 공연 지원 — 나란한 2박스 (마이 MUSIC·CONCERT 탭) */
+.newwork2{display:flex;gap:9px;margin:0 0 12px}
+.nw2{flex:1;background:transparent;border:1.5px dashed var(--line);color:var(--txt);border-radius:16px;
+  padding:14px 6px;font-size:12.5px;font-weight:700;min-height:64px;text-align:center;cursor:pointer;font-family:inherit;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.nw2 em{font-style:normal;font-size:20px;line-height:1}
+.nw2.music:hover{border-color:var(--mint);color:var(--mint)}
+.nw2.perf:hover{border-color:var(--coral);color:var(--coral)}
 /* 앨범 정보 (Work 상세) */
 .albuminfo{margin:14px 0 4px;display:flex;flex-direction:column;gap:12px}
 .ai-sec{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
@@ -1629,6 +1637,7 @@ function _clearStoredSession(){
 function _clearUserCaches(){
   MYBLOCKS.clear(); MYREPORTS.clear();
   for(var b in BLOCKEDNAMES) delete BLOCKEDNAMES[b];
+  MYPERF=null; MYPERF_UID=null;   /* 내 공연 지원 내역도 계정 전환 시 같이 비운다 */
 }
 async function logout(){ if(!SBC)return; try{ await SBC.auth.signOut(); }catch(e){ console.warn('[offlog] signOut 실패 — 로컬 세션은 지운다', e); } _clearStoredSession(); _clearUserCaches(); ME=null; MYFOLLOWS.clear(); MYFOLLOWERS.clear(); for(var k in MYREACT)delete MYREACT[k]; STREAM=STREAM.filter(function(l){return !(l&&(l.sid||String(l.id).indexOf('sv_')===0));}); S.view='home'; render(); offToast('로그아웃됐어요'); }
 
@@ -3148,12 +3157,48 @@ function mine(){
   const artistLog   = rpTracks.length ? rpTracks.map(alogCard).join('') : _emptyOrLoad;
   const artistWorks = rpTracks.length ? rpTracks.map(atrackCard).join('') : _emptyOrLoad;
 
+  /* 음원 발매 / 공연 지원 — 나란한 2박스. MUSIC·CONCERT 탭 둘 다 위에 얹는다 */
+  const applyBoxRow = me ? `<div class="newwork2">
+      <button class="nw2 music" id="newworkbtn"><em>＋</em>음원 발매</button>
+      <button class="nw2 perf" id="perfapplybtn"><em>＋</em>공연 지원</button></div>` : '';
+
   /* 내 작품(스튜디오) */
-  const myworks=(me?`<button class="newwork" id="newworkbtn">＋ 음원 발매</button>`:'')+WORKS.map(w=>`<div class="workrow">
+  const myworks=applyBoxRow+WORKS.map(w=>`<div class="workrow">
     <div class="wthumb"><div class="bgimg" style="position:absolute;inset:0;background:${w.cover?`center/cover no-repeat url(${w.cover})`:w.bg}"></div>
       <button class="wplay" aria-label="재생">▶</button></div>
     <div class="winfo"><b>${esc(w.nm)}</b><small>${w.mine?(w.pending?'발매 예약 '+w.date:(w.date&&w.date!=='작업 중'?'발매 '+w.date:'작업 중')):(w.logs+' Logs · '+w.span)}</small></div>
     <button class="openst" data-work="${w.id}">${w.mine?'열기':'History'} ›</button></div>`).join('');
+
+  /* 내 공연 지원 내역 — perf_entries에서 author_id=나 로 조회. 곡 카드와 같은 crow2/cex 문법 재사용 */
+  const myRoundName=rid=>{ const r=ROUNDS.find(x=>x.id===rid); return r?r.nm:rid; };
+  const myconcert = !ME
+    ? applyBoxRow+`<div class="pknote" style="padding:26px 0">로그인하면 내 공연 지원 내역을 볼 수 있어요</div>`
+    : !PERFTABLE
+      ? applyBoxRow+`<div class="pknote" style="padding:26px 0">공연 지원 기능을 준비 중이에요</div>`
+      : MYPERF===null
+        ? applyBoxRow+`<div class="pknote" style="padding:26px 0">불러오는 중…</div>`
+        : !MYPERF.length
+          ? applyBoxRow+`<div class="pknote" style="padding:26px 0">아직 지원한 공연이 없어요</div>`
+          : applyBoxRow+MYPERF.map(e=>{
+            const vid=parsePerfVideo(e.video_url), expanded=S.perfExpand===e.id;
+            return `<div class="crow2" data-pexpand="${e.id}">
+              <div class="chd">
+                <span class="cav">${avatarEl('','coral',34,e.team_name)}</span>
+                <span class="cinfo">
+                  <span class="cttl"><b>${esc(e.song_title)}</b>${e.hidden?'<i class="mytag" style="background:var(--card2);color:var(--muted)">비공개 처리됨</i>':''}</span>
+                  <small>${esc(e.team_name)} · ${esc(myRoundName(e.round_id))} · ${e.is_cover?'커버':'오리지널'}</small>
+                </span>
+                <span class="cv">${e.votes_count||0}표</span></div>
+              ${expanded?`<div class="cex">
+                ${vid?`<iframe class="cvidframe" src="${vid.embed}" title="${esc(e.team_name)} 영상" loading="lazy"
+                    sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+                    allow="encrypted-media; picture-in-picture" allowfullscreen
+                    referrerpolicy="strict-origin-when-cross-origin"></iframe>`
+                  :`<a class="cgo" href="${safeUrl(e.video_url)}" target="_blank" rel="noopener noreferrer">원본 링크에서 영상 보기 ↗</a>`}
+                <div class="cexh" style="margin-top:8px">참여자 · ${esc(e.members)}</div>
+              </div>`:''}
+            </div>`;
+          }).join('');
 
   /* 녹음 = 즉석. 음원 = 믹스다운 파일 업로드 (Demo 탭이 하던 일) */
   const tools=[['💬','생각'],['🖼','사진'],['🎤','음성'],['📋','메모'],['🎙','녹음'],['♪','음원']];
@@ -3215,8 +3260,9 @@ function mine(){
   ${me?`<button class="myplrow" data-v="lists">🎵 내 플레이리스트<span>›</span></button>`:''}
   <div class="seg">
     <button class="${S.seg==='log'?'on':''}" data-seg="log">LOG</button>
-    <button class="${S.seg==='works'?'on':''}" data-seg="works">MUSIC</button></div>
-  ${me ? (S.seg==='works'?myworks:logs) : (S.seg==='works'?artistWorks:artistLog)}
+    <button class="${S.seg==='works'?'on':''}" data-seg="works">MUSIC</button>
+    ${me?`<button class="${S.seg==='concert'?'on':''}" data-seg="concert">CONCERT</button>`:''}</div>
+  ${me ? (S.seg==='works'?myworks:S.seg==='concert'?myconcert:logs) : (S.seg==='works'?artistWorks:artistLog)}
   ${me&&S.editProf?profEditSheet():''}
   ${me&&S.logStats?logStatsSheet():''}
   <div style="height:14px"></div>`;
@@ -3534,19 +3580,16 @@ const ARTLOGS={
 const artOf=d=>(d.t[1]||d.t[0]).replace(/^#/,'');
 
 /* ── 공연 신청 — 영상 URL 파서 + 서버 로드 ──
-   유튜브(watch/youtu.be/shorts)와 구글드라이브(file/d/.../view, open?id=) 만 지원.
+   유튜브(watch/youtu.be/shorts)만 지원 — 공개 또는 일부공개(링크 공유) 모두 이 URL 형태로 접근 가능.
    id는 [a-zA-Z0-9_-]+ 로만 캡처되므로 속성 이탈 문자가 섞일 수 없고,
    embed URL은 이 안전한 값으로 새로 조립한다 — 원본 raw 문자열을 그대로 iframe에 넣지 않는다. */
 function parsePerfVideo(raw){
   const u=String(raw==null?'':raw).trim();
   if(!/^https?:\/\//i.test(u)) return null;
-  let m=u.match(/^https?:\/\/(?:www\.)?youtube\.com\/watch\?(?:[^\s#]*&)?v=([a-zA-Z0-9_-]{11})/i)
+  const m=u.match(/^https?:\/\/(?:www\.)?youtube\.com\/watch\?(?:[^\s#]*&)?v=([a-zA-Z0-9_-]{11})/i)
      || u.match(/^https?:\/\/youtu\.be\/([a-zA-Z0-9_-]{11})/i)
      || u.match(/^https?:\/\/(?:www\.)?youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/i);
   if(m) return {kind:'youtube', embed:'https://www.youtube-nocookie.com/embed/'+m[1]};
-  m=u.match(/^https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i)
-    || u.match(/^https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/i);
-  if(m) return {kind:'drive', embed:'https://drive.google.com/file/d/'+m[1]+'/preview'};
   return null;
 }
 let PERFTABLE=true;         /* perf_entries/perf_votes 테이블 사용 가능 여부 (없으면 false로 내려가고 조용히 폴백) */
@@ -3574,6 +3617,25 @@ async function loadPerfEntries(roundId){
       console.info('[offlog] perf_entries 테이블이 없습니다 — supabase/perf-entries.sql 실행 필요'); return; }
     console.warn('[offlog] 공연 신청 목록 로드 실패', e); PERFCACHE[roundId]=false;
   }
+}
+
+/* My 페이지 CONCERT 탭 — 내가 낸 지원서 전체(모든 라운드). null=아직 안 불러옴 */
+let MYPERF=null, MYPERF_UID=null;
+function loadMyPerf(){
+  if(!ME||!SBC||!PERFTABLE) return;
+  if(MYPERF_UID===ME.id) return;   /* 이미 이 유저 걸로 불러왔거나 불러오는 중 */
+  MYPERF_UID=ME.id;
+  SBC.from('perf_entries')
+    .select('id,round_id,team_name,members,song_title,is_cover,style,video_url,votes_count,hidden,created_at')
+    .eq('author_id',ME.id).order('created_at',{ascending:false})
+    .then(({data,error})=>{
+      if(error){
+        MYPERF_UID=null;
+        if(error.code==='PGRST205'||error.code==='42P01'){ PERFTABLE=false; render(); return; }  /* 테이블 준비 전 — CONCERT 탭이 계속 로딩 중으로 멈추지 않게 다시 그린다 */
+        console.warn('[offlog] 내 공연 지원 목록 로드 실패', error); return;
+      }
+      MYPERF=data||[]; render();
+    });
 }
 
 function lists(){
@@ -3605,9 +3667,8 @@ function voteHub(){
       <small>${lb}</small></button>`).join('')}</div>`;
   if(cat==='reco') return bar+recoView();
   const rounds=ROUNDS.filter(r=>r.cat===cat);
-  const applyCta = (cat==='stage' && ROUNDS.some(r=>r.cat==='stage'&&r.type==='open'&&r.entrySrc==='perf'))
-    ? `<button class="cta" id="pfopen" style="margin-bottom:16px">＋ 우리 팀 공연 신청하기</button>` : '';
-  return bar + applyCta + rounds.map(r=>{
+  /* 공연 신청은 My 페이지(＋공연 지원 박스)에서 한다 — 여기는 투표만 */
+  return bar + rounds.map(r=>{
     const max=Math.max(...r.cands.map(x=>x.v))||1;
     const shown=[...r.cands].map((d,i)=>({...d,_i:i})).sort((a,b)=>b.v-a.v).slice(0,20);
     return `<div class="rhead">
@@ -3663,9 +3724,8 @@ function voteHub(){
     ${r.cands.length>20?`<div class="showhint">상위 20명까지만 · 예선은 각자 Work에서</div>`:''}`;
   }).join('<div style="height:10px"></div>')
   + (cat==='stage'
-     ? `<div class="showhint">카드를 누르면 영상을 볼 수 있어요 · 발매곡으로 참여하려면 내 작품 안 [무대에 내기]</div>`
-     : `<div class="showhint">카드를 누르면 그 아티스트의 log로 들어갑니다 · 신청은 내 작품 안 [VOTE 신청하기]</div>`)
-  + (S.perfApply?perfApplySheet():'');
+     ? `<div class="showhint">카드를 누르면 영상을 볼 수 있어요 · 공연 지원은 My 페이지 CONCERT 탭에서</div>`
+     : `<div class="showhint">카드를 누르면 그 아티스트의 log로 들어갑니다 · 신청은 내 작품 안 [VOTE 신청하기]</div>`);
 }
 
 /* ⬡ 추천 — 전 라운드 합산, 지금 가장 사랑받는 아티스트 */
@@ -3763,12 +3823,12 @@ function perfMissing(){
   const P=S.perfForm||{}, m=[];
   if(!P.round) m.push('라운드 선택');
   if(!P.team||!P.team.trim()) m.push('팀명');
-  if(!P.members||!P.members.trim()) m.push('참가자');
+  if(!P.members||!P.members.trim()) m.push('참여자 이름');
   if(!P.contact||!P.contact.trim()) m.push('연락처');
   if(!P.song||!P.song.trim()) m.push('곡명');
   if(!P.style||!P.style.trim()) m.push('음악 스타일');
   if(!P.video||!P.video.trim()) m.push('영상 URL');
-  else if(!parsePerfVideo(P.video)) m.push('영상 URL(유튜브·구글드라이브만 지원)');
+  else if(!parsePerfVideo(P.video)) m.push('영상 URL(유튜브 링크만 지원)');
   return m;
 }
 function perfApplySheet(){
@@ -3787,12 +3847,12 @@ function perfApplySheet(){
     <div class="rsec">팀명</div>
     <input class="cs-name" id="pfteam" value="${esc(P.team||'')}" placeholder="팀 또는 아티스트명">
 
-    <div class="rsec">참가자 정보</div>
-    <div class="crow"><span class="clab">참가자</span>
+    <div class="rsec">참여자 정보</div>
+    <div class="crow"><span class="clab">참여자</span>
       <input class="cin" id="pfmembers" value="${esc(P.members||'')}" placeholder="이름 (쉼표로 구분)"></div>
     <div class="crow"><span class="clab">연락처</span>
-      <input class="cin" id="pfcontact" value="${esc(P.contact||'')}" placeholder="전화번호 또는 이메일"></div>
-    <p class="rulen" style="text-align:left;margin:0 4px 4px;color:var(--muted);font-size:11px">연락처는 투표 화면에 공개되지 않아요</p>
+      <input class="cin" id="pfcontact" value="${esc(P.contact||'')}" placeholder="합격 시 연락드릴 전화번호 또는 이메일"></div>
+    <p class="rulen" style="text-align:left;margin:0 4px 4px;color:var(--muted);font-size:11px">합격 시에만 연락드려요 — 투표 화면에는 공개되지 않아요</p>
 
     <div class="rsec">곡명</div>
     <input class="cs-name" id="pfsong" value="${esc(P.song||'')}" placeholder="곡 제목">
@@ -3803,8 +3863,9 @@ function perfApplySheet(){
     <div class="rsec">음악 스타일</div>
     <div class="crow"><input class="cin" id="pfstyle" value="${esc(P.style||'')}" placeholder="예: 인디팝, 어쿠스틱, 밴드"></div>
 
-    <div class="rsec">영상 URL <em class="opt">유튜브 또는 구글 드라이브</em></div>
+    <div class="rsec">영상 URL <em class="opt">유튜브만 지원</em></div>
     <div class="crow"><input class="cin" id="pfvideo" value="${esc(P.video||'')}" placeholder="https://youtube.com/watch?v=..."></div>
+    <p class="rulen" style="text-align:left;margin:0 4px 4px;color:var(--muted);font-size:11px">공개 또는 일부공개(링크 있는 사람) 둘 다 가능해요</p>
 
     <button class="cta" id="pfdone" ${miss.length?'disabled':''}>신청하기</button>
     ${miss.length?`<div class="missn">${miss.join(' · ')} 필요</div>`:''}
@@ -4426,7 +4487,7 @@ function render(){
   _lastSheet=_sheetKey;
   /* 시트·오버레이가 떠 있으면 뒤 화면 스크롤을 잠근다 — 안 그러면 시트를 만질 때 배경이 같이 밀린다 */
   const _scr=document.getElementById('screen');
-  if(_scr) _scr.classList.toggle('locked', !!(_sheetKey || S.compose || S.logMenu || S.myMenu || S.auth || S.saveTrack || S.report || S.cam || S.editProf || S.newwork || S.logStats || S.storyIdx!==null));
+  if(_scr) _scr.classList.toggle('locked', !!(_sheetKey || S.compose || S.logMenu || S.myMenu || S.auth || S.saveTrack || S.report || S.cam || S.editProf || S.newwork || S.logStats || S.perfApply || S.storyIdx!==null));
   [...document.querySelectorAll('#nav button[data-v]')].forEach(b=>
     b.classList.toggle('on', b.dataset.v===S.view || (S.view==='list'&&b.dataset.v==='lists') || (S.view==='room'&&b.dataset.v==='home')));
   const npf=document.getElementById('navprofile');
@@ -4441,7 +4502,7 @@ function render(){
   }
   document.getElementById('storyview').innerHTML = S.storyIdx!==null ? storyViewer() : '';
   /* 약관은 로그인 시트·잠금화면 위에 떠야 하므로 가장 앞에서 판정한다 */
-  document.getElementById('composeview').innerHTML = S.terms ? termsSheet() : (S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : (S.auth ? authSheet() : (S.saveTrack ? saveSheet() : (S.report ? reportSheet() : (S.logMenu ? logMenuSheet() : (S.myMenu ? myMenuSheet() : '')))))));
+  document.getElementById('composeview').innerHTML = S.terms ? termsSheet() : (S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : (S.auth ? authSheet() : (S.saveTrack ? saveSheet() : (S.report ? reportSheet() : (S.logMenu ? logMenuSheet() : (S.myMenu ? myMenuSheet() : (S.perfApply ? perfApplySheet() : ''))))))));
   /* 촬영 화면 + 하단 camera|logs 토글 상태 */
   const _cv=document.getElementById('camview');
   if(_cv) _cv.innerHTML = S.cam ? camView() : '';
@@ -4830,8 +4891,9 @@ function bind(){
   }
   document.querySelectorAll('[data-vcat]').forEach(b=>b.onclick=()=>{S.vcat=b.dataset.vcat;render()});
   ROUNDS.forEach(r=>{ if(r.entrySrc==='perf') loadPerfEntries(r.id); });   /* 최초 1회만 — PERFCACHE가 막는다 */
-  /* 공연 신청 — 열기 / 닫기 / 폼 입력 / 제출 */
-  const pfo=document.getElementById('pfopen');
+  if(S.view==='mine'&&S.profile==='me') loadMyPerf();                     /* CONCERT 탭용 — 최초 1회만 */
+  /* 공연 신청 — My 페이지의 ＋공연 지원 박스에서 연다. 열기 / 닫기 / 폼 입력 / 제출 */
+  const pfo=document.getElementById('perfapplybtn');
   if(pfo)pfo.onclick=()=>{
     if(!ME)return needLogin();
     const first=ROUNDS.find(r=>r.cat==='stage'&&r.type==='open'&&r.entrySrc==='perf');
@@ -4865,9 +4927,9 @@ function bind(){
         contact:P.contact.trim(), song_title:P.song.trim(), is_cover:!!P.isCover,
         style:P.style.trim(), video_url:P.video.trim()});
       if(error)throw error;
-      S.perfApply=false; S.perfForm=null; PERFCACHE[P.round]=false;
+      S.perfApply=false; S.perfForm=null; PERFCACHE[P.round]=false; MYPERF_UID=null;
       render(); offToast('신청됐어요 — 투표 목록에 올라갑니다');
-      loadPerfEntries(P.round);
+      loadPerfEntries(P.round); loadMyPerf();
     }catch(e){
       pfd.disabled=false; pfd.textContent='신청하기';
       if(e&&e.code==='23505')return offToast('이미 이 라운드에 신청했어요');
