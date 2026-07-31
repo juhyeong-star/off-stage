@@ -1556,7 +1556,13 @@ function wireAuth(){
 async function loginOAuth(provider, label){
   if(!SBC)return;
   try{
-    const {error}=await SBC.auth.signInWithOAuth({provider:provider, options:{redirectTo:location.href}});
+    const opts={redirectTo:location.href};
+    /* 구글은 한 번 로그인하면 그 뒤로는 계정 선택 없이 같은 계정으로 바로 들어간다.
+       우리 앱에서 로그아웃해도 구글 쪽 세션은 남아 있어서, 다른 계정으로 바꿀 수가 없었고
+       "로그아웃했는데 또 그 계정으로 로그인된다"로 보였다.
+       select_account 를 주면 매번 계정 선택 화면이 뜬다. */
+    if(provider==='google') opts.queryParams={prompt:'select_account'};
+    const {error}=await SBC.auth.signInWithOAuth({provider:provider, options:opts});
     if(error)throw error;
   }catch(e){
     console.warn('[offlog] '+provider+' 로그인 실패', e);
@@ -1614,7 +1620,13 @@ function _clearStoredSession(){
   try{ for(var i=localStorage.length-1;i>=0;i--){ var k=localStorage.key(i);
     if(k && /^sb-.*-auth-token/.test(k)) localStorage.removeItem(k); } }catch(_){}
 }
-async function logout(){ if(!SBC)return; try{ await SBC.auth.signOut(); }catch(e){ console.warn('[offlog] signOut 실패 — 로컬 세션은 지운다', e); } _clearStoredSession(); ME=null; MYFOLLOWS.clear(); MYFOLLOWERS.clear(); for(var k in MYREACT)delete MYREACT[k]; STREAM=STREAM.filter(function(l){return !(l&&(l.sid||String(l.id).indexOf('sv_')===0));}); S.view='home'; render(); offToast('로그아웃됐어요'); }
+/* 계정을 바꿀 때 앞사람 것이 남지 않게 — 차단·신고 목록은 사람마다 다르다.
+   loadMe 가 다시 채우지만, 그 사이에 앞사람 기준으로 글이 가려지면 안 된다. */
+function _clearUserCaches(){
+  MYBLOCKS.clear(); MYREPORTS.clear();
+  for(var b in BLOCKEDNAMES) delete BLOCKEDNAMES[b];
+}
+async function logout(){ if(!SBC)return; try{ await SBC.auth.signOut(); }catch(e){ console.warn('[offlog] signOut 실패 — 로컬 세션은 지운다', e); } _clearStoredSession(); _clearUserCaches(); ME=null; MYFOLLOWS.clear(); MYFOLLOWERS.clear(); for(var k in MYREACT)delete MYREACT[k]; STREAM=STREAM.filter(function(l){return !(l&&(l.sid||String(l.id).indexOf('sv_')===0));}); S.view='home'; render(); offToast('로그아웃됐어요'); }
 
 /* 계정 삭제 — 앱스토어 5.1.1(v). 가입할 수 있는 앱은 앱 안에서 계정을 지울 수 있어야 하고,
    '비활성화'가 아니라 데이터가 실제로 지워져야 한다.
@@ -1631,7 +1643,7 @@ async function deleteAccount(){
     /* 서버에서 계정이 사라졌으니 이 기기의 흔적도 지운다 (studioKey 는 ME.id 를 쓰므로 먼저) */
     try{ localStorage.removeItem(studioKey()); }catch(_){}
     try{ await SBC.auth.signOut(); }catch(_){}
-    _clearStoredSession();
+    _clearStoredSession(); _clearUserCaches();
     ME=null; MYFOLLOWS.clear(); MYFOLLOWERS.clear();
     for(var k in MYREACT) delete MYREACT[k];
     STREAM=STREAM.filter(function(l){ return !(l && (l.sid || String(l.id).indexOf('my_')===0)); });
@@ -1841,7 +1853,7 @@ function offConfirm(msg, okLabel){
    앱 안에서 UA·저장소·세션 상태를 직접 봐야 해서 넣었다. 일반 사용자에겐 보이지 않는다. */
 /* 배포 표시 — 앱(웹뷰)이 최신 코드를 받았는지 진단 화면에서 바로 확인하려고 둔다.
    ⚠️ 배포할 때마다 이 값을 갱신할 것. 안 그러면 "고쳤는데 안 바뀐다"를 판별할 수 없다. */
-const BUILD='2026-07-30 #10 · 차단 해제 목록 + 프로필에서 신고·차단';
+const BUILD='2026-07-30 #11 · 구글 계정 선택 + 로그아웃 캐시 정리';
 let _diagTaps=0, _diagTimer=null;
 /* env(safe-area-inset-*) 의 실제 픽셀값 — 앱에서만 0이 아니다. 재는 방법이 이것뿐이다(JS로 직접 못 읽음) */
 function _envInset(side){
