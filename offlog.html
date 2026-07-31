@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="OFFLOG — 기록이 무대가 되는 곳">
 <meta name="twitter:description" content="창작 과정을 기록하고, 투표로 무대에 오르고, 음원으로 발매합니다.">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Black+Han+Sans&family=Gaegu:wght@700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Black+Han+Sans&family=Gaegu:wght@700&family=Noto+Sans+KR:wght@400;500;700;900&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#000; --card:#161618; --card2:#1F1F23; --line:#2A2A2E;
@@ -355,6 +355,73 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .rcd{font-family:'Black Han Sans';font-size:11.5px;color:var(--lemon);letter-spacing:.5px}
 .rwhat{font-size:11.5px;color:var(--txt);margin-top:5px;line-height:1.5}
 .rprize{font-size:10.5px;color:var(--mint);margin-top:3px}
+
+/* ══════════════ Y2K 투표 화면 — voteHub() 전용, 다른 화면엔 영향 없음 ══════════════ */
+.y2kvote{--y2kred:#FF2438;--y2kyellow:#FFDD00;--y2kcyan:#3AD6E8;--y2kgreen:#6FCC42;--y2kpaper:#F7F2E3;overflow-x:hidden}
+.y2ktabs{display:flex;gap:8px;margin-bottom:16px}
+.y2ktab{flex:1;background:var(--card);border:1.5px solid var(--line);color:var(--muted);
+  font-family:'Press Start 2P';font-size:9px;padding:11px 4px;cursor:pointer;letter-spacing:.02em}
+.y2ktab.on{background:var(--card);color:var(--y2kred);border:1.5px solid var(--y2kred);
+  box-shadow:0 0 8px rgba(255,36,56,.55),0 0 16px rgba(255,36,56,.3),inset 0 0 6px rgba(255,36,56,.18)}
+.y2ktab:focus-visible{outline:2px solid var(--y2kred)}
+
+/* 섹션 헤더 — 티켓 스텁 */
+.y2kstub{margin:0 0 10px;background:var(--y2kpaper);color:#151108;position:relative;
+  border-top:3px dashed var(--y2kred);border-bottom:3px dashed var(--y2kred);padding:10px 14px}
+.y2kadm{position:absolute;top:-9px;left:10px;background:var(--y2kred);color:#fff;
+  font-family:'Press Start 2P';font-size:7px;padding:3px 6px;border:2px solid #151108}
+.y2kstub h2{font-family:'Pretendard','Noto Sans KR',sans-serif;font-weight:900;font-size:15px;
+  letter-spacing:-.01em;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.y2krcd{font-family:'VT323';font-size:16px;color:var(--y2kred);letter-spacing:.02em}
+.y2kstub small{display:block;margin-top:3px;font-size:10.5px;color:#5a5240;font-weight:700}
+
+/* TOP CHART — 음원 투표 (+ 레거시 공연 라운드도 동일 리스트) */
+.y2krow{position:relative;display:flex;align-items:center;gap:9px;background:var(--card);
+  border:1px solid var(--line);border-bottom:2px solid #000;padding:9px 10px;margin-bottom:7px;cursor:pointer}
+.y2krank{width:32px;height:32px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  font-family:'Press Start 2P';font-size:11px;background:var(--card2);border:2px solid var(--muted);color:var(--muted)}
+.y2krank.tier-S{background:var(--y2kred);border-color:var(--y2kred);color:#fff}
+.y2krank.tier-A{background:var(--y2kyellow);border-color:var(--y2kyellow);color:#151108}
+.y2krank.tier-B{background:var(--y2kcyan);border-color:var(--y2kcyan);color:#151108}
+.y2krank.top{box-shadow:0 0 0 2px var(--bg),0 0 12px 2px rgba(255,36,56,.55)}
+.y2kplay{width:26px;height:26px;flex:0 0 auto;background:var(--card2);border:2px solid var(--txt);
+  color:var(--txt);font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:0}
+.y2kplay.on{background:var(--y2kred);border-color:var(--y2kred);color:#fff}
+.y2kinfo{flex:1;min-width:0}
+.y2kinfo b{font-family:'Pretendard','Noto Sans KR',sans-serif;font-size:14px;font-weight:800}
+.y2kinfo small{display:block;font-size:10.5px;color:var(--muted);margin-top:1px}
+.y2ktag{font-style:normal;font-size:8.5px;font-family:'Press Start 2P';color:var(--y2kyellow);margin-left:6px}
+.y2ktag.me{color:var(--y2kcyan)}
+.y2kvside{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:2px}
+.y2kvbtn{width:28px;height:28px;background:var(--y2kred);border:2px solid #fff;color:#fff;font-size:12px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:0}
+.y2kvbtn.on{background:var(--card2);border-color:var(--muted);color:var(--muted)}
+.y2kvc{font-family:'VT323';font-size:15px;color:var(--txt)}
+
+/* 포스터월 — 공연 신청(entrySrc:perf) 카드는 그리드로 흩뿌린다 */
+.y2kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:8px;padding:0 6px}
+.y2kcard{position:relative;background:var(--card2);border:3px solid #fff;box-shadow:inset 0 0 0 3px #000;
+  cursor:pointer;transform:rotate(var(--rot,0deg));padding-top:8px}
+.y2kribbon{background:var(--y2kred);border-bottom:2px solid #fff;padding:3px 6px;text-align:center;margin-top:-8px}
+.y2kribbon b{font-family:'Pretendard','Noto Sans KR',sans-serif;font-weight:900;font-size:11px;color:#fff;
+  text-shadow:1px 1px 0 #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.y2kcardbody{position:relative;height:84px;display:flex;align-items:center;justify-content:center;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.05) 0 2px,transparent 2px 6px)}
+.y2ktri{width:0;height:0;border-style:solid;border-width:9px 0 9px 14px;border-color:transparent transparent transparent #fff;
+  filter:drop-shadow(0 0 2px #000)}
+.y2ksticker{position:absolute;top:2px;right:2px;transform:rotate(-10deg);font-family:'Press Start 2P';font-size:7px;
+  padding:3px 5px;border:2px solid #000}
+.y2ksticker.top{background:var(--y2kyellow);color:#151108}
+.y2ksticker.me{background:var(--y2kcyan);color:#151108}
+.y2kvbadge{display:flex;align-items:center;justify-content:center;gap:6px;background:var(--void,#0A0A0F);
+  border-top:2px dashed var(--y2kred);padding:4px 6px}
+.y2kvbadge b{font-family:'VT323';font-size:16px;color:#fff}
+.y2kvbadge .votebtn{width:22px;height:22px;background:var(--y2kyellow);border:none;color:#151108;
+  font-size:11px;font-weight:900;cursor:pointer;border-radius:0;display:flex;align-items:center;justify-content:center}
+.y2kvbadge .votebtn.on{background:var(--card2);color:var(--muted)}
+.y2kcard .cex{border-top:2px dashed var(--y2kred);padding:9px 8px;background:var(--card)}
+
+.y2khint{text-align:center;font-size:11px;color:var(--muted);padding:10px 20px 4px;font-weight:600}
 .crow2{background:var(--card);border:1px solid transparent;border-radius:18px;margin-bottom:9px;overflow:hidden;
   cursor:pointer;transition:transform .2s,border-color .25s}
 .crow2:hover{transform:translateY(-2px);border-color:var(--line)}
@@ -3662,46 +3729,44 @@ function lists(){
 }
 
 /* 투표 — 목록으로. 노래도 듣고, 펼치면 그 사람의 로그(생각)도 보인다 */
+/* 문자열 → 안정적인 -8~8도 회전값. 그리드 카드가 매 렌더마다 안 흔들리게(순수 함수) */
+function rotOf(id){ let h=0; const s=String(id); for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return (h%9)-4; }
+function tierOf(rank){ return rank<3?'S':rank<10?'A':rank<20?'B':'C'; }
+
 function voteHub(){
   const cat=S.vcat||'music';
-  const cats=[['music','diamond','음원 투표'],['stage','circle','공연 투표'],['reco','hex','추천']];
-  const bar=`<div class="vcats">${cats.map(([k,sym,lb])=>`
-    <button class="vcat ${cat===k?'on':''}" data-vcat="${k}">
-      <span class="vcsh">${shape(sym, cat===k?c('lemon'):'#4a4a52', 26)}</span>
-      <small>${lb}</small></button>`).join('')}</div>`;
-  if(cat==='reco') return bar+recoView();
+  const cats=[['music','TOP CHART'],['stage','STAGE'],['reco','⬡ 추천']];
+  const bar=`<div class="y2ktabs">${cats.map(([k,lb])=>`
+    <button class="y2ktab ${cat===k?'on':''}" data-vcat="${k}">${lb}</button>`).join('')}</div>`;
+  if(cat==='reco') return `<div class="y2kvote">${bar}</div>`+recoView();
   const rounds=ROUNDS.filter(r=>r.cat===cat);
   /* 공연 신청은 My 페이지(＋공연 지원 박스)에서 한다 — 여기는 투표만 */
-  return bar + rounds.map(r=>{
-    const max=Math.max(...r.cands.map(x=>x.v))||1;
+  const body = rounds.map(r=>{
     const shown=[...r.cands].map((d,i)=>({...d,_i:i})).sort((a,b)=>b.v-a.v).slice(0,20);
-    return `<div class="rhead">
-      <div class="rtitle">${r.type==='curated'?'<i>✦</i>':''}${esc(r.nm)}
-        <span class="rcd" data-cd="${r.id}">—</span></div>
-      <div class="rwhat">${r.what}</div>
-      <div class="rprize">${r.prize} · 참가 ${r.cands.length}명</div></div>
-    ${shown.map((d,rank)=>{
+    const head = `<div class="y2kstub"><span class="y2kadm">${r.type==='curated'?'CURATED':'OPEN'}</span>
+      <h2>${cat==='music'?'🎫':'🎤'} ${esc(r.nm)}<span class="y2krcd" data-cd="${r.id}">—</span></h2>
+      <small>${esc(r.what)} · ${esc(r.prize)} · 참가 ${r.cands.length}${r.entrySrc==='perf'?'팀':'명'}</small></div>`;
+    const cards = shown.map((d,rank)=>{
       const top=rank===0;
-      /* 공연 신청 후보 — 팀 카드(영상 펼쳐보기). 음원 후보와 완전히 다른 데이터 모양이라 여기서 조기 반환 */
+      /* 공연 신청 후보 — 포스터월 카드(영상 펼쳐보기). 음원 후보와 완전히 다른 데이터 모양이라 조기 반환 */
       if(d.kind==='perf'){
         const expanded=S.perfExpand===d.id, vid=parsePerfVideo(d.videoUrl);
-        return `<div class="crow2 ${d.voted?'voted':''} ${top?'top':''}" data-pexpand="${d.id}">
-          <div class="chd">
-            <span class="cav">${avatarEl('','coral',34,d.team)}</span>
-            <span class="cinfo">
-              <span class="cttl"><b>${esc(d.songTitle)}</b>${top?'<i class="toptag">⬡ 추천</i>':''}${d.me?'<i class="mytag">내 팀</i>':''}</span>
-              <small>${esc(d.team)} · ${d.isCover?'커버':'오리지널'}${d.style?' · '+esc(d.style):''}</small>
-            </span>
-            <span class="cv">${d.v}</span>
-            <button class="votebtn ${d.voted?'on':''}" data-vote="${r.id}|${d._i}">${d.voted?'✓':'투표'}</button></div>
-          <div class="cbar"><i style="width:${d.v/max*100}%"></i></div>
+        return `<div class="y2kcard ${expanded?'expanded':''}" style="--rot:${rotOf(d.id)}deg" data-pexpand="${d.id}">
+          <div class="y2kribbon"><b>${esc(d.team)}</b></div>
+          <div class="y2kcardbody">
+            <div class="y2ktri"></div>
+            ${top?`<span class="y2ksticker top">TOP</span>`:d.me?`<span class="y2ksticker me">MY</span>`:''}
+          </div>
+          <div class="y2kvbadge"><b>${d.v}</b>
+            <button class="votebtn ${d.voted?'on':''}" data-vote="${r.id}|${d._i}" aria-label="투표">${d.voted?'✓':'▲'}</button></div>
           ${expanded?`<div class="cex">
             ${vid?`<iframe class="cvidframe" src="${vid.embed}" title="${esc(d.team)} 영상" loading="lazy"
                 sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
                 allow="encrypted-media; picture-in-picture" allowfullscreen
                 referrerpolicy="strict-origin-when-cross-origin"></iframe>`
               :`<a class="cgo" href="${safeUrl(d.videoUrl)}" target="_blank" rel="noopener noreferrer">원본 링크에서 영상 보기 ↗</a>`}
-            <div class="cexh" style="margin-top:8px">참가자 · ${esc(d.members)}</div>
+            <div class="cexh" style="margin-top:8px">${esc(d.songTitle)} · ${d.isCover?'커버':'오리지널'}${d.style?' · '+esc(d.style):''}</div>
+            <div class="cexh" style="margin-top:4px">참가자 · ${esc(d.members)}</div>
           </div>`:''}
         </div>`;
       }
@@ -3711,25 +3776,28 @@ function voteHub(){
         ? (logs[0].t==='note' ? `<span class="cprev note">✎ ${logs[0].tx}</span>`
                                : `<span class="cprev snd">♪ ${logs[0].tx}</span>`)
         : `<span class="cprev empty">아직 공개된 로그가 없습니다</span>`;
-      return `<div class="crow2 ${d.voted?'voted':''} ${top?'top':''}" data-goart="${who}">
-        <div class="chd">
-          <span class="cav">${avatarEl(avOf(who), d.c, 34, who)}</span>
-          <button class="cplay" data-cp aria-label="재생">▶</button>
-          <span class="cinfo">
-            <span class="cttl"><b>${d.t[0]}</b>${top?'<i class="toptag">⬡ 추천</i>':''}${d.me?'<i class="mytag">내 곡</i>':''}</span>
-            <small>${who} · log 보기 ›</small>
-            ${preview}
-          </span>
-          <span class="cv">${d.v}</span>
-          <button class="votebtn ${d.voted?'on':''}" data-vote="${r.id}|${d._i}">${d.voted?'✓':'투표'}</button></div>
-        <div class="cbar"><i style="width:${d.v/max*100}%"></i></div>
+      return `<div class="y2krow ${d.voted?'voted':''}" data-goart="${who}">
+        <span class="y2krank tier-${tierOf(rank)} ${top?'top':''}">${rank+1}</span>
+        <button class="cplay y2kplay" data-cp aria-label="재생">▶</button>
+        <span class="y2kinfo">
+          <b>${d.t[0]}</b>${top?'<i class="y2ktag">⬡ 추천</i>':''}${d.me?'<i class="y2ktag me">내 곡</i>':''}
+          <small>♪ ${who} · log 보기 ›</small>
+          ${preview}
+        </span>
+        <span class="y2kvside">
+          <button class="votebtn y2kvbtn ${d.voted?'on':''}" data-vote="${r.id}|${d._i}">${d.voted?'✓':'▲'}</button>
+          <b class="y2kvc">${d.v}</b>
+        </span>
       </div>`;
-    }).join('')}
-    ${r.cands.length>20?`<div class="showhint">상위 20명까지만 · 예선은 각자 Work에서</div>`:''}`;
-  }).join('<div style="height:10px"></div>')
-  + (cat==='stage'
-     ? `<div class="showhint">카드를 누르면 영상을 볼 수 있어요 · 공연 지원은 My 페이지 CONCERT 탭에서</div>`
-     : `<div class="showhint">카드를 누르면 그 아티스트의 log로 들어갑니다 · 신청은 내 작품 안 [VOTE 신청하기]</div>`);
+    }).join('');
+    return head + (r.entrySrc==='perf' ? `<div class="y2kgrid">${cards}</div>` : cards)
+      + (r.cands.length>20?`<div class="y2khint">상위 20${r.entrySrc==='perf'?'팀':'명'}까지만 · 예선은 각자 Work에서</div>`:'');
+  }).join('<div style="height:14px"></div>');
+  return `<div class="y2kvote">${bar}${body}
+    ${cat==='stage'
+      ? `<p class="y2khint">카드를 눌러 영상을 보고 ▲로 투표하세요 · 공연 지원은 My 페이지 CONCERT 탭에서</p>`
+      : `<p class="y2khint">곡을 눌러 들으면서 ▲로 투표하세요 · 카드를 누르면 그 아티스트의 log로 이동합니다</p>`}
+  </div>`;
 }
 
 /* ⬡ 추천 — 전 라운드 합산, 지금 가장 사랑받는 아티스트 */
