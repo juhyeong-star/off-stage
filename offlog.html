@@ -2062,6 +2062,7 @@ function reportSheet(){
 }
 async function submitReport(reason){
   const R=S.report; if(!R) return;
+  if(!ME){ S.report=null; render(); return needLogin(); }
   const kind=R.kind||'track', id=String(R.id||'');
   S.report=null;
   /* 내 화면에서는 서버 응답을 기다리지 않고 바로 감춘다 */
@@ -2084,6 +2085,7 @@ async function submitReport(reason){
 }
 async function toggleBlock(aid, who){
   if(!aid) return;
+  if(!ME){ S.logMenu=null; render(); return needLogin(); }
   if(ME && aid===ME.id){ offToast('자기 자신은 차단할 수 없어요'); return; }
   const on=MYBLOCKS.has(aid);
   if(!on && !await offConfirm((who||'이 사람')+'을(를) 차단할까요?\n이 사람의 글이 바로 안 보이게 됩니다.','차단')) return;
@@ -4176,6 +4178,7 @@ function submitCompose(){
   if(!S.compose) return;
   const C=S.compose, txt=(C.text||'').trim(), m=C.media;
   if(!txt && !m) return;
+  if(!ME){ S.compose=null; render(); return needLogin(); }
   if(m && m.kind==='aud' && ME && SBC && m.file){ uploadDemoLog(m.file, txt); return; } /* 로그인 → 실제 업로드(영구·어디서나 재생) */
   pushLog(txt, m);
 }
@@ -4585,9 +4588,12 @@ function render(){
   /* 로그인 잠금 오버레이 — 확인 전=스플래시, 확인 후 비로그인=잠금, 로그인=없음 */
   const _lv=document.getElementById('lockview');
   /* 잠금은 "확실히 로그인 안 한 사람"에게만. 기기에 세션이 남아 있으면 아직 불러오는 중이므로 스플래시를 유지한다
-     — 한 번 로그인하면 로그아웃 전까지 다시 묻지 않는다 */
+     — 한 번 로그인하면 로그아웃 전까지 다시 묻지 않는다.
+     Home(무대 첫 진입 포함) · 투표 상세 화면은 비로그인도 구경 가능 — 실제 액션(투표·신청·팔로우 등)은
+     각 핸들러의 needLogin() 가드가 막는다. 그 외 화면(My 페이지 등)은 기존대로 로그인 벽 유지 */
+  const _openView = S.view==='home' || (S.view==='lists' && S.lseg==='vote');
   if(_lv) _lv.innerHTML = !(AUTHREADY&&DATAREADY) ? splashScreen()
-    : (ME ? '' : (hasStoredSession() ? splashScreen() : lockScreen()));
+    : ((ME||_openView) ? '' : (hasStoredSession() ? splashScreen() : lockScreen()));
   renderMini();
   bind();
   syncStoryAudio();     // 스토리 데모면 실제 소리 재생
@@ -5049,8 +5055,11 @@ function bind(){
       });
       return;
     }
+    /* 음원 투표 — 이 라운드가 이제 비로그인도 구경 가능해져서(홈/투표 화면 개방)
+       여기도 명시적으로 막아야 한다. 이전엔 로그인 벽 뒤라 도달 자체가 불가능했음 */
+    if(!ME)return needLogin();
     d.voted=1; d.v++;
-    const row=b.closest('.crow2');
+    const row=b.closest('.crow2, .y2krow');
     if(row){
       const p=document.createElement('span');
       p.className='pop'; p.textContent='+1 🎟'; p.style.cssText+='left:auto;right:14px;bottom:14px';
@@ -5363,7 +5372,7 @@ function bind(){
         offToast(v==='public'?'공개로 바꿨어요 — 팔로워 피드에 보여요':'비공개로 바꿨어요');
       }catch(e){ l.vis=prev; studioSave(); render(); console.warn('[offlog] 공개범위 변경 실패', e); offToast('변경 실패 — 잠시 후 다시'); }
     });
-    document.querySelectorAll('[data-omenu]').forEach(b=>b.onclick=()=>{ const act=b.dataset.omenu, M=S.logMenu; if(act==='save'){ S.saveTrack={tid:M.id, nm:M.nm, by:M.by, audio:M.audio}; S.logMenu=null; render(); } else if(act==='follow'){ const aid=M.aid; S.logMenu=null; if(!ME){ render(); needLogin(); return; } const willFollow=!MYFOLLOWS.has(aid); (willFollow?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(ok) offToast(willFollow?'팔로우했어요':'팔로우 해제했어요'); render(); }); render(); } else if(act==='report'){ S.logMenu=null;
+    document.querySelectorAll('[data-omenu]').forEach(b=>b.onclick=()=>{ const act=b.dataset.omenu, M=S.logMenu; if(act==='save'){ S.logMenu=null; if(!ME){ render(); needLogin(); return; } S.saveTrack={tid:M.id, nm:M.nm, by:M.by, audio:M.audio}; render(); } else if(act==='follow'){ const aid=M.aid; S.logMenu=null; if(!ME){ render(); needLogin(); return; } const willFollow=!MYFOLLOWS.has(aid); (willFollow?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(ok) offToast(willFollow?'팔로우했어요':'팔로우 해제했어요'); render(); }); render(); } else if(act==='report'){ S.logMenu=null;
         /* 프로필에서 열면 곡 id 가 없다 — 그때는 '사용자'를 신고한 것으로 본다 */
         const isUser=!M.id;
         S.report={kind:isUser?'user':'track', id:isUser?(M.aid||''):M.id, aid:M.aid||null, nm:M.nm||''};
