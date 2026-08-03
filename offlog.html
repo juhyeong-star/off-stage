@@ -2827,21 +2827,9 @@ function home(){
           ${dts?`<span class="reldate">${esc(dts)}</span>`:''}</div>`;}).join('')}</div>`
       : `<div class="pknote" style="padding:30px 0">불러오는 중…</div>`;
   } else {
-    /* 무대 — 이벤트/투표. 음원발매 / 공연을 탭으로 갈라 보여준다 (S.vcat을 투표 화면과 공유) */
-    const hcat = S.vcat==='reco' ? 'music' : (S.vcat||'music');
-    const hcats=[['music','diamond','음원 발매'],['stage','circle','공연']];
-    const hbar=`<div class="vcats" style="margin-bottom:12px">${hcats.map(([k,sym,lb])=>`
-      <button class="vcat ${hcat===k?'on':''}" data-vcat="${k}">
-        <span class="vcsh">${shape(sym, hcat===k?c('lemon'):'#4a4a52', 22)}</span>
-        <small>${lb}</small></button>`).join('')}</div>`;
-    const hrounds=ROUNDS.filter(r=>r.cat===hcat);
-    bodyC = hbar + (hrounds.length
-      ? hrounds.map(r=>`<button class="votetile vfull" data-goround="${r.id}">
-          <em>${r.cat==='music'?'🎵':'🎤'} ${r.type==='curated'?'큐레이션':'오픈'}</em>
-          <span class="vdday" data-cd="${r.id}">D-</span>
-          <b>${esc(r.nm)}</b><small>${esc(slotLine(r))}</small>
-          <span class="voten">${(r.cands||[]).length}팀 참여 · 투표하러 가기 ›</span></button>`).join('')
-      : `<div class="pknote" style="padding:24px 0">진행 중인 ${hcat==='music'?'발매':'공연'} 라운드가 없습니다</div>`);
+    /* 무대 — 홈의 첫 화면 자체가 voteHub()의 Y2K 투표 화면. 탭해서 더 들어가는 요약 타일이 아니라
+       투표 카드·리더보드·포스터월이 바로 나온다(S.vcat을 깊은 투표 화면과 그대로 공유) */
+    bodyC = voteHub();
   }
 
   return `<div class="hd">
