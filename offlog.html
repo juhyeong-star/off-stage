@@ -2652,7 +2652,7 @@ function myRank(r){
 let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:'me', round:'jul', lseg:'list', vcat:'music', flist:null, fq:'', flFrom:'mine', list:null, share:false, addlist:false,
   pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'', auth:false, profileAid:null, saveTrack:null, logMenu:null,
   cam:false,     /* true면 앱 안 촬영 화면 */
-  homeTab:'vote',/* Home 섹션 — logs(LOG)|vote(무대)|rel(MUSIC). 첫 진입은 무대(VOTE) */
+  homeTab:'logs',/* Home 섹션 — logs(LOG)|vote(무대)|rel(MUSIC). 첫 진입은 LOG(무대·MUSIC 탭은 일단 삭제) */
   calDate:null,  /* 홈 캘린더 필터: null=전체, 'YYYY-MM-DD'=그날 나+맞팔친구 로그만. 같은 날 재탭=해제 */
   calMonth:null, /* 캘린더에 표시 중인 달 'YYYY-MM' (null=이번 달) */
   perfApply:false, perfForm:null, perfExpand:null, /* 공연 신청 시트 — 열림여부·폼값·펼친 카드id */
@@ -2746,7 +2746,7 @@ function prevStory(){
    처음 = Trending. 그 다음부터 Following·Trending·For You가 섞여서 랜덤하게 계속 바뀐다. ── */
 /* ── Home — 한 화면에 한 섹션. 좌우 스와이프(또는 상단 칩)로 Logs·Releases·Vote·Following 전환 ── */
 /* 홈 3페이지 — 발견(첫 진입) · 무대 · 로그. 첫 화면이 절대 비지 않게 발견을 맨 앞에 둔다 */
-const HOMETABS=[['vote','무대'],['logs','LOG'],['rel','MUSIC']];
+const HOMETABS=[['logs','LOG']];/* 무대·MUSIC 탭은 일단 삭제 — 필요해지면 [['vote','무대'],['logs','LOG'],['rel','MUSIC']]로 되돌리면 됨 */
 let HOMEIN=0;   /* 방금 넘어온 방향(+1 다음 / -1 이전) — 새 섹션 입장 애니메이션용 */
 let _hgoT=null; /* 섹션 전환 예약 타이머 — 넘어가는 중에 다시 잡으면 취소한다(§3 중단 가능) */
 let _lastView='';   /* 직전 뷰 — 뷰 바뀔 때만 전환 페이드 */
@@ -2811,7 +2811,7 @@ function home(){
     const list = S.calDate ? logsOnDate(S.calDate) : S.feed;
     bodyC = list.map(feedCard).join('') || (S.calDate
       ? `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">이 날은 올라온 로그가 없어요.</div>`
-      : `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">아직 팔로우한 사람의 로그가 없어요.<br><b style="color:var(--mint)">MUSIC</b>에서 아티스트를 팔로우해 보세요.</div>`);
+      : `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">아직 팔로우한 사람의 로그가 없어요.</div>`);
   } else if(cur==='rel'){
     const rel=ALLTRACKS.filter(t=>!isHiddenItem(t)).slice(0,24);   /* 차단·신고분 제외 */
     bodyC=rel.length
@@ -2841,7 +2841,7 @@ function home(){
       ${fing?`<span class="pdot"></span>`:''}</button></div>
   ${storyRow()}
   ${calMonth()}
-  <div class="hstabs">${HOMETABS.map(t=>`<button class="hstab${cur===t[0]?' on':''}" data-hgoto="${t[0]}">${t[1]}</button>`).join('')}</div>
+  ${HOMETABS.length>1?`<div class="hstabs">${HOMETABS.map(t=>`<button class="hstab${cur===t[0]?' on':''}" data-hgoto="${t[0]}">${t[1]}</button>`).join('')}</div>`:''}
   <div id="hswipe">${bodyC}</div>`;
 }
 
