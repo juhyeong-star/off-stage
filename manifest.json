@@ -1,0 +1,35 @@
+{
+  "name": "OFFLOG — 기록이 무대가 되는 곳",
+  "short_name": "OFFLOG",
+  "description": "창작 과정을 기록하고, 투표로 무대에 오르고, 음원으로 발매합니다.",
+  "id": "/offlog",
+  "start_url": "/offlog",
+  "scope": "/offlog",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "lang": "ko",
+  "dir": "ltr",
+  "categories": ["music", "social", "lifestyle"],
+  "icons": [
+    {
+      "src": "/img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
