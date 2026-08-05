@@ -1300,6 +1300,18 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .nw2 em{font-style:normal;font-size:20px;line-height:1}
 .nw2.music:hover{border-color:var(--mint);color:var(--mint)}
 .nw2.perf:hover{border-color:var(--coral);color:var(--coral)}
+
+/* 진행중인 프로젝트 — 홈 LOG 피드 맨 위, 그룹 박스 하나씩 세로로 */
+.projrow{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.projbox{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);
+  border-radius:16px;padding:13px 14px;cursor:pointer;font-family:inherit}
+.projbox:hover{border-color:var(--mint)}
+.projhd{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.projhd b{font-family:'Black Han Sans';font-size:14.5px;letter-spacing:.01em}
+.projtype{flex-shrink:0;font-size:10px;font-weight:700;color:var(--mint);background:rgba(83,224,200,.1);
+  border-radius:99px;padding:3px 9px}
+.projwho{font-size:11px;color:var(--muted);margin-top:3px}
+.projwhat{font-size:12.5px;color:var(--txt);margin-top:5px;line-height:1.4}
 /* 앨범 정보 (Work 상세) */
 .albuminfo{margin:14px 0 4px;display:flex;flex-direction:column;gap:12px}
 .ai-sec{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
@@ -2623,6 +2635,18 @@ let ROUNDS=[
 ];
 const curRound = ()=>ROUNDS.find(r=>r.id===S.round)||ROUNDS[0];
 
+/* 진행중인 프로젝트(캐스팅·협업 공고) — ROUNDS와 같은 컨벤션으로 하드코딩.
+   투표가 아니라 지원작을 브랜드가 직접 검토하는 게시판이라 votes_count가 없다.
+   type: 'audio'(음원 파일 업로드) | 'video'(영상 URL). 내리려면 배열에서 지우면 된다(YAGNI) */
+let PROJECTS=[
+  {id:'proj_minlee', brand:'AMinlee Project', who:'글로벌 DJ 민리', what:'함께 작곡할 친구를 구해요',
+   type:'audio', end:Date.now()+30*864e5},
+  {id:'proj_kwon', brand:'권연수', who:'국내 DJ 권연수', what:'협업할 작곡가를 구해요',
+   type:'audio', end:Date.now()+30*864e5},
+  {id:'proj_ena', brand:'ENA', who:'9월 2일 방송', what:'출연할 엑스트라(기타 연주) 파트를 구해요',
+   type:'video', end:Date.now()+14*864e5},
+];
+
 /* ── 선발 규칙: 절대 득표가 아니라 좌석 수 기준 상위 N팀 ──
    150명 규모에서 '득표 500'은 도달 불가라 아무도 무대를 못 얻는다.
    좌석이 정하는 순위로 바꾼다. 최소 자격선(minVotes) 미만은 순위에서 제외. */
@@ -2660,6 +2684,7 @@ let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:
   calDate:null,  /* 홈 캘린더 필터: null=전체, 'YYYY-MM-DD'=그날 나+맞팔친구 로그만. 같은 날 재탭=해제 */
   calMonth:null, /* 캘린더에 표시 중인 달 'YYYY-MM' (null=이번 달) */
   perfApply:false, perfForm:null, perfExpand:null, /* 공연 신청 시트 — 열림여부·폼값·펼친 카드id */
+  projectApply:false, projectForm:null, /* 프로젝트 지원 시트 — 열림여부·폼값(선택 프로젝트에 따라 audioFile 또는 video) */
   calOpen:false, /* 홈 캘린더 펼침 여부 — 기본 접힘(로그가 바로 보이게). 얇은 바만 노출 */
   authMode:'login', /* 로그인 화면 모드 — login | signup */
   editProf:null, /* 프로필 수정 시트 (열려 있으면 {name,role,bio,ig,yt,tt}) */
@@ -2813,9 +2838,15 @@ function home(){
   if(cur==='logs'){
     /* 팔로우한 사람들의 공개 로그. 캘린더 날짜를 골랐으면 그날 것만 */
     const list = S.calDate ? logsOnDate(S.calDate) : S.feed;
-    bodyC = list.map(feedCard).join('') || (S.calDate
+    const projBoxes = PROJECTS.length ? `<div class="projrow">${PROJECTS.map(p=>`
+      <button class="projbox" data-openproj="${p.id}">
+        <div class="projhd"><b>${esc(p.brand)}</b><span class="projtype">${p.type==='audio'?'🎵 음원':'🎬 영상'}</span></div>
+        <div class="projwho">${esc(p.who)}</div>
+        <div class="projwhat">${esc(p.what)}</div>
+      </button>`).join('')}</div>` : '';
+    bodyC = projBoxes + (list.map(feedCard).join('') || (S.calDate
       ? `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">이 날은 올라온 로그가 없어요.</div>`
-      : `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">아직 팔로우한 사람의 로그가 없어요.</div>`);
+      : `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">아직 팔로우한 사람의 로그가 없어요.</div>`));
   } else if(cur==='rel'){
     const rel=ALLTRACKS.filter(t=>!isHiddenItem(t)).slice(0,24);   /* 차단·신고분 제외 */
     bodyC=rel.length
@@ -3224,7 +3255,8 @@ function mine(){
   /* 음원 발매 / 공연 지원 — 나란한 2박스. MUSIC 탭(LOG 아닌 쪽) 맨 위에 한 번만 얹는다 */
   const applyBoxRow = me ? `<div class="newwork2">
       <button class="nw2 music" id="newworkbtn"><em>＋</em>음원 발매</button>
-      <button class="nw2 perf" id="perfapplybtn"><em>＋</em>공연 지원</button></div>` : '';
+      <button class="nw2 perf" id="perfapplybtn"><em>＋</em>공연 지원</button></div>
+      <button class="newwork" id="projectapplybtn" style="margin-top:-3px">＋ 프로젝트 지원</button>` : '';
 
   /* 내 작품(스튜디오) */
   const myworks=(me&&WORKS.length?`<div class="rsec">음원 발매</div>`:'')+WORKS.map(w=>`<div class="workrow">
@@ -3659,6 +3691,7 @@ function parsePerfVideo(raw){
 }
 let PERFTABLE=true;         /* perf_entries/perf_votes 테이블 사용 가능 여부 (없으면 false로 내려가고 조용히 폴백) */
 const PERFCACHE={};         /* roundId -> true(로드완료/시도함), 중복요청 방지 */
+let PROJECTTABLE=true;      /* project_entries 테이블 사용 가능 여부 (없으면 false로 내려가고 조용히 폴백) */
 async function loadPerfEntries(roundId){
   const r=ROUNDS.find(x=>x.id===roundId);
   if(!r||!SBC||!PERFTABLE||PERFCACHE[roundId]) return;
@@ -3934,6 +3967,58 @@ function perfApplySheet(){
     <p class="rulen" style="text-align:left;margin:0 4px 4px;color:var(--muted);font-size:11px">공개 또는 일부공개(링크 있는 사람) 둘 다 가능해요</p>
 
     <button class="cta" id="pfdone" ${miss.length?'disabled':''}>신청하기</button>
+    ${miss.length?`<div class="missn">${miss.join(' · ')} 필요</div>`:''}
+  </div>`;
+}
+
+/* 진행중인 프로젝트 지원 — 프로젝트마다 음원(파일)/영상(URL) 타입이 고정돼 있어
+   고른 프로젝트에 따라 업로드 필드가 바뀐다 */
+function projectMissing(){
+  const P=S.projectForm||{}, proj=PROJECTS.find(x=>x.id===P.project), m=[];
+  if(!P.project) m.push('프로젝트 선택');
+  if(!P.name?.trim()) m.push('이름');
+  if(!P.contact?.trim()) m.push('연락처');
+  if(proj){
+    if(proj.type==='audio' && !P.audioFile) m.push('음원 파일');
+    if(proj.type==='video'){
+      if(!P.video?.trim()) m.push('영상 URL');
+      else if(!parsePerfVideo(P.video)) m.push('영상 URL(유튜브만 지원)');
+    }
+  }
+  return m;
+}
+function projectApplySheet(){
+  const P=S.projectForm||{};
+  const proj=PROJECTS.find(x=>x.id===P.project);
+  const miss=projectMissing();
+  return `<div class="sheet-bd" id="pjbd"></div>
+  <div class="pksheet tall">
+    <div class="pkhd"><b>프로젝트 지원</b><span class="pksub">선정되면 연락드려요</span>
+      <button class="pkx" id="pjclose" aria-label="닫기">✕</button></div>
+
+    <div class="rsec">지원할 프로젝트</div>
+    <div class="evpick">${PROJECTS.map(p=>`<button class="evopt ${P.project===p.id?'on':''}" data-pjproject="${p.id}">
+      <b>${esc(p.brand)}</b><small>${esc(p.who)} · ${p.type==='audio'?'음원 파일':'영상 URL'}</small></button>`).join('')}</div>
+
+    <div class="rsec">이름</div>
+    <input class="cs-name" id="pjname" value="${esc(P.name||'')}" placeholder="이름 (아티스트명)">
+
+    <div class="rsec">연락처</div>
+    <div class="crow"><input class="cin" id="pjcontact" value="${esc(P.contact||'')}" placeholder="선정 시 연락드릴 전화번호 또는 이메일"></div>
+    <p class="rulen" style="text-align:left;margin:0 4px 4px;color:var(--muted);font-size:11px">선정 시에만 연락드려요 — 목록에는 공개되지 않아요</p>
+
+    <div class="rsec">한 줄 소개 <em class="opt">선택</em></div>
+    <div class="crow"><input class="cin" id="pjnote" value="${esc(P.note||'')}" placeholder="간단한 소개나 하고 싶은 말"></div>
+
+    ${!proj ? ''
+      : proj.type==='audio'
+        ? `<div class="rsec">음원 파일</div>
+           <button class="cs-name" id="pjaudiobtn" style="text-align:left;cursor:pointer">${P.audioName?esc(P.audioName):'파일 선택 (mp3, wav 등)'}</button>
+           <input type="file" id="pjaudiofile" accept="audio/*" hidden>`
+        : `<div class="rsec">영상 URL <em class="opt">유튜브만 지원</em></div>
+           <div class="crow"><input class="cin" id="pjvideo" value="${esc(P.video||'')}" placeholder="https://youtube.com/watch?v=..."></div>`}
+
+    <button class="cta" id="pjdone" ${miss.length?'disabled':''}>지원하기</button>
     ${miss.length?`<div class="missn">${miss.join(' · ')} 필요</div>`:''}
   </div>`;
 }
@@ -4554,7 +4639,7 @@ function render(){
   _lastSheet=_sheetKey;
   /* 시트·오버레이가 떠 있으면 뒤 화면 스크롤을 잠근다 — 안 그러면 시트를 만질 때 배경이 같이 밀린다 */
   const _scr=document.getElementById('screen');
-  if(_scr) _scr.classList.toggle('locked', !!(_sheetKey || S.compose || S.logMenu || S.myMenu || S.auth || S.saveTrack || S.report || S.cam || S.editProf || S.newwork || S.logStats || S.perfApply || S.storyIdx!==null));
+  if(_scr) _scr.classList.toggle('locked', !!(_sheetKey || S.compose || S.logMenu || S.myMenu || S.auth || S.saveTrack || S.report || S.cam || S.editProf || S.newwork || S.logStats || S.perfApply || S.projectApply || S.storyIdx!==null));
   [...document.querySelectorAll('#nav button[data-v]')].forEach(b=>
     b.classList.toggle('on', b.dataset.v===S.view || (S.view==='list'&&b.dataset.v==='lists') || (S.view==='room'&&b.dataset.v==='home')));
   const npf=document.getElementById('navprofile');
@@ -4569,7 +4654,7 @@ function render(){
   }
   document.getElementById('storyview').innerHTML = S.storyIdx!==null ? storyViewer() : '';
   /* 약관은 로그인 시트·잠금화면 위에 떠야 하므로 가장 앞에서 판정한다 */
-  document.getElementById('composeview').innerHTML = S.terms ? termsSheet() : (S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : (S.auth ? authSheet() : (S.saveTrack ? saveSheet() : (S.report ? reportSheet() : (S.logMenu ? logMenuSheet() : (S.myMenu ? myMenuSheet() : (S.perfApply ? perfApplySheet() : ''))))))));
+  document.getElementById('composeview').innerHTML = S.terms ? termsSheet() : (S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : (S.auth ? authSheet() : (S.saveTrack ? saveSheet() : (S.report ? reportSheet() : (S.logMenu ? logMenuSheet() : (S.myMenu ? myMenuSheet() : (S.perfApply ? perfApplySheet() : (S.projectApply ? projectApplySheet() : '')))))))));
   /* 촬영 화면 + 하단 camera|logs 토글 상태 */
   const _cv=document.getElementById('camview');
   if(_cv) _cv.innerHTML = S.cam ? camView() : '';
@@ -5005,6 +5090,76 @@ function bind(){
       if(e&&e.code==='23505')return offToast('이미 이 라운드에 신청했어요');
       if(e&&(e.code==='PGRST205'||e.code==='42P01')){ PERFTABLE=false; return offToast('공연 신청 준비 중이에요 — 잠시 후 다시 시도해 주세요'); }
       console.warn('[offlog] 공연 신청 실패', e); offToast('신청에 실패했어요 — 잠시 후 다시 시도해 주세요');
+    }
+  };
+  /* 프로젝트 지원 — 열기(마이페이지 버튼·홈 박스 둘 다) / 폼 입력 / 제출 */
+  const openProjectSheet=(presetId)=>{
+    if(!ME)return needLogin();
+    const first=presetId?PROJECTS.find(p=>p.id===presetId):PROJECTS[0];
+    S.projectForm={project:first?first.id:'', name:'', contact:'', note:'', audioFile:null, audioName:'', video:''};
+    S.projectApply=true; render();
+  };
+  const pjo=document.getElementById('projectapplybtn');
+  if(pjo)pjo.onclick=()=>openProjectSheet();
+  document.querySelectorAll('[data-openproj]').forEach(b=>b.onclick=()=>openProjectSheet(b.dataset.openproj));
+  const pjx=document.getElementById('pjclose'); if(pjx)pjx.onclick=()=>{S.projectApply=false;render()};
+  const pjbd=document.getElementById('pjbd');   if(pjbd)pjbd.onclick=()=>{S.projectApply=false;render()};
+  document.querySelectorAll('[data-pjproject]').forEach(b=>b.onclick=()=>{
+    /* 프로젝트가 바뀌면 음원/영상 타입도 바뀔 수 있어 이전 업로드 값은 비운다 */
+    S.projectForm={...(S.projectForm||{}), project:b.dataset.pjproject, audioFile:null, audioName:'', video:''};
+    render();
+  });
+  const pjRefreshMiss=()=>{
+    const miss=projectMissing(), done=document.getElementById('pjdone'), note=document.querySelector('.pksheet .missn');
+    if(done)done.disabled=miss.length>0;
+    if(note)note.textContent=miss.length?miss.join(' · ')+' 필요':'';
+  };
+  [['pjname','name'],['pjcontact','contact'],['pjnote','note'],['pjvideo','video']].forEach(([id,key])=>{
+    const el=document.getElementById(id); if(!el)return;
+    el.oninput=()=>{ S.projectForm={...(S.projectForm||{}), [key]:el.value}; pjRefreshMiss(); };
+  });
+  const pjab=document.getElementById('pjaudiobtn'), pjaf=document.getElementById('pjaudiofile');
+  if(pjab&&pjaf)pjab.onclick=()=>pjaf.click();
+  if(pjaf)pjaf.onchange=()=>{
+    const f=pjaf.files&&pjaf.files[0]; if(!f)return;
+    if(tooBigToUpload(f,'aud')){ pjaf.value=''; return; }
+    S.projectForm={...(S.projectForm||{}), audioFile:f, audioName:f.name};
+    if(pjab)pjab.textContent=f.name;
+    pjRefreshMiss();
+  };
+  const pjd=document.getElementById('pjdone');
+  if(pjd)pjd.onclick=async()=>{
+    if(!ME)return needLogin();
+    if(projectMissing().length)return;
+    const P=S.projectForm||{}, proj=PROJECTS.find(x=>x.id===P.project);
+    pjd.disabled=true; pjd.textContent='보내는 중…';
+    try{
+      let mediaUrl='', mediaKind=proj.type;
+      if(proj.type==='audio'){
+        const ext=((P.audioFile.name||'').split('.').pop()||'mp3').toLowerCase().replace(/[^a-z0-9]/g,'')||'mp3';
+        const path='projects/'+ME.id+'/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext;
+        const up=await retryUp(async function(){
+          const r=await SBC.storage.from('audio').upload(path, P.audioFile, {contentType:P.audioFile.type||'audio/mpeg', upsert:true});
+          if(r.error) throw r.error;
+          return r;
+        });
+        const pub=SBC.storage.from('audio').getPublicUrl(path);
+        mediaUrl=(pub&&pub.data&&pub.data.publicUrl)||'';
+        if(!mediaUrl) throw new Error('업로드 URL을 못 받았어요');
+      } else {
+        mediaUrl=P.video.trim();
+      }
+      const {error}=await SBC.from('project_entries').insert({
+        project_id:P.project, author_id:ME.id, name:P.name.trim(), contact:P.contact.trim(),
+        note:(P.note||'').trim()||null, media_kind:mediaKind, media_url:mediaUrl});
+      if(error)throw error;
+      S.projectApply=false; S.projectForm=null;
+      render(); offToast('지원했어요 — 선정되면 연락드려요');
+    }catch(e){
+      pjd.disabled=false; pjd.textContent='지원하기';
+      if(e&&e.code==='23505')return offToast('이미 이 프로젝트에 지원했어요');
+      if(e&&(e.code==='PGRST205'||e.code==='42P01')){ PROJECTTABLE=false; return offToast('프로젝트 지원 기능을 준비 중이에요 — 잠시 후 다시 시도해 주세요'); }
+      console.warn('[offlog] 프로젝트 지원 실패', e); offToast('지원에 실패했어요 — 잠시 후 다시 시도해 주세요');
     }
   };
   /* 공연 카드 탭 → 영상 펼치기 (투표 버튼 누른 건 제외) */
