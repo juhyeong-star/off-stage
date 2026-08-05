@@ -31,7 +31,7 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
   font-family:'Noto Sans KR',sans-serif;-webkit-font-smoothing:antialiased}
 .phone{width:100%;max-width:400px;background:var(--bg);color:var(--txt);border-radius:44px;border:3px solid var(--pink);
   box-shadow:0 0 0 1px rgba(255,95,224,.35),0 0 38px rgba(255,95,224,.35);overflow:hidden;position:relative}
-.screen{padding:16px 14px 150px;height:840px;overflow-y:auto;scrollbar-width:none}
+.screen{padding:16px 14px 195px;height:840px;overflow-y:auto;scrollbar-width:none}
 .screen::-webkit-scrollbar{display:none}
 
 /* ── 헤더 ── */
@@ -389,7 +389,7 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .y2krank.tier-B{background:var(--y2kcyan);border-color:var(--y2kcyan);color:#151108}
 .y2krank.top{box-shadow:0 0 0 2px var(--bg),0 0 12px 2px rgba(255,36,56,.55)}
 .y2kplay{width:26px;height:26px;flex:0 0 auto;background:var(--card2);border:2px solid var(--txt);
-  color:var(--txt);font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:0}
+  color:var(--txt);font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:0;position:relative}
 .y2kplay.on{background:var(--y2kred);border-color:var(--y2kred);color:#fff}
 .y2kinfo{flex:1;min-width:0}
 .y2kinfo b{font-family:'Pretendard','Noto Sans KR',sans-serif;font-size:14px;font-weight:800}
@@ -398,7 +398,10 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .y2ktag.me{color:var(--y2kcyan)}
 .y2kvside{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:2px}
 .y2kvbtn{width:28px;height:28px;background:var(--y2kred);border:2px solid #fff;color:#fff;font-size:12px;
-  display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:0}
+  display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:0;position:relative}
+/* 시각적 크기는 카드 밀도를 위해 작게 유지하되, 손끝이 닿는 영역은 애플 권장(~44px)에 가깝게 넓힌다.
+   행 안 간격이 9~10px라 8px 이상 넓히면 옆 컨트롤과 겹쳐서 6px로 제한 */
+.y2kplay::after,.y2kvbtn::after,.votebtn::after,.cplay::after{content:'';position:absolute;inset:-6px}
 .y2kvbtn.on{background:var(--card2);border-color:var(--muted);color:var(--muted)}
 .y2kvc{font-family:'VT323';font-size:15px;color:var(--txt)}
 
@@ -421,7 +424,7 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
   border-top:2px dashed var(--y2kred);padding:4px 6px}
 .y2kvbadge b{font-family:'VT323';font-size:16px;color:#fff}
 .y2kvbadge .votebtn{width:22px;height:22px;background:var(--y2kyellow);border:none;color:#151108;
-  font-size:11px;font-weight:900;cursor:pointer;border-radius:0;display:flex;align-items:center;justify-content:center}
+  font-size:11px;font-weight:900;cursor:pointer;border-radius:0;display:flex;align-items:center;justify-content:center;position:relative}
 .y2kvbadge .votebtn.on{background:var(--card2);color:var(--muted)}
 .y2kcard .cex{border-top:2px dashed var(--y2kred);padding:9px 8px;background:var(--card)}
 
@@ -440,7 +443,7 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .cav .smile svg{width:22px;height:22px}
 .cav.first{box-shadow:0 0 0 2px var(--lemon),0 2px 8px rgba(0,0,0,.45)}
 .cplay{width:30px;height:30px;border-radius:50%;background:transparent;border:1.5px solid var(--mint);
-  color:var(--mint);font-size:10px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  color:var(--mint);font-size:10px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative}
 .cplay.on{background:var(--mint);color:#04231d}
 .cinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .cttl{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
@@ -866,7 +869,7 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .vct{font-family:'Black Han Sans';font-size:15px;width:40px;text-align:right;flex-shrink:0}
 
 /* ── 미니 플레이어 ── */
-.mini{position:absolute;left:14px;right:14px;bottom:74px;z-index:19;background:rgba(28,28,32,.96);backdrop-filter:blur(10px);
+.mini{position:absolute;left:14px;right:14px;bottom:88px;z-index:19;background:rgba(28,28,32,.96);backdrop-filter:blur(10px);
   border:1px solid var(--line);border-radius:16px;padding:9px 13px}
 .mini-top{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--mint);font-weight:700}
 .mini-top button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px}
@@ -1424,7 +1427,7 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
   /* 목업 프레임(핑크 베젤·라운드·그림자) 벗기고 화면을 꽉 채움 */
   .phone{max-width:none;width:100%;border:0;border-radius:0;box-shadow:none;height:100dvh;overflow:hidden}
   /* 세로 스크롤만 허용(pan-y) → 가로로 끌어도 화면이 안 따라 움직임. 스크롤 체이닝/바운스 차단 */
-  .screen{height:100%;overscroll-behavior:contain;overflow-x:hidden;touch-action:pan-y;padding-bottom:calc(148px + env(safe-area-inset-bottom))}
+  .screen{height:100%;overscroll-behavior:contain;overflow-x:hidden;touch-action:pan-y;padding-bottom:calc(195px + env(safe-area-inset-bottom))}
   /* 앱이 화면 전체(상태바·홈바 아래까지)를 덮는다 — ContentView.swift 의 .ignoresSafeArea().
      그래서 가려지지 않을 만큼을 여기서 확보한다. 브라우저에선 env(...)가 0이라 값이 그대로 유지된다. */
   .screen{padding-top:calc(16px + env(safe-area-inset-top))}
@@ -1444,7 +1447,7 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
   /* -webkit-overflow-scrolling:touch 제거 — iOS에서 .screen이 stacking context가 되어 발매 시트(z45)가 뮤직바(z19)/nav(z20) 아래로 깔리던 문제. iOS13+는 이 속성 없이도 관성 스크롤 정상 */
   /* iOS 홈바(34px)와 겹치지 않게 하단 네비/미니 안전영역 확보 */
   .nav{padding-bottom:max(18px, env(safe-area-inset-bottom))}
-  .mini{bottom:calc(74px + env(safe-area-inset-bottom))}
+  .mini{bottom:calc(88px + env(safe-area-inset-bottom))}
   /* iOS 포커스 시 자동 확대 방지 — 입력 계열만 16px 이상 */
   .fld input,.cin,.lyr,.rdate,.srch input,input,textarea{font-size:16px}
   /* 터치 타깃 최소 44px (핵심 컨트롤) */
