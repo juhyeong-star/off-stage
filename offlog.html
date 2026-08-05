@@ -2280,6 +2280,14 @@ function tooBigToUpload(file, kind){
   offToast(nm+'이 너무 커요 ('+(file.size/1048576).toFixed(1)+'MB) — '+Math.round(lim/1048576)+'MB 이하로 올려주세요');
   return true;
 }
+/* MP3·WAV만 허용 — accept 속성은 브라우저마다 "모든 파일"로 우회 가능해서 실제 선택 시 한 번 더 막는다.
+   WAV의 MIME 타입이 브라우저마다 audio/wav·audio/x-wav·audio/wave 로 갈려서 확장자도 같이 본다 */
+function isMp3OrWav(file){
+  if(!file) return false;
+  const ext=(file.name||'').toLowerCase().split('.').pop();
+  if(ext==='mp3'||ext==='wav') return true;
+  return /^audio\/(mpeg|mp3|wav|x-wav|wave|vnd\.wave)$/i.test(file.type||'');
+}
 
 /* 사진·영상 원본을 Storage에 올리고 공개 URL을 돌려준다 (로그인 필요) */
 async function uploadLogMedia(file, kind){
@@ -4012,9 +4020,10 @@ function projectApplySheet(){
 
     ${!proj ? ''
       : proj.type==='audio'
-        ? `<div class="rsec">음원 파일</div>
-           <button class="cs-name" id="pjaudiobtn" style="text-align:left;cursor:pointer">${P.audioName?esc(P.audioName):'파일 선택 (mp3, wav 등)'}</button>
-           <input type="file" id="pjaudiofile" accept="audio/*" hidden>`
+        ? `<div class="rsec">음원 파일 <em class="opt">MP3 · WAV</em></div>
+           <button class="cs-name" id="pjaudiobtn" style="text-align:left;cursor:pointer">${P.audioName?esc(P.audioName):'파일 선택 (MP3 또는 WAV)'}</button>
+           <input type="file" id="pjaudiofile" accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/wave,.mp3,.wav" hidden>
+           <p class="rulen" style="text-align:left;margin:6px 4px 0;color:var(--muted);font-size:11px">MP3, WAV 파일만 올릴 수 있어요 · 최대 45MB</p>`
         : `<div class="rsec">영상 URL <em class="opt">유튜브만 지원</em></div>
            <div class="crow"><input class="cin" id="pjvideo" value="${esc(P.video||'')}" placeholder="https://youtube.com/watch?v=..."></div>`}
 
@@ -5122,6 +5131,7 @@ function bind(){
   if(pjab&&pjaf)pjab.onclick=()=>pjaf.click();
   if(pjaf)pjaf.onchange=()=>{
     const f=pjaf.files&&pjaf.files[0]; if(!f)return;
+    if(!isMp3OrWav(f)){ offToast('MP3 또는 WAV 파일만 올릴 수 있어요'); pjaf.value=''; return; }
     if(tooBigToUpload(f,'aud')){ pjaf.value=''; return; }
     S.projectForm={...(S.projectForm||{}), audioFile:f, audioName:f.name};
     if(pjab)pjab.textContent=f.name;
