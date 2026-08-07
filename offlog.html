@@ -795,6 +795,9 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .bigwv{position:absolute;left:14px;right:14px;top:46px;bottom:42px;display:flex;align-items:center;gap:2px;z-index:2}
 .bigwv i{flex:1;border-radius:1.5px;background:#3a3a44;height:calc(var(--h)*1%);transform-origin:center;min-height:2px}
 .rcard.playing .bigwv i{background:var(--mint);animation:wv 1s ease-in-out infinite;animation-delay:calc(var(--d)*-.09s)}
+/* 카드 안 재생 진행바 — 카드 하단에 얇게. 뮤직바 팝업 대신 카드가 플레이어 역할 */
+.cprog{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.12);z-index:7;pointer-events:none}
+.cprog i{display:block;height:100%;width:0;background:var(--mint);transition:width .25s linear}
 /* 알약(pill) 배경을 벗겼다 — 앱의 다른 재생 버튼(.cplay/.tplay/.songplay)은 모두 원형이라
    이것만 알약이어서 이질적이었다. 배경이 없어진 대신 글자에 그림자를 줘서 파형 위에서도 읽힌다. */
 .sndpill{display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:none;border:0;
@@ -4542,7 +4545,17 @@ function _clearPlayingUI(){
     x.classList.remove('playing');
     var em=x.querySelector('.sndpill em'); if(em)em.classList.remove('on');
   });
+  document.querySelectorAll('.cprog').forEach(function(x){ x.remove(); });
 }
+/* 카드 안 재생 진행바 — 재생 중인 카드 하단에 진행 상황을 그린다.
+   피드 카드는 뮤직바(팝업) 없이 카드 자체가 플레이어라서, 진행이 카드 안에 보여야 한다 */
+AUDIO.addEventListener('timeupdate', function(){
+  var cd=document.querySelector('.rcard.playing');
+  if(!cd || !AUDIO.duration) return;
+  var bar=cd.querySelector('.cprog');
+  if(!bar){ bar=document.createElement('span'); bar.className='cprog'; bar.innerHTML='<i></i>'; cd.appendChild(bar); }
+  bar.firstElementChild.style.width=(AUDIO.currentTime/AUDIO.duration*100)+'%';
+});
 function playSrc(url,nm){
   if(!url) return false;
   if(CURSRC!==url){ AUDIO.src=url; CURSRC=url; }
@@ -5566,6 +5579,8 @@ function bind(){
       if(mb){ NOWPLAY.who=mb.dataset.sby||''; NOWPLAY.aid=mb.dataset.said||''; NOWPLAY.tid=mb.dataset.sharemenu||''; }
       cd.classList.toggle('playing', playing);
       const em=cd.querySelector('.sndpill em'); if(em)em.classList.toggle('on', !!playing);
+      /* 카드 자체가 플레이어 — 하단 뮤직바를 팝업시키지 않는다(다시 탭=일시정지, 진행바는 카드 안에) */
+      S.mini.on=false;
       renderMini();
     } else {
       /* 오디오 URL 없는 카드 → 기존 애니메이션만 */
