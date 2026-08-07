@@ -534,6 +534,15 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .mychip{position:absolute;top:11px;left:11px;z-index:6;background:var(--mint);border:none;color:#04231d;
   border-radius:99px;padding:3px 9px;font-size:9.5px;font-weight:700;line-height:1.5;
   max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 내 로그 공개/비공개 칩 — 카드 우하단, 항상 보이는 토글 */
+.vischip{position:absolute;bottom:11px;right:12px;z-index:7;border:none;border-radius:99px;
+  padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;line-height:1.4;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(4px);color:#fff}
+.vischip.pub{color:var(--mint)}
+.vischip.priv{color:#ffb3b3}
+.vischip.locked{opacity:.75;color:rgba(255,255,255,.85)}
+.rcard.paper .vischip{background:rgba(43,36,23,.12);color:var(--ink)}
+.vischip:active{transform:scale(.94)}
 .edit.mine,.edit.save{position:absolute;top:9px;right:11px;z-index:6;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);
   border:none;color:#fff;width:26px;height:26px;border-radius:50%;font-size:12px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;letter-spacing:0;opacity:.7;padding:0}
@@ -1304,6 +1313,13 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .nw2.music:hover{border-color:var(--mint);color:var(--mint)}
 .nw2.perf:hover{border-color:var(--coral);color:var(--coral)}
 
+/* 추천 팔로우 — 빈 피드(신규 가입자)에서 아티스트 추천 행 */
+.recorow{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;padding:10px 12px;margin-bottom:8px}
+.recoav .avimg,.recoav .smile{width:38px;height:38px;border-radius:50%}
+.reconm{flex:1;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recofol{flex-shrink:0}
+
 /* 진행중인 프로젝트 — 홈 LOG 피드 맨 위, 그룹 박스 하나씩 세로로 */
 .projrow{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
 .projbox{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);
@@ -1387,6 +1403,11 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .authdiv{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:11.5px;margin:14px 0 10px}
 .authdiv::before,.authdiv::after{content:'';flex:1;height:1px;background:var(--line)}
 .authinput{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--txt);padding:12px 13px;font-size:16px;margin-bottom:8px;font-family:inherit}
+.authpwrow{position:relative}
+.authpwrow .authinput{padding-right:44px}
+.authpweye{position:absolute;right:6px;top:calc(50% - 4px);transform:translateY(-50%);background:none;border:none;
+  font-size:17px;cursor:pointer;padding:6px;line-height:1;opacity:.65}
+.authpweye:active{opacity:1}
 .authinput:focus{outline:2px solid var(--mint)}
 /* 곡 담기 검색창 + 미리듣기 행 */
 .pksearch{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--txt);padding:11px 13px;font-size:16px;margin-bottom:8px;font-family:inherit}
@@ -1563,6 +1584,9 @@ try{
 
 /* 로그인 유저 로드 + 내 팔로우/반응 상태 미리 받아두기 */
 let AUTHREADY=false;   /* 로그인 여부 확인 완료 — 그 전엔 스플래시, 확인 후 !ME면 잠금 */
+/* 로그인 폼 입력값 보존소 — 로그인↔회원가입 전환(render)마다 입력이 날아가던 문제.
+   S 밖에 두는 이유: 입력마다 render()를 다시 돌리지 않기 위해(포커스 유지) */
+const AUTHVALS={email:'', pw:'', name:'', showPw:false};
 let DATAREADY=false;   /* 실제 트랙 데이터 도착 완료 — 그 전엔 스플래시 유지(시드 목업이 진짜처럼 새는 걸 막음) */
 /* 저장된 로그인 세션이 기기에 있는가 — 네트워크 없이 즉시 판단.
    이게 true면 "로그인한 사람"이므로 잠금 화면을 띄우면 안 된다(다시 로그인하라고 하면 안 됨). */
@@ -1861,9 +1885,11 @@ function authForm(){
     <button class="authbtn" id="authgoogle"><b>G</b> Google로 ${su?'가입':'계속'}</button>
     <div class="authdiv"><span>또는 이메일</span></div>`;
   return `${social}
-    ${su?`<input class="authinput" id="authname" type="text" autocomplete="name" placeholder="이름 (아티스트명)">`:''}
-    <input class="authinput" id="authemail" type="email" autocomplete="username" placeholder="이메일">
-    <input class="authinput" id="authpw" type="password" autocomplete="${su?'new-password':'current-password'}" placeholder="비밀번호${su?' (6자 이상)':''}">
+    ${su?`<input class="authinput" id="authname" type="text" autocomplete="name" placeholder="이름 (선택 — 나중에 바꿀 수 있어요)" value="${esc(AUTHVALS.name||'')}">`:''}
+    <input class="authinput" id="authemail" type="email" autocomplete="username" placeholder="이메일" value="${esc(AUTHVALS.email||'')}">
+    <div class="authpwrow">
+      <input class="authinput" id="authpw" type="${AUTHVALS.showPw?'text':'password'}" autocomplete="${su?'new-password':'current-password'}" placeholder="비밀번호${su?' (6자 이상)':''}" value="${esc(AUTHVALS.pw||'')}">
+      <button type="button" class="authpweye" id="authpweye" aria-label="비밀번호 ${AUTHVALS.showPw?'숨기기':'보기'}">${AUTHVALS.showPw?'🙈':'👁'}</button></div>
     ${su
       ? `<div class="agree">
            <input type="checkbox" id="authagree">
@@ -2146,7 +2172,9 @@ function offToast(msg){
   el.textContent=msg; el.style.opacity='1';
   clearTimeout(_toastT); _toastT=setTimeout(()=>{el.style.opacity='0';}, 2600);
 }
-function needLogin(){ offToast('로그인하면 저장돼요 — 메인에서 로그인 후 이용하세요'); }
+/* 로그인이 필요한 액션 — 안내만 하고 끝내면 사용자가 로그인 입구를 직접 찾아야 해서 어렵다.
+   토스트와 함께 로그인 시트를 바로 연다(어느 화면에서든 composeview 슬롯에 뜬다) */
+function needLogin(){ offToast('로그인하면 저장돼요'); S.auth=true; S.authMode='login'; render(); }
 
 /* ── 창작 스튜디오 로컬 저장 (내가 만든 작품/플레이리스트/로그, 새로고침에도 유지) ──
    ⚠️계정별 분리(2026-07-27): 예전엔 공용 키 하나라 같은 브라우저에서 계정을 바꾸면
@@ -2689,7 +2717,8 @@ function myRank(r){
 
 
 let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:'me', round:'jul', lseg:'list', vcat:'music', flist:null, fq:'', flFrom:'mine', list:null, share:false, addlist:false,
-  pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:true, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'', auth:false, profileAid:null, saveTrack:null, logMenu:null,
+  pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:false, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'', auth:false, profileAid:null, saveTrack:null, logMenu:null,
+  /* ↑ mini.on 기본 false — 켜자마자 '발견' 뮤직바가 화면을 차지하던 것 제거(P0-9). 재생 액션이 on:true로 켠다 */
   cam:false,     /* true면 앱 안 촬영 화면 */
   homeTab:'logs',/* Home 섹션 — logs(LOG)|vote(무대)|rel(MUSIC). 첫 진입은 LOG(무대·MUSIC 탭은 일단 삭제) */
   calDate:null,  /* 홈 캘린더 필터: null=전체, 'YYYY-MM-DD'=그날 나+맞팔친구 로그만. 같은 날 재탭=해제 */
@@ -2846,18 +2875,33 @@ function home(){
   const cur=S.homeTab||'logs';
 
   let bodyC='';
+  /* 빈 피드 = 신규 가입자 — 팔로우할 아티스트를 추천해서 피드가 채워질 길을 만든다 (P0-8).
+     실제 곡을 올린 아티스트(ALLTRACKS) 중에서 나·이미 팔로우한 사람을 뺀 상위 6명 */
+  function recoFollowBlock(){
+    const seen={}, recos=[];
+    (typeof ALLTRACKS!=='undefined'?ALLTRACKS:[]).forEach(t=>{
+      const nm=t.by, aid=t.aid;
+      if(!nm||!aid||seen[aid])return;
+      if(ME&&aid===ME.id)return;
+      if(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(aid))return;
+      seen[aid]=1; recos.push({nm, aid});
+    });
+    const rows=recos.slice(0,6);
+    if(!rows.length) return `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">아직 팔로우한 사람의 로그가 없어요.</div>`;
+    return `<div class="pknote" style="padding:20px 8px 10px;text-align:center;line-height:1.7">아직 팔로우한 사람의 로그가 없어요.<br>이 아티스트들부터 팔로우해 보세요</div>
+      ${rows.map(a=>`<div class="recorow">
+        <span class="recoav">${avatarEl(avOf(a.nm), 'blue', 38, a.nm)}</span>
+        <b class="reconm">${esc(a.nm)}</b>
+        <button class="fol recofol" data-recofollow="${a.aid}" data-reconm="${esc(a.nm)}">팔로우</button>
+      </div>`).join('')}`;
+  }
   if(cur==='logs'){
-    /* 팔로우한 사람들의 공개 로그. 캘린더 날짜를 골랐으면 그날 것만 */
+    /* 홈 = 팔로잉 피드 전용 (P0-6/7). 프로젝트 박스는 뺐다 — 프로젝트 지원은 My 페이지에서.
+       팔로우한 사람들의 공개 로그. 캘린더 날짜를 골랐으면 그날 것만 */
     const list = S.calDate ? logsOnDate(S.calDate) : S.feed;
-    const projBoxes = PROJECTS.length ? `<div class="projrow">${PROJECTS.map(p=>`
-      <button class="projbox" data-openproj="${p.id}">
-        <div class="projhd"><b>${esc(p.brand)}</b><span class="projtype">${p.type==='audio'?'🎵 음원':'🎬 영상'}</span></div>
-        <div class="projwho">${esc(p.who)}</div>
-        <div class="projwhat">${esc(p.what)}</div>
-      </button>`).join('')}</div>` : '';
-    bodyC = projBoxes + (list.map(feedCard).join('') || (S.calDate
+    bodyC = list.map(feedCard).join('') || (S.calDate
       ? `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">이 날은 올라온 로그가 없어요.</div>`
-      : `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">아직 팔로우한 사람의 로그가 없어요.</div>`));
+      : recoFollowBlock());
   } else if(cur==='rel'){
     const rel=ALLTRACKS.filter(t=>!isHiddenItem(t)).slice(0,24);   /* 차단·신고분 제외 */
     bodyC=rel.length
@@ -3322,8 +3366,14 @@ function mine(){
     const rx = `<div class="frx" data-tid="${l.tid||''}">${_rb('소름','tri','green')}${_rb('루프','circle','shpink')}${_rb('울컥','diamond','blue')}${_rb('최고','star','yellow')}<span class="rxn" data-n="${l.rx||0}">${l.rx||0}</span></div>`;
     /* 업로드 날짜 라벨 — 카드 위 gap에 (예: 07.20) */
     const dtb = l.dt?`<div class="fdt">${esc(String(l.dt).slice(5).replace('-','.'))}</div>`:'';
+    /* 공개/비공개 칩 — 카드 위에 항상 보이는 토글(⋯ 메뉴에 숨어 있으면 못 찾는다).
+       무대·발매에 낸 로그는 항상 공개(잠금) — 칩이 자물쇠 안내만 한다 */
+    const visLocked = logVisLocked(l);
+    const visChip = me ? `<button class="vischip ${l.vis==='public'?'pub':'priv'}${visLocked?' locked':''}" data-logvis="${l.id}"
+        aria-label="공개 범위 바꾸기">${visLocked?'🔒 항상 공개':(l.vis==='public'?'🔓 공개':'🔒 비공개')}</button>` : '';
     const chrome = me
       ? `${w?`<span class="wchip mychip">◆ ${esc(w.nm)}</span>`:''}
+         ${visChip}
          <button class="edit mine" ${l.t==='note'?`data-addmenu="${l.id}"`:`data-logdl="${l.id}"`} aria-label="${l.t==='note'?'넣기':'받기'}">⋯</button>`
       : '';
     if(l.t==='ph') return `<div class="fcard my">${dtb}<div class="rcard">
@@ -3348,7 +3398,7 @@ function mine(){
       <div class="marks">${streamOrder(STREAM).map(mark).join('')||`<div class="pknote" style="padding:26px 0">아직 로그가 없어요</div>`}</div></div>`;
 
   return `<div class="hd">
-    ${me?`<span style="width:34px"></span>`:`<button class="circ" data-v="home" aria-label="뒤로">‹</button>`}
+    <button class="circ" data-v="home" aria-label="뒤로">‹</button>
     <div class="htitle">${me?'':esc(prof.who)}<small>${me?'내 페이지':prof.sub}</small></div>
     <div class="r">${me&&ME
       ? `<button class="circ" id="mysettings" aria-label="메뉴">⋯</button>`
@@ -3748,7 +3798,7 @@ function loadMyPerf(){
 }
 
 function lists(){
-  return `<div class="hd"><span style="width:34px"></span>
+  return `<div class="hd"><button class="circ" data-v="home" aria-label="뒤로">‹</button>
     <div class="brand" style="flex:1;text-align:center;letter-spacing:.18em;font-size:14px">${S.lseg==='vote'?'VOTE':'MY LIST'}</div>
     <span style="width:34px"></span></div>
   <div class="lseg">
@@ -4254,10 +4304,6 @@ function composeSheet(){
       <button class="cs-att${m&&m.kind==='aud'?' on':''}" id="csaudio" aria-label="데모">🎵<span>데모</span></button>
     </div>
     <div class="cs-attach" style="margin-top:0">
-      <button class="cs-att${(C.vis||'private')!=='public'?' on':''}" id="csvpriv" aria-label="비공개">🔒<span>비공개</span></button>
-      <button class="cs-att${C.vis==='public'?' on':''}" id="csvpub" aria-label="공개">🔓<span>공개</span></button>
-    </div>
-    <div class="cs-attach" style="margin-top:0">
       ${[['prac','연습'],['show','공연'],['work','작업'],['etc','기타']].map(a=>`<button class="cs-att txt${C.act===a[0]?' on':''}" data-csact="${a[0]}" aria-label="${a[1]}">${a[1]}</button>`).join('')}
     </div>
     <button class="cs-post" id="cspost"${canPost?'':' disabled'}>올리기</button>
@@ -4282,7 +4328,9 @@ function pushLog(txt, m, audioUrl){
   else if(m && m.kind==='ph')  log={id, t:'ph',  at:now, dt, cap:txt||'사진', bg:'center/cover no-repeat url('+m.url+')', side:'l', work:null};
   else{ const _tone=['y','b','p'][STREAM.filter(x=>x&&x.t==='note').length%3];   /* 포스트잇 색을 노랑→하늘→핑크로 번갈아 */
                                log={id, t:'note',at:now, dt, text:txt, tone:_tone, side:'l', work:null}; }
-  log.vis=(S.compose&&S.compose.vis==='public')?'public':'private';   /* 작성 시트에서 선택 (기본 나만 보기) */
+  /* 기본 공개 — 작성 시트에서 공개/비공개 토글을 뺐다(친구 피드가 비지 않게).
+     비공개로 바꾸는 건 My 페이지 각 카드의 공개/비공개 칩에서 */
+  log.vis=(S.compose&&S.compose.vis==='private')?'private':'public';
   log.act=(S.compose&&S.compose.act)||null;                            /* 활동 태그(연습/공연/작업/기타) — 분석표용 */
   STREAM.unshift(log);
   SESSION_NEW.add(id);          /* 방금 올린 것 → 맨 위 핀(루틴 피드 위에) */
@@ -4758,8 +4806,8 @@ function bind(){
     const pw=(document.getElementById('authpw')||{}).value||'';
     if(!em||!pw){offToast('이메일과 비밀번호를 입력하세요');return;}
     if(S.authMode==='signup'){
-      const nm=((document.getElementById('authname')||{}).value||'').trim();
-      if(!nm){ offToast('이름(아티스트명)을 입력해 주세요'); return; }
+      /* 이름은 선택 — 비우면 이메일 앞부분으로 시작하고 나중에 프로필에서 바꾼다 (가입 정보 최소화) */
+      const nm=((document.getElementById('authname')||{}).value||'').trim() || em.split('@')[0];
       /* 앱스토어 Guideline 1.2 — 가입 전에 무관용 원칙 약관에 동의받아야 한다 */
       const ag=document.getElementById('authagree');
       if(!ag||!ag.checked){ offToast('이용약관에 동의해야 가입할 수 있어요'); return; }
@@ -4771,9 +4819,12 @@ function bind(){
   /* 비밀번호 찾기 */
   const afg=document.getElementById('authforgot');
   if(afg)afg.onclick=()=>{ resetPw(((document.getElementById('authemail')||{}).value||'').trim()); };
-  /* 엔터로 제출 */
-  ['authemail','authpw','authname'].forEach(function(id){ const el=document.getElementById(id);
-    if(el)el.onkeydown=e=>{ if(e.key==='Enter'&&asub)asub.click(); }; });
+  /* 엔터로 제출 + 입력값 보존(로그인↔가입 전환에도 안 날아가게) */
+  [['authemail','email'],['authpw','pw'],['authname','name']].forEach(function([id,key]){ const el=document.getElementById(id);
+    if(el){ el.oninput=()=>{ AUTHVALS[key]=el.value; };
+      el.onkeydown=e=>{ if(e.key==='Enter'&&asub)asub.click(); }; } });
+  const aeye=document.getElementById('authpweye');
+  if(aeye)aeye.onclick=()=>{ AUTHVALS.showPw=!AUTHVALS.showPw; render(); };
   const plgn=document.getElementById('profloginbtn'); if(plgn)plgn.onclick=()=>{ S.auth=true; render(); };
   /* 프로필 ⋯ — 이 사람을 신고하거나 차단한다 (콘텐츠가 없어도 닿을 수 있어야 한다) */
   const pmo=document.getElementById('promore');
@@ -5114,6 +5165,13 @@ function bind(){
   const pjo=document.getElementById('projectapplybtn');
   if(pjo)pjo.onclick=()=>openProjectSheet();
   document.querySelectorAll('[data-openproj]').forEach(b=>b.onclick=()=>openProjectSheet(b.dataset.openproj));
+  /* 추천 팔로우(빈 피드) — 팔로우 성공하면 피드를 새로 채워 바로 보여준다 */
+  document.querySelectorAll('[data-recofollow]').forEach(b=>b.onclick=async()=>{
+    b.disabled=true; b.textContent='…';
+    const ok=await followArtist(b.dataset.recofollow);
+    if(ok){ offToast((b.dataset.reconm||'아티스트')+'를 팔로우했어요'); try{renewHome();}catch(_){} }
+    render();
+  });
   const pjx=document.getElementById('pjclose'); if(pjx)pjx.onclick=()=>{S.projectApply=false;render()};
   const pjbd=document.getElementById('pjbd');   if(pjbd)pjbd.onclick=()=>{S.projectApply=false;render()};
   document.querySelectorAll('[data-pjproject]').forEach(b=>b.onclick=()=>{
@@ -5515,13 +5573,11 @@ function bind(){
   /* 내 글 로그 ⋯ → 사진/데모 넣기 메뉴 · 남의 음악 ⋯ → 공유/담기 메뉴 */
   document.querySelectorAll('[data-addmenu]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); S.logMenu={kind:'addmedia', id:b.dataset.addmenu}; render(); });
   document.querySelectorAll('[data-sharemenu]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); S.logMenu={kind:'oshare', id:b.dataset.sharemenu, nm:b.dataset.snm, by:b.dataset.sby, audio:b.dataset.saud, aid:b.dataset.said||''}; render(); });
-  if(S.logMenu){
-    const lmbd=document.getElementById('lmbd'), lmx=document.getElementById('lmx');
-    const lmclose=()=>{ S.logMenu=null; render(); };
-    if(lmx)lmx.onclick=lmclose; if(lmbd)lmbd.onclick=e=>{ if(e.target===lmbd)lmclose(); };
-    document.querySelectorAll('[data-addkind]').forEach(b=>b.onclick=()=>{ _attachTo=S.logMenu.id; const k=b.dataset.addkind; S.logMenu=null; render(); const inp=document.getElementById(k==='ph'?'addphoto':'adddemo'); if(inp)inp.click(); });
-    /* 로그 공개/비공개 전환 — 발매·무대에 담긴 로그는 항상 공개(정책) */
-    document.querySelectorAll('[data-logvis]').forEach(b=>b.onclick=async()=>{
+  /* 로그 공개/비공개 전환 — 발매·무대에 담긴 로그는 항상 공개(정책).
+     ⋯ 메뉴 안에서도, My 카드 위 공개/비공개 칩에서도 같은 핸들러가 처리한다
+     (그래서 if(S.logMenu) 블록 밖에 있어야 한다 — 칩은 메뉴 없이도 항상 떠 있음) */
+  document.querySelectorAll('[data-logvis]').forEach(b=>b.onclick=async(e)=>{
+      e.stopPropagation();
       const l=(typeof STREAM!=='undefined'?STREAM:[]).find(x=>x&&x.id===b.dataset.logvis); if(!l) return;
       if(logVisLocked(l)){ offToast('무대·발매에 낸 로그는 항상 공개예요'); return; }
       const v=(l.vis==='public')?'private':'public', prev=l.vis;
@@ -5532,6 +5588,11 @@ function bind(){
         offToast(v==='public'?'공개로 바꿨어요 — 팔로워 피드에 보여요':'비공개로 바꿨어요');
       }catch(e){ l.vis=prev; studioSave(); render(); console.warn('[offlog] 공개범위 변경 실패', e); offToast('변경 실패 — 잠시 후 다시'); }
     });
+  if(S.logMenu){
+    const lmbd=document.getElementById('lmbd'), lmx=document.getElementById('lmx');
+    const lmclose=()=>{ S.logMenu=null; render(); };
+    if(lmx)lmx.onclick=lmclose; if(lmbd)lmbd.onclick=e=>{ if(e.target===lmbd)lmclose(); };
+    document.querySelectorAll('[data-addkind]').forEach(b=>b.onclick=()=>{ _attachTo=S.logMenu.id; const k=b.dataset.addkind; S.logMenu=null; render(); const inp=document.getElementById(k==='ph'?'addphoto':'adddemo'); if(inp)inp.click(); });
     document.querySelectorAll('[data-omenu]').forEach(b=>b.onclick=()=>{ const act=b.dataset.omenu, M=S.logMenu; if(act==='save'){ S.logMenu=null; if(!ME){ render(); needLogin(); return; } S.saveTrack={tid:M.id, nm:M.nm, by:M.by, audio:M.audio}; render(); } else if(act==='follow'){ const aid=M.aid; S.logMenu=null; if(!ME){ render(); needLogin(); return; } const willFollow=!MYFOLLOWS.has(aid); (willFollow?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(ok) offToast(willFollow?'팔로우했어요':'팔로우 해제했어요'); render(); }); render(); } else if(act==='report'){ S.logMenu=null;
         /* 프로필에서 열면 곡 id 가 없다 — 그때는 '사용자'를 신고한 것으로 본다 */
         const isUser=!M.id;
@@ -5590,11 +5651,9 @@ function bind(){
     if(cam)cam.onclick=()=>{ S.cam=true; render(); startCam(); };   /* 앱 안 촬영 화면 (글은 유지, 권한 없으면 폰 카메라 폴백) */
     if(cau)cau.onclick=()=>{ const el=document.getElementById('caudio'); if(el)el.click(); };
     if(rm)rm.onclick=()=>{ const md=S.compose.media; if(md&&md.url&&/^blob:/.test(md.url)){try{URL.revokeObjectURL(md.url)}catch(_){}} S.compose.media=null; render(); };
-    /* 공개 범위·활동 태그 칩 — render() 대신 제자리 클래스만 토글.
-       (재렌더하면 시트 슬라이드업 애니메이션이 다시 재생돼 '내려갔다 올라오는' 튐 + 입력 포커스 유실) */
-    const vpr=document.getElementById('csvpriv'), vpu=document.getElementById('csvpub');
-    if(vpr)vpr.onclick=()=>{ S.compose.vis='private'; vpr.classList.add('on'); if(vpu)vpu.classList.remove('on'); };
-    if(vpu)vpu.onclick=()=>{ S.compose.vis='public'; vpu.classList.add('on'); if(vpr)vpr.classList.remove('on'); };
+    /* 활동 태그 칩 — render() 대신 제자리 클래스만 토글.
+       (재렌더하면 시트 슬라이드업 애니메이션이 다시 재생돼 '내려갔다 올라오는' 튐 + 입력 포커스 유실)
+       공개/비공개 토글은 작성 시트에서 뺐다 — 기본 공개, 조정은 My 페이지 카드의 칩에서 */
     /* 활동 태그(연습/공연/작업/기타) — 같은 칩 다시 누르면 해제 */
     document.querySelectorAll('[data-csact]').forEach(b=>b.onclick=()=>{
       S.compose.act=(S.compose.act===b.dataset.csact)?null:b.dataset.csact;
