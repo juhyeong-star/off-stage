@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>OFFLOG — 기록이 무대가 되는 곳</title>
-<meta name="description" content="창작 과정을 기록하고, 투표로 무대에 오르고, 음원으로 발매합니다.">
-<meta property="og:title" content="OFFLOG — 기록이 무대가 되는 곳">
-<meta property="og:description" content="창작 과정을 기록하고, 투표로 무대에 오르고, 음원으로 발매합니다.">
+<title>OFFLOG — 만드는 순간을 기록하다</title>
+<meta name="description" content="친구와 뮤지션이 지금 무엇을 만들고 있는지 기록하고, 팔로우한 사람의 LOG를 보는 음악 기록 앱.">
+<meta property="og:title" content="OFFLOG — 만드는 순간을 기록하다">
+<meta property="og:description" content="친구와 뮤지션이 지금 무엇을 만들고 있는지 기록하고, 팔로우한 사람의 LOG를 보는 음악 기록 앱.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://onoff-stage.com/offlog">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="OFFLOG — 기록이 무대가 되는 곳">
-<meta name="twitter:description" content="창작 과정을 기록하고, 투표로 무대에 오르고, 음원으로 발매합니다.">
+<meta name="twitter:title" content="OFFLOG — 만드는 순간을 기록하다">
+<meta name="twitter:description" content="친구와 뮤지션이 지금 무엇을 만들고 있는지 기록하고, 팔로우한 사람의 LOG를 보는 음악 기록 앱.">
 <!-- 안드로이드 TWA(구글 플레이 앱)가 앱 이름·아이콘·테마를 여기서 읽는다. 지우면 앱이 주소창 있는 웹으로 뜬다 -->
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#000000">
@@ -1372,6 +1372,8 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .authbtn.apple{background:#fff;color:#000;border-color:#fff}
 .authbtn.apple svg{width:17px;height:17px;margin-top:-2px}
 .authbtn.apple:hover{border-color:#fff;opacity:.92}
+.authbtn.kakao{background:#FEE500;color:#191919;border-color:#FEE500}
+.authbtn.kakao:hover{border-color:#FEE500;opacity:.92}
 .authbtn:hover{border-color:var(--mint)}
 /* 로그인 ↔ 회원가입 전환 · 비밀번호 찾기 */
 /* 이용약관 동의 (앱스토어 Guideline 1.2 — 가입 전 무관용 원칙 동의) */
@@ -1586,7 +1588,7 @@ try{
 let AUTHREADY=false;   /* 로그인 여부 확인 완료 — 그 전엔 스플래시, 확인 후 !ME면 잠금 */
 /* 로그인 폼 입력값 보존소 — 로그인↔회원가입 전환(render)마다 입력이 날아가던 문제.
    S 밖에 두는 이유: 입력마다 render()를 다시 돌리지 않기 위해(포커스 유지) */
-const AUTHVALS={email:'', pw:'', name:'', showPw:false};
+const AUTHVALS={email:'', pw:'', name:'', showPw:false, showEmail:false /* 이메일 폼 펼침 여부 — 기본은 소셜 3버튼만 */};
 let DATAREADY=false;   /* 실제 트랙 데이터 도착 완료 — 그 전엔 스플래시 유지(시드 목업이 진짜처럼 새는 걸 막음) */
 /* 저장된 로그인 세션이 기기에 있는가 — 네트워크 없이 즉시 판단.
    이게 true면 "로그인한 사람"이므로 잠금 화면을 띄우면 안 된다(다시 로그인하라고 하면 안 됨). */
@@ -1883,8 +1885,15 @@ function authForm(){
   const social =
     `<button class="authbtn apple" id="authapple"><svg viewBox="0 0 384 512" aria-hidden="true"><path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg> Apple로 ${su?'가입':'계속'}</button>
     <button class="authbtn" id="authgoogle"><b>G</b> Google로 ${su?'가입':'계속'}</button>
-    <div class="authdiv"><span>또는 이메일</span></div>`;
+    <button class="authbtn kakao" id="authkakao"><svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16"><path fill="currentColor" d="M12 3C6.48 3 2 6.48 2 10.8c0 2.76 1.84 5.18 4.6 6.56-.2.74-.74 2.7-.85 3.12-.13.52.19.51.4.37.17-.11 2.65-1.8 3.72-2.53.68.1 1.39.15 2.13.15 5.52 0 10-3.48 10-7.67C22 6.48 17.52 3 12 3z"/></svg> 카카오로 ${su?'가입':'계속'}</button>`;
+  /* 이메일 로그인은 기본으로 숨긴다 — 소셜 3버튼만 먼저. '다른 방법으로 로그인'을 눌러야 펼쳐진다 */
+  if(!AUTHVALS.showEmail){
+    return `${social}
+      <p class="agreenote">계속하면 <button type="button" class="authlink" id="opnterms">이용약관</button>에 동의하는 것으로 봅니다.</p>
+      <button type="button" class="authlink" id="authemailtoggle" style="margin-top:12px">다른 방법으로 로그인</button>`;
+  }
   return `${social}
+    <div class="authdiv"><span>또는 이메일</span></div>
     ${su?`<input class="authinput" id="authname" type="text" autocomplete="name" placeholder="이름 (선택 — 나중에 바꿀 수 있어요)" value="${esc(AUTHVALS.name||'')}">`:''}
     <input class="authinput" id="authemail" type="email" autocomplete="username" placeholder="이메일" value="${esc(AUTHVALS.email||'')}">
     <div class="authpwrow">
@@ -1940,9 +1949,11 @@ function logMenuSheet(){
   const M=S.logMenu;
   const _ml = M.kind==='addmedia' ? (typeof STREAM!=='undefined'?STREAM:[]).find(x=>x&&x.id===M.id) : null;
   const rows = M.kind==='addmedia'
-    ? `<button class="pkrow" data-addkind="ph"><span class="pknm"><b>📷 사진 넣기</b><small>이 글이 사진 위 캡션이 돼요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>
-       <button class="pkrow" data-addkind="snd"><span class="pknm"><b>♪ 데모 넣기</b><small>이 글에 데모(오디오)를 붙여요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>
-       ${_ml?`<button class="pkrow" data-logvis="${M.id}"><span class="pknm"><b>${_ml.vis==='public'?'🔓 공개 로그':'🔒 비공개'}</b><small>${logVisLocked(_ml)?'무대·발매에 낸 로그는 항상 공개예요':(_ml.vis==='public'?'탭하면 비공개로 바꿔요':'탭하면 공개로 — 팔로워 피드에 보여요')}</small></span><span style="margin-left:auto;color:var(--mint);font-weight:800">${_ml.vis==='public'?'공개':'비공개'}</span></button>`:''}`
+    ? `${_ml?`<button class="pkrow" data-logvis="${M.id}"><span class="pknm"><b>${_ml.vis==='public'?'🔓 공개 로그':'🔒 비공개'}</b><small>${logVisLocked(_ml)?'무대·발매에 낸 로그는 항상 공개예요':(_ml.vis==='public'?'탭하면 비공개로 바꿔요':'탭하면 공개로 — 팔로워 피드에 보여요')}</small></span><span style="margin-left:auto;color:var(--mint);font-weight:800">${_ml.vis==='public'?'공개':'비공개'}</span></button>`:''}
+       ${_ml&&_ml.t==='note'?`<button class="pkrow" data-addkind="ph"><span class="pknm"><b>📷 사진 넣기</b><small>이 글이 사진 위 캡션이 돼요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>
+       <button class="pkrow" data-addkind="snd"><span class="pknm"><b>♪ 데모 넣기</b><small>이 글에 데모(오디오)를 붙여요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>`:''}
+       <button class="pkrow" data-logdlm="${M.id}"><span class="pknm"><b>⬇ 다운로드</b><small>${_ml&&_ml.t==='note'?'글을 복사해요':'원본 파일을 받아요'}</small></span></button>
+       ${_ml?`<button class="pkrow danger" data-logdel="${M.id}"><span class="pknm"><b>삭제</b><small>이 로그를 완전히 지워요</small></span></button>`:''}`
     : `${M.aid?`<button class="pkrow" data-omenu="follow"><span class="pknm"><b>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'✓ 팔로잉':'＋ 팔로우'}</b><small>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'탭하면 팔로우 해제':(M.by||'이 아티스트')+' 팔로우하기'}</small></span></button>`:''}
        <button class="pkrow" data-omenu="save"><span class="pknm"><b>＋ 내 플레이리스트에 담기</b></span><span style="margin-left:auto;color:var(--mint);font-weight:800">담기</span></button>
        <button class="pkrow" data-omenu="share"><span class="pknm"><b>⤴ 공유</b><small>링크로 공유하거나 복사</small></span></button>
@@ -1950,7 +1961,7 @@ function logMenuSheet(){
        <button class="pkrow danger" data-omenu="report"><span class="pknm"><b>신고</b><small>부적절한 내용이면 알려주세요</small></span></button>
        ${M.aid && !(ME&&M.aid===ME.id) ? `<button class="pkrow danger" data-omenu="block"><span class="pknm"><b>${MYBLOCKS.has(M.aid)?'차단 해제':'차단'}</b><small>${MYBLOCKS.has(M.aid)?'다시 볼 수 있게 합니다':'이 사람의 글이 바로 안 보이게 됩니다'}</small></span></button>`:''}`;
   return `<div class="cs-bd" id="lmbd"><div class="cs">
-    <div class="cs-hd"><b>${M.kind==='addmedia'?'로그에 넣기':(M.nm||'음악')}</b><button class="cs-x" id="lmx" aria-label="닫기">✕</button></div>
+    <div class="cs-hd"><b>${M.kind==='addmedia'?'LOG 관리':(M.nm||'음악')}</b><button class="cs-x" id="lmx" aria-label="닫기">✕</button></div>
     ${M.kind==='addmedia'?'':`<div class="cs-trk">🎵 <b>${M.nm||'음악'}</b>${M.by?' · '+M.by:''}</div>`}
     ${rows}
   </div></div>`;
@@ -2835,7 +2846,7 @@ function prevStory(){
    처음 = Trending. 그 다음부터 Following·Trending·For You가 섞여서 랜덤하게 계속 바뀐다. ── */
 /* ── Home — 한 화면에 한 섹션. 좌우 스와이프(또는 상단 칩)로 Logs·Releases·Vote·Following 전환 ── */
 /* 홈 3페이지 — 발견(첫 진입) · 무대 · 로그. 첫 화면이 절대 비지 않게 발견을 맨 앞에 둔다 */
-const HOMETABS=[['logs','LOG']];/* 무대·MUSIC 탭은 일단 삭제 — 필요해지면 [['vote','무대'],['logs','LOG'],['rel','MUSIC']]로 되돌리면 됨 */
+const HOMETABS=[['logs','LOG']];/* 홈은 팔로잉 LOG 피드 전용 — 탭 하나뿐이라 탭바 자체가 렌더되지 않는다 */
 let HOMEIN=0;   /* 방금 넘어온 방향(+1 다음 / -1 이전) — 새 섹션 입장 애니메이션용 */
 let _hgoT=null; /* 섹션 전환 예약 타이머 — 넘어가는 중에 다시 잡으면 취소한다(§3 중단 가능) */
 let _lastView='';   /* 직전 뷰 — 뷰 바뀔 때만 전환 페이드 */
@@ -2922,25 +2933,9 @@ function home(){
     bodyC = list.map(feedCard).join('') || (S.calDate
       ? `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">이 날은 올라온 로그가 없어요.</div>`
       : recoFollowBlock());
-  } else if(cur==='rel'){
-    const rel=ALLTRACKS.filter(t=>!isHiddenItem(t)).slice(0,24);   /* 차단·신고분 제외 */
-    bodyC=rel.length
-      ? `<div class="relgrid">${rel.map(t=>{
-          const by=(t.by||'').replace(/"/g,'&quot;'), nm=(t.nm||'').replace(/"/g,'&quot;');
-          const dts=t.dt?String(t.dt).replace(/-/g,'.'):'';
-          return `<div class="reltile">
-          <button class="relcov" data-relplay="${t.audio||''}" data-relnm="${nm}" data-relby="${by}" data-relaid="${t.aid||''}" data-reltid="${t.tid||''}" aria-label="${nm} 재생"
-            style="background:${t.cover?`center/cover no-repeat url(${t.cover})`:relGrad(t.c)}">${t.cover?'':`<em>${(t.nm||'♪').slice(0,1)}</em>`}
-            ${t.demo?`<span class="reldemo">DEMO</span>`:''}<i class="relplay">▶</i></button>
-          <button class="reltitle" data-rellog="${by}" data-relaid="${t.aid||''}" title="${nm}">${esc(t.nm)}</button>
-          <button class="relartist" data-relgo="${by}" data-relaid="${t.aid||''}">${esc(t.by)}</button>
-          ${dts?`<span class="reldate">${esc(dts)}</span>`:''}</div>`;}).join('')}</div>`
-      : `<div class="pknote" style="padding:30px 0">불러오는 중…</div>`;
-  } else {
-    /* 무대 — 홈의 첫 화면 자체가 voteHub()의 Y2K 투표 화면. 탭해서 더 들어가는 요약 타일이 아니라
-       투표 카드·리더보드·포스터월이 바로 나온다(S.vcat을 깊은 투표 화면과 그대로 공유) */
-    bodyC = voteHub();
   }
+  /* 홈은 팔로잉 LOG 피드 전용 — 무대(투표)/MUSIC(발매 그리드) 분기는 완전히 삭제했다.
+     투표는 VOTE 화면(lists), 발매·프로젝트는 My 페이지에서 */
 
   return `<div class="hd">
     <div class="brand" style="flex:1;text-align:left;font-size:19px;letter-spacing:.02em">OFFLOG</div>
@@ -3128,7 +3123,7 @@ function roomFull(){
       <div class="rmid"><div class="rts">${slot}</div><div class="rnote">${esc(r.text)}</div></div>${chrome(r)}</div>`;
   };
 
-  return `<div class="hd"><button class="circ" data-v="home" aria-label="뒤로">‹</button>
+  return `<div class="hd"><button class="circ" data-v="home" aria-label="뒤로"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
     <div class="htitle">같은 시각<small>팔로잉</small></div>
     <div class="r"><button class="circ" aria-label="공유">⤴</button></div></div>
   <div class="roomhd">
@@ -3394,7 +3389,7 @@ function mine(){
     const chrome = me
       ? `${w?`<span class="wchip mychip">◆ ${esc(w.nm)}</span>`:''}
          ${visChip}
-         <button class="edit mine" ${l.t==='note'?`data-addmenu="${l.id}"`:`data-logdl="${l.id}"`} aria-label="${l.t==='note'?'넣기':'받기'}">⋯</button>`
+         <button class="edit mine" data-addmenu="${l.id}" aria-label="LOG 관리">⋯</button>`
       : '';
     if(l.t==='ph') return `<div class="fcard my">${dtb}<div class="rcard">
       <div class="bgimg" style="background:${l.bg}"></div><div class="grainy"></div>
@@ -3418,7 +3413,7 @@ function mine(){
       <div class="marks">${streamOrder(STREAM).map(mark).join('')||`<div class="pknote" style="padding:26px 0">아직 로그가 없어요</div>`}</div></div>`;
 
   return `<div class="hd">
-    <button class="circ" data-v="home" aria-label="뒤로">‹</button>
+    <button class="circ" data-v="home" aria-label="뒤로"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
     <div class="htitle">${me?'':esc(prof.who)}<small>${me?'내 페이지':prof.sub}</small></div>
     <div class="r">${me&&ME
       ? `<button class="circ" id="mysettings" aria-label="메뉴">⋯</button>`
@@ -3517,12 +3512,12 @@ let PEOPLE=[
 /* 팔로워/팔로잉 목록 — 전부 실제 follows+profiles 데이터 (하드코딩 PEEK/목업 없음) */
 /* 내 정보 / 설정 페이지 — 프로필·계정 정보, 로그아웃 */
 function accountView(){
-  if(!ME){ return `<div class="hd"><button class="circ" data-v="mine" aria-label="뒤로">‹</button>
+  if(!ME){ return `<div class="hd"><button class="circ" data-v="mine" aria-label="뒤로"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
     <div class="htitle">내 정보</div><span style="width:38px"></span></div>
     <div class="pknote" style="padding:40px 0">로그인이 필요해요</div>`; }
   const row=(k,v)=>v?`<div class="acrow"><span class="ack">${k}</span><span class="acv">${esc(v)}</span></div>`:'';
   const sns=ME.sns||{}, snsRow=(lab,val,pre)=>val?`<div class="acrow"><span class="ack">${lab}</span><span class="acv">${pre||''}${esc(val)}</span></div>`:'';
-  return `<div class="hd"><button class="circ" data-v="mine" aria-label="뒤로">‹</button>
+  return `<div class="hd"><button class="circ" data-v="mine" aria-label="뒤로"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
     <div class="htitle">내 정보<small>계정 · 설정</small></div><span style="width:38px"></span></div>
   <div class="mprof" style="padding-top:6px">
     <button class="mpav avedit" id="acavbtn" aria-label="프로필 사진 바꾸기">${avatarEl(ME.avatar,'coral', 92, ME.name)}<span class="avcam">📷</span></button>
@@ -3639,7 +3634,7 @@ function flist(){
   const fingN = meView ? MYFOLLOWS.size : ((rp&&rp.following!=null)?rp.following:'—');
   const body  = flistBody();
 
-  return `<div class="hd"><button class="circ" id="flback" aria-label="뒤로">‹</button>
+  return `<div class="hd"><button class="circ" id="flback" aria-label="뒤로"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
     <div class="htitle">${title}<small>${q?'검색':isFer?'팔로워':'팔로잉'}</small></div>
     <span style="width:34px"></span></div>
   <div class="srch"><span class="srchi">⌕</span>
@@ -3825,7 +3820,7 @@ function loadMyPerf(){
 }
 
 function lists(){
-  return `<div class="hd"><button class="circ" data-v="home" aria-label="뒤로">‹</button>
+  return `<div class="hd"><button class="circ" data-v="home" aria-label="뒤로"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
     <div class="brand" style="flex:1;text-align:center;letter-spacing:.18em;font-size:14px">${S.lseg==='vote'?'VOTE':'MY LIST'}</div>
     <span style="width:34px"></span></div>
   <div class="lseg">
@@ -3947,7 +3942,7 @@ function recoView(){
 
 function listDetail(){
   const p=LISTS.find(x=>x.id===S.list);
-  return `<div class="hd"><button class="circ" id="ldback" aria-label="뒤로">‹</button>
+  return `<div class="hd"><button class="circ" id="ldback" aria-label="뒤로"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
     <div class="htitle">${esc(p.nm)}<small>${(p.tracks||[]).length}곡 ${p.pub?'· 공개':'· 나만 보기'}</small></div>
     <div class="r"><button class="circ" data-share="${p.id}" aria-label="공유">⤴</button></div></div>
   <div class="lhero">
@@ -4189,7 +4184,7 @@ function work(){
   const working=(!w.date || w.date==='작업 중');
   const relTxt=working?'작업 중':(w.pending?'발매 예약 '+w.date:(w.date?'발매 '+w.date:'미발매'));
   const _cov=safeUrl(w.cover);
-  return `<div class="hd"><button class="circ" data-v="mine" aria-label="뒤로">‹</button>
+  return `<div class="hd"><button class="circ" data-v="mine" aria-label="뒤로"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
     <div class="htitle"></div>
     <div class="r"><button class="circ" aria-label="공유">⤴</button></div></div>
   <div class="whero2" style="--acc:${acc}">
@@ -4330,9 +4325,6 @@ function composeSheet(){
       <button class="cs-att${m&&(m.kind==='ph'||m.kind==='vid')?' on':''}" id="cscam" aria-label="카메라">📷<span>카메라</span></button>
       <button class="cs-att${m&&m.kind==='aud'?' on':''}" id="csaudio" aria-label="데모">🎵<span>데모</span></button>
     </div>
-    <div class="cs-attach" style="margin-top:0">
-      ${[['prac','연습'],['show','공연'],['work','작업'],['etc','기타']].map(a=>`<button class="cs-att txt${C.act===a[0]?' on':''}" data-csact="${a[0]}" aria-label="${a[1]}">${a[1]}</button>`).join('')}
-    </div>
     <button class="cs-post" id="cspost"${canPost?'':' disabled'}>올리기</button>
   </div></div>`;
 }
@@ -4414,6 +4406,20 @@ function downloadLog(id){
   else { if(navigator.clipboard){ navigator.clipboard.writeText(l.text||'').then(()=>offToast('글을 복사했어요')).catch(()=>offToast('복사 실패')); } else offToast('복사할 수 없어요'); return; }
   if(!url){ offToast('받을 파일이 없어요 (샘플 로그예요)'); return; }
   _saveFile(url, name);
+}
+/* 내 로그 삭제 — 화면에서 먼저 지우고, 서버 행(sid)이 있으면 같이 지운다.
+   실패해도 로컬은 이미 지워진 상태를 유지한다(사용자 의도가 삭제이므로 복원이 더 이상함) */
+async function deleteLog(id){
+  const i=STREAM.findIndex(x=>x&&String(x.id)===String(id));
+  if(i<0){ offToast('로그를 못 찾았어요'); return; }
+  const l=STREAM[i];
+  if(!await offConfirm('이 로그를 삭제할까요?\n지운 로그는 되돌릴 수 없습니다.','삭제')) return;
+  STREAM.splice(i,1); studioSave(); S.logMenu=null; render();
+  offToast('로그를 삭제했어요');
+  if(l.sid && ME && SBC && LOGSTABLE){
+    try{ const r=await SBC.from('logs').delete().eq('id',l.sid); if(r.error)throw r.error; }
+    catch(e){ console.warn('[offlog] 서버 로그 삭제 실패', e); }
+  }
 }
 /* 글 로그에 사진/데모 붙이기 → 미디어 카드로 (사진=캡션, 데모=데모카드) */
 function attachMedia(id, kind, file){
@@ -4749,15 +4755,11 @@ function render(){
   const _ns=document.getElementById('navseg');
   if(_ns){ _ns.classList.toggle('logs', !S.cam);
     _ns.querySelectorAll('.nsg').forEach(function(b){ b.classList.toggle('on', (b.dataset.cam==='cam')===!!S.cam); }); }
-  /* 로그인 잠금 오버레이 — 확인 전=스플래시, 확인 후 비로그인=잠금, 로그인=없음 */
+  /* 로딩 스플래시만 — 로그인 잠금화면은 없앴다(비회원 전면 둘러보기 허용).
+     팔로우·LOG 작성·반응·신청 같은 액션 시점에 각 핸들러의 needLogin()이
+     로그인 시트를 연다 — 둘러보다가 필요할 때만 로그인. 이탈률이 훨씬 낮다 */
   const _lv=document.getElementById('lockview');
-  /* 잠금은 "확실히 로그인 안 한 사람"에게만. 기기에 세션이 남아 있으면 아직 불러오는 중이므로 스플래시를 유지한다
-     — 한 번 로그인하면 로그아웃 전까지 다시 묻지 않는다.
-     Home(무대 첫 진입 포함) · 투표 상세 화면은 비로그인도 구경 가능 — 실제 액션(투표·신청·팔로우 등)은
-     각 핸들러의 needLogin() 가드가 막는다. 그 외 화면(My 페이지 등)은 기존대로 로그인 벽 유지 */
-  const _openView = S.view==='home' || (S.view==='lists' && S.lseg==='vote');
-  if(_lv) _lv.innerHTML = !(AUTHREADY&&DATAREADY) ? splashScreen()
-    : ((ME||_openView) ? '' : (hasStoredSession() ? splashScreen() : lockScreen()));
+  if(_lv) _lv.innerHTML = !(AUTHREADY&&DATAREADY) ? splashScreen() : '';
   renderMini();
   bind();
   syncStoryAudio();     // 스토리 데모면 실제 소리 재생
@@ -4827,6 +4829,9 @@ function bind(){
   };
   const aa=document.getElementById('authapple'); if(aa)aa.onclick=()=>{ if(_agreeOk()) loginApple(); };
   const ag=document.getElementById('authgoogle'); if(ag)ag.onclick=()=>{ if(_agreeOk()) loginGoogle(); };
+  const ak=document.getElementById('authkakao'); if(ak)ak.onclick=()=>{ if(_agreeOk()) loginKakao(); };
+  const aet=document.getElementById('authemailtoggle');
+  if(aet)aet.onclick=()=>{ AUTHVALS.showEmail=true; render(); };
   const asub=document.getElementById('authsubmit');
   if(asub)asub.onclick=()=>{
     const em=((document.getElementById('authemail')||{}).value||'').trim();
@@ -5620,6 +5625,9 @@ function bind(){
     const lmclose=()=>{ S.logMenu=null; render(); };
     if(lmx)lmx.onclick=lmclose; if(lmbd)lmbd.onclick=e=>{ if(e.target===lmbd)lmclose(); };
     document.querySelectorAll('[data-addkind]').forEach(b=>b.onclick=()=>{ _attachTo=S.logMenu.id; const k=b.dataset.addkind; S.logMenu=null; render(); const inp=document.getElementById(k==='ph'?'addphoto':'adddemo'); if(inp)inp.click(); });
+    /* LOG 관리 메뉴 — 다운로드(글은 복사) / 삭제. 모든 로그 타입에서 같은 메뉴 */
+    document.querySelectorAll('[data-logdlm]').forEach(b=>b.onclick=()=>{ const id=b.dataset.logdlm; S.logMenu=null; render(); downloadLog(id); });
+    document.querySelectorAll('[data-logdel]').forEach(b=>b.onclick=()=>{ deleteLog(b.dataset.logdel); });
     document.querySelectorAll('[data-omenu]').forEach(b=>b.onclick=()=>{ const act=b.dataset.omenu, M=S.logMenu; if(act==='save'){ S.logMenu=null; if(!ME){ render(); needLogin(); return; } S.saveTrack={tid:M.id, nm:M.nm, by:M.by, audio:M.audio}; render(); } else if(act==='follow'){ const aid=M.aid; S.logMenu=null; if(!ME){ render(); needLogin(); return; } const willFollow=!MYFOLLOWS.has(aid); (willFollow?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(ok) offToast(willFollow?'팔로우했어요':'팔로우 해제했어요'); render(); }); render(); } else if(act==='report'){ S.logMenu=null;
         /* 프로필에서 열면 곡 id 가 없다 — 그때는 '사용자'를 신고한 것으로 본다 */
         const isUser=!M.id;
@@ -5678,14 +5686,8 @@ function bind(){
     if(cam)cam.onclick=()=>{ S.cam=true; render(); startCam(); };   /* 앱 안 촬영 화면 (글은 유지, 권한 없으면 폰 카메라 폴백) */
     if(cau)cau.onclick=()=>{ const el=document.getElementById('caudio'); if(el)el.click(); };
     if(rm)rm.onclick=()=>{ const md=S.compose.media; if(md&&md.url&&/^blob:/.test(md.url)){try{URL.revokeObjectURL(md.url)}catch(_){}} S.compose.media=null; render(); };
-    /* 활동 태그 칩 — render() 대신 제자리 클래스만 토글.
-       (재렌더하면 시트 슬라이드업 애니메이션이 다시 재생돼 '내려갔다 올라오는' 튐 + 입력 포커스 유실)
-       공개/비공개 토글은 작성 시트에서 뺐다 — 기본 공개, 조정은 My 페이지 카드의 칩에서 */
-    /* 활동 태그(연습/공연/작업/기타) — 같은 칩 다시 누르면 해제 */
-    document.querySelectorAll('[data-csact]').forEach(b=>b.onclick=()=>{
-      S.compose.act=(S.compose.act===b.dataset.csact)?null:b.dataset.csact;
-      document.querySelectorAll('[data-csact]').forEach(x=>x.classList.toggle('on', S.compose.act===x.dataset.csact));
-    });
+    /* 작성창은 텍스트+카메라+음원+올리기만 남긴다 — 공개/비공개도, 활동 태그도 올릴 때 묻지 않는다.
+       새 로그는 기본 공개, 조정은 My 페이지 카드의 칩·⋯메뉴에서 */
     if(post)post.onclick=submitCompose;
   }
   /* 카메라 입력(1회 바인딩) — 찍은 게 영상이면 영상 로그, 사진이면 사진 로그로 자동 판별 */
