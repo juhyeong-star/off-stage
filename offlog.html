@@ -3335,11 +3335,11 @@ function mine(){
   const artistLog   = rpTracks.length ? rpTracks.map(alogCard).join('') : _emptyOrLoad;
   const artistWorks = rpTracks.length ? rpTracks.map(atrackCard).join('') : _emptyOrLoad;
 
-  /* 음원 발매 / 공연 지원 — 나란한 2박스. MUSIC 탭(LOG 아닌 쪽) 맨 위에 한 번만 얹는다 */
+  /* 음원 발매 / 오디션 — 나란한 2박스. MUSIC 탭(LOG 아닌 쪽) 맨 위에 한 번만 얹는다.
+     프로젝트 지원 버튼은 삭제(요청) — projectApplySheet 코드는 남아 있어 복원 쉬움 */
   const applyBoxRow = me ? `<div class="newwork2">
       <button class="nw2 music" id="newworkbtn"><em>＋</em>음원 발매</button>
-      <button class="nw2 perf" id="perfapplybtn"><em>＋</em>공연 지원</button></div>
-      <button class="newwork" id="projectapplybtn" style="margin-top:-3px">＋ 프로젝트 지원</button>` : '';
+      <button class="nw2 perf" id="perfapplybtn"><em>＋</em>오디션</button></div>` : '';
 
   /* 내 작품(스튜디오) */
   const myworks=(me&&WORKS.length?`<div class="rsec">음원 발매</div>`:'')+WORKS.map(w=>`<div class="workrow">
@@ -3351,15 +3351,15 @@ function mine(){
   /* 내 공연 지원 내역 — perf_entries에서 author_id=나 로 조회. 곡 카드와 같은 crow2/cex 문법 재사용.
      WORKS 아래에 이어붙는 두 번째 섹션이라 소제목만 달고, ＋박스는 위(applyBoxRow)에서 한 번만 나온다 */
   const myRoundName=rid=>{ const r=ROUNDS.find(x=>x.id===rid); return r?r.nm:rid; };
-  const concSecHead = `<div class="rsec" style="margin-top:18px">공연 지원</div>`;
+  const concSecHead = `<div class="rsec" style="margin-top:18px">오디션</div>`;
   const myconcertList = !ME
-    ? concSecHead+`<div class="pknote" style="padding:26px 0">로그인하면 내 공연 지원 내역을 볼 수 있어요</div>`
+    ? concSecHead+`<div class="pknote" style="padding:26px 0">로그인하면 내 오디션 지원 내역을 볼 수 있어요</div>`
     : !PERFTABLE
-      ? concSecHead+`<div class="pknote" style="padding:26px 0">공연 지원 기능을 준비 중이에요</div>`
+      ? concSecHead+`<div class="pknote" style="padding:26px 0">오디션 기능을 준비 중이에요</div>`
       : MYPERF===null
         ? concSecHead+`<div class="pknote" style="padding:26px 0">불러오는 중…</div>`
         : !MYPERF.length
-          ? concSecHead+`<div class="pknote" style="padding:26px 0">아직 지원한 공연이 없어요</div>`
+          ? concSecHead+`<div class="pknote" style="padding:26px 0">아직 지원한 오디션이 없어요</div>`
           : concSecHead+MYPERF.map(e=>{
             const vid=parsePerfVideo(e.video_url), expanded=S.perfExpand===e.id;
             return `<div class="crow2" data-pexpand="${e.id}">
@@ -3927,7 +3927,7 @@ function voteHub(){
   }).join('<div style="height:14px"></div>');
   return `<div class="y2kvote">${bar}${body}
     ${cat==='stage'
-      ? `<p class="y2khint">카드를 눌러 영상을 보고 ▲로 투표하세요 · 공연 지원은 My 페이지 CONCERT 탭에서</p>`
+      ? `<p class="y2khint">카드를 눌러 영상을 보고 ▲로 투표하세요 · 오디션 지원은 My 페이지에서</p>`
       : `<p class="y2khint">곡을 눌러 들으면서 ▲로 투표하세요 · 카드를 누르면 그 아티스트의 log로 이동합니다</p>`}
   </div>`;
 }
@@ -4041,7 +4041,7 @@ function perfApplySheet(){
   const miss=perfMissing();
   return `<div class="sheet-bd" id="pfbd"></div>
   <div class="pksheet tall">
-    <div class="pkhd"><b>공연 신청</b><span class="pksub">투표로 무대에 오릅니다</span>
+    <div class="pkhd"><b>오디션 지원</b><span class="pksub">투표로 무대에 오릅니다</span>
       <button class="pkx" id="pfclose" aria-label="닫기">✕</button></div>
 
     <div class="rsec">신청할 라운드</div>
@@ -5247,7 +5247,7 @@ function bind(){
     }catch(e){
       pfd.disabled=false; pfd.textContent='신청하기';
       if(e&&e.code==='23505')return offToast('이미 이 라운드에 신청했어요');
-      if(e&&(e.code==='PGRST205'||e.code==='42P01')){ PERFTABLE=false; return offToast('공연 신청 준비 중이에요 — 잠시 후 다시 시도해 주세요'); }
+      if(e&&(e.code==='PGRST205'||e.code==='42P01')){ PERFTABLE=false; return offToast('오디션 준비 중이에요 — 잠시 후 다시 시도해 주세요'); }
       console.warn('[offlog] 공연 신청 실패', e); offToast('신청에 실패했어요 — 잠시 후 다시 시도해 주세요');
     }
   };
