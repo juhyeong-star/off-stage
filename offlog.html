@@ -2159,7 +2159,27 @@ function _fqSchedule(){
   clearTimeout(_fqT);
   /* 목록만 갈아끼우므로 입력창은 그대로다 — 포커스·커서·한글 조합이 전혀 흔들리지 않는다.
      그래서 조합 중인지 볼 필요도 없고, 간격도 짧게 둘 수 있다. */
-  _fqT=setTimeout(refreshFlist, 120);
+  _fqT=setTimeout(function(){ refreshFlist(); searchProfiles(); }, 120);
+}
+
+/* 서버 프로필 검색 — 곡을 아직 안 올린 신규 가입자도 찾아진다.
+   allArtists()는 ALLTRACKS(곡 올린 사람)에서만 뽑아서, 방금 가입한 사람이
+   검색에 절대 안 나오던 문제의 원인이었다. profiles 테이블을 직접 이름으로 검색한다. */
+let PSEARCH={q:'', rows:[]};   /* 마지막 서버 검색 결과 캐시 — flistBody가 동기로 읽는다 */
+let _psT=0;
+async function searchProfiles(){
+  const q=(S.fq||'').trim();
+  if(!SBC || q.length<1){ PSEARCH={q:'', rows:[]}; return; }
+  if(PSEARCH.q===q) return;          /* 같은 검색어면 재요청 안 함 */
+  const my=++_psT;
+  try{
+    const r=await SBC.from('profiles').select('id,name,avatar_url,role')
+      .ilike('name','%'+q.replace(/[%_]/g,'')+'%').limit(20);
+    if(r.error) throw r.error;
+    if(my!==_psT) return;            /* 더 새 검색이 이미 나감 — 늦게 온 응답 버림 */
+    PSEARCH={q:q, rows:(r.data||[]).map(p=>({who:p.name||'', aid:p.id, avatar:p.avatar_url||'', c:'blue', sub:roleKo(p.role)}))};
+    refreshFlist();
+  }catch(e){ console.warn('[offlog] 프로필 검색 실패', e); }
 }
 
 /* 비로그인 안내 — 조용히 실패시키지 않고 알려준다 */
@@ -3643,13 +3663,20 @@ function flistBody(){
   let rows = (cached || []).filter(p=>!isHiddenItem(p));
   if(q) rows = rows.filter(p=>((p.who||'').toLowerCase().includes(q) || (p.sub||'').toLowerCase().includes(q)));
 
-  /* 검색 중이면 — 아직 팔로우 관계가 없어 목록에 안 뜨는 아티스트도 전체에서 찾아 보여준다 */
+  /* 검색 중이면 — 아직 팔로우 관계가 없어 목록에 안 뜨는 아티스트도 전체에서 찾아 보여준다.
+     곡 올린 사람(allArtists) + 서버 프로필 검색(PSEARCH, 곡 없는 신규 가입자 포함) 합집합 */
   let extra = [];
   if(q){
     const known = new Set(rows.map(p=>p.aid).filter(Boolean));
     extra = allArtists().filter(p => p.aid && !known.has(p.aid) && !(ME && p.aid===ME.id)
       && !isHiddenItem(p)                                   /* 차단한 사람은 검색에도 안 뜬다 */
       && (p.who||'').toLowerCase().includes(q)).slice(0,30);
+    const seen2 = new Set(extra.map(p=>p.aid));
+    (PSEARCH.q===(S.fq||'').trim() ? PSEARCH.rows : []).forEach(p=>{
+      if(p.aid && !known.has(p.aid) && !seen2.has(p.aid) && !(ME && p.aid===ME.id) && !isHiddenItem(p)){
+        seen2.add(p.aid); extra.push(p);
+      }
+    });
   }
 
   const prowOf = p => { const on=MYFOLLOWS.has(p.aid), mine=ME&&p.aid===ME.id;
