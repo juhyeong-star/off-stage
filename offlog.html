@@ -1952,17 +1952,14 @@ function logMenuSheet(){
   const M=S.logMenu;
   const _ml = M.kind==='addmedia' ? (typeof STREAM!=='undefined'?STREAM:[]).find(x=>x&&x.id===M.id) : null;
   const rows = M.kind==='addmedia'
-    ? `${_ml?`<button class="pkrow" data-logvis="${M.id}"><span class="pknm"><b>${_ml.vis==='public'?'🔓 공개 로그':'🔒 비공개'}</b><small>${logVisLocked(_ml)?'무대·발매에 낸 로그는 항상 공개예요':(_ml.vis==='public'?'탭하면 비공개로 바꿔요':'탭하면 공개로 — 팔로워 피드에 보여요')}</small></span><span style="margin-left:auto;color:var(--mint);font-weight:800">${_ml.vis==='public'?'공개':'비공개'}</span></button>`:''}
-       ${_ml&&_ml.t==='note'?`<button class="pkrow" data-addkind="ph"><span class="pknm"><b>📷 사진 넣기</b><small>이 글이 사진 위 캡션이 돼요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>
-       <button class="pkrow" data-addkind="snd"><span class="pknm"><b>♪ 데모 넣기</b><small>이 글에 데모(오디오)를 붙여요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>`:''}
-       <button class="pkrow" data-logdlm="${M.id}"><span class="pknm"><b>⬇ 다운로드</b><small>${_ml&&_ml.t==='note'?'글을 복사해요':'원본 파일을 받아요'}</small></span></button>
-       ${_ml?`<button class="pkrow danger" data-logdel="${M.id}"><span class="pknm"><b>삭제</b><small>이 로그를 완전히 지워요</small></span></button>`:''}`
+    ? `<button class="pkrow" data-logshare="${M.id}"><span class="pknm"><b>⤴ 공유하기</b><small>링크로 공유하거나 복사</small></span></button>
+       ${_ml?`<button class="pkrow" data-logedit="${M.id}"><span class="pknm"><b>✎ 수정하기</b><small>${_ml.t==='note'?'글 내용을 고쳐요':'설명(캡션)을 고쳐요'}</small></span></button>`:''}
+       ${_ml&&_ml.t==='note'?`<button class="pkrow" data-addkind="ph"><span class="pknm"><b>📷 사진 첨부하기</b><small>이 글이 사진 위 캡션이 돼요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>`:''}
+       ${_ml?`<button class="pkrow danger" data-logdel="${M.id}"><span class="pknm"><b>삭제하기</b><small>이 로그를 완전히 지워요</small></span></button>`:''}`
     : `${M.aid?`<button class="pkrow" data-omenu="follow"><span class="pknm"><b>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'✓ 팔로잉':'＋ 팔로우'}</b><small>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'탭하면 팔로우 해제':(M.by||'이 아티스트')+' 팔로우하기'}</small></span></button>`:''}
        <button class="pkrow" data-omenu="save"><span class="pknm"><b>＋ 내 플레이리스트에 담기</b></span><span style="margin-left:auto;color:var(--mint);font-weight:800">담기</span></button>
-       <button class="pkrow" data-omenu="share"><span class="pknm"><b>⤴ 공유</b><small>링크로 공유하거나 복사</small></span></button>
-       <!-- 앱스토어 Guideline 1.2 — 신고·차단은 콘텐츠에서 바로 닿을 수 있어야 한다 -->
-       <button class="pkrow danger" data-omenu="report"><span class="pknm"><b>신고</b><small>부적절한 내용이면 알려주세요</small></span></button>
-       ${M.aid && !(ME&&M.aid===ME.id) ? `<button class="pkrow danger" data-omenu="block"><span class="pknm"><b>${MYBLOCKS.has(M.aid)?'차단 해제':'차단'}</b><small>${MYBLOCKS.has(M.aid)?'다시 볼 수 있게 합니다':'이 사람의 글이 바로 안 보이게 됩니다'}</small></span></button>`:''}`;
+       <button class="pkrow" data-omenu="share"><span class="pknm"><b>⤴ 공유</b><small>링크로 공유하거나 복사</small></span></button>`;
+       /* 신고·차단 메뉴는 뺐다(요청) — 기존에 차단해둔 사람 해제는 계정 설정의 '차단한 사람' 목록에 남아 있다 */
   return `<div class="cs-bd" id="lmbd"><div class="cs">
     <div class="cs-hd"><b>${M.kind==='addmedia'?'LOG 관리':(M.nm||'음악')}</b><button class="cs-x" id="lmx" aria-label="닫기">✕</button></div>
     ${M.kind==='addmedia'?'':`<div class="cs-trk">🎵 <b>${M.nm||'음악'}</b>${M.by?' · '+M.by:''}</div>`}
@@ -2180,6 +2177,19 @@ function _fqSchedule(){
    allArtists()는 ALLTRACKS(곡 올린 사람)에서만 뽑아서, 방금 가입한 사람이
    검색에 절대 안 나오던 문제의 원인이었다. profiles 테이블을 직접 이름으로 검색한다. */
 let PSEARCH={q:'', rows:[]};   /* 마지막 서버 검색 결과 캐시 — flistBody가 동기로 읽는다 */
+/* 최근 가입한 사람들 — 아티스트 찾기 페이지에 들어오면 검색 없이도 쭉 보인다 */
+let RECENTP=null;              /* null=아직 안 불러옴, []=불러왔지만 없음 */
+async function loadRecentProfiles(){
+  if(!SBC || RECENTP!==null) return;
+  RECENTP=[];                  /* 중복 요청 방지 — 실패하면 다시 null로 되돌려 재시도 허용 */
+  try{
+    const r=await SBC.from('profiles').select('id,name,avatar_url,role,created_at')
+      .order('created_at',{ascending:false}).limit(30);
+    if(r.error) throw r.error;
+    RECENTP=(r.data||[]).filter(p=>p.name).map(p=>({who:p.name, aid:p.id, avatar:p.avatar_url||'', c:'blue', sub:roleKo(p.role)}));
+    if(S.view==='flist') render();
+  }catch(e){ RECENTP=null; console.warn('[offlog] 최근 가입 로드 실패', e); }
+}
 let _psT=0;
 async function searchProfiles(){
   const q=(S.fq||'').trim();
@@ -3433,7 +3443,7 @@ function mine(){
       ? (ME?`<button class="acedit" id="acedit">프로필 수정</button>`:`<button class="fol profol" id="profloginbtn">로그인</button>`)
       : `<button class="fol profol ${following?'on':''}" id="profolbtn" data-aid="${S.profileAid||''}">${following?'팔로잉':'팔로우'}</button>
          <!-- 앱스토어 Guideline 1.2 — 콘텐츠뿐 아니라 사용자 자체도 신고·차단할 수 있어야 한다 -->
-         <button class="promore" id="promore" aria-label="신고·차단">⋯</button>`}</div>
+         <button class="promore" id="promore" aria-label="공유 등 더보기">⋯</button>`}</div>
   ${me?`<button class="myplrow" data-v="lists">🎵 내 플레이리스트<span>›</span></button>`:''}
   <div class="seg profseg">
     <button class="${S.seg==='log'?'on':''}" data-seg="log">LOG</button>
@@ -3632,6 +3642,7 @@ function flist(){
   const key = targetId+'|'+S.flist;
   const cached = targetId ? FLCACHE[key] : null;
   if(targetId && !cached){ loadFollowList(targetId, S.flist).then(function(){ try{ if(S.view==='flist') render(); }catch(_){} }); }
+  loadRecentProfiles();   /* 최근 가입 목록 — 페이지에 들어오면 바로 (한 번만 로드) */
 
   const ferN  = meView ? ((ME&&ME.followers!=null)?ME.followers:'—') : ((rp&&rp.followers!=null)?rp.followers:'—');
   const fingN = meView ? MYFOLLOWS.size : ((rp&&rp.following!=null)?rp.following:'—');
@@ -3686,15 +3697,23 @@ function flistBody(){
   const extraBody = extra.length
     ? `<div class="pldate" style="margin-top:14px">발견 · 새로 팔로우</div>${extra.map(prowOf).join('')}` : '';
 
-  if(!targetId) return `<div class="pknote" style="padding:36px 0">${meView?'로그인하면 내 팔로워를 볼 수 있어요':'불러올 수 없어요'}</div>`;
+  /* 최근 가입 섹션 — 검색어 없을 때 목록 아래에 항상. 나·이미 위에 나온 사람은 제외 */
+  const recentBody = (()=>{
+    if(q || !RECENTP || !RECENTP.length) return '';
+    const shown=new Set(rows.map(p=>p.aid).filter(Boolean));
+    const rec=RECENTP.filter(p=>p.aid && !shown.has(p.aid) && !(ME&&p.aid===ME.id) && !isHiddenItem(p)).slice(0,20);
+    return rec.length ? `<div class="pldate" style="margin-top:14px">최근 가입한 사람들</div>${rec.map(prowOf).join('')}` : '';
+  })();
+
+  if(!targetId) return `<div class="pknote" style="padding:24px 0 10px">${meView?'로그인하면 내 팔로워를 볼 수 있어요':'불러올 수 없어요'}</div>` + recentBody;
   if(q){
     /* 검색 중 — 관계 목록 로딩과 무관하게 매칭 결과(관계 내 + 발견)를 바로 보여준다 */
     return (rows.length || extra.length)
       ? rows.map(prowOf).join('') + extraBody
       : ((cached===null||cached===undefined) ? `<div class="pknote" style="padding:36px 0">불러오는 중…</div>` : `<div class="pknote" style="padding:36px 0">찾는 아티스트가 없습니다</div>`);
   }
-  if(cached===null||cached===undefined) return `<div class="pknote" style="padding:36px 0">불러오는 중…</div>`;
-  return rows.length ? rows.map(prowOf).join('') : `<div class="pknote" style="padding:36px 0">${isFer?'아직 팔로워가 없어요':'아직 팔로우한 사람이 없어요'}</div>`;
+  if(cached===null||cached===undefined) return `<div class="pknote" style="padding:36px 0">불러오는 중…</div>` + recentBody;
+  return (rows.length ? rows.map(prowOf).join('') : `<div class="pknote" style="padding:24px 0 10px">${isFer?'아직 팔로워가 없어요':'아직 팔로우한 사람이 없어요'}</div>`) + recentBody;
 }
 
 /* 검색 결과만 다시 그린다 — 입력창(#fq)은 절대 건드리지 않는다.
@@ -4320,15 +4339,16 @@ function composeSheet(){
       : m.kind==='aud' ? `<div class="cs-prev aud"><span>🎵 ${m.name||'데모'}</span><button class="cs-rm" id="csrm" aria-label="첨부 삭제">✕</button></div>`
       : `<div class="cs-prev"><img src="${m.url}" alt=""><button class="cs-rm" id="csrm" aria-label="첨부 삭제">✕</button></div>`) : '';
   const canPost = !!((C.text||'').trim() || m);
+  const editing = !!C.editId;   /* 수정 모드 — 기존 로그의 글/캡션만 고친다(첨부 버튼 숨김) */
   return `<div class="cs-bd" id="csbd"><div class="cs">
-    <div class="cs-hd"><b>로그 남기기</b><button class="cs-x" id="csx" aria-label="닫기">✕</button></div>
-    <textarea class="cs-ta" id="csta" placeholder="무슨 생각이에요?  ·  그냥 쓰면 시간과 글만 남아요">${C.text||''}</textarea>
+    <div class="cs-hd"><b>${editing?'LOG 수정':'로그 남기기'}</b><button class="cs-x" id="csx" aria-label="닫기">✕</button></div>
+    <textarea class="cs-ta" id="csta" placeholder="${editing?'내용을 고쳐주세요':'무슨 생각이에요?  ·  그냥 쓰면 시간과 글만 남아요'}">${C.text||''}</textarea>
     ${prev}
-    <div class="cs-attach">
+    ${editing?'':`<div class="cs-attach">
       <button class="cs-att${m&&(m.kind==='ph'||m.kind==='vid')?' on':''}" id="cscam" aria-label="카메라">📷<span>카메라</span></button>
       <button class="cs-att${m&&m.kind==='aud'?' on':''}" id="csaudio" aria-label="데모">🎵<span>데모</span></button>
-    </div>
-    <button class="cs-post" id="cspost"${canPost?'':' disabled'}>올리기</button>
+    </div>`}
+    <button class="cs-post" id="cspost"${canPost?'':' disabled'}>${editing?'수정하기':'올리기'}</button>
   </div></div>`;
 }
 function submitCompose(){
@@ -4336,6 +4356,21 @@ function submitCompose(){
   const C=S.compose, txt=(C.text||'').trim(), m=C.media;
   if(!txt && !m) return;
   if(!ME){ S.compose=null; render(); return needLogin(); }
+  /* 수정 모드 — 새 로그를 만들지 않고 기존 로그의 본문(글)/캡션(미디어)만 바꾼다 */
+  if(C.editId){
+    const l=STREAM.find(x=>x&&String(x.id)===String(C.editId));
+    if(!l){ S.compose=null; render(); offToast('로그를 못 찾았어요'); return; }
+    if(badWordIn(txt)){ offToast('부적절한 표현이 있어 저장할 수 없어요'); return; }
+    if(l.t==='note') l.text=txt; else { l.cap=txt; if(l.t==='snd') l.nm=txt; }
+    studioSave(); S.compose=null; render(); offToast('수정했어요');
+    (async()=>{ try{
+      if(l.sid && SBC && LOGSTABLE){
+        const p=l.t==='note'?{text:txt}:{caption:txt};
+        const r=await SBC.from('logs').update(p).eq('id',l.sid); if(r.error)throw r.error;
+      }
+    }catch(e){ console.warn('[offlog] 로그 수정 서버 반영 실패', e); } })();
+    return;
+  }
   if(m && m.kind==='aud' && ME && SBC && m.file){ uploadDemoLog(m.file, txt); return; } /* 로그인 → 실제 업로드(영구·어디서나 재생) */
   pushLog(txt, m);
 }
@@ -4409,6 +4444,22 @@ function downloadLog(id){
   else { if(navigator.clipboard){ navigator.clipboard.writeText(l.text||'').then(()=>offToast('글을 복사했어요')).catch(()=>offToast('복사 실패')); } else offToast('복사할 수 없어요'); return; }
   if(!url){ offToast('받을 파일이 없어요 (샘플 로그예요)'); return; }
   _saveFile(url, name);
+}
+/* 내 로그 공유 — 링크(+글 내용)를 시스템 공유 시트로, 안 되면 클립보드로 */
+async function shareLog(id){
+  const l=STREAM.find(x=>x&&String(x.id)===String(id)); if(!l){ offToast('로그를 못 찾았어요'); return; }
+  const url=location.origin+'/offlog';
+  const txt=(l.text||l.cap||l.nm||'').slice(0,120);
+  try{ if(navigator.share){ await navigator.share({title:'OFFLOG', text:txt?txt+' — OFFLOG':'OFFLOG', url:url}); return; } }catch(e){ if(e&&e.name==='AbortError')return; }
+  try{ await navigator.clipboard.writeText((txt?txt+'\n':'')+url); offToast('링크가 복사됐어요'); }
+  catch(_){ offToast('링크: '+url); }
+}
+/* 내 로그 수정 — 작성 시트를 수정 모드로 연다(글=본문, 미디어=캡션) */
+function editLog(id){
+  const l=STREAM.find(x=>x&&String(x.id)===String(id)); if(!l){ offToast('로그를 못 찾았어요'); return; }
+  S.logMenu=null;
+  S.compose={text:(l.t==='note'?(l.text||''):(l.cap||l.nm||'')), media:null, editId:l.id};
+  render();
 }
 /* 내 로그 삭제 — 화면에서 먼저 지우고, 서버 행(sid)이 있으면 같이 지운다.
    실패해도 로컬은 이미 지워진 상태를 유지한다(사용자 의도가 삭제이므로 복원이 더 이상함) */
@@ -4876,7 +4927,7 @@ function bind(){
   if(pmo)pmo.onclick=()=>{
     const aid=S.profileAid||'';
     const who=(typeof PROFCACHE!=='undefined' && PROFCACHE[aid] && PROFCACHE[aid].name) || S.profile || '이 사람';
-    if(!aid){ offToast('이 프로필은 신고할 수 없어요'); return; }
+    if(!aid){ offToast('메뉴를 열 수 없는 프로필이에요'); return; }
     S.logMenu={kind:'oshare', id:'', nm:who, by:who, aid:aid, audio:''};
     render();
   };
@@ -5640,15 +5691,12 @@ function bind(){
     const lmclose=()=>{ S.logMenu=null; render(); };
     if(lmx)lmx.onclick=lmclose; if(lmbd)lmbd.onclick=e=>{ if(e.target===lmbd)lmclose(); };
     document.querySelectorAll('[data-addkind]').forEach(b=>b.onclick=()=>{ _attachTo=S.logMenu.id; const k=b.dataset.addkind; S.logMenu=null; render(); const inp=document.getElementById(k==='ph'?'addphoto':'adddemo'); if(inp)inp.click(); });
-    /* LOG 관리 메뉴 — 다운로드(글은 복사) / 삭제. 모든 로그 타입에서 같은 메뉴 */
-    document.querySelectorAll('[data-logdlm]').forEach(b=>b.onclick=()=>{ const id=b.dataset.logdlm; S.logMenu=null; render(); downloadLog(id); });
+    /* LOG 관리 메뉴 — 공유 / 수정 / 사진 첨부 / 삭제. 모든 로그 타입에서 같은 메뉴 */
+    document.querySelectorAll('[data-logshare]').forEach(b=>b.onclick=()=>{ const id=b.dataset.logshare; S.logMenu=null; render(); shareLog(id); });
+    document.querySelectorAll('[data-logedit]').forEach(b=>b.onclick=()=>{ editLog(b.dataset.logedit); });
     document.querySelectorAll('[data-logdel]').forEach(b=>b.onclick=()=>{ deleteLog(b.dataset.logdel); });
-    document.querySelectorAll('[data-omenu]').forEach(b=>b.onclick=()=>{ const act=b.dataset.omenu, M=S.logMenu; if(act==='save'){ S.logMenu=null; if(!ME){ render(); needLogin(); return; } S.saveTrack={tid:M.id, nm:M.nm, by:M.by, audio:M.audio}; render(); } else if(act==='follow'){ const aid=M.aid; S.logMenu=null; if(!ME){ render(); needLogin(); return; } const willFollow=!MYFOLLOWS.has(aid); (willFollow?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(ok) offToast(willFollow?'팔로우했어요':'팔로우 해제했어요'); render(); }); render(); } else if(act==='report'){ S.logMenu=null;
-        /* 프로필에서 열면 곡 id 가 없다 — 그때는 '사용자'를 신고한 것으로 본다 */
-        const isUser=!M.id;
-        S.report={kind:isUser?'user':'track', id:isUser?(M.aid||''):M.id, aid:M.aid||null, nm:M.nm||''};
-        render(); }
-      else if(act==='block'){ toggleBlock(M.aid, M.by); }
+    /* 신고·차단 분기는 삭제(요청) — 남은 액션: 담기 / 팔로우 / 공유 */
+    document.querySelectorAll('[data-omenu]').forEach(b=>b.onclick=()=>{ const act=b.dataset.omenu, M=S.logMenu; if(act==='save'){ S.logMenu=null; if(!ME){ render(); needLogin(); return; } S.saveTrack={tid:M.id, nm:M.nm, by:M.by, audio:M.audio}; render(); } else if(act==='follow'){ const aid=M.aid; S.logMenu=null; if(!ME){ render(); needLogin(); return; } const willFollow=!MYFOLLOWS.has(aid); (willFollow?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(ok) offToast(willFollow?'팔로우했어요':'팔로우 해제했어요'); render(); }); render(); }
       else { S.logMenu=null; render(); offShareTrack(M); } });
   }
   /* 신고 시트 — 사유를 고르면 접수되고 내 화면에서 바로 사라진다 */
