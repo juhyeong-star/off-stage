@@ -3298,6 +3298,9 @@ async function loadRecoAuthors(){
       const q=prof[p.aid]; if(!q||!q.name) return null;
       return {aid:p.aid, nm:q.name, av:q.avatar_url||'', peek:p.peek, at:p.at};
     }).filter(Boolean);
+    /* 첫 화면은 RECOAUTH 가 아직 null 이라 폴백(곡 올린 사람) 목록으로 그려진다.
+       여기서 다시 그리지 않으면 데이터가 도착해도 옛 목록이 그대로 남는다. */
+    if(RECOAUTH.length && S.view==='home'){ try{render();}catch(_){} }
   }catch(e){
     if(e&&(e.code==='PGRST205'||e.code==='42P01')){ LOGSTABLE=false; return; }
     RECOAUTH=null; console.warn('[offlog] 추천 대상 로드 실패', e);
