@@ -2511,7 +2511,10 @@ async function followArtist(aid){
   try{
     const {error}=await SBC.from('follows').insert({follower_id:ME.id, followed_id:aid});
     if(error && error.code!=='23505'){ throw error; }   // 23505=이미 있음 → 무시
-    MYFOLLOWS.add(aid); flcacheClear(); return true;
+    MYFOLLOWS.add(aid); flcacheClear();
+    /* 방금 팔로우한 사람의 로그가 바로 피드에 들어오게 — 스로틀 무시하고 즉시 재로드 */
+    loadFriendLogs(true).then(function(got){ if(got){ S.feed=buildFeed(); if(S.view==='home'){ try{render();}catch(_){} } } });
+    return true;
   }catch(e){ console.warn('[offlog] follow 실패', e); offToast('저장 실패 — 잠시 후 다시'); return false; }
 }
 async function unfollowArtist(aid){
@@ -2988,9 +2991,58 @@ function home(){
 }
 
 /* 홈에 다시 올 때마다 갱신된다. 버튼 없이, 다녀오면 새 얼굴 */
+/* ── 팔로우한 사람들의 "실제 로그"를 피드에 넣는다 ──────────────────────
+   버그의 원인: 지금까지 홈 피드는 발매곡(tracks)만 카드로 만들었고 logs 테이블은
+   아예 읽지 않았다 — 친구가 로그를 아무리 올려도 피드가 절대 안 변했다. */
+let FRIENDLOGS=[];   /* 피드 카드 형태로 변환된 친구 로그 */
+let _flogsAt=0;      /* 마지막 로드 시각 — 홈 재진입마다 서버를 두드리지 않게 30초 스로틀 */
+const _FCOLS=['coral','blue','green','yellow','purple','shpink'];
+function colorOfName(n){ let h=0; n=String(n||''); for(let i=0;i<n.length;i++) h=(h*31+n.charCodeAt(i))|0; return _FCOLS[Math.abs(h)%6]; }
+async function loadFriendLogs(force){
+  if(!ME||!SBC||!LOGSTABLE||!MYFOLLOWS.size){ FRIENDLOGS=[]; return false; }
+  if(!force && Date.now()-_flogsAt<30000) return false;
+  _flogsAt=Date.now();
+  try{
+    const ids=[...MYFOLLOWS];
+    const r=await SBC.from('logs')
+      .select('id,author_id,kind,text,caption,media_url,duration,tone,created_at')
+      .in('author_id',ids).eq('visibility','public')
+      .order('created_at',{ascending:false}).limit(80);
+    if(r.error) throw r.error;
+    const rows=r.data||[];
+    /* 작성자 이름·아바타 — profiles에서 한 번에 */
+    const need=[...new Set(rows.map(x=>x.author_id))];
+    const names={};
+    if(need.length){
+      const pr=await SBC.from('profiles').select('id,name,avatar_url').in('id',need);
+      (pr.data||[]).forEach(p=>{ names[p.id]={nm:p.name||'아티스트', av:p.avatar_url||''};
+        if(p.name){ AIDBYNAME[p.name]=p.id; if(p.avatar_url) AVBYNAME[p.name]=p.avatar_url; } });
+    }
+    const p2=x=>String(x).padStart(2,'0');
+    FRIENDLOGS=rows.map(x=>{
+      const d=new Date(x.created_at);
+      const who=(names[x.author_id]&&names[x.author_id].nm)||'아티스트';
+      const base={src:'flog', lid:x.id, who, c:colorOfName(who), aid:x.author_id,
+        at:p2(d.getHours())+':'+p2(d.getMinutes()),
+        dt:d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate()), rx:0};
+      if(x.kind==='ph')  return {...base, t:'ph', cap:x.caption||'사진',
+        bg:x.media_url?('center/cover no-repeat url('+x.media_url+')'):'#141418'};
+      if(x.kind==='vid') return {...base, t:'vid', cap:x.caption||'', vsrc:x.media_url||''};
+      if(x.kind==='snd') return {...base, t:'snd', nm:x.caption||'데모', dur:x.duration||'', audio:x.media_url||''};
+      return {...base, t:'note', text:x.text||'', tone:x.tone||'y'};
+    });
+    return true;
+  }catch(e){
+    if(e&&(e.code==='PGRST205'||e.code==='42P01')){ LOGSTABLE=false; }
+    else console.warn('[offlog] 친구 로그 로드 실패', e);
+    return false;
+  }
+}
 function renewHome(){
   if(window.__resample){ try{ window.__resample(); }catch(e){} }  /* 매번 전체 아티스트에서 새로 샘플 → 트렌드 첫 화면 새 얼굴 */
   S.feed=buildFeed();
+  /* 홈에 올 때마다 친구들의 새 로그를 확인한다(30초 스로틀) — 도착하면 피드만 다시 그림 */
+  loadFriendLogs().then(function(got){ if(got && S.view==='home'){ S.feed=buildFeed(); try{render();}catch(_){} } });
 }
 
 /* 스토리 열의 원을 제외한 모든 이름·아바타가 여기로 온다 */
@@ -3021,9 +3073,10 @@ function buildFeed(){
   const follow = FOLLOWLOG.map(f=>({src:'follow', ...f}));
   const seen=new Set();
   const key=x=>String(x.dt||'')+' '+String(x.at||'');
-  return [...trend, ...foryou, ...follow]
+  /* 친구들의 실제 로그(FRIENDLOGS)가 핵심 — 발매곡 카드와 합쳐 최신순 한 줄기로 */
+  return [...FRIENDLOGS, ...trend, ...foryou, ...follow]
     .filter(x=>!isHiddenItem(x))   /* 차단한 사람·신고된 콘텐츠는 피드에서 즉시 사라진다 (Guideline 1.2) */
-    .filter(x=>{ const k=x.tid||((x.who||'')+'|'+(x.nm||x.cap||'')+'|'+(x.at||'')); if(seen.has(k))return false; seen.add(k); return true; })
+    .filter(x=>{ const k=x.lid||x.tid||((x.who||'')+'|'+(x.nm||x.cap||'')+'|'+(x.at||'')); if(seen.has(k))return false; seen.add(k); return true; })
     .sort((a,b)=>key(b).localeCompare(key(a)));
 }
 
@@ -3053,6 +3106,9 @@ function feedCard(t,i){
         <div class="bigwv">${waveBars(34)}</div>
         <div class="rmid"><div class="rts">${t.at||''}</div><div class="rcap">${t.nm||t.cap}</div>
           <span class="sndpill"><em>▶</em><b>${t.dur||''}</b></span></div>${who}${fol}${rx}</div>`
+  : t.t==='vid' ? `<div class="rcard" style="overflow:hidden">
+        <video src="${t.vsrc||''}" controls playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>
+        <div class="rmid" style="pointer-events:none"><div class="rts">${t.at||''}</div>${t.cap?`<div class="rcap">${esc(t.cap)}</div>`:''}</div>${who}${fol}${rx}</div>`
   :               `<div class="rcard paper ${t.tone==='b'?'b':''}" data-slide="${i}">
         <div class="rmid"><div class="rts">${t.at}</div><div class="rnote">${esc(t.text)}</div></div>${who}${fol}${rx}</div>`;
 
@@ -5970,6 +6026,7 @@ setInterval(()=>{
     /* 서버에 저장된 내 로그(사진·메모·영상)를 불러오고, 이 기기에만 있던 예전 로그는 서버로 올린다 */
     try{ studioAdopt(); }catch(e){}     /* 옛 공용키·anon 캐시를 내 계정 키로 1회 입양(계정별 분리) */
     try{ await loadMyLogs(); }catch(e){}
+    try{ await loadFriendLogs(true); }catch(e){}   /* 팔로우한 친구들의 실제 로그 → 홈 피드 */
     try{ migrateLocalLogs(); }catch(e){}
 
     // (홈 피드 TREND/FORYOU/FOLLOWLOG/STORIES/PEOPLE 는 위 resampleFeed()가 매 새로고침마다 생성)
