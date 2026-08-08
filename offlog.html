@@ -1373,7 +1373,38 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .recorow{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line);
   border-radius:14px;padding:10px 12px;margin-bottom:8px}
 .recoav .avimg,.recoav .smile{width:38px;height:38px;border-radius:50%}
-.reconm{flex:1;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 이름이 이메일 앞부분인 사람에게만 보이는 조용한 안내 (본인만 봄) */
+.namehint{display:block;width:100%;margin:0 0 10px;padding:10px 13px;background:none;
+  border:1px dashed var(--line);border-radius:12px;color:var(--muted);font-size:12px;
+  text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.namehint b{color:var(--txt);font-weight:700}
+.namehint:active{transform:scale(.99)}
+/* 비공개 로그 일괄 공개 — 카드마다 칩을 누르는 건 현실적으로 아무도 안 한다 */
+.privbar{display:flex;align-items:center;gap:10px;width:100%;margin:0 0 12px;padding:12px 14px;
+  background:var(--card2);border:1px dashed var(--line);border-radius:14px;cursor:pointer;text-align:left;
+  -webkit-tap-highlight-color:transparent}
+.privbar:active{transform:scale(.99)}
+.pbtx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.pbtx b{font-family:'Black Han Sans';font-weight:400;font-size:12.5px;letter-spacing:.3px;color:var(--txt)}
+.pbtx small{font-size:11px;color:var(--muted)}
+.pbgo{flex-shrink:0;font-family:'Black Han Sans';font-weight:400;font-size:11.5px;letter-spacing:.3px;
+  color:#0e0e12;background:var(--mint);border-radius:999px;padding:7px 11px}
+/* 내 로그에 새 댓글 — 홈 상단 한 줄. 알림이 없어서 대화가 시작되지 않던 걸 잇는다 */
+.cmtalert{display:flex;align-items:center;gap:10px;width:100%;margin:2px 0 10px;padding:11px 13px;
+  background:var(--card2);border:1px solid var(--mint);border-radius:14px;cursor:pointer;text-align:left;
+  -webkit-tap-highlight-color:transparent}
+.cmtalert:active{transform:scale(.99)}
+.cashp{flex-shrink:0;display:flex;align-items:center}
+.catx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.catx b{font-family:'Black Han Sans';font-weight:400;font-size:12.5px;letter-spacing:.3px;color:var(--txt)}
+.catx small{font-family:'Gaegu','Caveat',cursive;font-size:12.5px;color:var(--muted);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cago{flex-shrink:0;color:var(--mint);font-size:17px}
+/* 이름 + 최근 로그 한 줄 미리보기(2단) — 팔로우하면 뭐가 보이는지 먼저 알려준다 */
+.reconm{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.reconm b{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.reconm small{font-family:'Gaegu','Caveat',cursive;font-size:12.5px;color:var(--muted);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .recofol{flex-shrink:0}
 
 /* 진행중인 프로젝트 — 홈 LOG 피드 맨 위, 그룹 박스 하나씩 세로로 */
@@ -1731,7 +1762,12 @@ let _authWired=false;
 function wireAuth(){
   if(_authWired||!SBC)return; _authWired=true;
   try{ SBC.auth.onAuthStateChange(function(ev){
-    loadMe().then(function(){ return loadMyStream(); }).then(function(){ try{render();}catch(_){}});
+    loadMe().then(function(){ return loadMyStream(); }).then(function(){
+      try{render();}catch(_){}
+      /* 로그인 전에 써둔 로그(sid 없는 my_)를 지금 바로 서버로 올린다.
+         부팅 때만 올리면 방금 쓴 글이 다음에 앱을 열 때까지 기기에만 남는다. */
+      try{ syncPendingLogs(); }catch(_){}   /* 완료 토스트는 syncPendingLogs 안에서 띄운다 */
+    });
   }); }catch(e){}
 }
 /* OAuth 공통 — signInWithOAuth 는 예외를 던지지 않고 {error} 를 돌려준다.
@@ -2638,8 +2674,10 @@ async function loadComments(logId, force){
 /* 피드가 새로 만들어질 때마다 그 안의 로그들 댓글 수를 채운다 */
 function refreshCmtCounts(){
   const ids=(S.feed||[]).filter(x=>x&&x.src==='flog'&&x.lid).map(x=>x.lid);
+  /* 내 로그(서버에 있는 것)도 함께 — 내 페이지에서 답이 몇 개 달렸는지 보여야 한다 */
+  (STREAM||[]).forEach(function(l){ if(l&&l.sid) ids.push(l.sid); });
   if(!ids.length) return;
-  loadCommentCounts(ids).then(function(got){ if(got && S.view==='home'){ try{render();}catch(_){} } });
+  loadCommentCounts(ids).then(function(got){ if(got){ try{render();}catch(_){} } });
 }
 async function addComment(logId, body){
   if(!ME) { needLogin(); return false; }
@@ -2682,6 +2720,41 @@ async function loadCommentCounts(logIds){
     return true;
   }catch(e){
     if(e&&(e.code==='PGRST205'||e.code==='42P01')) CMTTABLE=false;
+    return false;
+  }
+}
+
+/* ── 내 로그에 달린 새 댓글 알림 ───────────────────────────────────
+   알림이 없어서, 누가 내 로그에 댓글을 달아도 그 카드를 다시 열지 않으면 영영 몰랐다.
+   협업하라고 만든 기능인데 대화가 시작되질 않는다.
+   마지막으로 확인한 시각을 기기에 저장해 두고, 그 뒤에 달린 남의 댓글만 센다. */
+let CMTNEW=[];                 /* [{log_id, body, at}] — 아직 안 본 남의 댓글 */
+const _CMTSEEN_K='offlog_cmt_seen_v1';
+function cmtSeenAt(){ try{ return localStorage.getItem(_CMTSEEN_K)||''; }catch(_){ return ''; } }
+function markCmtSeen(){
+  try{ localStorage.setItem(_CMTSEEN_K, new Date().toISOString()); }catch(_){}
+  CMTNEW=[];
+}
+async function loadNewComments(){
+  if(!ME||!SBC||!CMTTABLE) return false;
+  try{
+    /* 내 로그 id 목록 — 서버에 있는 것만(sid) */
+    const mine=await SBC.from('logs').select('id').eq('author_id',ME.id).limit(500);
+    if(mine.error) throw mine.error;
+    const ids=(mine.data||[]).map(x=>x.id);
+    if(!ids.length){ CMTNEW=[]; return false; }
+    let q=SBC.from('log_comments').select('id,log_id,author_id,body,created_at')
+      .in('log_id',ids).neq('author_id',ME.id)          /* 내가 쓴 댓글은 알림이 아니다 */
+      .order('created_at',{ascending:false}).limit(50);
+    const since=cmtSeenAt();
+    if(since) q=q.gt('created_at',since);
+    const r=await q;
+    if(r.error) throw r.error;
+    CMTNEW=(r.data||[]).map(x=>({id:x.id, log_id:x.log_id, body:x.body||'', at:x.created_at}));
+    return CMTNEW.length>0;
+  }catch(e){
+    if(e&&(e.code==='PGRST205'||e.code==='42P01')) CMTTABLE=false;
+    else console.warn('[offlog] 새 댓글 확인 실패', e);
     return false;
   }
 }
@@ -3071,20 +3144,26 @@ function home(){
   /* 빈 피드 = 신규 가입자 — 팔로우할 아티스트를 추천해서 피드가 채워질 길을 만든다 (P0-8).
      실제 곡을 올린 아티스트(ALLTRACKS) 중에서 나·이미 팔로우한 사람을 뺀 상위 6명 */
   function recoFollowBlock(){
-    const seen={}, recos=[];
-    (typeof ALLTRACKS!=='undefined'?ALLTRACKS:[]).forEach(t=>{
-      const nm=t.by, aid=t.aid;
-      if(!nm||!aid||seen[aid])return;
-      if(ME&&aid===ME.id)return;
-      if(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(aid))return;
-      seen[aid]=1; recos.push({nm, aid});
-    });
-    const rows=recos.slice(0,6);
+    loadRecoAuthors();     /* 최근 공개 로그를 쓴 사람들 — 한 번만 불러온다 */
+    const mine=a=>(ME&&a.aid===ME.id)||(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(a.aid));
+    /* 1순위: 실제로 로그를 쓰는 사람. 그런 사람이 없을 때만 곡 올린 사람으로 폴백 */
+    let rows=(RECOAUTH||[]).filter(a=>!mine(a)).slice(0,6);
+    let withPeek=rows.length>0;
+    if(!withPeek){
+      const seen={}, recos=[];
+      (typeof ALLTRACKS!=='undefined'?ALLTRACKS:[]).forEach(t=>{
+        const nm=t.by, aid=t.aid;
+        if(!nm||!aid||seen[aid])return;
+        if(mine({aid}))return;
+        seen[aid]=1; recos.push({nm, aid, av:avOf(nm), peek:''});
+      });
+      rows=recos.slice(0,6);
+    }
     if(!rows.length) return `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">아직 팔로우한 사람의 로그가 없어요.</div>`;
-    return `<div class="pknote" style="padding:20px 8px 10px;text-align:center;line-height:1.7">아직 팔로우한 사람의 로그가 없어요.<br>이 아티스트들부터 팔로우해 보세요</div>
+    return `<div class="pknote" style="padding:20px 8px 10px;text-align:center;line-height:1.7">아직 팔로우한 사람의 로그가 없어요.<br>${withPeek?'요즘 기록 중인 사람들이에요':'이 아티스트들부터 팔로우해 보세요'}</div>
       ${rows.map(a=>`<div class="recorow">
-        <span class="recoav">${avatarEl(avOf(a.nm), 'blue', 38, a.nm)}</span>
-        <b class="reconm">${esc(a.nm)}</b>
+        <span class="recoav">${avatarEl(a.av||avOf(a.nm), 'blue', 38, a.nm)}</span>
+        <span class="reconm"><b>${esc(a.nm)}</b>${a.peek?`<small>${esc(a.peek)}</small>`:''}</span>
         <button class="fol recofol" data-recofollow="${a.aid}" data-reconm="${esc(a.nm)}">팔로우</button>
       </div>`).join('')}`;
   }
@@ -3125,9 +3204,19 @@ function home(){
         <path d="M16.4 5.2a3.4 3.4 0 0 1 0 5.7"/><path d="M18 14.4c2 .7 3.3 2.6 3.3 5.1"/></svg>
       ${fing?`<span class="pdot"></span>`:''}</button></div>
   ${storyRow()}
+  ${cmtAlertBar()}
   ${calMonth()}
   ${HOMETABS.length>1?`<div class="hstabs">${HOMETABS.map(t=>`<button class="hstab${cur===t[0]?' on':''}" data-hgoto="${t[0]}">${t[1]}</button>`).join('')}</div>`:''}
   <div id="hswipe">${bodyC}</div>`;
+}
+/* 내 로그에 새 댓글이 달렸을 때만 뜨는 줄 — 누르면 그 로그로 이동하며 읽음 처리 */
+function cmtAlertBar(){
+  if(!ME||!CMTNEW.length) return '';
+  const n=CMTNEW.length, first=CMTNEW[0];
+  return `<button class="cmtalert" data-cmtalert="${first.log_id}">
+    <span class="cashp">${shape('star', c('yellow'), 20)}</span>
+    <span class="catx"><b>내 로그에 새 표시 ${n}개</b><small>${esc(String(first.body).slice(0,34))}</small></span>
+    <span class="cago">›</span></button>`;
 }
 
 /* 홈에 다시 올 때마다 갱신된다. 버튼 없이, 다녀오면 새 얼굴 */
@@ -3178,11 +3267,49 @@ async function loadFriendLogs(force){
     return false;
   }
 }
+/* ── 추천 팔로우 = "로그를 쓰는 사람" ────────────────────────────────
+   예전엔 곡(ALLTRACKS)을 올린 사람을 추천했는데, 그 사람들 대부분은 로그를 안 쓴다.
+   추천 6명을 다 팔로우해도 홈이 여전히 비어서 신규 가입자가 그대로 나갔다.
+   그래서 '최근 공개 로그를 쓴 사람'을 최신순으로 추천하고, 그 사람의 마지막 로그를
+   한 줄 미리보기로 같이 보여준다 — 팔로우하면 뭐가 보이는지 먼저 알 수 있게. */
+let RECOAUTH=null;    /* null=아직 안 불러옴, []=불러왔지만 없음 */
+async function loadRecoAuthors(){
+  if(!SBC || !LOGSTABLE || RECOAUTH!==null) return;
+  RECOAUTH=[];        /* 중복 요청 방지 — 실패하면 null로 되돌려 재시도 허용 */
+  try{
+    const r=await SBC.from('logs')
+      .select('author_id,kind,text,caption,created_at')
+      .eq('visibility','public').order('created_at',{ascending:false}).limit(120);
+    if(r.error) throw r.error;
+    const rows=r.data||[], seen={}, picked=[];
+    rows.forEach(function(x){
+      if(!x.author_id || seen[x.author_id]) return;
+      seen[x.author_id]=1;
+      const peek = x.kind==='snd' ? '🎵 '+(x.caption||'데모')
+                 : x.kind==='ph'  ? '📷 '+(x.caption||'사진')
+                 : x.kind==='vid' ? '🎬 '+(x.caption||'영상')
+                 : (x.text||x.caption||'');
+      picked.push({aid:x.author_id, peek:String(peek).slice(0,40), at:x.created_at});
+    });
+    if(!picked.length) return;
+    const pr=await SBC.from('profiles').select('id,name,avatar_url').in('id',picked.map(p=>p.aid));
+    const prof={}; (pr.data||[]).forEach(p=>{ prof[p.id]=p; });
+    RECOAUTH=picked.map(function(p){
+      const q=prof[p.aid]; if(!q||!q.name) return null;
+      return {aid:p.aid, nm:q.name, av:q.avatar_url||'', peek:p.peek, at:p.at};
+    }).filter(Boolean);
+  }catch(e){
+    if(e&&(e.code==='PGRST205'||e.code==='42P01')){ LOGSTABLE=false; return; }
+    RECOAUTH=null; console.warn('[offlog] 추천 대상 로드 실패', e);
+  }
+}
 function renewHome(){
   if(window.__resample){ try{ window.__resample(); }catch(e){} }  /* 매번 전체 아티스트에서 새로 샘플 → 트렌드 첫 화면 새 얼굴 */
   S.feed=buildFeed();
   /* 홈에 올 때마다 친구들의 새 로그를 확인한다(30초 스로틀) — 도착하면 피드만 다시 그림 */
   loadFriendLogs().then(function(got){ if(got && S.view==='home'){ S.feed=buildFeed(); try{render();}catch(_){} } refreshCmtCounts(); });
+  /* 내 로그에 새로 달린 댓글 확인 — 있으면 홈 상단 알림 줄이 뜬다 */
+  loadNewComments().then(function(has){ if(has){ try{render();}catch(_){} } });
 }
 
 /* 스토리 열의 원을 제외한 모든 이름·아바타가 여기로 온다 */
@@ -3567,6 +3694,14 @@ const smileEl=(col,seed)=>{
 /* ── 마이 / 아티스트 페이지 ──
    내 페이지 = 도구·＋·수정 전부 여기서. 남의 페이지 = 보기만. */
 function roleKo(r){ return r==='artist'?'아티스트':r==='admin'?'관리자':r==='listener'?'리스너':'아티스트'; }
+/* 가입 트리거가 이름을 못 찾으면 이메일 앞부분을 그대로 쓴다(funzookim, whichday …).
+   그 이름으론 아무도 서로를 못 찾으니, 본인에게만 조용히 바꾸라고 알린다. 강제하지 않는다. */
+function needsRealName(){
+  if(!ME||!ME.name) return false;
+  if(ME.name==='익명'||ME.name==='아티스트'||ME.name==='나') return true;
+  const local=String(ME.email||'').split('@')[0];
+  return !!local && ME.name===local;
+}
 function mine(){
   const me   = S.profile==='me';
   const rp   = (!me && S.profileAid) ? PROFCACHE[S.profileAid] : null;   // 실제 아티스트 프로필(공개 읽기)
@@ -3654,28 +3789,47 @@ function mine(){
     const visLocked = logVisLocked(l);
     const visChip = me ? `<button class="vischip ${l.vis==='public'?'pub':'priv'}${visLocked?' locked':''}" data-logvis="${l.id}"
         aria-label="공개 범위 바꾸기">${visLocked?'🔒 항상 공개':(l.vis==='public'?'🔓 공개':'🔒 비공개')}</button>` : '';
+    /* 내 로그에 달린 댓글 — 예전엔 남의 로그(flog)에만 버튼이 있어서,
+       누가 내 로그에 답을 달아도 정작 나는 읽을 방법이 없었다. 서버에 있는 로그(sid)만 대상. */
+    const _mc=l.sid||'';
+    const _mn=(_mc&&CMTCOUNT[_mc])||0;
+    const _MSH={note:['star','yellow'], ph:['circle','shpink'], snd:['tri','green'], vid:['diamond','blue']};
+    const _ms=_MSH[l.t]||_MSH.note;
+    const cmtBtn = _mc ? `<button class="fcmt${_mn?'':' bare'}" data-cmt="${_mc}" aria-label="댓글 ${_mn}개">
+         ${shape(_ms[0], c(_ms[1]), 17)}${_mn?`<b>${_mn}</b>`:''}</button>` : '';
     const chrome = me
       ? `${w?`<span class="wchip mychip">◆ ${esc(w.nm)}</span>`:''}
-         ${visChip}
+         ${visChip}${cmtBtn}
          <button class="edit mine" data-addmenu="${l.id}" aria-label="LOG 관리">⋯</button>`
       : '';
+    const cp = _mc ? cmtPanel(_mc) : '';   /* 댓글 패널 — 펼친 로그만 실제로 그려진다 */
     if(l.t==='ph') return `<div class="fcard my">${dtb}<div class="rcard">
       <div class="bgimg" style="background:${l.bg}"></div><div class="grainy"></div>
-      <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${esc(l.cap)}</div></div>${who}${rx}${chrome}</div></div>`;
+      <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${esc(l.cap)}</div></div>${who}${rx}${chrome}</div>${cp}</div>`;
     if(l.t==='snd') return `<div class="fcard my">${dtb}<div class="rcard snd" data-play${l.audio?` data-audio="${l.audio}"`:''}>
       <div class="bigwv">${waveBars(34)}</div>
       <div class="rmid"><div class="rts">${l.at}</div><div class="rcap">${esc(l.nm)}</div>
-        <span class="sndpill"><em>▶</em><b>${l.dur}</b></span></div>${who}${rx}${chrome}</div></div>`;
+        <span class="sndpill"><em>▶</em><b>${l.dur}</b></span></div>${who}${rx}${chrome}</div>${cp}</div>`;
     if(l.t==='vid') return `<div class="fcard my">${dtb}<div class="rcard" style="overflow:hidden">
       <video src="${l.src}" controls playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>
-      <div class="rmid" style="pointer-events:none"><div class="rts">${l.at}</div>${l.cap?`<div class="rcap">${esc(l.cap)}</div>`:''}</div>${who}${rx}${chrome}</div></div>`;
+      <div class="rmid" style="pointer-events:none"><div class="rts">${l.at}</div>${l.cap?`<div class="rcap">${esc(l.cap)}</div>`:''}</div>${who}${rx}${chrome}</div>${cp}</div>`;
     const tc = l.tone==='b'?'b':l.tone==='p'?'p':'';   /* 포스트잇 색: 노랑/하늘/핑크 */
     return `<div class="fcard my">${dtb}<div class="rcard paper ${tc}">
-      <div class="rmid"><div class="rts">${l.at}</div><div class="rnote">${esc(l.text)}</div></div>${who}${rx}${chrome}</div></div>`;
+      <div class="rmid"><div class="rts">${l.at}</div><div class="rnote">${esc(l.text)}</div></div>${who}${rx}${chrome}</div>${cp}</div>`;
   };
+
+  /* 공개/비공개 토글이 있던 시절에 쌓인 비공개 로그들 — 카드마다 칩을 눌러 바꾸려면 너무 번거로워
+     친구 피드에 영영 안 나타난다. 몇 개인지 알려주고 한 번에 공개로 돌릴 길을 준다. */
+  const _priv = me ? STREAM.filter(l=>l&&l.vis!=='public'&&!logVisLocked(l)) : [];
+  const privBar = _priv.length
+    ? `<button class="privbar" id="puball">
+         <span class="pbtx"><b>비공개 로그 ${_priv.length}개</b><small>친구 피드에 안 보이고 있어요</small></span>
+         <span class="pbgo">한 번에 공개</span></button>`
+    : '';
 
   const logs=`
     ${me?`<button class="composebtn" id="composebtn"><span class="cplus">＋</span><span class="clabel">로그 남기기</span></button>`:''}
+    ${privBar}
     ${me?`<button class="statsbtn" id="logstats">📊 활동 분석<span>연습 · 공연 · 작업 기록 한눈에</span></button>`:''}
     <div class="stream" id="stream"><div class="ambient"></div>
       <div class="marks">${streamOrder(STREAM).map(mark).join('')||`<div class="pknote" style="padding:26px 0">아직 로그가 없어요</div>`}</div></div>`;
@@ -3699,6 +3853,7 @@ function mine(){
       : `<button class="fol profol ${following?'on':''}" id="profolbtn" data-aid="${S.profileAid||''}">${following?'팔로잉':'팔로우'}</button>
          <!-- 앱스토어 Guideline 1.2 — 콘텐츠뿐 아니라 사용자 자체도 신고·차단할 수 있어야 한다 -->
          <button class="promore" id="promore" aria-label="공유 등 더보기">⋯</button>`}</div>
+  ${me&&needsRealName()?`<button class="namehint" id="fixname">이름이 <b>${esc(ME.name)}</b> 로 되어 있어요 · 활동명으로 바꾸기</button>`:''}
   ${me?`<button class="myplrow" data-v="lists">🎵 내 플레이리스트<span>›</span></button>`:''}
   <div class="seg profseg">
     <button class="${S.seg==='log'?'on':''}" data-seg="log">LOG</button>
@@ -4665,7 +4820,12 @@ function pushLog(txt, m, audioUrl){
   S.compose=null;
   if(S.view!=='mine' || S.profile!=='me'){ S.view='mine'; S.profile='me'; }
   render();
-  offToast('로그를 올렸어요');
+  /* 로그인 전에는 서버로 못 보낸다(아래 async 블록이 조용히 return).
+     그런데도 "올렸어요"라고 하면 올라간 줄 알고 기기를 바꾸는 순간 사라진다.
+     그래서 정직하게 알리고 로그인 시트를 띄운다 — 글은 이미 기기에 남아 있고,
+     로그인하면 syncPendingLogs 가 sid 없는 my_ 로그를 자동으로 올려준다. */
+  if(!ME){ offToast('이 기기에 저장했어요 · 로그인하면 올라갑니다'); S.login=true; render(); }
+  else offToast('로그를 올렸어요');
   /* 서버에 영구 저장 — 사진·영상 원본은 Storage로 올리고 URL만 남긴다 */
   (async function(){
     try{
@@ -5225,6 +5385,11 @@ function bind(){
   if(aced)aced.onclick=()=>{ const s=(ME&&ME.sns)||{};
     S.editProf={name:(ME&&ME.name)||'', role:(ME&&ME.role)||'listener', bio:(ME&&ME.bio)||'', ig:s.ig||'', yt:s.yt||'', tt:s.tt||''};
     render(); };
+  /* 이름 안내 → 프로필 수정 시트를 이름이 비워진 채로 연다(바로 새 이름을 쓰게) */
+  const fxn=document.getElementById('fixname');
+  if(fxn)fxn.onclick=()=>{ const s=(ME&&ME.sns)||{};
+    S.editProf={name:'', role:(ME&&ME.role)||'listener', bio:(ME&&ME.bio)||'', ig:s.ig||'', yt:s.yt||'', tt:s.tt||''};
+    render(); };
   /* 프로필 사진 바꾸기 */
   const acav=document.getElementById('acavbtn'), acaf=document.getElementById('acavfile');
   if(acav&&acaf)acav.onclick=()=>{ acaf.value=''; acaf.click(); };
@@ -5246,6 +5411,16 @@ function bind(){
   }
   /* 📊 활동 분석 시트 열기/닫기 */
   const lst=document.getElementById('logstats'); if(lst)lst.onclick=()=>{ S.logStats=true; render(); };
+  /* 비공개 로그 한 번에 공개 — publishLogs 가 로컬·서버를 함께 바꾸고 실패하면 알려준다 */
+  const pub=document.getElementById('puball');
+  if(pub)pub.onclick=async()=>{
+    const ids=STREAM.filter(l=>l&&l.vis!=='public'&&!logVisLocked(l)).map(l=>l.id);
+    if(!ids.length) return;
+    pub.disabled=true;
+    const n=await publishLogs(ids);
+    render();
+    offToast(n?(n+'개 로그를 공개했어요'):'바꿀 로그가 없어요');
+  };
   if(S.logStats){
     const lsb=document.getElementById('lsbd'), lsx=document.getElementById('lsclose');
     const lsc=()=>{ S.logStats=false; render(); };
@@ -5972,6 +6147,16 @@ function bind(){
   /* 친구 로그 ⋯ — 담기·바 재생 없이 공유/팔로우만 */
   document.querySelectorAll('[data-logmenu]').forEach(b=>b.onclick=e=>{ e.stopPropagation();
     S.logMenu={kind:'flog', id:b.dataset.logmenu, nm:b.dataset.lnm||'로그', by:b.dataset.lby||'', aid:b.dataset.laid||'', audio:''}; render(); });
+  /* 새 댓글 알림 줄 — 그 로그를 내 페이지에서 열고 읽음 처리 */
+  document.querySelectorAll('[data-cmtalert]').forEach(b=>b.onclick=()=>{
+    const lid=b.dataset.cmtalert;
+    markCmtSeen();
+    S.view='mine'; S.profile='me'; S.myTab='log';
+    const l=STREAM.find(x=>x&&x.sid===lid);
+    S.cmtOpen = l ? l.id : lid;              /* 내 화면의 로그 id 는 my_… , 서버 id 는 sid */
+    render();
+    if(CMTS[lid]===undefined) loadComments(lid).then(ok=>{ if(ok) render(); });
+  });
   /* 댓글 — 카드 좌하단 버튼으로 펼치고, 그때 서버에서 가져온다 */
   document.querySelectorAll('[data-cmt]').forEach(b=>b.onclick=e=>{
     e.stopPropagation();
