@@ -732,8 +732,11 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
   background:rgba(0,0,0,.5);backdrop-filter:blur(4px);border:none;border-radius:99px;
   padding:5px 11px;color:#fff;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer}
 .fcmt b{font-weight:800}
+/* 댓글이 없을 땐 글자 없이 도형만 — 동그란 버튼 안에 도형이 꽉 차게 */
+.fcmt.bare{padding:7px;gap:0;border-radius:50%}
 .fcmt:active{transform:scale(.94)}
-.rcard.paper .fcmt{background:rgba(43,36,23,.12);color:var(--ink)}
+/* 포스트잇(노랑·하늘·핑크) 카드 위에서는 옅은 배경이면 도형이 묻힌다 → 어두운 배경으로 대비 확보 */
+.rcard.paper .fcmt{background:rgba(43,36,23,.72);color:#fff}
 /* 댓글 패널 — 카드 아래로 펼쳐진다 */
 .cmtpanel{background:var(--card);border:1px solid var(--line);border-top:none;
   border-radius:0 0 16px 16px;margin:-10px 4px 0;padding:12px 13px 11px}
@@ -807,8 +810,9 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .smile{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
 .smile svg{width:19px;height:19px}
 /* 도형 아바타 — 배경 원 없이 도형 자체가 아이덴티티(색은 사람마다 다르게) */
-.smile.shp{background:none!important}
-.smile.shp svg{width:17px;height:17px}
+/* 도형이 원 안에 갇히지 않고 자리를 꽉 채우게 — 배경 원 제거 + 도형을 컨테이너 크기까지 키운다 */
+.smile.shp{background:none!important;width:28px;height:28px}
+.smile.shp svg{width:26px;height:26px}
 
 .rmid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
   z-index:4;text-align:center;padding:0 44px;pointer-events:none}
@@ -3215,10 +3219,10 @@ function feedCard(t,i){
   const _cn=(_cid&&CMTCOUNT[_cid])||0;
   const _CSH={note:['star','yellow'], ph:['circle','shpink'], snd:['tri','green'], vid:['diamond','blue']};
   const _cs=_CSH[t.t]||_CSH.note;
+  /* '댓글' 글자 없이 도형 표시만 — 있으면 개수, 없으면 도형 하나. 접근성 라벨로만 의미를 남긴다 */
   const rx = (t.src==='flog' && _cid)
-    ? `<button class="fcmt" data-cmt="${_cid}" aria-label="댓글">
-         ${shape(_cs[0], c(_cs[1]), 15)}
-         <b>${_cn?_cn:'댓글'}</b></button>`
+    ? `<button class="fcmt${_cn?'':' bare'}" data-cmt="${_cid}" aria-label="댓글 ${_cn}개">
+         ${shape(_cs[0], c(_cs[1]), 17)}${_cn?`<b>${_cn}</b>`:''}</button>`
     : '';
   const dtb = t.dt?`<div class="fdt">${esc(String(t.dt).slice(5).replace('-','.'))}</div>`:'';
 
@@ -3533,14 +3537,14 @@ let STORY=[
 ];
 
 /* 이름 옆 아바타 — 예전엔 '거꾸로 스마일'이었으나 setlog 로고와 유사해 상표권 위험이 있어
-   도형(별·삼각·원·다이아·육각)으로 바꿨다. 색은 기존처럼 사람마다 다르게 유지하고,
-   도형도 이름 해시로 사람마다 달라진다 — 같은 사람은 항상 같은 도형·색. */
-const _SMSHAPES=['star','tri','circle','diamond','hex'];
+   도형으로 바꿨다. 별·육각만 쓴다(삼각은 빈 여백이 많아 작고 허전해 보였다).
+   색은 사람마다 다르게, 도형도 이름 해시로 고정 — 같은 사람은 항상 같은 도형·색. */
+const _SMSHAPES=['star','hex'];
 const smileEl=(col,seed)=>{
   const s=String(seed==null?col:seed);
   let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))|0;
   const sh=_SMSHAPES[Math.abs(h)%_SMSHAPES.length];
-  return `<span class="smile shp">${shape(sh, c(col), 17)}</span>`;
+  return `<span class="smile shp">${shape(sh, c(col), 26)}</span>`;
 };
 
 /* ── 마이 / 아티스트 페이지 ──
