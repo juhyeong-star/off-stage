@@ -786,6 +786,12 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .rts{font-family:'Black Han Sans';font-size:32px;letter-spacing:1px;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.8)}
 /* 날짜 라벨 — 카드(박스) 밖, 카드 사이 gap에 왼쪽 정렬로 (타임라인 날짜) */
 .fdt{display:block;font-family:'Black Han Sans';font-size:12px;letter-spacing:.5px;color:rgba(255,255,255,.5);margin:2px 0 5px 6px;line-height:1}
+/* 홈 피드 날짜 그룹 헤더 — 오늘/어제/MM.DD 아래로 그날 친구들 로그가 묶인다 */
+.fdaydiv{display:flex;align-items:baseline;gap:8px;margin:20px 2px 10px}
+.fdaydiv:first-child{margin-top:4px}
+.fdaydiv b{font-family:'Black Han Sans';font-weight:400;font-size:15px;letter-spacing:.5px;color:var(--mint)}
+.fdaydiv span{font-size:10.5px;color:var(--muted)}
+.fdaydiv::after{content:'';flex:1;height:1px;background:var(--line);align-self:center}
 .rcap{font-size:13px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.85);margin-top:1px}
 .rcard.empty .rts{color:rgba(255,255,255,.075);text-shadow:none}
 .rcard.paper .rts{color:rgba(43,36,23,.35);text-shadow:none;font-size:15px;margin-bottom:7px}
@@ -2940,10 +2946,28 @@ function home(){
       </div>`).join('')}`;
   }
   if(cur==='logs'){
-    /* 홈 = 팔로잉 피드 전용 (P0-6/7). 프로젝트 박스는 뺐다 — 프로젝트 지원은 My 페이지에서.
-       팔로우한 사람들의 공개 로그. 캘린더 날짜를 골랐으면 그날 것만 */
+    /* 홈 = 팔로잉 피드 전용 (P0-6/7). 팔로우한 사람들의 공개 로그를 "날짜별로 묶어" 보여준다 —
+       오늘/어제/날짜 헤더 아래로 그날 친구들의 활동이 모여, 서로의 리듬이 보인다(동기부여).
+       캘린더 날짜를 골랐으면 그날 것만 */
     const list = S.calDate ? logsOnDate(S.calDate) : S.feed;
-    bodyC = list.map(feedCard).join('') || (S.calDate
+    const _p2=x=>String(x).padStart(2,'0');
+    const _dnow=new Date();
+    const _today=_dnow.getFullYear()+'-'+_p2(_dnow.getMonth()+1)+'-'+_p2(_dnow.getDate());
+    const _yd=new Date(_dnow.getTime()-864e5);
+    const _yday=_yd.getFullYear()+'-'+_p2(_yd.getMonth()+1)+'-'+_p2(_yd.getDate());
+    const WD=['일','월','화','수','목','금','토'];
+    const dayHead=dt=>{
+      const lb = dt===_today?'오늘':dt===_yday?'어제':String(dt).slice(5).replace('-','.');
+      let wd=''; try{ wd=WD[new Date(dt+'T00:00:00').getDay()]+'요일'; }catch(_){}
+      return `<div class="fdaydiv"><b>${esc(lb)}</b>${wd?`<span>${wd}</span>`:''}</div>`;
+    };
+    let _lastDt=null;
+    bodyC = list.map((t,i)=>{
+      let head='';
+      if(t.dt && t.dt!==_lastDt){ _lastDt=t.dt; head=dayHead(t.dt); }
+      /* 카드 개별 날짜 칩은 끄고(dt:null) 그룹 헤더로만 날짜를 보여준다 */
+      return head + feedCard(t.dt?{...t, dt:null}:t, i);
+    }).join('') || (S.calDate
       ? `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">이 날은 올라온 로그가 없어요.</div>`
       : recoFollowBlock());
   }
