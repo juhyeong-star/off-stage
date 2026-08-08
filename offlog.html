@@ -568,14 +568,21 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .vdday{position:absolute;top:12px;right:13px;font-family:'Black Han Sans';font-size:11px;color:var(--lemon);letter-spacing:.3px}
 /* 홈 월별 캘린더(SETLOG 스타일) — 날짜 탭하면 그날 나+맞팔친구 로그만 */
 .calmon{margin:2px 0 8px;-webkit-tap-highlight-color:transparent}
-.calmon.open{background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:10px 12px 12px}
+/* 펼침 컨테이너에 좌우 padding 을 주면 그 안의 바가 안쪽으로 밀려 화살표 위치가 접힘과 어긋난다.
+   → 좌우 padding 은 0으로 두고, 아래 그리드에만 여백을 준다(화살표는 항상 같은 x). */
+/* 테두리를 border 대신 inset box-shadow 로 그린다 — border 는 1px 만큼 안쪽 .cmbar 를
+   밀어서, 접었을 때와 펼쳤을 때 화살표(▾/▴) x 좌표가 1px 어긋난다. */
+.calmon.open{background:var(--card2);box-shadow:inset 0 0 0 1px var(--line);border-radius:16px;padding:0 0 12px}
+.calmon.open .cmbar{border-color:transparent;background:none}
+.calmon.open .cmgrid,.calmon.open .cmhd{padding-left:12px;padding-right:12px}
 /* 접힘 — 얇은 바 */
 .cmbar{width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:9px 14px;cursor:pointer;color:var(--txt)}
 .cmbar .cmlabel{font-family:'Black Han Sans';font-size:13.5px;letter-spacing:.4px}
 .cmchev{color:var(--muted);font-size:11px}
 .cmclearbar{width:100%;margin-top:6px;background:none;border:1px solid var(--line);color:var(--mint);border-radius:11px;font-size:12px;padding:7px;cursor:pointer}
 /* 펼침 — 그리드 */
-.cmhd{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:10px;position:relative}
+.cmhd{display:flex;align-items:center;justify-content:center;gap:14px;margin:10px 0;position:relative}
+.cmhdlab{font-family:'Black Han Sans';font-size:12.5px;letter-spacing:.6px;color:var(--muted);min-width:64px;text-align:center}
 .cmnav{background:none;border:0;color:var(--muted);font-size:22px;line-height:1;cursor:pointer;padding:0 8px}
 .cmnav:active{color:var(--mint)}
 .cmlabel{font-family:'Black Han Sans';font-size:15px;letter-spacing:.5px}
@@ -1179,6 +1186,13 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .srch input::placeholder{color:#55555d}
 .srch:focus-within{border-color:var(--mint)}
 .srchx{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 4px;flex-shrink:0}
+/* 친구 초대 — 검색창 바로 아래. 찾는 사람이 아직 OFFLOG에 없을 때의 다음 행동. */
+.invbtn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;
+  background:var(--mint);color:#0e0e12;border:none;border-radius:13px;padding:12px;margin-bottom:14px;
+  font-family:'Black Han Sans';font-weight:400;font-size:13px;letter-spacing:.3px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent}
+.invbtn small{font-family:'Inter',sans-serif;font-size:11px;opacity:.62;letter-spacing:0}
+.invbtn:active{transform:scale(.985)}
 .seg button b{font-family:'Black Han Sans';font-weight:400;font-size:11px;color:var(--muted);margin-left:3px}
 .seg button.on b{color:var(--mint)}
 .prow{display:flex;align-items:center;gap:11px;padding:11px 4px;border-bottom:1px solid var(--line)}
@@ -3037,9 +3051,12 @@ function calMonth(){
   for(let d=1;d<=dim;d++){ const di=ym+'-'+String(d).padStart(2,'0');
     const cls=['cmday']; if(di===tIso)cls.push('today'); if(S.calDate===di)cls.push('sel'); if(have[di])cls.push('has');
     cells+=`<button class="${cls.join(' ')}" data-caldate="${di}"><b>${d}</b></button>`; }
+  /* 접힘과 동일한 바 구조 — 화살표(▴/▾)가 항상 같은 오른쪽 끝에 있어야 위치가 안 흔들린다.
+     달 이동(‹ ›)은 바 아래 줄로 내려 접힘/펼침 사이에 공통 요소만 같은 자리에 남긴다. */
   return `<div class="calmon open">
+    <button class="cmbar" data-caltoggle="1"><span class="cmlabel">🗓 ${yy}년 ${mm}월${sel}</span><span class="cmchev">▴</span></button>
     <div class="cmhd"><button class="cmnav" data-calmo="-1" aria-label="이전 달">‹</button>
-      <button class="cmlabel cmtoggle" data-caltoggle="1">${yy}년 ${mm}월 ▴</button>
+      <span class="cmhdlab">${yy}. ${String(mm).padStart(2,'0')}</span>
       <button class="cmnav" data-calmo="1" aria-label="다음 달">›</button>
       ${S.calDate?`<button class="cmclear" data-caldate="">전체</button>`:''}</div>
     <div class="cmgrid cmwd">${WD.map((w,i)=>`<span class="cmw${i===0?' sun':i===6?' sat':''}">${w}</span>`).join('')}</div>
@@ -3839,12 +3856,24 @@ async function saveProfile(){
   try{
     const row={id:ME.id, name:nm, role:P.role||'listener', bio:P.bio||'',
       sns_instagram:P.ig||'', sns_youtube:P.yt||'', sns_tiktok:P.tt||''};
-    const r=await SBC.from('profiles').upsert(row,{onConflict:'id'}); if(r.error)throw r.error;
+    const r=await _profileSave(row); if(r.error)throw r.error;
     ME.name=nm; ME.role=row.role; ME.bio=row.bio; ME.sns={ig:row.sns_instagram, yt:row.sns_youtube, tt:row.sns_tiktok};
     try{ AVBYNAME[nm]=ME.avatar||AVBYNAME[nm]||''; }catch(_){}
     S.editProf=null; render(); offToast('프로필을 저장했어요');
   }catch(e){ console.warn('[offlog] 프로필 저장 실패', e); offToast('저장 실패 — 잠시 후 다시');
     if(btn){btn.disabled=false;btn.textContent='저장';} }
+}
+/* 프로필 부분 갱신 공통 — update 를 먼저 시도하고, 행이 없을 때만 insert 로 만든다.
+   upsert(POST + merge-duplicates)는 profiles.name NOT NULL 때문에 부분 컬럼만 보내면
+   23502 로 실패한다(ON CONFLICT 전에 INSERT 튜플을 검증하므로 기존 행이 있어도 동일). */
+async function _profileSave(patch){
+  if(!ME||!SBC) return {error:{message:'no session'}};
+  const up=await SBC.from('profiles').update(patch).eq('id',ME.id).select('id');
+  if(up.error) return up;
+  if(up.data && up.data.length) return up;          /* 갱신됨 */
+  /* 아직 프로필 행이 없다 → name 을 채워 새로 만든다(NOT NULL 충족) */
+  const row=Object.assign({id:ME.id, name:(ME.name||'아티스트')}, patch);
+  return await SBC.from('profiles').insert(row);
 }
 /* 프로필 사진 변경 — Storage(log-media)에 올리고 profiles.avatar_url 갱신 */
 async function saveAvatar(file){
@@ -3854,7 +3883,9 @@ async function saveAvatar(file){
   try{
     const url=await uploadLogMedia(file,'ph');
     if(!url) throw new Error('업로드 실패');
-    const r=await SBC.from('profiles').upsert({id:ME.id, avatar_url:url},{onConflict:'id'}); if(r.error)throw r.error;
+    /* upsert 를 쓰면 안 된다 — profiles.name 이 NOT NULL 이라 Postgres 가 ON CONFLICT 이전에
+       INSERT 튜플을 검증하면서 23502(name null)로 실패한다(행이 이미 있어도). 부분 갱신은 update. */
+    const r=await _profileSave({avatar_url:url}); if(r.error)throw r.error;
     ME.avatar=url; try{ AVBYNAME[ME.name]=url; }catch(_){}
     render(); offToast('프로필 사진을 바꿨어요');
   }catch(e){ console.warn('[offlog] 아바타 변경 실패', e); offToast('사진 변경 실패 — 잠시 후 다시'); }
@@ -3864,7 +3895,7 @@ async function setAccountVisibility(v){
   if(!ME||!SBC){ needLogin(); return; }
   const prev=ME.vis; ME.vis=v; render();          /* 즉시 반영 */
   try{
-    const r=await SBC.from('profiles').upsert({id:ME.id, account_visibility:v},{onConflict:'id'}); if(r.error)throw r.error;
+    const r=await _profileSave({account_visibility:v}); if(r.error)throw r.error;
     offToast(v==='private'?'비공개 계정으로 바꿨어요':'공개 계정으로 바꿨어요');
   }catch(e){ ME.vis=prev; render(); console.warn('[offlog] 공개범위 저장 실패', e); offToast('변경 실패 — 잠시 후 다시'); }
 }
@@ -3892,6 +3923,7 @@ function flist(){
   <div class="srch"><span class="srchi">⌕</span>
     <input id="fq" value="${S.fq||''}" placeholder="아티스트 찾기">
     ${q?`<button class="srchx" id="fqx" aria-label="지우기">✕</button>`:''}</div>
+  <button class="invbtn" id="finvite">＋ 친구 초대하기 <small>링크 보내기</small></button>
   <div class="seg" id="flseg" style="${q?'display:none':''}">
     <button class="${isFer?'on':''}" data-flist="follower">팔로워 <b>${ferN}</b></button>
     <button class="${isFer?'':'on'}" data-flist="following">팔로잉 <b>${fingN}</b></button></div>
@@ -4756,6 +4788,18 @@ function attachMedia(id, kind, file){
     } })();
   } else { apply(URL.createObjectURL(file)); }
 }
+/* 친구 초대 — 내 아이디를 붙인 초대 링크를 네이티브 공유 시트나 클립보드로 넘긴다.
+   ?inv=<내 id> 는 받는 쪽에서 "누가 불렀는지" 표시하는 데만 쓴다(가입 강제 아님). */
+async function offInvite(){
+  const base=location.origin+'/offlog';
+  const url = (ME&&ME.id) ? base+'?inv='+encodeURIComponent(ME.id) : base;
+  const nm  = (ME&&ME.name) ? ME.name : '친구';
+  const txt = nm+'님이 OFFLOG에 초대했어요 — 만드는 순간을 기록하는 뮤지션 로그';
+  try{ if(navigator.share){ await navigator.share({title:'OFFLOG 초대', text:txt, url:url}); return; } }
+  catch(e){ if(e&&e.name==='AbortError') return; }
+  try{ await navigator.clipboard.writeText(txt+'\n'+url); offToast('초대 링크가 복사됐어요'); }
+  catch(_){ offToast('초대 링크: '+url); }
+}
 /* 남의 음악 공유 — 네이티브 공유 or 링크 복사 */
 async function offShareTrack(M){
   const url=location.origin+'/offlog';
@@ -4822,7 +4866,9 @@ const WGRAD='radial-gradient(circle at 30% 25%,#4a2f66,transparent 60%),radial-g
 let NOWPLAY={label:'발견', cnt:0, nm:'', tm:'', src:'', who:'', aid:'', tid:''};
 
 /* ── 실제 오디오 재생 (전역 Audio 1개) ── 재생버튼에 진짜 mp3를 물린다 */
-const AUDIO=new Audio(); AUDIO.preload='none';
+/* preload='none' 이면 재생 버튼을 누른 뒤에야 네트워크 요청이 시작돼 1초 넘게 기다렸다.
+   'metadata' 로 두면 src 지정 시점에 앞부분을 미리 받아 탭하자마자 소리가 난다. */
+const AUDIO=new Audio(); AUDIO.preload='metadata';
 /* 음악바 시간·막대 갱신 (드래그 중에는 손가락 우선) */
 AUDIO.addEventListener('timeupdate', function(){ if(!_seekDrag) paintSeek(); });
 AUDIO.addEventListener('loadedmetadata', function(){ paintSeek(); });
@@ -5334,6 +5380,8 @@ function bind(){
   if(fq)fq.oninput=()=>{ S.fq=fq.value; _fqSchedule(); };
   const fqx=document.getElementById('fqx');
   if(fqx)fqx.onclick=()=>{ S.fq=''; if(fq)fq.value=''; refreshFlist(); };
+  const finv=document.getElementById('finvite');
+  if(finv)finv.onclick=()=>{ offInvite(); };
   /* (팔로워/팔로잉 목록의 팔로우 버튼도 .fol 공통 핸들러가 처리 — data-aid 계약 하나로 통일) */
   /* (프로필 팔로우/로그인 버튼은 위 #profolbtn/#profloginbtn 에서 처리) */
   /* Demo — 음원 파일 올리기 */
@@ -5856,6 +5904,18 @@ function bind(){
     const on=b.classList.toggle('on');
     b.textContent=on?'✓ 작품':'＋ 작품';
   });
+  /* 손가락이 닿는 순간(누르기 전) 미리 받아둔다 — 탭했을 때 기다림이 거의 없다.
+     실제 재생은 click 에서만(사용자 제스처 필요), 여기선 다운로드만 시작시킨다. */
+  document.querySelectorAll('.rcard[data-play][data-audio]').forEach(cd=>{
+    if(cd.__warm) return; cd.__warm=1;
+    const warm=()=>{
+      const u=cd.dataset.audio; if(!u || CURSRC===u || AUDIO.__warming===u) return;
+      AUDIO.__warming=u;
+      try{ const a=new Audio(); a.preload='metadata'; a.src=u; }catch(_){}
+    };
+    cd.addEventListener('pointerenter', warm, {passive:true});
+    cd.addEventListener('touchstart', warm, {passive:true});
+  });
   /* 소리 카드: 카드 전체가 재생 버튼 — 실제 mp3 재생 (댓글·⋯·이름 탭은 제외) */
   document.querySelectorAll('.rcard[data-play]').forEach(cd=>cd.onclick=e=>{
     if(e.target.closest('.rheart,.keep,.rreply,.fcmt,.edit,.rwho,[data-prof]'))return;
@@ -6115,6 +6175,20 @@ setInterval(()=>{
           .map(x=>String(x).padStart(2,'0')).join(':');
   });
 },1000);
+
+/* 초대 링크(?inv=<초대한 사람 id>)로 들어온 경우 — 누가 불렀는지 한 번 알려주고
+   주소에서 파라미터는 지운다(새로고침·공유 시 따라다니지 않게). 가입을 막지는 않는다. */
+(function invitedBy(){
+  var id=''; try{ id=new URLSearchParams(location.search).get('inv')||''; }catch(_){ return; }
+  if(!/^[0-9a-f-]{36}$/i.test(id)) return;
+  try{ history.replaceState(null,'',location.pathname); }catch(_){}
+  setTimeout(async function(){
+    var nm='';
+    try{ if(SBC){ var r=await SBC.from('profiles').select('name').eq('id',id).maybeSingle();
+      if(!r.error&&r.data) nm=r.data.name||''; } }catch(_){}
+    offToast(nm ? nm+'님이 초대했어요 · 환영합니다' : 'OFFLOG에 초대됐어요 · 환영합니다');
+  }, 2600);
+})();
 
 /* ── 실제 데이터 주입 — 디자인/구성은 v34 그대로, 목업만 진짜 음악/아티스트로 교체 ── */
 (async function loadReal(){
