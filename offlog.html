@@ -727,6 +727,32 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .rxn{font-family:'Black Han Sans';font-size:13px;color:var(--muted);margin-left:2px}
 /* 반응 도형 = 카드 위 하단 오버레이 · 팔로우 = 카드 우측 상단 오버레이 (v30) */
 .frx{position:absolute;left:11px;right:11px;bottom:11px;z-index:6;display:flex;align-items:center;gap:6px}
+/* 댓글 버튼 — 카드 좌하단(옛 도형 반응 자리). 협업 대화의 입구 */
+.fcmt{position:absolute;left:11px;bottom:11px;z-index:7;display:flex;align-items:center;gap:5px;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(4px);border:none;border-radius:99px;
+  padding:5px 11px;color:#fff;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer}
+.fcmt b{font-weight:800}
+.fcmt:active{transform:scale(.94)}
+.rcard.paper .fcmt{background:rgba(43,36,23,.12);color:var(--ink)}
+/* 댓글 패널 — 카드 아래로 펼쳐진다 */
+.cmtpanel{background:var(--card);border:1px solid var(--line);border-top:none;
+  border-radius:0 0 16px 16px;margin:-10px 4px 0;padding:12px 13px 11px}
+.cmtnote{font-size:11.5px;color:var(--muted);padding:4px 2px 10px;text-align:center}
+.cmtrow{display:flex;align-items:baseline;gap:7px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.cmtrow:last-of-type{border-bottom:none}
+.cmtwho{flex-shrink:0;font-size:12px;font-weight:800;color:var(--mint);cursor:pointer;max-width:88px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmtbody{flex:1;font-size:13px;line-height:1.45;word-break:break-word}
+.cmtat{flex-shrink:0;font-size:9.5px;color:var(--muted)}
+.cmtdel{flex-shrink:0;background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 4px}
+.cmtdel:active{color:var(--coral)}
+.cmtform{display:flex;gap:7px;margin-top:9px}
+.cmtin{flex:1;min-width:0;background:var(--card2);border:1px solid var(--line);border-radius:10px;
+  color:var(--txt);padding:9px 11px;font-family:inherit;font-size:16px;outline:none}
+.cmtin:focus{border-color:var(--mint)}
+.cmtsend{flex-shrink:0;background:var(--mint);border:none;border-radius:10px;color:#04231d;
+  padding:0 14px;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer}
+.cmtsend:disabled{background:var(--card2);color:var(--muted)}
 .rcard.paper .rxn{color:var(--ink)}
 .ffol{position:absolute;top:11px;right:11px;z-index:6;background:rgba(0,0,0,.42);backdrop-filter:blur(4px);
   border:1px solid rgba(255,255,255,.28);color:#fff;border-radius:99px;
@@ -1962,13 +1988,17 @@ function logMenuSheet(){
        ${_ml?`<button class="pkrow" data-logedit="${M.id}"><span class="pknm"><b>✎ 수정하기</b><small>${_ml.t==='note'?'글 내용을 고쳐요':'설명(캡션)을 고쳐요'}</small></span></button>`:''}
        ${_ml&&_ml.t==='note'?`<button class="pkrow" data-addkind="ph"><span class="pknm"><b>📷 사진 첨부하기</b><small>이 글이 사진 위 캡션이 돼요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>`:''}
        ${_ml?`<button class="pkrow danger" data-logdel="${M.id}"><span class="pknm"><b>삭제하기</b><small>이 로그를 완전히 지워요</small></span></button>`:''}`
+    /* 친구 로그(flog) — 플레이리스트 담기 없음(요청). 공유·팔로우만 */
+    : M.kind==='flog'
+    ? `${M.aid&&!(ME&&M.aid===ME.id)?`<button class="pkrow" data-omenu="follow"><span class="pknm"><b>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'✓ 팔로잉':'＋ 팔로우'}</b><small>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'탭하면 팔로우 해제':(M.by||'이 아티스트')+' 팔로우하기'}</small></span></button>`:''}
+       <button class="pkrow" data-omenu="share"><span class="pknm"><b>⤴ 공유</b><small>링크로 공유하거나 복사</small></span></button>`
     : `${M.aid?`<button class="pkrow" data-omenu="follow"><span class="pknm"><b>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'✓ 팔로잉':'＋ 팔로우'}</b><small>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'탭하면 팔로우 해제':(M.by||'이 아티스트')+' 팔로우하기'}</small></span></button>`:''}
        <button class="pkrow" data-omenu="save"><span class="pknm"><b>＋ 내 플레이리스트에 담기</b></span><span style="margin-left:auto;color:var(--mint);font-weight:800">담기</span></button>
        <button class="pkrow" data-omenu="share"><span class="pknm"><b>⤴ 공유</b><small>링크로 공유하거나 복사</small></span></button>`;
        /* 신고·차단 메뉴는 뺐다(요청) — 기존에 차단해둔 사람 해제는 계정 설정의 '차단한 사람' 목록에 남아 있다 */
   return `<div class="cs-bd" id="lmbd"><div class="cs">
     <div class="cs-hd"><b>${M.kind==='addmedia'?'LOG 관리':(M.nm||'음악')}</b><button class="cs-x" id="lmx" aria-label="닫기">✕</button></div>
-    ${M.kind==='addmedia'?'':`<div class="cs-trk">🎵 <b>${M.nm||'음악'}</b>${M.by?' · '+M.by:''}</div>`}
+    ${M.kind==='addmedia'||M.kind==='flog'?'':`<div class="cs-trk">🎵 <b>${M.nm||'음악'}</b>${M.by?' · '+M.by:''}</div>`}
     ${rows}
   </div></div>`;
 }
@@ -2550,6 +2580,91 @@ async function toggleReact(tid, kind){
   }
 }
 
+/* ── LOG 댓글 — 도형 반응 대신 실제 대화(협업)를 남긴다 ──────────────────
+   CMTS[logId] = [{id, who, aid, body, at}]  (null=아직 안 불러옴)
+   로그 카드마다 "댓글 n" 을 눌러 펼치면 그때 서버에서 가져온다(필요할 때만). */
+let CMTS={};
+let CMTTABLE=true;      /* log_comments 테이블 사용 가능 여부 — 없으면 조용히 숨긴다 */
+let CMTCOUNT={};        /* logId -> 댓글 수 (카드에 바로 표시) */
+async function loadComments(logId, force){
+  if(!SBC||!CMTTABLE||!logId) return false;
+  if(!force && CMTS[logId]) return false;
+  try{
+    const r=await SBC.from('log_comments').select('id,author_id,body,created_at')
+      .eq('log_id',logId).order('created_at',{ascending:true}).limit(100);
+    if(r.error) throw r.error;
+    const rows=r.data||[];
+    const need=[...new Set(rows.map(x=>x.author_id))];
+    const names={};
+    if(need.length){
+      const pr=await SBC.from('profiles').select('id,name,avatar_url').in('id',need);
+      (pr.data||[]).forEach(p=>{ names[p.id]={nm:p.name||'익명', av:p.avatar_url||''};
+        if(p.name){ AIDBYNAME[p.name]=p.id; if(p.avatar_url) AVBYNAME[p.name]=p.avatar_url; } });
+    }
+    const p2=x=>String(x).padStart(2,'0');
+    CMTS[logId]=rows.map(x=>{ const d=new Date(x.created_at);
+      return {id:x.id, aid:x.author_id, who:(names[x.author_id]&&names[x.author_id].nm)||'익명',
+              av:(names[x.author_id]&&names[x.author_id].av)||'', body:x.body,
+              at:p2(d.getMonth()+1)+'.'+p2(d.getDate())+' '+p2(d.getHours())+':'+p2(d.getMinutes()),
+              mine:!!(ME&&x.author_id===ME.id)}; });
+    CMTCOUNT[logId]=CMTS[logId].length;
+    return true;
+  }catch(e){
+    if(e&&(e.code==='PGRST205'||e.code==='42P01')){ CMTTABLE=false; return false; }
+    console.warn('[offlog] 댓글 불러오기 실패', e); return false;
+  }
+}
+/* 피드가 새로 만들어질 때마다 그 안의 로그들 댓글 수를 채운다 */
+function refreshCmtCounts(){
+  const ids=(S.feed||[]).filter(x=>x&&x.src==='flog'&&x.lid).map(x=>x.lid);
+  if(!ids.length) return;
+  loadCommentCounts(ids).then(function(got){ if(got && S.view==='home'){ try{render();}catch(_){} } });
+}
+async function addComment(logId, body){
+  if(!ME) { needLogin(); return false; }
+  body=String(body||'').trim();
+  if(!body) return false;
+  if(badWordIn(body)){ offToast('부적절한 표현이 있어 올릴 수 없어요'); return false; }
+  try{
+    const r=await SBC.from('log_comments').insert({log_id:logId, author_id:ME.id, body:body}).select('id,created_at').maybeSingle();
+    if(r.error) throw r.error;
+    const p2=x=>String(x).padStart(2,'0'); const d=new Date((r.data&&r.data.created_at)||Date.now());
+    (CMTS[logId]=CMTS[logId]||[]).push({id:(r.data&&r.data.id)||('tmp'+Date.now()), aid:ME.id, who:ME.name||'나',
+      av:ME.avatar||'', body:body,
+      at:p2(d.getMonth()+1)+'.'+p2(d.getDate())+' '+p2(d.getHours())+':'+p2(d.getMinutes()), mine:true});
+    CMTCOUNT[logId]=CMTS[logId].length;
+    return true;
+  }catch(e){
+    if(e&&(e.code==='PGRST205'||e.code==='42P01')){ CMTTABLE=false; offToast('댓글 기능을 준비 중이에요'); return false; }
+    console.warn('[offlog] 댓글 저장 실패', e); offToast('댓글 저장 실패 — 잠시 후 다시'); return false;
+  }
+}
+async function deleteComment(logId, cid){
+  if(!ME) return false;
+  const arr=CMTS[logId]||[]; const i=arr.findIndex(c=>c.id===cid); if(i<0) return false;
+  const bak=arr[i];
+  arr.splice(i,1); CMTCOUNT[logId]=arr.length; render();
+  try{ const r=await SBC.from('log_comments').delete().eq('id',cid); if(r.error) throw r.error; return true; }
+  catch(e){ arr.splice(i,0,bak); CMTCOUNT[logId]=arr.length; render();
+    console.warn('[offlog] 댓글 삭제 실패', e); offToast('삭제 실패 — 잠시 후 다시'); return false; }
+}
+/* 피드에 보이는 로그들의 댓글 수를 한 번에 — 카드마다 "댓글 n"을 정확히 보여주려고 */
+async function loadCommentCounts(logIds){
+  if(!SBC||!CMTTABLE||!logIds||!logIds.length) return false;
+  const need=logIds.filter(id=>id && CMTCOUNT[id]===undefined);
+  if(!need.length) return false;
+  try{
+    const r=await SBC.from('log_comments').select('log_id').in('log_id',need).limit(1000);
+    if(r.error) throw r.error;
+    need.forEach(id=>{ CMTCOUNT[id]=0; });
+    (r.data||[]).forEach(x=>{ CMTCOUNT[x.log_id]=(CMTCOUNT[x.log_id]||0)+1; });
+    return true;
+  }catch(e){
+    if(e&&(e.code==='PGRST205'||e.code==='42P01')) CMTTABLE=false;
+    return false;
+  }
+}
+
 /* 스토리 — 원 = 아티스트. 탭하면 그 사람이 방금 올린 로그가 전체화면으로 재생된다.
    following:false 인 원도 섞여 있음 — 아직 안 팔로우하는 아티스트를 발견하는 자리.
    ring: 팔로우+안봄=new(그라데이션 발광) / 팔로우+봄=seen(회색) / 안팔로우=discover(점선)   */
@@ -2778,6 +2893,7 @@ let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:
   calMonth:null, /* 캘린더에 표시 중인 달 'YYYY-MM' (null=이번 달) */
   perfApply:false, perfForm:null, perfExpand:null, /* 공연 신청 시트 — 열림여부·폼값·펼친 카드id */
   projectApply:false, projectForm:null, /* 프로젝트 지원 시트 — 열림여부·폼값(선택 프로젝트에 따라 audioFile 또는 video) */
+  cmtOpen:null,  /* 댓글 패널이 펼쳐진 로그 id — 도형 반응 대신 댓글로 협업 */
   calOpen:false, /* 홈 캘린더 펼침 여부 — 기본 접힘(로그가 바로 보이게). 얇은 바만 노출 */
   authMode:'login', /* 로그인 화면 모드 — login | signup */
   editProf:null, /* 프로필 수정 시트 (열려 있으면 {name,role,bio,ig,yt,tt}) */
@@ -3042,7 +3158,7 @@ function renewHome(){
   if(window.__resample){ try{ window.__resample(); }catch(e){} }  /* 매번 전체 아티스트에서 새로 샘플 → 트렌드 첫 화면 새 얼굴 */
   S.feed=buildFeed();
   /* 홈에 올 때마다 친구들의 새 로그를 확인한다(30초 스로틀) — 도착하면 피드만 다시 그림 */
-  loadFriendLogs().then(function(got){ if(got && S.view==='home'){ S.feed=buildFeed(); try{render();}catch(_){} } });
+  loadFriendLogs().then(function(got){ if(got && S.view==='home'){ S.feed=buildFeed(); try{render();}catch(_){} } refreshCmtCounts(); });
 }
 
 /* 스토리 열의 원을 제외한 모든 이름·아바타가 여기로 온다 */
@@ -3085,24 +3201,25 @@ function feedCard(t,i){
   if(t.src==='room') return roomCard(t.slot);
 
   const who=`<div class="rwho" data-prof="${esc(t.who)}" data-paid="${t.aid||''}" style="cursor:pointer">${smileEl(t.c)}${esc(t.who)}</div>`;
-  /* 팔로우 = 카드 우측 상단. 반응 도형 = 카드 위 하단. 전부 카드 위에 얹힌다 */
-  /* 액션은 ⋯ 하나로 통합 (공유·담기·팔로우) — 우측 상단 */
-  const fol = `<button class="edit mine" data-sharemenu="${t.tid||''}" data-snm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-sby="${(t.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" data-said="${t.aid||''}" aria-label="공유·담기·팔로우">⋯</button>`;
-  const _mine = (t.tid && MYREACT[t.tid]) || null;  // 저장된 내 반응
-  const _rb=(emo,sh,col)=>`<button class="shape rbtn${_mine&&_mine.has(emo)?' hit':''}" data-emo="${emo}"${_mine&&_mine.has(emo)?' data-hit="1"':''} aria-label="${emo}">${shape(sh,c(col),22)}</button>`;
-  const rx=`<div class="frx" data-tid="${t.tid||''}">
-      ${_rb('소름','tri','green')}
-      ${_rb('루프','circle','shpink')}
-      ${_rb('울컥','diamond','blue')}
-      ${_rb('최고','star','yellow')}
-      <span class="rxn" data-n="${t.rx||0}">${t.rx||0}</span></div>`;
+  /* 액션은 ⋯ 하나 — 우측 상단. 친구 로그(flog)는 담기·바 재생 없이 공유/팔로우만 */
+  const fol = t.src==='flog'
+    ? `<button class="edit mine" data-logmenu="${t.lid||''}" data-lnm="${(t.nm||t.cap||t.text||'').slice(0,40).replace(/"/g,'&quot;')}" data-lby="${(t.who||'').replace(/"/g,'&quot;')}" data-laid="${t.aid||''}" aria-label="공유·팔로우">⋯</button>`
+    : `<button class="edit mine" data-sharemenu="${t.tid||''}" data-snm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-sby="${(t.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" data-said="${t.aid||''}" aria-label="공유·담기·팔로우">⋯</button>`;
+  /* 반응 도형 → 댓글로 교체(협업). 로그(flog)만 댓글 가능 — 발매곡 카드는 대상 로그가 없다 */
+  const _cid=t.lid||'';
+  const _cn=(_cid&&CMTCOUNT[_cid])||0;
+  const rx = (t.src==='flog' && _cid)
+    ? `<button class="fcmt" data-cmt="${_cid}" aria-label="댓글">
+         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-3.8-.9L3 21l1.9-4.6A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z"/></svg>
+         <b>${_cn?_cn:'댓글'}</b></button>`
+    : '';
   const dtb = t.dt?`<div class="fdt">${esc(String(t.dt).slice(5).replace('-','.'))}</div>`:'';
 
   const body =
     t.t==='ph'  ? `<div class="rcard" data-slide="${i}">
         <div class="bgimg" style="background:${t.bg}"></div><div class="grainy"></div>
         <div class="rmid"><div class="rts">${t.at}</div><div class="rcap">${esc(t.cap)}</div></div>${who}${fol}${rx}</div>`
-  : t.t==='snd' ? `<div class="rcard snd" data-slide="${i}">
+  : t.t==='snd' ? `<div class="rcard snd" data-play${t.audio?` data-audio="${t.audio}"`:''}>
         <div class="bigwv">${waveBars(34)}</div>
         <div class="rmid"><div class="rts">${t.at||''}</div><div class="rcap">${t.nm||t.cap}</div>
           <span class="sndpill"><em>▶</em><b>${t.dur||''}</b></span></div>${who}${fol}${rx}</div>`
@@ -3112,7 +3229,28 @@ function feedCard(t,i){
   :               `<div class="rcard paper ${t.tone==='b'?'b':''}" data-slide="${i}">
         <div class="rmid"><div class="rts">${t.at}</div><div class="rnote">${esc(t.text)}</div></div>${who}${fol}${rx}</div>`;
 
-  return `<div class="fcard">${dtb}${body}</div>`;
+  return `<div class="fcard">${dtb}${body}${cmtPanel(_cid)}</div>`;
+}
+/* 댓글 패널 — 카드 아래로 펼쳐진다(S.cmtOpen 인 로그만) */
+function cmtPanel(logId){
+  if(!logId || S.cmtOpen!==logId) return '';
+  const list=CMTS[logId];
+  const rows = list===undefined
+    ? `<div class="cmtnote">불러오는 중…</div>`
+    : (!list.length ? `<div class="cmtnote">첫 댓글을 남겨보세요</div>`
+      : list.map(c=>`<div class="cmtrow">
+          <b class="cmtwho" data-prof="${esc(c.who)}" data-paid="${c.aid||''}">${esc(c.who)}</b>
+          <span class="cmtbody">${esc(c.body)}</span>
+          <span class="cmtat">${esc(c.at)}</span>
+          ${c.mine?`<button class="cmtdel" data-cmtdel="${c.id}" data-cmtlog="${logId}" aria-label="댓글 삭제">✕</button>`:''}
+        </div>`).join(''));
+  return `<div class="cmtpanel">
+    ${rows}
+    <div class="cmtform">
+      <input class="cmtin" id="cmtin-${logId}" placeholder="${ME?'댓글 남기기…':'로그인하면 댓글을 쓸 수 있어요'}" ${ME?'':'disabled'}>
+      <button class="cmtsend" data-cmtsend="${logId}" ${ME?'':'disabled'}>등록</button>
+    </div>
+  </div>`;
 }
 
 /* ── 슬라이드 뷰 — 같은 피드, 한 화면에 하나씩. 위아래로 넘긴다 ── */
@@ -5698,9 +5836,9 @@ function bind(){
     const on=b.classList.toggle('on');
     b.textContent=on?'✓ 작품':'＋ 작품';
   });
-  /* 소리 카드: 카드 전체가 재생 버튼 — 실제 mp3 재생 */
+  /* 소리 카드: 카드 전체가 재생 버튼 — 실제 mp3 재생 (댓글·⋯·이름 탭은 제외) */
   document.querySelectorAll('.rcard[data-play]').forEach(cd=>cd.onclick=e=>{
-    if(e.target.closest('.rheart,.keep,.rreply'))return;
+    if(e.target.closest('.rheart,.keep,.rreply,.fcmt,.edit,.rwho,[data-prof]'))return;
     const url=cd.dataset.audio;
     if(url){
       const capEl=cd.querySelector('.rcap');
@@ -5751,6 +5889,39 @@ function bind(){
   /* 내 글 로그 ⋯ → 사진/데모 넣기 메뉴 · 남의 음악 ⋯ → 공유/담기 메뉴 */
   document.querySelectorAll('[data-addmenu]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); S.logMenu={kind:'addmedia', id:b.dataset.addmenu}; render(); });
   document.querySelectorAll('[data-sharemenu]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); S.logMenu={kind:'oshare', id:b.dataset.sharemenu, nm:b.dataset.snm, by:b.dataset.sby, audio:b.dataset.saud, aid:b.dataset.said||''}; render(); });
+  /* 친구 로그 ⋯ — 담기·바 재생 없이 공유/팔로우만 */
+  document.querySelectorAll('[data-logmenu]').forEach(b=>b.onclick=e=>{ e.stopPropagation();
+    S.logMenu={kind:'flog', id:b.dataset.logmenu, nm:b.dataset.lnm||'로그', by:b.dataset.lby||'', aid:b.dataset.laid||'', audio:''}; render(); });
+  /* 댓글 — 카드 좌하단 버튼으로 펼치고, 그때 서버에서 가져온다 */
+  document.querySelectorAll('[data-cmt]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    const id=b.dataset.cmt;
+    if(S.cmtOpen===id){ S.cmtOpen=null; render(); return; }
+    S.cmtOpen=id; render();
+    if(CMTS[id]===undefined) loadComments(id).then(ok=>{ if(ok && S.cmtOpen===id) render(); });
+  });
+  document.querySelectorAll('[data-cmtsend]').forEach(b=>b.onclick=async e=>{
+    e.stopPropagation();
+    const id=b.dataset.cmtsend, inp=document.getElementById('cmtin-'+id);
+    if(!inp) return;
+    const v=inp.value.trim(); if(!v) return;
+    b.disabled=true;
+    const ok=await addComment(id, v);
+    if(ok){ inp.value=''; render(); const again=document.getElementById('cmtin-'+id); if(again)again.focus(); }
+    else b.disabled=false;
+  });
+  document.querySelectorAll('[data-cmtdel]').forEach(b=>b.onclick=async e=>{
+    e.stopPropagation();
+    if(!await offConfirm('이 댓글을 지울까요?','삭제')) return;
+    deleteComment(b.dataset.cmtlog, b.dataset.cmtdel);
+  });
+  /* 댓글 입력 중 Enter = 등록. 카드 탭(재생·펼침)으로 이벤트가 새지 않게 */
+  document.querySelectorAll('.cmtin').forEach(inp=>{
+    inp.onclick=e=>e.stopPropagation();
+    inp.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault();
+      const id=inp.id.replace('cmtin-',''); const btn=document.querySelector('[data-cmtsend="'+id+'"]'); if(btn)btn.click(); } };
+  });
+  document.querySelectorAll('.cmtpanel').forEach(p=>{ p.onclick=e=>{ if(!e.target.closest('[data-prof]')) e.stopPropagation(); }; });
   /* 로그 공개/비공개 전환 — 발매·무대에 담긴 로그는 항상 공개(정책).
      ⋯ 메뉴 안에서도, My 카드 위 공개/비공개 칩에서도 같은 핸들러가 처리한다
      (그래서 if(S.logMenu) 블록 밖에 있어야 한다 — 칩은 메뉴 없이도 항상 떠 있음) */
