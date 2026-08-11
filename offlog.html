@@ -2099,6 +2099,7 @@ function logMenuSheet(){
     ? `<button class="pkrow" data-logshare="${M.id}"><span class="pknm"><b>⤴ 공유하기</b><small>링크로 공유하거나 복사</small></span></button>
        ${_ml?`<button class="pkrow" data-logedit="${M.id}"><span class="pknm"><b>✎ 수정하기</b><small>${_ml.t==='note'?'글 내용을 고쳐요':'설명(캡션)을 고쳐요'}</small></span></button>`:''}
        ${_ml&&_ml.t==='note'?`<button class="pkrow" data-addkind="ph"><span class="pknm"><b>📷 사진 첨부하기</b><small>이 글이 사진 위 캡션이 돼요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>`:''}
+       ${_ml&&_ml.t==='snd'&&_ml.sid?`<button class="pkrow" data-demopick="${M.id}"><span class="pknm"><b>🎵 LOG 담기</b><small>이 데모가 만들어진 기록을 골라 담아요</small></span><span style="margin-left:auto;color:var(--mint);font-weight:800">${(typeof STREAM!=='undefined'?STREAM:[]).filter(x=>x&&x.demoOf===_ml.sid).length||'＋'}</span></button>`:''}
        ${_ml?`<button class="pkrow danger" data-logdel="${M.id}"><span class="pknm"><b>삭제하기</b><small>이 로그를 완전히 지워요</small></span></button>`:''}`
     /* 친구 로그(flog) — 플레이리스트 담기 없음(요청). 공유·팔로우만 */
     : M.kind==='flog'
@@ -2447,6 +2448,7 @@ function studioMerge(){
    (supabase/logs.sql 미실행이면 예전처럼 이 기기에만 저장 — 조용히 폴백) */
 let LOGSTABLE=true;    /* logs 테이블 사용 가능 여부 (없으면 false로 내려가고 로컬만) */
 let LOGSACT=true;      /* logs.activity 컬럼 가능 여부 (supabase/logs_activity.sql 미실행이면 false로 내려가고 활동태그는 이 기기에만) */
+let LOGSDEMO=true;     /* logs.demo_id 컬럼 가능 여부 (supabase/logs-demo-link.sql) — 없으면 담기는 이 기기에만 */
 
 /* 사진을 화면에 충분한 크기로 줄이고 JPEG로 압축 — 원본 base64가 저장을 깨뜨리던 문제 해결 */
 function shrinkImage(file, maxPx, quality){
@@ -2612,7 +2614,8 @@ try{ window.addEventListener('online', function(){ setTimeout(syncPendingLogs, 8
 function _rowToLog(x){
   const ts=x.created_at||'', p=s=>s;
   const base={id:'sv_'+x.id, sid:x.id, at:ts.slice(11,16), dt:ts.slice(0,10),
-              vis:x.visibility||'private', side:'l', work:x.work_id||null, act:x.activity||null};
+              vis:x.visibility||'private', side:'l', work:x.work_id||null, act:x.activity||null,
+              demoOf:x.demo_id||null};   /* 이 로그가 담긴 데모(logs.id) — 데모의 history */
   if(x.kind==='ph')  return Object.assign(base,{t:'ph',  cap:x.caption||'사진', media:x.media_url||'',
                         bg:x.media_url?('center/cover no-repeat url('+x.media_url+')'):'#141418'});
   if(x.kind==='vid') return Object.assign(base,{t:'vid', cap:x.caption||'', media:x.media_url||'', src:x.media_url||''});
@@ -2623,7 +2626,7 @@ function _rowToLog(x){
 async function loadMyLogs(){
   if(!ME||!SBC||!LOGSTABLE) return false;
   try{
-    const cols='id,kind,text,caption,media_url,duration,tone,visibility,work_id,created_at'+(LOGSACT?',activity':'');
+    const cols='id,kind,text,caption,media_url,duration,tone,visibility,work_id,created_at'+(LOGSACT?',activity':'')+(LOGSDEMO?',demo_id':'');
     const r=await SBC.from('logs').select(cols)
       .eq('author_id',ME.id).order('created_at',{ascending:false}).limit(200);
     if(r.error) throw r.error;
@@ -2637,6 +2640,7 @@ async function loadMyLogs(){
   }catch(e){
     if(e&&(e.code==='PGRST205'||e.code==='42P01')){ LOGSTABLE=false; return false; }
     if(LOGSACT && e && /activity/i.test(String(e.message||''))){ LOGSACT=false; return loadMyLogs(); }
+    if(LOGSDEMO && e && /demo_id/i.test(String(e.message||''))){ LOGSDEMO=false; return loadMyLogs(); }
     console.warn('[offlog] 내 로그 불러오기 실패', e); return false;
   }
 }
@@ -3047,6 +3051,7 @@ let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:
   authMode:'login', /* 로그인 화면 모드 — login | signup */
   editProf:null, /* 프로필 수정 시트 (열려 있으면 {name,role,bio,ig,yt,tt}) */
   trim:null,     /* 영상 자르기 시트 {file,url,dur,start,end,busy} — 30초 이내만 올린다 */
+  demoPick:null, /* 데모에 LOG 담기 시트 {id(데모 로컬 id), sel:[로컬 id…]} */
   myMenu:false,  /* 마이 헤더 ⋯ 메뉴 (공유·로그아웃) */
   report:null,   /* 신고 시트 {kind,id,aid,nm} (Guideline 1.2) */
   terms:false,   /* 이용약관 전문 시트 */
@@ -5166,6 +5171,57 @@ function trimSheet(){
     ${T.busy?`<div class="pknote" style="padding:8px 0 0">고른 길이만큼 걸려요 — 화면을 끄지 말아주세요</div>`:''}
   </div>`;
 }
+/* ── 데모에 LOG 담기 — 데모가 만들어진 과정의 기록을 골라 연결한다(데모의 history) ── */
+function demoPickSheet(){
+  const P=S.demoPick; if(!P) return '';
+  const demo=STREAM.find(x=>x&&x.id===P.id);
+  if(!demo) return '';
+  /* 담을 수 있는 것 = 내 로그 중 데모 자신·다른 음원(snd)을 뺀 글/사진/영상 */
+  const cands=STREAM.filter(l=>l && l.id!==P.id && l.t!=='snd');
+  const lab=l=> l.t==='ph'?('📷 '+(l.cap||'사진')) : l.t==='vid'?('🎬 '+(l.cap||'영상')) : (l.text||'').split('\n')[0];
+  const rows=cands.map(l=>`<button class="pkrow ${P.sel.includes(l.id)?'on':''}" data-dprow="${l.id}">
+      <span class="pknm"><b>${esc(String(lab(l)).slice(0,30))}</b><small>${esc((l.dt||'').slice(5).replace('-','.'))} ${esc(l.at||'')}</small></span>
+      <span class="evck${P.sel.includes(l.id)?' on':''}" style="margin-left:auto"></span></button>`).join('');
+  return `<div class="sheet-bd" id="dpbd"></div>
+  <div class="pksheet tall">
+    <div class="pkhd"><b>LOG 담기</b><span class="pksub">${esc(demo.nm||'데모')}</span>
+      <button class="pkx" id="dpclose" aria-label="닫기">✕</button></div>
+    <div class="pkwarn" style="background:rgba(83,224,200,.07);border-color:rgba(83,224,200,.25);color:var(--mint)">
+      이 데모가 만들어진 날들의 기록을 골라주세요</div>
+    ${rows||`<div class="pknote" style="padding:26px 0">담을 로그가 아직 없어요 — 글·사진을 먼저 남겨보세요</div>`}
+    <button class="cta" id="dpdone">${P.sel.length?P.sel.length+'개 담기':'담기'}</button>
+  </div>`;
+}
+/* 담기 저장 — 로컬 demoOf + (컬럼이 있으면) 서버 demo_id */
+async function saveDemoPick(){
+  const P=S.demoPick; if(!P) return;
+  const demo=STREAM.find(x=>x&&x.id===P.id);
+  if(!demo||!demo.sid){ offToast('데모가 아직 서버에 저장되지 않았어요'); return; }
+  const before=STREAM.filter(l=>l&&l.demoOf===demo.sid).map(l=>l.id);
+  /* 로컬 반영: 고른 건 담고, 골랐다가 뺀 건 푼다 */
+  STREAM.forEach(function(l){
+    if(!l) return;
+    if(P.sel.includes(l.id)) l.demoOf=demo.sid;
+    else if(l.demoOf===demo.sid) l.demoOf=null;
+  });
+  try{studioSave()}catch(_){}
+  S.demoPick=null; render();
+  offToast(P.sel.length? P.sel.length+'개 기록을 담았어요' : '담긴 기록을 비웠어요');
+  /* 서버 반영 — 서버에 있는 로그(sid)만. 실패해도 로컬은 유지되고 다음 로드 때 다시 맞춘다 */
+  if(!ME||!SBC||!LOGSTABLE||!LOGSDEMO) return;
+  try{
+    const addSids=P.sel.map(id=>{ const l=STREAM.find(x=>x&&x.id===id); return l&&l.sid; }).filter(Boolean);
+    const rmSids =before.filter(id=>!P.sel.includes(id))
+                        .map(id=>{ const l=STREAM.find(x=>x&&x.id===id); return l&&l.sid; }).filter(Boolean);
+    if(addSids.length){ const r=await SBC.from('logs').update({demo_id:demo.sid}).in('id',addSids); if(r.error)throw r.error; }
+    if(rmSids.length){ const r=await SBC.from('logs').update({demo_id:null}).in('id',rmSids); if(r.error)throw r.error; }
+  }catch(e){
+    if(/demo_id/i.test(String(e&&e.message||''))){ LOGSDEMO=false;
+      console.info('[offlog] logs.demo_id 컬럼 없음 — supabase/logs-demo-link.sql 실행 필요'); return; }
+    console.warn('[offlog] LOG 담기 서버 저장 실패', e);
+    offToast('담기가 서버에 저장되지 않았어요 — 연결 확인 후 다시 시도해 주세요');
+  }
+}
 /* 데모(오디오) 로그 — 로그인 아티스트면 Storage에 실제 업로드 후 재생되는 소리 로그로 */
 async function uploadDemoLog(file, txt){
   /* 영상이 여기까지 오면 음원으로 저장돼 소리만 남는다 — 막고 영상 경로로 안내한다 */
@@ -5615,7 +5671,7 @@ function render(){
   document.getElementById('storyview').innerHTML = S.storyIdx!==null ? storyViewer() : '';
   /* 약관은 로그인 시트·잠금화면 위에 떠야 하므로 가장 앞에서 판정한다 */
   /* 영상 자르기는 작성 시트 위에 겹쳐 떠야 해서 가장 앞에서 가른다 */
-  document.getElementById('composeview').innerHTML = S.trim ? trimSheet() : (S.terms ? termsSheet() : (S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : (S.auth ? authSheet() : (S.saveTrack ? saveSheet() : (S.report ? reportSheet() : (S.logMenu ? logMenuSheet() : (S.myMenu ? myMenuSheet() : (S.perfApply ? perfApplySheet() : (S.projectApply ? projectApplySheet() : ''))))))))));
+  document.getElementById('composeview').innerHTML = S.trim ? trimSheet() : (S.demoPick ? demoPickSheet() : (S.terms ? termsSheet() : (S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : (S.auth ? authSheet() : (S.saveTrack ? saveSheet() : (S.report ? reportSheet() : (S.logMenu ? logMenuSheet() : (S.myMenu ? myMenuSheet() : (S.perfApply ? perfApplySheet() : (S.projectApply ? projectApplySheet() : '')))))))))));
   /* 촬영 화면 + 하단 camera|logs 토글 상태 */
   const _cv=document.getElementById('camview');
   if(_cv) _cv.innerHTML = S.cam ? camView() : '';
@@ -6640,6 +6696,29 @@ function bind(){
       /* 사진은 줄여서 담는다(원본 base64가 저장 용량을 넘겨 저장 자체가 실패하던 문제). 원본은 업로드용으로 보관 */
       else { shrinkImage(f).then(function(small){ S.compose.media={kind:'ph', url:small||URL.createObjectURL(f), file:f}; render(); }); } }
     ccam.value=''; }; }
+  /* ── 데모에 LOG 담기 시트 ── */
+  document.querySelectorAll('[data-demopick]').forEach(b=>b.onclick=()=>{
+    const demo=STREAM.find(x=>x&&x.id===b.dataset.demopick);
+    if(!demo) return;
+    if(!demo.sid){ offToast('데모가 서버에 저장된 뒤에 담을 수 있어요'); return; }
+    S.logMenu=null;
+    S.demoPick={id:demo.id, sel:STREAM.filter(l=>l&&l.demoOf===demo.sid).map(l=>l.id)};
+    render();
+  });
+  if(S.demoPick){
+    document.querySelectorAll('[data-dprow]').forEach(b=>b.onclick=()=>{
+      const id=b.dataset.dprow, P=S.demoPick, on=!P.sel.includes(id);
+      P.sel = on ? [...P.sel, id] : P.sel.filter(x=>x!==id);
+      /* 행만 토글 — 시트 스크롤 유지 */
+      b.classList.toggle('on', on);
+      const ck=b.querySelector('.evck'); if(ck)ck.classList.toggle('on', on);
+      const cta=document.getElementById('dpdone'); if(cta)cta.textContent = P.sel.length? P.sel.length+'개 담기':'담기';
+    });
+    const dpx=document.getElementById('dpclose'), dpb=document.getElementById('dpbd');
+    const dshut=()=>{ S.demoPick=null; render(); };
+    if(dpx)dpx.onclick=dshut; if(dpb)dpb.onclick=dshut;
+    const dpd=document.getElementById('dpdone'); if(dpd)dpd.onclick=()=>saveDemoPick();
+  }
   /* ── 영상 자르기 시트 ── 슬라이더는 render() 없이 값만 갱신한다(잡으면 안 놓치게) */
   if(S.trim){
     const T=S.trim, sv=document.getElementById('trvid');
