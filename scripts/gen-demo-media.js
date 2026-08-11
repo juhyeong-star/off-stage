@@ -67,7 +67,10 @@ function artwork(w, h, opt) {
   for (let i = 0; i < (opt.shapes || 5); i++) {
     shapes.push({
       x: r() * w, y: r() * h, rad: (0.08 + r() * 0.22) * Math.min(w, h),
-      kind: Math.floor(r() * 3), col: r() < 0.5 ? c1 : c2, a: 0.18 + r() * 0.5,
+      /* soft=true 면 원만 쓴다 — 아바타는 동그란 마스크 안에 들어가는데 사각형·마름모가
+         들어가면 원이 아니라 육각형처럼 각져 보인다. 커버·사진은 각진 도형이 있어야 멋있다. */
+      kind: opt.soft ? 0 : Math.floor(r() * 3),
+      col: r() < 0.5 ? c1 : c2, a: 0.18 + r() * 0.5,
     });
   }
   const grain = rnd(opt.seed ^ 0x9e3779b9);
@@ -230,7 +233,8 @@ const w = (name, buf) => {
 
 console.log('데모 미디어 생성 →', OUT);
 for (const a of ARTISTS) {
-  w(a.slug + '-avatar.png', artwork(320, 320, { c1: a.c1, c2: a.c2, seed: a.seed, shapes: 4 }));
+  /* 아바타는 동그란 마스크 안에 들어가므로 각진 도형 없이(soft) — 원형으로 읽히게 */
+  w(a.slug + '-avatar.png', artwork(320, 320, { c1: a.c1, c2: a.c2, seed: a.seed, shapes: 3, soft: true }));
   w(a.slug + '-cover.png', artwork(560, 560, { c1: a.c1, c2: a.c2, seed: a.seed + 1, shapes: 6 }));
   w(a.slug + '-photo.png', artwork(800, 534, { c1: a.c2, c2: a.c1, seed: a.seed + 2, shapes: 7 }));
   w(a.slug + '-demo.wav', wav(a.track(16)));
