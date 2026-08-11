@@ -812,6 +812,9 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 
 .rwho{position:absolute;top:11px;left:11px;z-index:6;display:flex;align-items:center;gap:7px;
   font-size:13px;font-weight:700;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.7)}
+/* 이름 옆 프로필 사진 — 하이라이트 원처럼 동그랗게. 사진 위에 얹혀도 경계가 보이게 얇은 링 */
+.rwho .avimg,.rwho .avini{box-shadow:0 0 0 1.5px rgba(255,255,255,.55), 0 1px 6px rgba(0,0,0,.45)}
+.rcard.paper .rwho .avimg,.rcard.paper .rwho .avini{box-shadow:0 0 0 1.5px rgba(43,36,23,.35)}
 .rcard.paper .rwho{color:var(--ink);text-shadow:none}
 .rcard.empty .rwho{color:var(--muted);text-shadow:none}
 .smile{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
@@ -3207,7 +3210,7 @@ function storyViewer(){
     <div class="svbars">${bars}</div>
     <div class="svhd">
       <span class="svgo" data-svprof="${s.who}" data-paid="${s.aid||''}">
-        ${smileEl(s.c, s.who)}<b>${s.who}</b></span>
+        ${avatarEl(s.av||avOf(s.who), s.c, 28, s.who)}<b>${s.who}</b></span>
       <span class="tm">${it.at}</span>
       <button class="svmore" data-sharemenu="${it.tid||''}" data-snm="${(it.cap||s.who||'').replace(/"/g,'&quot;')}" data-sby="${(s.who||'').replace(/"/g,'&quot;')}" data-saud="${it.audio||''}" data-said="${s.aid||''}" aria-label="공유·담기·팔로우">⋯</button>
       <button class="svclose" id="svclose" aria-label="닫기">✕</button></div>
@@ -3521,7 +3524,8 @@ function buildFeed(){
 function feedCard(t,i){
   if(t.src==='room') return roomCard(t.slot);
 
-  const who=`<div class="rwho" data-prof="${esc(t.who)}" data-paid="${t.aid||''}" style="cursor:pointer">${smileEl(t.c, t.who)}${esc(t.who)}</div>`;
+  /* 이름 옆은 도형이 아니라 프로필 사진(원형) — 없으면 이름 첫 글자. 하이라이트 원과 같은 규칙 */
+  const who=`<div class="rwho" data-prof="${esc(t.who)}" data-paid="${t.aid||''}" style="cursor:pointer">${avatarEl(t.av||avOf(t.who), t.c, 24, t.who)}${esc(t.who)}</div>`;
   /* 액션은 ⋯ 하나 — 우측 상단. 친구 로그(flog)는 담기·바 재생 없이 공유/팔로우만 */
   const fol = t.src==='flog'
     ? `<button class="edit mine" data-logmenu="${t.lid||''}" data-lnm="${(t.nm||t.cap||t.text||'').slice(0,40).replace(/"/g,'&quot;')}" data-lby="${(t.who||'').replace(/"/g,'&quot;')}" data-laid="${t.aid||''}" aria-label="공유·팔로우">⋯</button>`
@@ -3658,7 +3662,7 @@ function roomFull(){
 
   /* 남의 로그다. 반응은 되지만 담기·수정은 안 된다 */
   const chrome=r=>`
-      <div class="rwho" data-prof="${esc(r.who)}" style="cursor:pointer">${smile(r.c)}${esc(r.who)}</div>
+      <div class="rwho" data-prof="${esc(r.who)}" style="cursor:pointer">${avatarEl(avOf(r.who), r.c, 24, r.who)}${esc(r.who)}</div>
       ${r.bub?`<div class="rbub">${smile(r.bub.c)}<span class="bb">${r.bub.txt}</span></div>`:''}
       ${r.t!=='empty'?`<button class="rheart ${r.heart?'on':''}" aria-label="하트">❤️</button>
       <button class="rreply" aria-label="답장">↰</button>`:''}`;
@@ -4762,7 +4766,7 @@ function work(){
   const chips=[['all','전체'],['demo','Demo'],['pic','사진'],['vid','영상'],['idea','아이디어'],['voice','보이스'],['note','노트']];
   const scard=r=>{
     /* 작품 스토리 안 = 이미 담긴 것들. 뱃지 불필요 */
-    const chrome=`<div class="rwho" data-prof="${esc(r.who)}" style="cursor:pointer">${smileEl(r.c, r.who)}${esc(r.who)}</div>`;
+    const chrome=`<div class="rwho" data-prof="${esc(r.who)}" style="cursor:pointer">${avatarEl(avOf(r.who), r.c, 24, r.who)}${esc(r.who)}</div>`;
     if(r.t==='ph')return `<div class="rcard upcard" style="height:180px">
       <div class="bgimg" style="background:${r.bg}"></div><div class="grainy"></div>
       <div class="rmid"><div class="rts">${r.at}</div><div class="rcap">${r.cap}</div></div>
@@ -5444,6 +5448,7 @@ function bindSeek(){
 /* ── 앱 안 촬영 화면 (getUserMedia) — 하단 camera 탭 ──
    탭 = 사진, 길게 = 영상. 권한 거부/미지원이면 폰 기본 카메라로 폴백. */
 let CAMSTREAM=null, CAMFACING='user', CAMREC=null, CAMCHUNKS=[], CAMHOLD=null, CAMERR='';
+let CAMMIC=null;   /* 녹화할 때만 따로 얻는 마이크 스트림 (stopCam 이 위에서 참조하므로 여기서 선언) */
 function camView(){
   if(!S.cam) return '';
   if(CAMERR) return `<div class="camview">
@@ -5463,13 +5468,32 @@ function camView(){
 function stopCam(){
   try{ if(CAMSTREAM) CAMSTREAM.getTracks().forEach(function(t){ try{t.stop()}catch(_){} }); }catch(_){}
   CAMSTREAM=null;
+  /* 마이크도 같이 끈다 — 안 끄면 녹화가 끝나도 브라우저 탭에 '녹음 중' 표시가 남는다 */
+  try{ if(CAMMIC) CAMMIC.getTracks().forEach(function(t){ try{t.stop()}catch(_){} }); }catch(_){}
+  CAMMIC=null;
+}
+/* 지금 스트림이 살아 있고 방향도 같은가 — 살아 있으면 다시 요청하지 않는다 */
+function _camAlive(){
+  if(!CAMSTREAM) return false;
+  const t=CAMSTREAM.getVideoTracks()[0];
+  if(!t || t.readyState!=='live') return false;
+  const f=(t.getSettings&&t.getSettings().facingMode)||CAMFACING;
+  return f===CAMFACING || !t.getSettings;
 }
 async function startCam(){
   CAMERR='';
   try{
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw {name:'NotSupported'};
+    /* 이미 켜져 있으면 그대로 다시 붙인다 — 껐다 켜면 권한 창이 또 뜨는 브라우저가 있다 */
+    if(_camAlive()){
+      const v0=document.getElementById('camvid');
+      if(v0 && v0.srcObject!==CAMSTREAM){ v0.srcObject=CAMSTREAM; const p0=v0.play(); if(p0&&p0.catch)p0.catch(function(){}); }
+      return;
+    }
     stopCam();
-    CAMSTREAM=await navigator.mediaDevices.getUserMedia({video:{facingMode:CAMFACING}, audio:true});
+    /* 사진을 찍으려고 열었는데 마이크까지 요구하면 권한 창이 커지고 거절률이 올라간다.
+       소리는 실제로 영상을 녹화할 때(camRecStart) 그때 따로 요청한다. */
+    CAMSTREAM=await navigator.mediaDevices.getUserMedia({video:{facingMode:CAMFACING}, audio:false});
     if(!S.cam){ stopCam(); return; }           /* 그 사이 닫혔으면 정리 */
     const v=document.getElementById('camvid');
     if(v){ v.srcObject=CAMSTREAM; const p=v.play(); if(p&&p.catch)p.catch(function(){}); }
@@ -5505,12 +5529,28 @@ function camShot(){
       S.compose.media.file=new File([b],'cam_'+Date.now()+'.jpg',{type:'image/jpeg'}); } }, 'image/jpeg', 0.82); }catch(_){}
   }catch(e){ console.warn('[offlog] 촬영 실패', e); offToast('촬영 실패 — 다시 시도해 주세요'); }
 }
-/* 영상 — 길게 누르는 동안 녹화 */
-function camRecStart(){
+/* 영상 — 길게 누르는 동안 녹화.
+   소리는 여기서 처음 요청한다(미리보기는 영상만) — 사진만 찍는 사람은 마이크 권한 창을
+   아예 안 본다. 마이크를 거부해도 무음 영상으로 계속 녹화된다. */
+async function camEnsureMic(){
+  if(CAMMIC && CAMMIC.getAudioTracks()[0] && CAMMIC.getAudioTracks()[0].readyState==='live') return CAMMIC;
+  try{ CAMMIC=await navigator.mediaDevices.getUserMedia({audio:true}); }
+  catch(e){ CAMMIC=null; offToast('마이크 없이 영상만 녹화해요'); }
+  return CAMMIC;
+}
+async function camRecStart(){
   if(!CAMSTREAM || CAMREC || typeof MediaRecorder==='undefined') return;
+  const b0=document.getElementById('camshot'); if(b0)b0.classList.add('rec');   /* 누른 즉시 반응 */
+  const mic=await camEnsureMic();
+  if(!CAMSTREAM || S.cam===false){ return; }        /* 권한 창 동안 닫혔으면 중단 */
+  if(CAMREC) return;
   try{
     CAMCHUNKS=[];
-    CAMREC=new MediaRecorder(CAMSTREAM);
+    /* 영상 트랙 + (있으면) 소리 트랙을 합쳐서 녹화 */
+    const rec=new MediaStream();
+    CAMSTREAM.getVideoTracks().forEach(t=>rec.addTrack(t));
+    if(mic) mic.getAudioTracks().forEach(t=>rec.addTrack(t));
+    CAMREC=new MediaRecorder(rec);
     CAMREC.ondataavailable=function(e){ if(e.data && e.data.size) CAMCHUNKS.push(e.data); };
     CAMREC.onstop=function(){
       const blob=new Blob(CAMCHUNKS, {type:(CAMCHUNKS[0]&&CAMCHUNKS[0].type)||'video/mp4'});
