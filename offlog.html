@@ -1373,6 +1373,38 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .recorow{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line);
   border-radius:14px;padding:10px 12px;margin-bottom:8px}
 .recoav .avimg,.recoav .smile{width:38px;height:38px;border-radius:50%}
+/* 메인 이벤트 배너 — 2초마다 다음 이벤트로 넘어간다 */
+.evbn{display:flex;align-items:center;gap:10px;width:100%;margin:0 0 12px;padding:11px 13px;
+  background:var(--card2);border:1px solid var(--line);border-radius:14px;cursor:pointer;
+  text-align:left;-webkit-tap-highlight-color:transparent;overflow:hidden}
+.evbn:active{transform:scale(.99)}
+.evbin{animation:evbslide .34s cubic-bezier(.22,1,.36,1)}
+@keyframes evbslide{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.evbtag{flex-shrink:0;font-family:'Black Han Sans';font-weight:400;font-size:11px;letter-spacing:.4px;
+  color:#0e0e12;background:var(--mint);border-radius:999px;padding:5px 9px}
+.evbtag.lemon{background:var(--lemon)}
+.evbtag.shpink{background:var(--shpink)}
+.evbtx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.evbtx b{font-size:12.5px;font-weight:700;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.evbtx small{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.evbdots{flex-shrink:0;display:flex;gap:4px}
+.evbdots i{width:5px;height:5px;border-radius:50%;background:var(--line)}
+.evbdots i.on{background:var(--mint)}
+@media (prefers-reduced-motion: reduce){ .evbin{animation:none} }
+/* 영상 자르기 시트 — 30초 하이라이트만 올리게 */
+.trimsheet .trvid{width:100%;max-height:38vh;border-radius:14px;background:#000;display:block;margin:4px 0 12px}
+.trbar{position:relative;height:8px;border-radius:99px;background:var(--card2);border:1px solid var(--line);margin:2px 0 12px;overflow:hidden}
+.trrange{position:absolute;top:0;bottom:0;background:var(--mint);opacity:.75}
+.trrow{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+.trlab{flex-shrink:0;width:30px;font-size:11.5px;color:var(--muted)}
+.trsl{flex:1;min-width:0;accent-color:var(--mint);height:26px}
+.trval{flex-shrink:0;width:46px;text-align:right;font-family:'Black Han Sans';font-weight:400;font-size:12.5px;color:var(--txt)}
+.trsum{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:2px 0 12px}
+.trsum b{color:var(--txt);font-family:'Black Han Sans';font-weight:400}
+.trsum.over{color:#ff8080}
+.trsum.over b{color:#ff8080}
+.trplay{margin-left:auto;background:none;border:1px solid var(--line);border-radius:99px;
+  color:var(--mint);font-size:11.5px;padding:6px 11px;cursor:pointer;font-family:inherit}
 /* 이름이 이메일 앞부분인 사람에게만 보이는 조용한 안내 (본인만 봄) */
 .namehint{display:block;width:100%;margin:0 0 10px;padding:10px 13px;background:none;
   border:1px dashed var(--line);border-radius:12px;color:var(--muted);font-size:12px;
@@ -1594,8 +1626,12 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
 <input type="file" id="rpicker" accept="image/*" style="display:none">
 <input type="file" id="apicker" accept="audio/*" style="display:none">
 <input type="file" id="artpicker" accept="image/*" style="display:none">
-<!-- 새 로그 작성: 폰에서 capture=카메라 바로 열림. ccam=사진·영상 통합(카메라에서 직접 선택), caudio=데모 -->
-<input type="file" id="ccam" accept="image/*,video/*" capture="environment" style="display:none">
+<!-- 새 로그 작성: ccam=사진·영상 통합, caudio=데모.
+     capture="environment" 를 뺐다 — 그 속성은 카메라를 강제로 바로 열어서 (1) 올릴 때마다
+     카메라 권한 팝업이 뜨고 (2) 이미 찍어둔 사진·영상을 보관함에서 못 고른다.
+     빼면 iOS/안드로이드가 '사진 보관함 / 사진 찍기' 선택 시트를 띄우고, 보관함에서 고르면
+     카메라 권한 자체가 필요 없다. 카메라로 찍는 것도 그 시트에서 그대로 된다. -->
+<input type="file" id="ccam" accept="image/*,video/*" style="display:none">
 <input type="file" id="caudio" accept="audio/*" style="display:none">
 <input type="file" id="addphoto" accept="image/*" style="display:none">
 <input type="file" id="adddemo" accept="audio/*" style="display:none">
@@ -2991,6 +3027,7 @@ let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:
   calOpen:false, /* 홈 캘린더 펼침 여부 — 기본 접힘(로그가 바로 보이게). 얇은 바만 노출 */
   authMode:'login', /* 로그인 화면 모드 — login | signup */
   editProf:null, /* 프로필 수정 시트 (열려 있으면 {name,role,bio,ig,yt,tt}) */
+  trim:null,     /* 영상 자르기 시트 {file,url,dur,start,end,busy} — 30초 이내만 올린다 */
   myMenu:false,  /* 마이 헤더 ⋯ 메뉴 (공유·로그아웃) */
   report:null,   /* 신고 시트 {kind,id,aid,nm} (Guideline 1.2) */
   terms:false,   /* 이용약관 전문 시트 */
@@ -3005,8 +3042,108 @@ const waveBars=n=>{ let s=((++_wb)*2654435761)&0x7fffffff; if(!s)s=1;
   return [...Array(n)].map((_,i)=>`<i style="--h:${22+Math.round(rnd()*72)};--d:${i}"></i>`).join(''); };
 const dot=col=>`<span class="dot" style="background:${c(col)}"></span>`;
 
+/* ── 메인 이벤트 배너 ────────────────────────────────────────────────
+   음원발매·쇼케이스·프로젝트가 각각 따로 박스를 차지하면 화면을 다 먹는다.
+   한 줄짜리 배너 하나에 모아 2초마다 넘긴다 — 지나가다 눈에 걸리게. */
+let _bnI=0, _bnT=0;
+function bannerItems(){
+  const out=[], now=Date.now();
+  const dday=end=>{ const d=Math.ceil((end-now)/864e5); return d>0?('D-'+d):'마감'; };
+  (typeof ROUNDS!=='undefined'?ROUNDS:[]).forEach(function(r){
+    if(!r||!r.end||r.end<now) return;
+    out.push({k:'round', id:r.id, tag:dday(r.end), nm:r.nm,
+              sub:r.cat==='music'?'내 곡 낼래':'무대 신청', c:r.cat==='music'?'lemon':'mint'});
+  });
+  (typeof PROJECTS!=='undefined'?PROJECTS:[]).forEach(function(p){
+    if(!p||!p.end||p.end<now) return;
+    out.push({k:'proj', id:p.id, tag:dday(p.end), nm:p.brand, sub:p.what, c:'shpink'});
+  });
+  return out;
+}
+function eventBanner(){
+  const items=bannerItems();
+  if(!items.length) return '';
+  if(_bnI>=items.length) _bnI=0;
+  const b=items[_bnI];
+  return `<button class="evbn" data-evbn="${b.k}:${b.id}" aria-label="${esc(b.nm)} 자세히">
+    <span class="evbtag ${b.c}">${b.tag}</span>
+    <span class="evbtx"><b>${esc(b.nm)}</b><small>${esc(b.sub)}</small></span>
+    <span class="evbdots">${items.map((_,i)=>`<i class="${i===_bnI?'on':''}"></i>`).join('')}</span>
+  </button>`;
+}
+/* 2초마다 다음 배너로 — 배너 부분만 갈아끼워 화면 전체를 다시 그리지 않는다 */
+function startBannerRotate(){
+  clearInterval(_bnT);
+  const n=bannerItems().length;
+  if(n<2) return;
+  _bnT=setInterval(function(){
+    const host=document.getElementById('evbnwrap');
+    if(!host || S.view!=='home'){ clearInterval(_bnT); return; }
+    _bnI=(_bnI+1)%bannerItems().length;
+    host.innerHTML=eventBanner();
+    const el=host.firstElementChild;
+    if(el){ el.classList.add('evbin'); bindBanner(); }
+  }, 2000);
+}
+function bindBanner(){
+  document.querySelectorAll('[data-evbn]').forEach(function(b){
+    b.onclick=function(){
+      const [k,id]=String(b.dataset.evbn).split(':');
+      if(k==='round'){ const r=ROUNDS.find(x=>x.id===id); S.vcat=r?r.cat:'music'; S.round=id; S.view='lists'; }
+      else { S.view='mine'; S.profile='me'; S.seg='works'; }
+      render();
+    };
+  });
+}
+/* ── 하이라이트 = "오늘" 만든 것만 ────────────────────────────────────
+   예전엔 오래된 발매곡으로 스토리를 만들어서, 몇 달 전 곡이 계속 맨 위에 떠 있었고
+   카드에 시각(21:00)만 있어 언제 올린 건지 알 수 없었다.
+   이제 최근 24시간 안의 공개 로그만 모으고, 24시간이 지나면 저절로 사라진다. */
+const H24=24*60*60*1000;
+function _agoKo(ts){
+  const t=new Date(ts).getTime(); if(!t) return '';
+  const m=Math.floor((Date.now()-t)/60000);
+  if(m<1) return '방금';
+  if(m<60) return m+'분 전';
+  const h=Math.floor(m/60);
+  return h+'시간 전';
+}
+function buildStories(){
+  const src=[];
+  /* 친구들의 최근 공개 로그 */
+  (FRIENDLOGS||[]).forEach(function(x){ if(x&&x.ts) src.push(x); });
+  /* 내 로그도 내 하이라이트로 — sid 유무와 무관하게 기기의 것도 포함 */
+  (STREAM||[]).forEach(function(l){
+    if(!l||!ME) return;
+    const ts=l.dt?(l.dt+'T'+(l.at||'00:00')+':00'):null; if(!ts) return;
+    src.push({who:ME.name, aid:ME.id, c:'coral', av:ME.avatar||'', ts:ts, t:l.t,
+              cap:l.cap||l.nm||l.text||'', bg:l.bg||'', audio:l.audio||''});
+  });
+  const now=Date.now();
+  const fresh=src.filter(function(x){ const t=new Date(x.ts).getTime(); return t && (now-t)<H24 && t<=now+60000; });
+  if(!fresh.length) return [];
+  fresh.sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+  const by={}, order=[];
+  fresh.forEach(function(x){
+    const k=x.aid||x.who; if(!k) return;
+    if(!by[k]){ by[k]={who:x.who, aid:x.aid, c:x.c||colorOfName(x.who), av:x.av||'',
+                       following:true, seen:false, items:[]}; order.push(k); }
+    if(by[k].items.length<4){
+      const cap=x.cap||x.nm||x.text||'';
+      by[k].items.push(x.t==='ph'
+        ? {t:'ph', at:_agoKo(x.ts), ts:x.ts, cap:cap, bg:x.bg||'#141418'}
+        : x.t==='snd' ? {t:'snd', at:_agoKo(x.ts), ts:x.ts, cap:cap||'데모', dur:'', audio:x.audio||''}
+        : {t:'note', at:_agoKo(x.ts), ts:x.ts, cap:cap, text:esc(cap)});   /* 뷰어는 note 를 text 로 그린다 */
+    }
+  });
+  return order.map(k=>by[k]).slice(0,10);
+}
 /* ── 스토리 열 (아웃라인 상단 고정) — 팔로우 중 + 발견 가능한 아티스트 ── */
 function storyRow(){
+  /* 24시간 안의 것이 있으면 그걸로, 하나도 없으면 하이라이트 줄 자체를 감춘다 */
+  const live=buildStories();
+  if(live.length) STORIES=live;
+  else if(ME) return '';
   return `<div class="avrow">${STORIES.map((s,i)=>{
     /* 차단한 사람의 스토리는 숨긴다. data-story 가 배열 위치를 그대로 쓰므로
        걸러내지 말고 빈 문자열을 돌려 인덱스를 유지한다. */
@@ -3039,10 +3176,7 @@ function storyViewer(){
     <div class="svbars">${bars}</div>
     <div class="svhd">
       <span class="svgo" data-svprof="${s.who}" data-paid="${s.aid||''}">
-        <span class="smile" style="width:28px;height:28px;background:${c(s.c)}">
-          <svg viewBox="0 0 24 24"><path d="M6 13a6 6 0 0 1 12 0" fill="none" stroke="#1a1206" stroke-width="2.2" stroke-linecap="round"/>
-          <ellipse cx="9.4" cy="16.6" rx="1.15" ry="1.6" fill="#1a1206"/><ellipse cx="14.6" cy="16.6" rx="1.15" ry="1.6" fill="#1a1206"/></svg></span>
-        <b>${s.who}</b></span>
+        ${smileEl(s.c, s.who)}<b>${s.who}</b></span>
       <span class="tm">${it.at}</span>
       <button class="svmore" data-sharemenu="${it.tid||''}" data-snm="${(it.cap||s.who||'').replace(/"/g,'&quot;')}" data-sby="${(s.who||'').replace(/"/g,'&quot;')}" data-saud="${it.audio||''}" data-said="${s.aid||''}" aria-label="공유·담기·팔로우">⋯</button>
       <button class="svclose" id="svclose" aria-label="닫기">✕</button></div>
@@ -3204,6 +3338,7 @@ function home(){
         <path d="M16.4 5.2a3.4 3.4 0 0 1 0 5.7"/><path d="M18 14.4c2 .7 3.3 2.6 3.3 5.1"/></svg>
       ${fing?`<span class="pdot"></span>`:''}</button></div>
   ${storyRow()}
+  <div id="evbnwrap">${eventBanner()}</div>
   ${cmtAlertBar()}
   ${calMonth()}
   ${HOMETABS.length>1?`<div class="hstabs">${HOMETABS.map(t=>`<button class="hstab${cur===t[0]?' on':''}" data-hgoto="${t[0]}">${t[1]}</button>`).join('')}</div>`:''}
@@ -3252,8 +3387,9 @@ async function loadFriendLogs(force){
       const d=new Date(x.created_at);
       const who=(names[x.author_id]&&names[x.author_id].nm)||'아티스트';
       const base={src:'flog', lid:x.id, who, c:colorOfName(who), aid:x.author_id,
-        at:p2(d.getHours())+':'+p2(d.getMinutes()),
-        dt:d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate()), rx:0};
+        at:p2(d.getHours())+':'+p2(d.getMinutes()), ts:x.created_at,   /* ts = 24시간 하이라이트 계산용 */
+        dt:d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate()), rx:0,
+        av:(names[x.author_id]&&names[x.author_id].av)||''};
       if(x.kind==='ph')  return {...base, t:'ph', cap:x.caption||'사진',
         bg:x.media_url?('center/cover no-repeat url('+x.media_url+')'):'#141418'};
       if(x.kind==='vid') return {...base, t:'vid', cap:x.caption||'', vsrc:x.media_url||''};
@@ -3830,8 +3966,9 @@ function mine(){
          <span class="pbgo">한 번에 공개</span></button>`
     : '';
 
+  /* 맨 위의 큰 '＋ 로그 남기기' 박스는 없앴다 — 화면 첫 칸을 빈 버튼이 차지해서
+     정작 내 콘텐츠가 아래로 밀렸다. 작성은 하단 ＋ 버튼으로 통일. */
   const logs=`
-    ${me?`<button class="composebtn" id="composebtn"><span class="cplus">＋</span><span class="clabel">로그 남기기</span></button>`:''}
     ${privBar}
     ${me?`<button class="statsbtn" id="logstats">📊 활동 분석<span>연습 · 공연 · 작업 기록 한눈에</span></button>`:''}
     <div class="stream" id="stream"><div class="ambient"></div>
@@ -4851,8 +4988,148 @@ function pushLog(txt, m, audioUrl){
     }catch(e){ console.warn('[offlog] 로그 저장 후처리 실패', e); }
   })();
 }
+/* 파일이 정말 오디오인가 — accept="audio/*" 는 폰 파일 선택창에서 느슨하게 적용돼서
+   영상도 골라진다. 실제로 audio 버킷에 .mov/.mp4 영상 7개(109MB)가 들어가 있었고,
+   그것들이 '음원 로그'로 만들어져 화면엔 소리만 나오는 카드가 됐다. */
+function isVideoFile(f){
+  if(!f) return false;
+  if(/^video\//i.test(f.type||'')) return true;
+  return /\.(mov|mp4|m4v|avi|mkv|webm|3gp|hevc)$/i.test(f.name||'');
+}
+/* ── 영상 30초 자르기 ────────────────────────────────────────────────
+   왜: 폰 영상은 45MB까지 올라와 무료 저장소(1GB)를 금방 채운다. 그리고 사람들이
+   보는 건 하이라이트 몇 초다. 폰 갤러리 앱에서 미리 자르고 오라고 하는 대신
+   여기서 구간을 고르게 하고, 가능하면 그 구간만 새 파일로 만들어 올린다.
+   재인코딩이 안 되는 기기에서는 원본을 올리되 구간(start/end)만 기억해 그 부분만 재생한다. */
+const TRIM_MAX=30;      /* 초 — 이 길이를 넘겨 담을 수 없다 */
+function openTrimmer(file){
+  const url=URL.createObjectURL(file);
+  S.trim={file:file, url:url, dur:0, start:0, end:TRIM_MAX, busy:false, ready:false};
+  const v=document.createElement('video'); v.preload='metadata'; v.muted=true;
+  v.onloadedmetadata=function(){
+    const d=isFinite(v.duration)?v.duration:0;
+    S.trim.dur=d; S.trim.end=Math.min(d||TRIM_MAX, TRIM_MAX); S.trim.ready=true;
+    try{render()}catch(_){}
+  };
+  v.onerror=function(){ S.trim.dur=0; S.trim.ready=true; try{render()}catch(_){} };
+  v.src=url;
+}
+function closeTrimmer(keep){
+  if(S.trim && S.trim.url && !keep){ try{URL.revokeObjectURL(S.trim.url)}catch(_){} }
+  S.trim=null;
+}
+const _fmtT=s=>{ s=Math.max(0,s||0); const m=Math.floor(s/60), r=Math.floor(s%60);
+  return m+':'+String(r).padStart(2,'0'); };
+/* 실제로 잘라낸다 — 고른 구간을 재생하면서 화면+소리를 그대로 다시 녹화한다.
+   자른 길이만큼 시간이 걸리고(10초 구간=10초), 기기가 지원해야 한다. */
+function canReencode(){
+  try{
+    return typeof MediaRecorder!=='undefined'
+      && ('captureStream' in HTMLMediaElement.prototype)
+      && _recMime()!=='';
+  }catch(_){ return false; }
+}
+function _recMime(){
+  const cands=['video/mp4;codecs=h264,aac','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+  for(const t of cands){ try{ if(MediaRecorder.isTypeSupported(t)) return t; }catch(_){} }
+  return '';
+}
+function trimVideo(file, start, end, onProgress){
+  return new Promise(function(resolve, reject){
+    const mime=_recMime(); if(!mime) return reject(new Error('no-recorder'));
+    const v=document.createElement('video');
+    v.src=URL.createObjectURL(file); v.playsInline=true; v.muted=false; v.volume=1;
+    /* 화면 밖에 두되 display:none 은 쓰지 않는다 — 숨기면 프레임이 안 그려지는 브라우저가 있다 */
+    v.style.cssText='position:fixed;left:-9999px;top:0;width:320px;height:180px;opacity:.01;pointer-events:none';
+    document.body.appendChild(v);
+    let rec=null, chunks=[], done=false, timer=0;
+    const cleanup=()=>{ clearInterval(timer); try{v.pause()}catch(_){}
+      try{URL.revokeObjectURL(v.src)}catch(_){} try{v.remove()}catch(_){} };
+    const fail=e=>{ if(done)return; done=true; cleanup(); reject(e); };
+    v.onloadedmetadata=function(){
+      let stream;
+      try{ stream=(v.captureStream||v.mozCaptureStream).call(v); }catch(e){ return fail(e); }
+      if(!stream) return fail(new Error('no-stream'));
+      try{ rec=new MediaRecorder(stream,{mimeType:mime, videoBitsPerSecond:2500000}); }
+      catch(e){ return fail(e); }
+      rec.ondataavailable=e=>{ if(e.data&&e.data.size) chunks.push(e.data); };
+      rec.onstop=function(){
+        if(done)return; done=true; cleanup();
+        const blob=new Blob(chunks,{type:mime.split(';')[0]});
+        if(!blob.size) return reject(new Error('empty'));
+        const ext=blob.type.indexOf('mp4')>-1?'mp4':'webm';
+        resolve(new File([blob], 'clip'+Date.now()+'.'+ext, {type:blob.type}));
+      };
+      v.currentTime=start;
+      v.onseeked=function(){
+        v.onseeked=null;
+        try{ rec.start(200); }catch(e){ return fail(e); }
+        v.play().catch(fail);
+        timer=setInterval(function(){
+          if(onProgress) onProgress(Math.min(1,(v.currentTime-start)/Math.max(.001,end-start)));
+          if(v.currentTime>=end || v.ended){ clearInterval(timer);
+            try{ rec.state!=='inactive' && rec.stop(); }catch(_){} }
+        }, 100);
+      };
+    };
+    v.onerror=()=>fail(new Error('video-error'));
+    setTimeout(()=>{ if(!done) fail(new Error('timeout')); }, (end-start)*1000+30000);  /* 안전장치 */
+  });
+}
+/* 시트에서 '이 구간으로' 를 누르면 여기로 온다 */
+async function applyTrim(){
+  const T=S.trim; if(!T||T.busy) return;
+  const len=Math.max(0.2, T.end-T.start);
+  T.busy=true; render();
+  let out=T.file, trimmed=false;
+  if(canReencode() && T.dur>0){
+    try{
+      out=await trimVideo(T.file, T.start, T.end, function(p){
+        const el=document.getElementById('trimpct'); if(el) el.textContent=Math.round(p*100)+'%';
+      });
+      trimmed=true;
+    }catch(e){
+      console.warn('[offlog] 영상 자르기 실패 — 원본을 올리고 구간만 저장', e);
+      offToast('이 기기에선 잘라 올릴 수 없어 원본을 올려요 (그 구간만 재생됩니다)');
+    }
+  }
+  if(!S.compose) S.compose={text:'',media:null};
+  S.compose.media={kind:'vid', url:URL.createObjectURL(out), file:out,
+                   clipStart: trimmed?0:T.start, clipEnd: trimmed?len:T.end};
+  closeTrimmer();
+  render();
+}
+function trimSheet(){
+  const T=S.trim; if(!T) return '';
+  const d=T.dur||0, len=Math.max(0, T.end-T.start), over=len>TRIM_MAX+0.05;
+  const pct=x=>d>0?Math.max(0,Math.min(100,(x/d)*100)):0;
+  return `<div class="sheet-bd" id="trbd"></div>
+  <div class="pksheet trimsheet">
+    <div class="pkhd"><b>영상 자르기</b><span class="pksub">${TRIM_MAX}초까지 올릴 수 있어요</span>
+      <button class="pkx" id="trclose" aria-label="닫기">✕</button></div>
+    <video id="trvid" class="trvid" src="${T.url}" playsinline muted preload="metadata"></video>
+    ${!T.ready?`<div class="pknote" style="padding:18px 0">영상을 읽는 중…</div>`
+    : d<=0 ? `<div class="pknote" style="padding:14px 0">길이를 읽을 수 없는 영상이에요 — 그대로 올립니다</div>`
+    : `<div class="trbar">
+         <div class="trrange" style="left:${pct(T.start)}%;width:${pct(T.end)-pct(T.start)}%"></div>
+       </div>
+       <div class="trrow"><span class="trlab">시작</span>
+         <input class="trsl" id="trstart" type="range" min="0" max="${d.toFixed(2)}" step="0.1" value="${T.start.toFixed(2)}">
+         <b class="trval">${_fmtT(T.start)}</b></div>
+       <div class="trrow"><span class="trlab">끝</span>
+         <input class="trsl" id="trend" type="range" min="0" max="${d.toFixed(2)}" step="0.1" value="${T.end.toFixed(2)}">
+         <b class="trval">${_fmtT(T.end)}</b></div>
+       <div class="trsum ${over?'over':''}">고른 길이 <b>${len.toFixed(1)}초</b>${over?` · ${TRIM_MAX}초를 넘었어요`:''}
+         <button class="trplay" id="trpreview">▶ 이 구간 보기</button></div>`}
+    <button class="cta" id="trdone" ${(!T.ready||over||T.busy)?'disabled':''}>
+      ${T.busy?`잘라내는 중… <span id="trimpct">0%</span>`:'이 구간으로'}</button>
+    ${T.busy?`<div class="pknote" style="padding:8px 0 0">고른 길이만큼 걸려요 — 화면을 끄지 말아주세요</div>`:''}
+  </div>`;
+}
 /* 데모(오디오) 로그 — 로그인 아티스트면 Storage에 실제 업로드 후 재생되는 소리 로그로 */
 async function uploadDemoLog(file, txt){
+  /* 영상이 여기까지 오면 음원으로 저장돼 소리만 남는다 — 막고 영상 경로로 안내한다 */
+  if(isVideoFile(file)){ offToast('영상 파일이에요 — 📷 카메라로 올려주세요'); return; }
   if(tooBigToUpload(file,'aud')) return;
   const btn=document.getElementById('cspost'); if(btn){btn.disabled=true;btn.textContent='올리는 중…';}
   try{
@@ -5258,7 +5535,8 @@ function render(){
   }
   document.getElementById('storyview').innerHTML = S.storyIdx!==null ? storyViewer() : '';
   /* 약관은 로그인 시트·잠금화면 위에 떠야 하므로 가장 앞에서 판정한다 */
-  document.getElementById('composeview').innerHTML = S.terms ? termsSheet() : (S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : (S.auth ? authSheet() : (S.saveTrack ? saveSheet() : (S.report ? reportSheet() : (S.logMenu ? logMenuSheet() : (S.myMenu ? myMenuSheet() : (S.perfApply ? perfApplySheet() : (S.projectApply ? projectApplySheet() : '')))))))));
+  /* 영상 자르기는 작성 시트 위에 겹쳐 떠야 해서 가장 앞에서 가른다 */
+  document.getElementById('composeview').innerHTML = S.trim ? trimSheet() : (S.terms ? termsSheet() : (S.compose ? composeSheet() : (S.newwork ? newWorkSheet() : (S.auth ? authSheet() : (S.saveTrack ? saveSheet() : (S.report ? reportSheet() : (S.logMenu ? logMenuSheet() : (S.myMenu ? myMenuSheet() : (S.perfApply ? perfApplySheet() : (S.projectApply ? projectApplySheet() : ''))))))))));
   /* 촬영 화면 + 하단 camera|logs 토글 상태 */
   const _cv=document.getElementById('camview');
   if(_cv) _cv.innerHTML = S.cam ? camView() : '';
@@ -5450,6 +5728,8 @@ function bind(){
     const on=pfb.classList.toggle('on'); pfb.textContent=on?'팔로잉':'팔로우';
     (on?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(!ok){ const bk=pfb.classList.toggle('on'); pfb.textContent=bk?'팔로잉':'팔로우'; } }); };
   /* 하단 가운데 ➕ = Log 남기기 (글·사진·영상·데모 한 시트에서) */
+  /* 이벤트 배너 — 홈에 있을 때만 2초 회전 (다른 화면에선 타이머를 끈다) */
+  if(S.view==='home'){ bindBanner(); startBannerRotate(); } else { clearInterval(_bnT); }
   const nplus=document.getElementById('navplus');
   if(nplus)nplus.onclick=()=>{ if(!S.compose)S.compose={text:'',media:null}; S.cam=false; render(); };
   /* 촬영 화면 컨트롤 */
@@ -6277,13 +6557,52 @@ function bind(){
   if(ccam && !ccam.__b){ ccam.__b=1; ccam.onchange=()=>{ const f=ccam.files&&ccam.files[0];
     if(f){ if(!S.compose)S.compose={text:'',media:null};
       const md=S.compose.media; if(md&&md.url&&/^blob:/.test(md.url||'')){try{URL.revokeObjectURL(md.url)}catch(_){}}
-      if(/^video\//.test(f.type||'')){ S.compose.media={kind:'vid',url:URL.createObjectURL(f), file:f}; render(); }
+      if(isVideoFile(f)){ openTrimmer(f); render(); }   /* 영상은 30초 트리머를 먼저 거친다 */
       /* 사진은 줄여서 담는다(원본 base64가 저장 용량을 넘겨 저장 자체가 실패하던 문제). 원본은 업로드용으로 보관 */
       else { shrinkImage(f).then(function(small){ S.compose.media={kind:'ph', url:small||URL.createObjectURL(f), file:f}; render(); }); } }
     ccam.value=''; }; }
+  /* ── 영상 자르기 시트 ── 슬라이더는 render() 없이 값만 갱신한다(잡으면 안 놓치게) */
+  if(S.trim){
+    const T=S.trim, sv=document.getElementById('trvid');
+    const st=document.getElementById('trstart'), en=document.getElementById('trend');
+    const paint=()=>{
+      const d=T.dur||1, p=x=>Math.max(0,Math.min(100,(x/d)*100));
+      const rg=document.querySelector('.trrange');
+      if(rg){ rg.style.left=p(T.start)+'%'; rg.style.width=(p(T.end)-p(T.start))+'%'; }
+      const vals=document.querySelectorAll('.trval');
+      if(vals[0]) vals[0].textContent=_fmtT(T.start);
+      if(vals[1]) vals[1].textContent=_fmtT(T.end);
+      const len=Math.max(0,T.end-T.start), over=len>TRIM_MAX+0.05;
+      const sum=document.querySelector('.trsum');
+      if(sum){ sum.classList.toggle('over',over);
+        const b=sum.querySelector('b'); if(b)b.textContent=len.toFixed(1)+'초'; }
+      const done=document.getElementById('trdone'); if(done) done.disabled=over||T.busy||!T.ready;
+    };
+    if(st)st.oninput=()=>{ T.start=+st.value;
+      if(T.start>T.end-0.2){ T.end=Math.min(T.dur, T.start+0.2); if(en)en.value=T.end; }
+      if(T.end-T.start>TRIM_MAX){ T.end=T.start+TRIM_MAX; if(en)en.value=T.end; }   /* 30초로 자동 제한 */
+      if(sv)sv.currentTime=T.start; paint(); };
+    if(en)en.oninput=()=>{ T.end=+en.value;
+      if(T.end<T.start+0.2){ T.start=Math.max(0, T.end-0.2); if(st)st.value=T.start; }
+      if(T.end-T.start>TRIM_MAX){ T.start=T.end-TRIM_MAX; if(st)st.value=T.start; }
+      if(sv)sv.currentTime=T.end; paint(); };
+    const pv=document.getElementById('trpreview');
+    if(pv&&sv)pv.onclick=()=>{ sv.currentTime=T.start; sv.muted=false; sv.play();
+      const stop=()=>{ if(sv.currentTime>=T.end){ sv.pause(); sv.removeEventListener('timeupdate',stop); } };
+      sv.addEventListener('timeupdate',stop); };
+    const cx=document.getElementById('trclose'), bd=document.getElementById('trbd');
+    const shut=()=>{ if(T.busy){ offToast('자르는 중이에요 — 잠시만요'); return; } closeTrimmer(); render(); };
+    if(cx)cx.onclick=shut; if(bd)bd.onclick=shut;
+    const dn=document.getElementById('trdone'); if(dn)dn.onclick=()=>applyTrim();
+  }
   const caud=document.getElementById('caudio');
   if(caud && !caud.__b){ caud.__b=1; caud.onchange=()=>{ const f=caud.files&&caud.files[0];
-    if(f){ if(!S.compose)S.compose={text:'',media:null}; S.compose.media={kind:'aud',file:f,name:f.name}; render(); } caud.value=''; }; }
+    if(f){ if(!S.compose)S.compose={text:'',media:null};
+      /* 데모 버튼으로 영상을 고른 경우 — 튕겨내지 말고 영상으로 받아준다.
+         (accept="audio/*" 가 폰에서 느슨해 실제로 이 경로로 영상이 자주 들어온다) */
+      if(isVideoFile(f)){ offToast('영상이네요 — 영상으로 올릴게요'); openTrimmer(f); }
+      else S.compose.media={kind:'aud',file:f,name:f.name};
+      render(); } caud.value=''; }; }
   document.querySelectorAll('.play').forEach(p=>p.onclick=e=>{
     e.stopPropagation();
     const box=p.closest('.dplayer')||p.closest('.fy');
