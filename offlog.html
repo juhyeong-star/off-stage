@@ -1474,7 +1474,9 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .ai-dsp{display:flex;flex-wrap:wrap;gap:6px}
 .ai-dsp span{font-size:11.5px;color:var(--txt);background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:4px 11px}
 /* 실사 아바타 */
-.avimg{display:inline-block;border-radius:50%;background-size:cover;background-position:center;flex-shrink:0;vertical-align:middle}
+.avimg{display:inline-block;border-radius:50%;background-size:cover;background-position:center;flex-shrink:0;vertical-align:middle;overflow:hidden}
+/* 사진은 span 배경이 아니라 안의 img 로 — 배경이미지+둥근 클리핑이 팔각형으로 근사되는 렌더링 문제 회피 */
+.avimg img{width:100%;height:100%;object-fit:cover;display:block}
 /* 이름 첫 글자 아바타 — 사진이 없을 때 (initialEl 주석 참고) */
 .avini{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;
   vertical-align:middle;font-weight:800;line-height:1;user-select:none;-webkit-user-select:none}
@@ -2000,7 +2002,10 @@ function initialEl(name, size){
 }
 function avatarEl(av, color, size, name){
   var s=size||44, u=safeUrl(av);   /* url() breakout·속성 이탈 차단: 검증된 URL만 */
-  if(u) return `<span class="avimg" style="width:${s}px;height:${s}px;background-image:url(${u})"></span>`;
+  /* background-image 가 아니라 <img> 로 그린다 — 크로미움이 배경이미지의 둥근 클리핑을
+     다각형으로 근사해서 원이 팔각형으로 보이는 문제가 있다(글자 아바타는 멀쩡했던 이유).
+     overflow:hidden 원 안에 img 를 넣으면 어디서나 진짜 원으로 잘린다. */
+  if(u) return `<span class="avimg" style="width:${s}px;height:${s}px"><img src="${u}" alt="" loading="lazy" decoding="async"></span>`;
   if(name) return initialEl(name, s);
   return smileEl(color||'blue');
 }
@@ -5597,7 +5602,10 @@ function render(){
   const npf=document.getElementById('navprofile');
   if(npf){ npf.classList.toggle('on', S.view==='mine'&&S.profile==='me');
     const av=npf.querySelector('.avimg');
-    if(av) av.style.background = (ME&&ME.avatar) ? `url(${ME.avatar}) center/cover no-repeat` : 'var(--card2)'; }
+    if(av){ const u=safeUrl(ME&&ME.avatar);
+      /* 배경이미지 대신 img — 팔각형 근사 문제 회피 (avatarEl 주석 참고) */
+      if(u){ if(!av.querySelector('img')||av.__u!==u){ av.__u=u; av.style.background='var(--card2)'; av.innerHTML=`<img src="${u}" alt="" style="width:100%;height:100%;object-fit:cover;display:block">`; } }
+      else { av.__u=''; av.innerHTML=''; av.style.background='var(--card2)'; } }}
   document.getElementById('slideview').innerHTML =
     (S.view==='home' && S.mode==='slide') ? slideView() : '';
   if(S.view==='home' && S.mode==='slide' && S.slideAt){
