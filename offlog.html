@@ -835,6 +835,16 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .fdaydiv b{font-family:'Black Han Sans';font-weight:400;font-size:15px;letter-spacing:.5px;color:var(--mint)}
 .fdaydiv span{font-size:10.5px;color:var(--muted)}
 .fdaydiv::after{content:'';flex:1;height:1px;background:var(--line);align-self:center}
+/* 같은 시간대(예 14시) 로그를 한 박스로 — 비슷한 때 서로 뭘 했는지 한눈에 보이게.
+   최대 4개까지 한 박스, 넘치면 다음 박스로 넘어간다. 혼자면 박스를 씌우지 않는다. */
+.hgrp{position:relative;margin:0 0 14px;padding:10px 10px 4px;
+  background:var(--card2);border:1px solid var(--line);border-radius:18px}
+.hgrp .fcard{margin-bottom:10px}
+.hgrphd{display:flex;align-items:center;gap:8px;margin:0 2px 10px}
+.hgrphd b{font-family:'Black Han Sans';font-weight:400;font-size:13px;letter-spacing:.5px;color:var(--txt)}
+.hgrphd span{font-size:10.5px;color:var(--muted);background:var(--card);border:1px solid var(--line);
+  border-radius:99px;padding:2px 8px}
+.hgrphd i{flex:1;height:1px;background:var(--line)}
 .rcap{font-size:13px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.85);margin-top:1px}
 .rcard.empty .rts{color:rgba(255,255,255,.075);text-shadow:none}
 .rcard.paper .rts{color:rgba(43,36,23,.35);text-shadow:none;font-size:15px;margin-bottom:7px}
@@ -1405,6 +1415,15 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 /* 흰(bare) 배너에선 점을 어둡게 — 흰 위의 흰 점은 안 보인다 */
 .evbn.bare .evbdots i{background:rgba(0,0,0,.22);box-shadow:none}
 .evbn.bare .evbdots i.on{background:#111}
+/* 좌우 절반 탭 = 이전/다음. 가운데 34%는 비워 둬서 그 이벤트로 들어가는 길을 남긴다 */
+.evbnav{position:absolute;top:0;bottom:0;width:33%;background:none;border:0;padding:0;
+  cursor:pointer;-webkit-tap-highlight-color:transparent}
+.evbnav.prev{left:0}
+.evbnav.next{right:0}
+.evbdots i{cursor:pointer}
+/* 점은 5px이라 그대로면 누르기 어렵다 — 보이는 크기는 두고 터치 영역만 넓힌다 */
+.evbdots i{position:relative}
+.evbdots i::after{content:'';position:absolute;inset:-9px}
 .evbin{animation:evbfade .4s cubic-bezier(.22,1,.36,1)}
 @keyframes evbfade{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion: reduce){ .evbin{animation:none} }
@@ -1845,6 +1864,10 @@ async function loginOAuth(provider, label){
 }
 async function loginGoogle(){ return loginOAuth('google','Google'); }
 async function loginApple(){  return loginOAuth('apple','Apple'); }
+/* 카카오 로그인 임시 숨김 — Supabase 쪽 provider 는 켜져 있지만 카카오 개발자 콘솔의
+   Redirect URI 설정이 아직 맞지 않아 실제로 완주가 안 된다(가입자 63명 전원이 apple·google·email).
+   설정이 끝나면 이 값만 true 로 바꾸면 버튼이 다시 나온다. */
+const KAKAO_ON=false;
 async function loginKakao(){  return loginOAuth('kakao','카카오'); }
 async function loginEmail(email,pw){
   if(!SBC)return; const btn=document.getElementById('authsubmit'); if(btn){btn.disabled=true;btn.textContent='로그인 중…';}
@@ -2035,7 +2058,7 @@ function authForm(){
   const social =
     `<button class="authbtn apple" id="authapple"><svg viewBox="0 0 384 512" aria-hidden="true"><path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg> Apple로 ${su?'가입':'계속'}</button>
     <button class="authbtn" id="authgoogle"><b>G</b> Google로 ${su?'가입':'계속'}</button>
-    <button class="authbtn kakao" id="authkakao"><svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16"><path fill="currentColor" d="M12 3C6.48 3 2 6.48 2 10.8c0 2.76 1.84 5.18 4.6 6.56-.2.74-.74 2.7-.85 3.12-.13.52.19.51.4.37.17-.11 2.65-1.8 3.72-2.53.68.1 1.39.15 2.13.15 5.52 0 10-3.48 10-7.67C22 6.48 17.52 3 12 3z"/></svg> 카카오로 ${su?'가입':'계속'}</button>`;
+    ${KAKAO_ON?`<button class="authbtn kakao" id="authkakao"><svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16"><path fill="currentColor" d="M12 3C6.48 3 2 6.48 2 10.8c0 2.76 1.84 5.18 4.6 6.56-.2.74-.74 2.7-.85 3.12-.13.52.19.51.4.37.17-.11 2.65-1.8 3.72-2.53.68.1 1.39.15 2.13.15 5.52 0 10-3.48 10-7.67C22 6.48 17.52 3 12 3z"/></svg> 카카오로 ${su?'가입':'계속'}</button>`:''}`;
   /* 이메일 로그인은 기본으로 숨긴다 — 소셜 3버튼만 먼저. '다른 방법으로 로그인'을 눌러야 펼쳐진다 */
   if(!AUTHVALS.showEmail){
     return `${social}
@@ -3111,7 +3134,7 @@ function eventBanner(){
   const b=items[_bnI];
   /* bare = 글자가 이미지 안에 이미 그려진 배너(흰 발매 배너 등) — 어둡게 덮는 막과
      흰 글씨 오버레이를 빼고 이미지를 그대로 보여준다 */
-  return `<button class="evbn${b.bare?' bare':''}" data-evbn="${b.k}:${b.id}" aria-label="${esc(b.nm)} 자세히">
+  return `<div class="evbn${b.bare?' bare':''}" data-evbn="${b.k}:${b.id}" role="button" tabindex="0" aria-label="${esc(b.nm)} 자세히">
     <img class="evbimg" src="${safeUrl(b.img)}" alt="" decoding="async">
     ${b.bare?'':'<span class="evbveil"></span>'}
     <span class="evbtop"><span class="evbtag ${b.c}">${b.tag}</span></span>
@@ -3119,8 +3142,11 @@ function eventBanner(){
       <b class="evbnm">${esc(b.nm)}</b>
       <small class="evbsub">${esc(b.sub)}</small>
     </span>`}
-    <span class="evbdots">${items.map((_,i)=>`<i class="${i===_bnI?'on':''}"></i>`).join('')}</span>
-  </button>`;
+    <span class="evbdots">${items.map((_,i)=>`<i class="${i===_bnI?'on':''}" data-evbgo="${i}"></i>`).join('')}</span>
+    <!-- 좌우 절반을 탭하면 이전/다음 배너로. 가운데를 눌러야 그 이벤트로 들어간다 -->
+    <button class="evbnav prev" data-evbstep="-1" aria-label="이전 이벤트"></button>
+    <button class="evbnav next" data-evbstep="1" aria-label="다음 이벤트"></button>
+  </div>`;
 }
 /* 2초 간격으로 갈아끼우는데 이미지가 그때 받아지기 시작하면 한 박자 비어 보인다.
    전부 미리 받아둔다 — 8장 합쳐 1.2MB, 한 번만 받고 캐시된다. */
@@ -3144,7 +3170,25 @@ function startBannerRotate(){
     if(el){ el.classList.add('evbin'); bindBanner(); }
   }, 2000);
 }
+/* 배너를 원하는 순번으로 넘긴다 — 손으로 넘기면 자동 회전 타이머를 다시 시작해
+   방금 넘긴 화면이 곧바로 사라지지 않게 한다 */
+function bannerGo(i){
+  const n=bannerItems().length; if(!n) return;
+  _bnI=((i%n)+n)%n;
+  const host=document.getElementById('evbnwrap'); if(!host) return;
+  host.innerHTML=eventBanner();
+  const el=host.firstElementChild; if(el) el.classList.add('evbin');
+  bindBanner(); startBannerRotate();
+}
 function bindBanner(){
+  /* 좌우 탭 = 이전/다음 */
+  document.querySelectorAll('[data-evbstep]').forEach(function(b){
+    b.onclick=function(e){ e.stopPropagation(); bannerGo(_bnI + (+b.dataset.evbstep)); };
+  });
+  /* 점을 직접 눌러 그 배너로 */
+  document.querySelectorAll('[data-evbgo]').forEach(function(d){
+    d.onclick=function(e){ e.stopPropagation(); bannerGo(+d.dataset.evbgo); };
+  });
   document.querySelectorAll('[data-evbn]').forEach(function(b){
     b.onclick=function(){
       const [k,id]=String(b.dataset.evbn).split(':');
@@ -3380,12 +3424,30 @@ function home(){
       let wd=''; try{ wd=WD[new Date(dt+'T00:00:00').getDay()]+'요일'; }catch(_){}
       return `<div class="fdaydiv"><b>${esc(lb)}</b>${wd?`<span>${wd}</span>`:''}</div>`;
     };
+    /* ── 같은 시간대는 한 박스로 묶는다 ──────────────────────────────
+       14시에 네 명이 올렸으면 카드 네 장이 따로 흩어지는 게 아니라 "14시" 박스 하나에
+       모여 보인다. 서로 비슷한 시간에 뭘 하고 있었는지가 한눈에 보여야 동기부여가 된다.
+       묶음이 너무 커지면 덩어리가 안 읽히므로 4개까지만 한 박스, 넘치면 다음 박스로. */
+    const HOURMAX=4;
+    const groups=[];
+    list.forEach(function(t){
+      const hr=String(t.at||'').slice(0,2);
+      const last=groups[groups.length-1];
+      if(last && last.dt===t.dt && last.hr===hr && last.items.length<HOURMAX) last.items.push(t);
+      else groups.push({dt:t.dt, hr:hr, items:[t]});
+    });
     let _lastDt=null;
-    bodyC = list.map((t,i)=>{
+    bodyC = groups.map(function(g,gi){
       let head='';
-      if(t.dt && t.dt!==_lastDt){ _lastDt=t.dt; head=dayHead(t.dt); }
+      if(g.dt && g.dt!==_lastDt){ _lastDt=g.dt; head=dayHead(g.dt); }
       /* 카드 개별 날짜 칩은 끄고(dt:null) 그룹 헤더로만 날짜를 보여준다 */
-      return head + feedCard(t.dt?{...t, dt:null}:t, i);
+      const cards=g.items.map((t,i)=>feedCard(t.dt?{...t, dt:null}:t, gi*10+i)).join('');
+      /* 혼자면 굳이 박스로 감싸지 않는다 — 지금까지의 모습 그대로 */
+      if(g.items.length<2) return head+cards;
+      const hrLab = /^\d\d$/.test(g.hr) ? (+g.hr)+'시' : '';
+      return head+`<div class="hgrp">
+        <div class="hgrphd"><b>${hrLab}</b><span>${g.items.length}개</span><i></i></div>
+        ${cards}</div>`;
     }).join('') || (S.calDate
       ? `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">이 날은 올라온 로그가 없어요.</div>`
       : recoFollowBlock());
