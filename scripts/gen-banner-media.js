@@ -107,6 +107,7 @@ const EVENTS = [
   { id: 'proj_minlee', c1: '#4A7BE0', c2: '#C455E0' },  /* 프로젝트 — 푸른/보라 */
   { id: 'proj_kwon', c1: '#53E0C8', c2: '#F6C453' },
   { id: 'proj_ena', c1: '#E0698A', c2: '#F0A93B' },
+  { id: 'proj_yesa', c1: '#B85CC4', c2: '#F6C453' },  /* 예사 × MAMAMOO 리믹스 — 보라/금 */
 ];
 
 let total = 0;

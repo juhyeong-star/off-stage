@@ -1402,6 +1402,9 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .evbdots i{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.34);
   box-shadow:0 1px 4px rgba(0,0,0,.45)}
 .evbdots i.on{background:#fff}
+/* 흰(bare) 배너에선 점을 어둡게 — 흰 위의 흰 점은 안 보인다 */
+.evbn.bare .evbdots i{background:rgba(0,0,0,.22);box-shadow:none}
+.evbn.bare .evbdots i.on{background:#111}
 .evbin{animation:evbfade .4s cubic-bezier(.22,1,.36,1)}
 @keyframes evbfade{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion: reduce){ .evbin{animation:none} }
@@ -2999,6 +3002,8 @@ const curRound = ()=>ROUNDS.find(r=>r.id===S.round)||ROUNDS[0];
    투표가 아니라 지원작을 브랜드가 직접 검토하는 게시판이라 votes_count가 없다.
    type: 'audio'(음원 파일 업로드) | 'video'(영상 URL). 내리려면 배열에서 지우면 된다(YAGNI) */
 let PROJECTS=[
+  {id:'proj_yesa', brand:'예사 × MAMAMOO', who:'예사', what:'리믹스 컴피티션 — 나만의 리믹스를 보내요',
+   type:'audio', end:Date.now()+30*864e5},
   {id:'proj_minlee', brand:'AMinlee Project', who:'글로벌 DJ 민리', what:'함께 작곡할 친구를 구해요',
    type:'audio', end:Date.now()+30*864e5},
   {id:'proj_kwon', brand:'권연수', who:'국내 DJ 권연수', what:'협업할 작곡가를 구해요',
@@ -3073,9 +3078,17 @@ let _bnI=0, _bnT=0;
 /* safeUrl 이 http(s)·data:image 만 통과시켜서 상대경로('demo/…')는 빈 문자열이 된다.
    같은 도메인에서 서빙되므로 origin 을 붙여 절대주소로 만든다. */
 const _BNIMG=location.origin+'/demo/banner/';
+/* 새 발매를 메인 배너에 올릴 때 여기에 추가한다 — 곡·아티스트·이미지·프로필 링크.
+   맨 앞에 둬서 발매 소식이 배너 순환의 첫 화면이 된다. */
+let BANNER_RELEASES=[
+  {id:'rel_mohani', nm:'PEEK — 모하니', sub:'새 음원 발매 · 지금 듣기',
+   img:location.origin+'/music/peek-mohani-banner.svg', tag:'NEW', c:'lemon',
+   who:'김주형', aid:'c18bf4d3-efef-4fd7-8437-8a0b93ea85ae', bare:true},
+];
 function bannerItems(){
   const out=[], now=Date.now();
   const dday=end=>{ const d=Math.ceil((end-now)/864e5); return d>0?('D-'+d):'마감'; };
+  BANNER_RELEASES.forEach(function(x){ out.push({k:'rel', ...x}); });
   (typeof ROUNDS!=='undefined'?ROUNDS:[]).forEach(function(r){
     if(!r||!r.end||r.end<now) return;
     out.push({k:'round', id:r.id, tag:dday(r.end), nm:r.nm,
@@ -3096,14 +3109,16 @@ function eventBanner(){
   if(!items.length) return '';
   if(_bnI>=items.length) _bnI=0;
   const b=items[_bnI];
-  return `<button class="evbn" data-evbn="${b.k}:${b.id}" aria-label="${esc(b.nm)} 자세히">
+  /* bare = 글자가 이미지 안에 이미 그려진 배너(흰 발매 배너 등) — 어둡게 덮는 막과
+     흰 글씨 오버레이를 빼고 이미지를 그대로 보여준다 */
+  return `<button class="evbn${b.bare?' bare':''}" data-evbn="${b.k}:${b.id}" aria-label="${esc(b.nm)} 자세히">
     <img class="evbimg" src="${safeUrl(b.img)}" alt="" decoding="async">
-    <span class="evbveil"></span>
+    ${b.bare?'':'<span class="evbveil"></span>'}
     <span class="evbtop"><span class="evbtag ${b.c}">${b.tag}</span></span>
-    <span class="evbbot">
+    ${b.bare?'':`<span class="evbbot">
       <b class="evbnm">${esc(b.nm)}</b>
       <small class="evbsub">${esc(b.sub)}</small>
-    </span>
+    </span>`}
     <span class="evbdots">${items.map((_,i)=>`<i class="${i===_bnI?'on':''}"></i>`).join('')}</span>
   </button>`;
 }
@@ -3133,9 +3148,13 @@ function bindBanner(){
   document.querySelectorAll('[data-evbn]').forEach(function(b){
     b.onclick=function(){
       const [k,id]=String(b.dataset.evbn).split(':');
-      if(k==='round'){ const r=ROUNDS.find(x=>x.id===id); S.vcat=r?r.cat:'music'; S.round=id; S.view='lists'; }
-      else { S.view='mine'; S.profile='me'; S.seg='works'; }
-      render();
+      if(k==='round'){ const r=ROUNDS.find(x=>x.id===id); S.vcat=r?r.cat:'music'; S.round=id; S.view='lists'; render(); return; }
+      if(k==='rel'){ const x=BANNER_RELEASES.find(v=>v.id===id);
+        if(x){ goProfile(x.who, x.aid); } return; }
+      /* 프로젝트 — 지원 시트를 바로 연다 (My 페이지의 지원 버튼은 삭제됐으므로 여기가 유일한 입구) */
+      if(!ME){ needLogin(); return; }
+      S.projectForm={project:id, name:(ME&&ME.name)||'', contact:'', note:'', audioFile:null, audioName:'', video:''};
+      S.projectApply=true; render();
     };
   });
 }

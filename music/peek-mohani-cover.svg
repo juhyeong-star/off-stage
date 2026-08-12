@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+  <!-- PEEK 「모하니」 임시 커버 — 실제 손그림 커버 파일을 받으면 교체.
+       원본 커버의 무드(흰 배경 · 검정 라인 · 곰)를 라인 드로잉으로 따라간다. -->
+  <rect width="600" height="600" fill="#fdfdfb"/>
+  <text x="52" y="86" font-family="Comic Sans MS, Chalkboard SE, sans-serif" font-size="44" fill="#111">Peek</text>
+  <!-- 곰 얼굴 라인 드로잉 -->
+  <g fill="none" stroke="#111" stroke-width="9" stroke-linecap="round">
+    <circle cx="238" cy="222" r="34"/>
+    <circle cx="392" cy="218" r="30"/>
+    <path d="M198 306 q-14 -66 44 -96 q58 -32 130 -8 q66 22 62 92 q-4 66 -62 88 q-70 26 -138 -6 q-40 -20 -36 -70 z"/>
+  </g>
+  <g fill="#111">
+    <circle cx="272" cy="290" r="9"/>
+    <circle cx="356" cy="288" r="9"/>
+  </g>
+  <g fill="none" stroke="#111" stroke-width="8" stroke-linecap="round">
+    <path d="M300 318 q14 12 28 0"/>
+    <path d="M314 322 l0 14"/>
+    <path d="M300 344 q16 12 32 -2"/>
+    <!-- 안아주는 팔 -->
+    <path d="M150 408 q60 -58 150 -50 q106 8 150 46"/>
+    <path d="M170 428 q120 40 268 -8"/>
+  </g>
+  <text x="300" y="556" text-anchor="middle" font-family="Comic Sans MS, Chalkboard SE, sans-serif" font-size="86" font-weight="bold" fill="#111">모하니</text>
+</svg>

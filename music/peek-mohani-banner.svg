@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450">
+  <!-- PEEK 「모하니」 발매 배너 (16:9) — 커버와 같은 손그림 무드.
+       다크 앱에서 흰 카드가 강하게 눈에 걸리는 게 의도. 글자는 배너 오버레이(CSS)가 아니라
+       여기 직접 넣는다: 흰 배경에선 앱의 흰 글씨 오버레이가 안 보이기 때문. -->
+  <rect width="800" height="450" fill="#fdfdfb"/>
+  <!-- 곰 — 오른쪽 -->
+  <g transform="translate(470,40) scale(0.62)">
+    <g fill="none" stroke="#111" stroke-width="9" stroke-linecap="round">
+      <circle cx="238" cy="222" r="34"/>
+      <circle cx="392" cy="218" r="30"/>
+      <path d="M198 306 q-14 -66 44 -96 q58 -32 130 -8 q66 22 62 92 q-4 66 -62 88 q-70 26 -138 -6 q-40 -20 -36 -70 z"/>
+    </g>
+    <g fill="#111">
+      <circle cx="272" cy="290" r="9"/>
+      <circle cx="356" cy="288" r="9"/>
+    </g>
+    <g fill="none" stroke="#111" stroke-width="8" stroke-linecap="round">
+      <path d="M300 318 q14 12 28 0"/>
+      <path d="M314 322 l0 14"/>
+      <path d="M300 344 q16 12 32 -2"/>
+      <path d="M150 408 q60 -58 150 -50 q106 8 150 46"/>
+      <path d="M170 428 q120 40 268 -8"/>
+    </g>
+  </g>
+  <!-- 타이포 — 왼쪽 -->
+  <text x="56" y="150" font-family="Comic Sans MS, Chalkboard SE, sans-serif" font-size="40" fill="#111">Peek</text>
+  <text x="52" y="268" font-family="Comic Sans MS, Chalkboard SE, sans-serif" font-size="104" font-weight="bold" fill="#111">모하니</text>
+  <text x="56" y="336" font-family="-apple-system, sans-serif" font-size="26" fill="#555">새 음원 발매 · 지금 듣기</text>
+</svg>
