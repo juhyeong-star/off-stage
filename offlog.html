@@ -837,14 +837,36 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .fdaydiv::after{content:'';flex:1;height:1px;background:var(--line);align-self:center}
 /* 같은 시간대(예 14시) 로그를 한 박스로 — 비슷한 때 서로 뭘 했는지 한눈에 보이게.
    최대 4개까지 한 박스, 넘치면 다음 박스로 넘어간다. 혼자면 박스를 씌우지 않는다. */
-.hgrp{position:relative;margin:0 0 14px;padding:10px 10px 4px;
+.hgrp{position:relative;margin:0 0 14px;padding:10px;
   background:var(--card2);border:1px solid var(--line);border-radius:18px}
-.hgrp .fcard{margin-bottom:10px}
 .hgrphd{display:flex;align-items:center;gap:8px;margin:0 2px 10px}
 .hgrphd b{font-family:'Black Han Sans';font-weight:400;font-size:13px;letter-spacing:.5px;color:var(--txt)}
 .hgrphd span{font-size:10.5px;color:var(--muted);background:var(--card);border:1px solid var(--line);
   border-radius:99px;padding:2px 8px}
 .hgrphd i{flex:1;height:1px;background:var(--line)}
+/* 박스 하나가 여러 조각으로 갈린다 — 한 칸엔 음원, 옆칸엔 글, 아래엔 사진.
+   각 조각은 서로 다른 사람 것이라, 그 시간에 누가 뭘 하고 있었는지가 한 덩어리로 보인다. */
+.hgrid{display:grid;gap:8px}
+.hgrp.n2 .hgrid{grid-template-columns:1fr 1fr}
+/* 3조각 — 왼쪽 큰 칸 + 오른쪽에 둘 (잡지 레이아웃처럼 크기를 다르게) */
+.hgrp.n3 .hgrid{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.hgrp.n3 .hgrid > .fcard:first-child{grid-row:span 2}
+.hgrp.n4 .hgrid{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+/* 조각 안에서는 카드가 칸을 꽉 채운다 */
+.hgrid .fcard{margin:0;min-width:0;display:flex}
+.hgrid .fcard > .rcard{height:100%;width:100%;margin:0;border-radius:14px}
+.hgrid .fcard .fdt{display:none}          /* 조각마다 날짜칩은 과하다 — 박스 머리말로 충분 */
+.hgrp.n2 .hgrid .fcard,.hgrp.n3 .hgrid .fcard,.hgrp.n4 .hgrid .fcard{height:132px}
+.hgrp.n3 .hgrid > .fcard:first-child{height:auto}
+/* 좁은 칸에 맞춰 글씨·요소를 줄인다 */
+.hgrid .rwho{top:8px;left:8px;font-size:11px;gap:5px}
+.hgrid .rwho .avimg,.hgrid .rwho .avini{width:19px!important;height:19px!important}
+.hgrid .rts{font-size:12px}
+.hgrid .rnote{font-size:15px;line-height:1.32}
+.hgrid .rcap{font-size:11.5px}
+.hgrid .edit.mine,.hgrid .fcmt{transform:scale(.86);transform-origin:top right}
+.hgrid .bigwv{opacity:.55}
+.hgrid .sndpill{font-size:10.5px;padding:3px 7px}
 .rcap{font-size:13px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.85);margin-top:1px}
 .rcard.empty .rts{color:rgba(255,255,255,.075);text-shadow:none}
 .rcard.paper .rts{color:rgba(43,36,23,.35);text-shadow:none;font-size:15px;margin-bottom:7px}
@@ -3445,9 +3467,9 @@ function home(){
       /* 혼자면 굳이 박스로 감싸지 않는다 — 지금까지의 모습 그대로 */
       if(g.items.length<2) return head+cards;
       const hrLab = /^\d\d$/.test(g.hr) ? (+g.hr)+'시' : '';
-      return head+`<div class="hgrp">
-        <div class="hgrphd"><b>${hrLab}</b><span>${g.items.length}개</span><i></i></div>
-        ${cards}</div>`;
+      return head+`<div class="hgrp n${g.items.length}">
+        <div class="hgrphd"><b>${hrLab}</b><span>${g.items.length}명</span><i></i></div>
+        <div class="hgrid">${cards}</div></div>`;
     }).join('') || (S.calDate
       ? `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">이 날은 올라온 로그가 없어요.</div>`
       : recoFollowBlock());
