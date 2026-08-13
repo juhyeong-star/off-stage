@@ -852,19 +852,22 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .hgrphd i{flex:1;height:1px;background:var(--line)}
 /* 박스 하나가 여러 조각으로 갈린다 — 한 칸엔 음원, 옆칸엔 글, 아래엔 사진.
    각 조각은 서로 다른 사람 것이라, 그 시간에 누가 뭘 하고 있었는지가 한 덩어리로 보인다. */
-/* 조각 사이 간격 = 박스 안쪽 패딩(10px) — 한 가지 값으로 통일해야 리듬이 안 흔들린다 */
-.hgrid{display:grid;gap:10px}
-.hgrp.n2 .hgrid{grid-template-columns:1fr 1fr}
-/* 3조각 — 왼쪽 큰 칸 + 오른쪽에 둘 (잡지 레이아웃처럼 크기를 다르게) */
-.hgrp.n3 .hgrid{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+/* 조각 사이 간격 = 박스 안쪽 패딩(10px) — 한 가지 값으로 통일해야 리듬이 안 흔들린다.
+   높이는 조각 수와 상관없이 항상 274px 로 고정한다. 2명이든 4명이든 박스 크기가 같아야
+   스크롤할 때 덩어리가 일정하게 지나간다 — 안 그러면 13시 박스와 15시 박스 높이가 달라진다.
+   274 = 132(한 칸) × 2 + 10(간격) */
+.hgrid{display:grid;gap:10px;height:274px;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+/* 2조각 — 좌우로 갈리되 위아래를 꽉 채운다(각 조각이 274px) */
+.hgrp.n2 .hgrid > .fcard{grid-row:span 2}
+/* 3조각 — 왼쪽 큰 칸(274) + 오른쪽 위아래 둘(132씩) */
 .hgrp.n3 .hgrid > .fcard:first-child{grid-row:span 2}
-.hgrp.n4 .hgrid{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+/* 4조각 — 2×2, 각 132 */
 /* 조각 안에서는 카드가 칸을 꽉 채운다 */
 .hgrid .fcard{margin:0;min-width:0;display:flex}
 .hgrid .fcard > .rcard{height:100%;width:100%;margin:0;border-radius:16px}
 .hgrid .fcard .fdt{display:none}          /* 조각마다 날짜칩은 과하다 — 박스 머리말로 충분 */
-.hgrp.n2 .hgrid .fcard,.hgrp.n3 .hgrid .fcard,.hgrp.n4 .hgrid .fcard{height:132px}
-.hgrp.n3 .hgrid > .fcard:first-child{height:auto}
+/* 칸 높이는 격자(grid-template-rows)가 정한다 — 카드에 직접 높이를 주면
+   조각 수마다 박스 높이가 달라진다(전에 13시와 15시 높이가 달랐던 원인) */
 /* 좁은 칸에 맞춰 글씨·요소를 줄인다 */
 .hgrid .rwho{top:8px;left:8px;font-size:11px;gap:5px}
 .hgrid .rwho .avimg,.hgrid .rwho .avini{width:19px!important;height:19px!important}
