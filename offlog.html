@@ -872,11 +872,30 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .hgrid .rwho{top:8px;left:8px;font-size:11px;gap:5px}
 .hgrid .rwho .avimg,.hgrid .rwho .avini{width:19px!important;height:19px!important}
 .hgrid .rts{font-size:12px}
-.hgrid .rnote{font-size:15px;line-height:1.32}
+/* 조각 안 긴 메모: 가운데 정렬이면 첫 문장까지 잘려나간다 — 위에서부터 읽히게 하고
+   넘치는 만큼만 말줄임. 전문은 탭해서 시트에서 본다 */
+.hgrid .rcard.paper .rmid{justify-content:flex-start;padding:34px 16px 16px}
+.hgrid .rnote{font-size:15px;line-height:1.32;text-align:left;width:100%;
+  display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+.hgrp.n2 .hgrid .rnote{-webkit-line-clamp:10}
+.hgrp.n3 .hgrid > .fcard:first-child .rnote{-webkit-line-clamp:10}
+.hgrp.n3 .hgrid .rnote,.hgrp.n4 .hgrid .rnote{-webkit-line-clamp:4}
+.hgrid .rcard.paper .rts{text-align:left;width:100%;margin-bottom:4px}
 .hgrid .rcap{font-size:11.5px}
 .hgrid .edit.mine,.hgrid .fcmt{transform:scale(.86);transform-origin:top right}
 .hgrid .bigwv{opacity:.55}
 .hgrid .sndpill{font-size:10.5px;padding:3px 7px}
+/* 조각은 눌리는 것이다 — 손을 대면 그 자리에서 바로 반응해야 죽은 화면으로 안 읽힌다 */
+.hgrid [data-logopen]{cursor:pointer;transition:transform .12s ease-out}
+.hgrid [data-logopen]:active{transform:scale(.975)}
+/* 잘린 글은 line-clamp 가 말줄임(…)으로 알린다 — 페이드까지 겹치면 신호가 두 번이다 */
+/* 로그 상세 시트 — 조각이 못 보여준 글 전문·사진·댓글이 여기서 제 크기를 갖는다 */
+.lssheet .lswho{display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer}
+.lsimg{width:100%;aspect-ratio:1/1;border-radius:14px;margin:2px 0 12px;background-size:cover;background-position:center}
+.lsvid{width:100%;aspect-ratio:16/9;border-radius:14px;margin:2px 0 12px;background:#000;display:block}
+.lstext{font-family:'Gaegu';font-weight:700;font-size:19px;line-height:1.5;color:var(--ink);
+  white-space:pre-line;background:var(--paper);border-radius:14px;padding:16px 15px;margin-bottom:12px}
+.lssheet .cmtpanel{margin:0}
 .rcap{font-size:13px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.85);margin-top:1px}
 .rcard.empty .rts{color:rgba(255,255,255,.075);text-shadow:none}
 .rcard.paper .rts{color:rgba(43,36,23,.35);text-shadow:none;font-size:15px;margin-bottom:7px}
@@ -1362,7 +1381,9 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
   padding:16px 16px calc(20px + env(safe-area-inset-bottom));animation:csup .22s ease}
 @keyframes csup{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .cs-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.cs-hd b{font-family:'Black Han Sans';font-size:16px}
+/* 로그 본문이 제목으로 들어와 단어 중간에서 뚝 잘리던 것 — 넘치면 … 로 끝낸다 */
+.cs-hd b{font-family:'Black Han Sans';font-size:16px;min-width:0;flex:1;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cs-x{width:38px;height:38px;border-radius:50%;background:var(--card);border:1px solid var(--line);
   color:var(--muted);font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
 .cs-x:active{transform:scale(.92)}
@@ -1418,6 +1439,12 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .recorow{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line);
   border-radius:14px;padding:10px 12px;margin-bottom:8px}
 .recoav .avimg,.recoav .smile{width:38px;height:38px;border-radius:50%}
+/* 이름·사진을 눌러 그 사람 페이지로 — 예전엔 팔로우 버튼만 눌렸고, 정작 "이 사람이 뭘
+   기록했나" 보러 가는 길이 막혀 있었다 */
+.recogo{flex:1;min-width:0;display:flex;align-items:center;gap:11px;background:none;border:0;
+  padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer;
+  -webkit-tap-highlight-color:transparent}
+.recogo:active{opacity:.65}
 /* 메인 이벤트 배너 — 캘린더 아래, 16:9 이미지 위에 글이 얹힌 큰 카드.
    2초마다 다음 이벤트로 넘어간다. */
 .evbn{position:relative;display:block;width:100%;aspect-ratio:16/9;margin:2px 0 14px;padding:0;
@@ -1447,11 +1474,17 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 /* 흰(bare) 배너에선 점을 어둡게 — 흰 위의 흰 점은 안 보인다 */
 .evbn.bare .evbdots i{background:rgba(0,0,0,.22);box-shadow:none}
 .evbn.bare .evbdots i.on{background:#111}
-/* 좌우 절반 탭 = 이전/다음. 가운데 34%는 비워 둬서 그 이벤트로 들어가는 길을 남긴다 */
+/* 좌우 탭 = 이전/다음. 가운데 34%는 비워 둬서 그 이벤트로 들어가는 길을 남긴다.
+   화살표를 실제로 보여준다 — 투명 버튼만 있으면 넘길 수 있다는 걸 아무도 모른다 */
 .evbnav{position:absolute;top:0;bottom:0;width:33%;background:none;border:0;padding:0;
-  cursor:pointer;-webkit-tap-highlight-color:transparent}
-.evbnav.prev{left:0}
-.evbnav.next{right:0}
+  cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;align-items:center}
+.evbnav.prev{left:0;justify-content:flex-start;padding-left:8px}
+.evbnav.next{right:0;justify-content:flex-end;padding-right:8px}
+.evbnav i{display:flex;align-items:center;justify-content:center;width:28px;height:28px;
+  border-radius:50%;background:rgba(0,0,0,.34);color:#fff;font-size:18px;font-style:normal;
+  line-height:1;backdrop-filter:blur(3px);opacity:.72}
+.evbn.bare .evbnav i{background:rgba(255,255,255,.72);color:#111}
+.evbnav:active i{opacity:1;transform:scale(.92)}
 .evbdots i{cursor:pointer}
 /* 점은 5px이라 그대로면 누르기 어렵다 — 보이는 크기는 두고 터치 영역만 넓힌다 */
 .evbdots i{position:relative}
@@ -1847,7 +1880,7 @@ async function loadMe(){
 async function loadMyStream(){
   if(!ME||!ME.id||!SBC) return false;
   try{
-    const mt=await SBC.from('tracks').select('id,title,audio_url,created_at')
+    const mt=await SBC.from('tracks').select('id,title,audio_url,cover_url,created_at')
       .eq('artist_id',ME.id).order('created_at',{ascending:false}).limit(60);
     const rows=(mt&&mt.data)?mt.data:[];
     const mine=rows.map(function(x,i){
@@ -1856,13 +1889,24 @@ async function loadMyStream(){
         ? {id:'sb_'+x.id, t:'snd', at:at, dt:dt, nm:x.title||'무제', dur:'', side:(i%2?'r':'l'), work:null, audio:x.audio_url}
         : {id:'sb_'+x.id, t:'note', at:at, dt:dt, text:x.title||'', tone:(i%2?'b':'y'), side:(i%2?'r':'l'), work:null};
     });
-    /* 기기에 저장한 내 로그(my_)는 남기고, 데모 시드는 내 실제 곡으로 교체 */
+    /* 기기에 저장한 내 로그(my_)는 남기고, 데모 시드는 내 실제 곡으로 교체.
+       ⚠️ rows 가 비어도(내 곡 0개) 반드시 갈아끼운다 — 예전엔 곡이 없으면 시드가 그대로 남아
+       "김아론(로그 0개)" 같은 계정의 MY 페이지에 남의 데모가 내 것처럼 떴다. */
     const myLocal=STREAM.filter(function(l){ return String(l.id).indexOf('my_')===0; });
     STREAM=_dedupById(myLocal.concat(mine));
+    /* MY → MUSIC 도 내 발매곡만. WORKS 는 부팅 때 '플랫폼 전체 트랙'으로 채워지므로
+       그대로 두면 모든 사용자에게 같은 12곡(모하니·방에서…)이 내 발매곡처럼 보인다. */
+    MYWORKS=rows.map(function(x,i){
+      return {id:'tw_'+x.id, nm:(x.title||'무제'), by:(ME&&ME.name)||'나', mine:true,
+              logs:0, span:'', dur:'', date:'', cover:x.cover_url||'', _audio:x.audio_url||'',
+              bg:(typeof GRADS!=='undefined'?GRADS[i%GRADS.length]:'#141418')};
+    });
     return true;
   }catch(e){ console.warn('[offlog] 내 로그 로드 실패', e); return false; }
 }
 
+/* 내 발매곡 — MY → MUSIC 은 이것만 쓴다(WORKS 는 플랫폼 전체라 남의 곡이 섞인다) */
+let MYWORKS=[];
 /* ── 로그인/로그아웃 (기존 회원 계정, 메인앱과 동일 방식) ── */
 let _authWired=false;
 function wireAuth(){
@@ -2390,10 +2434,12 @@ async function loadRecentProfiles(){
   if(!SBC || RECENTP!==null) return;
   RECENTP=[];                  /* 중복 요청 방지 — 실패하면 다시 null로 되돌려 재시도 허용 */
   try{
-    const r=await SBC.from('profiles').select('id,name,avatar_url,role,created_at')
+    const r=await SBC.from('profiles').select('id,name,avatar_url,role,bio,created_at')
       .order('created_at',{ascending:false}).limit(30);
     if(r.error) throw r.error;
-    RECENTP=(r.data||[]).filter(p=>p.name).map(p=>({who:p.name, aid:p.id, avatar:p.avatar_url||'', c:'blue', sub:roleKo(p.role)}));
+    /* 이름이 같은 사람이 나란히 뜨면 구분이 안 된다 — 소개 첫 줄을 역할 뒤에 붙인다 */
+    RECENTP=(r.data||[]).filter(p=>p.name).map(p=>({who:p.name, aid:p.id, avatar:p.avatar_url||'', c:'blue',
+      sub:roleKo(p.role)+((p.bio||'').split('\n')[0] ? ' · '+(p.bio||'').split('\n')[0].slice(0,22) : '')}));
     if(S.view==='flist') render();
   }catch(e){ RECENTP=null; console.warn('[offlog] 최근 가입 로드 실패', e); }
 }
@@ -2404,11 +2450,13 @@ async function searchProfiles(){
   if(PSEARCH.q===q) return;          /* 같은 검색어면 재요청 안 함 */
   const my=++_psT;
   try{
-    const r=await SBC.from('profiles').select('id,name,avatar_url,role')
+    const r=await SBC.from('profiles').select('id,name,avatar_url,role,bio')
       .ilike('name','%'+q.replace(/[%_]/g,'')+'%').limit(20);
     if(r.error) throw r.error;
     if(my!==_psT) return;            /* 더 새 검색이 이미 나감 — 늦게 온 응답 버림 */
-    PSEARCH={q:q, rows:(r.data||[]).map(p=>({who:p.name||'', aid:p.id, avatar:p.avatar_url||'', c:'blue', sub:roleKo(p.role)}))};
+    /* 동명이인이 나란히 뜨면 어느 쪽인지 알 수 없다 — 역할 뒤에 소개 첫 줄을 붙여 구분한다 */
+    PSEARCH={q:q, rows:(r.data||[]).map(p=>({who:p.name||'', aid:p.id, avatar:p.avatar_url||'', c:'blue',
+      sub:roleKo(p.role)+((p.bio||'').split('\n')[0] ? ' · '+(p.bio||'').split('\n')[0].slice(0,22) : '')}))};
     refreshFlist();
   }catch(e){ console.warn('[offlog] 프로필 검색 실패', e); }
 }
@@ -2716,6 +2764,7 @@ async function followArtist(aid){
     const {error}=await SBC.from('follows').insert({follower_id:ME.id, followed_id:aid});
     if(error && error.code!=='23505'){ throw error; }   // 23505=이미 있음 → 무시
     MYFOLLOWS.add(aid); flcacheClear();
+    try{render();}catch(_){}   /* 팔로잉 숫자를 바로 갱신 — 전엔 탭을 바꿔야 반영됐다 */
     /* 방금 팔로우한 사람의 로그가 바로 피드에 들어오게 — 스로틀 무시하고 즉시 재로드 */
     loadFriendLogs(true).then(function(got){ if(got){ S.feed=buildFeed(); if(S.view==='home'){ try{render();}catch(_){} } } });
     return true;
@@ -2727,7 +2776,9 @@ async function unfollowArtist(aid){
   try{
     const {error}=await SBC.from('follows').delete().eq('follower_id',ME.id).eq('followed_id',aid);
     if(error) throw error;
-    MYFOLLOWS.delete(aid); flcacheClear(); return true;
+    MYFOLLOWS.delete(aid); flcacheClear();
+    try{render();}catch(_){}   /* 팔로잉 숫자 즉시 갱신 */
+    return true;
   }catch(e){ console.warn('[offlog] unfollow 실패', e); offToast('저장 실패 — 잠시 후 다시'); return false; }
 }
 async function toggleReact(tid, kind){
@@ -2846,6 +2897,7 @@ async function loadCommentCounts(logIds){
    협업하라고 만든 기능인데 대화가 시작되질 않는다.
    마지막으로 확인한 시각을 기기에 저장해 두고, 그 뒤에 달린 남의 댓글만 센다. */
 let CMTNEW=[];                 /* [{log_id, body, at}] — 아직 안 본 남의 댓글 */
+let INGRID=false;              /* 지금 그리는 카드가 시간대 그리드 조각인가 (feedCard 가 읽는다) */
 const _CMTSEEN_K='offlog_cmt_seen_v1';
 function cmtSeenAt(){ try{ return localStorage.getItem(_CMTSEEN_K)||''; }catch(_){ return ''; } }
 function markCmtSeen(){
@@ -3107,6 +3159,7 @@ let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:
   perfApply:false, perfForm:null, perfExpand:null, /* 공연 신청 시트 — 열림여부·폼값·펼친 카드id */
   projectApply:false, projectForm:null, /* 프로젝트 지원 시트 — 열림여부·폼값(선택 프로젝트에 따라 audioFile 또는 video) */
   cmtOpen:null,  /* 댓글 패널이 펼쳐진 로그 id — 도형 반응 대신 댓글로 협업 */
+  logOpen:null,  /* 상세 시트가 열린 로그 id — 시간대 그리드 조각을 탭했을 때 */
   calOpen:false, /* 홈 캘린더 펼침 여부 — 기본 접힘(로그가 바로 보이게). 얇은 바만 노출 */
   authMode:'login', /* 로그인 화면 모드 — login | signup */
   editProf:null, /* 프로필 수정 시트 (열려 있으면 {name,role,bio,ig,yt,tt}) */
@@ -3129,7 +3182,7 @@ const dot=col=>`<span class="dot" style="background:${c(col)}"></span>`;
 /* ── 메인 이벤트 배너 ────────────────────────────────────────────────
    음원발매·쇼케이스·프로젝트가 각각 따로 박스를 차지하면 화면을 다 먹는다.
    한 줄짜리 배너 하나에 모아 2초마다 넘긴다 — 지나가다 눈에 걸리게. */
-let _bnI=0, _bnT=0;
+let _bnI=0, _bnT=0, _bnHold=false;   /* _bnHold = 손이 배너에 닿아 있는 동안 자동 전환 정지 */
 /* safeUrl 이 http(s)·data:image 만 통과시켜서 상대경로('demo/…')는 빈 문자열이 된다.
    같은 도메인에서 서빙되므로 origin 을 붙여 절대주소로 만든다. */
 const _BNIMG=location.origin+'/demo/banner/';
@@ -3175,9 +3228,10 @@ function eventBanner(){
       <small class="evbsub">${esc(b.sub)}</small>
     </span>`}
     <span class="evbdots">${items.map((_,i)=>`<i class="${i===_bnI?'on':''}" data-evbgo="${i}"></i>`).join('')}</span>
-    <!-- 좌우 절반을 탭하면 이전/다음 배너로. 가운데를 눌러야 그 이벤트로 들어간다 -->
-    <button class="evbnav prev" data-evbstep="-1" aria-label="이전 이벤트"></button>
-    <button class="evbnav next" data-evbstep="1" aria-label="다음 이벤트"></button>
+    <!-- 좌우 탭 = 이전/다음. 화살표를 실제로 그려준다 — 투명 버튼만 깔아두면
+         넘길 수 있다는 걸 알 방법이 없어서 아무도 안 쓴다 -->
+    <button class="evbnav prev" data-evbstep="-1" aria-label="이전 이벤트"><i>‹</i></button>
+    <button class="evbnav next" data-evbstep="1" aria-label="다음 이벤트"><i>›</i></button>
   </div>`;
 }
 /* 2초 간격으로 갈아끼우는데 이미지가 그때 받아지기 시작하면 한 박자 비어 보인다.
@@ -3196,11 +3250,12 @@ function startBannerRotate(){
   _bnT=setInterval(function(){
     const host=document.getElementById('evbnwrap');
     if(!host || S.view!=='home'){ clearInterval(_bnT); return; }
+    if(_bnHold) return;          /* 손이 배너 위에 있으면 넘기지 않는다 */
     _bnI=(_bnI+1)%bannerItems().length;
     host.innerHTML=eventBanner();
     const el=host.firstElementChild;
     if(el){ el.classList.add('evbin'); bindBanner(); }
-  }, 2000);
+  }, 5000);   /* 2초는 읽고 누를 새도 없이 넘어갔다 — 5초 */
 }
 /* 배너를 원하는 순번으로 넘긴다 — 손으로 넘기면 자동 회전 타이머를 다시 시작해
    방금 넘긴 화면이 곧바로 사라지지 않게 한다 */
@@ -3213,6 +3268,16 @@ function bannerGo(i){
   bindBanner(); startBannerRotate();
 }
 function bindBanner(){
+  /* 읽는 동안(손이 올라가 있는 동안)엔 안 넘어가게 — 누르려는 순간 바뀌던 문제 */
+  const bn=document.querySelector('.evbn');
+  if(bn){
+    const hold=()=>{_bnHold=true;}, free=()=>{_bnHold=false;};
+    bn.addEventListener('pointerenter',hold,{passive:true});
+    bn.addEventListener('pointerdown',hold,{passive:true});
+    bn.addEventListener('pointerleave',free,{passive:true});
+    bn.addEventListener('pointerup',free,{passive:true});
+    bn.addEventListener('pointercancel',free,{passive:true});
+  }
   /* 좌우 탭 = 이전/다음 */
   document.querySelectorAll('[data-evbstep]').forEach(function(b){
     b.onclick=function(e){ e.stopPropagation(); bannerGo(_bnI + (+b.dataset.evbstep)); };
@@ -3435,8 +3500,10 @@ function home(){
     if(!rows.length) return `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">아직 팔로우한 사람의 로그가 없어요.</div>`;
     return `<div class="pknote" style="padding:20px 8px 10px;text-align:center;line-height:1.7">아직 팔로우한 사람의 로그가 없어요.<br>${withPeek?'요즘 기록 중인 사람들이에요':'이 아티스트들부터 팔로우해 보세요'}</div>
       ${rows.map(a=>`<div class="recorow">
-        <span class="recoav">${avatarEl(a.av||avOf(a.nm), 'blue', 38, a.nm)}</span>
-        <span class="reconm"><b>${esc(a.nm)}</b>${a.peek?`<small>${esc(a.peek)}</small>`:''}</span>
+        <button class="recogo" data-prof="${esc(a.nm)}" data-paid="${a.aid||''}" aria-label="${esc(a.nm)} 프로필 보기">
+          <span class="recoav">${avatarEl(a.av||avOf(a.nm), 'blue', 38, a.nm)}</span>
+          <span class="reconm"><b>${esc(a.nm)}</b>${a.peek?`<small>${esc(a.peek)}</small>`:''}</span>
+        </button>
         <button class="fol recofol" data-recofollow="${a.aid}" data-reconm="${esc(a.nm)}">팔로우</button>
       </div>`).join('')}`;
   }
@@ -3472,8 +3539,11 @@ function home(){
     bodyC = groups.map(function(g,gi){
       let head='';
       if(g.dt && g.dt!==_lastDt){ _lastDt=g.dt; head=dayHead(g.dt); }
-      /* 카드 개별 날짜 칩은 끄고(dt:null) 그룹 헤더로만 날짜를 보여준다 */
+      /* 카드 개별 날짜 칩은 끄고(dt:null) 그룹 헤더로만 날짜를 보여준다.
+         혼자면 박스로 감싸지 않으므로 그리드 규칙(탭→시트)도 적용하지 않는다 */
+      INGRID = g.items.length>=2;
       const cards=g.items.map((t,i)=>feedCard(t.dt?{...t, dt:null}:t, gi*10+i)).join('');
+      INGRID = false;
       /* 혼자면 굳이 박스로 감싸지 않는다 — 지금까지의 모습 그대로 */
       if(g.items.length<2) return head+cards;
       const hrLab = /^\d\d$/.test(g.hr) ? (+g.hr)+'시' : '';
@@ -3499,7 +3569,8 @@ function home(){
   ${calMonth()}
   <div id="evbnwrap">${eventBanner()}</div>
   ${HOMETABS.length>1?`<div class="hstabs">${HOMETABS.map(t=>`<button class="hstab${cur===t[0]?' on':''}" data-hgoto="${t[0]}">${t[1]}</button>`).join('')}</div>`:''}
-  <div id="hswipe">${bodyC}</div>`;
+  <div id="hswipe">${bodyC}</div>
+  ${logSheet()}`;
 }
 /* 내 로그에 새 댓글이 달렸을 때만 뜨는 줄 — 누르면 그 로그로 이동하며 읽음 처리 */
 function cmtAlertBar(){
@@ -3668,9 +3739,15 @@ function feedCard(t,i){
   const dtb = t.dt?`<div class="fdt">${esc(String(t.dt).slice(5).replace('-','.'))}</div>`:'';
 
   /* 카드를 눌러도 전체화면(슬라이드) 팝업이 뜨지 않는다 — 홈에서는 data-slide 를 붙이지 않는다.
-     사진/글은 그 자리에 그대로 있고, 음원은 카드 안에서 재생, 대화는 댓글 패널로. */
+     사진/글은 그 자리에 그대로 있고, 음원은 카드 안에서 재생, 대화는 댓글 패널로.
+
+     단 시간대 그리드(1/2~1/4 조각)에서는 얘기가 다르다: 긴 메모가 잘려도 펼칠 방법이 없고,
+     댓글 패널이 조각 안에서 열리면 카드를 찌그러뜨린다. 그래서 그리드 조각은 탭하면
+     아래에서 올라오는 상세 시트를 연다 — 박스 크기는 그대로 두고, 글·사진·댓글은 제 공간을 갖는다.
+     음원은 예전대로 그 자리에서 재생(요청사항) — 시트로 가지 않는다. */
+  const tap = (INGRID && t.src==='flog' && _cid && t.t!=='snd' && t.t!=='vid') ? ` data-logopen="${_cid}"` : '';
   const body =
-    t.t==='ph'  ? `<div class="rcard">
+    t.t==='ph'  ? `<div class="rcard"${tap}>
         <div class="bgimg" style="background:${t.bg}"></div><div class="grainy"></div>
         <div class="rmid"><div class="rts">${t.at}</div><div class="rcap">${esc(t.cap)}</div></div>${who}${fol}${rx}</div>`
   : t.t==='snd' ? `<div class="rcard snd" data-play${t.audio?` data-audio="${t.audio}"`:''}>
@@ -3680,10 +3757,11 @@ function feedCard(t,i){
   : t.t==='vid' ? `<div class="rcard" style="overflow:hidden">
         <video src="${t.vsrc||''}" controls playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>
         <div class="rmid" style="pointer-events:none"><div class="rts">${t.at||''}</div>${t.cap?`<div class="rcap">${esc(t.cap)}</div>`:''}</div>${who}${fol}${rx}</div>`
-  :               `<div class="rcard paper ${t.tone==='b'?'b':''}">
+  :               `<div class="rcard paper ${t.tone==='b'?'b':''}"${tap}>
         <div class="rmid"><div class="rts">${t.at}</div><div class="rnote">${esc(t.text)}</div></div>${who}${fol}${rx}</div>`;
 
-  return `<div class="fcard">${dtb}${body}${cmtPanel(_cid)}</div>`;
+  /* 그리드 조각에서는 댓글을 인라인으로 펼치지 않는다(위 설명) — 시트가 받는다 */
+  return `<div class="fcard">${dtb}${body}${INGRID?'':cmtPanel(_cid)}</div>`;
 }
 /* 댓글 패널 — 카드 아래로 펼쳐진다(S.cmtOpen 인 로그만) */
 function cmtPanel(logId){
@@ -3705,6 +3783,39 @@ function cmtPanel(logId){
       <button class="cmtsend" data-cmtsend="${logId}" ${ME?'':'disabled'}>등록</button>
     </div>
   </div>`;
+}
+
+/* 로그 상세 시트 — 시간대 그리드 조각을 탭했을 때. 조각 안에서는 못 보던
+   글 전문·사진 원본·댓글을 아래에서 올라오는 시트가 제 크기로 받는다. */
+function logSheet(){
+  const id=S.logOpen; if(!id) return '';
+  const t=(S.feed||[]).find(x=>x.lid===id) || (STREAM||[]).find(x=>x.sid===id);
+  if(!t) return '';
+  const media =
+    t.t==='ph'  ? `<div class="lsimg" style="background:${t.bg||'#141418'}"></div>`
+  : t.t==='vid' ? `<video class="lsvid" src="${safeUrl(t.vsrc||'')}" controls playsinline></video>`
+  : '';
+  const words = t.t==='note'||!t.t ? (t.text||'') : (t.cap||'');
+  return `<div class="sheet-bd" id="lsbd"></div>
+  <div class="pksheet tall lssheet">
+    <div class="pkhd">
+      <b class="lswho" data-prof="${esc(t.who||'')}" data-paid="${t.aid||''}">${avatarEl(t.av||avOf(t.who),t.c,26,t.who)}${esc(t.who||'')}</b>
+      <span class="pksub">${esc(String(t.dt||'').slice(5).replace('-','.'))} ${esc(t.at||'')}</span>
+      <button class="pkx" id="lsclose" aria-label="닫기">✕</button></div>
+    ${media}
+    ${words?`<div class="lstext">${esc(words)}</div>`:''}
+    ${cmtPanelForce(id)}
+  </div>`;
+}
+/* 시트 안에서는 S.cmtOpen 과 무관하게 항상 댓글을 보여준다 — 탭한 이유가 그것이므로 */
+function cmtPanelForce(id){
+  const keep=S.cmtOpen; S.cmtOpen=id;
+  const html=cmtPanel(id); S.cmtOpen=keep; return html;
+}
+function openLogSheet(id){
+  if(!id) return;
+  S.logOpen=id; render();
+  if(CMTS[id]===undefined) loadComments(id).then(ok=>{ if(ok && S.logOpen===id) render(); });
 }
 
 /* ── 슬라이드 뷰 — 같은 피드, 한 화면에 하나씩. 위아래로 넘긴다 ── */
@@ -4011,11 +4122,11 @@ function mine(){
   const atrackCard=t=>`<div class="workrow">
     <div class="wthumb"><div class="bgimg" style="position:absolute;inset:0;background:${t.cover?`center/cover no-repeat url(${t.cover})`:'#22222a'}"></div>
       <button class="tplay" data-tplay="${t.audio||''}" aria-label="재생">▶</button></div>
-    <div class="winfo"><b>${esc(t.nm)}</b><small>${t.demo?'Demo':'Track'}${t.dt?' · '+t.dt.replace(/-/g,'.'):''}</small></div></div>`;
+    <div class="winfo"><b>${esc(t.nm)}</b><small>${t.demo?'데모':'발매곡'}${t.dt?' · '+t.dt.replace(/-/g,'.'):''}</small></div></div>`;
   const alogCard=t=>`<div class="fcard"><div class="rcard snd" data-play${t.audio?` data-audio="${t.audio}"`:''}>
     <div class="bigwv">${waveBars(34)}</div>
     <div class="rmid"><div class="rts">${t.dt?t.dt.replace(/-/g,'.'):''}</div><div class="rcap">${esc(t.nm)}</div>
-      <span class="sndpill"><em>▶</em><b>${t.demo?'Demo':''}</b></span></div>
+      <span class="sndpill"><em>▶</em><b>${t.demo?'데모':''}</b></span></div>
     <button class="edit mine" data-sharemenu="${t.id||''}" data-snm="${(t.nm||'').replace(/"/g,'&quot;')}" data-sby="${(prof.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" data-said="${S.profileAid||''}" aria-label="공유·담기·팔로우">⋯</button></div></div>`;
   const _emptyOrLoad = rp ? `<div class="pknote" style="padding:22px 0">아직 올린 게 없어요</div>` : `<div class="pknote" style="padding:22px 0">불러오는 중…</div>`;
   const rpTracks    = rp ? rp.tracks.slice().sort((a,b)=>String(b.dt||'').localeCompare(String(a.dt||''))) : [];  /* 최신이 위로 */
@@ -4029,11 +4140,16 @@ function mine(){
       <button class="nw2 perf" id="perfapplybtn"><em>＋</em>오디션</button></div>` : '';
 
   /* 내 작품(스튜디오) */
-  const myworks=(me&&WORKS.length?`<div class="rsec">음원 발매</div>`:'')+WORKS.map(w=>`<div class="workrow">
+  /* 내 페이지에서는 반드시 내 발매곡만 — WORKS 는 플랫폼 전체 트랙이라 남의 곡이 섞인다.
+     (곡이 0개면 빈 안내를 보여준다. 예전엔 그 자리에 남의 곡 12개가 들어갔다) */
+  const worksSrc = me ? (MYWORKS||[]).concat(WORKS.filter(w=>w&&w.mine)) : WORKS;
+  const myworks=(me?`<div class="rsec">음원 발매</div>`:'')
+    + (worksSrc.length ? worksSrc.map(w=>`<div class="workrow">
     <div class="wthumb"><div class="bgimg" style="position:absolute;inset:0;background:${w.cover?`center/cover no-repeat url(${w.cover})`:w.bg}"></div>
       <button class="wplay" aria-label="재생">▶</button></div>
-    <div class="winfo"><b>${esc(w.nm)}</b><small>${w.mine?(w.pending?'발매 예약 '+w.date:(w.date&&w.date!=='작업 중'?'발매 '+w.date:'작업 중')):(w.logs+' Logs · '+w.span)}</small></div>
-    <button class="openst" data-work="${w.id}">${w.mine?'열기':'History'} ›</button></div>`).join('');
+    <div class="winfo"><b>${esc(w.nm)}</b><small>${w.mine?(w.pending?'발매 예약 '+w.date:(w.date&&w.date!=='작업 중'?'발매 '+w.date:'작업 중')):(w.logs+'개 기록 · '+w.span)}</small></div>
+    <button class="openst" data-work="${w.id}">${w.mine?'열기':'기록 보기'} ›</button></div>`).join('')
+    : `<div class="pknote" style="padding:22px 0">아직 발매한 곡이 없어요 — 위 ＋음원 발매로 올려보세요</div>`);
 
   /* 내 공연 지원 내역 — perf_entries에서 author_id=나 로 조회. 곡 카드와 같은 crow2/cex 문법 재사용.
      WORKS 아래에 이어붙는 두 번째 섹션이라 소제목만 달고, ＋박스는 위(applyBoxRow)에서 한 번만 나온다 */
@@ -4483,7 +4599,7 @@ function allArtists(){
   if(_artCache && _artCacheLen===ALLTRACKS.length) return _artCache;
   const seen={}, out=[];
   ALLTRACKS.forEach(t=>{ const key=t.aid||t.by; if(!key||seen[key])return; seen[key]=1;
-    out.push({who:t.by, aid:t.aid||null, c:t.c, sub:'Artist'}); });
+    out.push({who:t.by, aid:t.aid||null, c:t.c, sub:'아티스트'}); });
   _artCache=out; _artCacheLen=ALLTRACKS.length;
   return out;
 }
@@ -4886,7 +5002,7 @@ function shareSheet(p){
 function work(){
   const w=WORKS.find(x=>x.id===S.work)||WORKS[0];
   const story=w.id==='sr'?STORY:STORY.slice(0,3);
-  const chips=[['all','전체'],['demo','Demo'],['pic','사진'],['vid','영상'],['idea','아이디어'],['voice','보이스'],['note','노트']];
+  const chips=[['all','전체'],['demo','데모'],['pic','사진'],['vid','영상'],['idea','아이디어'],['voice','보이스'],['note','노트']];
   const scard=r=>{
     /* 작품 스토리 안 = 이미 담긴 것들. 뱃지 불필요 */
     const chrome=`<div class="rwho" data-prof="${esc(r.who)}" style="cursor:pointer">${avatarEl(avOf(r.who), r.c, 24, r.who)}${esc(r.who)}</div>`;
@@ -4938,7 +5054,7 @@ function work(){
     <h1 class="wtitle2">${esc(w.nm)}</h1>
     <div class="wsub2"><button class="wartist" data-prof="${esc(w.by||'나')}">${esc(w.by||'나')}</button>
       <span class="wdot">·</span><span>${relTxt}</span>
-      ${w.logs?`<span class="wdot">·</span><span>${w.logs} Logs</span>`:''}</div>
+      ${w.logs?`<span class="wdot">·</span><span>기록 ${w.logs}개</span>`:''}</div>
     <div class="wactions">
       <div class="wicons">
         <button class="wicon" id="wsave" aria-label="플레이리스트에 담기"><span>＋</span><i>담기</i></button>
@@ -4958,7 +5074,7 @@ function work(){
     <div class="sec" style="margin:0">${w.mine?'음원 로그':'The Story'}</div></div>
   ${w.mine?'':`<div class="mchips">${chips.map(([k,l])=>`<button class="mchip ${S.wf===k?'on':''}" data-wf="${k}">${l}</button>`).join('')}</div>`}
   <div class="daytl">${w.mine?mineTimeline():groups}</div>
-  ${(!w.mine&&w.id==='ml')?`<div class="expire">이 스토리는 지금도 자라는 중 · <b>91 Logs</b></div>`:''}
+  ${(!w.mine&&w.id==='ml')?`<div class="expire">이 스토리는 지금도 자라는 중 · <b>기록 91개</b></div>`:''}
   ${S.relpick?releaseLogPicker(w):''}
   ${S.pull?logPuller(w):''}
   ${S.stage?stageSheet(w):''}
@@ -5528,6 +5644,9 @@ function _clearPlayingUI(){
   document.querySelectorAll('.rcard.playing').forEach(function(x){
     x.classList.remove('playing');
     var em=x.querySelector('.sndpill em'); if(em)em.classList.remove('on');
+    /* 재생 중 바꿔 끼웠던 경과시간을 원래 길이 표시로 되돌린다 */
+    var b=x.querySelector('.sndpill b');
+    if(b && b.dataset.orig!=null){ b.textContent=b.dataset.orig; delete b.dataset.orig; }
   });
   document.querySelectorAll('.cprog').forEach(function(x){ x.remove(); });
 }
@@ -5539,6 +5658,10 @@ AUDIO.addEventListener('timeupdate', function(){
   var bar=cd.querySelector('.cprog');
   if(!bar){ bar=document.createElement('span'); bar.className='cprog'; bar.innerHTML='<i></i>'; cd.appendChild(bar); }
   bar.firstElementChild.style.width=(AUDIO.currentTime/AUDIO.duration*100)+'%';
+  /* 진행바만으로는 "지금 진짜 나오고 있나"를 알기 어렵다 — 흐르는 숫자를 같이 보여준다 */
+  var pill=cd.querySelector('.sndpill b');
+  if(pill){ if(!pill.dataset.orig) pill.dataset.orig=pill.textContent||'';
+    pill.textContent=_mmss(AUDIO.currentTime)+' / '+_mmss(AUDIO.duration); }
 });
 function playSrc(url,nm){
   if(!url) return false;
@@ -6638,9 +6761,9 @@ function bind(){
       S.mini.on=false;
       renderMini();
     } else {
-      /* 오디오 URL 없는 카드 → 기존 애니메이션만 */
-      const on=cd.classList.toggle('playing');
-      const em=cd.querySelector('.sndpill em'); if(em)em.classList.toggle('on', !!on);
+      /* 소리 파일이 없는 카드. 예전엔 여기서 파형만 켜서 '재생 중'처럼 보였다 —
+         실제로는 아무것도 나오지 않아 사용자가 재생됐는지 알 수 없었다. 솔직하게 알린다. */
+      offToast('이 로그에는 소리 파일이 없어요');
     }
   });
   /* 사진 카드: 탭하면 갤러리에서 진짜 사진 넣기 */
@@ -6692,10 +6815,20 @@ function bind(){
   document.querySelectorAll('[data-cmt]').forEach(b=>b.onclick=e=>{
     e.stopPropagation();
     const id=b.dataset.cmt;
+    /* 그리드 조각의 댓글은 조각 안에서 열면 카드를 찌그러뜨린다 — 상세 시트로 보낸다 */
+    if(b.closest('.hgrid')){ openLogSheet(id); return; }
     if(S.cmtOpen===id){ S.cmtOpen=null; render(); return; }
     S.cmtOpen=id; render();
     if(CMTS[id]===undefined) loadComments(id).then(ok=>{ if(ok && S.cmtOpen===id) render(); });
   });
+  /* 그리드 조각 탭 → 상세 시트. 조각 안에서는 글이 잘리고 사진도 작아 열 곳이 필요하다 */
+  document.querySelectorAll('[data-logopen]').forEach(b=>b.onclick=e=>{
+    if(e.target.closest('button,a,video,[data-prof]')) return;   /* ⋯·댓글·이름은 각자 할 일이 있다 */
+    openLogSheet(b.dataset.logopen);
+  });
+  const _lsx=()=>{ S.logOpen=null; render(); };
+  const _lsb=document.getElementById('lsbd'); if(_lsb) _lsb.onclick=_lsx;
+  const _lsc=document.getElementById('lsclose'); if(_lsc) _lsc.onclick=_lsx;
   document.querySelectorAll('[data-cmtsend]').forEach(b=>b.onclick=async e=>{
     e.stopPropagation();
     const id=b.dataset.cmtsend, inp=document.getElementById('cmtin-'+id);
@@ -7020,7 +7153,7 @@ setInterval(()=>{
 
     // 피드 카드 1장 데이터 (트랙 → 카드) — resampleFeed 와 calIndex(캘린더)가 공유
     var mk=function(t){ var o={who:cut(t.artist,18), c:colOf(t.artist), at:tm(t.ts), dt:(t.ts||'').slice(0,10), rx:(t.likes||0), aid:aidOf(t.artist), tid:t.id, t:'snd', audio:t.audio, nm:cut(t.title,20)};
-      o.cap=o.nm; o.sub=cut((t.demo?'Demo':'Track')+(t.tags[0]?' · '+t.tags[0]:''),24); if(t.tags[0])o.tags=t.tags.slice(0,2).map(function(x){return '#'+String(x).replace(/^#/,'');}); return o; };
+      o.cap=o.nm; o.sub=cut((t.demo?'데모':'발매곡')+(t.tags[0]?' · '+t.tags[0]:''),24); if(t.tags[0])o.tags=t.tags.slice(0,2).map(function(x){return '#'+String(x).replace(/^#/,'');}); return o; };
     // 날짜별 인덱스 (맞팔+발매 친구의 모든 트랙을 YYYY-MM-DD 로 그룹) — 홈 캘린더용. 전역 노출
     function calIndex(){ var byDate={};
       tracks.forEach(function(t){ if(!isFriend(t.artist))return; var d=(t.ts||'').slice(0,10); if(!d)return; (byDate[d]=byDate[d]||[]).push(mk(t)); });
@@ -7040,7 +7173,7 @@ setInterval(()=>{
       TREND     = take(12).map(mk);
       FORYOU    = take(8).map(mk);
       FOLLOWLOG = take(8).map(mk);
-      PEOPLE = _shuf(reps).slice(0,24).map(function(t){ return {who:t.artist, c:colOf(t.artist), aid:aidOf(t.artist), sub:(t.tags[0]||'Artist'), fing:(iFollow(t.artist)?1:0)}; });
+      PEOPLE = _shuf(reps).slice(0,24).map(function(t){ return {who:t.artist, c:colOf(t.artist), aid:aidOf(t.artist), sub:(t.tags[0]||'아티스트'), fing:(iFollow(t.artist)?1:0)}; });
       var f=reps[0]; if(f){ NOWPLAY={label:'발견', cnt:tracks.length, nm:cut(f.title,20), tm:'', src:f.audio}; }
     }
     window.__resample=resampleFeed;
