@@ -853,15 +853,17 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 /* 박스 하나가 여러 조각으로 갈린다 — 한 칸엔 음원, 옆칸엔 글, 아래엔 사진.
    각 조각은 서로 다른 사람 것이라, 그 시간에 누가 뭘 하고 있었는지가 한 덩어리로 보인다. */
 /* 조각 사이 간격 = 박스 안쪽 패딩(10px) — 한 가지 값으로 통일해야 리듬이 안 흔들린다.
-   높이는 조각 수와 상관없이 항상 274px 로 고정한다. 2명이든 4명이든 박스 크기가 같아야
+   높이는 조각 수와 상관없이 항상 200px 로 고정한다. 2명이든 4명이든 박스 크기가 같아야
    스크롤할 때 덩어리가 일정하게 지나간다 — 안 그러면 13시 박스와 15시 박스 높이가 달라진다.
-   274 = 132(한 칸) × 2 + 10(간격) */
-.hgrid{display:grid;gap:10px;height:274px;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
-/* 2조각 — 좌우로 갈리되 위아래를 꽉 채운다(각 조각이 274px) */
+   200 = 로그가 하나만 올라온 날의 단독 카드(366×200)와 똑같은 크기. 박스로 묶이든
+   혼자 서든 화면에서 차지하는 덩어리가 같아야 스크롤 리듬이 안 튄다.
+   200 = 95(한 칸) × 2 + 10(간격) */
+.hgrid{display:grid;gap:10px;height:200px;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+/* 2조각 — 좌우로 갈리되 위아래를 꽉 채운다(각 조각이 200px = 단독 카드와 같은 높이) */
 .hgrp.n2 .hgrid > .fcard{grid-row:span 2}
-/* 3조각 — 왼쪽 큰 칸(274) + 오른쪽 위아래 둘(132씩) */
+/* 3조각 — 왼쪽 큰 칸(200) + 오른쪽 위아래 둘(95씩) */
 .hgrp.n3 .hgrid > .fcard:first-child{grid-row:span 2}
-/* 4조각 — 2×2, 각 132 */
+/* 4조각 — 2×2, 각 95 */
 /* 조각 안에서는 카드가 칸을 꽉 채운다 */
 .hgrid .fcard{margin:0;min-width:0;display:flex}
 .hgrid .fcard > .rcard{height:100%;width:100%;margin:0;border-radius:16px}
@@ -877,10 +879,17 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .hgrid .rcard.paper .rmid{justify-content:flex-start;padding:34px 16px 16px}
 .hgrid .rnote{font-size:15px;line-height:1.32;text-align:left;width:100%;
   display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
-.hgrp.n2 .hgrid .rnote{-webkit-line-clamp:10}
-.hgrp.n3 .hgrid > .fcard:first-child .rnote{-webkit-line-clamp:10}
-.hgrp.n3 .hgrid .rnote,.hgrp.n4 .hgrid .rnote{-webkit-line-clamp:4}
 .hgrid .rcard.paper .rts{text-align:left;width:100%;margin-bottom:4px}
+/* 큰 칸(200) — 단독 카드와 같은 높이라 여섯 줄까지 들어간다 */
+.hgrp.n2 .hgrid .rnote{-webkit-line-clamp:6}
+.hgrp.n3 .hgrid > .fcard:first-child .rnote{-webkit-line-clamp:6}
+/* 작은 칸(95) — 시각은 박스 머리말("13시")에 이미 있다. 지우고 그 자리를 글에 준다 */
+.hgrp.n3 .hgrid > .fcard:not(:first-child) .rcard.paper .rmid,
+.hgrp.n4 .hgrid .rcard.paper .rmid{padding:30px 14px 10px}
+.hgrp.n3 .hgrid > .fcard:not(:first-child) .rcard.paper .rts,
+.hgrp.n4 .hgrid .rcard.paper .rts{display:none}
+.hgrp.n3 .hgrid > .fcard:not(:first-child) .rnote,
+.hgrp.n4 .hgrid .rnote{-webkit-line-clamp:2}
 .hgrid .rcap{font-size:11.5px}
 .hgrid .edit.mine,.hgrid .fcmt{transform:scale(.86);transform-origin:top right}
 .hgrid .bigwv{opacity:.55}
