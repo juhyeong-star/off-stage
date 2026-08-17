@@ -1730,7 +1730,7 @@ button:active,.rcard:active,.av:active,.tool:active,.circ:active,.fab:active,
   <div id="lockview"></div>
   <div class="nav" id="nav">
     <button data-v="home" aria-label="Home"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.3V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.3"/></svg></i>Home</button>
-    <button class="navctr" id="navplus" aria-label="Log 남기기"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13"/></svg></i></button>
+    <button class="navctr" id="navplus" aria-label="Write a LOG"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13"/></svg></i></button>
     <button id="navprofile" aria-label="My"><i><span class="avimg"></span></i>My</button>
   </div>
 </div>
@@ -1856,7 +1856,7 @@ async function loadMe(){
         _q(SBC.from('blocks').select('blocked_id').eq('blocker_id', user.id)),            /* 차단 목록 */
         _q(SBC.from('reports').select('target_kind,target_id').eq('reporter_id', user.id)) /* 내가 낸 신고 */
       ]);
-      if(pR&&pR.data){ const d=pR.data; if(d.name&&d.name!=='익명')nm=d.name; if(d.avatar_url)av=d.avatar_url; if(d.role)role=d.role;
+      if(pR&&pR.data){ const d=pR.data; if(d.name&&d.name!=='Anonymous')nm=d.name; if(d.avatar_url)av=d.avatar_url; if(d.role)role=d.role;
         sns={ig:d.sns_instagram||'',yt:d.sns_youtube||'',tt:d.sns_tiktok||''}; bio=d.bio||''; if(d.account_visibility)vis=d.account_visibility; }
       /* 사진이 없으면 비워둔다 — avatarEl 이 이름 첫 글자 아바타로 그린다.
          무작위 인물 사진(i.pravatar.cc)을 넣던 것을 없앴다(initialEl 주석 참고). */
@@ -1895,7 +1895,7 @@ async function loadMyStream(){
     const mine=rows.map(function(x,i){
       const ts=x.created_at||'', dt=ts.slice(0,10), at=ts.slice(11,16);
       return x.audio_url
-        ? {id:'sb_'+x.id, t:'snd', at:at, dt:dt, nm:x.title||'무제', dur:'', side:(i%2?'r':'l'), work:null, audio:x.audio_url}
+        ? {id:'sb_'+x.id, t:'snd', at:at, dt:dt, nm:x.title||'Untitled', dur:'', side:(i%2?'r':'l'), work:null, audio:x.audio_url}
         : {id:'sb_'+x.id, t:'note', at:at, dt:dt, text:x.title||'', tone:(i%2?'b':'y'), side:(i%2?'r':'l'), work:null};
     });
     /* 기기에 저장한 내 로그(my_)는 남기고, 데모 시드는 내 실제 곡으로 교체.
@@ -1906,7 +1906,7 @@ async function loadMyStream(){
     /* MY → MUSIC 도 내 발매곡만. WORKS 는 부팅 때 '플랫폼 전체 트랙'으로 채워지므로
        그대로 두면 모든 사용자에게 같은 12곡(모하니·방에서…)이 내 발매곡처럼 보인다. */
     MYWORKS=rows.map(function(x,i){
-      return {id:'tw_'+x.id, nm:(x.title||'무제'), by:(ME&&ME.name)||'나', mine:true,
+      return {id:'tw_'+x.id, nm:(x.title||'Untitled'), by:(ME&&ME.name)||'나', mine:true,
               logs:0, span:'', dur:'', date:'', cover:x.cover_url||'', _audio:x.audio_url||'',
               bg:(typeof GRADS!=='undefined'?GRADS[i%GRADS.length]:'#141418')};
     });
@@ -1958,40 +1958,40 @@ async function loginEmail(email,pw){
   if(!SBC)return; const btn=document.getElementById('authsubmit'); if(btn){btn.disabled=true;btn.textContent='로그인 중…';}
   try{ const {error}=await SBC.auth.signInWithPassword({email:email, password:pw}); if(error)throw error;
     await loadMe(); S.auth=false; render(); offToast('로그인됐어요'); }
-  catch(e){ offToast('이메일 또는 비밀번호를 확인하세요'); if(btn){btn.disabled=false;btn.textContent='로그인';} }
+  catch(e){ offToast('Check your email or password'); if(btn){btn.disabled=false;btn.textContent='Log in';} }
 }
 /* 회원가입 — 이메일/비밀번호. 가입 직후 profiles 행에 이름을 심는다(없으면 만든다) */
 async function signupEmail(email, pw, name){
   if(!SBC)return;
   const btn=document.getElementById('authsubmit'); if(btn){btn.disabled=true;btn.textContent='가입 중…';}
   try{
-    if((pw||'').length<6) throw {message:'비밀번호는 6자 이상이어야 해요'};
+    if((pw||'').length<6) throw {message:'Password must be at least 6 characters'};
     const {data,error}=await SBC.auth.signUp({email:email, password:pw, options:{data:{name:name||''}}});
     if(error)throw error;
     const u=data&&data.user;
     /* 이메일 확인이 켜져 있으면 세션이 아직 없다 — 확인 메일 안내로 끝낸다 */
     if(u && !(data.session)){
       S.auth=false; S.authMode='login'; render();
-      offToast('확인 메일을 보냈어요 — 메일에서 인증 후 로그인해 주세요');
+      offToast('Verification email sent — confirm it, then log in');
       return;
     }
     if(u && name){ try{ await SBC.from('profiles').upsert({id:u.id, name:name}, {onConflict:'id'}); }catch(_){ } }
     await loadMe(); S.auth=false; render(); offToast('가입 완료 — 반가워요!');
   }catch(e){
     const m=(e&&e.message)||'';
-    offToast(/already|registered|exists/i.test(m) ? '이미 가입된 이메일이에요 — 로그인해 주세요'
+    offToast(/already|registered|exists/i.test(m) ? 'This email is already registered — please log in'
            : /6/.test(m)&&/비밀번호/.test(m) ? m
-           : /password/i.test(m) ? '비밀번호는 6자 이상이어야 해요'
+           : /password/i.test(m) ? 'Password must be at least 6 characters'
            : '가입 실패 — '+(m||'다시 시도해 주세요'));
-    if(btn){btn.disabled=false;btn.textContent='가입하기';}
+    if(btn){btn.disabled=false;btn.textContent='Sign up';}
   }
 }
 /* 비밀번호 재설정 메일 */
 async function resetPw(email){
   if(!SBC)return;
-  if(!email){ offToast('이메일을 먼저 입력해 주세요'); return; }
+  if(!email){ offToast('Enter your email first'); return; }
   try{ const {error}=await SBC.auth.resetPasswordForEmail(email, {redirectTo:location.href}); if(error)throw error;
-    offToast('비밀번호 재설정 메일을 보냈어요'); }
+    offToast('Password reset email sent'); }
   catch(e){ offToast('메일 발송 실패 — 이메일을 확인해 주세요'); }
 }
 /* 기기에 저장된 로그인 토큰을 지운다.
@@ -2017,8 +2017,8 @@ async function logout(){ if(!SBC)return; try{ await SBC.auth.signOut(); }catch(e
    되돌릴 수 없는 동작이라 두 번 확인한다. */
 async function deleteAccount(){
   if(!SBC||!ME) return;
-  if(!await offConfirm('계정을 삭제하면 올린 로그·곡·사진이 모두 사라집니다.\n되돌릴 수 없어요. 계속할까요?','계속')) return;
-  if(!await offConfirm('정말 삭제할까요?\n이 작업은 취소할 수 없습니다.','삭제')) return;
+  if(!await offConfirm('계정을 삭제하면 올린 로그·곡·사진이 모두 사라집니다.\nThis can’t be undone. Continue?','Continue')) return;
+  if(!await offConfirm('정말 삭제할까요?\nThis action can’t be undone.','Delete')) return;
   offToast('계정을 삭제하는 중…');
   try{
     const r=await SBC.rpc('delete_my_account');
@@ -2074,7 +2074,7 @@ async function loadFollowList(id, kind){
     if(!ids.length){ FLCACHE[key]=[]; return []; }
     const p=await SBC.from('profiles').select('id,name,avatar_url,role').in('id', ids);
     const rows=(p&&p.data?p.data:[]).map(function(x){
-      return { id:x.id, aid:x.id, who:x.name||'익명', avatar:x.avatar_url||'', sub:roleKo(x.role)||'', c:'blue' };
+      return { id:x.id, aid:x.id, who:x.name||'Anonymous', avatar:x.avatar_url||'', sub:roleKo(x.role)||'', c:'blue' };
     });
     FLCACHE[key]=rows; return rows;
   }catch(e){ console.warn('[offlog] loadFollowList 실패', e); return []; }
@@ -2090,10 +2090,10 @@ async function loadProfile(id){
       followCounts(id)
     ]);
     const p=pr&&pr.data?pr.data:null;
-    const prof={ id:id, name:(p&&p.name)||'아티스트', avatar:(p&&p.avatar_url)||'',
+    const prof={ id:id, name:(p&&p.name)||'Artist', avatar:(p&&p.avatar_url)||'',
       role:(p&&p.role)||'artist', sns:{ig:(p&&p.sns_instagram)||'',yt:(p&&p.sns_youtube)||'',tt:(p&&p.sns_tiktok)||''},
       followers:fc.followers, following:fc.following,
-      tracks:(tr&&tr.data?tr.data:[]).map(function(t){ return {id:t.id, nm:t.title||'무제', audio:t.audio_url||'', cover:(t.cover_url&&/^https?:\/\//.test(t.cover_url))?t.cover_url:'', demo:!!t.is_demo, dt:(t.created_at||'').slice(0,10), likes:t.likes_count||0}; }) };
+      tracks:(tr&&tr.data?tr.data:[]).map(function(t){ return {id:t.id, nm:t.title||'Untitled', audio:t.audio_url||'', cover:(t.cover_url&&/^https?:\/\//.test(t.cover_url))?t.cover_url:'', demo:!!t.is_demo, dt:(t.created_at||'').slice(0,10), likes:t.likes_count||0}; }) };
     PROFCACHE[id]=prof; return prof;
   }catch(e){ console.warn('[offlog] loadProfile 실패', e); return null; }
 }
@@ -2141,34 +2141,34 @@ function splashScreen(){
 function authForm(){
   const su = S.authMode==='signup';
   const social =
-    `<button class="authbtn apple" id="authapple"><svg viewBox="0 0 384 512" aria-hidden="true"><path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg> Apple로 ${su?'가입':'계속'}</button>
-    <button class="authbtn" id="authgoogle"><b>G</b> Google로 ${su?'가입':'계속'}</button>
-    ${KAKAO_ON?`<button class="authbtn kakao" id="authkakao"><svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16"><path fill="currentColor" d="M12 3C6.48 3 2 6.48 2 10.8c0 2.76 1.84 5.18 4.6 6.56-.2.74-.74 2.7-.85 3.12-.13.52.19.51.4.37.17-.11 2.65-1.8 3.72-2.53.68.1 1.39.15 2.13.15 5.52 0 10-3.48 10-7.67C22 6.48 17.52 3 12 3z"/></svg> 카카오로 ${su?'가입':'계속'}</button>`:''}`;
+    `<button class="authbtn apple" id="authapple"><svg viewBox="0 0 384 512" aria-hidden="true"><path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg> Apple로 ${su?'Sign up':'Continue'}</button>
+    <button class="authbtn" id="authgoogle"><b>G</b> Google로 ${su?'Sign up':'Continue'}</button>
+    ${KAKAO_ON?`<button class="authbtn kakao" id="authkakao"><svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16"><path fill="currentColor" d="M12 3C6.48 3 2 6.48 2 10.8c0 2.76 1.84 5.18 4.6 6.56-.2.74-.74 2.7-.85 3.12-.13.52.19.51.4.37.17-.11 2.65-1.8 3.72-2.53.68.1 1.39.15 2.13.15 5.52 0 10-3.48 10-7.67C22 6.48 17.52 3 12 3z"/></svg> 카카오로 ${su?'Sign up':'Continue'}</button>`:''}`;
   /* 이메일 로그인은 기본으로 숨긴다 — 소셜 3버튼만 먼저. '다른 방법으로 로그인'을 눌러야 펼쳐진다 */
   if(!AUTHVALS.showEmail){
     return `${social}
-      <p class="agreenote">계속하면 <button type="button" class="authlink" id="opnterms">이용약관</button>에 동의하는 것으로 봅니다.</p>
+      <p class="agreenote">계속하면 <button type="button" class="authlink" id="opnterms">Terms</button>에 동의하는 것으로 봅니다.</p>
       <button type="button" class="authlink" id="authemailtoggle" style="margin-top:12px">다른 방법으로 로그인</button>`;
   }
   return `${social}
     <div class="authdiv"><span>또는 이메일</span></div>
-    ${su?`<input class="authinput" id="authname" type="text" autocomplete="name" placeholder="이름 (선택 — 나중에 바꿀 수 있어요)" value="${esc(AUTHVALS.name||'')}">`:''}
-    <input class="authinput" id="authemail" type="email" autocomplete="username" placeholder="이메일" value="${esc(AUTHVALS.email||'')}">
+    ${su?`<input class="authinput" id="authname" type="text" autocomplete="name" placeholder="Name (optional — you can change it later)" value="${esc(AUTHVALS.name||'')}">`:''}
+    <input class="authinput" id="authemail" type="email" autocomplete="username" placeholder="Email" value="${esc(AUTHVALS.email||'')}">
     <div class="authpwrow">
-      <input class="authinput" id="authpw" type="${AUTHVALS.showPw?'text':'password'}" autocomplete="${su?'new-password':'current-password'}" placeholder="비밀번호${su?' (6자 이상)':''}" value="${esc(AUTHVALS.pw||'')}">
-      <button type="button" class="authpweye" id="authpweye" aria-label="비밀번호 ${AUTHVALS.showPw?'숨기기':'보기'}">${AUTHVALS.showPw?'🙈':'👁'}</button></div>
+      <input class="authinput" id="authpw" type="${AUTHVALS.showPw?'text':'password'}" autocomplete="${su?'new-password':'current-password'}" placeholder="Password${su?' (6자 이상)':''}" value="${esc(AUTHVALS.pw||'')}">
+      <button type="button" class="authpweye" id="authpweye" aria-label="Password ${AUTHVALS.showPw?'숨기기':'보기'}">${AUTHVALS.showPw?'🙈':'👁'}</button></div>
     ${su
       ? `<div class="agree">
            <input type="checkbox" id="authagree">
-           <label for="authagree">만 14세 이상이며 <b>이용약관</b>에 동의합니다. 부적절한 콘텐츠와 괴롭힘에는 <b>무관용 원칙</b>이 적용됩니다.</label>
+           <label for="authagree">만 14세 이상이며 <b>Terms</b>에 동의합니다. 부적절한 콘텐츠와 괴롭힘에는 <b>무관용 원칙</b>이 적용됩니다.</label>
          </div>
          <button type="button" class="authlink agreelink" id="opnterms">약관 전문 보기</button>`
-      : `<p class="agreenote">계속하면 <button type="button" class="authlink" id="opnterms">이용약관</button>에 동의하는 것으로 봅니다.</p>`}
-    <button class="cs-post" id="authsubmit" style="margin-top:10px">${su?'가입하기':'로그인'}</button>
+      : `<p class="agreenote">계속하면 <button type="button" class="authlink" id="opnterms">Terms</button>에 동의하는 것으로 봅니다.</p>`}
+    <button class="cs-post" id="authsubmit" style="margin-top:10px">${su?'Sign up':'Log in'}</button>
     <div class="authalt">
-      ${su ? `이미 계정이 있나요? <button class="authlink" data-authmode="login">로그인</button>`
-           : `처음이신가요? <button class="authlink" data-authmode="signup">회원가입</button>
-              <span class="authsep">·</span><button class="authlink" id="authforgot">비밀번호 찾기</button>`}
+      ${su ? `이미 계정이 있나요? <button class="authlink" data-authmode="login">Log in</button>`
+           : `처음이신가요? <button class="authlink" data-authmode="signup">Sign up</button>
+              <span class="authsep">·</span><button class="authlink" id="authforgot">Forgot password</button>`}
     </div>`;
 }
 function lockScreen(){
@@ -2182,8 +2182,8 @@ function lockScreen(){
 function authSheet(){
   if(!S.auth) return '';
   return `<div class="cs-bd" id="authbd"><div class="cs">
-    <div class="cs-hd"><b>${S.authMode==='signup'?'회원가입':'로그인'}</b><button class="cs-x" id="authx" aria-label="닫기">✕</button></div>
-    <p style="color:var(--muted);font-size:12.5px;margin:0 2px 12px">${S.authMode==='signup'?'계정을 만들면 로그·곡이 계정에 저장돼 어느 기기에서나 보여요.':'로그인하면 내 페이지·팔로우·저장이 연동돼요.'}</p>
+    <div class="cs-hd"><b>${S.authMode==='signup'?'Sign up':'Log in'}</b><button class="cs-x" id="authx" aria-label="Close">✕</button></div>
+    <p style="color:var(--muted);font-size:12.5px;margin:0 2px 12px">${S.authMode==='signup'?'With an account your LOGs and songs follow you to any device.':'Log in to sync your page, follows and saves.'}</p>
     ${authForm()}
   </div></div>`;
 }
@@ -2192,12 +2192,12 @@ function saveSheet(){
   if(!S.saveTrack) return '';
   const t=S.saveTrack, mine=LISTS.filter(p=>p.mine);
   return `<div class="cs-bd" id="svbd"><div class="cs">
-    <div class="cs-hd"><b>담을 플레이리스트</b><button class="cs-x" id="svx" aria-label="닫기">✕</button></div>
+    <div class="cs-hd"><b>담을 플레이리스트</b><button class="cs-x" id="svx" aria-label="Close">✕</button></div>
     <div class="cs-trk">🎵 <b>${esc(t.nm)}</b> · ${esc(t.by)}</div>
     ${mine.length?mine.map(p=>{const has=(p.tracks||[]).some(x=>x.tid===t.tid);
       return `<button class="pkrow" data-savein="${p.id}"><span class="pknm"><b>${esc(p.nm)}</b><small>${(p.tracks||[]).length}곡</small></span>
-        <span style="margin-left:auto;color:${has?'var(--mint)':'var(--muted)'};font-weight:800">${has?'✓ 담김':'＋'}</span></button>`}).join(''):`<div class="pknote" style="padding:10px 0">아직 만든 플레이리스트가 없어요</div>`}
-    <button class="newlist" id="svnew" style="margin-top:8px">＋ 새 플레이리스트에 담기</button>
+        <span style="margin-left:auto;color:${has?'var(--mint)':'var(--muted)'};font-weight:800">${has?'✓ 담김':'＋'}</span></button>`}).join(''):`<div class="pknote" style="padding:10px 0">No playlists yet</div>`}
+    <button class="newlist" id="svnew" style="margin-top:8px">＋ Add to a new playlist</button>
   </div></div>`;
 }
 /* 로그 ⋯ 액션 메뉴 — 내 글=사진/데모 넣기, 남의 음악=공유/담기 */
@@ -2209,20 +2209,20 @@ function logMenuSheet(){
   const rows = M.kind==='addmedia'
     ? `<button class="pkrow" data-logshare="${M.id}"><span class="pknm"><b>⤴ 공유하기</b><small>링크로 공유하거나 복사</small></span></button>
        ${_ml?`<button class="pkrow" data-logedit="${M.id}"><span class="pknm"><b>✎ 수정하기</b><small>${_ml.t==='note'?'글 내용을 고쳐요':'설명(캡션)을 고쳐요'}</small></span></button>`:''}
-       ${_ml&&_ml.t==='note'?`<button class="pkrow" data-addkind="ph"><span class="pknm"><b>📷 사진 첨부하기</b><small>이 글이 사진 위 캡션이 돼요</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>`:''}
+       ${_ml&&_ml.t==='note'?`<button class="pkrow" data-addkind="ph"><span class="pknm"><b>📷 사진 첨부하기</b><small>This becomes the caption on the photo</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>`:''}
        ${_ml&&_ml.t==='snd'&&_ml.sid?`<button class="pkrow" data-demopick="${M.id}"><span class="pknm"><b>🎵 LOG 담기</b><small>이 데모가 만들어진 기록을 골라 담아요</small></span><span style="margin-left:auto;color:var(--mint);font-weight:800">${(typeof STREAM!=='undefined'?STREAM:[]).filter(x=>x&&x.demoOf===_ml.sid).length||'＋'}</span></button>`:''}
        ${_ml?`<button class="pkrow danger" data-logdel="${M.id}"><span class="pknm"><b>삭제하기</b><small>이 로그를 완전히 지워요</small></span></button>`:''}`
     /* 친구 로그(flog) — 플레이리스트 담기 없음(요청). 공유·팔로우만 */
     : M.kind==='flog'
-    ? `${M.aid&&!(ME&&M.aid===ME.id)?`<button class="pkrow" data-omenu="follow"><span class="pknm"><b>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'✓ 팔로잉':'＋ 팔로우'}</b><small>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'탭하면 팔로우 해제':(M.by||'이 아티스트')+' 팔로우하기'}</small></span></button>`:''}
+    ? `${M.aid&&!(ME&&M.aid===ME.id)?`<button class="pkrow" data-omenu="follow"><span class="pknm"><b>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'✓ Following':'＋ Follow'}</b><small>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'Tap to unfollow':(M.by||'this artist')+' Follow'}</small></span></button>`:''}
        <button class="pkrow" data-omenu="share"><span class="pknm"><b>⤴ 공유</b><small>링크로 공유하거나 복사</small></span></button>`
-    : `${M.aid?`<button class="pkrow" data-omenu="follow"><span class="pknm"><b>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'✓ 팔로잉':'＋ 팔로우'}</b><small>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'탭하면 팔로우 해제':(M.by||'이 아티스트')+' 팔로우하기'}</small></span></button>`:''}
-       <button class="pkrow" data-omenu="save"><span class="pknm"><b>＋ 내 플레이리스트에 담기</b></span><span style="margin-left:auto;color:var(--mint);font-weight:800">담기</span></button>
+    : `${M.aid?`<button class="pkrow" data-omenu="follow"><span class="pknm"><b>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'✓ Following':'＋ Follow'}</b><small>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'Tap to unfollow':(M.by||'this artist')+' Follow'}</small></span></button>`:''}
+       <button class="pkrow" data-omenu="save"><span class="pknm"><b>＋ Add to my playlist</b></span><span style="margin-left:auto;color:var(--mint);font-weight:800">Add</span></button>
        <button class="pkrow" data-omenu="share"><span class="pknm"><b>⤴ 공유</b><small>링크로 공유하거나 복사</small></span></button>`;
        /* 신고·차단 메뉴는 뺐다(요청) — 기존에 차단해둔 사람 해제는 계정 설정의 '차단한 사람' 목록에 남아 있다 */
   return `<div class="cs-bd" id="lmbd"><div class="cs">
-    <div class="cs-hd"><b>${M.kind==='addmedia'?'LOG 관리':(M.nm||'음악')}</b><button class="cs-x" id="lmx" aria-label="닫기">✕</button></div>
-    ${M.kind==='addmedia'||M.kind==='flog'?'':`<div class="cs-trk">🎵 <b>${M.nm||'음악'}</b>${M.by?' · '+M.by:''}</div>`}
+    <div class="cs-hd"><b>${M.kind==='addmedia'?'Manage LOG':(M.nm||'Music')}</b><button class="cs-x" id="lmx" aria-label="Close">✕</button></div>
+    ${M.kind==='addmedia'||M.kind==='flog'?'':`<div class="cs-trk">🎵 <b>${M.nm||'Music'}</b>${M.by?' · '+M.by:''}</div>`}
     ${rows}
   </div></div>`;
 }
@@ -2236,7 +2236,7 @@ function offConfirm(msg, okLabel){
     var bd=document.createElement('div');
     bd.className='ocf-bd';
     bd.innerHTML='<div class="ocf"><p class="ocf-msg">'+esc(msg)+'</p>'
-      +'<div class="ocf-btns"><button class="ocf-no">취소</button>'
+      +'<div class="ocf-btns"><button class="ocf-no">Cancel</button>'
       +'<button class="ocf-ok">'+esc(okLabel||'확인')+'</button></div></div>';
     function done(v){ try{ bd.remove(); }catch(_){} resolve(v); }
     bd.querySelector('.ocf-no').onclick=function(){ done(false); };
@@ -2267,7 +2267,7 @@ function showDiag(){
   let store='OK';
   try{ localStorage.setItem('_d','1'); localStorage.removeItem('_d'); }
   catch(e){ store='막힘 ('+(e&&e.name||'?')+')'; }
-  let sess='없음';
+  let sess='None';
   try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i);
     if(k&&/^sb-.*-auth-token$/.test(k)) sess='있음'; } }catch(_){}
   /* 레이아웃 실측 — 하단바가 화면 밖으로 넘치는지, 안전영역이 실제로 들어오는지 */
@@ -2283,15 +2283,15 @@ function showDiag(){
     ['UA', navigator.userAgent||''],
     ['주소', location.href],
     ['화면', window.innerWidth+'×'+window.innerHeight],
-    ['이 화면의 재생버튼', _btns.length?_btns.join('  ·  '):'없음'],
+    ['이 화면의 재생버튼', _btns.length?_btns.join('  ·  '):'None'],
     ['안전영역 위/아래', _envInset('top')+'px / '+_envInset('bottom')+'px'+
       (_envInset('top')===0&&_envInset('bottom')===0?'  ⚠️ 둘 다 0 = 앱이 안전영역 값을 안 넘겨줌':'')],
     ['하단바(nav)', nv?('높이 '+Math.round(nv.height)+' · 아래끝 '+Math.round(nv.bottom)+
       ' · 화면밖으로 '+Math.round(nv.bottom-window.innerHeight)+'px'+
-      (nv.bottom-window.innerHeight>1?'  ⚠️ 잘림':'  ✅')):'없음'],
-    ['screen 여백 위/아래', sc?(sc.paddingTop+' / '+sc.paddingBottom):'없음'],
+      (nv.bottom-window.innerHeight>1?'  ⚠️ 잘림':'  ✅')):'None'],
+    ['screen 여백 위/아래', sc?(sc.paddingTop+' / '+sc.paddingBottom):'None'],
     ['스크롤', _scr?(_scr.scrollHeight>_scr.clientHeight+1?'가능':'내용이 화면보다 짧음')+
-      ' · 잠금 '+(_scr.classList.contains('locked')?'⚠️걸림':'없음'):'없음'],
+      ' · 잠금 '+(_scr.classList.contains('locked')?'⚠️걸림':'None'):'None'],
     ['저장소 / 세션', store+' / '+sess],
     ['플로우', (SBC&&SBC.auth&&SBC.auth.flowType)||'?'],
     ['standalone / 터치', String(navigator.standalone)+' / '+navigator.maxTouchPoints]
@@ -2311,7 +2311,7 @@ function showDiag(){
 function termsSheet(){
   if(!S.terms) return '';
   return `<div class="cs-bd" id="tmbd"><div class="cs tall">
-    <div class="cs-hd"><b>이용약관</b><button class="cs-x" id="tmx" aria-label="닫기">✕</button></div>
+    <div class="cs-hd"><b>Terms</b><button class="cs-x" id="tmx" aria-label="Close">✕</button></div>
     <div class="tmbody">
       <h4>1. 무관용 원칙</h4>
       <p>OFFLOG는 부적절한 콘텐츠와 괴롭히는 이용자에 대해 <b>무관용 원칙</b>을 적용합니다.
@@ -2319,16 +2319,16 @@ function termsSheet(){
          계정 이용이 영구히 중단됩니다.</p>
       <h4>2. 금지되는 콘텐츠</h4>
       <p>· 욕설·비하·차별·괴롭힘<br>· 선정적이거나 폭력적인 내용<br>· 타인의 저작물 무단 게시<br>
-         · 스팸·광고·사기<br>· 타인의 개인정보 게시<br>· 그 밖에 법령을 위반하는 내용</p>
+         · Spam / ads·사기<br>· 타인의 개인정보 게시<br>· 그 밖에 법령을 위반하는 내용</p>
       <h4>3. 신고와 차단</h4>
       <p>모든 글과 음악에는 신고 기능이 있습니다. 다른 이용자를 차단하면 그 사람의 콘텐츠가
          즉시 보이지 않습니다. 여러 명이 신고한 콘텐츠는 자동으로 숨겨집니다.</p>
       <h4>4. 내가 올린 것에 대한 책임</h4>
       <p>올린 콘텐츠에 대한 책임은 올린 사람에게 있습니다. 본인이 만들었거나 올릴 권리가 있는 것만 올려주세요.</p>
       <h4>5. 계정과 데이터</h4>
-      <p>언제든지 <b>My → 계정 → 계정 삭제</b>에서 계정과 올린 데이터를 완전히 삭제할 수 있습니다.</p>
+      <p>언제든지 <b>My → 계정 → Delete account</b>에서 계정과 올린 데이터를 완전히 삭제할 수 있습니다.</p>
       <h4>6. 문의</h4>
-      <p>신고·문의: whichday@naver.com</p>
+      <p>Report·문의: whichday@naver.com</p>
     </div>
   </div></div>`;
 }
@@ -2359,19 +2359,19 @@ function badWordIn(text){
          서로 다른 3명이 신고하면 hidden_targets() 가 잡아 모두에게서 감춰진다.
    차단: blocks 에 남고, 그 사람 콘텐츠가 피드에서 바로 사라진다. */
 const REPORT_REASONS=[
-  ['spam','스팸·광고'],
-  ['abuse','욕설·괴롭힘'],
-  ['sexual','선정적인 내용'],
-  ['violence','폭력적인 내용'],
-  ['copyright','저작권 침해'],
-  ['etc','기타']
+  ['spam','Spam / ads'],
+  ['abuse','Abuse / harassment'],
+  ['sexual','Sexual content'],
+  ['violence','Violence'],
+  ['copyright','Copyright'],
+  ['etc','Other']
 ];
 function reportSheet(){
   if(!S.report) return '';
   const R=S.report;
   return `<div class="cs-bd" id="rpbd"><div class="cs">
-    <div class="cs-hd"><b>신고하기</b><button class="cs-x" id="rpx" aria-label="닫기">✕</button></div>
-    <p style="color:var(--muted);font-size:12.5px;margin:0 2px 12px">${esc(R.nm||'이 콘텐츠')}를 신고합니다. 사유를 골라주세요.</p>
+    <div class="cs-hd"><b>Report</b><button class="cs-x" id="rpx" aria-label="Close">✕</button></div>
+    <p style="color:var(--muted);font-size:12.5px;margin:0 2px 12px">Report ${esc(R.nm||'this content')}. Pick a reason.</p>
     ${REPORT_REASONS.map(r=>`<button class="pkrow" data-rpreason="${r[0]}"><span class="pknm"><b>${esc(r[1])}</b></span></button>`).join('')}
     <p class="rulen" style="text-align:left;margin:12px 4px 0">신고하면 이 콘텐츠는 내 화면에서 바로 사라집니다. 여러 명이 신고하면 모두에게서 숨겨지고, 운영자가 24시간 안에 확인합니다.</p>
   </div></div>`;
@@ -2384,31 +2384,31 @@ async function submitReport(reason){
   /* 내 화면에서는 서버 응답을 기다리지 않고 바로 감춘다 */
   if(id) MYREPORTS.add(tKey(kind,id));
   render();
-  if(!ME||!SBC||!SAFETYTABLE){ offToast('신고를 접수했어요 — 이 콘텐츠는 이제 안 보입니다'); return; }
+  if(!ME||!SBC||!SAFETYTABLE){ offToast('Reported — you won’t see this content again'); return; }
   try{
     const r=await SBC.from('reports').insert({
       reporter_id:ME.id, target_kind:kind, target_id:id||null,
       target_user:R.aid||null, reason:reason||'etc'
     });
     if(r.error) throw r.error;
-    offToast('신고했어요 — 운영자가 확인합니다');
+    offToast('Reported — our team will review it');
   }catch(e){
     console.warn('[offlog] 신고 저장 실패', e);
     if(e&&(e.code==='PGRST205'||e.code==='42P01')){ SAFETYTABLE=false;
-      offToast('신고를 접수했어요 — 이 콘텐츠는 이제 안 보입니다'); return; }
+      offToast('Reported — you won’t see this content again'); return; }
     offToast('신고가 서버에 저장되지 않았어요 — 이 기기에서는 숨겨집니다');
   }
 }
 async function toggleBlock(aid, who){
   if(!aid) return;
   if(!ME){ S.logMenu=null; render(); return needLogin(); }
-  if(ME && aid===ME.id){ offToast('자기 자신은 차단할 수 없어요'); return; }
+  if(ME && aid===ME.id){ offToast('You can’t block yourself'); return; }
   const on=MYBLOCKS.has(aid);
-  if(!on && !await offConfirm((who||'이 사람')+'을(를) 차단할까요?\n이 사람의 글이 바로 안 보이게 됩니다.','차단')) return;
+  if(!on && !await offConfirm((who||'this person')+'을(를) 차단할까요?\n이 사람의 글이 바로 안 보이게 됩니다.','Block')) return;
   /* 화면부터 즉시 반영 — 차단은 바로 사라져야 한다 */
   if(on) MYBLOCKS.delete(aid); else MYBLOCKS.add(aid);
   S.logMenu=null; render();
-  offToast(on?'차단을 해제했어요':'차단했어요 — 이제 이 사람의 글이 보이지 않습니다');
+  offToast(on?'차단을 해제했어요':'Blocked — you won’t see their posts');
   if(!ME||!SBC||!SAFETYTABLE) return;
   try{
     const r = on ? await SBC.from('blocks').delete().eq('blocker_id',ME.id).eq('blocked_id',aid)
@@ -2544,7 +2544,7 @@ function studioSave(){
       }).length;
       if(lost) offToast('저장 공간이 부족해 사진·소리 '+lost+'개가 이 기기에서 지워졌어요 — 로그인하면 서버에 보관됩니다');
       if(!(ME&&SBC)) offToast('사진은 로그인해야 영구 저장돼요');
-    }catch(e2){ console.warn('[studio] save 실패', e2); offToast('저장 공간이 부족해요 — 오래된 로그를 정리해 주세요'); }
+    }catch(e2){ console.warn('[studio] save 실패', e2); offToast('Storage is full — clear out old LOGs'); }
   }
 }
 function _dedupById(arr){ var seen={}, out=[]; arr.forEach(function(x){ if(!x)return; var k=x.id; if(k!=null&&seen[k])return; if(k!=null)seen[k]=1; out.push(x); }); return out; }
@@ -2616,7 +2616,7 @@ const MAX_UP={ph:10*1024*1024, vid:45*1024*1024, aud:45*1024*1024};
 function tooBigToUpload(file, kind){
   const lim=MAX_UP[kind]||MAX_UP.vid;
   if(!file || file.size<=lim) return false;
-  const nm=kind==='ph'?'사진':(kind==='aud'?'음원':'영상');
+  const nm=kind==='ph'?'Photo':(kind==='aud'?'Track':'Video');
   offToast(nm+'이 너무 커요 ('+(file.size/1048576).toFixed(1)+'MB) — '+Math.round(lim/1048576)+'MB 이하로 올려주세요');
   return true;
 }
@@ -2731,7 +2731,7 @@ function _rowToLog(x){
   const base={id:'sv_'+x.id, sid:x.id, at:ts.slice(11,16), dt:ts.slice(0,10),
               vis:x.visibility||'private', side:'l', work:x.work_id||null, act:x.activity||null,
               demoOf:x.demo_id||null};   /* 이 로그가 담긴 데모(logs.id) — 데모의 history */
-  if(x.kind==='ph')  return Object.assign(base,{t:'ph',  cap:x.caption||'사진', media:x.media_url||'',
+  if(x.kind==='ph')  return Object.assign(base,{t:'ph',  cap:x.caption||'Photo', media:x.media_url||'',
                         bg:x.media_url?('center/cover no-repeat url('+x.media_url+')'):'#141418'});
   if(x.kind==='vid') return Object.assign(base,{t:'vid', cap:x.caption||'', media:x.media_url||'', src:x.media_url||''});
   if(x.kind==='snd') return Object.assign(base,{t:'snd', nm:x.caption||'데모', dur:x.duration||'', media:x.media_url||'', audio:x.media_url||''});
@@ -2777,7 +2777,7 @@ async function followArtist(aid){
     /* 방금 팔로우한 사람의 로그가 바로 피드에 들어오게 — 스로틀 무시하고 즉시 재로드 */
     loadFriendLogs(true).then(function(got){ if(got){ S.feed=buildFeed(); if(S.view==='home'){ try{render();}catch(_){} } } });
     return true;
-  }catch(e){ console.warn('[offlog] follow 실패', e); offToast('저장 실패 — 잠시 후 다시'); return false; }
+  }catch(e){ console.warn('[offlog] follow 실패', e); offToast('Couldn’t save — try again shortly'); return false; }
 }
 async function unfollowArtist(aid){
   if(!aid){ return false; }
@@ -2788,7 +2788,7 @@ async function unfollowArtist(aid){
     MYFOLLOWS.delete(aid); flcacheClear();
     try{render();}catch(_){}   /* 팔로잉 숫자 즉시 갱신 */
     return true;
-  }catch(e){ console.warn('[offlog] unfollow 실패', e); offToast('저장 실패 — 잠시 후 다시'); return false; }
+  }catch(e){ console.warn('[offlog] unfollow 실패', e); offToast('Couldn’t save — try again shortly'); return false; }
 }
 async function toggleReact(tid, kind){
   if(!tid){ return; }
@@ -2810,7 +2810,7 @@ async function toggleReact(tid, kind){
     /* 진짜 실패 → 낙관적 토글 되돌리고 화면 복구(DB와 어긋나지 않게) */
     if(had) set.add(kind); else set.delete(kind);
     if(typeof render==='function') render();
-    console.warn('[offlog] react 실패', e); offToast('반응 저장 실패 — 잠시 후 다시');
+    console.warn('[offlog] react 실패', e); offToast('Couldn’t save your reaction — try again shortly');
   }
 }
 
@@ -2832,12 +2832,12 @@ async function loadComments(logId, force){
     const names={};
     if(need.length){
       const pr=await SBC.from('profiles').select('id,name,avatar_url').in('id',need);
-      (pr.data||[]).forEach(p=>{ names[p.id]={nm:p.name||'익명', av:p.avatar_url||''};
+      (pr.data||[]).forEach(p=>{ names[p.id]={nm:p.name||'Anonymous', av:p.avatar_url||''};
         if(p.name){ AIDBYNAME[p.name]=p.id; if(p.avatar_url) AVBYNAME[p.name]=p.avatar_url; } });
     }
     const p2=x=>String(x).padStart(2,'0');
     CMTS[logId]=rows.map(x=>{ const d=new Date(x.created_at);
-      return {id:x.id, aid:x.author_id, who:(names[x.author_id]&&names[x.author_id].nm)||'익명',
+      return {id:x.id, aid:x.author_id, who:(names[x.author_id]&&names[x.author_id].nm)||'Anonymous',
               av:(names[x.author_id]&&names[x.author_id].av)||'', body:x.body,
               at:p2(d.getMonth()+1)+'.'+p2(d.getDate())+' '+p2(d.getHours())+':'+p2(d.getMinutes()),
               mine:!!(ME&&x.author_id===ME.id)}; });
@@ -2860,7 +2860,7 @@ async function addComment(logId, body){
   if(!ME) { needLogin(); return false; }
   body=String(body||'').trim();
   if(!body) return false;
-  if(badWordIn(body)){ offToast('부적절한 표현이 있어 올릴 수 없어요'); return false; }
+  if(badWordIn(body)){ offToast('Contains inappropriate language — can’t post'); return false; }
   try{
     const r=await SBC.from('log_comments').insert({log_id:logId, author_id:ME.id, body:body}).select('id,created_at').maybeSingle();
     if(r.error) throw r.error;
@@ -2872,7 +2872,7 @@ async function addComment(logId, body){
     return true;
   }catch(e){
     if(e&&(e.code==='PGRST205'||e.code==='42P01')){ CMTTABLE=false; offToast('댓글 기능을 준비 중이에요'); return false; }
-    console.warn('[offlog] 댓글 저장 실패', e); offToast('댓글 저장 실패 — 잠시 후 다시'); return false;
+    console.warn('[offlog] 댓글 저장 실패', e); offToast('Couldn’t post the comment — try again shortly'); return false;
   }
 }
 async function deleteComment(logId, cid){
@@ -2882,7 +2882,7 @@ async function deleteComment(logId, cid){
   arr.splice(i,1); CMTCOUNT[logId]=arr.length; render();
   try{ const r=await SBC.from('log_comments').delete().eq('id',cid); if(r.error) throw r.error; return true; }
   catch(e){ arr.splice(i,0,bak); CMTCOUNT[logId]=arr.length; render();
-    console.warn('[offlog] 댓글 삭제 실패', e); offToast('삭제 실패 — 잠시 후 다시'); return false; }
+    console.warn('[offlog] 댓글 삭제 실패', e); offToast('Couldn’t delete — try again shortly'); return false; }
 }
 /* 피드에 보이는 로그들의 댓글 수를 한 번에 — 카드마다 "댓글 n"을 정확히 보여주려고 */
 async function loadCommentCounts(logIds){
@@ -3061,9 +3061,9 @@ function streamOrder(arr){
    curated = 우리가 후보를 올린다. 신청 못 함. 테마로 묶는다.
    open    = 아티스트가 신청해서 후보가 된다. 득표가 무대를 연다.   */
 let ROUNDS=[
-  {id:'jul', nm:'7월 발매 음악', cat:'music', type:'curated', by:'OFFLOG 선정',
-   sub:'이번 달 나온 곡 중에서', prize:'상위 20곡이 이번 달 플레이리스트에 실립니다', slot:20, minVotes:10, perUser:3,
-   what:'이번 달 발매된 곡 중 최고를 뽑는 라운드입니다',
+  {id:'jul', nm:'July Releases', cat:'music', type:'curated', by:'OFFLOG picks',
+   sub:'From this month’s releases', prize:'Top 20 make this month’s playlist', slot:20, minVotes:10, perUser:3,
+   what:'The best of this month’s releases',
    end:Date.now()+6*864e5+12*36e5+33*6e4, applied:null,
    cands:[
      {t:['Summer Rain','PEEK'], s:'hex', c:'blue', v:88, x:34, y:1, bd:'7.1s'},
@@ -3073,9 +3073,9 @@ let ROUNDS=[
      {t:['반짝映','현수윤'], s:'hex', c:'purple', v:47, x:62, y:42, bd:'6.5s'},
      {t:['도자기','조예만'], s:'circle', c:'coral', v:31, x:8, y:58, bd:'7.3s'},
    ]},
-  {id:'rp', nm:'레드 포인트', cat:'stage', type:'open', by:'신청 받는 중',
-   sub:'레드포인트 200석 · 90분', prize:'1위가 레드포인트 단독 공연을 가져갑니다', slot:1, minVotes:10, perUser:3,
-   what:'1위가 레드포인트(200석 공연장)에서 단독 공연을 엽니다',
+  {id:'rp', nm:'Red Point', cat:'stage', type:'open', by:'Open for entries',
+   sub:'Red Point · 200 seats · 90 min', prize:'No.1 headlines Red Point', slot:1, minVotes:10, perUser:3,
+   what:'No.1 headlines Red Point (200-seat venue)',
    end:Date.now()+14*864e5+14*36e5+48*6e4, applied:'Summer Rain',
    cands:[
      {me:1, t:['Summer Rain','PEEK'], s:'circle', c:'coral', v:210, x:33, y:60, bd:'7.2s'},
@@ -3087,8 +3087,8 @@ let ROUNDS=[
      {t:['도자기','조예만'], s:'circle', c:'yellow', v:22, x:2, y:52, bd:'6.9s'},
      {t:['이런일이 생기면','SMHS'], s:'circle', c:'shpink', v:19, x:33, y:56, bd:'7.2s'},
    ]},
-  {id:'gh', nm:'8월 공감홀 쇼케이스', cat:'stage', type:'open', by:'신청 받는 중',
-   sub:'공감홀 60석 · 60분', prize:'상위 4팀이 8월 공감홀 무대에 오릅니다', slot:4, minVotes:10, perUser:3,
+  {id:'gh', nm:'August Gonggam Hall Showcase', cat:'stage', type:'open', by:'Open for entries',
+   sub:'Gonggam Hall · 60 seats · 60 min', prize:'상위 4팀이 8월 공감홀 무대에 오릅니다', slot:4, minVotes:10, perUser:3,
    what:'상위 4팀이 공감홀(60석 소극장) 쇼케이스 무대에 섭니다',
    end:Date.now()+32*864e5+3*36e5+11*6e4, applied:null,
    cands:[
@@ -3096,9 +3096,9 @@ let ROUNDS=[
      {t:['푸가','전아름'], s:'circle', c:'green', v:11, x:58, y:24, bd:'6.7s'},
      {t:['미로','MINLEE'], s:'star', c:'blue', v:9, x:14, y:44, bd:'7.9s'},
    ]},
-  {id:'sep', nm:'9월 공연 음원', cat:'music', type:'curated', by:'OFFLOG 선정',
-   sub:'9월 무대에 올릴 곡', prize:'상위 5곡이 9월 합동 공연 셋리스트에 오릅니다', slot:5, minVotes:10, perUser:3,
-   what:'상위 5곡이 9월 합동 공연 셋리스트에 오릅니다',
+  {id:'sep', nm:'September Show Tracks', cat:'music', type:'curated', by:'OFFLOG picks',
+   sub:'Songs for the September stage', prize:'Top 5 join the September setlist', slot:5, minVotes:10, perUser:3,
+   what:'Top 5 join the September setlist',
    end:Date.now()+21*864e5+7*36e5+2*6e4, applied:null,
    cands:[
      {t:['Moonlight','PEEK'], s:'circle', c:'purple', v:43, x:32, y:6, bd:'7.4s'},
@@ -3107,9 +3107,9 @@ let ROUNDS=[
      {t:['링크크','박하람'], s:'hex', c:'blue', v:17, x:44, y:54, bd:'7.1s'},
    ]},
   /* entrySrc:'perf' — 발매곡이 아니라 팀 신청서(perf_entries 테이블)로 후보가 채워지는 라운드 */
-  {id:'sc2026', nm:'2026 쇼케이스', cat:'stage', type:'open', entrySrc:'perf', by:'신청 받는 중',
-   sub:'팀 단위 신청 · 영상 심사', prize:'상위 4팀이 2026 쇼케이스 무대에 오릅니다', slot:4, minVotes:10, perUser:3,
-   what:'팀명·참가자·영상을 올리고, 투표로 무대에 오릅니다',
+  {id:'sc2026', nm:'2026 Showcase', cat:'stage', type:'open', entrySrc:'perf', by:'Open for entries',
+   sub:'Team entry · Video review', prize:'Top 4 teams take the 2026 Showcase stage', slot:4, minVotes:10, perUser:3,
+   what:'Submit your team, members and video — vote your way onto the stage',
    end:Date.now()+45*864e5, applied:null, cands:[]},
 ];
 const curRound = ()=>ROUNDS.find(r=>r.id===S.round)||ROUNDS[0];
@@ -3118,13 +3118,13 @@ const curRound = ()=>ROUNDS.find(r=>r.id===S.round)||ROUNDS[0];
    투표가 아니라 지원작을 브랜드가 직접 검토하는 게시판이라 votes_count가 없다.
    type: 'audio'(음원 파일 업로드) | 'video'(영상 URL). 내리려면 배열에서 지우면 된다(YAGNI) */
 let PROJECTS=[
-  {id:'proj_yesa', brand:'예사 × MAMAMOO', who:'예사', what:'리믹스 컴피티션 — 나만의 리믹스를 보내요',
+  {id:'proj_yesa', brand:'예사 × MAMAMOO', who:'YESA', what:'Remix competition — send us your remix',
    type:'audio', end:Date.now()+30*864e5},
-  {id:'proj_minlee', brand:'AMinlee Project', who:'글로벌 DJ 민리', what:'함께 작곡할 친구를 구해요',
+  {id:'proj_minlee', brand:'AMinlee Project', who:'Global DJ MINLEE', what:'Looking for a co-writer',
    type:'audio', end:Date.now()+30*864e5},
-  {id:'proj_kwon', brand:'권연수', who:'국내 DJ 권연수', what:'협업할 작곡가를 구해요',
+  {id:'proj_kwon', brand:'Kwon Yeonsu', who:'DJ Kwon Yeonsu', what:'Looking for a producer to collaborate',
    type:'audio', end:Date.now()+30*864e5},
-  {id:'proj_ena', brand:'ENA', who:'9월 2일 방송', what:'출연할 엑스트라(기타 연주) 파트를 구해요',
+  {id:'proj_ena', brand:'ENA', who:'Airing Sept 2', what:'Casting an extra — guitar part',
    type:'video', end:Date.now()+14*864e5},
 ];
 
@@ -3136,8 +3136,8 @@ function minVotes(r){ return (r&&r.minVotes!=null)?r.minVotes:10; }
 function slotLine(r){
   if(!r) return '';
   const n=slotN(r);
-  if(r.cat==='music') return '상위 '+n+'곡이 선정됩니다';
-  return n===1 ? '1위가 무대를 가져갑니다' : ('상위 '+n+'팀이 무대에 오릅니다');
+  if(r.cat==='music') return 'Top '+n+' songs are picked';
+  return n===1 ? 'No.1 takes the stage' : ('Top '+n+' teams take the stage');
 }
 /* 자격선 넘긴 후보만 득표순 정렬 → 순위 배열 */
 function ranked(r){
@@ -3228,7 +3228,7 @@ function eventBanner(){
   const b=items[_bnI];
   /* bare = 글자가 이미지 안에 이미 그려진 배너(흰 발매 배너 등) — 어둡게 덮는 막과
      흰 글씨 오버레이를 빼고 이미지를 그대로 보여준다 */
-  return `<div class="evbn${b.bare?' bare':''}" data-evbn="${b.k}:${b.id}" role="button" tabindex="0" aria-label="${esc(b.nm)} 자세히">
+  return `<div class="evbn${b.bare?' bare':''}" data-evbn="${b.k}:${b.id}" role="button" tabindex="0" aria-label="${esc(b.nm)} Details">
     <img class="evbimg" src="${safeUrl(b.img)}" alt="" decoding="async">
     ${b.bare?'':'<span class="evbveil"></span>'}
     <span class="evbtop"><span class="evbtag ${b.c}">${b.tag}</span></span>
@@ -3239,8 +3239,8 @@ function eventBanner(){
     <span class="evbdots">${items.map((_,i)=>`<i class="${i===_bnI?'on':''}" data-evbgo="${i}"></i>`).join('')}</span>
     <!-- 좌우 탭 = 이전/다음. 화살표를 실제로 그려준다 — 투명 버튼만 깔아두면
          넘길 수 있다는 걸 알 방법이 없어서 아무도 안 쓴다 -->
-    <button class="evbnav prev" data-evbstep="-1" aria-label="이전 이벤트"><i>‹</i></button>
-    <button class="evbnav next" data-evbstep="1" aria-label="다음 이벤트"><i>›</i></button>
+    <button class="evbnav prev" data-evbstep="-1" aria-label="Previous event"><i>‹</i></button>
+    <button class="evbnav next" data-evbstep="1" aria-label="Next event"><i>›</i></button>
   </div>`;
 }
 /* 2초 간격으로 갈아끼우는데 이미지가 그때 받아지기 시작하면 한 박자 비어 보인다.
@@ -3391,16 +3391,16 @@ function storyViewer(){
       <span class="svgo" data-svprof="${s.who}" data-paid="${s.aid||''}">
         ${avatarEl(s.av||avOf(s.who), s.c, 28, s.who)}<b>${s.who}</b></span>
       <span class="tm">${it.at}</span>
-      <button class="svmore" data-sharemenu="${it.tid||''}" data-snm="${(it.cap||s.who||'').replace(/"/g,'&quot;')}" data-sby="${(s.who||'').replace(/"/g,'&quot;')}" data-saud="${it.audio||''}" data-said="${s.aid||''}" aria-label="공유·담기·팔로우">⋯</button>
-      <button class="svclose" id="svclose" aria-label="닫기">✕</button></div>
+      <button class="svmore" data-sharemenu="${it.tid||''}" data-snm="${(it.cap||s.who||'').replace(/"/g,'&quot;')}" data-sby="${(s.who||'').replace(/"/g,'&quot;')}" data-saud="${it.audio||''}" data-said="${s.aid||''}" aria-label="Share·Add·Follow">⋯</button>
+      <button class="svclose" id="svclose" aria-label="Close">✕</button></div>
     <div class="svbody">${content}
       <button class="svtap l" id="svtapl" aria-label="이전"></button>
       <button class="svtap r" id="svtapr" aria-label="다음"></button></div>
     <div class="svrx">
-      <button class="shape rbtn" data-emo="소름" aria-label="소름">${shape('tri',c('green'),24)}</button>
-      <button class="shape rbtn" data-emo="루프" aria-label="루프">${shape('circle',c('shpink'),24)}</button>
-      <button class="shape rbtn" data-emo="울컥" aria-label="울컥">${shape('diamond',c('blue'),24)}</button>
-      <button class="shape rbtn" data-emo="최고" aria-label="최고">${shape('star',c('yellow'),24)}</button>
+      <button class="shape rbtn" data-emo="Chills" aria-label="Chills">${shape('tri',c('green'),24)}</button>
+      <button class="shape rbtn" data-emo="On repeat" aria-label="On repeat">${shape('circle',c('shpink'),24)}</button>
+      <button class="shape rbtn" data-emo="Moved" aria-label="Moved">${shape('diamond',c('blue'),24)}</button>
+      <button class="shape rbtn" data-emo="Best" aria-label="Best">${shape('star',c('yellow'),24)}</button>
       <span class="rxn svrxn" data-n="0">0</span></div>
   </div>`;
 }
@@ -3448,6 +3448,7 @@ function logsOnDate(dateStr){   /* 그날 = 내 로그 + 맞팔 친구 로그 (�
 }
 /* 월별 캘린더(그리드) — SETLOG 스타일. 기본은 얇은 바로 접혀 있고(로그가 바로 보이게),
    탭하면 펼쳐진다. 로그 있는 날엔 점, 오늘/선택 강조 */
+const MONTHS_EN=['January','February','March','April','May','June','July','August','September','October','November','December'];
 function calMonth(){
   const today=new Date(), tIso=_isoDay(today);
   const ym = S.calMonth || tIso.slice(0,7);
@@ -3456,8 +3457,8 @@ function calMonth(){
   /* 접힘 — 얇은 바만. 그리드/인덱스 계산도 안 함(가벼움) */
   if(!S.calOpen){
     return `<div class="calmon">
-      <button class="cmbar" data-caltoggle="1"><span class="cmlabel">🗓 ${yy}년 ${mm}월${sel}</span><span class="cmchev">▾</span></button>
-      ${S.calDate?`<button class="cmclearbar" data-caldate="">전체 보기 ✕</button>`:''}</div>`;
+      <button class="cmbar" data-caltoggle="1"><span class="cmlabel">🗓 ${MONTHS_EN[+mm-1]} ${yy}${sel}</span><span class="cmchev">▾</span></button>
+      ${S.calDate?`<button class="cmclearbar" data-caldate="">Show all ✕</button>`:''}</div>`;
   }
   /* 펼침 — 달력 그리드 */
   const startDow=new Date(yy, mm-1, 1).getDay();
@@ -3465,7 +3466,7 @@ function calMonth(){
   const idx=(window.__calIndex&&window.__calIndex())||{};
   const have={}; (typeof STREAM!=='undefined'?STREAM:[]).forEach(l=>{ if(l.dt)have[l.dt]=1; });
   Object.keys(idx).forEach(d=>{ if((idx[d]||[]).length)have[d]=1; });
-  const WD=['일','월','화','수','목','금','토'];
+  const WD=['S','M','T','W','T','F','S'];
   let cells='';
   for(let i=0;i<startDow;i++) cells+=`<span class="cmday empty"></span>`;
   for(let d=1;d<=dim;d++){ const di=ym+'-'+String(d).padStart(2,'0');
@@ -3474,11 +3475,11 @@ function calMonth(){
   /* 접힘과 동일한 바 구조 — 화살표(▴/▾)가 항상 같은 오른쪽 끝에 있어야 위치가 안 흔들린다.
      달 이동(‹ ›)은 바 아래 줄로 내려 접힘/펼침 사이에 공통 요소만 같은 자리에 남긴다. */
   return `<div class="calmon open">
-    <button class="cmbar" data-caltoggle="1"><span class="cmlabel">🗓 ${yy}년 ${mm}월${sel}</span><span class="cmchev">▴</span></button>
-    <div class="cmhd"><button class="cmnav" data-calmo="-1" aria-label="이전 달">‹</button>
+    <button class="cmbar" data-caltoggle="1"><span class="cmlabel">🗓 ${MONTHS_EN[+mm-1]} ${yy}${sel}</span><span class="cmchev">▴</span></button>
+    <div class="cmhd"><button class="cmnav" data-calmo="-1" aria-label="Previous month">‹</button>
       <span class="cmhdlab">${yy}. ${String(mm).padStart(2,'0')}</span>
-      <button class="cmnav" data-calmo="1" aria-label="다음 달">›</button>
-      ${S.calDate?`<button class="cmclear" data-caldate="">전체</button>`:''}</div>
+      <button class="cmnav" data-calmo="1" aria-label="Next month">›</button>
+      ${S.calDate?`<button class="cmclear" data-caldate="">All</button>`:''}</div>
     <div class="cmgrid cmwd">${WD.map((w,i)=>`<span class="cmw${i===0?' sun':i===6?' sat':''}">${w}</span>`).join('')}</div>
     <div class="cmgrid">${cells}</div>
   </div>`;
@@ -3506,14 +3507,14 @@ function home(){
       });
       rows=recos.slice(0,6);
     }
-    if(!rows.length) return `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">아직 팔로우한 사람의 로그가 없어요.</div>`;
-    return `<div class="pknote" style="padding:20px 8px 10px;text-align:center;line-height:1.7">아직 팔로우한 사람의 로그가 없어요.<br>${withPeek?'요즘 기록 중인 사람들이에요':'이 아티스트들부터 팔로우해 보세요'}</div>
+    if(!rows.length) return `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">No LOGs from people you follow yet.</div>`;
+    return `<div class="pknote" style="padding:20px 8px 10px;text-align:center;line-height:1.7">No LOGs from people you follow yet.<br>${withPeek?'People logging right now':'Start by following these artists'}</div>
       ${rows.map(a=>`<div class="recorow">
-        <button class="recogo" data-prof="${esc(a.nm)}" data-paid="${a.aid||''}" aria-label="${esc(a.nm)} 프로필 보기">
+        <button class="recogo" data-prof="${esc(a.nm)}" data-paid="${a.aid||''}" aria-label="${esc(a.nm)}’s profile">
           <span class="recoav">${avatarEl(a.av||avOf(a.nm), 'blue', 38, a.nm)}</span>
           <span class="reconm"><b>${esc(a.nm)}</b>${a.peek?`<small>${esc(a.peek)}</small>`:''}</span>
         </button>
-        <button class="fol recofol" data-recofollow="${a.aid}" data-reconm="${esc(a.nm)}">팔로우</button>
+        <button class="fol recofol" data-recofollow="${a.aid}" data-reconm="${esc(a.nm)}">Follow</button>
       </div>`).join('')}`;
   }
   if(cur==='logs'){
@@ -3526,7 +3527,7 @@ function home(){
     const _today=_dnow.getFullYear()+'-'+_p2(_dnow.getMonth()+1)+'-'+_p2(_dnow.getDate());
     const _yd=new Date(_dnow.getTime()-864e5);
     const _yday=_yd.getFullYear()+'-'+_p2(_yd.getMonth()+1)+'-'+_p2(_yd.getDate());
-    const WD=['일','월','화','수','목','금','토'];
+    const WD=['S','M','T','W','T','F','S'];
     const dayHead=dt=>{
       const lb = dt===_today?'오늘':dt===_yday?'어제':String(dt).slice(5).replace('-','.');
       let wd=''; try{ wd=WD[new Date(dt+'T00:00:00').getDay()]+'요일'; }catch(_){}
@@ -3560,7 +3561,7 @@ function home(){
         <div class="hgrphd"><b>${hrLab}</b><span>${g.items.length}명</span><i></i></div>
         <div class="hgrid">${cards}</div></div>`;
     }).join('') || (S.calDate
-      ? `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">이 날은 올라온 로그가 없어요.</div>`
+      ? `<div class="pknote" style="padding:44px 20px;text-align:center;line-height:1.75">No LOGs on this day.</div>`
       : recoFollowBlock());
   }
   /* 홈은 팔로잉 LOG 피드 전용 — 무대(투표)/MUSIC(발매 그리드) 분기는 완전히 삭제했다.
@@ -3568,7 +3569,7 @@ function home(){
 
   return `<div class="hd">
     <div class="brand" style="flex:1;text-align:left;font-size:19px;letter-spacing:.02em">OFFLOG</div>
-    <button class="circ people" id="gopeople" aria-label="팔로워 · 팔로잉">
+    <button class="circ people" id="gopeople" aria-label="Followers · Following">
       <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
         <circle cx="9" cy="8" r="3.4"/><path d="M3.2 19.5c0-3.3 2.6-5.6 5.8-5.6s5.8 2.3 5.8 5.6"/>
         <path d="M16.4 5.2a3.4 3.4 0 0 1 0 5.7"/><path d="M18 14.4c2 .7 3.3 2.6 3.3 5.1"/></svg>
@@ -3587,7 +3588,7 @@ function cmtAlertBar(){
   const n=CMTNEW.length, first=CMTNEW[0];
   return `<button class="cmtalert" data-cmtalert="${first.log_id}">
     <span class="cashp">${shape('star', c('yellow'), 20)}</span>
-    <span class="catx"><b>내 로그에 새 표시 ${n}개</b><small>${esc(String(first.body).slice(0,34))}</small></span>
+    <span class="catx"><b>${n} new on your LOGs</b><small>${esc(String(first.body).slice(0,34))}</small></span>
     <span class="cago">›</span></button>`;
 }
 
@@ -3616,18 +3617,18 @@ async function loadFriendLogs(force){
     const names={};
     if(need.length){
       const pr=await SBC.from('profiles').select('id,name,avatar_url').in('id',need);
-      (pr.data||[]).forEach(p=>{ names[p.id]={nm:p.name||'아티스트', av:p.avatar_url||''};
+      (pr.data||[]).forEach(p=>{ names[p.id]={nm:p.name||'Artist', av:p.avatar_url||''};
         if(p.name){ AIDBYNAME[p.name]=p.id; if(p.avatar_url) AVBYNAME[p.name]=p.avatar_url; } });
     }
     const p2=x=>String(x).padStart(2,'0');
     FRIENDLOGS=rows.map(x=>{
       const d=new Date(x.created_at);
-      const who=(names[x.author_id]&&names[x.author_id].nm)||'아티스트';
+      const who=(names[x.author_id]&&names[x.author_id].nm)||'Artist';
       const base={src:'flog', lid:x.id, who, c:colorOfName(who), aid:x.author_id,
         at:p2(d.getHours())+':'+p2(d.getMinutes()), ts:x.created_at,   /* ts = 24시간 하이라이트 계산용 */
         dt:d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate()), rx:0,
         av:(names[x.author_id]&&names[x.author_id].av)||''};
-      if(x.kind==='ph')  return {...base, t:'ph', cap:x.caption||'사진',
+      if(x.kind==='ph')  return {...base, t:'ph', cap:x.caption||'Photo',
         bg:x.media_url?('center/cover no-repeat url('+x.media_url+')'):'#141418'};
       if(x.kind==='vid') return {...base, t:'vid', cap:x.caption||'', vsrc:x.media_url||''};
       if(x.kind==='snd') return {...base, t:'snd', nm:x.caption||'데모', dur:x.duration||'', audio:x.media_url||''};
@@ -3659,8 +3660,8 @@ async function loadRecoAuthors(){
       if(!x.author_id || seen[x.author_id]) return;
       seen[x.author_id]=1;
       const peek = x.kind==='snd' ? '🎵 '+(x.caption||'데모')
-                 : x.kind==='ph'  ? '📷 '+(x.caption||'사진')
-                 : x.kind==='vid' ? '🎬 '+(x.caption||'영상')
+                 : x.kind==='ph'  ? '📷 '+(x.caption||'Photo')
+                 : x.kind==='vid' ? '🎬 '+(x.caption||'Video')
                  : (x.text||x.caption||'');
       picked.push({aid:x.author_id, peek:String(peek).slice(0,40), at:x.created_at});
     });
@@ -3731,8 +3732,8 @@ function feedCard(t,i){
   const who=`<div class="rwho" data-prof="${esc(t.who)}" data-paid="${t.aid||''}" style="cursor:pointer">${avatarEl(t.av||avOf(t.who), t.c, 24, t.who)}${esc(t.who)}</div>`;
   /* 액션은 ⋯ 하나 — 우측 상단. 친구 로그(flog)는 담기·바 재생 없이 공유/팔로우만 */
   const fol = t.src==='flog'
-    ? `<button class="edit mine" data-logmenu="${t.lid||''}" data-lnm="${(t.nm||t.cap||t.text||'').slice(0,40).replace(/"/g,'&quot;')}" data-lby="${(t.who||'').replace(/"/g,'&quot;')}" data-laid="${t.aid||''}" aria-label="공유·팔로우">⋯</button>`
-    : `<button class="edit mine" data-sharemenu="${t.tid||''}" data-snm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-sby="${(t.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" data-said="${t.aid||''}" aria-label="공유·담기·팔로우">⋯</button>`;
+    ? `<button class="edit mine" data-logmenu="${t.lid||''}" data-lnm="${(t.nm||t.cap||t.text||'').slice(0,40).replace(/"/g,'&quot;')}" data-lby="${(t.who||'').replace(/"/g,'&quot;')}" data-laid="${t.aid||''}" aria-label="Share·Follow">⋯</button>`
+    : `<button class="edit mine" data-sharemenu="${t.tid||''}" data-snm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-sby="${(t.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" data-said="${t.aid||''}" aria-label="Share·Add·Follow">⋯</button>`;
   /* 반응 도형 → 댓글로 교체(협업). 로그(flog)만 댓글 가능 — 발매곡 카드는 대상 로그가 없다.
      아이콘은 기존 도형 언어를 그대로 이어간다 — 로그 종류마다 다른 도형·색(메모=별, 사진=원,
      데모=삼각, 영상=다이아). 말풍선 대신 이 앱의 vibe를 유지 */
@@ -3742,7 +3743,7 @@ function feedCard(t,i){
   const _cs=_CSH[t.t]||_CSH.note;
   /* '댓글' 글자 없이 도형 표시만 — 있으면 개수, 없으면 도형 하나. 접근성 라벨로만 의미를 남긴다 */
   const rx = (t.src==='flog' && _cid)
-    ? `<button class="fcmt${_cn?'':' bare'}" data-cmt="${_cid}" aria-label="댓글 ${_cn}개">
+    ? `<button class="fcmt${_cn?'':' bare'}" data-cmt="${_cid}" aria-label="${_cn} comments">
          ${shape(_cs[0], c(_cs[1]), 17)}${_cn?`<b>${_cn}</b>`:''}</button>`
     : '';
   const dtb = t.dt?`<div class="fdt">${esc(String(t.dt).slice(5).replace('-','.'))}</div>`:'';
@@ -3777,8 +3778,8 @@ function cmtPanel(logId){
   if(!logId || S.cmtOpen!==logId) return '';
   const list=CMTS[logId];
   const rows = list===undefined
-    ? `<div class="cmtnote">불러오는 중…</div>`
-    : (!list.length ? `<div class="cmtnote">첫 댓글을 남겨보세요</div>`
+    ? `<div class="cmtnote">Loading…</div>`
+    : (!list.length ? `<div class="cmtnote">Be the first to comment</div>`
       : list.map(c=>`<div class="cmtrow">
           <b class="cmtwho" data-prof="${esc(c.who)}" data-paid="${c.aid||''}">${esc(c.who)}</b>
           <span class="cmtbody">${esc(c.body)}</span>
@@ -3788,8 +3789,8 @@ function cmtPanel(logId){
   return `<div class="cmtpanel">
     ${rows}
     <div class="cmtform">
-      <input class="cmtin" id="cmtin-${logId}" placeholder="${ME?'댓글 남기기…':'로그인하면 댓글을 쓸 수 있어요'}" ${ME?'':'disabled'}>
-      <button class="cmtsend" data-cmtsend="${logId}" ${ME?'':'disabled'}>등록</button>
+      <input class="cmtin" id="cmtin-${logId}" placeholder="${ME?'Write a comment…':'Log in to comment'}" ${ME?'':'disabled'}>
+      <button class="cmtsend" data-cmtsend="${logId}" ${ME?'':'disabled'}>Post</button>
     </div>
   </div>`;
 }
@@ -3810,7 +3811,7 @@ function logSheet(){
     <div class="pkhd">
       <b class="lswho" data-prof="${esc(t.who||'')}" data-paid="${t.aid||''}">${avatarEl(t.av||avOf(t.who),t.c,26,t.who)}${esc(t.who||'')}</b>
       <span class="pksub">${esc(String(t.dt||'').slice(5).replace('-','.'))} ${esc(t.at||'')}</span>
-      <button class="pkx" id="lsclose" aria-label="닫기">✕</button></div>
+      <button class="pkx" id="lsclose" aria-label="Close">✕</button></div>
     ${media}
     ${words?`<div class="lstext">${esc(words)}</div>`:''}
     ${cmtPanelForce(id)}
@@ -3833,17 +3834,17 @@ function slideView(){
     const anchor=` id="sl${i}"`;
     const who=`<div class="slwho"><span data-prof="${esc(t.who)}" data-paid="${t.aid||''}" style="cursor:pointer;display:flex;align-items:center;gap:8px">${dot(t.c)}${t.who||''}</span></div>`;
     /* ⋯ 는 하나로 — 우측 상단 ✕ 옆. 공유·담기·팔로우를 다 담는다 */
-    const moreBtn=`<button class="sldots" data-sharemenu="${t.tid||''}" data-snm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-sby="${(t.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" data-said="${t.aid||''}" aria-label="공유·담기·팔로우">⋯</button>`;
+    const moreBtn=`<button class="sldots" data-sharemenu="${t.tid||''}" data-snm="${(t.nm||t.cap||'').replace(/"/g,'&quot;')}" data-sby="${(t.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" data-said="${t.aid||''}" aria-label="Share·Add·Follow">⋯</button>`;
     /* ✕ 는 슬라이드마다 넣는다. 예전엔 스크롤되는 바깥(.slwrap)에 하나만 있어서
        슬라이드를 넘기면 ✕ 가 같이 스크롤돼 사라졌다(닫을 방법이 없어짐). */
-    const closeBtn=`<button class="slx" aria-label="닫기">✕</button>`;
+    const closeBtn=`<button class="slx" aria-label="Close">✕</button>`;
     const _smine=(t.tid && MYREACT[t.tid])||null;
     const _srb=(emo,sh,col)=>`<button class="shape rbtn${_smine&&_smine.has(emo)?' hit':''}" data-emo="${emo}"${_smine&&_smine.has(emo)?' data-hit="1"':''} aria-label="${emo}">${shape(sh,c(col),26)}</button>`;
     const rx=`<div class="slrx" data-tid="${t.tid||''}">
-      ${_srb('소름','tri','green')}
-      ${_srb('루프','circle','shpink')}
-      ${_srb('울컥','diamond','blue')}
-      ${_srb('최고','star','yellow')}
+      ${_srb('Chills','tri','green')}
+      ${_srb('On repeat','circle','shpink')}
+      ${_srb('Moved','diamond','blue')}
+      ${_srb('Best','star','yellow')}
       <span class="rxn" data-n="${t.rx||0}">${t.rx||0}</span></div>`;
     const hint=i===0?`<span class="slhint">⌄</span>`:'';
 
@@ -3917,7 +3918,7 @@ function roomFull(){
     if(r.t==='ph') return `<div class="rcard upcard">
       <div class="bgimg" style="background:${r.bg}"></div><div class="grainy"></div>
       <div class="rmid"><div class="rts">${slot}</div><div class="rcap">${r.cap}</div></div>
-      <div class="uphint2">📷 탭해서 사진 넣기</div>${chrome(r)}</div>`;
+      <div class="uphint2">📷 Tap to add a photo</div>${chrome(r)}</div>`;
 
     if(r.t==='snd') return `<div class="rcard snd" data-play${r.audio?` data-audio="${r.audio}"`:''}>
       <div class="bigwv">${waveBars(34)}</div>
@@ -3928,9 +3929,9 @@ function roomFull(){
       <div class="rmid"><div class="rts">${slot}</div><div class="rnote">${esc(r.text)}</div></div>${chrome(r)}</div>`;
   };
 
-  return `<div class="hd"><button class="circ" data-v="home" aria-label="뒤로"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
-    <div class="htitle">같은 시각<small>팔로잉</small></div>
-    <div class="r"><button class="circ" aria-label="공유">⤴</button></div></div>
+  return `<div class="hd"><button class="circ" data-v="home" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
+    <div class="htitle">같은 시각<small>Following</small></div>
+    <div class="r"><button class="circ" aria-label="Share">⤴</button></div></div>
   <div class="roomhd">
     <div class="slots">${SLOTS.map((s,i)=>{
       const filled=ROOM[s].some(r=>r.t!=='empty');
@@ -3993,10 +3994,10 @@ function logStatsSheet(){
   let streak=0, sd=new Date();
   if(!days.has(iso(sd))) sd.setDate(sd.getDate()-1);
   while(days.has(iso(sd))){ streak++; sd.setDate(sd.getDate()-1); }
-  const ACT=[['prac','연습','var(--mint)'],['show','공연','var(--pink)'],['work','작업','var(--blue)'],['etc','기타','var(--yellow)'],[null,'미분류','#5a5a62']];
+  const ACT=[['prac','Practice','var(--mint)'],['show','공연','var(--pink)'],['work','Work','var(--blue)'],['etc','Other','var(--yellow)'],[null,'미분류','#5a5a62']];
   const actCnt=ACT.map(a=>in30L.filter(l=>(l.act||null)===a[0]).length);
   const actMax=Math.max.apply(null,actCnt.concat([1]));
-  const KND=[['note','✎ 글'],['ph','📷 사진'],['vid','🎬 영상'],['snd','♪ 데모']];
+  const KND=[['note','✎ 글'],['ph','📷 Photo'],['vid','🎬 Video'],['snd','♪ 데모']];
   const kndCnt=KND.map(k=>in30L.filter(l=>l.t===k[0]).length);
   const kndMax=Math.max.apply(null,kndCnt.concat([1]));
   const wk=[]; for(let i=7;i>=0;i--){ const a=now-(i+1)*7*D, b=now-i*7*D; wk.push(L.filter(l=>{const t=logTs(l);return t>a&&t<=b;}).length); }
@@ -4004,12 +4005,12 @@ function logStatsSheet(){
   const bar=(lab,cnt,max,col)=>`<div class="stbrow"><span class="stblab">${lab}</span><span class="stbtrack"><i style="width:${Math.round(cnt/max*100)}%;background:${col||'var(--mint)'}"></i></span><b class="stbnum">${cnt}</b></div>`;
   return `<div class="sheet-bd" id="lsbd"></div>
   <div class="pksheet tall">
-    <div class="pkhd"><b>📊 활동 분석</b><span class="pksub">최근 30일 기준</span><button class="pkx" id="lsclose" aria-label="닫기">✕</button></div>
+    <div class="pkhd"><b>📊 Activity</b><span class="pksub">최근 30일 기준</span><button class="pkx" id="lsclose" aria-label="Close">✕</button></div>
     <div class="stsum">
       <div class="stcell"><b>${in7}</b><small>이번 주</small></div>
       <div class="stcell"><b>${in30}</b><small>30일</small></div>
       <div class="stcell"><b>${streak}<em>일</em></b><small>연속 기록</small></div>
-      <div class="stcell"><b>${L.length}</b><small>전체</small></div>
+      <div class="stcell"><b>${L.length}</b><small>All</small></div>
     </div>
     <div class="rsec">활동별</div>
     ${ACT.map((a,i)=>bar(a[1],actCnt[i],actMax,a[2])).join('')}
@@ -4017,13 +4018,13 @@ function logStatsSheet(){
     ${KND.map((k,i)=>bar(k[1],kndCnt[i],kndMax)).join('')}
     <div class="rsec">주별 추이 <em class="opt">최근 8주</em></div>
     <div class="stwk">${wk.map(c=>`<span class="stwb"><i style="height:${Math.max(6,Math.round(c/wkMax*100))}%"></i><small>${c}</small></span>`).join('')}</div>
-    <p class="rulen" style="text-align:left;margin:10px 4px 0">로그 올릴 때 연습·공연·작업·기타 태그를 고르면 여기에 분류돼요</p>
+    <p class="rulen" style="text-align:left;margin:10px 4px 0">로그 올릴 때 연습·공연·Work·기타 태그를 고르면 여기에 분류돼요</p>
   </div>`;
 }
 /* 비공개 계정이면 밖으로 나간다는 걸 먼저 알린다 (되돌리기 어려운 행동이라 확인 필요) */
 async function confirmGoPublic(what){
   if(!ME || (ME.vis||'public')!=='private') return true;
-  return await offConfirm(what+'은(는) 비공개 계정이어도 모두에게 공개됩니다.\n계속할까요?', '계속');
+  return await offConfirm(what+'은(는) 비공개 계정이어도 모두에게 공개됩니다.\n계속할까요?', 'Continue');
 }
 
 
@@ -4031,7 +4032,7 @@ async function confirmGoPublic(what){
 let WORKS=[
  {id:'sr', nm:'Summer Rain', by:'PEEK', dur:'03:12', logs:183, span:'6 Months', date:'2026.06.01',
   bg:'radial-gradient(circle at 30% 25%,#2e5a7e,transparent 60%),radial-gradient(circle at 80% 80%,#173a4e,transparent 55%),#0c141c'},
- {id:'ml', nm:'Moonlight', by:'PEEK', dur:'02:47', logs:91, span:'2 Months', date:'작업 중',
+ {id:'ml', nm:'Moonlight', by:'PEEK', dur:'02:47', logs:91, span:'2 Months', date:'In progress',
   bg:'radial-gradient(circle at 65% 20%,#4a3a7e,transparent 55%),radial-gradient(circle at 20% 85%,#1c2a5c,transparent 60%),#0e0c18'},
 ];
 
@@ -4039,9 +4040,9 @@ let WORKS=[
 function myMenuSheet(){
   if(!S.myMenu) return '';
   return `<div class="cs-bd" id="mmbd"><div class="cs">
-    <div class="cs-hd"><b>${(ME&&ME.name)||'내 계정'}</b><button class="cs-x" id="mmx" aria-label="닫기">✕</button></div>
-    <button class="mmi" id="mminfo"><span class="mmic">👤</span><span class="mmt"><b>내 정보</b><small>프로필 · 계정 · 설정</small></span></button>
-    <button class="mmi" id="mmshare"><span class="mmic">⤴</span><span class="mmt"><b>공유하기</b><small>내 페이지 링크 보내기</small></span></button>
+    <div class="cs-hd"><b>${(ME&&ME.name)||'내 계정'}</b><button class="cs-x" id="mmx" aria-label="Close">✕</button></div>
+    <button class="mmi" id="mminfo"><span class="mmic">👤</span><span class="mmt"><b>Account</b><small>프로필 · 계정 · Settings</small></span></button>
+    <button class="mmi" id="mmshare"><span class="mmic">⤴</span><span class="mmt"><b>Share</b><small>내 페이지 링크 보내기</small></span></button>
   </div></div>`;
 }
 /* LOG · VOTE 나란히 — 같은 크기 두 카드. 투표는 로그가 있어야 열린다 */
@@ -4074,7 +4075,7 @@ function eventStatus(w){
   const confirmed = !!(mine && inSlot(r,mine));
   if(confirmed) return `<div class="evstat one confirmed">
     <span class="evbadge confirmed">🎉 무대 확정</span><b>${esc(r.nm)}</b>
-    <span class="evcd">${rank}위 · ${v}표</span></div>`;
+    <span class="evcd">${rank}위 · ${v} votes</span></div>`;
   return `<div class="evstat one">
     <span class="evbadge">◆ 참여 중</span><b>${esc(r.nm)}</b>
     <span class="evcd" data-cd="${r.id}">${rank?rank+'위 · '+slotN(r)+'위까지':'10표 이상부터'}</span></div>`;
@@ -4110,12 +4111,12 @@ const smileEl=(col,seed)=>{
 
 /* ── 마이 / 아티스트 페이지 ──
    내 페이지 = 도구·＋·수정 전부 여기서. 남의 페이지 = 보기만. */
-function roleKo(r){ return r==='artist'?'아티스트':r==='admin'?'관리자':r==='listener'?'리스너':'아티스트'; }
+function roleKo(r){ return r==='artist'?'Artist':r==='admin'?'관리자':r==='listener'?'Listener':'Artist'; }
 /* 가입 트리거가 이름을 못 찾으면 이메일 앞부분을 그대로 쓴다(funzookim, whichday …).
    그 이름으론 아무도 서로를 못 찾으니, 본인에게만 조용히 바꾸라고 알린다. 강제하지 않는다. */
 function needsRealName(){
   if(!ME||!ME.name) return false;
-  if(ME.name==='익명'||ME.name==='아티스트'||ME.name==='나') return true;
+  if(ME.name==='Anonymous'||ME.name==='Artist'||ME.name==='나') return true;
   const local=String(ME.email||'').split('@')[0];
   return !!local && ME.name===local;
 }
@@ -4123,21 +4124,21 @@ function mine(){
   const me   = S.profile==='me';
   const rp   = (!me && S.profileAid) ? PROFCACHE[S.profileAid] : null;   // 실제 아티스트 프로필(공개 읽기)
   const prof = me
-    ? (ME ? {who:ME.name, avatar:ME.avatar, c:'coral', sub:roleKo(ME.role)} : {who:'게스트', avatar:'', c:'blue', sub:'로그인하고 내 페이지 연동'})
-    : (rp ? {who:rp.name, avatar:rp.avatar, c:'blue', sub:roleKo(rp.role)} : {who:S.profile, avatar:'', c:'blue', sub:'불러오는 중…'});
+    ? (ME ? {who:ME.name, avatar:ME.avatar, c:'coral', sub:roleKo(ME.role)} : {who:'Guest', avatar:'', c:'blue', sub:'Log in to sync your page'})
+    : (rp ? {who:rp.name, avatar:rp.avatar, c:'blue', sub:roleKo(rp.role)} : {who:S.profile, avatar:'', c:'blue', sub:'Loading…'});
   const following = !!(S.profileAid && MYFOLLOWS.has(S.profileAid));
 
   /* 아티스트 페이지 — WORK(작품 행) + LOG(로그 카드), 그 사람 실제 곡 기반 */
   const atrackCard=t=>`<div class="workrow">
     <div class="wthumb"><div class="bgimg" style="position:absolute;inset:0;background:${t.cover?`center/cover no-repeat url(${t.cover})`:'#22222a'}"></div>
-      <button class="tplay" data-tplay="${t.audio||''}" aria-label="재생">▶</button></div>
-    <div class="winfo"><b>${esc(t.nm)}</b><small>${t.demo?'데모':'발매곡'}${t.dt?' · '+t.dt.replace(/-/g,'.'):''}</small></div></div>`;
+      <button class="tplay" data-tplay="${t.audio||''}" aria-label="Play">▶</button></div>
+    <div class="winfo"><b>${esc(t.nm)}</b><small>${t.demo?'데모':'Releases'}${t.dt?' · '+t.dt.replace(/-/g,'.'):''}</small></div></div>`;
   const alogCard=t=>`<div class="fcard"><div class="rcard snd" data-play${t.audio?` data-audio="${t.audio}"`:''}>
     <div class="bigwv">${waveBars(34)}</div>
     <div class="rmid"><div class="rts">${t.dt?t.dt.replace(/-/g,'.'):''}</div><div class="rcap">${esc(t.nm)}</div>
       <span class="sndpill"><em>▶</em><b>${t.demo?'데모':''}</b></span></div>
-    <button class="edit mine" data-sharemenu="${t.id||''}" data-snm="${(t.nm||'').replace(/"/g,'&quot;')}" data-sby="${(prof.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" data-said="${S.profileAid||''}" aria-label="공유·담기·팔로우">⋯</button></div></div>`;
-  const _emptyOrLoad = rp ? `<div class="pknote" style="padding:22px 0">아직 올린 게 없어요</div>` : `<div class="pknote" style="padding:22px 0">불러오는 중…</div>`;
+    <button class="edit mine" data-sharemenu="${t.id||''}" data-snm="${(t.nm||'').replace(/"/g,'&quot;')}" data-sby="${(prof.who||'').replace(/"/g,'&quot;')}" data-saud="${t.audio||''}" data-said="${S.profileAid||''}" aria-label="Share·Add·Follow">⋯</button></div></div>`;
+  const _emptyOrLoad = rp ? `<div class="pknote" style="padding:22px 0">아직 올린 게 없어요</div>` : `<div class="pknote" style="padding:22px 0">Loading…</div>`;
   const rpTracks    = rp ? rp.tracks.slice().sort((a,b)=>String(b.dt||'').localeCompare(String(a.dt||''))) : [];  /* 최신이 위로 */
   const artistLog   = rpTracks.length ? rpTracks.map(alogCard).join('') : _emptyOrLoad;
   const artistWorks = rpTracks.length ? rpTracks.map(atrackCard).join('') : _emptyOrLoad;
@@ -4145,56 +4146,56 @@ function mine(){
   /* 음원 발매 / 오디션 — 나란한 2박스. MUSIC 탭(LOG 아닌 쪽) 맨 위에 한 번만 얹는다.
      프로젝트 지원 버튼은 삭제(요청) — projectApplySheet 코드는 남아 있어 복원 쉬움 */
   const applyBoxRow = me ? `<div class="newwork2">
-      <button class="nw2 music" id="newworkbtn"><em>＋</em>음원 발매</button>
-      <button class="nw2 perf" id="perfapplybtn"><em>＋</em>오디션</button></div>` : '';
+      <button class="nw2 music" id="newworkbtn"><em>＋</em>Release</button>
+      <button class="nw2 perf" id="perfapplybtn"><em>＋</em>Audition</button></div>` : '';
 
   /* 내 작품(스튜디오) */
   /* 내 페이지에서는 반드시 내 발매곡만 — WORKS 는 플랫폼 전체 트랙이라 남의 곡이 섞인다.
      (곡이 0개면 빈 안내를 보여준다. 예전엔 그 자리에 남의 곡 12개가 들어갔다) */
   const worksSrc = me ? (MYWORKS||[]).concat(WORKS.filter(w=>w&&w.mine)) : WORKS;
-  const myworks=(me?`<div class="rsec">음원 발매</div>`:'')
+  const myworks=(me?`<div class="rsec">Release</div>`:'')
     + (worksSrc.length ? worksSrc.map(w=>`<div class="workrow">
     <div class="wthumb"><div class="bgimg" style="position:absolute;inset:0;background:${w.cover?`center/cover no-repeat url(${w.cover})`:w.bg}"></div>
-      <button class="wplay" aria-label="재생">▶</button></div>
-    <div class="winfo"><b>${esc(w.nm)}</b><small>${w.mine?(w.pending?'발매 예약 '+w.date:(w.date&&w.date!=='작업 중'?'발매 '+w.date:'작업 중')):(w.logs+'개 기록 · '+w.span)}</small></div>
+      <button class="wplay" aria-label="Play">▶</button></div>
+    <div class="winfo"><b>${esc(w.nm)}</b><small>${w.mine?(w.pending?'Schedule release '+w.date:(w.date&&w.date!=='In progress'?'발매 '+w.date:'In progress')):(w.logs+'개 기록 · '+w.span)}</small></div>
     <button class="openst" data-work="${w.id}">${w.mine?'열기':'기록 보기'} ›</button></div>`).join('')
-    : `<div class="pknote" style="padding:22px 0">아직 발매한 곡이 없어요 — 위 ＋음원 발매로 올려보세요</div>`);
+    : `<div class="pknote" style="padding:22px 0">No releases yet — use ＋Release above</div>`);
 
   /* 내 공연 지원 내역 — perf_entries에서 author_id=나 로 조회. 곡 카드와 같은 crow2/cex 문법 재사용.
      WORKS 아래에 이어붙는 두 번째 섹션이라 소제목만 달고, ＋박스는 위(applyBoxRow)에서 한 번만 나온다 */
   const myRoundName=rid=>{ const r=ROUNDS.find(x=>x.id===rid); return r?r.nm:rid; };
-  const concSecHead = `<div class="rsec" style="margin-top:18px">오디션</div>`;
+  const concSecHead = `<div class="rsec" style="margin-top:18px">Audition</div>`;
   const myconcertList = !ME
-    ? concSecHead+`<div class="pknote" style="padding:26px 0">로그인하면 내 오디션 지원 내역을 볼 수 있어요</div>`
+    ? concSecHead+`<div class="pknote" style="padding:26px 0">Log in to see your audition entries</div>`
     : !PERFTABLE
       ? concSecHead+`<div class="pknote" style="padding:26px 0">오디션 기능을 준비 중이에요</div>`
       : MYPERF===null
-        ? concSecHead+`<div class="pknote" style="padding:26px 0">불러오는 중…</div>`
+        ? concSecHead+`<div class="pknote" style="padding:26px 0">Loading…</div>`
         : !MYPERF.length
-          ? concSecHead+`<div class="pknote" style="padding:26px 0">아직 지원한 오디션이 없어요</div>`
+          ? concSecHead+`<div class="pknote" style="padding:26px 0">No auditions applied to yet</div>`
           : concSecHead+MYPERF.map(e=>{
             const vid=parsePerfVideo(e.video_url), expanded=S.perfExpand===e.id;
             return `<div class="crow2" data-pexpand="${e.id}">
               <div class="chd">
                 <span class="cav">${avatarEl('','coral',34,e.team_name)}</span>
                 <span class="cinfo">
-                  <span class="cttl"><b>${esc(e.song_title)}</b>${e.hidden?'<i class="mytag" style="background:var(--card2);color:var(--muted)">비공개 처리됨</i>':''}</span>
-                  <small>${esc(e.team_name)} · ${esc(myRoundName(e.round_id))} · ${e.is_cover?'커버':'오리지널'}</small>
+                  <span class="cttl"><b>${esc(e.song_title)}</b>${e.hidden?'<i class="mytag" style="background:var(--card2);color:var(--muted)">Hidden</i>':''}</span>
+                  <small>${esc(e.team_name)} · ${esc(myRoundName(e.round_id))} · ${e.is_cover?'Cover':'Original'}</small>
                 </span>
-                <span class="cv">${e.votes_count||0}표</span></div>
+                <span class="cv">${e.votes_count||0} votes</span></div>
               ${expanded?`<div class="cex">
-                ${vid?`<iframe class="cvidframe" src="${vid.embed}" title="${esc(e.team_name)} 영상" loading="lazy"
+                ${vid?`<iframe class="cvidframe" src="${vid.embed}" title="${esc(e.team_name)} Video" loading="lazy"
                     sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
                     allow="encrypted-media; picture-in-picture" allowfullscreen
                     referrerpolicy="strict-origin-when-cross-origin"></iframe>`
-                  :`<a class="cgo" href="${safeUrl(e.video_url)}" target="_blank" rel="noopener noreferrer">원본 링크에서 영상 보기 ↗</a>`}
-                <div class="cexh" style="margin-top:8px">참여자 · ${esc(e.members)}</div>
+                  :`<a class="cgo" href="${safeUrl(e.video_url)}" target="_blank" rel="noopener noreferrer">Watch on the original link ↗</a>`}
+                <div class="cexh" style="margin-top:8px">Members · ${esc(e.members)}</div>
               </div>`:''}
             </div>`;
           }).join('');
 
   /* 녹음 = 즉석. 음원 = 믹스다운 파일 업로드 (Demo 탭이 하던 일) */
-  const tools=[['💬','생각'],['🖼','사진'],['🎤','음성'],['📋','메모'],['🎙','녹음'],['♪','음원']];
+  const tools=[['💬','생각'],['🖼','Photo'],['🎤','음성'],['📋','Memo'],['🎙','녹음'],['♪','Track']];
   /* 피드·Work 스토리와 같은 카드 문법. 안 기울고, 시각이 카드 중앙에 */
   const mark=l=>{
     const w = l.work ? WORKS.find(x=>x.id===l.work) : null;
@@ -4203,26 +4204,26 @@ function mine(){
     /* 좋아요 = 도형 반응 (소름·루프·울컥·최고 + 개수) */
     const _mine=(l.tid && MYREACT[l.tid])||null;
     const _rb=(emo,sh,col)=>`<button class="shape rbtn${_mine&&_mine.has(emo)?' hit':''}" data-emo="${emo}"${l.tid?` data-tid="${l.tid}"`:''} aria-label="${emo}">${shape(sh,c(col),22)}</button>`;
-    const rx = `<div class="frx" data-tid="${l.tid||''}">${_rb('소름','tri','green')}${_rb('루프','circle','shpink')}${_rb('울컥','diamond','blue')}${_rb('최고','star','yellow')}<span class="rxn" data-n="${l.rx||0}">${l.rx||0}</span></div>`;
+    const rx = `<div class="frx" data-tid="${l.tid||''}">${_rb('Chills','tri','green')}${_rb('On repeat','circle','shpink')}${_rb('Moved','diamond','blue')}${_rb('Best','star','yellow')}<span class="rxn" data-n="${l.rx||0}">${l.rx||0}</span></div>`;
     /* 업로드 날짜 라벨 — 카드 위 gap에 (예: 07.20) */
     const dtb = l.dt?`<div class="fdt">${esc(String(l.dt).slice(5).replace('-','.'))}</div>`:'';
     /* 공개/비공개 칩 — 카드 위에 항상 보이는 토글(⋯ 메뉴에 숨어 있으면 못 찾는다).
        무대·발매에 낸 로그는 항상 공개(잠금) — 칩이 자물쇠 안내만 한다 */
     const visLocked = logVisLocked(l);
     const visChip = me ? `<button class="vischip ${l.vis==='public'?'pub':'priv'}${visLocked?' locked':''}" data-logvis="${l.id}"
-        aria-label="공개 범위 바꾸기">${visLocked?'🔒 항상 공개':(l.vis==='public'?'🔓 공개':'🔒 비공개')}</button>` : '';
+        aria-label="Change visibility">${visLocked?'🔒 Always public':(l.vis==='public'?'🔓 Public':'🔒 Private')}</button>` : '';
     /* 내 로그에 달린 댓글 — 예전엔 남의 로그(flog)에만 버튼이 있어서,
        누가 내 로그에 답을 달아도 정작 나는 읽을 방법이 없었다. 서버에 있는 로그(sid)만 대상. */
     const _mc=l.sid||'';
     const _mn=(_mc&&CMTCOUNT[_mc])||0;
     const _MSH={note:['star','yellow'], ph:['circle','shpink'], snd:['tri','green'], vid:['diamond','blue']};
     const _ms=_MSH[l.t]||_MSH.note;
-    const cmtBtn = _mc ? `<button class="fcmt${_mn?'':' bare'}" data-cmt="${_mc}" aria-label="댓글 ${_mn}개">
+    const cmtBtn = _mc ? `<button class="fcmt${_mn?'':' bare'}" data-cmt="${_mc}" aria-label="${_mn} comments">
          ${shape(_ms[0], c(_ms[1]), 17)}${_mn?`<b>${_mn}</b>`:''}</button>` : '';
     const chrome = me
       ? `${w?`<span class="wchip mychip">◆ ${esc(w.nm)}</span>`:''}
          ${visChip}${cmtBtn}
-         <button class="edit mine" data-addmenu="${l.id}" aria-label="LOG 관리">⋯</button>`
+         <button class="edit mine" data-addmenu="${l.id}" aria-label="Manage LOG">⋯</button>`
       : '';
     const cp = _mc ? cmtPanel(_mc) : '';   /* 댓글 패널 — 펼친 로그만 실제로 그려진다 */
     if(l.t==='ph') return `<div class="fcard my">${dtb}<div class="rcard">
@@ -4245,39 +4246,39 @@ function mine(){
   const _priv = me ? STREAM.filter(l=>l&&l.vis!=='public'&&!logVisLocked(l)) : [];
   const privBar = _priv.length
     ? `<button class="privbar" id="puball">
-         <span class="pbtx"><b>비공개 로그 ${_priv.length}개</b><small>친구 피드에 안 보이고 있어요</small></span>
-         <span class="pbgo">한 번에 공개</span></button>`
+         <span class="pbtx"><b>${_priv.length} private LOGs</b><small>Not visible in your friends’ feed</small></span>
+         <span class="pbgo">Publish all</span></button>`
     : '';
 
   /* 맨 위의 큰 '＋ 로그 남기기' 박스는 없앴다 — 화면 첫 칸을 빈 버튼이 차지해서
      정작 내 콘텐츠가 아래로 밀렸다. 작성은 하단 ＋ 버튼으로 통일. */
   const logs=`
     ${privBar}
-    ${me?`<button class="statsbtn" id="logstats">📊 활동 분석<span>연습 · 공연 · 작업 기록 한눈에</span></button>`:''}
+    ${me?`<button class="statsbtn" id="logstats">📊 Activity<span>Practice · Shows · Work at a glance</span></button>`:''}
     <div class="stream" id="stream"><div class="ambient"></div>
       <div class="marks">${streamOrder(STREAM).map(mark).join('')||`<div class="pknote" style="padding:26px 0">아직 로그가 없어요</div>`}</div></div>`;
 
   return `<div class="hd">
-    <button class="circ" data-v="home" aria-label="뒤로"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
-    <div class="htitle">${me?'':esc(prof.who)}<small>${me?'내 페이지':prof.sub}</small></div>
+    <button class="circ" data-v="home" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
+    <div class="htitle">${me?'':esc(prof.who)}<small>${me?'My Page':prof.sub}</small></div>
     <div class="r">${me&&ME
       ? `<button class="circ" id="mysettings" aria-label="메뉴">⋯</button>`
-      : `<button class="circ" aria-label="공유">⤴</button>`}</div></div>
+      : `<button class="circ" aria-label="Share">⤴</button>`}</div></div>
   <div class="mprof">${me&&ME
-      ? `<button class="mpav avedit" id="acavbtn" aria-label="프로필 사진 바꾸기">${avatarEl(prof.avatar, prof.c, 92, prof.who||prof.name)}<span class="avcam">📷</span></button><input type="file" id="acavfile" accept="image/*" hidden>`
+      ? `<button class="mpav avedit" id="acavbtn" aria-label="Change profile photo">${avatarEl(prof.avatar, prof.c, 92, prof.who||prof.name)}<span class="avcam">📷</span></button><input type="file" id="acavfile" accept="image/*" hidden>`
       : `<span class="mpav">${avatarEl(prof.avatar, prof.c, 92, prof.who||prof.name)}</span>`}
     <h3>${esc(prof.who)}</h3><p>${esc(prof.sub)}</p>
     <div class="fcount">
-      <button class="fc" data-flist="follower"><b>${me?((ME&&ME.followers!=null)?ME.followers:'—'):((rp&&rp.followers!=null)?rp.followers:'—')}</b><small>팔로워</small></button>
+      <button class="fc" data-flist="follower"><b>${me?((ME&&ME.followers!=null)?ME.followers:'—'):((rp&&rp.followers!=null)?rp.followers:'—')}</b><small>Followers</small></button>
       <span class="fcdiv"></span>
-      <button class="fc" data-flist="following"><b>${me?MYFOLLOWS.size:((rp&&rp.following!=null)?rp.following:'—')}</b><small>팔로잉</small></button></div>
+      <button class="fc" data-flist="following"><b>${me?MYFOLLOWS.size:((rp&&rp.following!=null)?rp.following:'—')}</b><small>Following</small></button></div>
     ${me
-      ? (ME?`<button class="acedit" id="acedit">프로필 수정</button>`:`<button class="fol profol" id="profloginbtn">로그인</button>`)
-      : `<button class="fol profol ${following?'on':''}" id="profolbtn" data-aid="${S.profileAid||''}">${following?'팔로잉':'팔로우'}</button>
+      ? (ME?`<button class="acedit" id="acedit">Edit profile</button>`:`<button class="fol profol" id="profloginbtn">Log in</button>`)
+      : `<button class="fol profol ${following?'on':''}" id="profolbtn" data-aid="${S.profileAid||''}">${following?'Following':'Follow'}</button>
          <!-- 앱스토어 Guideline 1.2 — 콘텐츠뿐 아니라 사용자 자체도 신고·차단할 수 있어야 한다 -->
          <button class="promore" id="promore" aria-label="공유 등 더보기">⋯</button>`}</div>
   ${me&&needsRealName()?`<button class="namehint" id="fixname">이름이 <b>${esc(ME.name)}</b> 로 되어 있어요 · 활동명으로 바꾸기</button>`:''}
-  ${me?`<button class="myplrow" data-v="lists">🎵 내 플레이리스트<span>›</span></button>`:''}
+  ${me?`<button class="myplrow" data-v="lists">🎵 My Playlist<span>›</span></button>`:''}
   <div class="seg profseg">
     <button class="${S.seg==='log'?'on':''}" data-seg="log">LOG</button>
     <button class="${S.seg!=='log'?'on':''}" data-seg="works">MUSIC</button></div>
@@ -4299,7 +4300,7 @@ function logPuller(w){
   return `<div class="sheet-bd" id="plbd"></div>
   <div class="pksheet">
     <div class="pkhd"><b>${esc(w.nm)}에 담을 로그</b>
-      <button class="pkx" id="plclose" aria-label="닫기">✕</button></div>
+      <button class="pkx" id="plclose" aria-label="Close">✕</button></div>
     <div class="pkwarn" style="background:rgba(83,224,200,.07);border-color:rgba(83,224,200,.25);color:var(--mint)">
       작업 기간 <b>${w.span}</b> 안의 아직 어느 작품도 아닌 로그입니다</div>
     ${free.length?free.map(l=>`<button class="pkrow plrow ${S.sel.includes(l.id)?'on':''}" data-sel="${l.id}">
@@ -4321,10 +4322,10 @@ function relLogRows(){
     :                `<span class="plth snd">♪</span>`;
   const nm=l=> l.t==='note' ? (l.text||'').replace(/\n[\s\S]*/,'') : (l.nm||l.cap||'로그');
   const all=STREAM.slice();
-  if(!all.length) return `<div class="pknote" style="padding:20px 0">아직 로그가 없어요 · 마이에서 ＋로 로그를 남겨보세요</div>`;
+  if(!all.length) return `<div class="pknote" style="padding:20px 0">No LOGs yet · Tap ＋ in My to write one</div>`;
   const byDt={}; all.forEach(l=>{ const d=l.dt||'zzz'; (byDt[d]=byDt[d]||[]).push(l); });
   return Object.keys(byDt).sort().reverse().map(d=>{
-    const label=(d==='zzz')?'날짜 미상':d.replace(/-/g,'.');
+    const label=(d==='zzz')?'No date':d.replace(/-/g,'.');
     return `<div class="pldate">${label}</div>${byDt[d].map(l=>`<button class="pkrow plrow ${S.sel.includes(l.id)?'on':''}" data-sel="${l.id}">
       <span class="plck"></span>${pv(l)}
       <span class="pknm"><b>${esc(nm(l))}</b><small>${l.at||''}${l.dur?' · '+l.dur:''}</small></span></button>`).join('')}`;
@@ -4335,11 +4336,11 @@ function releaseLogPicker(w){
   return `<div class="sheet-bd" id="rpkbd"></div>
   <div class="pksheet tall">
     <div class="pkhd"><b>${esc(w.nm)} 발매 로그</b>
-      <button class="pkx" id="rpkclose" aria-label="닫기">✕</button></div>
+      <button class="pkx" id="rpkclose" aria-label="Close">✕</button></div>
     <div class="pkwarn" style="background:rgba(83,224,200,.07);border-color:rgba(83,224,200,.25);color:var(--mint)">
       전체 로그에서 이 발매에 넣을 것을 고르세요 · 날짜별로 자동 정리됩니다</div>
     ${body}
-    <button class="cta" id="rpkdone">${S.sel.length?S.sel.length+'개 담기':'담기'}</button>
+    <button class="cta" id="rpkdone">${S.sel.length?S.sel.length+'개 담기':'Add'}</button>
   </div>`;
 }
 
@@ -4358,17 +4359,17 @@ let PEOPLE=[
 /* 팔로워/팔로잉 목록 — 전부 실제 follows+profiles 데이터 (하드코딩 PEEK/목업 없음) */
 /* 내 정보 / 설정 페이지 — 프로필·계정 정보, 로그아웃 */
 function accountView(){
-  if(!ME){ return `<div class="hd"><button class="circ" data-v="mine" aria-label="뒤로"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
-    <div class="htitle">내 정보</div><span style="width:38px"></span></div>
+  if(!ME){ return `<div class="hd"><button class="circ" data-v="mine" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
+    <div class="htitle">Account</div><span style="width:38px"></span></div>
     <div class="pknote" style="padding:40px 0">로그인이 필요해요</div>`; }
   const row=(k,v)=>v?`<div class="acrow"><span class="ack">${k}</span><span class="acv">${esc(v)}</span></div>`:'';
   const sns=ME.sns||{}, snsRow=(lab,val,pre)=>val?`<div class="acrow"><span class="ack">${lab}</span><span class="acv">${pre||''}${esc(val)}</span></div>`:'';
-  return `<div class="hd"><button class="circ" data-v="mine" aria-label="뒤로"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
-    <div class="htitle">내 정보<small>계정 · 설정</small></div><span style="width:38px"></span></div>
+  return `<div class="hd"><button class="circ" data-v="mine" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
+    <div class="htitle">Account<small>계정 · Settings</small></div><span style="width:38px"></span></div>
   <div class="mprof" style="padding-top:6px">
-    <button class="mpav avedit" id="acavbtn" aria-label="프로필 사진 바꾸기">${avatarEl(ME.avatar,'coral', 92, ME.name)}<span class="avcam">📷</span></button>
+    <button class="mpav avedit" id="acavbtn" aria-label="Change profile photo">${avatarEl(ME.avatar,'coral', 92, ME.name)}<span class="avcam">📷</span></button>
     <h3>${esc(ME.name)}</h3><p>${roleKo(ME.role)}</p>
-    <button class="acedit" id="acedit">프로필 수정</button></div>
+    <button class="acedit" id="acedit">Edit profile</button></div>
   ${ME.bio?`<div class="acbio">${ME.bio.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`:''}
   <input type="file" id="acavfile" accept="image/*" hidden>
   <div class="acsec">공개 범위</div>
@@ -4378,16 +4379,16 @@ function accountView(){
       <span class="pknm"><b>공개 계정</b><small>누구나 내 기록과 곡을 볼 수 있어요</small></span></button>
     <button class="acvis${ME.vis==='private'?' on':''}" data-acvis="private">
       <span class="evck${ME.vis==='private'?' on':''}"></span>
-      <span class="pknm"><b>비공개 계정</b><small>승인한 팔로워만 볼 수 있어요</small></span></button>
+      <span class="pknm"><b>Private account</b><small>Only approved followers can see it</small></span></button>
     <p class="acvisnote">이벤트에 신청하거나 발매한 곡은 계정 설정과 상관없이 모두에게 공개돼요</p>
   </div>
   <div class="acsec">계정</div>
   <div class="accard">
-    ${row('이름', ME.name)}
+    ${row('Name', ME.name)}
     ${row('역할', roleKo(ME.role))}
-    ${row('이메일', ME.email||'—')}
+    ${row('Email', ME.email||'—')}
     ${row('가입일', ME.joined?ME.joined.replace(/-/g,'.'):'—')}
-    <div class="acrow"><span class="ack">팔로워 · 팔로잉</span><span class="acv">${(ME.followers!=null?ME.followers:'—')} · ${MYFOLLOWS.size}</span></div>
+    <div class="acrow"><span class="ack">Followers · Following</span><span class="acv">${(ME.followers!=null?ME.followers:'—')} · ${MYFOLLOWS.size}</span></div>
   </div>
   ${(sns.ig||sns.yt||sns.tt)?`<div class="acsec">SNS</div><div class="accard">
     ${snsRow('Instagram', sns.ig, '@')}${snsRow('YouTube', sns.yt)}${snsRow('TikTok', sns.tt, '@')}
@@ -4398,9 +4399,9 @@ function accountView(){
       <button class="acunblock" data-unblock="${esc(id)}">차단 해제</button></div>`).join('')}
   </div>
   <p class="acdelnote" style="text-align:left;margin-top:8px">차단한 사람의 글은 보이지 않습니다. 해제하면 다시 보여요.</p>`:''}
-  <button class="aclogout" id="aclogout">로그아웃</button>
+  <button class="aclogout" id="aclogout">Log out</button>
   <!-- 앱스토어 5.1.1(v) — 가입할 수 있는 앱은 앱 안에서 계정을 지울 수 있어야 한다 -->
-  <button class="acdel" id="acdel">계정 삭제</button>
+  <button class="acdel" id="acdel">Delete account</button>
   <p class="acdelnote">계정을 삭제하면 올린 로그·곡·사진이 모두 사라지고 되돌릴 수 없어요.</p>
   <div style="height:24px"></div>
   ${S.editProf?profEditSheet():''}`;
@@ -4410,19 +4411,19 @@ function profEditSheet(){
   const P=S.editProf||{};
   return `<div class="sheet-bd" id="pebd"></div>
   <div class="pksheet tall">
-    <div class="pkhd"><b>프로필 수정</b><button class="pkx" id="peclose" aria-label="닫기">✕</button></div>
-    <div class="rsec">이름 (아티스트명)</div>
-    <input class="cs-name" id="penm" value="${esc(P.name||'')}" placeholder="이름">
+    <div class="pkhd"><b>Edit profile</b><button class="pkx" id="peclose" aria-label="Close">✕</button></div>
+    <div class="rsec">Name (Artist name)</div>
+    <input class="cs-name" id="penm" value="${esc(P.name||'')}" placeholder="Name">
     <div class="rsec">역할</div>
-    <div class="evpick">${[['artist','아티스트'],['producer','프로듀서'],['listener','리스너']].map(([k,l])=>
+    <div class="evpick">${[['artist','Artist'],['producer','Producer'],['listener','Listener']].map(([k,l])=>
       `<button class="evopt ${P.role===k?'on':''}" data-perole="${k}">${l}</button>`).join('')}</div>
-    <div class="rsec">소개</div>
-    <textarea class="lyr" id="pebio" placeholder="나를 한 줄로 소개해 주세요" style="min-height:80px">${esc(P.bio||'')}</textarea>
-    <div class="rsec">SNS <em class="opt">선택</em></div>
+    <div class="rsec">Bio</div>
+    <textarea class="lyr" id="pebio" placeholder="Introduce yourself in one line" style="min-height:80px">${esc(P.bio||'')}</textarea>
+    <div class="rsec">SNS <em class="opt">Select</em></div>
     <div class="crow"><span class="clab">Instagram</span><input class="cin" id="peig" value="${esc(P.ig||'')}" placeholder="아이디"></div>
     <div class="crow"><span class="clab">YouTube</span><input class="cin" id="peyt" value="${esc(P.yt||'')}" placeholder="채널"></div>
     <div class="crow"><span class="clab">TikTok</span><input class="cin" id="pett" value="${esc(P.tt||'')}" placeholder="아이디"></div>
-    <button class="cta" id="pedone" style="margin-top:14px">저장</button>
+    <button class="cta" id="pedone" style="margin-top:14px">Save</button>
   </div>`;
 }
 /* 프로필 저장 — profiles 테이블에 반영 */
@@ -4438,8 +4439,8 @@ async function saveProfile(){
     ME.name=nm; ME.role=row.role; ME.bio=row.bio; ME.sns={ig:row.sns_instagram, yt:row.sns_youtube, tt:row.sns_tiktok};
     try{ AVBYNAME[nm]=ME.avatar||AVBYNAME[nm]||''; }catch(_){}
     S.editProf=null; render(); offToast('프로필을 저장했어요');
-  }catch(e){ console.warn('[offlog] 프로필 저장 실패', e); offToast('저장 실패 — 잠시 후 다시');
-    if(btn){btn.disabled=false;btn.textContent='저장';} }
+  }catch(e){ console.warn('[offlog] 프로필 저장 실패', e); offToast('Couldn’t save — try again shortly');
+    if(btn){btn.disabled=false;btn.textContent='Save';} }
 }
 /* 프로필 부분 갱신 공통 — update 를 먼저 시도하고, 행이 없을 때만 insert 로 만든다.
    upsert(POST + merge-duplicates)는 profiles.name NOT NULL 때문에 부분 컬럼만 보내면
@@ -4450,7 +4451,7 @@ async function _profileSave(patch){
   if(up.error) return up;
   if(up.data && up.data.length) return up;          /* 갱신됨 */
   /* 아직 프로필 행이 없다 → name 을 채워 새로 만든다(NOT NULL 충족) */
-  const row=Object.assign({id:ME.id, name:(ME.name||'아티스트')}, patch);
+  const row=Object.assign({id:ME.id, name:(ME.name||'Artist')}, patch);
   return await SBC.from('profiles').insert(row);
 }
 /* 프로필 사진 변경 — Storage(log-media)에 올리고 profiles.avatar_url 갱신 */
@@ -4466,7 +4467,7 @@ async function saveAvatar(file){
     const r=await _profileSave({avatar_url:url}); if(r.error)throw r.error;
     ME.avatar=url; try{ AVBYNAME[ME.name]=url; }catch(_){}
     render(); offToast('프로필 사진을 바꿨어요');
-  }catch(e){ console.warn('[offlog] 아바타 변경 실패', e); offToast('사진 변경 실패 — 잠시 후 다시'); }
+  }catch(e){ console.warn('[offlog] 아바타 변경 실패', e); offToast('Couldn’t change the photo — try again shortly'); }
 }
 /* 계정 공개 범위 — 인스타식 공개/비공개 계정 */
 async function setAccountVisibility(v){
@@ -4475,7 +4476,7 @@ async function setAccountVisibility(v){
   try{
     const r=await _profileSave({account_visibility:v}); if(r.error)throw r.error;
     offToast(v==='private'?'비공개 계정으로 바꿨어요':'공개 계정으로 바꿨어요');
-  }catch(e){ ME.vis=prev; render(); console.warn('[offlog] 공개범위 저장 실패', e); offToast('변경 실패 — 잠시 후 다시'); }
+  }catch(e){ ME.vis=prev; render(); console.warn('[offlog] 공개범위 저장 실패', e); offToast('Couldn’t change — try again shortly'); }
 }
 function flist(){
   const isFer = S.flist==='follower';
@@ -4483,7 +4484,7 @@ function flist(){
   const meView = S.profile==='me';
   const targetId = meView ? (ME?ME.id:'') : (S.profileAid||'');
   const rp = (!meView && S.profileAid) ? PROFCACHE[S.profileAid] : null;
-  const title = meView ? (ME?ME.name:'내 페이지') : ((rp&&rp.name)||S.profile);
+  const title = meView ? (ME?ME.name:'My Page') : ((rp&&rp.name)||S.profile);
 
   /* 캐시에 없으면 비동기로 실제 목록을 불러오고, 오면 다시 그린다 */
   const key = targetId+'|'+S.flist;
@@ -4495,16 +4496,16 @@ function flist(){
   const fingN = meView ? MYFOLLOWS.size : ((rp&&rp.following!=null)?rp.following:'—');
   const body  = flistBody();
 
-  return `<div class="hd"><button class="circ" id="flback" aria-label="뒤로"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
-    <div class="htitle">${title}<small>${q?'검색':isFer?'팔로워':'팔로잉'}</small></div>
+  return `<div class="hd"><button class="circ" id="flback" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
+    <div class="htitle">${title}<small>${q?'Search':isFer?'Followers':'Following'}</small></div>
     <span style="width:34px"></span></div>
   <div class="srch"><span class="srchi">⌕</span>
     <input id="fq" value="${S.fq||''}" placeholder="아티스트 찾기">
     ${q?`<button class="srchx" id="fqx" aria-label="지우기">✕</button>`:''}</div>
   <button class="invbtn" id="finvite">＋ 친구 초대하기 <small>링크 보내기</small></button>
   <div class="seg" id="flseg" style="${q?'display:none':''}">
-    <button class="${isFer?'on':''}" data-flist="follower">팔로워 <b>${ferN}</b></button>
-    <button class="${isFer?'':'on'}" data-flist="following">팔로잉 <b>${fingN}</b></button></div>
+    <button class="${isFer?'on':''}" data-flist="follower">Followers <b>${ferN}</b></button>
+    <button class="${isFer?'':'on'}" data-flist="following">Following <b>${fingN}</b></button></div>
   <div id="flbody">${body}</div>
   <div style="height:20px"></div>`;
 }
@@ -4540,10 +4541,10 @@ function flistBody(){
     return `<div class="prow">
     <span class="pgo" data-prof="${esc(p.who)}" data-paid="${p.aid||''}">${avatarEl(p.avatar, p.c, 0, p.who)}
       <span class="pnm"><b>${esc(p.who)}</b><small>${esc(p.sub||'')}</small></span></span>
-    ${mine?'':`<button class="fol plfol ${on?'on':''}" data-aid="${p.aid||''}">${on?'팔로잉':'팔로우'}</button>`}
+    ${mine?'':`<button class="fol plfol ${on?'on':''}" data-aid="${p.aid||''}">${on?'Following':'Follow'}</button>`}
   </div>`; };
   const extraBody = extra.length
-    ? `<div class="pldate" style="margin-top:14px">발견 · 새로 팔로우</div>${extra.map(prowOf).join('')}` : '';
+    ? `<div class="pldate" style="margin-top:14px">Discover · 새로 팔로우</div>${extra.map(prowOf).join('')}` : '';
 
   /* 최근 가입 섹션 — 검색어 없을 때 목록 아래에 항상. 나·이미 위에 나온 사람은 제외 */
   const recentBody = (()=>{
@@ -4553,15 +4554,15 @@ function flistBody(){
     return rec.length ? `<div class="pldate" style="margin-top:14px">최근 가입한 사람들</div>${rec.map(prowOf).join('')}` : '';
   })();
 
-  if(!targetId) return `<div class="pknote" style="padding:24px 0 10px">${meView?'로그인하면 내 팔로워를 볼 수 있어요':'불러올 수 없어요'}</div>` + recentBody;
+  if(!targetId) return `<div class="pknote" style="padding:24px 0 10px">${meView?'Log in to see your followers':'불러올 수 없어요'}</div>` + recentBody;
   if(q){
     /* 검색 중 — 관계 목록 로딩과 무관하게 매칭 결과(관계 내 + 발견)를 바로 보여준다 */
     return (rows.length || extra.length)
       ? rows.map(prowOf).join('') + extraBody
-      : ((cached===null||cached===undefined) ? `<div class="pknote" style="padding:36px 0">불러오는 중…</div>` : `<div class="pknote" style="padding:36px 0">찾는 아티스트가 없습니다</div>`);
+      : ((cached===null||cached===undefined) ? `<div class="pknote" style="padding:36px 0">Loading…</div>` : `<div class="pknote" style="padding:36px 0">찾는 아티스트가 없습니다</div>`);
   }
-  if(cached===null||cached===undefined) return `<div class="pknote" style="padding:36px 0">불러오는 중…</div>` + recentBody;
-  return (rows.length ? rows.map(prowOf).join('') : `<div class="pknote" style="padding:24px 0 10px">${isFer?'아직 팔로워가 없어요':'아직 팔로우한 사람이 없어요'}</div>`) + recentBody;
+  if(cached===null||cached===undefined) return `<div class="pknote" style="padding:36px 0">Loading…</div>` + recentBody;
+  return (rows.length ? rows.map(prowOf).join('') : `<div class="pknote" style="padding:24px 0 10px">${isFer?'No followers yet':'You are not following anyone yet'}</div>`) + recentBody;
 }
 
 /* 검색 결과만 다시 그린다 — 입력창(#fq)은 절대 건드리지 않는다.
@@ -4574,7 +4575,7 @@ function refreshFlist(){
   el.innerHTML=flistBody();
   const q=(S.fq||'').trim();
   const seg=document.getElementById('flseg'); if(seg) seg.style.display=q?'none':'';
-  const lab=document.querySelector('.htitle small'); if(lab) lab.textContent=q?'검색':(S.flist==='follower'?'팔로워':'팔로잉');
+  const lab=document.querySelector('.htitle small'); if(lab) lab.textContent=q?'Search':(S.flist==='follower'?'Followers':'Following');
   /* 지우기(✕) 버튼은 검색어가 있을 때만 — 입력창은 그대로 두고 버튼만 넣고 뺀다 */
   const row=document.querySelector('.srch'); let x=document.getElementById('fqx');
   if(q && !x && row){ x=document.createElement('button'); x.className='srchx'; x.id='fqx';
@@ -4588,9 +4589,9 @@ function refreshFlist(){
     const aid=b.dataset.aid;
     if(!ME){ needLogin(); return; }
     const on=b.classList.toggle('on');
-    b.textContent=on?'팔로잉':'팔로우';
+    b.textContent=on?'Following':'Follow';
     (on?followArtist(aid):unfollowArtist(aid)).then(ok=>{
-      if(!ok){ const back=b.classList.toggle('on'); b.textContent=back?'팔로잉':'팔로우'; }
+      if(!ok){ const back=b.classList.toggle('on'); b.textContent=back?'Following':'Follow'; }
     });
   });
 }
@@ -4608,7 +4609,7 @@ function allArtists(){
   if(_artCache && _artCacheLen===ALLTRACKS.length) return _artCache;
   const seen={}, out=[];
   ALLTRACKS.forEach(t=>{ const key=t.aid||t.by; if(!key||seen[key])return; seen[key]=1;
-    out.push({who:t.by, aid:t.aid||null, c:t.c, sub:'아티스트'}); });
+    out.push({who:t.by, aid:t.aid||null, c:t.c, sub:'Artist'}); });
   _artCache=out; _artCacheLen=ALLTRACKS.length;
   return out;
 }
@@ -4690,20 +4691,20 @@ function loadMyPerf(){
 }
 
 function lists(){
-  return `<div class="hd"><button class="circ" data-v="home" aria-label="뒤로"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
+  return `<div class="hd"><button class="circ" data-v="home" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
     <div class="brand" style="flex:1;text-align:center;letter-spacing:.18em;font-size:14px">${S.lseg==='vote'?'VOTE':'MY LIST'}</div>
     <span style="width:34px"></span></div>
   <div class="lseg">
     <button class="${S.lseg!=='vote'?'on':''}" data-lseg="list">LIST</button>
-    <button class="${S.lseg==='vote'?'on':''}" data-lseg="vote">투표</button></div>
+    <button class="${S.lseg==='vote'?'on':''}" data-lseg="vote">Vote</button></div>
   ${S.lseg==='vote'?voteHub():`
   ${LISTS.map(p=>`<div class="lrow" data-list="${p.id}">
     <span class="lcov">${p.cov.slice(0,3).map((id,i)=>
       `<i style="background:${covOf(id)};z-index:${3-i};left:${i*9}px"></i>`).join('')}</span>
-    <span class="lnm"><b>${esc(p.nm)}</b><small>${(p.tracks||[]).length}곡 ${p.pub?'· 공개':'· 나만'}</small></span>
-    <button class="lshare" data-share="${p.id}" aria-label="공유">⤴</button>
+    <span class="lnm"><b>${esc(p.nm)}</b><small>${(p.tracks||[]).length}곡 ${p.pub?'· Public':'· 나만'}</small></span>
+    <button class="lshare" data-share="${p.id}" aria-label="Share">⤴</button>
   </div>`).join('')}
-  <button class="newlist" id="newlist">＋ 새 플레이리스트</button>`}
+  <button class="newlist" id="newlist">＋ New playlist</button>`}
   ${S.share?shareSheet(LISTS.find(x=>x.id===S.list)):''}
   <div style="height:20px"></div>`;
 }
@@ -4715,7 +4716,7 @@ function tierOf(rank){ return rank<3?'S':rank<10?'A':rank<20?'B':'C'; }
 
 function voteHub(){
   const cat=S.vcat||'music';
-  const cats=[['music','TOP CHART'],['stage','STAGE'],['reco','⬡ 추천']];
+  const cats=[['music','TOP CHART'],['stage','STAGE'],['reco','⬡ Picks']];
   const bar=`<div class="y2ktabs">${cats.map(([k,lb])=>`
     <button class="y2ktab ${cat===k?'on':''}" data-vcat="${k}">${lb}</button>`).join('')}</div>`;
   if(cat==='reco') return `<div class="y2kvote">${bar}</div>`+recoView();
@@ -4738,15 +4739,15 @@ function voteHub(){
             ${top?`<span class="y2ksticker top">TOP</span>`:d.me?`<span class="y2ksticker me">MY</span>`:''}
           </div>
           <div class="y2kvbadge"><b>${d.v}</b>
-            <button class="votebtn ${d.voted?'on':''}" data-vote="${r.id}|${d._i}" aria-label="투표">${d.voted?'✓':'▲'}</button></div>
+            <button class="votebtn ${d.voted?'on':''}" data-vote="${r.id}|${d._i}" aria-label="Vote">${d.voted?'✓':'▲'}</button></div>
           ${expanded?`<div class="cex">
-            ${vid?`<iframe class="cvidframe" src="${vid.embed}" title="${esc(d.team)} 영상" loading="lazy"
+            ${vid?`<iframe class="cvidframe" src="${vid.embed}" title="${esc(d.team)} Video" loading="lazy"
                 sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
                 allow="encrypted-media; picture-in-picture" allowfullscreen
                 referrerpolicy="strict-origin-when-cross-origin"></iframe>`
-              :`<a class="cgo" href="${safeUrl(d.videoUrl)}" target="_blank" rel="noopener noreferrer">원본 링크에서 영상 보기 ↗</a>`}
-            <div class="cexh" style="margin-top:8px">${esc(d.songTitle)} · ${d.isCover?'커버':'오리지널'}${d.style?' · '+esc(d.style):''}</div>
-            <div class="cexh" style="margin-top:4px">참가자 · ${esc(d.members)}</div>
+              :`<a class="cgo" href="${safeUrl(d.videoUrl)}" target="_blank" rel="noopener noreferrer">Watch on the original link ↗</a>`}
+            <div class="cexh" style="margin-top:8px">${esc(d.songTitle)} · ${d.isCover?'Cover':'Original'}${d.style?' · '+esc(d.style):''}</div>
+            <div class="cexh" style="margin-top:4px">Members · ${esc(d.members)}</div>
           </div>`:''}
         </div>`;
       }
@@ -4755,12 +4756,12 @@ function voteHub(){
       const preview = logs[0]
         ? (logs[0].t==='note' ? `<span class="cprev note">✎ ${logs[0].tx}</span>`
                                : `<span class="cprev snd">♪ ${logs[0].tx}</span>`)
-        : `<span class="cprev empty">아직 공개된 로그가 없습니다</span>`;
+        : `<span class="cprev empty">No public LOGs yet</span>`;
       return `<div class="y2krow ${d.voted?'voted':''}" data-goart="${who}">
         <span class="y2krank tier-${tierOf(rank)} ${top?'top':''}">${rank+1}</span>
-        <button class="cplay y2kplay" data-cp aria-label="재생">▶</button>
+        <button class="cplay y2kplay" data-cp aria-label="Play">▶</button>
         <span class="y2kinfo">
-          <b>${d.t[0]}</b>${top?'<i class="y2ktag">⬡ 추천</i>':''}${d.me?'<i class="y2ktag me">내 곡</i>':''}
+          <b>${d.t[0]}</b>${top?'<i class="y2ktag">⬡ Picks</i>':''}${d.me?'<i class="y2ktag me">내 곡</i>':''}
           <small>♪ ${who} · log 보기 ›</small>
           ${preview}
         </span>
@@ -4795,7 +4796,7 @@ function recoView(){
     const preview = logs[0]
       ? (logs[0].t==='note' ? `<span class="cprev note">✎ ${logs[0].tx}</span>`
                              : `<span class="cprev snd">♪ ${logs[0].tx}</span>`)
-      : `<span class="cprev empty">아직 공개된 로그가 없습니다</span>`;
+      : `<span class="cprev empty">No public LOGs yet</span>`;
     return `<div class="crow2 ${i===0?'top':''}" data-goart="${who}">
       <div class="chd">
         <span class="cav${i===0?' first':''}">${avatarEl(avOf(who), (st(who)||{}).c||'blue', 34, who)}</span>
@@ -4812,9 +4813,9 @@ function recoView(){
 
 function listDetail(){
   const p=LISTS.find(x=>x.id===S.list);
-  return `<div class="hd"><button class="circ" id="ldback" aria-label="뒤로"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
-    <div class="htitle">${esc(p.nm)}<small>${(p.tracks||[]).length}곡 ${p.pub?'· 공개':'· 나만 보기'}</small></div>
-    <div class="r"><button class="circ" data-share="${p.id}" aria-label="공유">⤴</button></div></div>
+  return `<div class="hd"><button class="circ" id="ldback" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
+    <div class="htitle">${esc(p.nm)}<small>${(p.tracks||[]).length}곡 ${p.pub?'· Public':'· 나만 보기'}</small></div>
+    <div class="r"><button class="circ" data-share="${p.id}" aria-label="Share">⤴</button></div></div>
   <div class="lhero">
     <span class="lcov big">${p.cov.slice(0,3).map((id,i)=>
       `<i style="background:${covOf(id)};z-index:${3-i};left:${i*22}px"></i>`).join('')}</span>
@@ -4824,7 +4825,7 @@ function listDetail(){
   </div>
   ${p.tracks.length?p.tracks.map((t,i)=>`<div class="trow">
     <span class="tno">${String(i+1).padStart(2,'0')}</span>
-    <button class="tplay" data-tplay="${t.audio||''}" aria-label="재생">▶</button>
+    <button class="tplay" data-tplay="${t.audio||''}" aria-label="Play">▶</button>
     <span class="tnm"><b>${esc(t.nm)}</b><small>${esc(t.by)}</small></span>
     <span class="tdur">${t.dur||''}</span>
     <button class="tx" data-tx="${i}" aria-label="빼기">✕</button></div>`).join(''):`<div class="pknote" style="padding:18px 0">아직 곡이 없어요 · 아래 <b>＋ 곡 담기</b>로 발견의 곡을 담아보세요</div>`}
@@ -4841,13 +4842,13 @@ function songPicker(p){
   return `<div class="sheet-bd" id="asbd"></div>
   <div class="pksheet tall">
     <div class="pkhd"><b>${esc(p.nm)}에 곡 담기</b>
-      <button class="pkx" id="asclose" aria-label="닫기">✕</button></div>
+      <button class="pkx" id="asclose" aria-label="Close">✕</button></div>
     <input class="pksearch" id="assearch" placeholder="곡·아티스트 검색" value="${(S.sq||'').replace(/"/g,'&quot;')}">
     <div class="pknote" style="text-align:left;margin:0 2px 8px;color:var(--muted)">▶ 들어보고 · ＋로 담기</div>
     ${list.length?list.slice(0,60).map(t=>`<div class="pkrow songrow ${have[t.tid]?'cur':''}" data-tid="${t.tid}">
       <button class="songplay" data-preview="${t.audio||''}" aria-label="미리듣기">▶</button>
       <span class="pknm"><b>${esc(t.nm)}</b><small>${esc(t.by)}</small></span>
-      <button class="songadd ${have[t.tid]?'on':''}" data-addsong="${t.tid}">${have[t.tid]?'✓ 담김':'＋ 담기'}</button></div>`).join('')
+      <button class="songadd ${have[t.tid]?'on':''}" data-addsong="${t.tid}">${have[t.tid]?'✓ 담김':'＋ Add'}</button></div>`).join('')
       : `<div class="pknote" style="padding:20px 0">검색 결과 없음</div>`}
     <button class="cta" id="asdone">완료 (${(p.tracks||[]).length}곡)</button>
   </div>`;
@@ -4860,7 +4861,7 @@ function stageSheet(w){
   return `<div class="sheet-bd" id="stbd"></div>
   <div class="pksheet">
     <div class="pkhd"><b>${esc(w.nm)}을 낼 무대</b>
-      <button class="pkx" id="stclose" aria-label="닫기">✕</button></div>
+      <button class="pkx" id="stclose" aria-label="Close">✕</button></div>
     ${open.map(r=>`<button class="pkrow ${r.applied===w.nm?'cur':''}" data-stage="${r.id}">
       <span class="pkth" style="background:var(--card2);display:flex;align-items:center;justify-content:center;color:var(--lemon)">◆</span>
       <span class="pknm"><b>${esc(r.nm)}</b><small>${esc(r.sub)} · ${r.prize}</small></span>
@@ -4873,14 +4874,14 @@ function stageSheet(w){
    WORKS 없이도 신청 가능한 완전 별개 플로우. 기존 컴포넌트만 재사용(새 CSS 0줄). */
 function perfMissing(){
   const P=S.perfForm||{}, m=[];
-  if(!P.round) m.push('라운드 선택');
-  if(!P.team||!P.team.trim()) m.push('팀명');
+  if(!P.round) m.push('Pick a round');
+  if(!P.team||!P.team.trim()) m.push('Team name');
   if(!P.members||!P.members.trim()) m.push('참여자 이름');
-  if(!P.contact||!P.contact.trim()) m.push('연락처');
-  if(!P.song||!P.song.trim()) m.push('곡명');
-  if(!P.style||!P.style.trim()) m.push('음악 스타일');
-  if(!P.video||!P.video.trim()) m.push('영상 URL');
-  else if(!parsePerfVideo(P.video)) m.push('영상 URL(유튜브 링크만 지원)');
+  if(!P.contact||!P.contact.trim()) m.push('Contact');
+  if(!P.song||!P.song.trim()) m.push('Song title');
+  if(!P.style||!P.style.trim()) m.push('Style');
+  if(!P.video||!P.video.trim()) m.push('Video URL');
+  else if(!parsePerfVideo(P.video)) m.push('Video URL(YouTube links only)');
   return m;
 }
 function perfApplySheet(){
@@ -4889,37 +4890,37 @@ function perfApplySheet(){
   const miss=perfMissing();
   return `<div class="sheet-bd" id="pfbd"></div>
   <div class="pksheet tall">
-    <div class="pkhd"><b>오디션 지원</b><span class="pksub">투표로 무대에 오릅니다</span>
-      <button class="pkx" id="pfclose" aria-label="닫기">✕</button></div>
+    <div class="pkhd"><b>Audition entry</b><span class="pksub">Vote your way onto the stage</span>
+      <button class="pkx" id="pfclose" aria-label="Close">✕</button></div>
 
-    <div class="rsec">신청할 라운드</div>
+    <div class="rsec">Round to enter</div>
     <div class="evpick">${openRounds.map(r=>`<button class="evopt ${P.round===r.id?'on':''}" data-pfround="${r.id}">
       <b>${esc(r.nm)}</b><small>${esc(r.sub)} · ${esc(slotLine(r))}</small></button>`).join('')}</div>
 
-    <div class="rsec">팀명</div>
-    <input class="cs-name" id="pfteam" value="${esc(P.team||'')}" placeholder="팀 또는 아티스트명">
+    <div class="rsec">Team name</div>
+    <input class="cs-name" id="pfteam" value="${esc(P.team||'')}" placeholder="Team or artist name">
 
-    <div class="rsec">참여자 정보</div>
-    <div class="crow"><span class="clab">참여자</span>
-      <input class="cin" id="pfmembers" value="${esc(P.members||'')}" placeholder="이름 (쉼표로 구분)"></div>
-    <div class="crow"><span class="clab">연락처</span>
-      <input class="cin" id="pfcontact" value="${esc(P.contact||'')}" placeholder="합격 시 연락드릴 전화번호 또는 이메일"></div>
-    <p class="rulen" style="text-align:left;margin:0 4px 4px;color:var(--muted);font-size:11px">합격 시에만 연락드려요 — 투표 화면에는 공개되지 않아요</p>
+    <div class="rsec">Members</div>
+    <div class="crow"><span class="clab">Members</span>
+      <input class="cin" id="pfmembers" value="${esc(P.members||'')}" placeholder="Names (comma separated)"></div>
+    <div class="crow"><span class="clab">Contact</span>
+      <input class="cin" id="pfcontact" value="${esc(P.contact||'')}" placeholder="Phone or email to reach you if selected"></div>
+    <p class="rulen" style="text-align:left;margin:0 4px 4px;color:var(--muted);font-size:11px">We contact you only if selected — never shown on the vote screen</p>
 
-    <div class="rsec">곡명</div>
-    <input class="cs-name" id="pfsong" value="${esc(P.song||'')}" placeholder="곡 제목">
+    <div class="rsec">Song title</div>
+    <input class="cs-name" id="pfsong" value="${esc(P.song||'')}" placeholder="Song title">
     <div class="seg" style="margin-top:8px">
-      <button class="${!P.isCover?'on':''}" data-pfcover="0">오리지널</button>
-      <button class="${P.isCover?'on':''}" data-pfcover="1">커버</button></div>
+      <button class="${!P.isCover?'on':''}" data-pfcover="0">Original</button>
+      <button class="${P.isCover?'on':''}" data-pfcover="1">Cover</button></div>
 
-    <div class="rsec">음악 스타일</div>
-    <div class="crow"><input class="cin" id="pfstyle" value="${esc(P.style||'')}" placeholder="예: 인디팝, 어쿠스틱, 밴드"></div>
+    <div class="rsec">Style</div>
+    <div class="crow"><input class="cin" id="pfstyle" value="${esc(P.style||'')}" placeholder="e.g. indie pop, acoustic, band"></div>
 
-    <div class="rsec">영상 URL <em class="opt">유튜브만 지원</em></div>
+    <div class="rsec">Video URL <em class="opt">YouTube only</em></div>
     <div class="crow"><input class="cin" id="pfvideo" value="${esc(P.video||'')}" placeholder="https://youtube.com/watch?v=..."></div>
-    <p class="rulen" style="text-align:left;margin:0 4px 4px;color:var(--muted);font-size:11px">공개 또는 일부공개(링크 있는 사람) 둘 다 가능해요</p>
+    <p class="rulen" style="text-align:left;margin:0 4px 4px;color:var(--muted);font-size:11px">Public or link-only — both work</p>
 
-    <button class="cta" id="pfdone" ${miss.length?'disabled':''}>신청하기</button>
+    <button class="cta" id="pfdone" ${miss.length?'disabled':''}>Submit</button>
     ${miss.length?`<div class="missn">${miss.join(' · ')} 필요</div>`:''}
   </div>`;
 }
@@ -4929,13 +4930,13 @@ function perfApplySheet(){
 function projectMissing(){
   const P=S.projectForm||{}, proj=PROJECTS.find(x=>x.id===P.project), m=[];
   if(!P.project) m.push('프로젝트 선택');
-  if(!P.name?.trim()) m.push('이름');
-  if(!P.contact?.trim()) m.push('연락처');
+  if(!P.name?.trim()) m.push('Name');
+  if(!P.contact?.trim()) m.push('Contact');
   if(proj){
     if(proj.type==='audio' && !P.audioFile) m.push('음원 파일');
     if(proj.type==='video'){
-      if(!P.video?.trim()) m.push('영상 URL');
-      else if(!parsePerfVideo(P.video)) m.push('영상 URL(유튜브만 지원)');
+      if(!P.video?.trim()) m.push('Video URL');
+      else if(!parsePerfVideo(P.video)) m.push('Video URL(YouTube only)');
     }
   }
   return m;
@@ -4947,32 +4948,32 @@ function projectApplySheet(){
   return `<div class="sheet-bd" id="pjbd"></div>
   <div class="pksheet tall">
     <div class="pkhd"><b>프로젝트 지원</b><span class="pksub">선정되면 연락드려요</span>
-      <button class="pkx" id="pjclose" aria-label="닫기">✕</button></div>
+      <button class="pkx" id="pjclose" aria-label="Close">✕</button></div>
 
     <div class="rsec">지원할 프로젝트</div>
     <div class="evpick">${PROJECTS.map(p=>`<button class="evopt ${P.project===p.id?'on':''}" data-pjproject="${p.id}">
-      <b>${esc(p.brand)}</b><small>${esc(p.who)} · ${p.type==='audio'?'음원 파일':'영상 URL'}</small></button>`).join('')}</div>
+      <b>${esc(p.brand)}</b><small>${esc(p.who)} · ${p.type==='audio'?'음원 파일':'Video URL'}</small></button>`).join('')}</div>
 
-    <div class="rsec">이름</div>
-    <input class="cs-name" id="pjname" value="${esc(P.name||'')}" placeholder="이름 (아티스트명)">
+    <div class="rsec">Name</div>
+    <input class="cs-name" id="pjname" value="${esc(P.name||'')}" placeholder="Name (Artist name)">
 
-    <div class="rsec">연락처</div>
-    <div class="crow"><input class="cin" id="pjcontact" value="${esc(P.contact||'')}" placeholder="선정 시 연락드릴 전화번호 또는 이메일"></div>
-    <p class="rulen" style="text-align:left;margin:0 4px 4px;color:var(--muted);font-size:11px">선정 시에만 연락드려요 — 목록에는 공개되지 않아요</p>
+    <div class="rsec">Contact</div>
+    <div class="crow"><input class="cin" id="pjcontact" value="${esc(P.contact||'')}" placeholder="Phone or email to reach you if selected"></div>
+    <p class="rulen" style="text-align:left;margin:0 4px 4px;color:var(--muted);font-size:11px">We contact you only if selected — never shown in the list</p>
 
-    <div class="rsec">한 줄 소개 <em class="opt">선택</em></div>
-    <div class="crow"><input class="cin" id="pjnote" value="${esc(P.note||'')}" placeholder="간단한 소개나 하고 싶은 말"></div>
+    <div class="rsec">한 줄 소개 <em class="opt">Select</em></div>
+    <div class="crow"><input class="cin" id="pjnote" value="${esc(P.note||'')}" placeholder="A short intro or anything you want to say"></div>
 
     ${!proj ? ''
       : proj.type==='audio'
         ? `<div class="rsec">음원 파일 <em class="opt">MP3 · WAV</em></div>
-           <button class="cs-name" id="pjaudiobtn" style="text-align:left;cursor:pointer">${P.audioName?esc(P.audioName):'파일 선택 (MP3 또는 WAV)'}</button>
+           <button class="cs-name" id="pjaudiobtn" style="text-align:left;cursor:pointer">${P.audioName?esc(P.audioName):'Choose file (MP3 또는 WAV)'}</button>
            <input type="file" id="pjaudiofile" accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/wave,.mp3,.wav" hidden>
-           <p class="rulen" style="text-align:left;margin:6px 4px 0;color:var(--muted);font-size:11px">MP3, WAV 파일만 올릴 수 있어요 · 최대 45MB</p>`
-        : `<div class="rsec">영상 URL <em class="opt">유튜브만 지원</em></div>
+           <p class="rulen" style="text-align:left;margin:6px 4px 0;color:var(--muted);font-size:11px">MP3, WAV 파일만 올릴 수 있어요 · 45MB max</p>`
+        : `<div class="rsec">Video URL <em class="opt">YouTube only</em></div>
            <div class="crow"><input class="cin" id="pjvideo" value="${esc(P.video||'')}" placeholder="https://youtube.com/watch?v=..."></div>`}
 
-    <button class="cta" id="pjdone" ${miss.length?'disabled':''}>지원하기</button>
+    <button class="cta" id="pjdone" ${miss.length?'disabled':''}>Apply</button>
     ${miss.length?`<div class="missn">${miss.join(' · ')} 필요</div>`:''}
   </div>`;
 }
@@ -4982,12 +4983,12 @@ function listPicker(w){
   return `<div class="sheet-bd" id="lpbd"></div>
   <div class="pksheet">
     <div class="pkhd"><b>${esc(w.nm)}을 담을 곳</b>
-      <button class="pkx" id="lpclose" aria-label="닫기">✕</button></div>
+      <button class="pkx" id="lpclose" aria-label="Close">✕</button></div>
     ${LISTS.map(p=>`<button class="pkrow" data-addto="${p.id}">
       <span class="lcov" style="width:44px;height:34px">${p.cov.slice(0,2).map((id,i)=>
         `<i style="background:${covOf(id)};z-index:${2-i};left:${i*8}px;width:34px;height:34px"></i>`).join('')}</span>
       <span class="pknm"><b>${esc(p.nm)}</b><small>${(p.tracks||[]).length}곡</small></span></button>`).join('')}
-    <button class="newlist" id="lpnew" style="margin-top:8px">＋ 새 플레이리스트에 담기</button>
+    <button class="newlist" id="lpnew" style="margin-top:8px">＋ Add to a new playlist</button>
   </div>`;
 }
 
@@ -4995,13 +4996,13 @@ function listPicker(w){
 function shareSheet(p){
   return `<div class="sheet-bd" id="shbd"></div>
   <div class="pksheet">
-    <div class="pkhd"><b>${esc(p.nm)} 공유</b>
-      <button class="pkx" id="shclose" aria-label="닫기">✕</button></div>
+    <div class="pkhd"><b>${esc(p.nm)} Share</b>
+      <button class="pkx" id="shclose" aria-label="Close">✕</button></div>
     <div class="shlink"><span>offlog.app/l/${p.id}</span><button class="shcopy" id="shcopy">복사</button></div>
     <button class="pkrow" data-pub="${p.id}">
       <span class="evck ${p.pub?'on':''}"></span>
       <span class="pknm"><b>${p.pub?'공개 중':'나만 보기'}</b>
-        <small>${p.pub?'링크가 있으면 누구나 들을 수 있습니다':'링크를 열어도 나만 보입니다'}</small></span></button>
+        <small>${p.pub?'Anyone with the link can listen':'Only you can see it, even with the link'}</small></span></button>
     <div class="shrow">${[['💬','메시지'],['📷','스토리'],['🔗','링크'],['⋯','더보기']].map(([i,l])=>
       `<button class="shbtn"><span>${i}</span><small>${l}</small></button>`).join('')}</div>
   </div>`;
@@ -5011,14 +5012,14 @@ function shareSheet(p){
 function work(){
   const w=WORKS.find(x=>x.id===S.work)||WORKS[0];
   const story=w.id==='sr'?STORY:STORY.slice(0,3);
-  const chips=[['all','전체'],['demo','데모'],['pic','사진'],['vid','영상'],['idea','아이디어'],['voice','보이스'],['note','노트']];
+  const chips=[['all','All'],['demo','데모'],['pic','Photo'],['vid','Video'],['idea','아이디어'],['voice','보이스'],['note','노트']];
   const scard=r=>{
     /* 작품 스토리 안 = 이미 담긴 것들. 뱃지 불필요 */
     const chrome=`<div class="rwho" data-prof="${esc(r.who)}" style="cursor:pointer">${avatarEl(avOf(r.who), r.c, 24, r.who)}${esc(r.who)}</div>`;
     if(r.t==='ph')return `<div class="rcard upcard" style="height:180px">
       <div class="bgimg" style="background:${r.bg}"></div><div class="grainy"></div>
       <div class="rmid"><div class="rts">${r.at}</div><div class="rcap">${r.cap}</div></div>
-      <div class="uphint2">📷 탭해서 사진 넣기</div>${chrome}</div>`;
+      <div class="uphint2">📷 Tap to add a photo</div>${chrome}</div>`;
     if(r.t==='snd')return `<div class="rcard snd" data-play${r.audio?` data-audio="${r.audio}"`:''} style="height:170px">
       <div class="bigwv">${waveBars(30)}</div>
       <div class="rmid"><div class="rts">${r.at}</div><div class="rcap">${r.cap}</div>
@@ -5040,44 +5041,44 @@ function work(){
   };
   const mineTimeline=()=>{
     const logs=(w.releaseLogs||[]).map(id=>STREAM.find(l=>l.id===id)).filter(Boolean);
-    if(!logs.length) return `<div class="expire">아직 담은 발매 로그가 없어요 · 아래 <b>발매 로그 고르기</b>로 추가하세요</div>`;
+    if(!logs.length) return `<div class="expire">No LOGs attached to this release yet · 아래 <b>발매 로그 고르기</b>로 추가하세요</div>`;
     const byDt={}; logs.forEach(l=>{ const d=l.dt||'zzz'; (byDt[d]=byDt[d]||[]).push(l); });
     return Object.keys(byDt).sort().reverse().map(d=>{
-      const label=(d==='zzz')?'날짜 미상':d.replace(/-/g,'.');
-      return `<div class="dayhd"><b>${label}</b><small>${byDt[d].length}개</small></div>${byDt[d].map(logCard).join('')}`;
+      const label=(d==='zzz')?'No date':d.replace(/-/g,'.');
+      return `<div class="dayhd"><b>${label}</b><small>${byDt[d].length}</small></div>${byDt[d].map(logCard).join('')}`;
     }).join('');
   };
   /* 커버/아티스트 기반 강조색 (Spotify처럼 위에서 아래로 번지는 색) */
   const _PAL=['coral','blue','green','yellow','purple','shpink','mint'];
   let _ah=0; const _as=String(w.by||w.nm||''); for(let k=0;k<_as.length;k++)_ah=(_ah*31+_as.charCodeAt(k))|0;
   const acc=c(_PAL[Math.abs(_ah)%_PAL.length])||'#3a3a44';
-  const working=(!w.date || w.date==='작업 중');
-  const relTxt=working?'작업 중':(w.pending?'발매 예약 '+w.date:(w.date?'발매 '+w.date:'미발매'));
+  const working=(!w.date || w.date==='In progress');
+  const relTxt=working?'In progress':(w.pending?'Schedule release '+w.date:(w.date?'발매 '+w.date:'미발매'));
   const _cov=safeUrl(w.cover);
-  return `<div class="hd"><button class="circ" data-v="mine" aria-label="뒤로"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
+  return `<div class="hd"><button class="circ" data-v="mine" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
     <div class="htitle"></div>
-    <div class="r"><button class="circ" aria-label="공유">⤴</button></div></div>
+    <div class="r"><button class="circ" aria-label="Share">⤴</button></div></div>
   <div class="whero2" style="--acc:${acc}">
     <div class="wcov2 ${_cov?'':'empty'}" style="${_cov?`background-image:url(${_cov})`:'background:'+w.bg}">
-      ${_cov?'':`<span class="wcov-hint">🖼<br>${w.mine?'발매에서 커버':'커버'}</span>`}</div>
+      ${_cov?'':`<span class="wcov-hint">🖼<br>${w.mine?'발매에서 커버':'Cover'}</span>`}</div>
     <h1 class="wtitle2">${esc(w.nm)}</h1>
     <div class="wsub2"><button class="wartist" data-prof="${esc(w.by||'나')}">${esc(w.by||'나')}</button>
       <span class="wdot">·</span><span>${relTxt}</span>
       ${w.logs?`<span class="wdot">·</span><span>기록 ${w.logs}개</span>`:''}</div>
     <div class="wactions">
       <div class="wicons">
-        <button class="wicon" id="wsave" aria-label="플레이리스트에 담기"><span>＋</span><i>담기</i></button>
-        <button class="wicon" aria-label="공유"><span>⤴</span><i>공유</i></button>
+        <button class="wicon" id="wsave" aria-label="플레이리스트에 담기"><span>＋</span><i>Add</i></button>
+        <button class="wicon" aria-label="Share"><span>⤴</span><i>Share</i></button>
         ${w.mine ? (working
-          ? `<button class="wicon acc" id="relbtn" aria-label="음원 발매"><span>◎</span><i>발매</i></button>`
+          ? `<button class="wicon acc" id="relbtn" aria-label="Release"><span>◎</span><i>발매</i></button>`
           : `<button class="wicon" id="relbtn" aria-label="발매 정보 수정"><span>✎</span><i>수정</i></button>`) : ''}
       </div>
-      <button class="wplay2" id="wplaybig" aria-label="재생"></button>
+      <button class="wplay2" id="wplaybig" aria-label="Play"></button>
     </div>
-    ${w.mine && !working && w.date ? `<div class="wrelbar"><span class="ap-dot" style="background:var(--lemon);box-shadow:0 0 8px var(--lemon)"></span><b>${w.date}</b> 발매 예약</div>`:''}
+    ${w.mine && !working && w.date ? `<div class="wrelbar"><span class="ap-dot" style="background:var(--lemon);box-shadow:0 0 8px var(--lemon)"></span><b>${w.date}</b> Schedule release</div>`:''}
   </div>
-  ${w.mine && w.credits&&(w.credits.comp||w.credits.lyri||w.credits.arr||w.credits.prod) ? `<div class="wsec"><div class="wsec-t">크레딧</div><div class="wcredits">${w.credits.comp?`<span>작곡 <b>${esc(w.credits.comp)}</b></span>`:''}${w.credits.lyri?`<span>작사 <b>${esc(w.credits.lyri)}</b></span>`:''}${w.credits.arr?`<span>편곡 <b>${esc(w.credits.arr)}</b></span>`:''}${w.credits.prod?`<span>프로듀서 <b>${esc(w.credits.prod)}</b></span>`:''}</div></div>`:''}
-  ${w.mine && (w.inst || w.lyr) ? `<div class="wsec"><div class="wsec-t">가사</div><div class="wlyr"${w.inst?' style="color:var(--muted)"':''}>${w.inst?'연주곡 (가사 없음)':w.lyr.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div></div>`:''}
+  ${w.mine && w.credits&&(w.credits.comp||w.credits.lyri||w.credits.arr||w.credits.prod) ? `<div class="wsec"><div class="wsec-t">Credits</div><div class="wcredits">${w.credits.comp?`<span>작곡 <b>${esc(w.credits.comp)}</b></span>`:''}${w.credits.lyri?`<span>작사 <b>${esc(w.credits.lyri)}</b></span>`:''}${w.credits.arr?`<span>편곡 <b>${esc(w.credits.arr)}</b></span>`:''}${w.credits.prod?`<span>Producer <b>${esc(w.credits.prod)}</b></span>`:''}</div></div>`:''}
+  ${w.mine && (w.inst || w.lyr) ? `<div class="wsec"><div class="wsec-t">Lyrics</div><div class="wlyr"${w.inst?' style="color:var(--muted)"':''}>${w.inst?'연주곡 (가사 없음)':w.lyr.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div></div>`:''}
   ${w.mine?lvRow(w):eventStatus(w)}
   <div class="sechd">
     <div class="sec" style="margin:0">${w.mine?'음원 로그':'The Story'}</div></div>
@@ -5100,13 +5101,13 @@ function releaseSheet(w){
   const miss=relMissing();
   return `<div class="sheet-bd" id="relbd"></div>
   <div class="pksheet tall">
-    <div class="pkhd"><b>음원 발매</b><span class="pksub">유통 제출</span>
-      <button class="pkx" id="relclose" aria-label="닫기">✕</button></div>
+    <div class="pkhd"><b>Release</b><span class="pksub">유통 제출</span>
+      <button class="pkx" id="relclose" aria-label="Close">✕</button></div>
 
     <div class="rsec">제목</div>
-    <input class="cs-name" id="reltitle" value="${(R.title||'').replace(/"/g,'&quot;')}" placeholder="곡 제목">
+    <input class="cs-name" id="reltitle" value="${(R.title||'').replace(/"/g,'&quot;')}" placeholder="Song title">
 
-    <div class="rsec">음원</div>
+    <div class="rsec">Track</div>
     <button class="ubox ${R.audio?'on':''}" id="relaudio">
       <span class="ub-ic">${R.audio?'♪':'＋'}</span>
       <span class="ub-t"><b>${R.audio?R.audio.name:'음원 파일 업로드'}</b>
@@ -5120,21 +5121,21 @@ function releaseSheet(w){
         <small>3000×3000 · JPG/PNG · 텍스트 없는 정사각</small></span>
       ${R.art?`<span class="ub-ok">✓</span>`:''}</button>
 
-    <div class="rsec">가사</div>
+    <div class="rsec">Lyrics</div>
     <button class="instck ${R.inst?'on':''}" id="relinst">
       <span class="evck"></span><span>연주곡 (가사 없음)</span></button>
     ${R.inst?'' : `<textarea class="lyr" id="rellyr" placeholder="가사를 붙여넣으세요&#10;&#10;줄바꿈 그대로 유통사에 전달됩니다">${R.lyr}</textarea>`}
 
-    <div class="rsec">크레딧 <em class="opt">작곡가는 필수</em></div>
-    ${[['comp','작곡'],['lyri','작사'],['arr','편곡'],['prod','프로듀서']].map(([k,l])=>`
+    <div class="rsec">Credits <em class="opt">작곡가는 필수</em></div>
+    ${[['comp','작곡'],['lyri','작사'],['arr','편곡'],['prod','Producer']].map(([k,l])=>`
       <div class="crow"><span class="clab">${l}</span>
-        <input class="cin" data-cr="${k}" value="${R[k]}" placeholder="${k==='comp'?'이름 (필수)':'이름'}"></div>`).join('')}
+        <input class="cin" data-cr="${k}" value="${R[k]}" placeholder="${k==='comp'?'Name (필수)':'Name'}"></div>`).join('')}
 
-    <div class="rsec">발매일</div>
+    <div class="rsec">Release date</div>
     <input class="rdate" type="date" id="reldate" value="${R.date}" min="${minRelDate()}">
     <div class="rulen" style="text-align:left;margin:7px 4px 0">유통사 심사 때문에 <b style="color:var(--lemon)">최소 2주 뒤</b>부터 지정할 수 있습니다 · 빠른 날짜 ${minRelDate().replace(/-/g,'.')}</div>
 
-    <div class="rsec">공연 이벤트 참여 <em class="opt">선택</em></div>
+    <div class="rsec">공연 이벤트 참여 <em class="opt">Select</em></div>
     <div class="evpick">
       <button class="evopt ${!R.event?'on':''}" data-relevent="">나중에 할게요</button>
       ${ROUNDS.filter(r=>r.cat==='stage'&&r.type==='open'&&r.entrySrc!=='perf').map(r=>`
@@ -5147,7 +5148,7 @@ function releaseSheet(w){
     <div class="rellogsel">${relLogRows()}</div>
 
     <div class="relsum">${S.sel.length?`선택한 로그 <b>${S.sel.length}개</b>가 발매일에 메이킹 필름으로 자동 편집됩니다`:'넣을 로그를 골라주세요 (선택 안 하면 로그 없이 발매)'}</div>
-    <button class="cta" id="reldone" ${miss.length?'disabled':''}>발매 예약</button>
+    <button class="cta" id="reldone" ${miss.length?'disabled':''}>Schedule release</button>
     ${miss.length?`<div class="missn">${miss.join(' · ')} 필요</div>`:''}
   </div>`;
 }
@@ -5161,11 +5162,11 @@ function minRelDate(){
 function relMissing(){
   const R=S.relForm, m=[];
   if(!R.title||!R.title.trim()) m.push('제목');
-  if(!R.audio) m.push('음원');
+  if(!R.audio) m.push('Track');
   if(!R.art)   m.push('아트워크');
-  if(!R.inst && !R.lyr.trim()) m.push('가사');
+  if(!R.inst && !R.lyr.trim()) m.push('Lyrics');
   if(!R.comp.trim()) m.push('작곡가');
-  if(!R.date) m.push('발매일');
+  if(!R.date) m.push('Release date');
   return m;
 }
 
@@ -5183,14 +5184,14 @@ function syncStoryAudio(){
 function composeSheet(){
   if(!S.compose) return '';
   const C=S.compose, m=C.media;
-  const prev = m ? (m.kind==='vid' ? `<div class="cs-prev"><video src="${m.url}" controls playsinline></video><button class="cs-rm" id="csrm" aria-label="첨부 삭제">✕</button></div>`
-      : m.kind==='aud' ? `<div class="cs-prev aud"><span>🎵 ${m.name||'데모'}</span><button class="cs-rm" id="csrm" aria-label="첨부 삭제">✕</button></div>`
-      : `<div class="cs-prev"><img src="${m.url}" alt=""><button class="cs-rm" id="csrm" aria-label="첨부 삭제">✕</button></div>`) : '';
+  const prev = m ? (m.kind==='vid' ? `<div class="cs-prev"><video src="${m.url}" controls playsinline></video><button class="cs-rm" id="csrm" aria-label="Remove attachment">✕</button></div>`
+      : m.kind==='aud' ? `<div class="cs-prev aud"><span>🎵 ${m.name||'데모'}</span><button class="cs-rm" id="csrm" aria-label="Remove attachment">✕</button></div>`
+      : `<div class="cs-prev"><img src="${m.url}" alt=""><button class="cs-rm" id="csrm" aria-label="Remove attachment">✕</button></div>`) : '';
   const canPost = !!((C.text||'').trim() || m);
   const editing = !!C.editId;   /* 수정 모드 — 기존 로그의 글/캡션만 고친다(첨부 버튼 숨김) */
   return `<div class="cs-bd" id="csbd"><div class="cs">
-    <div class="cs-hd"><b>${editing?'LOG 수정':'로그 남기기'}</b><button class="cs-x" id="csx" aria-label="닫기">✕</button></div>
-    <textarea class="cs-ta" id="csta" placeholder="${editing?'내용을 고쳐주세요':'무슨 생각이에요?  ·  그냥 쓰면 시간과 글만 남아요'}">${C.text||''}</textarea>
+    <div class="cs-hd"><b>${editing?'LOG 수정':'Write a LOG'}</b><button class="cs-x" id="csx" aria-label="Close">✕</button></div>
+    <textarea class="cs-ta" id="csta" placeholder="${editing?'Edit your text':'What’s on your mind?  ·  Just write — the time and the words stay'}">${C.text||''}</textarea>
     ${prev}
     ${editing?'':`<div class="cs-attach">
       <button class="cs-att${m&&(m.kind==='ph'||m.kind==='vid')?' on':''}" id="cscam" aria-label="카메라">📷<span>카메라</span></button>
@@ -5207,8 +5208,8 @@ function submitCompose(){
   /* 수정 모드 — 새 로그를 만들지 않고 기존 로그의 본문(글)/캡션(미디어)만 바꾼다 */
   if(C.editId){
     const l=STREAM.find(x=>x&&String(x.id)===String(C.editId));
-    if(!l){ S.compose=null; render(); offToast('로그를 못 찾았어요'); return; }
-    if(badWordIn(txt)){ offToast('부적절한 표현이 있어 저장할 수 없어요'); return; }
+    if(!l){ S.compose=null; render(); offToast('LOG not found'); return; }
+    if(badWordIn(txt)){ offToast('Contains inappropriate language — can’t save'); return; }
     if(l.t==='note') l.text=txt; else { l.cap=txt; if(l.t==='snd') l.nm=txt; }
     studioSave(); S.compose=null; render(); offToast('수정했어요');
     (async()=>{ try{
@@ -5230,7 +5231,7 @@ function pushLog(txt, m, audioUrl){
   let log;
   if(m && m.kind==='vid')      log={id, t:'vid', at:now, dt, cap:txt, src:m.url, side:'l', work:null};
   else if(m && m.kind==='aud') log={id, t:'snd', at:now, dt, nm:txt||'데모', dur:'', audio:audioUrl||m.url, media:audioUrl||'', side:'l', work:null};
-  else if(m && m.kind==='ph')  log={id, t:'ph',  at:now, dt, cap:txt||'사진', bg:'center/cover no-repeat url('+m.url+')', side:'l', work:null};
+  else if(m && m.kind==='ph')  log={id, t:'ph',  at:now, dt, cap:txt||'Photo', bg:'center/cover no-repeat url('+m.url+')', side:'l', work:null};
   else{ const _tone=['y','b','p'][STREAM.filter(x=>x&&x.t==='note').length%3];   /* 포스트잇 색을 노랑→하늘→핑크로 번갈아 */
                                log={id, t:'note',at:now, dt, text:txt, tone:_tone, side:'l', work:null}; }
   /* 기본 공개 — 작성 시트에서 공개/비공개 토글을 뺐다(친구 피드가 비지 않게).
@@ -5247,8 +5248,8 @@ function pushLog(txt, m, audioUrl){
      그런데도 "올렸어요"라고 하면 올라간 줄 알고 기기를 바꾸는 순간 사라진다.
      그래서 정직하게 알리고 로그인 시트를 띄운다 — 글은 이미 기기에 남아 있고,
      로그인하면 syncPendingLogs 가 sid 없는 my_ 로그를 자동으로 올려준다. */
-  if(!ME){ offToast('이 기기에 저장했어요 · 로그인하면 올라갑니다'); S.login=true; render(); }
-  else offToast('로그를 올렸어요');
+  if(!ME){ offToast('Saved on this device · Log in to upload'); S.login=true; render(); }
+  else offToast('LOG posted');
   /* 서버에 영구 저장 — 사진·영상 원본은 Storage로 올리고 URL만 남긴다 */
   (async function(){
     try{
@@ -5264,7 +5265,7 @@ function pushLog(txt, m, audioUrl){
           try{studioSave()}catch(_){}
           try{render()}catch(_){}
         } else if(okSize){
-          offToast((m.kind==='vid'?'영상':'사진')+'을 서버에 올리지 못했어요 — 이 기기에만 남습니다');
+          offToast((m.kind==='vid'?'Video':'Photo')+'을 서버에 올리지 못했어요 — 이 기기에만 남습니다');
         }
       }
       await saveLogRemote(log);
@@ -5389,7 +5390,7 @@ function trimSheet(){
   return `<div class="sheet-bd" id="trbd"></div>
   <div class="pksheet trimsheet">
     <div class="pkhd"><b>영상 자르기</b><span class="pksub">${TRIM_MAX}초까지 올릴 수 있어요</span>
-      <button class="pkx" id="trclose" aria-label="닫기">✕</button></div>
+      <button class="pkx" id="trclose" aria-label="Close">✕</button></div>
     <video id="trvid" class="trvid" src="${T.url}" playsinline muted preload="metadata"></video>
     ${!T.ready?`<div class="pknote" style="padding:18px 0">영상을 읽는 중…</div>`
     : d<=0 ? `<div class="pknote" style="padding:14px 0">길이를 읽을 수 없는 영상이에요 — 그대로 올립니다</div>`
@@ -5406,7 +5407,7 @@ function trimSheet(){
          <button class="trplay" id="trpreview">▶ 이 구간 보기</button></div>`}
     <button class="cta" id="trdone" ${(!T.ready||over||T.busy)?'disabled':''}>
       ${T.busy?`잘라내는 중… <span id="trimpct">0%</span>`:'이 구간으로'}</button>
-    ${T.busy?`<div class="pknote" style="padding:8px 0 0">고른 길이만큼 걸려요 — 화면을 끄지 말아주세요</div>`:''}
+    ${T.busy?`<div class="pknote" style="padding:8px 0 0">Takes about as long as the clip — keep the screen on</div>`:''}
   </div>`;
 }
 /* ── 데모에 LOG 담기 — 데모가 만들어진 과정의 기록을 골라 연결한다(데모의 history) ── */
@@ -5416,25 +5417,25 @@ function demoPickSheet(){
   if(!demo) return '';
   /* 담을 수 있는 것 = 내 로그 중 데모 자신·다른 음원(snd)을 뺀 글/사진/영상 */
   const cands=STREAM.filter(l=>l && l.id!==P.id && l.t!=='snd');
-  const lab=l=> l.t==='ph'?('📷 '+(l.cap||'사진')) : l.t==='vid'?('🎬 '+(l.cap||'영상')) : (l.text||'').split('\n')[0];
+  const lab=l=> l.t==='ph'?('📷 '+(l.cap||'Photo')) : l.t==='vid'?('🎬 '+(l.cap||'Video')) : (l.text||'').split('\n')[0];
   const rows=cands.map(l=>`<button class="pkrow ${P.sel.includes(l.id)?'on':''}" data-dprow="${l.id}">
       <span class="pknm"><b>${esc(String(lab(l)).slice(0,30))}</b><small>${esc((l.dt||'').slice(5).replace('-','.'))} ${esc(l.at||'')}</small></span>
       <span class="evck${P.sel.includes(l.id)?' on':''}" style="margin-left:auto"></span></button>`).join('');
   return `<div class="sheet-bd" id="dpbd"></div>
   <div class="pksheet tall">
     <div class="pkhd"><b>LOG 담기</b><span class="pksub">${esc(demo.nm||'데모')}</span>
-      <button class="pkx" id="dpclose" aria-label="닫기">✕</button></div>
+      <button class="pkx" id="dpclose" aria-label="Close">✕</button></div>
     <div class="pkwarn" style="background:rgba(83,224,200,.07);border-color:rgba(83,224,200,.25);color:var(--mint)">
       이 데모가 만들어진 날들의 기록을 골라주세요</div>
-    ${rows||`<div class="pknote" style="padding:26px 0">담을 로그가 아직 없어요 — 글·사진을 먼저 남겨보세요</div>`}
-    <button class="cta" id="dpdone">${P.sel.length?P.sel.length+'개 담기':'담기'}</button>
+    ${rows||`<div class="pknote" style="padding:26px 0">No LOGs to attach — write or post a photo first</div>`}
+    <button class="cta" id="dpdone">${P.sel.length?P.sel.length+'개 담기':'Add'}</button>
   </div>`;
 }
 /* 담기 저장 — 로컬 demoOf + (컬럼이 있으면) 서버 demo_id */
 async function saveDemoPick(){
   const P=S.demoPick; if(!P) return;
   const demo=STREAM.find(x=>x&&x.id===P.id);
-  if(!demo||!demo.sid){ offToast('데모가 아직 서버에 저장되지 않았어요'); return; }
+  if(!demo||!demo.sid){ offToast('This demo is not saved on the server yet'); return; }
   const before=STREAM.filter(l=>l&&l.demoOf===demo.sid).map(l=>l.id);
   /* 로컬 반영: 고른 건 담고, 골랐다가 뺀 건 푼다 */
   STREAM.forEach(function(l){
@@ -5463,7 +5464,7 @@ async function saveDemoPick(){
 /* 데모(오디오) 로그 — 로그인 아티스트면 Storage에 실제 업로드 후 재생되는 소리 로그로 */
 async function uploadDemoLog(file, txt){
   /* 영상이 여기까지 오면 음원으로 저장돼 소리만 남는다 — 막고 영상 경로로 안내한다 */
-  if(isVideoFile(file)){ offToast('영상 파일이에요 — 📷 카메라로 올려주세요'); return; }
+  if(isVideoFile(file)){ offToast('That’s a video — post it with 📷 Camera'); return; }
   if(tooBigToUpload(file,'aud')) return;
   const btn=document.getElementById('cspost'); if(btn){btn.disabled=true;btn.textContent='올리는 중…';}
   try{
@@ -5480,27 +5481,27 @@ async function uploadDemoLog(file, txt){
 }
 /* 내 로그 ⋯ — 그 로그의 음악·데모·사진을 다시 받기(다운로드). 글은 복사 */
 function downloadLog(id){
-  const l=STREAM.find(x=>String(x.id)===String(id)); if(!l){ offToast('로그를 못 찾았어요'); return; }
+  const l=STREAM.find(x=>String(x.id)===String(id)); if(!l){ offToast('LOG not found'); return; }
   let url='', name='';
   if(l.t==='snd'){ url=l.audio||''; name=(l.nm||'데모')+'.mp3'; }
-  else if(l.t==='vid'){ url=l.src||''; name=(l.cap||'영상')+'.mp4'; }
-  else if(l.t==='ph'){ url=(String(l.bg||'').match(/url\(["']?(.*?)["']?\)/)||[])[1]||''; name=(l.cap||'사진')+'.jpg'; }
+  else if(l.t==='vid'){ url=l.src||''; name=(l.cap||'Video')+'.mp4'; }
+  else if(l.t==='ph'){ url=(String(l.bg||'').match(/url\(["']?(.*?)["']?\)/)||[])[1]||''; name=(l.cap||'Photo')+'.jpg'; }
   else { if(navigator.clipboard){ navigator.clipboard.writeText(l.text||'').then(()=>offToast('글을 복사했어요')).catch(()=>offToast('복사 실패')); } else offToast('복사할 수 없어요'); return; }
-  if(!url){ offToast('받을 파일이 없어요 (샘플 로그예요)'); return; }
+  if(!url){ offToast('Nothing to download (sample LOG)'); return; }
   _saveFile(url, name);
 }
 /* 내 로그 공유 — 링크(+글 내용)를 시스템 공유 시트로, 안 되면 클립보드로 */
 async function shareLog(id){
-  const l=STREAM.find(x=>x&&String(x.id)===String(id)); if(!l){ offToast('로그를 못 찾았어요'); return; }
+  const l=STREAM.find(x=>x&&String(x.id)===String(id)); if(!l){ offToast('LOG not found'); return; }
   const url=location.origin+'/offlog';
   const txt=(l.text||l.cap||l.nm||'').slice(0,120);
   try{ if(navigator.share){ await navigator.share({title:'OFFLOG', text:txt?txt+' — OFFLOG':'OFFLOG', url:url}); return; } }catch(e){ if(e&&e.name==='AbortError')return; }
-  try{ await navigator.clipboard.writeText((txt?txt+'\n':'')+url); offToast('링크가 복사됐어요'); }
+  try{ await navigator.clipboard.writeText((txt?txt+'\n':'')+url); offToast('Link copied'); }
   catch(_){ offToast('링크: '+url); }
 }
 /* 내 로그 수정 — 작성 시트를 수정 모드로 연다(글=본문, 미디어=캡션) */
 function editLog(id){
-  const l=STREAM.find(x=>x&&String(x.id)===String(id)); if(!l){ offToast('로그를 못 찾았어요'); return; }
+  const l=STREAM.find(x=>x&&String(x.id)===String(id)); if(!l){ offToast('LOG not found'); return; }
   S.logMenu=null;
   S.compose={text:(l.t==='note'?(l.text||''):(l.cap||l.nm||'')), media:null, editId:l.id};
   render();
@@ -5509,9 +5510,9 @@ function editLog(id){
    실패해도 로컬은 이미 지워진 상태를 유지한다(사용자 의도가 삭제이므로 복원이 더 이상함) */
 async function deleteLog(id){
   const i=STREAM.findIndex(x=>x&&String(x.id)===String(id));
-  if(i<0){ offToast('로그를 못 찾았어요'); return; }
+  if(i<0){ offToast('LOG not found'); return; }
   const l=STREAM[i];
-  if(!await offConfirm('이 로그를 삭제할까요?\n지운 로그는 되돌릴 수 없습니다.','삭제')) return;
+  if(!await offConfirm('Delete this LOG?\nA deleted LOG can’t be restored.','Delete')) return;
   STREAM.splice(i,1); studioSave(); S.logMenu=null; render();
   offToast('로그를 삭제했어요');
   if(l.sid && ME && SBC && LOGSTABLE){
@@ -5521,12 +5522,12 @@ async function deleteLog(id){
 }
 /* 글 로그에 사진/데모 붙이기 → 미디어 카드로 (사진=캡션, 데모=데모카드) */
 function attachMedia(id, kind, file){
-  const l=STREAM.find(x=>String(x.id)===String(id)); if(!l){ offToast('로그를 못 찾았어요'); return; }
+  const l=STREAM.find(x=>String(x.id)===String(id)); if(!l){ offToast('LOG not found'); return; }
   const txt=(l.text||'').trim();
   if(kind==='ph'){
     /* 원본 base64는 저장 용량을 넘겨 저장이 통째로 실패한다 → 줄여서 넣고, 원본은 서버로 */
     shrinkImage(file).then(function(small){
-      l.t='ph'; l.cap=txt||'사진'; l.bg='center/cover no-repeat url('+(small||'')+')';
+      l.t='ph'; l.cap=txt||'Photo'; l.bg='center/cover no-repeat url('+(small||'')+')';
       delete l.text; delete l.tone; studioSave(); render(); offToast('사진을 넣었어요');
       (async function(){ try{
         const okSize=!tooBigToUpload(file,'ph');
@@ -5577,9 +5578,9 @@ async function offInvite(){
 /* 남의 음악 공유 — 네이티브 공유 or 링크 복사 */
 async function offShareTrack(M){
   const url=location.origin+'/offlog';
-  const title=((M&&M.nm)?M.nm:'음악')+((M&&M.by)?' · '+M.by:'');
-  try{ if(navigator.share){ await navigator.share({title:title, url:url}); } else { await navigator.clipboard.writeText(url); offToast('링크가 복사됐어요'); } }
-  catch(e){ try{ await navigator.clipboard.writeText(url); offToast('링크가 복사됐어요'); }catch(_){ offToast('링크: '+url); } }
+  const title=((M&&M.nm)?M.nm:'Music')+((M&&M.by)?' · '+M.by:'');
+  try{ if(navigator.share){ await navigator.share({title:title, url:url}); } else { await navigator.clipboard.writeText(url); offToast('Link copied'); } }
+  catch(e){ try{ await navigator.clipboard.writeText(url); offToast('Link copied'); }catch(_){ offToast('링크: '+url); } }
 }
 function _anchorDL(href, name){ const a=document.createElement('a'); a.href=href; a.download=name; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove(); }
 /* data:/blob: 는 바로 저장. http(s)(Storage)는 blob으로 받아 실제 저장 — download 속성은 cross-origin이면 무시되므로 */
@@ -5595,7 +5596,7 @@ function _saveFile(url, name){
         navigator.clipboard.writeText(url);
         offToast('바로 저장이 안 돼요 — 링크를 복사했으니 브라우저에서 열어 저장해 주세요'); return;
       } }catch(_){}
-      offToast('저장에 실패했어요 — 잠시 후 다시 시도해 주세요');
+      offToast('Couldn’t save — please try again shortly');
     });
 }
 /* 실제 음악 업로드 — Storage(audio) + tracks (로그인 아티스트) */
@@ -5613,13 +5614,13 @@ async function submitMusic(file, title){
     });
     const pub=SBC.storage.from('audio').getPublicUrl(path);
     const url=(pub&&pub.data&&pub.data.publicUrl)||'';
-    const ins=await SBC.from('tracks').insert({artist_id:ME.id, title:title||'무제', audio_url:url, is_demo:false}).select('id').maybeSingle();
+    const ins=await SBC.from('tracks').insert({artist_id:ME.id, title:title||'Untitled', audio_url:url, is_demo:false}).select('id').maybeSingle();
     if(ins.error) throw ins.error;
     const tid=(ins.data&&ins.data.id)||('t_'+Date.now());
-    const nm=title||'무제', dt=(new Date()).toISOString().slice(0,10);
+    const nm=title||'Untitled', dt=(new Date()).toISOString().slice(0,10);
     ALLTRACKS.unshift({nm:nm, by:ME.name, dur:'', tid:tid, audio:url, c:'coral'});
     if(PROFCACHE[ME.id]) PROFCACHE[ME.id].tracks.unshift({id:tid, nm:nm, audio:url, cover:'', demo:false, dt:dt, likes:0});
-    S.compose=null; render(); offToast('음악을 올렸어요 🎵 — 발견·내 페이지에 반영');
+    S.compose=null; render(); offToast('Music posted 🎵 — added to Discover and My Page');
   }catch(e){ console.warn('[offlog] 음악 업로드 실패', e); offToast('업로드 실패 — '+((e&&e.message)||'다시 시도')); const b=document.getElementById('cspost'); if(b){b.disabled=false;b.textContent='음악 올리기';} }
 }
 
@@ -5628,16 +5629,16 @@ function newWorkSheet(){
   if(!S.newwork) return '';
   const nm=(S.newwork.nm||'').replace(/"/g,'&quot;');
   return `<div class="cs-bd" id="nwbd"><div class="cs">
-    <div class="cs-hd"><b>새 작품</b><button class="cs-x" id="nwx" aria-label="닫기">✕</button></div>
+    <div class="cs-hd"><b>새 작품</b><button class="cs-x" id="nwx" aria-label="Close">✕</button></div>
     <input class="cs-name" id="nwname" placeholder="앨범 · 작품 이름" value="${nm}">
-    <p style="color:var(--muted);font-size:12px;margin:8px 2px 0">만든 뒤 '음원 발매하기'에서 커버·가사·크레딧·발매일(최소 2주 뒤)을 넣을 수 있어요.</p>
+    <p style="color:var(--muted);font-size:12px;margin:8px 2px 0">만든 뒤 '음원 발매하기'에서 커버·Lyrics·Credits·Release date(최소 2주 뒤)을 넣을 수 있어요.</p>
     <button class="cs-post" id="nwdone"${(S.newwork.nm||'').trim()?'':' disabled'}>만들기</button>
   </div></div>`;
 }
 const WGRAD='radial-gradient(circle at 30% 25%,#4a2f66,transparent 60%),radial-gradient(circle at 80% 75%,#173f38,transparent 55%),#101014';
 
 /* ── 미니 플레이어 ── 곡·리스트명은 실제 데이터(NOWPLAY)에서 온다 */
-let NOWPLAY={label:'발견', cnt:0, nm:'', tm:'', src:'', who:'', aid:'', tid:''};
+let NOWPLAY={label:'Discover', cnt:0, nm:'', tm:'', src:'', who:'', aid:'', tid:''};
 
 /* ── 실제 오디오 재생 (전역 Audio 1개) ── 재생버튼에 진짜 mp3를 물린다 */
 /* preload='none' 이면 재생 버튼을 누른 뒤에야 네트워크 요청이 시작돼 1초 넘게 기다렸다.
@@ -5692,14 +5693,14 @@ function renderMini(){
   const _lab=NOWPLAY.label+(NOWPLAY.cnt?' · '+NOWPLAY.cnt+'곡':'');
   m.innerHTML = (S.mini.on && NOWPLAY.nm && !(S.view==='home'&&S.mode==='slide'))
     ? `<div class="mini ${S.mini.playing?'playing':''}">
-        <div class="mini-top"><span>${esc(_lab)}</span><button id="mx" aria-label="닫기">✕</button></div>
-        <div class="mini-btm"><button class="miniplay" id="mp" aria-label="${S.mini.playing?'일시정지':'재생'}"></button>
+        <div class="mini-top"><span>${esc(_lab)}</span><button id="mx" aria-label="Close">✕</button></div>
+        <div class="mini-btm"><button class="miniplay" id="mp" aria-label="${S.mini.playing?'일시정지':'Play'}"></button>
           <div class="mini-nmwrap">
             <span class="nm">${esc(NOWPLAY.nm)}</span>
             ${NOWPLAY.who?`<span class="who" id="mwho" style="cursor:pointer">${esc(NOWPLAY.who)} ›</span>`:''}
           </div>
-          <button class="minish" id="msh" aria-label="공유">⤴</button>
-          ${(NOWPLAY.aid||NOWPLAY.tid)?`<button class="minimore" id="mmore" aria-label="공유·담기·팔로우">⋯</button>`:''}</div>
+          <button class="minish" id="msh" aria-label="Share">⤴</button>
+          ${(NOWPLAY.aid||NOWPLAY.tid)?`<button class="minimore" id="mmore" aria-label="Share·Add·Follow">⋯</button>`:''}</div>
         <div class="mini-seek">
           <span class="mtime" id="mcur">0:00</span>
           <div class="mbar" id="mbar" role="slider" aria-label="재생 위치"><i class="mbuf" id="mbuf"></i><i class="mfill" id="mfill"></i><b class="mknob" id="mknob"></b></div>
@@ -5758,13 +5759,13 @@ let CAMMIC=null;   /* 녹화할 때만 따로 얻는 마이크 스트림 (stopCa
 function camView(){
   if(!S.cam) return '';
   if(CAMERR) return `<div class="camview">
-    <button class="camx" id="camx" aria-label="닫기">✕</button>
+    <button class="camx" id="camx" aria-label="Close">✕</button>
     <div class="camerr"><div>${CAMERR}</div>
       <button class="cs-post" id="camfallback">폰 카메라로 찍기</button></div></div>`;
   return `<div class="camview">
     <video class="camvid${CAMFACING==='user'?' mirror':''}" id="camvid" autoplay playsinline muted></video>
-    <button class="camx" id="camx" aria-label="닫기">✕</button>
-    <div class="camhint">탭 = 사진 · 길게 누르면 영상</div>
+    <button class="camx" id="camx" aria-label="Close">✕</button>
+    <div class="camhint">Tap = photo · Hold = video</div>
     <div class="cambar">
       <button class="camsub" id="camdemo" aria-label="데모 올리기">♪</button>
       <button class="camshot" id="camshot" aria-label="촬영"></button>
@@ -5817,7 +5818,7 @@ function closeCam(){
 /* 사진 — 현재 프레임을 캔버스로 (셀피는 거울 보정) */
 function camShot(){
   const v=document.getElementById('camvid');
-  if(!v || !v.videoWidth){ offToast('아직 카메라가 준비 안 됐어요'); return; }
+  if(!v || !v.videoWidth){ offToast('Camera isn’t ready yet'); return; }
   try{
     /* 센서 해상도 그대로 담으면 용량이 커서 저장이 실패한다 — 긴 변 1280px로 제한 */
     const s=Math.min(1, 1280/Math.max(v.videoWidth, v.videoHeight));
@@ -5833,7 +5834,7 @@ function camShot(){
     /* 업로드용 원본(파일) 도 만들어 둔다 — 서버에 올라가면 어느 기기에서나 보인다 */
     try{ if(c.toBlob) c.toBlob(function(b){ if(b && S.compose && S.compose.media && S.compose.media.kind==='ph'){
       S.compose.media.file=new File([b],'cam_'+Date.now()+'.jpg',{type:'image/jpeg'}); } }, 'image/jpeg', 0.82); }catch(_){}
-  }catch(e){ console.warn('[offlog] 촬영 실패', e); offToast('촬영 실패 — 다시 시도해 주세요'); }
+  }catch(e){ console.warn('[offlog] 촬영 실패', e); offToast('Capture failed — please try again'); }
 }
 /* 영상 — 길게 누르는 동안 녹화.
    소리는 여기서 처음 요청한다(미리보기는 영상만) — 사진만 찍는 사람은 마이크 권한 창을
@@ -5841,7 +5842,7 @@ function camShot(){
 async function camEnsureMic(){
   if(CAMMIC && CAMMIC.getAudioTracks()[0] && CAMMIC.getAudioTracks()[0].readyState==='live') return CAMMIC;
   try{ CAMMIC=await navigator.mediaDevices.getUserMedia({audio:true}); }
-  catch(e){ CAMMIC=null; offToast('마이크 없이 영상만 녹화해요'); }
+  catch(e){ CAMMIC=null; offToast('Records video only, no mic'); }
   return CAMMIC;
 }
 async function camRecStart(){
@@ -5867,7 +5868,7 @@ async function camRecStart(){
     };
     CAMREC.start();
     const b=document.getElementById('camshot'); if(b)b.classList.add('rec');
-  }catch(e){ console.warn('[offlog] 녹화 불가', e); CAMREC=null; offToast('이 기기에서 영상 녹화를 쓸 수 없어요'); }
+  }catch(e){ console.warn('[offlog] 녹화 불가', e); CAMREC=null; offToast('Video recording isn’t available on this device'); }
 }
 function camRecStop(){
   const b=document.getElementById('camshot'); if(b)b.classList.remove('rec');
@@ -5954,12 +5955,12 @@ function bind(){
     e.stopPropagation(); S.storyIdx=null; try{AUDIO.pause();}catch(_){} goProfile(b.dataset.svprof, b.dataset.paid);
   });
   /* 헤더 공유 ⤴ — 죽은 버튼이었음. 실제 공유(네이티브 공유 or 링크 복사) */
-  document.querySelectorAll('[aria-label="공유"]:not([data-share])').forEach(b=>b.onclick=async()=>{
+  document.querySelectorAll('[aria-label="Share"]:not([data-share])').forEach(b=>b.onclick=async()=>{
     const url=location.origin+'/offlog', title='OFFLOG';
     try{
       if(navigator.share){ await navigator.share({title:title, url:url}); }
-      else { await navigator.clipboard.writeText(url); offToast('링크가 복사됐어요'); }
-    }catch(e){ try{ await navigator.clipboard.writeText(url); offToast('링크가 복사됐어요'); }catch(_){ offToast('링크: '+url); } }
+      else { await navigator.clipboard.writeText(url); offToast('Link copied'); }
+    }catch(e){ try{ await navigator.clipboard.writeText(url); offToast('Link copied'); }catch(_){ offToast('링크: '+url); } }
   });
   /* 좌측 상단 프로필/로그인 (마이 진입점) */
   const acc=document.getElementById('acctbtn');
@@ -5994,7 +5995,7 @@ function bind(){
     if(S.authMode!=='signup') return true;
     const ag=document.getElementById('authagree');
     if(ag && ag.checked) return true;
-    offToast('이용약관에 동의해야 가입할 수 있어요'); return false;
+    offToast('You must accept the Terms to sign up'); return false;
   };
   const aa=document.getElementById('authapple'); if(aa)aa.onclick=()=>{ if(_agreeOk()) loginApple(); };
   const ag=document.getElementById('authgoogle'); if(ag)ag.onclick=()=>{ if(_agreeOk()) loginGoogle(); };
@@ -6005,13 +6006,13 @@ function bind(){
   if(asub)asub.onclick=()=>{
     const em=((document.getElementById('authemail')||{}).value||'').trim();
     const pw=(document.getElementById('authpw')||{}).value||'';
-    if(!em||!pw){offToast('이메일과 비밀번호를 입력하세요');return;}
+    if(!em||!pw){offToast('Enter your email and password');return;}
     if(S.authMode==='signup'){
       /* 이름은 선택 — 비우면 이메일 앞부분으로 시작하고 나중에 프로필에서 바꾼다 (가입 정보 최소화) */
       const nm=((document.getElementById('authname')||{}).value||'').trim() || em.split('@')[0];
       /* 앱스토어 Guideline 1.2 — 가입 전에 무관용 원칙 약관에 동의받아야 한다 */
       const ag=document.getElementById('authagree');
-      if(!ag||!ag.checked){ offToast('이용약관에 동의해야 가입할 수 있어요'); return; }
+      if(!ag||!ag.checked){ offToast('You must accept the Terms to sign up'); return; }
       signupEmail(em, pw, nm);
     } else loginEmail(em, pw);
   };
@@ -6031,13 +6032,13 @@ function bind(){
   const pmo=document.getElementById('promore');
   if(pmo)pmo.onclick=()=>{
     const aid=S.profileAid||'';
-    const who=(typeof PROFCACHE!=='undefined' && PROFCACHE[aid] && PROFCACHE[aid].name) || S.profile || '이 사람';
-    if(!aid){ offToast('메뉴를 열 수 없는 프로필이에요'); return; }
+    const who=(typeof PROFCACHE!=='undefined' && PROFCACHE[aid] && PROFCACHE[aid].name) || S.profile || 'this person';
+    if(!aid){ offToast('No menu for this profile'); return; }
     S.logMenu={kind:'oshare', id:'', nm:who, by:who, aid:aid, audio:''};
     render();
   };
   /* 내 정보 페이지 로그아웃 */
-  const aclo=document.getElementById('aclogout'); if(aclo)aclo.onclick=async ()=>{ if(await offConfirm('로그아웃할까요?','로그아웃')){ S.view='mine'; logout(); } };
+  const aclo=document.getElementById('aclogout'); if(aclo)aclo.onclick=async ()=>{ if(await offConfirm('로그아웃할까요?','Log out')){ S.view='mine'; logout(); } };
   const acdl=document.getElementById('acdel'); if(acdl)acdl.onclick=deleteAccount;
   /* 차단 해제 — 차단하면 그 사람 콘텐츠가 안 보여서 여기 말고는 해제할 길이 없다 */
   document.querySelectorAll('[data-unblock]').forEach(b=>b.onclick=()=>toggleBlock(b.dataset.unblock, BLOCKEDNAMES[b.dataset.unblock]));
@@ -6100,13 +6101,13 @@ function bind(){
     const mms=document.getElementById('mmshare');
     if(mms)mms.onclick=async()=>{ S.myMenu=false; render();
       const url=location.origin+'/offlog', title='OFFLOG';
-      try{ if(navigator.share){ await navigator.share({title, url}); } else { await navigator.clipboard.writeText(url); offToast('링크가 복사됐어요'); } }
-      catch(e){ try{ await navigator.clipboard.writeText(url); offToast('링크가 복사됐어요'); }catch(_){ offToast('링크: '+url); } } };
+      try{ if(navigator.share){ await navigator.share({title, url}); } else { await navigator.clipboard.writeText(url); offToast('Link copied'); } }
+      catch(e){ try{ await navigator.clipboard.writeText(url); offToast('Link copied'); }catch(_){ offToast('링크: '+url); } } };
   }
   const pfb=document.getElementById('profolbtn');
   if(pfb)pfb.onclick=()=>{ const aid=pfb.dataset.aid; if(!ME){ needLogin(); return; }
-    const on=pfb.classList.toggle('on'); pfb.textContent=on?'팔로잉':'팔로우';
-    (on?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(!ok){ const bk=pfb.classList.toggle('on'); pfb.textContent=bk?'팔로잉':'팔로우'; } }); };
+    const on=pfb.classList.toggle('on'); pfb.textContent=on?'Following':'Follow';
+    (on?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(!ok){ const bk=pfb.classList.toggle('on'); pfb.textContent=bk?'Following':'Follow'; } }); };
   /* 하단 가운데 ➕ = Log 남기기 (글·사진·영상·데모 한 시트에서) */
   /* 이벤트 배너 — 홈에 있을 때만 2초 회전 (다른 화면에선 타이머를 끈다) */
   if(S.view==='home'){ bindBanner(); startBannerRotate(); } else { clearInterval(_bnT); }
@@ -6154,12 +6155,12 @@ function bind(){
   const nl=document.getElementById('newlist');
   if(nl)nl.onclick=()=>{
     const id='p'+Date.now().toString(36);
-    LISTS.unshift({id, nm:'새 플레이리스트', mine:true, cnt:0, pub:0, cov:[], tracks:[]});
+    LISTS.unshift({id, nm:'New playlist', mine:true, cnt:0, pub:0, cov:[], tracks:[]});
     studioSave(); S.list=id; S.share=false; S.view='list'; render();
   };
   /* 플레이리스트 이름 변경 (내 것) */
   const lnm=document.getElementById('listname');
-  if(lnm)lnm.onchange=()=>{ const p=LISTS.find(x=>x.id===S.list); if(p){p.nm=lnm.value.trim()||'플레이리스트'; if(p.mine)studioSave();} };
+  if(lnm)lnm.onchange=()=>{ const p=LISTS.find(x=>x.id===S.list); if(p){p.nm=lnm.value.trim()||'Playlist'; if(p.mine)studioSave();} };
   /* 트랙 빼기 ✕ (기존 죽은 버튼) */
   document.querySelectorAll('[data-tx]').forEach(b=>b.onclick=()=>{
     const p=LISTS.find(x=>x.id===S.list); if(!p)return;
@@ -6174,7 +6175,7 @@ function bind(){
       if(same){ AUDIO.pause(); S.mini.playing=false; renderMini(); return; }
       if(CURSRC!==url){ AUDIO.src=url; CURSRC=url; } const pr=AUDIO.play(); if(pr&&pr.catch)pr.catch(()=>{});
       b.classList.add('on'); b.textContent='❙❙'; S.mini.on=true; S.mini.playing=true; renderMini();
-    } else { offToast('이 곡은 재생 파일이 없어요'); }
+    } else { offToast('This song has no playable file'); }
   });
   const lp=document.getElementById('lplay');
   if(lp)lp.onclick=()=>{ const p=LISTS.find(x=>x.id===S.list); const first=p&&(p.tracks||[]).find(t=>t.audio);
@@ -6204,7 +6205,7 @@ function bind(){
     e.stopPropagation();
     const p=LISTS.find(x=>x.id===S.list), t=ALLTRACKS.find(x=>x.tid===b.dataset.addsong);
     if(!p||!t)return;
-    if((p.tracks||[]).some(x=>x.tid===t.tid)){ p.tracks=p.tracks.filter(x=>x.tid!==t.tid); b.classList.remove('on'); b.textContent='＋ 담기'; }
+    if((p.tracks||[]).some(x=>x.tid===t.tid)){ p.tracks=p.tracks.filter(x=>x.tid!==t.tid); b.classList.remove('on'); b.textContent='＋ Add'; }
     else { p.tracks.push({nm:t.nm, by:t.by, dur:t.dur||'', tid:t.tid, audio:t.audio}); b.classList.add('on'); b.textContent='✓ 담김'; }
     if(!p.mine)p.mine=true; studioSave();
     const done=document.getElementById('asdone'); if(done)done.textContent='완료 ('+(p.tracks||[]).length+'곡)';
@@ -6366,13 +6367,13 @@ function bind(){
         style:P.style.trim(), video_url:P.video.trim()});
       if(error)throw error;
       S.perfApply=false; S.perfForm=null; PERFCACHE[P.round]=false; MYPERF_UID=null;
-      render(); offToast('신청됐어요 — 투표 목록에 올라갑니다');
+      render(); offToast('Submitted — it will appear in the vote list');
       loadPerfEntries(P.round); loadMyPerf();
     }catch(e){
-      pfd.disabled=false; pfd.textContent='신청하기';
-      if(e&&e.code==='23505')return offToast('이미 이 라운드에 신청했어요');
+      pfd.disabled=false; pfd.textContent='Submit';
+      if(e&&e.code==='23505')return offToast('You already entered this round');
       if(e&&(e.code==='PGRST205'||e.code==='42P01')){ PERFTABLE=false; return offToast('오디션 준비 중이에요 — 잠시 후 다시 시도해 주세요'); }
-      console.warn('[offlog] 공연 신청 실패', e); offToast('신청에 실패했어요 — 잠시 후 다시 시도해 주세요');
+      console.warn('[offlog] 공연 신청 실패', e); offToast('Couldn’t submit — please try again shortly');
     }
   };
   /* 프로젝트 지원 — 열기(마이페이지 버튼·홈 박스 둘 다) / 폼 입력 / 제출 */
@@ -6389,7 +6390,7 @@ function bind(){
   document.querySelectorAll('[data-recofollow]').forEach(b=>b.onclick=async()=>{
     b.disabled=true; b.textContent='…';
     const ok=await followArtist(b.dataset.recofollow);
-    if(ok){ offToast((b.dataset.reconm||'아티스트')+'를 팔로우했어요'); try{renewHome();}catch(_){} }
+    if(ok){ offToast((b.dataset.reconm||'Artist')+'를 팔로우했어요'); try{renewHome();}catch(_){} }
     render();
   });
   const pjx=document.getElementById('pjclose'); if(pjx)pjx.onclick=()=>{S.projectApply=false;render()};
@@ -6445,12 +6446,12 @@ function bind(){
         note:(P.note||'').trim()||null, media_kind:mediaKind, media_url:mediaUrl});
       if(error)throw error;
       S.projectApply=false; S.projectForm=null;
-      render(); offToast('지원했어요 — 선정되면 연락드려요');
+      render(); offToast('Applied — we’ll contact you if selected');
     }catch(e){
-      pjd.disabled=false; pjd.textContent='지원하기';
-      if(e&&e.code==='23505')return offToast('이미 이 프로젝트에 지원했어요');
+      pjd.disabled=false; pjd.textContent='Apply';
+      if(e&&e.code==='23505')return offToast('You already applied to this project');
       if(e&&(e.code==='PGRST205'||e.code==='42P01')){ PROJECTTABLE=false; return offToast('프로젝트 지원 기능을 준비 중이에요 — 잠시 후 다시 시도해 주세요'); }
-      console.warn('[offlog] 프로젝트 지원 실패', e); offToast('지원에 실패했어요 — 잠시 후 다시 시도해 주세요');
+      console.warn('[offlog] 프로젝트 지원 실패', e); offToast('Couldn’t apply — please try again shortly');
     }
   };
   /* 공연 카드 탭 → 영상 펼치기 (투표 버튼 누른 건 제외) */
@@ -6489,7 +6490,7 @@ function bind(){
       }).catch(err=>{
         d.voted=0; d.v=prev; render();
         console.warn('[offlog] 공연 투표 실패', err);
-        offToast('투표에 실패했어요 — 잠시 후 다시 시도해 주세요');
+        offToast('Couldn’t vote — please try again shortly');
       });
       return;
     }
@@ -6515,7 +6516,7 @@ function bind(){
     S.sel = on ? [...S.sel, id] : S.sel.filter(x=>x!==id);
     /* 전체 render 대신 이 행만 토글 + 카운트 갱신 → 시트 스크롤 위치 유지 */
     b.classList.toggle('on', on);
-    const cta=document.getElementById('rpkdone'); if(cta) cta.textContent = S.sel.length? S.sel.length+'개 담기':'담기';
+    const cta=document.getElementById('rpkdone'); if(cta) cta.textContent = S.sel.length? S.sel.length+'개 담기':'Add';
     const rs=document.querySelector('.relsum'); if(rs) rs.innerHTML = S.sel.length?`선택한 로그 <b>${S.sel.length}개</b>가 발매일에 메이킹 필름으로 자동 편집됩니다`:'넣을 로그를 골라주세요 (선택 안 하면 로그 없이 발매)';
   });
   const pd=document.getElementById('pulldone');
@@ -6532,7 +6533,7 @@ function bind(){
   const lvl=document.getElementById('lvlog');
   if(lvl)lvl.onclick=()=>{ const w=WORKS.find(x=>x.id===S.work); S.sel=((w&&w.releaseLogs)||[]).slice(); S.relpick=true; render(); };
   const lvv=document.getElementById('lvvote');
-  if(lvv)lvv.onclick=()=>{ const w=WORKS.find(x=>x.id===S.work); if(!((w&&w.releaseLogs)||[]).length){ offToast('로그를 먼저 담아야 투표에 참여할 수 있어요'); return; } S.stage=true; render(); };
+  if(lvv)lvv.onclick=()=>{ const w=WORKS.find(x=>x.id===S.work); if(!((w&&w.releaseLogs)||[]).length){ offToast('Attach a LOG first to enter the vote'); return; } S.stage=true; render(); };
   /* 발매용 로그 큐레이션 (날짜별) */
   const rpb=document.getElementById('relpickbtn');
   if(rpb)rpb.onclick=()=>{ const w=WORKS.find(x=>x.id===S.work); S.sel=((w&&w.releaseLogs)||[]).slice(); S.relpick=true; render(); };
@@ -6548,7 +6549,7 @@ function bind(){
   const nwb=document.getElementById('newworkbtn');
   if(nwb)nwb.onclick=()=>{
     const id='w_'+Date.now().toString(36);
-    WORKS.unshift({id:id, nm:'', by:(ME&&ME.name)||'나', mine:true, date:'작업 중', logs:0, releaseLogs:[], span:'', dur:'', bg:WGRAD});
+    WORKS.unshift({id:id, nm:'', by:(ME&&ME.name)||'나', mine:true, date:'In progress', logs:0, releaseLogs:[], span:'', dur:'', bg:WGRAD});
     S.relNew=id; S.work=id; S.wf='all'; S.seg='works'; S.view='work';
     S.relForm={title:'', audio:null, art:null, inst:false, lyr:'', comp:(ME&&ME.name)||'PEEK', lyri:'', arr:'', prod:'', date:minRelDate(), event:''};
     S.sel=[];   /* 새 릴리스 — 넣을 로그 선택 비움 */
@@ -6563,7 +6564,7 @@ function bind(){
     if(ninp)ninp.oninput=()=>{ S.newwork.nm=ninp.value; if(ndone)ndone.disabled=!ninp.value.trim(); };
     if(ndone)ndone.onclick=()=>{ const nm=(S.newwork.nm||'').trim(); if(!nm)return;
       const id='w_'+Date.now().toString(36);
-      WORKS.unshift({id:id, nm:nm, by:(ME&&ME.name)||'나', mine:true, date:'작업 중', logs:0, releaseLogs:[], span:'', dur:'', bg:WGRAD});
+      WORKS.unshift({id:id, nm:nm, by:(ME&&ME.name)||'나', mine:true, date:'In progress', logs:0, releaseLogs:[], span:'', dur:'', bg:WGRAD});
       studioSave(); S.newwork=null; S.work=id; S.wf='all'; S.seg='works'; S.view='work'; render();
     };
   }
@@ -6593,7 +6594,7 @@ function bind(){
   /* 발매창 닫기 — '새 릴리스'에서 발매 안 하고 닫으면 임시 작품 정리 */
   const _relClose=()=>{
     if(S.relNew){ const i=WORKS.findIndex(x=>x.id===S.relNew), w=WORKS[i];
-      if(w && (!w.date || w.date==='작업 중')){ WORKS.splice(i,1); S.view='mine'; S.work=(WORKS[0]||{}).id; }
+      if(w && (!w.date || w.date==='In progress')){ WORKS.splice(i,1); S.view='mine'; S.work=(WORKS[0]||{}).id; }
       S.relNew=null; }
     S.sel=[];   /* 공용 선택 상태 정리 (logPuller/stage 와 충돌 방지) */
     S.rel=false; render();
@@ -6709,9 +6710,9 @@ function bind(){
     e.stopPropagation();
     const aid=b.dataset.aid;
     if(!ME){ needLogin(); return; }
-    const on=b.classList.toggle('on'); b.textContent=on?'팔로잉':'팔로우';
+    const on=b.classList.toggle('on'); b.textContent=on?'Following':'Follow';
     (on?followArtist(aid):unfollowArtist(aid)).then(ok=>{
-      if(!ok){ const back=b.classList.toggle('on'); b.textContent=back?'팔로잉':'팔로우'; }
+      if(!ok){ const back=b.classList.toggle('on'); b.textContent=back?'Following':'Follow'; }
     });
   });
   /* (릴스 담기는 우측 상단 ⋯ = [data-sharemenu] 메뉴의 '담기'로 통합) */
@@ -6772,7 +6773,7 @@ function bind(){
     } else {
       /* 소리 파일이 없는 카드. 예전엔 여기서 파형만 켜서 '재생 중'처럼 보였다 —
          실제로는 아무것도 나오지 않아 사용자가 재생됐는지 알 수 없었다. 솔직하게 알린다. */
-      offToast('이 로그에는 소리 파일이 없어요');
+      offToast('This LOG has no audio file');
     }
   });
   /* 사진 카드: 탭하면 갤러리에서 진짜 사진 넣기 */
@@ -6850,7 +6851,7 @@ function bind(){
   });
   document.querySelectorAll('[data-cmtdel]').forEach(b=>b.onclick=async e=>{
     e.stopPropagation();
-    if(!await offConfirm('이 댓글을 지울까요?','삭제')) return;
+    if(!await offConfirm('Delete this comment?','Delete')) return;
     deleteComment(b.dataset.cmtlog, b.dataset.cmtdel);
   });
   /* 댓글 입력 중 Enter = 등록. 카드 탭(재생·펼침)으로 이벤트가 새지 않게 */
@@ -6866,14 +6867,14 @@ function bind(){
   document.querySelectorAll('[data-logvis]').forEach(b=>b.onclick=async(e)=>{
       e.stopPropagation();
       const l=(typeof STREAM!=='undefined'?STREAM:[]).find(x=>x&&x.id===b.dataset.logvis); if(!l) return;
-      if(logVisLocked(l)){ offToast('무대·발매에 낸 로그는 항상 공개예요'); return; }
+      if(logVisLocked(l)){ offToast('LOGs entered in a stage or release are always public'); return; }
       const v=(l.vis==='public')?'private':'public', prev=l.vis;
       l.vis=v; S.logMenu=null; render();
       try{
         if(l.sid && ME && SBC && LOGSTABLE){ const r=await SBC.from('logs').update({visibility:v}).eq('id',l.sid); if(r.error)throw r.error; }
         studioSave();
-        offToast(v==='public'?'공개로 바꿨어요 — 팔로워 피드에 보여요':'비공개로 바꿨어요');
-      }catch(e){ l.vis=prev; studioSave(); render(); console.warn('[offlog] 공개범위 변경 실패', e); offToast('변경 실패 — 잠시 후 다시'); }
+        offToast(v==='public'?'Now public — visible in your followers’ feed':'비공개로 바꿨어요');
+      }catch(e){ l.vis=prev; studioSave(); render(); console.warn('[offlog] 공개범위 변경 실패', e); offToast('Couldn’t change — try again shortly'); }
     });
   if(S.logMenu){
     const lmbd=document.getElementById('lmbd'), lmx=document.getElementById('lmx');
@@ -6885,7 +6886,7 @@ function bind(){
     document.querySelectorAll('[data-logedit]').forEach(b=>b.onclick=()=>{ editLog(b.dataset.logedit); });
     document.querySelectorAll('[data-logdel]').forEach(b=>b.onclick=()=>{ deleteLog(b.dataset.logdel); });
     /* 신고·차단 분기는 삭제(요청) — 남은 액션: 담기 / 팔로우 / 공유 */
-    document.querySelectorAll('[data-omenu]').forEach(b=>b.onclick=()=>{ const act=b.dataset.omenu, M=S.logMenu; if(act==='save'){ S.logMenu=null; if(!ME){ render(); needLogin(); return; } S.saveTrack={tid:M.id, nm:M.nm, by:M.by, audio:M.audio}; render(); } else if(act==='follow'){ const aid=M.aid; S.logMenu=null; if(!ME){ render(); needLogin(); return; } const willFollow=!MYFOLLOWS.has(aid); (willFollow?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(ok) offToast(willFollow?'팔로우했어요':'팔로우 해제했어요'); render(); }); render(); }
+    document.querySelectorAll('[data-omenu]').forEach(b=>b.onclick=()=>{ const act=b.dataset.omenu, M=S.logMenu; if(act==='save'){ S.logMenu=null; if(!ME){ render(); needLogin(); return; } S.saveTrack={tid:M.id, nm:M.nm, by:M.by, audio:M.audio}; render(); } else if(act==='follow'){ const aid=M.aid; S.logMenu=null; if(!ME){ render(); needLogin(); return; } const willFollow=!MYFOLLOWS.has(aid); (willFollow?followArtist(aid):unfollowArtist(aid)).then(ok=>{ if(ok) offToast(willFollow?'Following':'Unfollowed'); render(); }); render(); }
       else { S.logMenu=null; render(); offShareTrack(M); } });
   }
   /* 신고 시트 — 사유를 고르면 접수되고 내 화면에서 바로 사라진다 */
@@ -6955,7 +6956,7 @@ function bind(){
   document.querySelectorAll('[data-demopick]').forEach(b=>b.onclick=()=>{
     const demo=STREAM.find(x=>x&&x.id===b.dataset.demopick);
     if(!demo) return;
-    if(!demo.sid){ offToast('데모가 서버에 저장된 뒤에 담을 수 있어요'); return; }
+    if(!demo.sid){ offToast('You can attach LOGs once the demo is saved'); return; }
     S.logMenu=null;
     S.demoPick={id:demo.id, sel:STREAM.filter(l=>l&&l.demoOf===demo.sid).map(l=>l.id)};
     render();
@@ -6967,7 +6968,7 @@ function bind(){
       /* 행만 토글 — 시트 스크롤 유지 */
       b.classList.toggle('on', on);
       const ck=b.querySelector('.evck'); if(ck)ck.classList.toggle('on', on);
-      const cta=document.getElementById('dpdone'); if(cta)cta.textContent = P.sel.length? P.sel.length+'개 담기':'담기';
+      const cta=document.getElementById('dpdone'); if(cta)cta.textContent = P.sel.length? P.sel.length+'개 담기':'Add';
     });
     const dpx=document.getElementById('dpclose'), dpb=document.getElementById('dpbd');
     const dshut=()=>{ S.demoPick=null; render(); };
@@ -7004,7 +7005,7 @@ function bind(){
       const stop=()=>{ if(sv.currentTime>=T.end){ sv.pause(); sv.removeEventListener('timeupdate',stop); } };
       sv.addEventListener('timeupdate',stop); };
     const cx=document.getElementById('trclose'), bd=document.getElementById('trbd');
-    const shut=()=>{ if(T.busy){ offToast('자르는 중이에요 — 잠시만요'); return; } closeTrimmer(); render(); };
+    const shut=()=>{ if(T.busy){ offToast('Trimming — one moment'); return; } closeTrimmer(); render(); };
     if(cx)cx.onclick=shut; if(bd)bd.onclick=shut;
     const dn=document.getElementById('trdone'); if(dn)dn.onclick=()=>applyTrim();
   }
@@ -7013,7 +7014,7 @@ function bind(){
     if(f){ if(!S.compose)S.compose={text:'',media:null};
       /* 데모 버튼으로 영상을 고른 경우 — 튕겨내지 말고 영상으로 받아준다.
          (accept="audio/*" 가 폰에서 느슨해 실제로 이 경로로 영상이 자주 들어온다) */
-      if(isVideoFile(f)){ offToast('영상이네요 — 영상으로 올릴게요'); openTrimmer(f); }
+      if(isVideoFile(f)){ offToast('That’s a video — posting it as video'); openTrimmer(f); }
       else S.compose.media={kind:'aud',file:f,name:f.name};
       render(); } caud.value=''; }; }
   document.querySelectorAll('.play').forEach(p=>p.onclick=e=>{
@@ -7028,9 +7029,9 @@ function bind(){
     const aid=b.dataset.aid;
     if(!ME){ needLogin(); return; }               // 비로그인 → UI 안 바꾸고 안내
     const on=b.classList.toggle('on');             // 낙관적 UI
-    b.textContent=on?'팔로잉':'팔로우';
+    b.textContent=on?'Following':'Follow';
     (on?followArtist(aid):unfollowArtist(aid)).then(ok=>{
-      if(!ok){ const back=b.classList.toggle('on'); b.textContent=back?'팔로잉':'팔로우'; } // 실패 시 롤백
+      if(!ok){ const back=b.classList.toggle('on'); b.textContent=back?'Following':'Follow'; } // 실패 시 롤백
     });
   });
   /* 스트림 안에서 소리가 울리면 종이 전체가 반응한다 */
@@ -7137,7 +7138,7 @@ setInterval(()=>{
       'radial-gradient(circle at 70% 25%,#5c3050,transparent 55%),radial-gradient(circle at 20% 80%,#20305c,transparent 60%),#12121a'
     ];
     var tracks=rows.map(function(x){ return {
-      id:x.id, title:x.title||'무제', artist:(x.profiles&&x.profiles.name)||'익명',
+      id:x.id, title:x.title||'Untitled', artist:(x.profiles&&x.profiles.name)||'Anonymous',
       artistId:(x.profiles&&x.profiles.id)||null,
       artistAv:(x.profiles&&x.profiles.avatar_url)||'',
       tags:Array.isArray(x.tags)?x.tags:[], audio:x.audio_url||'',
@@ -7162,7 +7163,7 @@ setInterval(()=>{
 
     // 피드 카드 1장 데이터 (트랙 → 카드) — resampleFeed 와 calIndex(캘린더)가 공유
     var mk=function(t){ var o={who:cut(t.artist,18), c:colOf(t.artist), at:tm(t.ts), dt:(t.ts||'').slice(0,10), rx:(t.likes||0), aid:aidOf(t.artist), tid:t.id, t:'snd', audio:t.audio, nm:cut(t.title,20)};
-      o.cap=o.nm; o.sub=cut((t.demo?'데모':'발매곡')+(t.tags[0]?' · '+t.tags[0]:''),24); if(t.tags[0])o.tags=t.tags.slice(0,2).map(function(x){return '#'+String(x).replace(/^#/,'');}); return o; };
+      o.cap=o.nm; o.sub=cut((t.demo?'데모':'Releases')+(t.tags[0]?' · '+t.tags[0]:''),24); if(t.tags[0])o.tags=t.tags.slice(0,2).map(function(x){return '#'+String(x).replace(/^#/,'');}); return o; };
     // 날짜별 인덱스 (맞팔+발매 친구의 모든 트랙을 YYYY-MM-DD 로 그룹) — 홈 캘린더용. 전역 노출
     function calIndex(){ var byDate={};
       tracks.forEach(function(t){ if(!isFriend(t.artist))return; var d=(t.ts||'').slice(0,10); if(!d)return; (byDate[d]=byDate[d]||[]).push(mk(t)); });
@@ -7182,8 +7183,8 @@ setInterval(()=>{
       TREND     = take(12).map(mk);
       FORYOU    = take(8).map(mk);
       FOLLOWLOG = take(8).map(mk);
-      PEOPLE = _shuf(reps).slice(0,24).map(function(t){ return {who:t.artist, c:colOf(t.artist), aid:aidOf(t.artist), sub:(t.tags[0]||'아티스트'), fing:(iFollow(t.artist)?1:0)}; });
-      var f=reps[0]; if(f){ NOWPLAY={label:'발견', cnt:tracks.length, nm:cut(f.title,20), tm:'', src:f.audio}; }
+      PEOPLE = _shuf(reps).slice(0,24).map(function(t){ return {who:t.artist, c:colOf(t.artist), aid:aidOf(t.artist), sub:(t.tags[0]||'Artist'), fing:(iFollow(t.artist)?1:0)}; });
+      var f=reps[0]; if(f){ NOWPLAY={label:'Discover', cnt:tracks.length, nm:cut(f.title,20), tm:'', src:f.audio}; }
     }
     window.__resample=resampleFeed;
     if(tracks.length) resampleFeed();
@@ -7193,7 +7194,7 @@ setInterval(()=>{
     var byPid={}; tracks.forEach(function(t){ (byPid[t.pid]=byPid[t.pid]||[]).push(t); });
     var wl=Object.keys(byPid).map(function(pid,i){
       var vs=byPid[pid]; var rep=vs[0];
-      return { id:'w'+i, nm:(rep.title||'무제').replace(/\s*\(.*\)$/,''), by:rep.artist, dur:'', logs:vs.length, span:'', date:'', bg:GRADS[i%GRADS.length], _cover:rep.cover, _rep:rep };
+      return { id:'w'+i, nm:(rep.title||'Untitled').replace(/\s*\(.*\)$/,''), by:rep.artist, dur:'', logs:vs.length, span:'', date:'', bg:GRADS[i%GRADS.length], _cover:rep.cover, _rep:rep };
     }).slice(0,12);
     if(wl.length) WORKS=wl;
 
