@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>OFFLOG — 만드는 순간을 기록하다</title>
-<meta name="description" content="친구와 뮤지션이 지금 무엇을 만들고 있는지 기록하고, 팔로우한 사람의 LOG를 보는 음악 기록 앱.">
-<meta property="og:title" content="OFFLOG — 만드는 순간을 기록하다">
-<meta property="og:description" content="친구와 뮤지션이 지금 무엇을 만들고 있는지 기록하고, 팔로우한 사람의 LOG를 보는 음악 기록 앱.">
+<title>OFFLOG — Log the moment you make it</title>
+<meta name="description" content="A music logging app — record what you are making right now and see the LOGs of the people you follow. / 친구와 뮤지션이 지금 무엇을 만들고 있는지 기록하고, 팔로우한 사람의 LOG를 보는 음악 기록 앱.">
+<meta property="og:title" content="OFFLOG — Log the moment you make it · 만드는 순간을 기록하다">
+<meta property="og:description" content="A music logging app — record what you are making right now and see the LOGs of the people you follow. / 친구와 뮤지션이 지금 무엇을 만들고 있는지 기록하고, 팔로우한 사람의 LOG를 보는 음악 기록 앱.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://onoff-stage.com/offlog">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="OFFLOG — 만드는 순간을 기록하다">
-<meta name="twitter:description" content="친구와 뮤지션이 지금 무엇을 만들고 있는지 기록하고, 팔로우한 사람의 LOG를 보는 음악 기록 앱.">
+<meta name="twitter:title" content="OFFLOG — Log the moment you make it · 만드는 순간을 기록하다">
+<meta name="twitter:description" content="A music logging app — record what you are making right now and see the LOGs of the people you follow. / 친구와 뮤지션이 지금 무엇을 만들고 있는지 기록하고, 팔로우한 사람의 LOG를 보는 음악 기록 앱.">
 <!-- 안드로이드 TWA(구글 플레이 앱)가 앱 이름·아이콘·테마를 여기서 읽는다. 지우면 앱이 주소창 있는 웹으로 뜬다 -->
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#000000">
@@ -1584,6 +1584,12 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .acedit{margin-top:8px;background:none;border:1px solid var(--line);color:var(--txt);border-radius:99px;
   font-family:inherit;font-size:12px;font-weight:700;padding:7px 16px;cursor:pointer}
 .acedit:active{border-color:var(--mint);color:var(--mint)}
+/* 언어 — 각 버튼은 늘 그 언어로 적는다(English 를 "영어"로 쓰면 못 찾는다) */
+.langrow{display:flex;gap:8px;padding:12px 14px}
+.langbtn{flex:1;padding:11px 0;border-radius:12px;background:var(--card2);border:0;
+  box-shadow:inset 0 0 0 1px var(--line);color:var(--muted);font-size:13.5px;font-weight:600;cursor:pointer}
+.langbtn.on{background:rgba(94,234,212,.14);color:var(--mint);box-shadow:inset 0 0 0 1px var(--mint)}
+.langbtn:active{opacity:.7}
 .acvis{width:100%;display:flex;align-items:flex-start;gap:11px;background:none;border:0;border-bottom:1px solid var(--line);
   padding:13px 2px;text-align:left;color:var(--txt);font-family:inherit;cursor:pointer}
 .acvis:last-of-type{border-bottom:0}
@@ -2141,32 +2147,32 @@ function splashScreen(){
 function authForm(){
   const su = S.authMode==='signup';
   const social =
-    `<button class="authbtn apple" id="authapple"><svg viewBox="0 0 384 512" aria-hidden="true"><path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg> Apple로 ${su?'Sign up':'Continue'}</button>
-    <button class="authbtn" id="authgoogle"><b>G</b> Google로 ${su?'Sign up':'Continue'}</button>
+    `<button class="authbtn apple" id="authapple"><svg viewBox="0 0 384 512" aria-hidden="true"><path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg> ${su?'Sign up':'Continue'} with Apple</button>
+    <button class="authbtn" id="authgoogle"><b>G</b> ${su?'Sign up':'Continue'} with Google</button>
     ${KAKAO_ON?`<button class="authbtn kakao" id="authkakao"><svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16"><path fill="currentColor" d="M12 3C6.48 3 2 6.48 2 10.8c0 2.76 1.84 5.18 4.6 6.56-.2.74-.74 2.7-.85 3.12-.13.52.19.51.4.37.17-.11 2.65-1.8 3.72-2.53.68.1 1.39.15 2.13.15 5.52 0 10-3.48 10-7.67C22 6.48 17.52 3 12 3z"/></svg> 카카오로 ${su?'Sign up':'Continue'}</button>`:''}`;
   /* 이메일 로그인은 기본으로 숨긴다 — 소셜 3버튼만 먼저. '다른 방법으로 로그인'을 눌러야 펼쳐진다 */
   if(!AUTHVALS.showEmail){
     return `${social}
-      <p class="agreenote">계속하면 <button type="button" class="authlink" id="opnterms">Terms</button>에 동의하는 것으로 봅니다.</p>
-      <button type="button" class="authlink" id="authemailtoggle" style="margin-top:12px">다른 방법으로 로그인</button>`;
+      <p class="agreenote">By continuing you accept the <button type="button" class="authlink" id="opnterms">Terms</button>.</p>
+      <button type="button" class="authlink" id="authemailtoggle" style="margin-top:12px">Other ways to sign in</button>`;
   }
   return `${social}
     <div class="authdiv"><span>또는 이메일</span></div>
     ${su?`<input class="authinput" id="authname" type="text" autocomplete="name" placeholder="Name (optional — you can change it later)" value="${esc(AUTHVALS.name||'')}">`:''}
     <input class="authinput" id="authemail" type="email" autocomplete="username" placeholder="Email" value="${esc(AUTHVALS.email||'')}">
     <div class="authpwrow">
-      <input class="authinput" id="authpw" type="${AUTHVALS.showPw?'text':'password'}" autocomplete="${su?'new-password':'current-password'}" placeholder="Password${su?' (6자 이상)':''}" value="${esc(AUTHVALS.pw||'')}">
+      <input class="authinput" id="authpw" type="${AUTHVALS.showPw?'text':'password'}" autocomplete="${su?'new-password':'current-password'}" placeholder="Password${su?' (6+ 이상)':''}" value="${esc(AUTHVALS.pw||'')}">
       <button type="button" class="authpweye" id="authpweye" aria-label="Password ${AUTHVALS.showPw?'숨기기':'보기'}">${AUTHVALS.showPw?'🙈':'👁'}</button></div>
     ${su
       ? `<div class="agree">
            <input type="checkbox" id="authagree">
            <label for="authagree">만 14세 이상이며 <b>Terms</b>에 동의합니다. 부적절한 콘텐츠와 괴롭힘에는 <b>무관용 원칙</b>이 적용됩니다.</label>
          </div>
-         <button type="button" class="authlink agreelink" id="opnterms">약관 전문 보기</button>`
-      : `<p class="agreenote">계속하면 <button type="button" class="authlink" id="opnterms">Terms</button>에 동의하는 것으로 봅니다.</p>`}
+         <button type="button" class="authlink agreelink" id="opnterms">Read the full Terms</button>`
+      : `<p class="agreenote">By continuing you accept the <button type="button" class="authlink" id="opnterms">Terms</button>.</p>`}
     <button class="cs-post" id="authsubmit" style="margin-top:10px">${su?'Sign up':'Log in'}</button>
     <div class="authalt">
-      ${su ? `이미 계정이 있나요? <button class="authlink" data-authmode="login">Log in</button>`
+      ${su ? `Already have an account? <button class="authlink" data-authmode="login">Log in</button>`
            : `처음이신가요? <button class="authlink" data-authmode="signup">Sign up</button>
               <span class="authsep">·</span><button class="authlink" id="authforgot">Forgot password</button>`}
     </div>`;
@@ -2192,11 +2198,11 @@ function saveSheet(){
   if(!S.saveTrack) return '';
   const t=S.saveTrack, mine=LISTS.filter(p=>p.mine);
   return `<div class="cs-bd" id="svbd"><div class="cs">
-    <div class="cs-hd"><b>담을 플레이리스트</b><button class="cs-x" id="svx" aria-label="Close">✕</button></div>
+    <div class="cs-hd"><b>Add to playlist</b><button class="cs-x" id="svx" aria-label="Close">✕</button></div>
     <div class="cs-trk">🎵 <b>${esc(t.nm)}</b> · ${esc(t.by)}</div>
     ${mine.length?mine.map(p=>{const has=(p.tracks||[]).some(x=>x.tid===t.tid);
-      return `<button class="pkrow" data-savein="${p.id}"><span class="pknm"><b>${esc(p.nm)}</b><small>${(p.tracks||[]).length}곡</small></span>
-        <span style="margin-left:auto;color:${has?'var(--mint)':'var(--muted)'};font-weight:800">${has?'✓ 담김':'＋'}</span></button>`}).join(''):`<div class="pknote" style="padding:10px 0">No playlists yet</div>`}
+      return `<button class="pkrow" data-savein="${p.id}"><span class="pknm"><b>${esc(p.nm)}</b><small>${(p.tracks||[]).length} songs</small></span>
+        <span style="margin-left:auto;color:${has?'var(--mint)':'var(--muted)'};font-weight:800">${has?'✓ Added':'＋'}</span></button>`}).join(''):`<div class="pknote" style="padding:10px 0">No playlists yet</div>`}
     <button class="newlist" id="svnew" style="margin-top:8px">＋ Add to a new playlist</button>
   </div></div>`;
 }
@@ -2207,18 +2213,18 @@ function logMenuSheet(){
   const M=S.logMenu;
   const _ml = M.kind==='addmedia' ? (typeof STREAM!=='undefined'?STREAM:[]).find(x=>x&&x.id===M.id) : null;
   const rows = M.kind==='addmedia'
-    ? `<button class="pkrow" data-logshare="${M.id}"><span class="pknm"><b>⤴ 공유하기</b><small>링크로 공유하거나 복사</small></span></button>
-       ${_ml?`<button class="pkrow" data-logedit="${M.id}"><span class="pknm"><b>✎ 수정하기</b><small>${_ml.t==='note'?'글 내용을 고쳐요':'설명(캡션)을 고쳐요'}</small></span></button>`:''}
-       ${_ml&&_ml.t==='note'?`<button class="pkrow" data-addkind="ph"><span class="pknm"><b>📷 사진 첨부하기</b><small>This becomes the caption on the photo</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>`:''}
-       ${_ml&&_ml.t==='snd'&&_ml.sid?`<button class="pkrow" data-demopick="${M.id}"><span class="pknm"><b>🎵 LOG 담기</b><small>이 데모가 만들어진 기록을 골라 담아요</small></span><span style="margin-left:auto;color:var(--mint);font-weight:800">${(typeof STREAM!=='undefined'?STREAM:[]).filter(x=>x&&x.demoOf===_ml.sid).length||'＋'}</span></button>`:''}
-       ${_ml?`<button class="pkrow danger" data-logdel="${M.id}"><span class="pknm"><b>삭제하기</b><small>이 로그를 완전히 지워요</small></span></button>`:''}`
+    ? `<button class="pkrow" data-logshare="${M.id}"><span class="pknm"><b>⤴ Share</b><small>Share or copy the link</small></span></button>
+       ${_ml?`<button class="pkrow" data-logedit="${M.id}"><span class="pknm"><b>✎ Edit</b><small>${_ml.t==='note'?'Change the text':'설명(캡션)을 고쳐요'}</small></span></button>`:''}
+       ${_ml&&_ml.t==='note'?`<button class="pkrow" data-addkind="ph"><span class="pknm"><b>📷 Attach a photo</b><small>This becomes the caption on the photo</small></span><span style="margin-left:auto;color:var(--muted);font-weight:800">＋</span></button>`:''}
+       ${_ml&&_ml.t==='snd'&&_ml.sid?`<button class="pkrow" data-demopick="${M.id}"><span class="pknm"><b>🎵 Attach LOGs</b><small>이 데모가 만들어진 기록을 골라 담아요</small></span><span style="margin-left:auto;color:var(--mint);font-weight:800">${(typeof STREAM!=='undefined'?STREAM:[]).filter(x=>x&&x.demoOf===_ml.sid).length||'＋'}</span></button>`:''}
+       ${_ml?`<button class="pkrow danger" data-logdel="${M.id}"><span class="pknm"><b>Delete</b><small>Removes this LOG for good</small></span></button>`:''}`
     /* 친구 로그(flog) — 플레이리스트 담기 없음(요청). 공유·팔로우만 */
     : M.kind==='flog'
     ? `${M.aid&&!(ME&&M.aid===ME.id)?`<button class="pkrow" data-omenu="follow"><span class="pknm"><b>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'✓ Following':'＋ Follow'}</b><small>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'Tap to unfollow':(M.by||'this artist')+' Follow'}</small></span></button>`:''}
-       <button class="pkrow" data-omenu="share"><span class="pknm"><b>⤴ 공유</b><small>링크로 공유하거나 복사</small></span></button>`
+       <button class="pkrow" data-omenu="share"><span class="pknm"><b>⤴ Share</b><small>Share or copy the link</small></span></button>`
     : `${M.aid?`<button class="pkrow" data-omenu="follow"><span class="pknm"><b>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'✓ Following':'＋ Follow'}</b><small>${(typeof MYFOLLOWS!=='undefined'&&MYFOLLOWS.has(M.aid))?'Tap to unfollow':(M.by||'this artist')+' Follow'}</small></span></button>`:''}
        <button class="pkrow" data-omenu="save"><span class="pknm"><b>＋ Add to my playlist</b></span><span style="margin-left:auto;color:var(--mint);font-weight:800">Add</span></button>
-       <button class="pkrow" data-omenu="share"><span class="pknm"><b>⤴ 공유</b><small>링크로 공유하거나 복사</small></span></button>`;
+       <button class="pkrow" data-omenu="share"><span class="pknm"><b>⤴ Share</b><small>Share or copy the link</small></span></button>`;
        /* 신고·차단 메뉴는 뺐다(요청) — 기존에 차단해둔 사람 해제는 계정 설정의 '차단한 사람' 목록에 남아 있다 */
   return `<div class="cs-bd" id="lmbd"><div class="cs">
     <div class="cs-hd"><b>${M.kind==='addmedia'?'Manage LOG':(M.nm||'Music')}</b><button class="cs-x" id="lmx" aria-label="Close">✕</button></div>
@@ -2231,7 +2237,7 @@ function logMenuSheet(){
    confirm()·alert()·prompt() 는 아무것도 띄우지 않고 즉시 false 를 돌려준다.
    그래서 앱에서는 로그아웃·이벤트 신청 같은 "확인이 필요한 동작"이 통째로 막혀
    버튼이 안 눌리는 것처럼 보였다. 확인창을 페이지 안에서 직접 그린다. */
-function offConfirm(msg, okLabel){
+function offConfirm(msg, okLabel){ msg=T(msg); okLabel=okLabel?T(okLabel):okLabel;
   return new Promise(function(resolve){
     var bd=document.createElement('div');
     bd.className='ocf-bd';
@@ -2310,8 +2316,10 @@ function showDiag(){
 /* 이용약관 (Guideline 1.2 — 가입 전에 무관용 원칙에 동의받아야 한다) */
 function termsSheet(){
   if(!S.terms) return '';
-  return `<div class="cs-bd" id="tmbd"><div class="cs tall">
-    <div class="cs-hd"><b>Terms</b><button class="cs-x" id="tmx" aria-label="Close">✕</button></div>
+  /* 약관은 문장이 길고 <b> 가 중간에 끼어 있어 글자 노드 단위로 갈아끼우면 쪼개진다.
+     법적 문구라 어설프게 이어붙이면 안 된다 — 두 언어를 통째로 두고 고른다. */
+  if(LANG==='ko') return `<div class="cs-bd" id="tmbd"><div class="cs tall">
+    <div class="cs-hd"><b>이용약관</b><button class="cs-x" id="tmx" aria-label="닫기">✕</button></div>
     <div class="tmbody">
       <h4>1. 무관용 원칙</h4>
       <p>OFFLOG는 부적절한 콘텐츠와 괴롭히는 이용자에 대해 <b>무관용 원칙</b>을 적용합니다.
@@ -2319,16 +2327,37 @@ function termsSheet(){
          계정 이용이 영구히 중단됩니다.</p>
       <h4>2. 금지되는 콘텐츠</h4>
       <p>· 욕설·비하·차별·괴롭힘<br>· 선정적이거나 폭력적인 내용<br>· 타인의 저작물 무단 게시<br>
-         · Spam / ads·사기<br>· 타인의 개인정보 게시<br>· 그 밖에 법령을 위반하는 내용</p>
+         · 스팸·광고·사기<br>· 타인의 개인정보 게시<br>· 그 밖에 법령을 위반하는 내용</p>
       <h4>3. 신고와 차단</h4>
       <p>모든 글과 음악에는 신고 기능이 있습니다. 다른 이용자를 차단하면 그 사람의 콘텐츠가
          즉시 보이지 않습니다. 여러 명이 신고한 콘텐츠는 자동으로 숨겨집니다.</p>
       <h4>4. 내가 올린 것에 대한 책임</h4>
       <p>올린 콘텐츠에 대한 책임은 올린 사람에게 있습니다. 본인이 만들었거나 올릴 권리가 있는 것만 올려주세요.</p>
       <h4>5. 계정과 데이터</h4>
-      <p>언제든지 <b>My → 계정 → Delete account</b>에서 계정과 올린 데이터를 완전히 삭제할 수 있습니다.</p>
+      <p>언제든지 <b>My → 계정 → 계정 삭제</b>에서 계정과 올린 데이터를 완전히 삭제할 수 있습니다.</p>
       <h4>6. 문의</h4>
-      <p>Report·문의: whichday@naver.com</p>
+      <p>신고·문의: whichday@naver.com</p>
+    </div>
+  </div></div>`;
+  return `<div class="cs-bd" id="tmbd"><div class="cs tall">
+    <div class="cs-hd"><b>Terms</b><button class="cs-x" id="tmx" aria-label="Close">✕</button></div>
+    <div class="tmbody">
+      <h4>1. Zero tolerance</h4>
+      <p>OFFLOG has <b>zero tolerance</b> for abusive content and harassment.
+         Reported content below is removed <b>within 24 hours</b>. Repeat or severe cases
+         end in a permanent ban.</p>
+      <h4>2. Not allowed</h4>
+      <p>· Abuse, slurs, discrimination, harassment<br>· Sexual or violent content<br>· Posting others’ work without rights<br>
+         · Spam, ads, fraud<br>· Posting someone’s personal data<br>· Anything else that breaks the law</p>
+      <h4>3. Reporting and blocking</h4>
+      <p>Every post and track can be reported. Block someone and their content
+         disappears for you at once. Content reported by several people is hidden automatically.</p>
+      <h4>4. Your responsibility</h4>
+      <p>You are responsible for what you post. Post only what you made or have the right to post.</p>
+      <h4>5. Account and data</h4>
+      <p>You can delete your account and everything you posted at any time from <b>My → Account → Delete account</b>.</p>
+      <h4>6. Contact</h4>
+      <p>Reports and questions: whichday@naver.com</p>
     </div>
   </div></div>`;
 }
@@ -2373,7 +2402,7 @@ function reportSheet(){
     <div class="cs-hd"><b>Report</b><button class="cs-x" id="rpx" aria-label="Close">✕</button></div>
     <p style="color:var(--muted);font-size:12.5px;margin:0 2px 12px">Report ${esc(R.nm||'this content')}. Pick a reason.</p>
     ${REPORT_REASONS.map(r=>`<button class="pkrow" data-rpreason="${r[0]}"><span class="pknm"><b>${esc(r[1])}</b></span></button>`).join('')}
-    <p class="rulen" style="text-align:left;margin:12px 4px 0">신고하면 이 콘텐츠는 내 화면에서 바로 사라집니다. 여러 명이 신고하면 모두에게서 숨겨지고, 운영자가 24시간 안에 확인합니다.</p>
+    <p class="rulen" style="text-align:left;margin:12px 4px 0">Reporting hides this from your screen right away. Enough reports hide it from everyone, and our team reviews it within 24 hours.</p>
   </div></div>`;
 }
 async function submitReport(reason){
@@ -2472,7 +2501,7 @@ async function searchProfiles(){
 
 /* 비로그인 안내 — 조용히 실패시키지 않고 알려준다 */
 let _toastT=null;
-function offToast(msg){
+function offToast(msg){ msg=T(msg);
   let el=document.getElementById('offtoast');
   if(!el){ el=document.createElement('div'); el.id='offtoast';
     el.style.cssText='position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:9999;background:#1F1F23;color:#F5F5F2;border:1px solid #53E0C8;padding:11px 16px;border-radius:14px;font-size:13px;font-family:\'Noto Sans KR\',sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.5);max-width:80vw;text-align:center';
@@ -3088,8 +3117,8 @@ let ROUNDS=[
      {t:['이런일이 생기면','SMHS'], s:'circle', c:'shpink', v:19, x:33, y:56, bd:'7.2s'},
    ]},
   {id:'gh', nm:'August Gonggam Hall Showcase', cat:'stage', type:'open', by:'Open for entries',
-   sub:'Gonggam Hall · 60 seats · 60 min', prize:'상위 4팀이 8월 공감홀 무대에 오릅니다', slot:4, minVotes:10, perUser:3,
-   what:'상위 4팀이 공감홀(60석 소극장) 쇼케이스 무대에 섭니다',
+   sub:'Gonggam Hall · 60 seats · 60 min', prize:'Top 4 take the August Gonggam Hall stage', slot:4, minVotes:10, perUser:3,
+   what:'Top 4 play the Gonggam Hall showcase (60-seat room)',
    end:Date.now()+32*864e5+3*36e5+11*6e4, applied:null,
    cands:[
      {t:['허밍','김이든'], s:'hex', c:'yellow', v:14, x:30, y:8, bd:'7.2s'},
@@ -3157,6 +3186,545 @@ function myRank(r){
 
 /* 내 곡 — LOG의 소리와 WORKS의 음원 전부. 신청은 여기서 고른다 */
 
+
+
+/* ── 언어 ─────────────────────────────────────────────────────────────
+   화면 문구의 기준은 영어다(소스에 영어로 적혀 있다). 한국어를 고르면
+   render 직후 DOM 을 훑어 영어를 한국어로 갈아끼운다. 같은 프레임 안에서
+   바꾸므로 영어가 잠깐 스쳐 보이지 않는다.
+
+   왜 T('...') 를 코드마다 부르지 않았나: 이 앱은 템플릿 문자열로 화면을
+   통째로 그린다. 호출 지점이 350곳이 넘어 하나씩 감싸면 놓치는 곳이 생기고
+   차이도 커진다. 사전을 한 곳에 두고 화면 전체를 훑으면 빠지는 문구가 없다.
+
+   기본값은 브라우저 언어 — 한국어 기기면 한국어, 아니면 영어. */
+let LANG=(function(){ try{ var v=localStorage.getItem('offlog_lang');
+    if(v==='ko'||v==='en') return v; }catch(e){}
+  return /^ko/i.test((navigator.language||'')) ? 'ko' : 'en'; })();
+try{ if(LANG==='ko') document.title='OFFLOG — 만드는 순간을 기록하다'; }catch(e){}
+function setLang(v){
+  if(v!==LANG){ try{localStorage.setItem('offlog_lang',v);}catch(e){}
+    /* 화면 밖 뼈대(내비·헤더)는 매 렌더마다 다시 그려지지 않아서 되돌릴 수가 없다.
+       한 번 새로 읽는 게 가장 확실하다. */
+    location.reload(); }
+}
+const KO_DICT={
+"Language":"언어",
+"Previous month":"이전 달",
+"Next month":"다음 달",
+"The Story":"스토리",
+"Track LOGs":"음원 로그",
+"Optional":"선택",
+"Select":"선택",
+"MY LIST":"내 리스트",
+"LIST":"리스트",
+"VOTE":"투표",
+"Name (Artist name)":"이름 (활동명)",
+"Sign up with Apple":"Apple로 가입하기",
+"Sign up with Google":"Google로 가입하기",
+"Project":"프로젝트",
+"Audio file":"음원 파일",
+"Distributor review means the date must be":"유통사 심사 때문에",
+"at least 2 weeks out":"최소 2주 뒤",
+"Team entry":"팀 단위 신청",
+"Video review":"영상 심사",
+"Airing Sept 2":"9월 2일 방송",
+"Global DJ MINLEE":"글로벌 DJ 민리",
+"DJ Kwon Yeonsu":"국내 DJ 권연수",
+"YESA":"예사",
+"No.1 takes the stage":"1위가 무대를 가져갑니다",
+"Red Point":"레드 포인트",
+"Gonggam Hall":"공감홀",
+"Artist":"아티스트",
+"Listener":"리스너",
+"Producer":"프로듀서",
+"Admin":"관리자",
+"Title":"제목",
+"Track":"음원",
+"Artwork":"아트워크",
+"Lyrics":"가사",
+"Release date":"발매일",
+"Composer":"작곡가",
+"Team name":"팀명",
+"Contact":"연락처",
+"Song title":"곡명",
+"Style":"음악 스타일",
+"Member names":"참여자 이름",
+"Video URL":"영상 URL",
+"Pick a round":"라운드 선택",
+"Pick a project":"프로젝트 선택",
+"Continue with Apple":"Apple로 계속하기",
+"Continue with Google":"Google로 계속하기",
+"By continuing you accept the":"계속하면",
+"Other ways to sign in":"다른 방법으로 로그인",
+"Read the full Terms":"약관 전문 보기",
+"(6+":"(6자",
+"Once created, ‘Release’ lets you add cover art, lyrics, credits and a release date (at least 2 weeks out).":"만든 뒤 ‘음원 발매’에서 커버·가사·크레딧·발매일(최소 2주 뒤)을 넣을 수 있어요.",
+"Pick a project":"프로젝트 선택",
+"Already have an account?":"이미 계정이 있나요?",
+"1. Zero tolerance":"1. 무관용 원칙",
+"2. Not allowed":"2. 금지되는 콘텐츠",
+"3. Reporting and blocking":"3. 신고와 차단",
+"4. Your responsibility":"4. 내가 올린 것에 대한 책임",
+"5. Account and data":"5. 계정과 데이터",
+"6. Contact":"6. 문의",
+"Reports and questions: whichday@naver.com":"신고·문의: whichday@naver.com",
+"⤴ Share":"⤴ 공유하기",
+"Share or copy the link":"링크로 공유하거나 복사",
+"✎ Edit":"✎ 수정하기",
+"Change the text":"글 내용을 고쳐요",
+"📷 Attach a photo":"📷 사진 첨부하기",
+"🎵 Attach LOGs":"🎵 LOG 담기",
+"Removes this LOG for good":"이 로그를 완전히 지워요",
+"New work":"새 작품",
+"Album or work name":"앨범 · 작품 이름",
+"After creating it, ‘Release’":"만든 뒤 '음원 발매하기'",
+"Create":"만들기",
+"✓ Added":"✓ 담김",
+"Edit LOG":"LOG 수정",
+"Camera":"카메라",
+"Post":"올리기",
+"My account":"내 계정",
+"Profile · Account · Settings":"프로필 · 계정 · 설정",
+"Attach LOGs":"LOG 담기",
+"Pick the LOGs from the days this demo was made":"이 데모가 만들어진 날들의 기록을 골라주세요",
+"Trim video":"영상 자르기",
+"Up to 30s":"30초까지 올릴 수 있어요",
+"Reading the video…":"영상을 읽는 중…",
+"Start":"시작",
+"End":"끝",
+"▶ Preview":"▶ 이 구간 보기",
+"Use this clip":"이 구간으로",
+"Project entry":"프로젝트 지원",
+"We contact you if selected":"선정되면 연락드려요",
+"Audio file":"음원 파일",
+"One-line intro":"한 줄 소개",
+"Choose file (MP3 or WAV)":"파일 선택 (MP3 또는 WAV)",
+"MP3 and WAV only":"MP3, WAV 파일만 올릴 수 있어요",
+"Copy":"복사",
+"Only me":"나만 보기",
+"Message":"메시지",
+"Previous":"이전",
+"Next":"다음",
+"Use the phone camera":"폰 카메라로 찍기",
+"Post a demo":"데모 올리기",
+"Shoot":"촬영",
+"Flip camera":"앞뒤 전환",
+"Reporting hides this from your screen right away. Enough reports hide it from everyone, and our team reviews it within 24 hours.":"신고하면 이 콘텐츠는 내 화면에서 바로 사라집니다. 여러 명이 신고하면 모두에게서 숨겨지고, 운영자가 24시간 안에 확인합니다.",
+/* 같은 영어에 한국어가 여럿 걸릴 때 쓰는 말을 못박는다 — 버튼은 짧은 쪽 */
+"Follow":"팔로우","Log in":"로그인","Save":"저장","Share":"공유","Delete":"삭제","Vote":"투표",
+" votes":"표",
+"2026 Showcase":"2026 쇼케이스",
+"30 days":"30일",
+"3000×3000 · JPG/PNG · square, no text":"3000×3000 · JPG/PNG · 텍스트 없는 정사각",
+"45MB max":"최대 45MB",
+"A deleted LOG can’t be restored.":"지운 로그는 되돌릴 수 없습니다.",
+"A short intro or anything you want to say":"간단한 소개나 하고 싶은 말",
+"Abuse / harassment":"욕설·괴롭힘",
+"Abuse / hate":"욕설·혐오",
+"Account":"내 정보",
+"Activity":"활동 분석",
+"Add":"담기",
+"Add to a new playlist":"새 플레이리스트에 담기",
+"Add to my playlist":"내 플레이리스트에 담기",
+"Add to playlist":"플레이리스트에 담기",
+"Admin":"관리자",
+"Airing Sept 2":"9월 2일 방송",
+"Album artwork":"앨범 아트워크",
+"All":"전체",
+"Always public":"항상 공개",
+"Anonymous":"익명",
+"Anyone can see your LOGs and songs":"누구나 내 기록과 곡을 볼 수 있어요",
+"Anyone with the link can listen":"링크가 있으면 누구나 들을 수 있습니다",
+"Applied — we’ll contact you if selected":"지원했어요 — 선정되면 연락드려요",
+"Apply":"지원하기",
+"Apply as a team · Video review · Top 4 take the stage":"팀 단위 신청 · 영상 심사 · Top 4팀이 무대에 오릅니다",
+"Apply to play":"공연 지원",
+"Arranger":"편곡",
+"Artist":"아티스트",
+"Artist name":"아티스트명",
+"Artwork":"아트워크",
+"Artwork added":"아트워크 등록됨",
+"Attach a LOG first to enter the vote":"로그를 먼저 담아야 투표에 참여할 수 있어요",
+"Audition":"오디션",
+"Audition entry":"오디션 지원",
+"August Gonggam Hall Showcase":"8월 공감홀 쇼케이스",
+"Back":"뒤로",
+"Be the first to comment":"첫 댓글을 남겨보세요",
+"Best":"최고",
+"Bio":"소개",
+"Block":"차단",
+"Blocked":"차단 목록",
+"Blocked — you won’t see their posts":"차단했어요 — 이제 이 사람의 글이 보이지 않습니다",
+"By activity":"활동별",
+"By type":"종류별",
+"Camera isn’t ready yet":"아직 카메라가 준비 안 됐어요",
+"Cancel":"취소",
+"Capture failed — please try again":"촬영 실패 — 다시 시도해 주세요",
+"Casting an extra — guitar part":"출연할 엑스트라(기타 연주) 파트를 구해요",
+"Change profile photo":"프로필 사진 바꾸기",
+"Change visibility":"공개 범위 바꾸기",
+"Channel":"채널",
+"Check your email or password":"이메일 또는 비밀번호를 확인하세요",
+"Cheers":"응원",
+"Chills":"소름",
+"Choose file":"파일 선택",
+"Close":"닫기",
+"Comment":"댓글",
+"Composer":"작곡",
+"Composer required":"작곡가는 필수",
+"Contact":"연락처",
+"Contains inappropriate language — can’t post":"부적절한 표현이 있어 올릴 수 없어요",
+"Contains inappropriate language — can’t save":"부적절한 표현이 있어 저장할 수 없어요",
+"Continue":"계속",
+"Continue with Apple":"애플로 계속하기",
+"Continue with Google":"구글로 계속하기",
+"Continue with email":"이메일로 계속하기",
+"Copy":"복사하기",
+"Copyright":"저작권",
+"Couldn’t apply — please try again shortly":"지원에 실패했어요 — 잠시 후 다시 시도해 주세요",
+"Couldn’t change the photo — try again shortly":"사진 변경 실패 — 잠시 후 다시",
+"Couldn’t change — try again shortly":"변경 실패 — 잠시 후 다시",
+"Couldn’t delete — try again shortly":"삭제 실패 — 잠시 후 다시",
+"Couldn’t post the comment — try again shortly":"댓글 저장 실패 — 잠시 후 다시",
+"Couldn’t save your reaction — try again shortly":"반응 저장 실패 — 잠시 후 다시",
+"Couldn’t save — please try again shortly":"저장에 실패했어요 — 잠시 후 다시 시도해 주세요",
+"Couldn’t save — try again shortly":"저장 실패 — 잠시 후 다시",
+"Couldn’t submit — please try again shortly":"신청에 실패했어요 — 잠시 후 다시 시도해 주세요",
+"Couldn’t vote — please try again shortly":"투표에 실패했어요 — 잠시 후 다시 시도해 주세요",
+"Cover":"커버",
+"Credits":"크레딧",
+"Curated":"큐레이션",
+"DJ Kwon Yeonsu":"국내 DJ 권연수",
+"Delete":"삭제",
+"Delete account":"계정 삭제",
+"Delete this LOG?":"이 로그를 삭제할까요?",
+"Delete this comment?":"이 댓글을 지울까요?",
+"Deleting your account removes every LOG, song and photo for good.":"계정을 삭제하면 올린 로그·곡·사진이 모두 사라지고 되돌릴 수 없어요.",
+"Demo":"데모",
+"Details":"자세히",
+"Discover":"발견",
+"Distribution":"유통 제출",
+"Edit profile":"프로필 수정",
+"Edit your text":"내용을 고쳐주세요",
+"Email":"이메일",
+"Enter":"참여",
+"Enter a stage event":"공연 이벤트 참여",
+"Enter and listeners vote · Place high enough and the stage is yours":"참여를 고르면 청취자 투표를 받아요 · 순위 안에 들면 무대가 확정돼요",
+"Enter your email and password":"이메일과 비밀번호를 입력하세요",
+"Enter your email first":"이메일을 먼저 입력해 주세요",
+"Entered":"신청 중",
+"Follow":"팔로우하기",
+"Followers":"팔로워",
+"Followers · Following":"팔로워 · 팔로잉",
+"Following":"팔로잉",
+"Forgot password":"비밀번호 찾기",
+"From this month’s releases":"이번 달 나온 곡 중에서",
+"Global DJ MINLEE":"글로벌 DJ 민리",
+"Gonggam Hall · 60 seats · 60 min":"공감홀 60석 · 60분",
+"Guest":"게스트",
+"Handle":"아이디",
+"Hidden":"비공개 처리됨",
+"Home":"홈",
+"Idea":"아이디어",
+"In progress":"작업 중",
+"Instrumental (no lyrics)":"연주곡 (가사 없음)",
+"Introduce yourself in one line":"나를 한 줄로 소개해 주세요",
+"Joined":"가입일",
+"July Releases":"7월 발매 음악",
+"Just write — the time and the words stay":"그냥 쓰면 시간과 글만 남아요",
+"Kwon Yeonsu":"권연수",
+"LOG not found":"로그를 못 찾았어요",
+"LOG posted":"로그를 올렸어요",
+"LOGs entered in a stage or release are always public":"무대·발매에 낸 로그는 항상 공개예요",
+"LOGs for this release":"이 발매에 넣을 로그",
+"Last 30 days":"최근 30일 기준",
+"Last 8 weeks":"최근 8주",
+"Link copied":"링크가 복사됐어요",
+"Listener":"리스너",
+"Loading…":"불러오는 중…",
+"Log in":"로그인하기",
+"Log in first":"로그인이 필요해요",
+"Log in to comment":"로그인하면 댓글을 쓸 수 있어요",
+"Log in to see your audition entries":"로그인하면 내 오디션 지원 내역을 볼 수 있어요",
+"Log in to see your followers":"로그인하면 내 팔로워를 볼 수 있어요",
+"Log in to sync your page":"로그인하고 내 페이지 연동",
+"Log in to sync your page, follows and saves.":"로그인하면 내 페이지·팔로우·저장이 연동돼요.",
+"Log out":"로그아웃",
+"Looking for a co-writer":"함께 작곡할 친구를 구해요",
+"Looking for a producer to collaborate":"협업할 작곡가를 구해요",
+"Lyricist":"작사",
+"Lyrics":"가사",
+"Manage LOG":"LOG 관리",
+"Member names":"참여자 이름",
+"Members":"참가자",
+"Memo":"메모",
+"Menu":"메뉴",
+"Moved":"울컥",
+"Music":"음악",
+"Music posted":"음악을 올렸어요",
+"Music posted 🎵 — added to Discover and My Page":"음악을 올렸어요 🎵 — 발견·내 페이지에 반영",
+"My":"마이",
+"My Page":"내 페이지",
+"My Playlist":"내 플레이리스트",
+"My team":"내 팀",
+"Name":"이름",
+"Name (optional — you can change it later)":"이름 (선택 — 나중에 바꿀 수 있어요)",
+"Name (required)":"Name (필수)",
+"Names (comma separated)":"이름 (쉼표로 구분)",
+"New playlist":"새 플레이리스트",
+"Next event":"다음 이벤트",
+"No LOGs attached to this release yet":"아직 담은 발매 로그가 없어요",
+"No LOGs from people you follow yet.":"아직 팔로우한 사람의 로그가 없어요.",
+"No LOGs on this day.":"이 날은 올라온 로그가 없어요.",
+"No LOGs to attach — write or post a photo first":"담을 로그가 아직 없어요 — 글·사진을 먼저 남겨보세요",
+"No LOGs yet · Tap ＋ in My to write one":"아직 로그가 없어요 · 마이에서 ＋로 로그를 남겨보세요",
+"No auditions applied to yet":"아직 지원한 오디션이 없어요",
+"No date":"날짜 미상",
+"No followers yet":"아직 팔로워가 없어요",
+"No menu for this profile":"메뉴를 열 수 없는 프로필이에요",
+"No playlists yet":"아직 만든 플레이리스트가 없어요",
+"No public LOGs yet":"아직 공개된 로그가 없습니다",
+"No releases yet — use ＋Release above":"아직 발매한 곡이 없어요 — 위 ＋음원 발매로 올려보세요",
+"No.1 headlines Red Point":"1위가 레드포인트 단독 공연을 가져갑니다",
+"No.1 headlines Red Point (200-seat venue)":"1위가 레드포인트(200석 공연장)에서 단독 공연을 엽니다",
+"No.1 takes the stage":"1위가 무대를 가져갑니다",
+"None":"없음",
+"Not now":"나중에 할게요",
+"Not visible in your friends’ feed":"친구 피드에 안 보이고 있어요",
+"Note":"노트",
+"Nothing to download (sample LOG)":"받을 파일이 없어요 (샘플 로그예요)",
+"Notifications":"알림",
+"Now public — visible in your followers’ feed":"공개로 바꿨어요 — 팔로워 피드에 보여요",
+"OFFLOG picks":"OFFLOG 선정",
+"On repeat":"루프",
+"One song per round. Swapping resets votes to 0.":"라운드당 한 곡만. 교체하면 득표는 0부터 다시 시작합니다",
+"Only approved followers can see it":"승인한 팔로워만 볼 수 있어요",
+"Only you can see it, even with the link":"링크를 열어도 나만 보입니다",
+"Open":"오픈",
+"Open for entries":"신청 받는 중",
+"Original":"오리지널",
+"Other":"기타",
+"Password":"비밀번호",
+"Password must be at least 6 characters":"비밀번호는 6자 이상이어야 해요",
+"Password reset email sent":"비밀번호 재설정 메일을 보냈어요",
+"Paste your lyrics\n\nLine breaks reach the distributor as-is":"가사를 붙여넣으세요\n\n줄바꿈 그대로 유통사에 전달됩니다",
+"People logging right now":"요즘 기록 중인 사람들이에요",
+"Phone or email":"전화번호 또는 이메일",
+"Phone or email to reach you if selected":"합격 시 연락드릴 전화번호 또는 이메일",
+"Photo":"사진",
+"Pick LOGs to include — or release without any":"넣을 로그를 골라주세요 (선택 안 하면 로그 없이 발매)",
+"Pick a round":"라운드 선택",
+"Picks":"추천",
+"Play":"재생",
+"Playlist":"플레이리스트",
+"Post":"등록",
+"Practice":"연습",
+"Practice · Shows · Work at a glance":"연습 · 공연 · 작업 기록 한눈에",
+"Previous event":"이전 이벤트",
+"Privacy Policy":"개인정보처리방침",
+"Private":"비공개",
+"Private account":"비공개 계정",
+"Producer":"프로듀서",
+"Profile · Settings":"계정 · 설정",
+"Public":"공개",
+"Public account":"공개 계정",
+"Public or link-only — both work":"공개 또는 일부공개(링크 있는 사람) 둘 다 가능해요",
+"Publish all":"한 번에 공개",
+"Rank":"순위",
+"Reason":"사유",
+"Recently joined":"최근 가입한 사람들",
+"Records video only, no mic":"마이크 없이 영상만 녹화해요",
+"Red Point":"레드 포인트",
+"Red Point · 200 seats · 90 min":"레드포인트 200석 · 90분",
+"Release":"음원 발매",
+"Release date":"발매일",
+"Releases":"발매곡",
+"Remix competition — send us your remix":"리믹스 컴피티션 — 나만의 리믹스를 보내요",
+"Remove attachment":"첨부 삭제",
+"Report":"신고",
+"Report this content. Pick a reason.":"이 콘텐츠를 신고합니다. 사유를 골라주세요.",
+"Reported — our team will review it":"신고했어요 — 운영자가 확인합니다",
+"Reported — you won’t see this content again":"신고를 접수했어요 — 이 콘텐츠는 이제 안 보입니다",
+"Role":"역할",
+"Round to enter":"신청할 라운드",
+"Save":"저장하기",
+"Saved on this device · Log in to upload":"이 기기에 저장했어요 · 로그인하면 올라갑니다",
+"Schedule release":"발매 예약",
+"Search":"검색",
+"Search artists":"아티스트 찾기",
+"See LOGs":"기록 보기",
+"Select":"선택",
+"Send link":"링크 보내기",
+"Send your page link":"내 페이지 링크 보내기",
+"September Show Tracks":"9월 공연 음원",
+"Settings":"설정",
+"Sexual content":"성적인 내용",
+"Share":"공유하기",
+"Show":"공연",
+"Show all ✕":"전체 보기 ✕",
+"Showcase":"쇼케이스",
+"Sign up":"가입하기",
+"Song title":"곡 제목",
+"Songs entered in events or released stay public no matter this setting":"이벤트에 신청하거나 발매한 곡은 계정 설정과 상관없이 모두에게 공개돼요",
+"Songs for the September stage":"9월 무대에 올릴 곡",
+"Spam":"스팸",
+"Spam / ads":"Spam·광고",
+"Start by following these artists":"이 아티스트들부터 팔로우해 보세요",
+"Stay logged in":"로그인 유지",
+"Storage is full — clear out old LOGs":"저장 공간이 부족해요 — 오래된 로그를 정리해 주세요",
+"Streak":"연속 기록",
+"Style":"음악 스타일",
+"Submit":"신청하기",
+"Submit your team, members and video — vote your way onto the stage":"팀명·참가자·영상을 올리고, 투표로 무대에 오릅니다",
+"Submitted — it will appear in the vote list":"신청됐어요 — 투표 목록에 올라갑니다",
+"Tag a LOG as Practice, Show, Work or Other and it lands here":"로그 올릴 때 연습·공연·작업·기타 태그를 고르면 여기에 분류돼요",
+"Tags":"태그",
+"Takes about as long as the clip — keep the screen on":"고른 길이만큼 걸려요 — 화면을 끄지 말아주세요",
+"Tap = photo · Hold = video":"탭 = 사진 · 길게 누르면 영상",
+"Tap to add a photo":"탭해서 사진 넣기",
+"Tap to pick":"탭해서 선택",
+"Tap to unfollow":"탭하면 팔로우 해제",
+"Team entry · Video review":"팀 단위 신청 · 영상 심사",
+"Team name":"팀명",
+"Team or artist name":"팀 또는 아티스트명",
+"Terms":"이용약관",
+"That’s a video — post it with 📷 Camera":"영상 파일이에요 — 📷 카메라로 올려주세요",
+"That’s a video — posting it as video":"영상이네요 — 영상으로 올릴게요",
+"The best of this month’s releases":"이번 달 발매된 곡 중 최고를 뽑는 라운드입니다",
+"This LOG has no audio file":"이 로그에는 소리 파일이 없어요",
+"This action can’t be undone.":"이 작업은 취소할 수 없습니다.",
+"This becomes the caption on the photo":"이 글이 사진 위 캡션이 돼요",
+"This can’t be undone. Continue?":"되돌릴 수 없어요. 계속할까요?",
+"This demo is not saved on the server yet":"데모가 아직 서버에 저장되지 않았어요",
+"This email is already registered — please log in":"이미 가입된 이메일이에요 — 로그인해 주세요",
+"This song has no playable file":"이 곡은 재생 파일이 없어요",
+"This story is still growing":"이 스토리는 지금도 자라는 중",
+"This week":"이번 주",
+"Title":"제목",
+"Top ":"상위 ",
+"Top 20 make this month’s playlist":"상위 20곡이 이번 달 플레이리스트에 실립니다",
+"Top 4 play the Gonggam Hall showcase (60-seat room)":"상위 4팀이 공감홀(60석 소극장) 쇼케이스 무대에 섭니다",
+"Top 4 take the August Gonggam Hall stage":"상위 4팀이 8월 공감홀 무대에 오릅니다",
+"Top 4 teams take the 2026 Showcase stage":"상위 4팀이 2026 쇼케이스 무대에 오릅니다",
+"Top 5 join the September setlist":"상위 5곡이 9월 합동 공연 셋리스트에 오릅니다",
+"Track":"음원",
+"Trimming — one moment":"자르는 중이에요 — 잠시만요",
+"Unblock":"차단 해제",
+"Unfollow":"팔로우 해제",
+"Unfollowed":"팔로우 해제했어요",
+"Untagged":"미분류",
+"Untitled":"무제",
+"Upload audio file":"음원 파일 업로드",
+"Upload image":"이미지 업로드",
+"Verification email sent — confirm it, then log in":"확인 메일을 보냈어요 — 메일에서 인증 후 로그인해 주세요",
+"Video":"영상",
+"Video URL":"영상 URL",
+"Video recording isn’t available on this device":"이 기기에서 영상 녹화를 쓸 수 없어요",
+"Violence":"폭력적인 내용",
+"Violence / threats":"폭력·위협",
+"Visibility":"공개 범위",
+"Voice":"보이스",
+"Vote":"투표",
+"Vote list":"투표 목록",
+"Vote your way onto the stage":"투표로 무대에 오릅니다",
+"Watch on the original link":"원본 링크에서 영상 보기",
+"We contact you only if selected — never shown in the list":"선정 시에만 연락드려요 — 목록에는 공개되지 않아요",
+"We contact you only if selected — never shown on the vote screen":"합격 시에만 연락드려요 — 투표 화면에는 공개되지 않아요",
+"Weekly":"주별 추이",
+"What’s on your mind?":"무슨 생각이에요?",
+"With an account your LOGs and songs follow you to any device.":"계정을 만들면 로그·곡이 계정에 저장돼 어느 기기에서나 보여요.",
+"Work":"작업",
+"Write a LOG":"Log 남기기",
+"Write a comment…":"댓글 남기기…",
+"YESA":"예사",
+"You already applied to this project":"이미 이 프로젝트에 지원했어요",
+"You already entered this round":"이미 이 라운드에 신청했어요",
+"You are not following anyone yet":"아직 팔로우한 사람이 없어요",
+"You can attach LOGs once the demo is saved":"데모가 서버에 저장된 뒤에 담을 수 있어요",
+"You can’t block yourself":"자기 자신은 차단할 수 없어요",
+"You must accept the Terms to sign up":"이용약관에 동의해야 가입할 수 있어요",
+"You won’t see posts from people you block. Unblock to see them again.":"차단한 사람의 글은 보이지 않습니다. 해제하면 다시 보여요.",
+"YouTube links only":"유튜브 링크만 지원",
+"YouTube only":"유튜브만 지원",
+"Your contact is never shown on the vote screen":"연락처는 투표 화면에 공개되지 않아요",
+"e.g. indie pop, acoustic, band":"예: 인디팝, 어쿠스틱, 밴드",
+"this artist":"이 아티스트",
+"this content":"이 콘텐츠",
+"this person":"이 사람",
+"wav · flac recommended":"wav · flac 권장",
+"’s profile":"프로필 보기",
+"♪ Demo":"♪ 데모",
+"✎ Note":"✎ 글",
+"＋ Add to my playlist":"＋ 내 플레이리스트에 담기",
+"＋ Enter my team":"＋ 우리 팀 공연 신청하기",
+"＋ Invite a friend":"＋ 친구 초대하기",
+"＋Apply to play":"＋공연 지원",
+"＋Release":"＋음원 발매"
+};
+/* 숫자·이름이 섞인 문구는 통째로 사전에 못 넣는다 — 모양으로 잡는다 */
+const KO_PAT=[
+  [/^(\d+) seats$/, '$1석'],
+  [/^(\d+) min$/, '$1분'],
+  [/^· earliest (.+)$/, '· 빠른 날짜 $1'],
+  [/^Report (.+)\. Pick a reason\.$/, '$1을(를) 신고합니다. 사유를 골라주세요.'],
+  [/^(\d+) songs$/, '$1곡'],
+  [/^(\d+) private LOGs$/, '비공개 로그 $1개'],
+  [/^(\d+) comments$/, '댓글 $1개'],
+  [/^(\d+) new on your LOGs$/, '내 로그에 새 표시 $1개'],
+  [/^(\d+) LOGs$/, '기록 $1개'],
+  [/^(\d+) LOGs · (.+)$/, '기록 $1개 · $2'],
+  [/^Top (\d+) songs are picked$/, '상위 $1곡이 선정됩니다'],
+  [/^Top (\d+) teams take the stage$/, '상위 $1팀이 무대에 오릅니다'],
+  [/^Stage for (.+)$/, '$1 낼 무대'],
+  [/^(.+)’s profile$/, '$1 프로필 보기'],
+  [/^Released (.+)$/, '발매 $1'],
+  [/^Schedule release (.+)$/, '발매 예약 $1'],
+  [/^(.+) → swap$/, '$1 →교체'],
+  [/^(\d+) selected$/, '$1개 선택'],
+  [/^January (\d{4})$/,'$1년 1월'],[/^February (\d{4})$/,'$1년 2월'],
+  [/^March (\d{4})$/,'$1년 3월'],[/^April (\d{4})$/,'$1년 4월'],
+  [/^May (\d{4})$/,'$1년 5월'],[/^June (\d{4})$/,'$1년 6월'],
+  [/^July (\d{4})$/,'$1년 7월'],[/^August (\d{4})$/,'$1년 8월'],
+  [/^September (\d{4})$/,'$1년 9월'],[/^October (\d{4})$/,'$1년 10월'],
+  [/^November (\d{4})$/,'$1년 11월'],[/^December (\d{4})$/,'$1년 12월'],
+];
+/* 영어 한 덩어리 → 한국어. 못 찾으면 null (그대로 둔다) */
+function koOf(t){
+  if(KO_DICT[t]!==undefined) return KO_DICT[t];
+  for(var i=0;i<KO_PAT.length;i++){ if(KO_PAT[i][0].test(t)) return t.replace(KO_PAT[i][0],KO_PAT[i][1]); }
+  /* "🗓 August 2026", "🎵 My Playlist", "＋ Invite a friend" 처럼 앞에 기호가 붙은 것 —
+     기호는 두고 뒤쪽만 바꾼다. 안 그러면 이런 라벨이 통째로 영어로 남는다. */
+  var m=t.match(/^([^A-Za-z가-힣]+)(.+)$/);
+  if(m){ var k=koOf(m[2]); if(k!==null) return m[1]+k; }
+  /* "Red Point · 200 seats · 90 min" 처럼 여러 조각을 이어 붙인 한 줄 —
+     통째로는 사전에 없다. 조각마다 찾아 아는 것만 바꾼다. */
+  if(t.indexOf(' · ')>=0){
+    var ps=t.split(' · '), hit=false;
+    var out=ps.map(function(p){ var q=koOf(p); if(q!==null){hit=true; return q;} return p; });
+    if(hit) return out.join(' · ');
+  }
+  /* "Title · Track · Artwork required" 같은 꼬리말 */
+  var mr=t.match(/^(.+) required$/);
+  if(mr){ var kr=koOf(mr[1]); if(kr!==null) return kr+' 필요'; }
+  return null;
+}
+/* 화면에 뜨는 문자열은 이걸 거쳐 나간다(토스트·확인창처럼 render 밖에서 만드는 것) */
+function T(t){ if(LANG!=='ko') return t; var k=koOf(String(t==null?'':t)); return k===null?t:k; }
+/* DOM 한 덩어리를 한국어로 — 글자 노드와 placeholder/aria-label/title */
+function localize(root){
+  if(LANG!=='ko'||!root) return;
+  var w=document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null), n, list=[];
+  while((n=w.nextNode())) list.push(n);
+  for(var i=0;i<list.length;i++){ var v=list[i].nodeValue, t=v.trim();
+    if(!t||!/[A-Za-z]/.test(t)) continue;
+    var k=koOf(t); if(k!==null) list[i].nodeValue=v.replace(t,k); }
+  var ATTR=['placeholder','aria-label','title'];
+  var els=root.querySelectorAll?root.querySelectorAll('[placeholder],[aria-label],[title]'):[];
+  for(var j=0;j<els.length;j++){ for(var a=0;a<ATTR.length;a++){
+    var val=els[j].getAttribute(ATTR[a]); if(!val)continue;
+    var kk=koOf(val.trim()); if(kk!==null) els[j].setAttribute(ATTR[a],kk); } }
+}
 
 let S={view:'home', mode:'feed', slideAt:0, slot:1, ltype:0, seg:'log', profile:'me', round:'jul', lseg:'list', vcat:'music', flist:null, fq:'', flFrom:'mine', list:null, share:false, addlist:false,
   pull:false, sel:[], rel:false, stage:false, work:'sr', wf:'all', mini:{on:false, playing:false}, storyIdx:null, itemIdx:0, feed:[], compose:null, relpick:false, newwork:false, addsong:false, sq:'', auth:false, profileAid:null, saveTrack:null, logMenu:null,
@@ -3261,7 +3829,7 @@ function startBannerRotate(){
     if(!host || S.view!=='home'){ clearInterval(_bnT); return; }
     if(_bnHold) return;          /* 손이 배너 위에 있으면 넘기지 않는다 */
     _bnI=(_bnI+1)%bannerItems().length;
-    host.innerHTML=eventBanner();
+    host.innerHTML=eventBanner(); localize(host); localize(host);
     const el=host.firstElementChild;
     if(el){ el.classList.add('evbin'); bindBanner(); }
   }, 5000);   /* 2초는 읽고 누를 새도 없이 넘어갔다 — 5초 */
@@ -3272,7 +3840,7 @@ function bannerGo(i){
   const n=bannerItems().length; if(!n) return;
   _bnI=((i%n)+n)%n;
   const host=document.getElementById('evbnwrap'); if(!host) return;
-  host.innerHTML=eventBanner();
+  host.innerHTML=eventBanner(); localize(host);
   const el=host.firstElementChild; if(el) el.classList.add('evbin');
   bindBanner(); startBannerRotate();
 }
@@ -3394,8 +3962,8 @@ function storyViewer(){
       <button class="svmore" data-sharemenu="${it.tid||''}" data-snm="${(it.cap||s.who||'').replace(/"/g,'&quot;')}" data-sby="${(s.who||'').replace(/"/g,'&quot;')}" data-saud="${it.audio||''}" data-said="${s.aid||''}" aria-label="Share·Add·Follow">⋯</button>
       <button class="svclose" id="svclose" aria-label="Close">✕</button></div>
     <div class="svbody">${content}
-      <button class="svtap l" id="svtapl" aria-label="이전"></button>
-      <button class="svtap r" id="svtapr" aria-label="다음"></button></div>
+      <button class="svtap l" id="svtapl" aria-label="Previous"></button>
+      <button class="svtap r" id="svtapr" aria-label="Next"></button></div>
     <div class="svrx">
       <button class="shape rbtn" data-emo="Chills" aria-label="Chills">${shape('tri',c('green'),24)}</button>
       <button class="shape rbtn" data-emo="On repeat" aria-label="On repeat">${shape('circle',c('shpink'),24)}</button>
@@ -3659,7 +4227,7 @@ async function loadRecoAuthors(){
     rows.forEach(function(x){
       if(!x.author_id || seen[x.author_id]) return;
       seen[x.author_id]=1;
-      const peek = x.kind==='snd' ? '🎵 '+(x.caption||'데모')
+      const peek = x.kind==='snd' ? '🎵 '+(x.caption||'Demo')
                  : x.kind==='ph'  ? '📷 '+(x.caption||'Photo')
                  : x.kind==='vid' ? '🎬 '+(x.caption||'Video')
                  : (x.text||x.caption||'');
@@ -3994,10 +4562,10 @@ function logStatsSheet(){
   let streak=0, sd=new Date();
   if(!days.has(iso(sd))) sd.setDate(sd.getDate()-1);
   while(days.has(iso(sd))){ streak++; sd.setDate(sd.getDate()-1); }
-  const ACT=[['prac','Practice','var(--mint)'],['show','공연','var(--pink)'],['work','Work','var(--blue)'],['etc','Other','var(--yellow)'],[null,'미분류','#5a5a62']];
+  const ACT=[['prac','Practice','var(--mint)'],['show','Show','var(--pink)'],['work','Work','var(--blue)'],['etc','Other','var(--yellow)'],[null,'Untagged','#5a5a62']];
   const actCnt=ACT.map(a=>in30L.filter(l=>(l.act||null)===a[0]).length);
   const actMax=Math.max.apply(null,actCnt.concat([1]));
-  const KND=[['note','✎ 글'],['ph','📷 Photo'],['vid','🎬 Video'],['snd','♪ 데모']];
+  const KND=[['note','✎ Note'],['ph','📷 Photo'],['vid','🎬 Video'],['snd','♪ Demo']];
   const kndCnt=KND.map(k=>in30L.filter(l=>l.t===k[0]).length);
   const kndMax=Math.max.apply(null,kndCnt.concat([1]));
   const wk=[]; for(let i=7;i>=0;i--){ const a=now-(i+1)*7*D, b=now-i*7*D; wk.push(L.filter(l=>{const t=logTs(l);return t>a&&t<=b;}).length); }
@@ -4005,20 +4573,20 @@ function logStatsSheet(){
   const bar=(lab,cnt,max,col)=>`<div class="stbrow"><span class="stblab">${lab}</span><span class="stbtrack"><i style="width:${Math.round(cnt/max*100)}%;background:${col||'var(--mint)'}"></i></span><b class="stbnum">${cnt}</b></div>`;
   return `<div class="sheet-bd" id="lsbd"></div>
   <div class="pksheet tall">
-    <div class="pkhd"><b>📊 Activity</b><span class="pksub">최근 30일 기준</span><button class="pkx" id="lsclose" aria-label="Close">✕</button></div>
+    <div class="pkhd"><b>📊 Activity</b><span class="pksub">Last 30 days</span><button class="pkx" id="lsclose" aria-label="Close">✕</button></div>
     <div class="stsum">
-      <div class="stcell"><b>${in7}</b><small>이번 주</small></div>
-      <div class="stcell"><b>${in30}</b><small>30일</small></div>
-      <div class="stcell"><b>${streak}<em>일</em></b><small>연속 기록</small></div>
+      <div class="stcell"><b>${in7}</b><small>This week</small></div>
+      <div class="stcell"><b>${in30}</b><small>30 days</small></div>
+      <div class="stcell"><b>${streak}<em>d</em></b><small>Streak</small></div>
       <div class="stcell"><b>${L.length}</b><small>All</small></div>
     </div>
-    <div class="rsec">활동별</div>
+    <div class="rsec">By activity</div>
     ${ACT.map((a,i)=>bar(a[1],actCnt[i],actMax,a[2])).join('')}
-    <div class="rsec">종류별</div>
+    <div class="rsec">By type</div>
     ${KND.map((k,i)=>bar(k[1],kndCnt[i],kndMax)).join('')}
-    <div class="rsec">주별 추이 <em class="opt">최근 8주</em></div>
+    <div class="rsec">Weekly <em class="opt">Last 8 weeks</em></div>
     <div class="stwk">${wk.map(c=>`<span class="stwb"><i style="height:${Math.max(6,Math.round(c/wkMax*100))}%"></i><small>${c}</small></span>`).join('')}</div>
-    <p class="rulen" style="text-align:left;margin:10px 4px 0">로그 올릴 때 연습·공연·Work·기타 태그를 고르면 여기에 분류돼요</p>
+    <p class="rulen" style="text-align:left;margin:10px 4px 0">Tag a LOG as Practice, Show, Work or Other and it lands here</p>
   </div>`;
 }
 /* 비공개 계정이면 밖으로 나간다는 걸 먼저 알린다 (되돌리기 어려운 행동이라 확인 필요) */
@@ -4040,9 +4608,9 @@ let WORKS=[
 function myMenuSheet(){
   if(!S.myMenu) return '';
   return `<div class="cs-bd" id="mmbd"><div class="cs">
-    <div class="cs-hd"><b>${(ME&&ME.name)||'내 계정'}</b><button class="cs-x" id="mmx" aria-label="Close">✕</button></div>
-    <button class="mmi" id="mminfo"><span class="mmic">👤</span><span class="mmt"><b>Account</b><small>프로필 · 계정 · Settings</small></span></button>
-    <button class="mmi" id="mmshare"><span class="mmic">⤴</span><span class="mmt"><b>Share</b><small>내 페이지 링크 보내기</small></span></button>
+    <div class="cs-hd"><b>${(ME&&ME.name)||'My account'}</b><button class="cs-x" id="mmx" aria-label="Close">✕</button></div>
+    <button class="mmi" id="mminfo"><span class="mmic">👤</span><span class="mmt"><b>Account</b><small>Profile · Account · Settings</small></span></button>
+    <button class="mmi" id="mmshare"><span class="mmic">⤴</span><span class="mmt"><b>Share</b><small>Send your page link</small></span></button>
   </div></div>`;
 }
 /* LOG · VOTE 나란히 — 같은 크기 두 카드. 투표는 로그가 있어야 열린다 */
@@ -4111,7 +4679,7 @@ const smileEl=(col,seed)=>{
 
 /* ── 마이 / 아티스트 페이지 ──
    내 페이지 = 도구·＋·수정 전부 여기서. 남의 페이지 = 보기만. */
-function roleKo(r){ return r==='artist'?'Artist':r==='admin'?'관리자':r==='listener'?'Listener':'Artist'; }
+function roleKo(r){ return r==='artist'?'Artist':r==='admin'?'Admin':r==='listener'?'Listener':'Artist'; }
 /* 가입 트리거가 이름을 못 찾으면 이메일 앞부분을 그대로 쓴다(funzookim, whichday …).
    그 이름으론 아무도 서로를 못 찾으니, 본인에게만 조용히 바꾸라고 알린다. 강제하지 않는다. */
 function needsRealName(){
@@ -4157,8 +4725,8 @@ function mine(){
     + (worksSrc.length ? worksSrc.map(w=>`<div class="workrow">
     <div class="wthumb"><div class="bgimg" style="position:absolute;inset:0;background:${w.cover?`center/cover no-repeat url(${w.cover})`:w.bg}"></div>
       <button class="wplay" aria-label="Play">▶</button></div>
-    <div class="winfo"><b>${esc(w.nm)}</b><small>${w.mine?(w.pending?'Schedule release '+w.date:(w.date&&w.date!=='In progress'?'발매 '+w.date:'In progress')):(w.logs+'개 기록 · '+w.span)}</small></div>
-    <button class="openst" data-work="${w.id}">${w.mine?'열기':'기록 보기'} ›</button></div>`).join('')
+    <div class="winfo"><b>${esc(w.nm)}</b><small>${w.mine?(w.pending?'Schedule release '+w.date:(w.date&&w.date!=='In progress'?'Released '+w.date:'In progress')):(w.logs+' LOGs · '+w.span)}</small></div>
+    <button class="openst" data-work="${w.id}">${w.mine?'Open':'See LOGs'} ›</button></div>`).join('')
     : `<div class="pknote" style="padding:22px 0">No releases yet — use ＋Release above</div>`);
 
   /* 내 공연 지원 내역 — perf_entries에서 author_id=나 로 조회. 곡 카드와 같은 crow2/cex 문법 재사용.
@@ -4262,7 +4830,7 @@ function mine(){
     <button class="circ" data-v="home" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
     <div class="htitle">${me?'':esc(prof.who)}<small>${me?'My Page':prof.sub}</small></div>
     <div class="r">${me&&ME
-      ? `<button class="circ" id="mysettings" aria-label="메뉴">⋯</button>`
+      ? `<button class="circ" id="mysettings" aria-label="Menu">⋯</button>`
       : `<button class="circ" aria-label="Share">⤴</button>`}</div></div>
   <div class="mprof">${me&&ME
       ? `<button class="mpav avedit" id="acavbtn" aria-label="Change profile photo">${avatarEl(prof.avatar, prof.c, 92, prof.who||prof.name)}<span class="avcam">📷</span></button><input type="file" id="acavfile" accept="image/*" hidden>`
@@ -4361,48 +4929,55 @@ let PEOPLE=[
 function accountView(){
   if(!ME){ return `<div class="hd"><button class="circ" data-v="mine" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
     <div class="htitle">Account</div><span style="width:38px"></span></div>
-    <div class="pknote" style="padding:40px 0">로그인이 필요해요</div>`; }
+    <div class="pknote" style="padding:40px 0">Log in first</div>`; }
   const row=(k,v)=>v?`<div class="acrow"><span class="ack">${k}</span><span class="acv">${esc(v)}</span></div>`:'';
   const sns=ME.sns||{}, snsRow=(lab,val,pre)=>val?`<div class="acrow"><span class="ack">${lab}</span><span class="acv">${pre||''}${esc(val)}</span></div>`:'';
   return `<div class="hd"><button class="circ" data-v="mine" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
-    <div class="htitle">Account<small>계정 · Settings</small></div><span style="width:38px"></span></div>
+    <div class="htitle">Account<small>Profile · Settings</small></div><span style="width:38px"></span></div>
   <div class="mprof" style="padding-top:6px">
     <button class="mpav avedit" id="acavbtn" aria-label="Change profile photo">${avatarEl(ME.avatar,'coral', 92, ME.name)}<span class="avcam">📷</span></button>
     <h3>${esc(ME.name)}</h3><p>${roleKo(ME.role)}</p>
     <button class="acedit" id="acedit">Edit profile</button></div>
   ${ME.bio?`<div class="acbio">${ME.bio.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`:''}
   <input type="file" id="acavfile" accept="image/*" hidden>
-  <div class="acsec">공개 범위</div>
+  <div class="acsec">Language</div>
+  <div class="accard">
+    <div class="langrow">
+      <button class="langbtn${LANG==='ko'?' on':''}" data-lang="ko">한국어</button>
+      <button class="langbtn${LANG==='en'?' on':''}" data-lang="en">English</button>
+    </div>
+  </div>
+  <div class="acsec">Visibility</div>
   <div class="accard">
     <button class="acvis${ME.vis==='private'?'':' on'}" data-acvis="public">
       <span class="evck${ME.vis==='private'?'':' on'}"></span>
-      <span class="pknm"><b>공개 계정</b><small>누구나 내 기록과 곡을 볼 수 있어요</small></span></button>
+      <span class="pknm"><b>Public account</b><small>Anyone can see your LOGs and songs</small></span></button>
     <button class="acvis${ME.vis==='private'?' on':''}" data-acvis="private">
       <span class="evck${ME.vis==='private'?' on':''}"></span>
       <span class="pknm"><b>Private account</b><small>Only approved followers can see it</small></span></button>
-    <p class="acvisnote">이벤트에 신청하거나 발매한 곡은 계정 설정과 상관없이 모두에게 공개돼요</p>
+    <p class="acvisnote">Songs entered in events or released stay public no matter this setting</p>
   </div>
-  <div class="acsec">계정</div>
+  <div class="acsec">Account</div>
   <div class="accard">
     ${row('Name', ME.name)}
-    ${row('역할', roleKo(ME.role))}
+    ${row('Role', roleKo(ME.role))}
     ${row('Email', ME.email||'—')}
-    ${row('가입일', ME.joined?ME.joined.replace(/-/g,'.'):'—')}
+    ${row('Joined', ME.joined?ME.joined.replace(/-/g,'.'):'—')}
     <div class="acrow"><span class="ack">Followers · Following</span><span class="acv">${(ME.followers!=null?ME.followers:'—')} · ${MYFOLLOWS.size}</span></div>
   </div>
   ${(sns.ig||sns.yt||sns.tt)?`<div class="acsec">SNS</div><div class="accard">
     ${snsRow('Instagram', sns.ig, '@')}${snsRow('YouTube', sns.yt)}${snsRow('TikTok', sns.tt, '@')}
   </div>`:''}
-  ${MYBLOCKS.size ? `<div class="acsec">차단한 사람</div><div class="accard">
+  ${MYBLOCKS.size ? `<div class="acsec">Blocked</div><div class="accard">
     ${Array.from(MYBLOCKS).map(id=>`<div class="acrow">
       <span class="acv" style="text-align:left;flex:1;font-weight:700">${esc(BLOCKEDNAMES[id]||'…')}</span>
-      <button class="acunblock" data-unblock="${esc(id)}">차단 해제</button></div>`).join('')}
+      <button class="acunblock" data-unblock="${esc(id)}">Unblock</button></div>`).join('')}
   </div>
-  <p class="acdelnote" style="text-align:left;margin-top:8px">차단한 사람의 글은 보이지 않습니다. 해제하면 다시 보여요.</p>`:''}
+  <p class="acdelnote" style="text-align:left;margin-top:8px">You won’t see posts from people you block. Unblock to see them again.</p>`:''}
   <button class="aclogout" id="aclogout">Log out</button>
   <!-- 앱스토어 5.1.1(v) — 가입할 수 있는 앱은 앱 안에서 계정을 지울 수 있어야 한다 -->
   <button class="acdel" id="acdel">Delete account</button>
-  <p class="acdelnote">계정을 삭제하면 올린 로그·곡·사진이 모두 사라지고 되돌릴 수 없어요.</p>
+  <p class="acdelnote">Deleting your account removes every LOG, song and photo for good.</p>
   <div style="height:24px"></div>
   ${S.editProf?profEditSheet():''}`;
 }
@@ -4414,15 +4989,15 @@ function profEditSheet(){
     <div class="pkhd"><b>Edit profile</b><button class="pkx" id="peclose" aria-label="Close">✕</button></div>
     <div class="rsec">Name (Artist name)</div>
     <input class="cs-name" id="penm" value="${esc(P.name||'')}" placeholder="Name">
-    <div class="rsec">역할</div>
+    <div class="rsec">Role</div>
     <div class="evpick">${[['artist','Artist'],['producer','Producer'],['listener','Listener']].map(([k,l])=>
       `<button class="evopt ${P.role===k?'on':''}" data-perole="${k}">${l}</button>`).join('')}</div>
     <div class="rsec">Bio</div>
     <textarea class="lyr" id="pebio" placeholder="Introduce yourself in one line" style="min-height:80px">${esc(P.bio||'')}</textarea>
     <div class="rsec">SNS <em class="opt">Select</em></div>
-    <div class="crow"><span class="clab">Instagram</span><input class="cin" id="peig" value="${esc(P.ig||'')}" placeholder="아이디"></div>
-    <div class="crow"><span class="clab">YouTube</span><input class="cin" id="peyt" value="${esc(P.yt||'')}" placeholder="채널"></div>
-    <div class="crow"><span class="clab">TikTok</span><input class="cin" id="pett" value="${esc(P.tt||'')}" placeholder="아이디"></div>
+    <div class="crow"><span class="clab">Instagram</span><input class="cin" id="peig" value="${esc(P.ig||'')}" placeholder="Handle"></div>
+    <div class="crow"><span class="clab">YouTube</span><input class="cin" id="peyt" value="${esc(P.yt||'')}" placeholder="Channel"></div>
+    <div class="crow"><span class="clab">TikTok</span><input class="cin" id="pett" value="${esc(P.tt||'')}" placeholder="Handle"></div>
     <button class="cta" id="pedone" style="margin-top:14px">Save</button>
   </div>`;
 }
@@ -4500,9 +5075,9 @@ function flist(){
     <div class="htitle">${title}<small>${q?'Search':isFer?'Followers':'Following'}</small></div>
     <span style="width:34px"></span></div>
   <div class="srch"><span class="srchi">⌕</span>
-    <input id="fq" value="${S.fq||''}" placeholder="아티스트 찾기">
+    <input id="fq" value="${S.fq||''}" placeholder="Search artists">
     ${q?`<button class="srchx" id="fqx" aria-label="지우기">✕</button>`:''}</div>
-  <button class="invbtn" id="finvite">＋ 친구 초대하기 <small>링크 보내기</small></button>
+  <button class="invbtn" id="finvite">＋ Invite a friend <small>Send link</small></button>
   <div class="seg" id="flseg" style="${q?'display:none':''}">
     <button class="${isFer?'on':''}" data-flist="follower">Followers <b>${ferN}</b></button>
     <button class="${isFer?'':'on'}" data-flist="following">Following <b>${fingN}</b></button></div>
@@ -4551,7 +5126,7 @@ function flistBody(){
     if(q || !RECENTP || !RECENTP.length) return '';
     const shown=new Set(rows.map(p=>p.aid).filter(Boolean));
     const rec=RECENTP.filter(p=>p.aid && !shown.has(p.aid) && !(ME&&p.aid===ME.id) && !isHiddenItem(p)).slice(0,20);
-    return rec.length ? `<div class="pldate" style="margin-top:14px">최근 가입한 사람들</div>${rec.map(prowOf).join('')}` : '';
+    return rec.length ? `<div class="pldate" style="margin-top:14px">Recently joined</div>${rec.map(prowOf).join('')}` : '';
   })();
 
   if(!targetId) return `<div class="pknote" style="padding:24px 0 10px">${meView?'Log in to see your followers':'불러올 수 없어요'}</div>` + recentBody;
@@ -4572,7 +5147,7 @@ function flistBody(){
 function refreshFlist(){
   const el=document.getElementById('flbody');
   if(!el || S.view!=='flist') return;
-  el.innerHTML=flistBody();
+  el.innerHTML=flistBody(); localize(el);
   const q=(S.fq||'').trim();
   const seg=document.getElementById('flseg'); if(seg) seg.style.display=q?'none':'';
   const lab=document.querySelector('.htitle small'); if(lab) lab.textContent=q?'Search':(S.flist==='follower'?'Followers':'Following');
@@ -4819,7 +5394,7 @@ function listDetail(){
   <div class="lhero">
     <span class="lcov big">${p.cov.slice(0,3).map((id,i)=>
       `<i style="background:${covOf(id)};z-index:${3-i};left:${i*22}px"></i>`).join('')}</span>
-    <div class="lhinfo">${p.mine?`<input class="lhname" id="listname" value="${(p.nm||'').replace(/"/g,'&quot;')}">`:`<h3>${esc(p.nm)}</h3>`}<small>${(ME&&ME.name)||'나'} · ${(p.tracks||[]).length}곡</small>
+    <div class="lhinfo">${p.mine?`<input class="lhname" id="listname" value="${(p.nm||'').replace(/"/g,'&quot;')}">`:`<h3>${esc(p.nm)}</h3>`}<small>${(ME&&ME.name)||'나'} · ${(p.tracks||[]).length} songs</small>
       <div class="lhbtn"><button class="cta" id="lplay">▶ 전체 재생</button>
         <button class="savebtn" id="addsongbtn">＋ 곡 담기</button></div></div>
   </div>
@@ -4860,13 +5435,13 @@ function stageSheet(w){
   const open=ROUNDS.filter(r=>r.type==='open'&&r.entrySrc!=='perf');
   return `<div class="sheet-bd" id="stbd"></div>
   <div class="pksheet">
-    <div class="pkhd"><b>${esc(w.nm)}을 낼 무대</b>
+    <div class="pkhd"><b>Stage for ${esc(w.nm)}</b>
       <button class="pkx" id="stclose" aria-label="Close">✕</button></div>
     ${open.map(r=>`<button class="pkrow ${r.applied===w.nm?'cur':''}" data-stage="${r.id}">
       <span class="pkth" style="background:var(--card2);display:flex;align-items:center;justify-content:center;color:var(--lemon)">◆</span>
       <span class="pknm"><b>${esc(r.nm)}</b><small>${esc(r.sub)} · ${r.prize}</small></span>
-      ${r.applied?`<span class="pkcur">${r.applied===w.nm?'신청 중':r.applied+' →교체'}</span>`:''}</button>`).join('')}
-    <div class="pknote">라운드당 한 곡만. 교체하면 득표는 0부터 다시 시작합니다</div>
+      ${r.applied?`<span class="pkcur">${r.applied===w.nm?'Entered':r.applied+' → swap'}</span>`:''}</button>`).join('')}
+    <div class="pknote">One song per round. Swapping resets votes to 0.</div>
   </div>`;
 }
 
@@ -4876,7 +5451,7 @@ function perfMissing(){
   const P=S.perfForm||{}, m=[];
   if(!P.round) m.push('Pick a round');
   if(!P.team||!P.team.trim()) m.push('Team name');
-  if(!P.members||!P.members.trim()) m.push('참여자 이름');
+  if(!P.members||!P.members.trim()) m.push('Member names');
   if(!P.contact||!P.contact.trim()) m.push('Contact');
   if(!P.song||!P.song.trim()) m.push('Song title');
   if(!P.style||!P.style.trim()) m.push('Style');
@@ -4921,7 +5496,7 @@ function perfApplySheet(){
     <p class="rulen" style="text-align:left;margin:0 4px 4px;color:var(--muted);font-size:11px">Public or link-only — both work</p>
 
     <button class="cta" id="pfdone" ${miss.length?'disabled':''}>Submit</button>
-    ${miss.length?`<div class="missn">${miss.join(' · ')} 필요</div>`:''}
+    ${miss.length?`<div class="missn">${miss.join(' · ')} required</div>`:''}
   </div>`;
 }
 
@@ -4929,7 +5504,7 @@ function perfApplySheet(){
    고른 프로젝트에 따라 업로드 필드가 바뀐다 */
 function projectMissing(){
   const P=S.projectForm||{}, proj=PROJECTS.find(x=>x.id===P.project), m=[];
-  if(!P.project) m.push('프로젝트 선택');
+  if(!P.project) m.push('Pick a project');
   if(!P.name?.trim()) m.push('Name');
   if(!P.contact?.trim()) m.push('Contact');
   if(proj){
@@ -4947,12 +5522,12 @@ function projectApplySheet(){
   const miss=projectMissing();
   return `<div class="sheet-bd" id="pjbd"></div>
   <div class="pksheet tall">
-    <div class="pkhd"><b>프로젝트 지원</b><span class="pksub">선정되면 연락드려요</span>
+    <div class="pkhd"><b>Project entry</b><span class="pksub">We contact you if selected</span>
       <button class="pkx" id="pjclose" aria-label="Close">✕</button></div>
 
-    <div class="rsec">지원할 프로젝트</div>
+    <div class="rsec">Project</div>
     <div class="evpick">${PROJECTS.map(p=>`<button class="evopt ${P.project===p.id?'on':''}" data-pjproject="${p.id}">
-      <b>${esc(p.brand)}</b><small>${esc(p.who)} · ${p.type==='audio'?'음원 파일':'Video URL'}</small></button>`).join('')}</div>
+      <b>${esc(p.brand)}</b><small>${esc(p.who)} · ${p.type==='audio'?'Audio file':'Video URL'}</small></button>`).join('')}</div>
 
     <div class="rsec">Name</div>
     <input class="cs-name" id="pjname" value="${esc(P.name||'')}" placeholder="Name (Artist name)">
@@ -4961,20 +5536,20 @@ function projectApplySheet(){
     <div class="crow"><input class="cin" id="pjcontact" value="${esc(P.contact||'')}" placeholder="Phone or email to reach you if selected"></div>
     <p class="rulen" style="text-align:left;margin:0 4px 4px;color:var(--muted);font-size:11px">We contact you only if selected — never shown in the list</p>
 
-    <div class="rsec">한 줄 소개 <em class="opt">Select</em></div>
+    <div class="rsec">One-line intro <em class="opt">Optional</em></div>
     <div class="crow"><input class="cin" id="pjnote" value="${esc(P.note||'')}" placeholder="A short intro or anything you want to say"></div>
 
     ${!proj ? ''
       : proj.type==='audio'
-        ? `<div class="rsec">음원 파일 <em class="opt">MP3 · WAV</em></div>
-           <button class="cs-name" id="pjaudiobtn" style="text-align:left;cursor:pointer">${P.audioName?esc(P.audioName):'Choose file (MP3 또는 WAV)'}</button>
+        ? `<div class="rsec">Audio file <em class="opt">MP3 · WAV</em></div>
+           <button class="cs-name" id="pjaudiobtn" style="text-align:left;cursor:pointer">${P.audioName?esc(P.audioName):'Choose file (MP3 or WAV)'}</button>
            <input type="file" id="pjaudiofile" accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/wave,.mp3,.wav" hidden>
-           <p class="rulen" style="text-align:left;margin:6px 4px 0;color:var(--muted);font-size:11px">MP3, WAV 파일만 올릴 수 있어요 · 45MB max</p>`
+           <p class="rulen" style="text-align:left;margin:6px 4px 0;color:var(--muted);font-size:11px">MP3 and WAV only · 45MB max</p>`
         : `<div class="rsec">Video URL <em class="opt">YouTube only</em></div>
            <div class="crow"><input class="cin" id="pjvideo" value="${esc(P.video||'')}" placeholder="https://youtube.com/watch?v=..."></div>`}
 
     <button class="cta" id="pjdone" ${miss.length?'disabled':''}>Apply</button>
-    ${miss.length?`<div class="missn">${miss.join(' · ')} 필요</div>`:''}
+    ${miss.length?`<div class="missn">${miss.join(' · ')} required</div>`:''}
   </div>`;
 }
 
@@ -4987,7 +5562,7 @@ function listPicker(w){
     ${LISTS.map(p=>`<button class="pkrow" data-addto="${p.id}">
       <span class="lcov" style="width:44px;height:34px">${p.cov.slice(0,2).map((id,i)=>
         `<i style="background:${covOf(id)};z-index:${2-i};left:${i*8}px;width:34px;height:34px"></i>`).join('')}</span>
-      <span class="pknm"><b>${esc(p.nm)}</b><small>${(p.tracks||[]).length}곡</small></span></button>`).join('')}
+      <span class="pknm"><b>${esc(p.nm)}</b><small>${(p.tracks||[]).length} songs</small></span></button>`).join('')}
     <button class="newlist" id="lpnew" style="margin-top:8px">＋ Add to a new playlist</button>
   </div>`;
 }
@@ -4998,12 +5573,12 @@ function shareSheet(p){
   <div class="pksheet">
     <div class="pkhd"><b>${esc(p.nm)} Share</b>
       <button class="pkx" id="shclose" aria-label="Close">✕</button></div>
-    <div class="shlink"><span>offlog.app/l/${p.id}</span><button class="shcopy" id="shcopy">복사</button></div>
+    <div class="shlink"><span>offlog.app/l/${p.id}</span><button class="shcopy" id="shcopy">Copy</button></div>
     <button class="pkrow" data-pub="${p.id}">
       <span class="evck ${p.pub?'on':''}"></span>
-      <span class="pknm"><b>${p.pub?'공개 중':'나만 보기'}</b>
+      <span class="pknm"><b>${p.pub?'Public':'Only me'}</b>
         <small>${p.pub?'Anyone with the link can listen':'Only you can see it, even with the link'}</small></span></button>
-    <div class="shrow">${[['💬','메시지'],['📷','스토리'],['🔗','링크'],['⋯','더보기']].map(([i,l])=>
+    <div class="shrow">${[['💬','Message'],['📷','Story'],['🔗','Link'],['⋯','More']].map(([i,l])=>
       `<button class="shbtn"><span>${i}</span><small>${l}</small></button>`).join('')}</div>
   </div>`;
 }
@@ -5012,7 +5587,7 @@ function shareSheet(p){
 function work(){
   const w=WORKS.find(x=>x.id===S.work)||WORKS[0];
   const story=w.id==='sr'?STORY:STORY.slice(0,3);
-  const chips=[['all','All'],['demo','데모'],['pic','Photo'],['vid','Video'],['idea','아이디어'],['voice','보이스'],['note','노트']];
+  const chips=[['all','All'],['demo','Demo'],['pic','Photo'],['vid','Video'],['idea','Idea'],['voice','Voice'],['note','Note']];
   const scard=r=>{
     /* 작품 스토리 안 = 이미 담긴 것들. 뱃지 불필요 */
     const chrome=`<div class="rwho" data-prof="${esc(r.who)}" style="cursor:pointer">${avatarEl(avOf(r.who), r.c, 24, r.who)}${esc(r.who)}</div>`;
@@ -5053,7 +5628,7 @@ function work(){
   let _ah=0; const _as=String(w.by||w.nm||''); for(let k=0;k<_as.length;k++)_ah=(_ah*31+_as.charCodeAt(k))|0;
   const acc=c(_PAL[Math.abs(_ah)%_PAL.length])||'#3a3a44';
   const working=(!w.date || w.date==='In progress');
-  const relTxt=working?'In progress':(w.pending?'Schedule release '+w.date:(w.date?'발매 '+w.date:'미발매'));
+  const relTxt=working?'In progress':(w.pending?'Schedule release '+w.date:(w.date?'Released '+w.date:'미발매'));
   const _cov=safeUrl(w.cover);
   return `<div class="hd"><button class="circ" data-v="mine" aria-label="Back"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button>
     <div class="htitle"></div>
@@ -5064,10 +5639,10 @@ function work(){
     <h1 class="wtitle2">${esc(w.nm)}</h1>
     <div class="wsub2"><button class="wartist" data-prof="${esc(w.by||'나')}">${esc(w.by||'나')}</button>
       <span class="wdot">·</span><span>${relTxt}</span>
-      ${w.logs?`<span class="wdot">·</span><span>기록 ${w.logs}개</span>`:''}</div>
+      ${w.logs?`<span class="wdot">·</span><span>${w.logs} LOGs</span>`:''}</div>
     <div class="wactions">
       <div class="wicons">
-        <button class="wicon" id="wsave" aria-label="플레이리스트에 담기"><span>＋</span><i>Add</i></button>
+        <button class="wicon" id="wsave" aria-label="Add to playlist"><span>＋</span><i>Add</i></button>
         <button class="wicon" aria-label="Share"><span>⤴</span><i>Share</i></button>
         ${w.mine ? (working
           ? `<button class="wicon acc" id="relbtn" aria-label="Release"><span>◎</span><i>발매</i></button>`
@@ -5081,10 +5656,10 @@ function work(){
   ${w.mine && (w.inst || w.lyr) ? `<div class="wsec"><div class="wsec-t">Lyrics</div><div class="wlyr"${w.inst?' style="color:var(--muted)"':''}>${w.inst?'연주곡 (가사 없음)':w.lyr.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div></div>`:''}
   ${w.mine?lvRow(w):eventStatus(w)}
   <div class="sechd">
-    <div class="sec" style="margin:0">${w.mine?'음원 로그':'The Story'}</div></div>
+    <div class="sec" style="margin:0">${w.mine?'Track LOGs':'The Story'}</div></div>
   ${w.mine?'':`<div class="mchips">${chips.map(([k,l])=>`<button class="mchip ${S.wf===k?'on':''}" data-wf="${k}">${l}</button>`).join('')}</div>`}
   <div class="daytl">${w.mine?mineTimeline():groups}</div>
-  ${(!w.mine&&w.id==='ml')?`<div class="expire">이 스토리는 지금도 자라는 중 · <b>기록 91개</b></div>`:''}
+  ${(!w.mine&&w.id==='ml')?`<div class="expire">This story is still growing · <b>91 LOGs</b></div>`:''}
   ${S.relpick?releaseLogPicker(w):''}
   ${S.pull?logPuller(w):''}
   ${S.stage?stageSheet(w):''}
@@ -5101,55 +5676,55 @@ function releaseSheet(w){
   const miss=relMissing();
   return `<div class="sheet-bd" id="relbd"></div>
   <div class="pksheet tall">
-    <div class="pkhd"><b>Release</b><span class="pksub">유통 제출</span>
+    <div class="pkhd"><b>Release</b><span class="pksub">Distribution</span>
       <button class="pkx" id="relclose" aria-label="Close">✕</button></div>
 
-    <div class="rsec">제목</div>
+    <div class="rsec">Title</div>
     <input class="cs-name" id="reltitle" value="${(R.title||'').replace(/"/g,'&quot;')}" placeholder="Song title">
 
     <div class="rsec">Track</div>
     <button class="ubox ${R.audio?'on':''}" id="relaudio">
       <span class="ub-ic">${R.audio?'♪':'＋'}</span>
-      <span class="ub-t"><b>${R.audio?R.audio.name:'음원 파일 업로드'}</b>
-        <small>${R.audio?R.audio.size+(R.audio.dur?' · '+R.audio.dur:''):'wav · flac 권장'}</small></span>
+      <span class="ub-t"><b>${R.audio?R.audio.name:'Upload audio file'}</b>
+        <small>${R.audio?R.audio.size+(R.audio.dur?' · '+R.audio.dur:''):'wav · flac recommended'}</small></span>
       ${R.audio?`<span class="ub-ok">✓</span>`:''}</button>
 
-    <div class="rsec">앨범 아트워크</div>
+    <div class="rsec">Album artwork</div>
     <button class="ubox art ${R.art?'on':''}" id="relart">
       ${R.art?`<span class="artimg" style="background-image:url(${R.art})"></span>`:`<span class="ub-ic">＋</span>`}
-      <span class="ub-t"><b>${R.art?'아트워크 등록됨':'이미지 업로드'}</b>
-        <small>3000×3000 · JPG/PNG · 텍스트 없는 정사각</small></span>
+      <span class="ub-t"><b>${R.art?'Artwork added':'Upload image'}</b>
+        <small>3000×3000 · JPG/PNG · square, no text</small></span>
       ${R.art?`<span class="ub-ok">✓</span>`:''}</button>
 
     <div class="rsec">Lyrics</div>
     <button class="instck ${R.inst?'on':''}" id="relinst">
-      <span class="evck"></span><span>연주곡 (가사 없음)</span></button>
-    ${R.inst?'' : `<textarea class="lyr" id="rellyr" placeholder="가사를 붙여넣으세요&#10;&#10;줄바꿈 그대로 유통사에 전달됩니다">${R.lyr}</textarea>`}
+      <span class="evck"></span><span>Instrumental (no lyrics)</span></button>
+    ${R.inst?'' : `<textarea class="lyr" id="rellyr" placeholder="Paste your lyrics&#10;&#10;Line breaks reach the distributor as-is">${R.lyr}</textarea>`}
 
-    <div class="rsec">Credits <em class="opt">작곡가는 필수</em></div>
-    ${[['comp','작곡'],['lyri','작사'],['arr','편곡'],['prod','Producer']].map(([k,l])=>`
+    <div class="rsec">Credits <em class="opt">Composer required</em></div>
+    ${[['comp','Composer'],['lyri','Lyricist'],['arr','Arranger'],['prod','Producer']].map(([k,l])=>`
       <div class="crow"><span class="clab">${l}</span>
-        <input class="cin" data-cr="${k}" value="${R[k]}" placeholder="${k==='comp'?'Name (필수)':'Name'}"></div>`).join('')}
+        <input class="cin" data-cr="${k}" value="${R[k]}" placeholder="${k==='comp'?'Name (required)':'Name'}"></div>`).join('')}
 
     <div class="rsec">Release date</div>
     <input class="rdate" type="date" id="reldate" value="${R.date}" min="${minRelDate()}">
-    <div class="rulen" style="text-align:left;margin:7px 4px 0">유통사 심사 때문에 <b style="color:var(--lemon)">최소 2주 뒤</b>부터 지정할 수 있습니다 · 빠른 날짜 ${minRelDate().replace(/-/g,'.')}</div>
+    <div class="rulen" style="text-align:left;margin:7px 4px 0">Distributor review means the date must be <b style="color:var(--lemon)">at least 2 weeks out</b> · earliest ${minRelDate().replace(/-/g,'.')}</div>
 
-    <div class="rsec">공연 이벤트 참여 <em class="opt">Select</em></div>
+    <div class="rsec">Enter a stage event <em class="opt">Optional</em></div>
     <div class="evpick">
-      <button class="evopt ${!R.event?'on':''}" data-relevent="">나중에 할게요</button>
+      <button class="evopt ${!R.event?'on':''}" data-relevent="">Not now</button>
       ${ROUNDS.filter(r=>r.cat==='stage'&&r.type==='open'&&r.entrySrc!=='perf').map(r=>`
         <button class="evopt ${R.event===r.id?'on':''}" data-relevent="${r.id}">
           <b>${esc(r.nm)}</b><small>${esc(r.sub)} · ${esc(slotLine(r))}</small></button>`).join('')}
     </div>
-    <p class="rulen" style="text-align:left;margin:7px 4px 0">참여를 고르면 청취자 투표를 받아요 · 순위 안에 들면 무대가 확정돼요</p>
+    <p class="rulen" style="text-align:left;margin:7px 4px 0">Enter and listeners vote · Place high enough and the stage is yours</p>
 
-    <div class="rsec">이 발매에 넣을 로그 <em class="opt">탭해서 선택</em></div>
+    <div class="rsec">LOGs for this release <em class="opt">Tap to pick</em></div>
     <div class="rellogsel">${relLogRows()}</div>
 
-    <div class="relsum">${S.sel.length?`선택한 로그 <b>${S.sel.length}개</b>가 발매일에 메이킹 필름으로 자동 편집됩니다`:'넣을 로그를 골라주세요 (선택 안 하면 로그 없이 발매)'}</div>
+    <div class="relsum">${S.sel.length?`<b>${S.sel.length}</b> selected — auto-cut into a making film on release day`:'Pick LOGs to include — or release without any'}</div>
     <button class="cta" id="reldone" ${miss.length?'disabled':''}>Schedule release</button>
-    ${miss.length?`<div class="missn">${miss.join(' · ')} 필요</div>`:''}
+    ${miss.length?`<div class="missn">${miss.join(' · ')} required</div>`:''}
   </div>`;
 }
 
@@ -5161,11 +5736,11 @@ function minRelDate(){
 /* 유통사가 반려하는 것들 */
 function relMissing(){
   const R=S.relForm, m=[];
-  if(!R.title||!R.title.trim()) m.push('제목');
+  if(!R.title||!R.title.trim()) m.push('Title');
   if(!R.audio) m.push('Track');
-  if(!R.art)   m.push('아트워크');
+  if(!R.art)   m.push('Artwork');
   if(!R.inst && !R.lyr.trim()) m.push('Lyrics');
-  if(!R.comp.trim()) m.push('작곡가');
+  if(!R.comp.trim()) m.push('Composer');
   if(!R.date) m.push('Release date');
   return m;
 }
@@ -5185,19 +5760,19 @@ function composeSheet(){
   if(!S.compose) return '';
   const C=S.compose, m=C.media;
   const prev = m ? (m.kind==='vid' ? `<div class="cs-prev"><video src="${m.url}" controls playsinline></video><button class="cs-rm" id="csrm" aria-label="Remove attachment">✕</button></div>`
-      : m.kind==='aud' ? `<div class="cs-prev aud"><span>🎵 ${m.name||'데모'}</span><button class="cs-rm" id="csrm" aria-label="Remove attachment">✕</button></div>`
+      : m.kind==='aud' ? `<div class="cs-prev aud"><span>🎵 ${m.name||'Demo'}</span><button class="cs-rm" id="csrm" aria-label="Remove attachment">✕</button></div>`
       : `<div class="cs-prev"><img src="${m.url}" alt=""><button class="cs-rm" id="csrm" aria-label="Remove attachment">✕</button></div>`) : '';
   const canPost = !!((C.text||'').trim() || m);
   const editing = !!C.editId;   /* 수정 모드 — 기존 로그의 글/캡션만 고친다(첨부 버튼 숨김) */
   return `<div class="cs-bd" id="csbd"><div class="cs">
-    <div class="cs-hd"><b>${editing?'LOG 수정':'Write a LOG'}</b><button class="cs-x" id="csx" aria-label="Close">✕</button></div>
+    <div class="cs-hd"><b>${editing?'Edit LOG':'Write a LOG'}</b><button class="cs-x" id="csx" aria-label="Close">✕</button></div>
     <textarea class="cs-ta" id="csta" placeholder="${editing?'Edit your text':'What’s on your mind?  ·  Just write — the time and the words stay'}">${C.text||''}</textarea>
     ${prev}
     ${editing?'':`<div class="cs-attach">
-      <button class="cs-att${m&&(m.kind==='ph'||m.kind==='vid')?' on':''}" id="cscam" aria-label="카메라">📷<span>카메라</span></button>
-      <button class="cs-att${m&&m.kind==='aud'?' on':''}" id="csaudio" aria-label="데모">🎵<span>데모</span></button>
+      <button class="cs-att${m&&(m.kind==='ph'||m.kind==='vid')?' on':''}" id="cscam" aria-label="Camera">📷<span>Camera</span></button>
+      <button class="cs-att${m&&m.kind==='aud'?' on':''}" id="csaudio" aria-label="Demo">🎵<span>Demo</span></button>
     </div>`}
-    <button class="cs-post" id="cspost"${canPost?'':' disabled'}>${editing?'수정하기':'올리기'}</button>
+    <button class="cs-post" id="cspost"${canPost?'':' disabled'}>${editing?'Save':'Post'}</button>
   </div></div>`;
 }
 function submitCompose(){
@@ -5360,7 +5935,7 @@ function trimVideo(file, start, end, onProgress){
     setTimeout(()=>{ if(!done) fail(new Error('timeout')); }, (end-start)*1000+30000);  /* 안전장치 */
   });
 }
-/* 시트에서 '이 구간으로' 를 누르면 여기로 온다 */
+/* 시트에서 'Use this clip' 를 누르면 여기로 온다 */
 async function applyTrim(){
   const T=S.trim; if(!T||T.busy) return;
   const len=Math.max(0.2, T.end-T.start);
@@ -5389,24 +5964,24 @@ function trimSheet(){
   const pct=x=>d>0?Math.max(0,Math.min(100,(x/d)*100)):0;
   return `<div class="sheet-bd" id="trbd"></div>
   <div class="pksheet trimsheet">
-    <div class="pkhd"><b>영상 자르기</b><span class="pksub">${TRIM_MAX}초까지 올릴 수 있어요</span>
+    <div class="pkhd"><b>Trim video</b><span class="pksub">Up to ${TRIM_MAX}s</span>
       <button class="pkx" id="trclose" aria-label="Close">✕</button></div>
     <video id="trvid" class="trvid" src="${T.url}" playsinline muted preload="metadata"></video>
-    ${!T.ready?`<div class="pknote" style="padding:18px 0">영상을 읽는 중…</div>`
+    ${!T.ready?`<div class="pknote" style="padding:18px 0">Reading the video…</div>`
     : d<=0 ? `<div class="pknote" style="padding:14px 0">길이를 읽을 수 없는 영상이에요 — 그대로 올립니다</div>`
     : `<div class="trbar">
          <div class="trrange" style="left:${pct(T.start)}%;width:${pct(T.end)-pct(T.start)}%"></div>
        </div>
-       <div class="trrow"><span class="trlab">시작</span>
+       <div class="trrow"><span class="trlab">Start</span>
          <input class="trsl" id="trstart" type="range" min="0" max="${d.toFixed(2)}" step="0.1" value="${T.start.toFixed(2)}">
          <b class="trval">${_fmtT(T.start)}</b></div>
-       <div class="trrow"><span class="trlab">끝</span>
+       <div class="trrow"><span class="trlab">End</span>
          <input class="trsl" id="trend" type="range" min="0" max="${d.toFixed(2)}" step="0.1" value="${T.end.toFixed(2)}">
          <b class="trval">${_fmtT(T.end)}</b></div>
-       <div class="trsum ${over?'over':''}">고른 길이 <b>${len.toFixed(1)}초</b>${over?` · ${TRIM_MAX}초를 넘었어요`:''}
-         <button class="trplay" id="trpreview">▶ 이 구간 보기</button></div>`}
+       <div class="trsum ${over?'over':''}">Selected <b>${len.toFixed(1)}s</b>${over?` · over ${TRIM_MAX}s`:''}
+         <button class="trplay" id="trpreview">▶ Preview</button></div>`}
     <button class="cta" id="trdone" ${(!T.ready||over||T.busy)?'disabled':''}>
-      ${T.busy?`잘라내는 중… <span id="trimpct">0%</span>`:'이 구간으로'}</button>
+      ${T.busy?`Trimming… <span id="trimpct">0%</span>`:'Use this clip'}</button>
     ${T.busy?`<div class="pknote" style="padding:8px 0 0">Takes about as long as the clip — keep the screen on</div>`:''}
   </div>`;
 }
@@ -5423,12 +5998,12 @@ function demoPickSheet(){
       <span class="evck${P.sel.includes(l.id)?' on':''}" style="margin-left:auto"></span></button>`).join('');
   return `<div class="sheet-bd" id="dpbd"></div>
   <div class="pksheet tall">
-    <div class="pkhd"><b>LOG 담기</b><span class="pksub">${esc(demo.nm||'데모')}</span>
+    <div class="pkhd"><b>Attach LOGs</b><span class="pksub">${esc(demo.nm||'Demo')}</span>
       <button class="pkx" id="dpclose" aria-label="Close">✕</button></div>
     <div class="pkwarn" style="background:rgba(83,224,200,.07);border-color:rgba(83,224,200,.25);color:var(--mint)">
-      이 데모가 만들어진 날들의 기록을 골라주세요</div>
+      Pick the LOGs from the days this demo was made</div>
     ${rows||`<div class="pknote" style="padding:26px 0">No LOGs to attach — write or post a photo first</div>`}
-    <button class="cta" id="dpdone">${P.sel.length?P.sel.length+'개 담기':'Add'}</button>
+    <button class="cta" id="dpdone">${P.sel.length?P.sel.length+' selected':'Add'}</button>
   </div>`;
 }
 /* 담기 저장 — 로컬 demoOf + (컬럼이 있으면) 서버 demo_id */
@@ -5629,10 +6204,10 @@ function newWorkSheet(){
   if(!S.newwork) return '';
   const nm=(S.newwork.nm||'').replace(/"/g,'&quot;');
   return `<div class="cs-bd" id="nwbd"><div class="cs">
-    <div class="cs-hd"><b>새 작품</b><button class="cs-x" id="nwx" aria-label="Close">✕</button></div>
-    <input class="cs-name" id="nwname" placeholder="앨범 · 작품 이름" value="${nm}">
-    <p style="color:var(--muted);font-size:12px;margin:8px 2px 0">만든 뒤 '음원 발매하기'에서 커버·Lyrics·Credits·Release date(최소 2주 뒤)을 넣을 수 있어요.</p>
-    <button class="cs-post" id="nwdone"${(S.newwork.nm||'').trim()?'':' disabled'}>만들기</button>
+    <div class="cs-hd"><b>New work</b><button class="cs-x" id="nwx" aria-label="Close">✕</button></div>
+    <input class="cs-name" id="nwname" placeholder="Album or work name" value="${nm}">
+    <p style="color:var(--muted);font-size:12px;margin:8px 2px 0">Once created, ‘Release’ lets you add cover art, lyrics, credits and a release date (at least 2 weeks out).</p>
+    <button class="cs-post" id="nwdone"${(S.newwork.nm||'').trim()?'':' disabled'}>Create</button>
   </div></div>`;
 }
 const WGRAD='radial-gradient(circle at 30% 25%,#4a2f66,transparent 60%),radial-gradient(circle at 80% 75%,#173f38,transparent 55%),#101014';
@@ -5761,15 +6336,15 @@ function camView(){
   if(CAMERR) return `<div class="camview">
     <button class="camx" id="camx" aria-label="Close">✕</button>
     <div class="camerr"><div>${CAMERR}</div>
-      <button class="cs-post" id="camfallback">폰 카메라로 찍기</button></div></div>`;
+      <button class="cs-post" id="camfallback">Use the phone camera</button></div></div>`;
   return `<div class="camview">
     <video class="camvid${CAMFACING==='user'?' mirror':''}" id="camvid" autoplay playsinline muted></video>
     <button class="camx" id="camx" aria-label="Close">✕</button>
     <div class="camhint">Tap = photo · Hold = video</div>
     <div class="cambar">
-      <button class="camsub" id="camdemo" aria-label="데모 올리기">♪</button>
-      <button class="camshot" id="camshot" aria-label="촬영"></button>
-      <button class="camsub" id="camflip" aria-label="앞뒤 전환">⟳</button>
+      <button class="camsub" id="camdemo" aria-label="Post a demo">♪</button>
+      <button class="camshot" id="camshot" aria-label="Shoot"></button>
+      <button class="camsub" id="camflip" aria-label="Flip camera">⟳</button>
     </div></div>`;
 }
 function stopCam(){
@@ -5931,6 +6506,7 @@ function render(){
   const _lv=document.getElementById('lockview');
   if(_lv) _lv.innerHTML = !(AUTHREADY&&DATAREADY) ? splashScreen() : '';
   renderMini();
+  localize(document.body);   /* 한국어면 여기서 통째로 갈아끼운다(같은 프레임이라 안 깜빡임) */
   bind();
   syncStoryAudio();     // 스토리 데모면 실제 소리 재생
 }
@@ -6059,6 +6635,7 @@ function bind(){
   /* 계정 공개 범위 */
   document.querySelectorAll('[data-acvis]').forEach(b=>b.onclick=()=>{ const v=b.dataset.acvis;
     if((ME&&ME.vis||'public')!==v) setAccountVisibility(v); });
+  document.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>setLang(b.dataset.lang));
   /* 프로필 수정 시트 */
   if(S.editProf){
     const pb=document.getElementById('pebd'), px=document.getElementById('peclose');
@@ -6517,7 +7094,7 @@ function bind(){
     /* 전체 render 대신 이 행만 토글 + 카운트 갱신 → 시트 스크롤 위치 유지 */
     b.classList.toggle('on', on);
     const cta=document.getElementById('rpkdone'); if(cta) cta.textContent = S.sel.length? S.sel.length+'개 담기':'Add';
-    const rs=document.querySelector('.relsum'); if(rs) rs.innerHTML = S.sel.length?`선택한 로그 <b>${S.sel.length}개</b>가 발매일에 메이킹 필름으로 자동 편집됩니다`:'넣을 로그를 골라주세요 (선택 안 하면 로그 없이 발매)';
+    const rs=document.querySelector('.relsum'); if(rs) rs.innerHTML = S.sel.length?`<b>${S.sel.length}</b> selected — auto-cut into a making film on release day`:'Pick LOGs to include — or release without any';
   });
   const pd=document.getElementById('pulldone');
   if(pd)pd.onclick=()=>{
@@ -6968,7 +7545,7 @@ function bind(){
       /* 행만 토글 — 시트 스크롤 유지 */
       b.classList.toggle('on', on);
       const ck=b.querySelector('.evck'); if(ck)ck.classList.toggle('on', on);
-      const cta=document.getElementById('dpdone'); if(cta)cta.textContent = P.sel.length? P.sel.length+'개 담기':'Add';
+      const cta=document.getElementById('dpdone'); if(cta)cta.textContent = P.sel.length? P.sel.length+' selected':'Add';
     });
     const dpx=document.getElementById('dpclose'), dpb=document.getElementById('dpbd');
     const dshut=()=>{ S.demoPick=null; render(); };
