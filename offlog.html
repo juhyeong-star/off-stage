@@ -1584,6 +1584,14 @@ body{background:#050505;min-height:100vh;display:flex;justify-content:center;pad
 .acedit{margin-top:8px;background:none;border:1px solid var(--line);color:var(--txt);border-radius:99px;
   font-family:inherit;font-size:12px;font-weight:700;padding:7px 16px;cursor:pointer}
 .acedit:active{border-color:var(--mint);color:var(--mint)}
+/* 메인 상단의 작은 언어 스위치 — 한글을 못 읽는 사람이 설정을 뒤질 수 없다.
+   그래서 첫 화면에 둔다. KO/EN 두 글자는 어느 쪽 사용자든 읽는다. */
+.langmini{display:flex;gap:2px;margin-right:8px;padding:2px;border-radius:999px;
+  background:var(--card2);box-shadow:inset 0 0 0 1px var(--line)}
+.lm{padding:4px 9px;border:0;border-radius:999px;background:none;color:var(--muted);
+  font-size:10.5px;font-weight:800;letter-spacing:.06em;cursor:pointer;line-height:1}
+.lm.on{background:rgba(94,234,212,.16);color:var(--mint)}
+.lm:active{opacity:.65}
 /* 언어 — 각 버튼은 늘 그 언어로 적는다(English 를 "영어"로 쓰면 못 찾는다) */
 .langrow{display:flex;gap:8px;padding:12px 14px}
 .langbtn{flex:1;padding:11px 0;border-radius:12px;background:var(--card2);border:0;
@@ -3414,7 +3422,6 @@ const KO_DICT={
 "Enter your email and password":"이메일과 비밀번호를 입력하세요",
 "Enter your email first":"이메일을 먼저 입력해 주세요",
 "Entered":"신청 중",
-"Follow":"팔로우하기",
 "Followers":"팔로워",
 "Followers · Following":"팔로워 · 팔로잉",
 "Following":"팔로잉",
@@ -3443,7 +3450,6 @@ const KO_DICT={
 "Link copied":"링크가 복사됐어요",
 "Listener":"리스너",
 "Loading…":"불러오는 중…",
-"Log in":"로그인하기",
 "Log in first":"로그인이 필요해요",
 "Log in to comment":"로그인하면 댓글을 쓸 수 있어요",
 "Log in to see your audition entries":"로그인하면 내 오디션 지원 내역을 볼 수 있어요",
@@ -3548,7 +3554,6 @@ const KO_DICT={
 "Reported — you won’t see this content again":"신고를 접수했어요 — 이 콘텐츠는 이제 안 보입니다",
 "Role":"역할",
 "Round to enter":"신청할 라운드",
-"Save":"저장하기",
 "Saved on this device · Log in to upload":"이 기기에 저장했어요 · 로그인하면 올라갑니다",
 "Schedule release":"발매 예약",
 "Search":"검색",
@@ -3560,7 +3565,6 @@ const KO_DICT={
 "September Show Tracks":"9월 공연 음원",
 "Settings":"설정",
 "Sexual content":"성적인 내용",
-"Share":"공유하기",
 "Show":"공연",
 "Show all ✕":"전체 보기 ✕",
 "Showcase":"쇼케이스",
@@ -4137,6 +4141,10 @@ function home(){
 
   return `<div class="hd">
     <div class="brand" style="flex:1;text-align:left;font-size:19px;letter-spacing:.02em">OFFLOG</div>
+    <div class="langmini">
+      <button class="lm${LANG==='ko'?' on':''}" data-lang="ko" aria-label="한국어">KO</button>
+      <button class="lm${LANG==='en'?' on':''}" data-lang="en" aria-label="English">EN</button>
+    </div>
     <button class="circ people" id="gopeople" aria-label="Followers · Following">
       <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
         <circle cx="9" cy="8" r="3.4"/><path d="M3.2 19.5c0-3.3 2.6-5.6 5.8-5.6s5.8 2.3 5.8 5.6"/>
